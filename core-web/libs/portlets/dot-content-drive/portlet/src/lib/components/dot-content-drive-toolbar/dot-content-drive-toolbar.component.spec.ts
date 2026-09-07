@@ -30,6 +30,7 @@ import {
     DotFieldFilterHost,
     DotFilterFacade,
     DotFilterValue,
+    DotLanguageFilterChipComponent,
     isCanonicalChipOrder
 } from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
@@ -317,6 +318,39 @@ describe('DotContentDriveToolbarComponent', () => {
                 expect(focusable).toBeTruthy();
                 expect(focusable?.getAttribute('tabindex')).not.toBe('-1');
             });
+        });
+
+        // The wiring half of bug 5: the rule lives in the shared chip, but it only fires if this
+        // toolbar hands over the locale it re-seeds. Both halves are guarded separately because the
+        // affordance was already lost once — when the adapter that computed it was deleted.
+        it('should hand the seeded locale to the Locale chip', () => {
+            const chip = spectator.query(DotLanguageFilterChipComponent);
+
+            expect(chip?.$defaultLanguageId()).toBe(1);
+        });
+
+        it('should withhold the Locale X while the seeded locale is the only selection', () => {
+            filtersSignal.set({ languageId: ['1'] });
+            spectator.detectChanges();
+
+            // Clearing it would re-seed the same value through `withFilterDefaults`, so the X
+            // would cost the editor their page and change nothing else.
+            expect(
+                spectator
+                    .query('[data-testid="language-chip"]')
+                    ?.querySelector('[data-testid="chip-remove"]')
+            ).toBeNull();
+        });
+
+        it('should offer the Locale X once a non-seeded locale is selected', () => {
+            filtersSignal.set({ languageId: ['2'] });
+            spectator.detectChanges();
+
+            expect(
+                spectator
+                    .query('[data-testid="language-chip"]')
+                    ?.querySelector('[data-testid="chip-remove"]')
+            ).toBeTruthy();
         });
 
         it('should open a filter panel from the keyboard alone', () => {

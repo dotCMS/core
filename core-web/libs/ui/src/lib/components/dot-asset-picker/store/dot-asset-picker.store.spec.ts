@@ -484,6 +484,22 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().status).toEqual(['ARCHIVED']);
         });
 
+        // FR-014f, the seeding half. A field entry point carries no `browse`, so it may not seed
+        // Archived either: the bound has to hold before any chip exists, or it holds only because
+        // one happens to be on screen.
+        it('should drop a seeded Archived from a caller with no browse capabilities', () => {
+            store.initPicker({ ...FILE_FIELD_CONFIG, status: ['ARCHIVED', 'LOCKED'] });
+
+            expect(store.getFilterValue('status')).toEqual(['LOCKED']);
+            expect(store.$request().status).toEqual(['LOCKED']);
+        });
+
+        it('should keep a seeded Archived for a browse caller, which is what asked for it', () => {
+            store.initPicker({ ...BROWSE_CONFIG, status: ['ARCHIVED'] });
+
+            expect(store.getFilterValue('status')).toEqual(['ARCHIVED']);
+        });
+
         it('should never carry a published-only pin together with a working-only condition', () => {
             store.initPicker({
                 ...BROWSE_CONFIG,

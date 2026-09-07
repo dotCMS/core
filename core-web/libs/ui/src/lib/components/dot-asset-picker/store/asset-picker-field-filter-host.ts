@@ -17,6 +17,12 @@ type AssetPickerStore = InstanceType<typeof DotAssetPickerStore>;
  * results table, which is why the raw field list crossing the seam is dropped here — see
  * `setUserSearchableFields`.
  *
+ * **Deliberately has no spec of its own**, unlike Content Drive's counterpart. That one carries
+ * real logic — the `field.listed` split feeding its table's extra columns — and is tested for it.
+ * Every line here forwards to a store method that has its own coverage in
+ * `dot-asset-picker.store.spec.ts`, so a spec would assert that five arrows point where the file
+ * says they point. If this ever gains a decision, it earns a spec with it.
+ *
  * @param store The picker's store, provided per dialog instance.
  * @return The field-filter host backed by that store.
  */

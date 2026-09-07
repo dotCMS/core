@@ -12,16 +12,14 @@ import { DotFieldFilterComponent } from '../../../dot-filter-bar/chips/dot-field
 import { DotFieldFilterMenuComponent } from '../../../dot-filter-bar/chips/dot-field-filter-menu/dot-field-filter-menu.component';
 import { DotLanguageFilterChipComponent } from '../../../dot-filter-bar/chips/dot-language-filter-chip/dot-language-filter-chip.component';
 import { DotSharedAssetsFilterComponent } from '../../../dot-filter-bar/chips/dot-shared-assets-filter/dot-shared-assets-filter.component';
-import {
-    DotContentStatus,
-    PUBLISHED_ONLY_STATUSES
-} from '../../../dot-filter-bar/chips/dot-status-filter/constants';
+import { DotContentStatus } from '../../../dot-filter-bar/chips/dot-status-filter/constants';
 import { DotStatusFilterComponent } from '../../../dot-filter-bar/chips/dot-status-filter/dot-status-filter.component';
 import { DotFilterBarComponent } from '../../../dot-filter-bar/dot-filter-bar.component';
 import { DotFilterChipError } from '../../../dot-filter-bar/filter-facade.token';
 import { DotSearchInputComponent } from '../../../dot-search-input/dot-search-input.component';
 import { DotUploadButtonComponent } from '../../../dot-upload-button/dot-upload-button.component';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
+import { allowedStatusesFor } from '../../store/filter-defaults';
 
 /**
  * AssetPicker toolbar: search, the shared filter row, and the upload trigger.
@@ -87,17 +85,12 @@ export class DotAssetPickerToolbarComponent {
     /**
      * Which content conditions the Status chip may offer, or `null` for no bound.
      *
-     * Derived from the caller's version state rather than from any filter, because that is what it
-     * is: a property of how the picker was opened. `showWorking === false` is the only value that
-     * narrows the request to published content (`live: true`), and {@link PUBLISHED_ONLY_STATUSES}
-     * is what may still coexist with it.
-     *
-     * The same rule is applied to the caller's *seeded* conditions in `buildPickerFilterDefaults`.
-     * Both are needed: a seed arrives before any chip exists, and this bound is what keeps the
-     * editor from re-adding by hand what the seed was not allowed to carry (SC-009).
+     * A caller restriction, not a filter, so it arrives as an input to the chip rather than through
+     * the facade (contract O8a). The rule itself lives in {@link allowedStatusesFor}, which the
+     * seeding shares — see there for which bounds exist and why.
      */
     protected readonly $allowedStatuses = computed<DotContentStatus[] | null>(() =>
-        this.store.config()?.browse?.showWorking === false ? PUBLISHED_ONLY_STATUSES : null
+        allowedStatusesFor(this.store.config())
     );
 
     /**

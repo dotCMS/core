@@ -237,6 +237,19 @@ the chip set matches the opted-in set, in the same order, with the same labels a
   described by a version the caller did not ask for. Bounding the *options* of a control, rather
   than omitting the control, is the same treatment the content-type control already gets from the
   caller's allowed base types.
+- **FR-014f**: The **Archived** condition MUST NOT be offered by, nor seeded into, a picker opened
+  from a field — the File, Image, video and audio entry points. Those callers are choosing an asset
+  for *other content to point at*, and archived content is not served, so a live page referencing
+  one renders nothing. **Unpublished** and **Locked** stay: referencing content that is not
+  published yet is ordinary editing.
+
+  Recorded because it is a bound the spec did not originally examine. Removing the picker's blanket
+  `archived: false` pin (FR-014b) was decided in the context of `openBrowserModal`, where browsing
+  to find archived content is the point; the same change made Archived reachable from four field
+  entry points where it had been impossible and where nobody asked for it. `openBrowserModal`
+  remains unbounded. The bound is applied to the control's *options* and to the caller's *seeds*,
+  the same two places FR-014d is applied, from one shared rule.
+
 - **FR-014e**: A control whose options are bounded by a caller restriction MUST make the bound
   legible rather than silently showing a shorter list — the editor should be able to tell that
   something is unavailable because of how the picker was opened, not because it does not exist.

@@ -280,6 +280,17 @@ export class DotContentDriveToolbarComponent {
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
 
     /**
+     * The environment's default locale, which this drive re-seeds on every path that builds filters
+     * from scratch. Handed to the Locale chip so it can tell a clearable selection from one whose X
+     * would simply put the same value back.
+     *
+     * `?? null` because the store leaves it `undefined` until `/api/v2/languages` answers, and the
+     * chip's input is `number | null` — an absent default means "nothing is re-seeded", which is the
+     * right reading while the lookup is still in flight.
+     */
+    readonly $defaultLanguageId = computed(() => this.#store.defaultLanguageId() ?? null);
+
+    /**
      * The action currently being applied, surfaced here because the run outlives the Action Center
      * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
      * so without this the work would continue with no indication until the completion toast fired.

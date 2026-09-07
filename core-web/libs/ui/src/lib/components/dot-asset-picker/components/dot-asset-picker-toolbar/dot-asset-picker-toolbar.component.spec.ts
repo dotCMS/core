@@ -242,7 +242,7 @@ describe('DotAssetPickerToolbarComponent', () => {
             expect(offeredStatuses()).toEqual(['LOCKED']);
         });
 
-        it('should offer every condition when working versions are included', () => {
+        it('should offer every condition when a browse caller includes working versions', () => {
             setup(
                 buildAssetPickerConfig({
                     mode: 'browse',
@@ -254,11 +254,24 @@ describe('DotAssetPickerToolbarComponent', () => {
             expect(offeredStatuses()).toBeNull();
         });
 
-        it('should offer every condition when the caller pinned nothing', () => {
-            setup(buildAssetPickerConfig({ mode: 'image', site: SITE }));
+        it('should offer every condition when a browse caller pinned nothing', () => {
+            setup(buildAssetPickerConfig({ mode: 'browse', site: SITE }));
 
+            // Browsing to find archived content is exactly what `openBrowserModal` is for.
             expect(offeredStatuses()).toBeNull();
         });
+
+        // FR-014f. Dropping the blanket `archived: false` pin (FR-014b) made Archived reachable
+        // from the four field entry points as a side effect — callers that are choosing an asset
+        // for other content to point at, where an archived asset is not served at all.
+        it.each(['file', 'image', 'video', 'audio'] as const)(
+            'should withhold Archived from the %s field entry point',
+            (mode) => {
+                setup(buildAssetPickerConfig({ mode, site: SITE }));
+
+                expect(offeredStatuses()).toEqual(['UNPUBLISHED', 'LOCKED']);
+            }
+        );
     });
 
     describe('the "More" overflow', () => {

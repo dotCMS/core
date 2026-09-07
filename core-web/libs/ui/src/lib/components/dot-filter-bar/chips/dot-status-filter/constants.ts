@@ -36,3 +36,24 @@ export const STATUS_FILTER_OPTIONS: { value: DotContentStatus; labelKey: string 
  * control that decides what to *offer*, and the seeding that decides what a caller may *pre-select*.
  */
 export const PUBLISHED_ONLY_STATUSES: DotContentStatus[] = [CONTENT_STATUS.LOCKED];
+
+/**
+ * The conditions that describe content you can still reference.
+ *
+ * Archived is the one excluded: it means the content has been withdrawn (`cvi.deleted = true`), so
+ * it is not served — a live page pointing at an archived asset renders nothing. Unpublished stays,
+ * because referencing something that is not published yet is ordinary editing: it gets published
+ * later. Locked stays for the same reason.
+ *
+ * Applied by a surface whose whole job is picking something for *other content* to point at — the
+ * File, Image, video and audio field entry points. `openBrowserModal` is deliberately not bounded
+ * by it: browsing to find archived content is exactly what it is for (FR-014b, FR-014f).
+ *
+ * Lives beside {@link PUBLISHED_ONLY_STATUSES} because it is the same kind of rule and has the same
+ * two callers: the control that decides what to *offer*, and the seeding that decides what a caller
+ * may *pre-select*.
+ */
+export const REFERENCEABLE_STATUSES: DotContentStatus[] = [
+    CONTENT_STATUS.UNPUBLISHED,
+    CONTENT_STATUS.LOCKED
+];

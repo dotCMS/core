@@ -120,4 +120,30 @@ describe('DotFilterBarComponent', () => {
             expect(spectator.query(byTestId('dot-filter-bar'))?.className).toContain('flex-wrap');
         });
     });
+
+    describe('the trailing slot', () => {
+        it('should render trailing content inside the same wrapping row, after Clear all', () => {
+            setup(
+                true,
+                '<span data-testid="a-chip"></span><span dotFilterBarTrailing data-testid="trailing"></span>'
+            );
+
+            // The row is what makes `ml-auto` work on the projected element. A surface that placed
+            // it beside the bar instead would get it on its own line, because the bar is a
+            // full-width flex item — the regression this slot exists to prevent.
+            const row = spectator.query(byTestId('dot-filter-bar')) as HTMLElement;
+            const trailing = row.querySelector('[data-testid="trailing"]');
+
+            expect(trailing).toBeTruthy();
+            // Same row, so `ml-auto` on the projected element has something to push against.
+            expect(trailing?.parentElement).toBe(row);
+
+            // And after Clear all, which is where the indicator sat before the bar owned the row.
+            const order = Array.from(row.children).map((child) =>
+                child.getAttribute('data-testid')
+            );
+
+            expect(order.indexOf('trailing')).toBeGreaterThan(order.indexOf('clear-all-filters'));
+        });
+    });
 });

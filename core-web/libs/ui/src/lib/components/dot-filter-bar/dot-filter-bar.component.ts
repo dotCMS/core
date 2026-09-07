@@ -21,6 +21,19 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
  *
  * Chip **order** is therefore the surface's template order, anchored by `DOT_CANONICAL_FILTER_ORDER`
  * and asserted per toolbar rather than enforced here.
+ *
+ * **Why a shared component reads `content-drive.*` keys.** It does look odd now that the
+ * AssetPicker renders this row too, and it is deliberate: the keys were moved verbatim with the
+ * chips. Renaming them means editing `Language.properties` and every translation that ships with
+ * it, for no user-visible gain, and the risk is orphaning a key in a language nobody notices until
+ * a customer sees the raw id. The contract lists them as frozen for exactly this reason
+ * (`contracts/filter-facade.contract.md` §6, research R8). Recorded as debt, not as an oversight.
+ *
+ * One named slot exists beyond the chips: anything marked `dotFilterBarTrailing` renders after
+ * "Clear all", still inside the wrapping row. It is there because this component is a full-width
+ * flex item, so a surface that puts something *next to* the bar gets it on a line of its own —
+ * which is how Content Drive's action-execution indicator lost its right-aligned spot on the filter
+ * row.
  */
 @Component({
     selector: 'dot-filter-bar',

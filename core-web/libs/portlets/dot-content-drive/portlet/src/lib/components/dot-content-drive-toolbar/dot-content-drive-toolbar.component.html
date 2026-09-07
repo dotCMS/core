@@ -90,7 +90,12 @@
                      No `allowedOptions`: Content Drive pins no version state, so all three
                      conditions apply here (FR-014d). -->
                 <dot-status-filter data-testid="status-filter" />
-                <dot-language-filter-chip data-testid="language-field" />
+                <!-- The seeded locale is passed so the chip can withhold its X while that is the
+                     only selection: clearing it would re-seed the same value through
+                     `withFilterDefaults` and only cost the editor their page. -->
+                <dot-language-filter-chip
+                    [defaultLanguageId]="$defaultLanguageId()"
+                    data-testid="language-field" />
 
                 @for (field of $activeFieldFilters(); track field.variable) {
                     <dot-field-filter
@@ -105,23 +110,28 @@
                 <dot-field-filter-menu
                     data-testid="field-filter-menu"
                     (error)="onFieldFilterError($event)" />
-            </dot-filter-bar>
 
-            <!-- Sits at the end of the filter row rather than beside the search box: during a run the
-                 selection still stands, so the row above is occupied by the workflow-action buttons.
-                 `ml-auto` keeps it right-aligned as filter chips come and go. -->
-            @if ($actionExecution()) {
-                <div
-                    class="ml-auto flex items-center gap-2 text-sm text-gray-700"
-                    animate.enter="toolbar-enter"
-                    animate.leave="toolbar-leave"
-                    role="status"
-                    aria-live="polite"
-                    data-testid="action-execution-indicator">
-                    <i class="pi pi-spin pi-spinner text-[0.875rem]!" aria-hidden="true"></i>
-                    <span [innerHTML]="$actionExecutionLabel()"></span>
-                </div>
-            }
+                <!-- Sits at the end of the filter row rather than beside the search box: during a run
+                     the selection still stands, so the row above is occupied by the workflow-action
+                     buttons. `ml-auto` keeps it right-aligned as filter chips come and go.
+
+                     Projected into the bar's trailing slot rather than placed beside the bar: the
+                     bar is a full-width flex item in the row above, so a sibling would be pushed
+                     onto its own line and `ml-auto` would have nothing to push against. -->
+                @if ($actionExecution()) {
+                    <div
+                        dotFilterBarTrailing
+                        class="ml-auto flex items-center gap-2 text-sm text-gray-700"
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        role="status"
+                        aria-live="polite"
+                        data-testid="action-execution-indicator">
+                        <i class="pi pi-spin pi-spinner text-[0.875rem]!" aria-hidden="true"></i>
+                        <span [innerHTML]="$actionExecutionLabel()"></span>
+                    </div>
+                }
+            </dot-filter-bar>
         </div>
     </div>
 </p-toolbar>

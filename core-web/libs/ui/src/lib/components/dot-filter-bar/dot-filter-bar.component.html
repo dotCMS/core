@@ -13,4 +13,10 @@
             (click)="onClearAll()"
             data-testid="clear-all-filters" />
     }
+
+    <!-- Trails "Clear all", inside the same wrapping row. A surface with something to show at the
+         end of the filter row — Content Drive's action-execution indicator — projects it here
+         instead of placing it beside the bar: as a sibling it would be pushed onto its own line,
+         because this component is a full-width flex item in the row above. -->
+    <ng-content select="[dotFilterBarTrailing]" />
 </div>

@@ -1,15 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    inject,
-    input,
-    linkedSignal,
-    untracked
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -89,25 +80,36 @@ export class DotStatusFilterComponent {
     );
 
     /**
-     * Current selection, read from the filter bag.
+     * Current selection: what the filter bag holds, narrowed to what the bound admits.
      *
      * `getFilterValue` can return `string | string[]`; only an array is valid here. A bare string
      * would mean the URL decoder lost the array shape — see the explicit `status` entry in
      * `decodeByFilterKey`.
+     *
+     * The bound is applied **here**, in the derivation, rather than by an effect that watched the
+     * selection and wrote a corrected one back. Restored or stale state must not keep applying a
+     * condition the control cannot offer — the request would carry a filter the editor has no way
+     * to see or clear — and deriving it makes that true by construction: there is no window in
+     * which the un-narrowed value exists. `#syncStore` then persists the narrowed value like any
+     * other change, so the bag is cleaned without a second write path.
      */
     readonly $selection = linkedSignal<string[]>(
         () => {
             const raw = this.#filters.getFilterValue(STATUS_FILTER_KEY);
+            const stored = Array.isArray(raw) ? raw : [];
+            const allowed = this.$allowedOptions();
 
-            return Array.isArray(raw) ? raw : [];
+            return allowed
+                ? stored.filter((value) => allowed.includes(value as DotContentStatus))
+                : stored;
         },
         {
             // Compare by VALUE, not reference. This is what makes the reactive sync below safe
-            // rather than merely lucky: the effect writes to the store, the store feeds this
+            // rather than merely lucky: `#syncStore` writes to the surface, the surface feeds this
             // signal, and without value equality every write that minted a new array — a
             // `[...selection]` spread, or the fresh `[]` produced when the key is absent — would
-            // notify, re-run the effect and write again. With it, a write that does not change
-            // the selection is inert and the cycle cannot start.
+            // notify, re-run the sync and write again. With it, a write that does not change the
+            // selection is inert and the cycle cannot start.
             equal: (a, b) => a.length === b.length && a.every((value, i) => value === b[i])
         }
     );
@@ -126,26 +128,9 @@ export class DotStatusFilterComponent {
     }
 
     constructor() {
+        // The component's only reactive wiring: one `signalMethod`, no `effect`. The bound that
+        // used to need an effect of its own is part of `$selection`'s derivation now.
         this.#syncStore(this.$selection);
-
-        // Drop any selection the bound no longer admits. Restored or stale state must not keep
-        // applying a condition the control cannot offer, or the request carries a filter the editor
-        // has no way to see or clear. `untracked` because the write feeds back into `$selection`.
-        effect(() => {
-            const allowed = this.$allowedOptions();
-            if (!allowed) {
-                return;
-            }
-
-            const selection = this.$selection();
-            const admitted = selection.filter((value) =>
-                allowed.includes(value as DotContentStatus)
-            );
-
-            if (admitted.length !== selection.length) {
-                untracked(() => this.$selection.set(admitted));
-            }
-        });
     }
 
     /**

@@ -168,7 +168,13 @@ export function buildAssetPickerConfig({
             isBrowse && allowedBaseTypes?.length
                 ? [...allowedBaseTypes]
                 : [...ASSET_PICKER_ASSET_BASE_TYPES],
-        ...(isBrowse && browse ? { browse } : {}),
+        // Attached for browse mode even when the caller opted into no capabilities: its
+        // **presence** is what marks a browse open, and the Status bound keys off exactly that
+        // (see `allowedStatusesFor`). `browseOptionsFor` in the form bridge already returns an
+        // empty object for this reason; before this line, a `mode: 'browse'` caller that passed no
+        // options got a field picker's bound instead. Inert otherwise — every read of `browse` is
+        // an optional flag, and `{}` resolves the seeded sort to the same default.
+        ...(isBrowse ? { browse: browse ?? {} } : {}),
         ...(isBrowse && status?.length ? { status: [...status] } : {}),
         ...(browseMimeTypes?.length ? { mimeTypes: [...browseMimeTypes] } : {}),
         ...(languageId ? { languageId } : {}),

@@ -1,5 +1,3 @@
-import { format } from 'date-fns';
-
 import {
     DotCMSContentTypeField,
     DotContentDriveDateRange,
@@ -201,16 +199,26 @@ function isDateRange(value: DotContentDriveUserSearchableValue): value is DotCon
  * FE, `new Date('…T10:00:00')` (no offset) also parses as local, so the picker round-trips too.
  *
  * Returns `''` for an invalid/absent Date: the typeable Time picker (`[keepInvalid]="true"`) can
- * emit an `Invalid Date` mid-typing, and `date-fns` `format` throws `RangeError` on one — so a
- * partial time simply clears that bound instead of blowing up the range application.
+ * emit an `Invalid Date` mid-typing, so a partial time simply clears that bound instead of blowing
+ * up the range application.
+ *
+ * Written out rather than delegated to `date-fns`, which is what it used while it lived in the
+ * portlet. `@dotcms/ui` is bundled into the legacy Dojo custom-element host, and this was the only
+ * thing in the whole library pulling that dependency in — the getters below are the entire feature
+ * being used.
  */
 export function toLocalIsoString(date: Date): string {
     if (!date || Number.isNaN(date.getTime())) {
         return '';
     }
 
-    // `date-fns` formats by the Date's LOCAL components, so this is the wall-clock with no offset/Z.
-    return format(date, "yyyy-MM-dd'T'HH:mm:ss");
+    // LOCAL getters throughout, which is what makes this the wall-clock with no offset/Z.
+    const pad = (value: number, length = 2): string => String(value).padStart(length, '0');
+
+    return (
+        `${pad(date.getFullYear(), 4)}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+        `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+    );
 }
 
 /**

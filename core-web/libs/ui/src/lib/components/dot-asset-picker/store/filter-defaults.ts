@@ -6,7 +6,8 @@ import {
 } from '../../dot-filter-bar/chips/dot-shared-assets-filter/constants';
 import {
     DotContentStatus,
-    PUBLISHED_ONLY_STATUSES
+    PUBLISHED_ONLY_STATUSES,
+    REFERENCEABLE_STATUSES
 } from '../../dot-filter-bar/chips/dot-status-filter/constants';
 
 /**
@@ -45,16 +46,20 @@ export function buildPickerFilterDefaults(
 }
 
 /**
- * The seeded conditions the caller's own version state admits.
+ * The seeded conditions this caller is allowed to carry.
  *
- * A picker pinned to published content cannot carry Archived or Unpublished: neither has a
- * published version, so the platform would answer with the working version instead — content
- * described by a version the caller did not ask for (SC-009).
+ * Two bounds, the same two the toolbar applies to the chip's *options* — see
+ * `$allowedStatuses` there for why each exists:
+ *
+ * - a **field entry point** (no `browse`) may not carry Archived: it is picking something for
+ *   other content to point at, and archived content is not served (FR-014f);
+ * - a **published-only** caller may carry neither Archived nor Unpublished, because either would
+ *   force the whole query onto the working version (SC-009).
  *
  * Enforced **here**, at the seed, and not only by bounding the chip's options: a seed arrives
  * before any chip exists, and an invariant that depends on a control being on screen is an
- * invariant that holds by luck. The chip's bound (FR-014d) is what keeps the editor from re-adding
- * one afterwards.
+ * invariant that holds by luck. The chip's bound is what keeps the editor from re-adding one
+ * afterwards.
  *
  * @param config The picker's configuration.
  * @return The admitted conditions, in the caller's order. Empty when nothing was seeded.
@@ -62,11 +67,60 @@ export function buildPickerFilterDefaults(
 function admittedStatuses(config: DotAssetPickerConfig): string[] {
     const seeded = config.status ?? [];
 
-    if (!seeded.length || config.browse?.showWorking !== false) {
+    if (!seeded.length) {
         return seeded;
     }
 
-    return seeded.filter((value) => PUBLISHED_ONLY_STATUSES.includes(value as DotContentStatus));
+    const admitted = allowedStatusesFor(config);
+
+    return admitted
+        ? seeded.filter((value) => admitted.includes(value as DotContentStatus))
+        : seeded;
+}
+
+/**
+ * The content conditions a caller's configuration admits, or `null` for no bound.
+ *
+ * The **one** definition of the rule: the toolbar binds it to the Status chip's options, and
+ * {@link admittedStatuses} above applies it to the caller's seeds. A divergence between two copies
+ * would be unobservable — a seeded value the chip refuses to show, or an option the seeding would
+ * have dropped — so there is one.
+ *
+ * Two bounds exist, both properties of how the picker was opened:
+ *
+ * - **Field entry points** (File, Image, video, audio — no `browse`) get
+ *   {@link REFERENCEABLE_STATUSES}. They are choosing something for *other content* to point at,
+ *   and archived content is not served (`cvi.deleted = true`), so a live page referencing an
+ *   archived asset renders nothing. These entry points could never reach archived content before:
+ *   the picker pinned `archived: false` on every request. Dropping that pin so the Status control
+ *   could not be contradicted (FR-014b) made Archived reachable here as a side effect, for four
+ *   callers nobody asked it for. This bound takes it back, and leaves `openBrowserModal` — whose
+ *   purpose can be finding archived content — unbounded (FR-014f).
+ * - **A published-only caller** (`browse.showWorking === false`) gets
+ *   {@link PUBLISHED_ONLY_STATUSES}. That is the only value narrowing the request to published
+ *   content (`live: true`), and Archived or Unpublished alongside it would force the *whole* query
+ *   onto the working version (`BrowserQuery` lines 166-179) — a version the caller did not ask for
+ *   (SC-009).
+ *
+ * `config.browse`'s **presence** is what marks a browse open: `buildAssetPickerConfig` attaches it
+ * for that mode only, and `browseOptionsFor` returns an object even when empty precisely so this
+ * discriminator holds.
+ *
+ * @param config The picker's configuration, or `null` before `initPicker` has run.
+ * @return The admitted conditions, or `null` when every condition applies.
+ */
+export function allowedStatusesFor(
+    config: DotAssetPickerConfig | null
+): DotContentStatus[] | null {
+    if (!config) {
+        return null;
+    }
+
+    if (!config.browse) {
+        return REFERENCEABLE_STATUSES;
+    }
+
+    return config.browse.showWorking === false ? PUBLISHED_ONLY_STATUSES : null;
 }
 
 /** Whether two filter values are the same selection, order included. */
