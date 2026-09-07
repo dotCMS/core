@@ -103,9 +103,15 @@ file count and the real total are decided **while reading**, and a `413` raised 
 there rather than after the whole body has arrived, so no submission can commit more than the
 ceiling to disk.
 
-Content staged before a refusal aborts the read **is reclaimed** by this feature (FR-013d). It
+Content staged before a refusal aborts the read **is reclaimed** by this feature (FR-013d.1). It
 created that content, so it owns cleaning it up — a refused submission never becomes a run, so
 nothing else ever would.
+
+The same holds if **the client abandons the upload** — navigating away, closing the tab, or losing
+the connection. The parts already staged are reclaimed (FR-013d.2), so an abandoned submission
+costs the author nothing and leaves nothing behind. What it does not do is leave a batch: the
+handle is what starts every guarantee in this contract, and an abandoned upload never reaches
+one.
 
 ### Resubmitting after a lost connection
 

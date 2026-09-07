@@ -394,10 +394,19 @@ run reports a collision failure for it.
      is created and no more than the ceiling reaches disk. Without a declared total this is the
      only stage that runs, which means an over-ceiling batch is refused **after** the author has
      watched it upload.
-- **FR-013d**: Content already staged when a submission is refused — by FR-013c or by any other
-  submission-time refusal — MUST be reclaimed. FR-033 covers reclaim for runs that reach a terminal
-  state; a refused submission never becomes a run and would otherwise leak bytes the author cannot
-  see and no run will ever clean up.
+- **FR-013d**: Content already staged MUST be reclaimed whenever a submission ends without becoming
+  a run. This covers two paths, and they are **not** the same code:
+  1. **A refusal** — by FR-013c.2 or by any other submission-time check. The system raises it, so
+     the system knows to clean up.
+  2. **A submission that dies while being read** — the author navigated away, closed the tab, or
+     the connection dropped (C-001a1). Nothing is raised by this side; the read fails from
+     underneath it. Reclaim MUST therefore be scoped to the whole read rather than to the refusal
+     path, or this case leaks silently — which is the likelier of the two, since it is the author's
+     own action rather than a limit being hit.
+
+  FR-033 covers reclaim for runs that reach a terminal state. Neither path here ever becomes a run,
+  so nothing else would clean up after them — and nothing purges staged content on a schedule, so
+  what leaks here leaks permanently.
 
 **Outcome**
 
@@ -570,6 +579,14 @@ from the consumer's point of view.
   connection dropped part-way through means resending the batch, not the one file that failed. The
   client MAY reduce the blast radius by submitting smaller batches; nothing on this half prevents
   it.
+- **C-001a1**: **Every guarantee in this contract begins at the handle.** Surviving the author
+  leaving, resumability, cancellation, the durable outcome — all of them are properties of a run,
+  and a run does not exist until the submission is answered. While the content is still being sent
+  there is no batch: if that request dies, nothing is recorded and nobody is notified, because
+  there is nothing yet to record. Stated explicitly because the client's own requirements are
+  written about a *running* batch and would otherwise be read as covering the upload too. What the
+  client does about it — where it owns the request, and whether it warns the author before a
+  genuine page unload — is the client's to decide; this half only fixes where the boundary is.
 - **C-001b**: What the one-call shape buys the client: the staging clock starts on the **server**,
   immediately before the batch is created, so no submission can carry content that has already
   expired and there is no window in which an author sits on a confirmation screen while their
