@@ -63,10 +63,12 @@ describe('DotAiImageComponent', () => {
         expect(spectator.query(byTestId('dotai-image-loading'))).toBeTruthy();
     });
 
-    it('should show the provider rewritten prompt (FR-039)', () => {
+    it('should not render the provider rewritten prompt', () => {
+        // Removed on request. Note this diverges from FR-039, which requires the rewritten
+        // prompt to be shown and copyable; the spec needs updating and re-approving.
         withImage();
 
-        expect(spectator.query(byTestId('dotai-image-revised'))).toHaveText('a photorealistic cat');
+        expect(spectator.query(byTestId('dotai-image-revised'))).toBeFalsy();
     });
 
     it('should offer download as a same-origin anchor, available before any save (FR-038)', () => {
