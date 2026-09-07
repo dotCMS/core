@@ -1,3 +1,5 @@
+import { MarkdownModule } from 'ngx-markdown';
+
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -31,6 +33,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
         ButtonModule,
         TextareaModule,
         SplitterModule,
+        MarkdownModule,
         DotAgentThinkingComponent,
         DotAiSettingsPanelComponent,
         DotMessagePipe

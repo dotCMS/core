@@ -65,9 +65,19 @@
                                 [text]="'dotai.chat.thinking' | dm"
                                 data-testid="dotai-chat-thinking" />
                         } @else {
-                            <p class="whitespace-pre-wrap" data-testid="dotai-chat-answer-text">
-                                {{ current.content }}
-                            </p>
+                            <!-- Answers come back as markdown, so they are rendered as markdown
+                                 rather than shown as literal `##` and `*`. ngx-markdown is the
+                                 house renderer and is already provided app-wide by
+                                 MarkdownModule.forRoot(); it sanitizes by default, which matters
+                                 because this is model output being turned into HTML.
+
+                                 `prose` comes from @tailwindcss/typography, already loaded in
+                                 style.css — without it Tailwind's preflight leaves headings and
+                                 list markers stripped. prose caps itself at 65ch, so the 70ch
+                                 here is a deliberate override for line length. -->
+                            <div class="prose max-w-[70ch]" data-testid="dotai-chat-answer-text">
+                                <markdown [data]="current.content" />
+                            </div>
                         }
 
                         @if (current.state === states.STOPPED) {

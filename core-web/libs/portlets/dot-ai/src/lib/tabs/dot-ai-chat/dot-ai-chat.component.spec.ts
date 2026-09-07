@@ -1,4 +1,5 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { MarkdownModule } from 'ngx-markdown';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_ANSWER_STATE, DotAiChatAnswer } from '@dotcms/dotcms-models';
@@ -42,6 +43,10 @@ describe('DotAiChatComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAiChatComponent,
         componentProviders: [{ provide: DotAiStore, useValue: storeMock }],
+        // The real renderer, not a stub: answers are markdown and the tests below assert the
+        // rendered text. MarkdownModule.forRoot() supplies MarkdownService, which the app
+        // provides globally in app.config.ts.
+        imports: [MarkdownModule.forRoot()],
         providers: [mockProvider(DotMessageService)],
         shallow: true
     });
@@ -54,6 +59,12 @@ describe('DotAiChatComponent', () => {
         storeMock.isConfigured.mockReturnValue(true);
     });
 
+    /** ngx-markdown renders asynchronously, so the DOM lands a microtask after creation. */
+    const settle = async () => {
+        await spectator.fixture.whenStable();
+        spectator.detectChanges();
+    };
+
     const withAnswer = (current: DotAiChatAnswer | null) => {
         storeMock.chatAnswer.mockReturnValue(current);
         storeMock.hasAnswer.mockReturnValue(current !== null);
@@ -65,13 +76,31 @@ describe('DotAiChatComponent', () => {
         expect(spectator.query(byTestId('dotai-chat-empty'))).toBeTruthy();
     });
 
-    it('should render the current answer, with no transcript around it', () => {
+    it('should render the current answer, with no transcript around it', async () => {
         withAnswer(answer({ content: 'hi there', state: 'complete' }));
         spectator = createComponent();
+        await settle();
 
         expect(spectator.query(byTestId('dotai-chat-answer-text'))).toHaveText('hi there');
         // Nothing echoes the question back as a chat turn — it stays in the composer.
         expect(spectator.query(byTestId('dotai-chat-user-message'))).toBeFalsy();
+    });
+
+    it('should render the answer as markdown rather than literal syntax', async () => {
+        withAnswer(
+            answer({ content: '## Costa Rica\n\n- rainforests\n- **beaches**', state: 'complete' })
+        );
+        spectator = createComponent();
+        await settle();
+
+        const region = spectator.query(byTestId('dotai-chat-answer-text'));
+
+        expect(region.querySelector('h2')).toHaveText('Costa Rica');
+        expect(region.querySelectorAll('li')).toHaveLength(2);
+        expect(region.querySelector('strong')).toHaveText('beaches');
+        // The raw syntax must not survive as text.
+        expect(region.textContent).not.toContain('##');
+        expect(region.textContent).not.toContain('**');
     });
 
     it('should put the composer above the answer so each submit reads as its own request', () => {
@@ -88,7 +117,7 @@ describe('DotAiChatComponent', () => {
         ).toBeTruthy();
     });
 
-    it('should show the thinking indicator only until the first delta lands', () => {
+    it('should show the thinking indicator only until the first delta lands', async () => {
         withAnswer(answer({ content: '' }));
         spectator = createComponent();
 
@@ -96,6 +125,7 @@ describe('DotAiChatComponent', () => {
 
         withAnswer(answer({ content: 'partial' }));
         spectator = createComponent();
+        await settle();
 
         expect(spectator.query(byTestId('dotai-chat-thinking'))).toBeFalsy();
         expect(spectator.query(byTestId('dotai-chat-answer-text'))).toHaveText('partial');
@@ -110,9 +140,10 @@ describe('DotAiChatComponent', () => {
         expect(spectator.query(byTestId('dotai-chat-send'))).toBeFalsy();
     });
 
-    it('should mark a stopped answer rather than implying it finished', () => {
+    it('should mark a stopped answer rather than implying it finished', async () => {
         withAnswer(answer({ content: 'partial', state: DOT_AI_ANSWER_STATE.STOPPED }));
         spectator = createComponent();
+        await settle();
 
         expect(spectator.query(byTestId('dotai-chat-stopped'))).toBeTruthy();
         // The partial answer stays readable.
