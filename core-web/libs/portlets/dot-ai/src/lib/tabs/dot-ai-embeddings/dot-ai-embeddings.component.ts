@@ -76,16 +76,21 @@ export default class DotAiEmbeddingsComponent {
                     return;
                 }
 
-                if (result.mode === 'delete') {
+                // `mode` picks the branch and must not travel any further: it is a dialog
+                // concept, and EmbeddingsForm rejects the whole request with
+                // "Unrecognized field 'mode'" rather than ignoring it.
+                const { mode, ...form } = result;
+
+                if (mode === 'delete') {
                     this.store.deleteFromIndex({
-                        indexName: result.indexName,
-                        query: result.query
+                        indexName: form.indexName,
+                        query: form.query
                     });
 
                     return;
                 }
 
-                this.store.buildIndex(result);
+                this.store.buildIndex(form);
             });
     }
 

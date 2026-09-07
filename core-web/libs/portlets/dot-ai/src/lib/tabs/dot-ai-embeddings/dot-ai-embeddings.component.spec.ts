@@ -122,17 +122,38 @@ describe('DotAiEmbeddingsComponent', () => {
             );
         });
 
-        it('should build on an add-mode result', () => {
+        it('should build without forwarding the dialog-only mode field', () => {
+            // The server answers 400 "Unrecognized field 'mode'" rather than ignoring it, so
+            // passing the dialog result through verbatim broke every index build.
             clickButton('dotai-embeddings-new-index');
 
             onClose.next({ mode: 'add', indexName: 'blogs', query: '+contentType:Blog' });
 
             expect(storeMock.buildIndex).toHaveBeenCalledWith({
-                mode: 'add',
                 indexName: 'blogs',
                 query: '+contentType:Blog'
             });
+            expect(storeMock.buildIndex.mock.calls[0][0]).not.toHaveProperty('mode');
             expect(storeMock.deleteFromIndex).not.toHaveBeenCalled();
+        });
+
+        it('should still forward the optional build fields', () => {
+            clickButton('dotai-embeddings-new-index');
+
+            onClose.next({
+                mode: 'add',
+                indexName: 'blogs',
+                query: '+contentType:Blog',
+                fields: 'title,body',
+                velocityTemplate: '$!{title}'
+            });
+
+            expect(storeMock.buildIndex).toHaveBeenCalledWith({
+                indexName: 'blogs',
+                query: '+contentType:Blog',
+                fields: 'title,body',
+                velocityTemplate: '$!{title}'
+            });
         });
 
         it('should delete from the index on a delete-mode result (FR-030)', () => {
