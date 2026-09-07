@@ -20,8 +20,9 @@ afterEach(async () => {
 });
 
 const codex = () => getTarget('codex');
-const write = () =>
-    writeTomlTarget({ target: codex(), scope: 'folder', url: URL_, token: TOKEN, cwd: dir });
+const write = async () =>
+    (await writeTomlTarget({ target: codex(), scope: 'folder', url: URL_, token: TOKEN, cwd: dir }))
+        .path;
 async function seed(content: string) {
     const file = codex().configPath('folder', dir) as string;
     await fs.mkdir(path.dirname(file), { recursive: true });

@@ -51,6 +51,7 @@ export const TARGETS: readonly AgentTarget[] = [
         containerKey: 'mcpServers',
         entryShape: 'stdio',
         detect: probe('.claude'),
+        folderConfigIsCommitted: true,
         configPath: (scope: Scope, cwd?: string) =>
             scope === 'global' ? inHome('.claude.json') : inFolder(cwd, '.mcp.json')
     },

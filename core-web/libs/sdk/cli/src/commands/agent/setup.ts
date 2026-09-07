@@ -1,15 +1,10 @@
-import { parse as parseToml } from 'smol-toml';
-
 import { confirmConnection } from './connect';
-import { ENTRY_KEY } from './constants';
 import { protectFromVersionControl, type GitignoreOutcome } from './gitignore';
 import { installSkills } from './skills';
-import { writeJsonTargetDetailed } from './targets/json-target';
 import { getTarget, detectTargets, TARGETS, TARGET_IDS } from './targets/registry';
-import { writeTomlTarget } from './targets/toml-target';
+import { WRITERS } from './targets/writers';
 
 import { mintToken, verifyToken } from '../../shared/auth';
-import { CAN_RESTRICT, hasEntry } from '../../shared/config-file';
 import { ENV_KEYS, readEnv } from '../../shared/env';
 import {
     ConflictingAuthError,
@@ -87,6 +82,25 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     const explicitTargets = resolveTargets(opts);
     const scope = opts.scope ?? 'folder';
 
+    /** Every outcome shares seven fields and differs in three. Written out four times, the
+     *  defaults drifted: `permissionsApplied: false` was copy-pasted rather than observed. */
+    const outcome = (
+        targetId: TargetId,
+        path: string | null,
+        result: TargetOutcome['result'],
+        reason: string | null = null,
+        extra: Partial<TargetOutcome> = {}
+    ): TargetOutcome => ({
+        targetId,
+        scope,
+        path,
+        result,
+        reason,
+        permissionsApplied: false,
+        skillsInstalled: 'no',
+        ...extra
+    });
+
     const step = opts.onProgress ?? (() => undefined);
     const warnings: string[] = [];
 
@@ -151,7 +165,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
             // out, without ever prompting. For a credential the instance has just rejected,
             // the only useful source is the human.
             const fresh = await promptForAuth(opts.promptPort);
-            inputs = { url, ...fresh, prompted: true };
+            inputs = { url, ...fresh };
         }
     }
 
@@ -205,88 +219,51 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     if (opts.skipMcp) {
         // Say so. Returning an empty summary made `--skip-mcp` look like a no-op run.
         for (const { target, file } of plan) {
-            outcomes.push({
-                targetId: target.id,
-                scope,
-                path: file,
-                result: 'skipped',
-                reason: 'configuration writing skipped (--skip-mcp)',
-                permissionsApplied: false,
-                skillsInstalled: 'no'
-            });
+            outcomes.push(
+                outcome(target.id, file, 'skipped', 'configuration writing skipped (--skip-mcp)')
+            );
         }
-    }
-    if (!opts.skipMcp && plan.length) {
+    } else if (plan.length) {
         step(`Writing configuration for ${plan.length} editor${plan.length === 1 ? '' : 's'}`);
     }
+
     for (const { target, file } of opts.skipMcp ? [] : plan) {
         try {
             // Ask BEFORE replacing (FR-017). --force and --yes skip the question, never the
             // token verification that already happened above.
-            const isToml = target.format === 'toml';
-            const existing = await hasEntry({
-                file,
-                containerKey: target.containerKey,
-                entryKey: ENTRY_KEY,
-                parse: isToml ? (raw) => parseToml(raw) as Record<string, unknown> : undefined
-            });
+            const writer = WRITERS[target.format];
+            const existing = await writer.hasEntry(file, target);
             if (existing && !opts.force && !opts.yes && opts.confirmOverwrite) {
                 const proceed = await opts.confirmOverwrite(file);
                 if (!proceed) {
-                    outcomes.push({
-                        targetId: target.id,
-                        scope,
-                        path: file,
-                        result: 'skipped',
-                        reason: 'left the existing entry in place',
-                        permissionsApplied: false,
-                        skillsInstalled: 'no'
-                    });
+                    outcomes.push(
+                        outcome(target.id, file, 'skipped', 'left the existing entry in place')
+                    );
                     continue;
                 }
             }
 
             // The registry's `format` selects the writer; the flow branches on nothing
             // target-specific (FR-013).
-            const written = isToml
-                ? {
-                      path: await writeTomlTarget({
-                          target,
-                          scope,
-                          url,
-                          token: token.value,
-                          cwd: opts.cwd
-                      }),
-                      permissionsApplied: CAN_RESTRICT,
-                      replacedExisting: existing
-                  }
-                : await writeJsonTargetDetailed({
-                      target,
-                      scope,
-                      url,
-                      token: token.value,
-                      cwd: opts.cwd
-                  });
+            const written = await writer.write({
+                target,
+                scope,
+                url,
+                token: token.value,
+                cwd: opts.cwd
+            });
 
-            outcomes.push({
-                targetId: target.id,
-                scope,
-                path: written.path,
-                result: written.replacedExisting ? 'replaced' : 'written',
-                reason: null,
-                permissionsApplied: written.permissionsApplied,
-                skillsInstalled: 'no'
-            });
+            outcomes.push(
+                outcome(
+                    target.id,
+                    written.path,
+                    written.replacedExisting ? 'replaced' : 'written',
+                    null,
+                    { permissionsApplied: written.permissionsApplied }
+                )
+            );
         } catch (error) {
-            outcomes.push({
-                targetId: target.id,
-                scope,
-                path: file,
-                result: 'failed',
-                reason: (error as Error).message,
-                permissionsApplied: false,
-                skillsInstalled: 'no'
-            });
+            outcomes.push(outcome(target.id, file, 'failed', (error as Error).message));
         }
     }
 
@@ -304,6 +281,11 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     if (scope === 'folder' && written.length) {
         versionControl = await protectFromVersionControl({
             files: written,
+            // Which of them a project would normally commit is the registry's to say, not a
+            // basename set inside the gitignore module.
+            committedByConvention: plan
+                .filter(({ target }) => target.folderConfigIsCommitted)
+                .map(({ file }) => file),
             cwd: opts.cwd ?? process.cwd(),
             confirmExclude: opts.yes ? async () => true : opts.confirmExclude
         });

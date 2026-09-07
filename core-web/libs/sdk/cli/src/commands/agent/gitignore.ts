@@ -12,18 +12,15 @@ export interface GitignoreOutcome {
 
 export interface GitignoreArgs {
     files: string[];
+    /**
+     * Of `files`, those the registry marks as conventionally committed. Supplied by the caller,
+     * which knows which target wrote what — this module has no idea editors exist.
+     */
+    committedByConvention?: string[];
     cwd: string;
     /** Confirmation. `--yes` must pass `() => true` — the SAFE answer, not a skip (FR-023). */
     confirmExclude?: (files: string[]) => Promise<boolean>;
 }
-
-/**
- * Files that projects conventionally COMMIT. `.mcp.json` at a repository root is shared team
- * configuration, so excluding it is the unusual choice — the one place where our safe default
- * is actively wrong for the developer's workflow, and the reason FR-024 demands an explicit
- * warning rather than silently adding it to `.gitignore`.
- */
-const CONVENTIONALLY_COMMITTED = new Set(['.mcp.json']);
 
 function findRepositoryRoot(from: string): string | null {
     let dir = path.resolve(from);
@@ -46,8 +43,9 @@ export async function protectFromVersionControl(args: GitignoreArgs): Promise<Gi
     const warnings: string[] = [];
     const root = findRepositoryRoot(args.cwd);
 
+    const committed = new Set(args.committedByConvention ?? []);
     for (const file of args.files) {
-        if (CONVENTIONALLY_COMMITTED.has(path.basename(file))) {
+        if (committed.has(file)) {
             warnings.push(
                 `${path.basename(file)} is normally committed to version control — it now holds a ` +
                     `token, so committing it would publish that token.`

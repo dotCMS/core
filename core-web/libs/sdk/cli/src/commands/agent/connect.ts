@@ -12,12 +12,12 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 
 /** Separating these matters: FR-024c requires naming the causes we can distinguish, and with no
  *  verbose mode the message is all the developer gets. */
-function classify(stderr: string, code: number | null): ConnectFailure {
+function classify(stderr: string): ConnectFailure {
     if (/404|E404|not found|ETARGET|ENOTFOUND|registry/i.test(stderr)) return 'fetch-failed';
     if (/Unsupported engine|requires Node|SyntaxError|Unexpected token/i.test(stderr)) {
         return 'runtime-unsupported';
     }
-    return code === null ? 'exited' : 'exited';
+    return 'exited';
 }
 
 /**
@@ -79,7 +79,11 @@ export async function confirmConnection(args: {
         let buffer = '';
         child.stdout?.on('data', (chunk: Buffer) => {
             buffer += String(chunk);
-            for (const line of buffer.split('\n')) {
+            // Only completed frames. Re-splitting the whole buffer each chunk re-parsed every
+            // line already seen, and re-threw on the trailing partial one every time.
+            const frames = buffer.split('\n');
+            buffer = frames.pop() ?? '';
+            for (const line of frames) {
                 if (!line.trim()) continue;
                 try {
                     const message = JSON.parse(line) as { result?: { tools?: unknown[] } };
@@ -97,7 +101,7 @@ export async function confirmConnection(args: {
         child.on('exit', (code: number | null) =>
             finish({
                 ok: false,
-                cause: classify(stderr, code),
+                cause: classify(stderr),
                 detail: stderr.trim().split('\n').slice(-1)[0] || `Server exited with code ${code}.`
             })
         );

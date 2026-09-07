@@ -35,6 +35,15 @@ export interface AgentTarget {
     containerKey: string;
     /** OpenCode's entry differs structurally, not merely by key. */
     entryShape: 'stdio' | 'opencode-local';
+    /**
+     * Is this target's FOLDER-scope file one projects conventionally COMMIT?
+     *
+     * `.mcp.json` at a repository root is shared team configuration, so excluding it is the
+     * unusual choice — the one place our safe default is actively wrong, and why FR-024 demands
+     * an explicit warning. A registry field rather than a basename set inside `gitignore.ts`, so
+     * an eighth editor whose folder config is shared stays one object literal (FR-013).
+     */
+    folderConfigIsCommitted?: boolean;
     /** Advisory only — an undetected editor is still explicitly selectable (spec Edge Cases). */
     detect(): Promise<boolean>;
     /**
@@ -45,4 +54,14 @@ export interface AgentTarget {
      * cases and is fragile if a case throws before cleanup.
      */
     configPath(scope: Scope, cwd?: string): string | null;
+}
+
+/** What every writer needs. One shape, so the two writers share a callable signature. */
+export interface WriteArgs {
+    target: AgentTarget;
+    scope: Scope;
+    url: string;
+    token: string;
+    /** Base directory for folder scope. Defaults to `process.cwd()`. */
+    cwd?: string;
 }

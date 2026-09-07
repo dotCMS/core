@@ -9,8 +9,6 @@ export interface ResolvedInputs {
     user?: string;
     password?: string;
     authToken?: string;
-    /** True when a value had to be asked for. */
-    prompted: boolean;
 }
 
 export interface PromptPort {
@@ -32,18 +30,6 @@ export function canPrompt(): boolean {
     return Boolean(process.stdin.isTTY);
 }
 
-/**
- * Resolve the only two required inputs: the instance address and ONE auth mode (FR-003i).
- *
- * Two rules here are easy to implement conventionally and wrongly:
- *
- * 1. Prompting is driven by a MISSING REQUIRED INPUT, not by a mode. Supply the url and one
- *    auth mode and nothing is asked, terminal or not — the run does not become "interactive"
- *    merely because a terminal exists (FR-003i).
- * 2. `--yes` governs CONFIRMATIONS ONLY. The usual reading of -y is "assume defaults for
- *    everything", which here would silently skip a required input. It must not shortcut this
- *    function at all (FR-003l).
- */
 /**
  * The instance address, on its own.
  *
@@ -67,6 +53,18 @@ export async function resolveInstanceUrl(
     return url;
 }
 
+/**
+ * Resolve the only two required inputs: the instance address and ONE auth mode (FR-003i).
+ *
+ * Two rules here are easy to implement conventionally and wrongly:
+ *
+ * 1. Prompting is driven by a MISSING REQUIRED INPUT, not by a mode. Supply the url and one
+ *    auth mode and nothing is asked, terminal or not — the run does not become "interactive"
+ *    merely because a terminal exists (FR-003i).
+ * 2. `--yes` governs CONFIRMATIONS ONLY. The usual reading of -y is "assume defaults for
+ *    everything", which here would silently skip a required input. It must not shortcut this
+ *    function at all (FR-003l).
+ */
 export async function resolveRequiredInputs(
     opts: Partial<RunOptions>,
     port?: PromptPort,
@@ -75,42 +73,40 @@ export async function resolveRequiredInputs(
     // again here would second-guess it — and made the function untestable without a TTY.
     interactive = Boolean(port)
 ): Promise<ResolvedInputs> {
-    let prompted = false;
-
+    // `prompted` used to be threaded out of here through every return. Nothing ever read it;
+    // the closure below existed only to set it.
     const ask = async <T>(what: string, run: () => Promise<T>): Promise<T> => {
         if (!interactive || !port) throw new MissingInputError(what);
-        prompted = true;
         return run();
     };
 
     // Already resolved and validated by the caller in the normal flow; re-resolving here is
     // cheap and keeps this function usable on its own.
     const url = await resolveInstanceUrl(opts, port, interactive);
-    if (!opts.url && !readEnv(ENV_KEYS.url)) prompted = true;
 
     // --- authentication: exactly one mode ---
     const authToken = opts.authToken ?? readEnv(ENV_KEYS.authToken);
     const user = opts.user;
     const password = opts.password ?? readEnv(ENV_KEYS.password);
 
-    if (authToken) return { url, authToken, prompted };
-    if (user && password) return { url, user, password, prompted };
+    if (authToken) return { url, authToken };
+    if (user && password) return { url, user, password };
 
     if (user) {
         const typed = await ask('A password', () => (port as PromptPort).password('Password'));
-        return { url, user, password: typed, prompted };
+        return { url, user, password: typed };
     }
 
     if (password) {
         const typed = await ask('A username', () => (port as PromptPort).text('Username'));
-        return { url, user: typed, password, prompted };
+        return { url, user: typed, password };
     }
 
     // Neither mode supplied. Name BOTH when we cannot ask (FR-003h).
     if (!interactive || !port) {
         throw new MissingInputError('A username and password, or an authentication token,');
     }
-    return { url, ...(await promptForAuth(port)), prompted: true };
+    return { url, ...(await promptForAuth(port)) };
 }
 
 /** Just the credential half of {@link resolveRequiredInputs}. */

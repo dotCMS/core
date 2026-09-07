@@ -3,7 +3,14 @@ import chalk from 'chalk';
 
 import type { TargetOutcome } from './types';
 
-/** Matches `create-app`'s printWelcomeScreen() so the two commands read as one tool. */
+/**
+ * The `dotcms agent setup` banner.
+ *
+ * Deliberately NOT claiming to match `create-app`'s `printWelcomeScreen()` — it does not (that
+ * one is `DOTCMS`, system colours, letter-spaced), and a must-match relationship with no shared
+ * owner is a promise nothing can keep. If the two should ever be identical, the banner needs a
+ * shared module first.
+ */
 export function printBanner(): void {
     cfonts.say('dotCMS', { font: 'block', align: 'left', colors: ['red', 'white'], space: false });
     process.stdout.write('  Connect your AI coding agent to a dotCMS instance\n\n');
@@ -44,10 +51,12 @@ const RESULT_MARK: Record<TargetOutcome['result'], string> = {
 export function renderSummary(input: SummaryInput): string {
     const lines: string[] = [];
 
+    // Derived, not tuned to the longest id that happens to exist today.
+    const idWidth = Math.max(...input.outcomes.map((o) => o.targetId.length), 0);
     for (const o of input.outcomes) {
         const bits = [
             `  ${RESULT_MARK[o.result]}`,
-            o.targetId.padEnd(13),
+            o.targetId.padEnd(idWidth),
             o.scope.padEnd(7),
             o.path ?? '—'
         ];

@@ -98,6 +98,7 @@ describe('a repo-root .mcp.json is conventionally committed (FR-024)', () => {
         await asRepo();
         const out = await protectFromVersionControl({
             files: [path.join(dir, '.mcp.json')],
+            committedByConvention: [path.join(dir, '.mcp.json')],
             cwd: dir,
             confirmExclude: async () => true
         });

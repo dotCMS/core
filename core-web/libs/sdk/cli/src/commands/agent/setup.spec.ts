@@ -980,3 +980,40 @@ describe('an auth retry asks the human, it does not re-read the environment', ()
         expect(bearers).toContain('Bearer typed-by-hand');
     });
 });
+
+describe('the conventionally-committed warning is driven by the registry (FR-024)', () => {
+    /**
+     * `.mcp.json` used to be a basename set inside `gitignore.ts`, which meant the module that
+     * "never learns editors exist" carried Claude Code's filename. It is a registry field now,
+     * so the binding worth testing is target -> warning, not path -> warning.
+     */
+    beforeEach(() => {
+        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+            String(input).includes('/appconfiguration')
+                ? appConfigurationResponse()
+                : new Response(JSON.stringify({ entity: {} }), { status: 200 })
+        );
+    });
+
+    const run = (agent: 'claude-code' | 'cursor') =>
+        runSetup({
+            url: URL_,
+            authToken: 'good',
+            agents: [agent],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            yes: true
+        });
+
+    it('warns for claude-code, whose folder file a project commits', async () => {
+        const result = await run('claude-code');
+        expect(result.versionControl?.warnings.join(' ')).toMatch(/normally committed/i);
+    });
+
+    it('does not warn for cursor, whose folder file it does not', async () => {
+        const result = await run('cursor');
+        expect(result.versionControl?.warnings.join(' ') ?? '').not.toMatch(/normally committed/i);
+    });
+});

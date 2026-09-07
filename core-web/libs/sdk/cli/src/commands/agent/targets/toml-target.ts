@@ -3,31 +3,38 @@ import { parse, stringify } from 'smol-toml';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { buildEntry } from './json-target';
+import { buildEntry } from './entry';
 
-import { ensureDir, restrictFile } from '../../../shared/config-file';
+import { ensureDir, restrictFile, type WriteResult } from '../../../shared/config-file';
 import { MalformedConfigError, NoConfigPathError } from '../../../shared/errors';
 import { ENTRY_KEY } from '../constants';
 
-import type { AgentTarget } from './types';
-import type { Scope } from '../../../shared/types';
-
-export interface TomlWriteArgs {
-    target: AgentTarget;
-    scope: Scope;
-    url: string;
-    token: string;
-    cwd?: string;
-}
+import type { AgentTarget, WriteArgs } from './types';
 
 /**
  * Codex is the only non-JSON target.
  *
- * The file belongs to the developer and will carry unrelated tables and comments, so it is
- * parsed and re-serialized rather than text-spliced: replacing an existing
- * `[mcp_servers.dotcms]` in place requires understanding where a table begins and ends, which
- * is parsing by another name (research R6).
+ * The file belongs to the developer and carries unrelated tables and comments, so it is parsed
+ * to VALIDATE and spliced to WRITE — never re-serialized, because smol-toml drops comments on
+ * round-trip and this is a file people maintain by hand (research R6).
  */
+
+/**
+ * Is our entry already present?
+ *
+ * Backed by `findEntrySpan`, deliberately: answering this with a TOML object-lookup while the
+ * write located the entry by line span gave two notions of "present" that agreed only by luck.
+ */
+export async function hasTomlEntry(file: string, target: AgentTarget): Promise<boolean> {
+    let raw: string;
+    try {
+        raw = await fs.readFile(file, 'utf8');
+    } catch {
+        return false;
+    }
+    return findEntrySpan(raw.split('\n'), target.containerKey) !== null;
+}
+
 /**
  * The line span of our own tables — `[mcp_servers.dotcms]` and any sub-table of it.
  *
@@ -82,7 +89,7 @@ function renderEntry(
     }).trimEnd();
 }
 
-export async function writeTomlTarget(args: TomlWriteArgs): Promise<string> {
+export async function writeTomlTarget(args: WriteArgs): Promise<WriteResult> {
     const file = args.target.configPath(args.scope, args.cwd);
     if (!file) {
         throw new NoConfigPathError(args.target.displayName, args.scope);
@@ -103,12 +110,13 @@ export async function writeTomlTarget(args: TomlWriteArgs): Promise<string> {
         try {
             parse(original);
         } catch {
-            throw new MalformedConfigError(file);
+            throw new MalformedConfigError(file, 'TOML');
         }
     }
 
     const block = renderEntry(args.target, args.url, args.token, args.target.containerKey);
     let next: string;
+    let replacedExisting = false;
 
     if (original.trim() === '') {
         next = block;
@@ -116,6 +124,7 @@ export async function writeTomlTarget(args: TomlWriteArgs): Promise<string> {
         const lines = original.split('\n');
         const span = findEntrySpan(lines, args.target.containerKey);
         if (span) {
+            replacedExisting = true;
             lines.splice(span.start, span.end - span.start, ...block.trimEnd().split('\n'));
             next = lines.join('\n');
         } else {
@@ -126,6 +135,8 @@ export async function writeTomlTarget(args: TomlWriteArgs): Promise<string> {
 
     await ensureDir(path.dirname(file));
     await fs.writeFile(file, next.endsWith('\n') ? next : `${next}\n`, 'utf8');
-    await restrictFile(file);
-    return file;
+    // Report what chmod actually did. The flow used to assert `CAN_RESTRICT` here, which is a
+    // platform constant rather than an observation — the summary claimed a protection nobody
+    // had checked.
+    return { path: file, permissionsApplied: await restrictFile(file), replacedExisting };
 }

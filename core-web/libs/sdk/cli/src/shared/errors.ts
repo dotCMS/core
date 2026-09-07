@@ -92,15 +92,20 @@ export class NoConfigPathError extends CliError {
     constructor(displayName: string, scope: string) {
         super(
             `${displayName} has no configuration file at ${scope} scope. ` +
-                `Re-run with ${scope === 'folder' ? '-g/--global' : '--project'}, or drop it from --agent.`
+                // `--project` was never a flag: `index.ts` registers only `-g/--global`, so the
+                // remedy named something the developer could not type. With no verbose mode the
+                // message IS the diagnostic surface (FR-032a).
+                `Re-run ${scope === 'folder' ? 'with -g/--global' : 'without -g/--global'}, or drop it from --agent.`
         );
     }
 }
 
 export class MalformedConfigError extends CliError {
-    constructor(file: string) {
+    /** The format is passed, not sniffed from the extension: both callers know exactly which
+     *  parser just refused the file. */
+    constructor(file: string, format: 'JSON' | 'TOML' = 'JSON') {
         super(
-            `${file} is not valid ${file.endsWith('.toml') ? 'TOML' : 'JSON'} — fix it or re-run with ` +
+            `${file} is not valid ${format} — fix it or re-run with ` +
                 `--skip-mcp. It has been left untouched.`
         );
     }

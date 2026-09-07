@@ -77,24 +77,17 @@ export function detectIndent(raw: string): { insertSpaces: boolean; tabSize: num
  *
  * Read-only and deliberately separate from the write: FR-017's confirmation has to happen
  * before anything is modified, not as a rollback afterwards.
+ *
+ * JSON only. This used to take an injected `parse` so the flow could hand it a TOML parser,
+ * which is how `shared/` came to know a second format existed — and it left TOML with two
+ * disagreeing notions of "present". Each writer now answers for its own format.
  */
 export async function hasEntry(args: {
     file: string;
     containerKey: string;
     entryKey: string;
-    parse?: (raw: string) => Record<string, unknown>;
 }): Promise<boolean> {
-    let doc: Record<string, unknown> | null;
-    if (args.parse) {
-        try {
-            const raw = await fs.readFile(args.file, 'utf8');
-            doc = raw.trim() === '' ? {} : args.parse(raw);
-        } catch {
-            return false;
-        }
-    } else {
-        doc = await readJsonDocument(args.file);
-    }
+    const doc = await readJsonDocument(args.file).catch(() => null);
     const container = (doc?.[args.containerKey] as Record<string, unknown> | undefined) ?? {};
     return Object.prototype.hasOwnProperty.call(container, args.entryKey);
 }
@@ -118,12 +111,6 @@ export async function ensureDir(dir: string): Promise<void> {
     if (created && CAN_RESTRICT) await fs.chmod(dir, DIR_MODE).catch(() => undefined);
 }
 
-/**
- * Merge one entry into a document the developer owns and write it back.
- *
- * Every other key survives exactly — this is User Story 2's P1 guarantee, and the reason the
- * whole file is parsed rather than text-spliced.
- */
 /**
  * Render `value` as JSON indented to sit at `depth` levels inside the document.
  *
@@ -182,6 +169,12 @@ function setProperty(
     );
 }
 
+/**
+ * Merge one entry into a document the developer owns and write it back.
+ *
+ * Every other key survives byte-for-byte — User Story 2's P1 guarantee, and the reason the file
+ * is parsed to VALIDATE and spliced to WRITE rather than re-serialized from its parse tree.
+ */
 export async function writeMerged(args: {
     file: string;
     containerKey: string;

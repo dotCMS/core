@@ -23,7 +23,7 @@ async function readJson(p: string) {
 describe('json target — fresh file (FR-019, FR-020)', () => {
     it('creates the file and any missing parent directories', async () => {
         const target = getTarget('cursor');
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target,
             scope: 'folder',
             url: URL_,
@@ -34,7 +34,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
     });
 
     it('writes the entry under the container key that editor reads', async () => {
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('vscode'),
             scope: 'folder',
             url: URL_,
@@ -47,7 +47,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
     });
 
     it('writes the standard stdio shape with the env var names the server reads', async () => {
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('cursor'),
             scope: 'folder',
             url: URL_,
@@ -63,7 +63,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
     });
 
     it("writes OpenCode's different shape, not merely a different key", async () => {
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('opencode'),
             scope: 'folder',
             url: URL_,
@@ -78,7 +78,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
     });
 
     it('writes 2-space indented JSON', async () => {
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('cursor'),
             scope: 'folder',
             url: URL_,
@@ -109,7 +109,7 @@ describe('json target — merge, never clobber (FR-016)', () => {
 
     it('preserves every other server verbatim', async () => {
         await seed();
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('cursor'),
             scope: 'folder',
             url: URL_,
@@ -124,7 +124,7 @@ describe('json target — merge, never clobber (FR-016)', () => {
 
     it('preserves unrelated top-level settings, including nested ones', async () => {
         await seed();
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('cursor'),
             scope: 'folder',
             url: URL_,
@@ -138,7 +138,7 @@ describe('json target — merge, never clobber (FR-016)', () => {
 
     it('does not touch a similarly-named sibling server', async () => {
         await seed();
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('cursor'),
             scope: 'folder',
             url: URL_,
@@ -167,7 +167,7 @@ describe('json target — merge, never clobber (FR-016)', () => {
             ),
             'utf8'
         );
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('cursor'),
             scope: 'folder',
             url: URL_,
@@ -184,7 +184,7 @@ describe('json target — merge, never clobber (FR-016)', () => {
     it('leaves everything but the dotcms key byte-for-byte identical', async () => {
         const file = await seed();
         const before = JSON.parse(await fs.readFile(file, 'utf8'));
-        const written = await writeJsonTarget({
+        const { path: written } = await writeJsonTarget({
             target: getTarget('cursor'),
             scope: 'folder',
             url: URL_,

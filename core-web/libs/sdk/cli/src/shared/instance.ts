@@ -1,9 +1,6 @@
 import { DOTCMS_API, describeRequestFailure, endpoint, httpGet } from '@dotcms/http';
 
-import { ENV_KEYS, readEnv } from './env';
 import { InstanceUnreachableError, InvalidUrlError, NotADotCmsInstanceError } from './errors';
-
-import type { RunOptions } from './types';
 
 export interface InstanceInfo {
     /** Normalized base URL, no trailing slash. */
@@ -24,22 +21,6 @@ export function validateUrl(url: string): void {
     } catch {
         throw new InvalidUrlError(url);
     }
-}
-
-/**
- * Option -> environment -> prompt (FR-004). The prompt is supplied by the caller so this stays
- * usable from a non-interactive context; `promptFor` is only reached when both earlier sources
- * are empty.
- */
-export async function resolveUrl(
-    opts: Partial<RunOptions>,
-    promptFor?: () => Promise<string>
-): Promise<string> {
-    const raw = opts.url ?? readEnv(ENV_KEYS.url) ?? (promptFor ? await promptFor() : undefined);
-    if (!raw) throw new InvalidUrlError('');
-    const url = normalizeUrl(raw);
-    validateUrl(url);
-    return url;
 }
 
 /**

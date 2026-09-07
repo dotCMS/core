@@ -59,11 +59,9 @@ export function isHttpError(error: unknown): error is HttpError {
     return error instanceof HttpError;
 }
 
-const DEFAULT_TIMEOUT_MS = 10000;
+import { isSuccessStatus } from './fetch-retry';
 
-function isSuccess(status: number): boolean {
-    return status >= 200 && status < 300;
-}
+const DEFAULT_TIMEOUT_MS = 10000;
 
 /** Best-effort JSON. A health endpoint may answer 204, or plain text; neither is an error. */
 async function readBody<T>(response: Response): Promise<T> {
@@ -115,7 +113,7 @@ async function request<T>(
 
     const data = await readBody<T>(response);
 
-    if (!isSuccess(response.status) && !acceptAnyStatus) {
+    if (!isSuccessStatus(response.status) && !acceptAnyStatus) {
         throw new HttpError(`Request failed with status code ${response.status}`, {
             status: response.status,
             statusText: response.statusText

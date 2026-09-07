@@ -34,17 +34,19 @@ function makeProgress(interactive: boolean) {
         done(): void {
             spinner?.stop();
         },
-        /** Leave the failed step visible instead of a spinner that never stops. */
+        /**
+         * Leave the failed step visible instead of a spinner that never stops.
+         *
+         * `warn` was a byte-identical second copy of this: a retry notice and a failure render
+         * the same way — mark the attempt failed, then carry on.
+         */
         fail(text?: string): void {
             if (spinner) spinner.fail(text);
             else if (text) writeOut(`  ✗ ${text}`);
             spinner = null;
         },
-        /** A retry notice: mark the attempt failed, then carry on. */
         warn(text: string): void {
-            if (spinner) spinner.fail(text);
-            else writeOut(`  ✗ ${text}`);
-            spinner = null;
+            this.fail(text);
         }
     };
 }
@@ -84,9 +86,9 @@ export function registerAgentCommand(program: Command): void {
         .option('-y, --yes', 'accept confirmations (never skips a required input)')
         .option('--force', 'replace an existing dotcms entry without asking')
         .action(async (options: Record<string, unknown>) => {
-            // Only when someone is watching — a banner in a CI log is noise.
-            if (canPrompt()) printBanner();
             const interactive = canPrompt();
+            // Only when someone is watching — a banner in a CI log is noise.
+            if (interactive) printBanner();
             // A spinner only where someone can see it; in CI the same steps are plain lines.
             const progress = makeProgress(interactive);
             try {
