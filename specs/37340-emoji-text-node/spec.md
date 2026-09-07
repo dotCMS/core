@@ -393,11 +393,22 @@ class in one change with no list to maintain across extension upgrades.
     the node is dropped on load. This change reduces future exposure by not creating nodes, and
     *removes* it for any field healed and re-saved through the new editor. **The plan should
     confirm the legacy-drop behavior empirically.**
-  - **The joining itself is ProseMirror's, not ours.** Both the already-marked case (a link applied
-    *over* a node) and the sandwich case (AC-015) produce three adjacent `text` nodes with identical
-    marks; ProseMirror joins those during normalization. The heal never merges nodes itself. **The
-    plan must confirm this empirically rather than assert it** — it is the one place the spec relies
-    on library behavior instead of its own code, and both cases now depend on it.
+  - **The heal merges the runs it creates; ProseMirror does not.** An earlier draft assumed
+    normalization joined adjacent `text` nodes carrying identical marks. **Measured, and false on
+    every load path** — `Fragment.fromJSON` constructs the fragment directly and never calls
+    `Fragment.fromArray`, which is where joining lives (research.md R10). The editor *renders* one
+    `<a>` because the DOM serializer emits a mark run as one element, which is why the assumption
+    survived review; the stored document keeps three nodes, and VTL and the SDKs emit one `<a>` per
+    text node. Leaving them unmerged would produce **three** anchors downstream where the defect
+    currently produces two — worse than the bug.
+  - **The merge is scoped to inline arrays the heal actually touched.** It never runs over a
+    document that contained no `emoji` node, and never merges across differing marks. Both are
+    asserted (AC-016, AC-017). A document-wide merge would silently normalize adjacent identical-mark
+    runs that have nothing to do with this defect — the same class of harm the mark rules exist to
+    prevent, arriving through the back door.
+  - **Merging is not inference.** The marks are already identical; concatenating the text decides
+    nothing and is exactly what `Fragment.fromArray` does. The sandwich rule (AC-015) remains the
+    single place this change infers anything.
   - No REST contract, DB schema, or ES mapping change. Not rollback-unsafe in any documented
     category.
 - **Data considerations**: an `emoji` node persists only until a field is opened and saved through
@@ -449,16 +460,19 @@ class in one change with no list to maintain across extension upgrades.
 **Editor — healing stored nodes**
 
 - **AC-013**: Loading a document that contains an `emoji` node yields a document with **no** `emoji`
-  node: each has become a `text` node holding the character resolved from its `attrs.name`.
+  node: each has become a `text` node holding the character resolved from its `attrs.name`. Within
+  each inline array the heal touched, adjacent `text` nodes whose marks are **deep-equal** are then
+  merged into one — the normalization the JSON load path does not perform for us (research.md R10).
 - **AC-014**: The resulting `text` node carries **exactly** the marks the `emoji` node carried —
   none for a node created by the defect, and the `link` mark for a node a link was applied over.
   **No mark is inherited from a neighbouring node**, with the single narrow exception in AC-015.
   This is the criterion that keeps the transform from altering content unrelated to this defect.
 - **AC-015**: **The link sandwich.** Where a **bare** `emoji` node sits between two **`text`** nodes
   whose `link` marks are equal on **every** attribute (`href`, `target`, `rel`, `title`,
-  `aria-label`), the healed text node carries that same `link` mark. ProseMirror then joins the run,
-  so the reported payload renders as a **single** `<a>` with the character inside it — **with no
-  re-save and no author action**.
+  `aria-label`), the healed text node carries that same `link` mark, **and the heal merges the
+  resulting identical-mark run into a single `text` node** (AC-013). The reported payload therefore
+  renders as a **single** `<a>` with the character inside it — **with no re-save and no author
+  action** — in the stored JSON, not merely in the editor's DOM.
 - **AC-016**: **The sandwich rule does not fire otherwise.** No mark is inherited when any of these
   holds, each asserted separately:
   - the two `link` marks differ in **any** attribute;
@@ -467,6 +481,11 @@ class in one change with no list to maintain across extension upgrades.
   - either sibling carries no `link` mark;
   - the `emoji` node is **not** bare — a node carrying its own marks keeps them under AC-014 and is
     never re-marked from a neighbour.
+
+  The merge carries the same boundary, asserted alongside:
+  - `text` nodes whose marks **differ in any attribute** are never merged, however adjacent;
+  - an inline array the heal did **not** touch is never merged, even when it already holds adjacent
+    identical-mark `text` nodes. The heal normalizes what it creates, not what it finds.
 - **AC-017**: The heal is recursive — `emoji` nodes inside headings, list items, blockquotes and
   table cells are healed identically to those in paragraphs.
 - **AC-018**: An `emoji` node whose `name` does not resolve against the `emojis` table is left
@@ -509,9 +528,10 @@ class in one change with no list to maintain across extension upgrades.
 - **Manual accessibility pass** — AC-022 and AC-023, with NVDA and with VoiceOver, on content
   authored after the fix. Not automatable; record in the post-merge QA plan. Run it on new content
   and on a field healed from the reported payload, which AC-015 rejoins into one anchor.
-- **Empirical check the plan owes** — whether ProseMirror joins the adjacent `text(link)` nodes
-  produced when the heal converts a node that already carried the `link` mark. Confirm, do not
-  assume.
+- **Merge coverage** — the heal's own normalization is asserted in the same pure-transform suite:
+  identical marks merge, differing marks never do, and an inline array the heal did not touch is
+  returned as found. This replaces what was an empirical check on ProseMirror; the library does not
+  perform the merge (research.md R10).
 - **Manual cross-editor check** — open a field carrying `emoji` nodes in the legacy editor before
   and after this change, to confirm the pre-existing drop path is unchanged (Regression Risk).
 

@@ -28,10 +28,12 @@ The healed shape reaches storage on the author's next save, along the same path 
 ## Third guarantee — the reported payload repairs itself
 
 > **A bare `emoji` node between two `text` nodes carrying attribute-identical `link` marks heals
-> into that link, and the run renders as a single `<a>`.**
+> into that link, and the heal merges the run into one `text` node.**
 
-No re-save, no author action, no renderer change. This meets #37340's criterion that already-split
-content render as a single link without a re-save.
+The single `<a>` is therefore in the stored JSON, not only in the editor's DOM — which matters,
+because VTL and the SDKs emit one `<a>` per text node and would otherwise render three. No re-save,
+no author action, no renderer change. This meets #37340's criterion that already-split content
+render as a single link without a re-save.
 
 ## Guarantee explicitly NOT made
 
@@ -75,3 +77,6 @@ Non-negotiable, guarded by AC-013 and AC-014:
 4. **The heal must not touch a document that has no `emoji` node** (AC-019), must not inherit marks
    outside the link sandwich (AC-014), and must not fire the sandwich rule in any of the negative
    cases (AC-016). Those three bound the entire risk of the transform.
+5. **The merge is scoped to inline arrays the heal modified** and never crosses differing marks
+   (AC-016). It normalizes what the heal creates, never what it finds — a document-wide pass would
+   rewrite identical-mark runs unrelated to this defect.

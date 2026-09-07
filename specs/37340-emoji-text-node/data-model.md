@@ -72,7 +72,7 @@ AFTER THE FIX — the reported payload, healed on load
   text(link, "dotCMS Copyright ")
 + emoji(bare) between two identical link marks   ← the sandwich: a
                                                    fingerprint of this defect
-  → healed text inherits that link mark, ProseMirror joins the run
+  → healed text inherits that link mark, then THE HEAL merges the run
   → text(link, "dotCMS Copyright © All rights reserved") — one <a>
 
 AFTER THE FIX — a symbol between links to DIFFERENT urls
@@ -83,11 +83,14 @@ AFTER THE FIX — a symbol between links to DIFFERENT urls
 
 AFTER THE FIX — a link applied OVER an existing node
   text(link) + emoji(link) + text(link)
-  → heals to three text(link) nodes, joined by normalization
+  → heals to three text(link) nodes, merged by the heal into one
 ```
 
-**The second transition is the fix; the rest are the heal.** Two of them rejoin, and in both cases
-the joining is ProseMirror's — the transform only decides which marks the healed text carries.
+**The second transition is the fix; the rest are the heal.** Two of them rejoin. In both the merge is
+**ours** — `Fragment.fromJSON` does not normalize identical-mark runs (research.md R10) — and the
+merge is scoped to inline arrays the heal touched, so nothing else in the document is rewritten. What
+separates the two cases is not who merges but whether a mark has to be inferred: only the sandwich
+infers.
 
 ---
 
