@@ -8,61 +8,66 @@
     <ng-template pTemplate>
         <section class="flex h-full min-w-0 flex-col overflow-hidden">
             <div #answer class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-chat-answer">
-                @if (!store.hasAnswer()) {
-                    <div class="p-8 text-center" data-testid="dotai-chat-empty">
-                        <h2 class="text-2xl font-medium">{{ 'dotai.chat.empty.title' | dm }}</h2>
-                        <!-- Deliberately does not promise sources: only the non-streaming mode
-                             returns them, and this tab streams. -->
-                        <p class="mt-1 text-muted-color">{{ 'dotai.chat.empty.sub' | dm }}</p>
-                    </div>
-                } @else {
-                    @let current = store.chatAnswer();
+                <div class="container mx-auto">
+                    @if (!store.hasAnswer()) {
+                        <div class="p-8 text-center" data-testid="dotai-chat-empty">
+                            <h2 class="text-2xl font-medium">
+                                {{ 'dotai.chat.empty.title' | dm }}
+                            </h2>
+                            <!-- Deliberately does not promise sources: only the non-streaming mode
+                                 returns them, and this tab streams. -->
+                            <p class="mt-1 text-muted-color">{{ 'dotai.chat.empty.sub' | dm }}</p>
+                        </div>
+                    } @else {
+                        @let current = store.chatAnswer();
 
-                    @if (current) {
-                        @if (current.state === states.STREAMING && !current.content) {
-                            <dot-agent-thinking
-                                [text]="'dotai.chat.thinking' | dm"
-                                data-testid="dotai-chat-thinking" />
-                        } @else {
-                            <!-- Answers come back as markdown, so they are rendered as markdown
-                                 rather than shown as literal `##` and `*`. ngx-markdown is the
-                                 house renderer and is already provided app-wide by
-                                 MarkdownModule.forRoot(); it sanitizes by default, which matters
-                                 because this is model output being turned into HTML.
+                        @if (current) {
+                            @if (current.state === states.STREAMING && !current.content) {
+                                <dot-agent-thinking
+                                    [text]="'dotai.chat.thinking' | dm"
+                                    data-testid="dotai-chat-thinking" />
+                            } @else {
+                                <!-- Answers come back as markdown, so they are rendered as markdown
+                                     rather than shown as literal `##` and `*`. ngx-markdown is the
+                                     house renderer and is already provided app-wide by
+                                     MarkdownModule.forRoot(); it sanitizes by default, which matters
+                                     because this is model output being turned into HTML.
 
-                                 `prose` comes from @tailwindcss/typography, already loaded in
-                                 style.css — without it Tailwind's preflight leaves headings and
-                                 list markers stripped. prose caps itself at 65ch, so the 70ch
-                                 here is a deliberate override for line length. -->
-                            <div
-                                class="mx-auto prose max-w-[70ch]"
-                                data-testid="dotai-chat-answer-text">
-                                <markdown [data]="current.content" />
-                            </div>
-                        }
+                                     `prose` comes from @tailwindcss/typography, already loaded in
+                                     style.css — without it Tailwind's preflight leaves headings and
+                                     list markers stripped. prose caps itself at 65ch, so the 70ch
+                                     here is a deliberate override for line length. -->
+                                <div
+                                    class="mx-auto prose max-w-[70ch]"
+                                    data-testid="dotai-chat-answer-text">
+                                    <markdown [data]="current.content" />
+                                </div>
+                            }
 
-                        @if (current.state === states.STOPPED) {
-                            <p
-                                class="mt-1 text-xs text-muted-color"
-                                data-testid="dotai-chat-stopped">
-                                {{ 'dotai.chat.stopped' | dm }}
-                            </p>
-                        }
+                            @if (current.state === states.STOPPED) {
+                                <p
+                                    class="mt-1 text-xs text-muted-color"
+                                    data-testid="dotai-chat-stopped">
+                                    {{ 'dotai.chat.stopped' | dm }}
+                                </p>
+                            }
 
-                        @if (current.state === states.ERROR) {
-                            <!-- Inline, never a dialog over a live stream. -->
-                            <p class="mt-1 text-sm text-red-500" data-testid="dotai-chat-error">
-                                {{ current.error }}
-                            </p>
+                            @if (current.state === states.ERROR) {
+                                <!-- Inline, never a dialog over a live stream. -->
+                                <p class="mt-1 text-sm text-red-500" data-testid="dotai-chat-error">
+                                    {{ current.error }}
+                                </p>
+                            }
                         }
                     }
-                }
+                </div>
             </div>
             <!-- Composer last in the DOM as well as visually, so focus order matches what you
                  read: answer, then the box you type in. border-t rather than border-b now that
                  it sits under the result. -->
             <div class="shrink-0 border-t border-surface-200 p-4">
                 <dot-ai-prompt-input
+                    class="container mx-auto"
                     [value]="$draft()"
                     (valueChange)="$draft.set($event)"
                     (submitted)="onSend()"
@@ -89,7 +94,6 @@
                     }
                 </dot-ai-prompt-input>
             </div>
-
         </section>
     </ng-template>
 
