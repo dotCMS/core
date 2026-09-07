@@ -11,7 +11,7 @@ import { of, throwError } from 'rxjs';
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal, WritableSignal } from '@angular/core';
+import { signal, Signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -1292,6 +1292,16 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.detectChanges();
         };
+
+        it('should leave the upload restricted to nothing', () => {
+            // Content Drive shares the selector and the dropzone with the Asset Picker, which
+            // scopes uploads to the field that opened it (#37365). Content Drive has no such field:
+            // it must keep accepting every file type, with today's wording. An empty
+            // `restrictionLabel` is what keeps the default descriptions rendering.
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(spectator.query(DotUploadTypeSelectorComponent).$restrictionLabel()).toBe('');
+        });
 
         it('should open the upload menu with the selected folder when the upload button is clicked', () => {
             openViaButton(TARGET_FOLDER_DATA);
@@ -2881,11 +2891,26 @@ describe('DotContentDriveShellComponent', () => {
                     url: string;
                 }) => void;
 
-            it('routes Back through the panel close guard (does not discard silently)', () => {
+            // The panel lives behind `@defer`, so the view child is not resolved synchronously —
+            // the tests stub the signal instead. `$sidePanel` is protected, so it is absent from
+            // the public type `jest.spyOn` infers its keys from; cast to the shape being stubbed.
+            const stubSidePanel = () => {
                 const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
+
+                jest.spyOn(
+                    spectator.component as unknown as {
+                        $sidePanel: Signal<DotEditContentSidePanelComponent | undefined>;
+                    },
+                    '$sidePanel'
+                ).mockReturnValue({
                     requestClose
                 } as unknown as DotEditContentSidePanelComponent);
+
+                return requestClose;
+            };
+
+            it('routes Back through the panel close guard (does not discard silently)', () => {
+                const requestClose = stubSidePanel();
                 setPanelRequest(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
@@ -2898,10 +2923,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('keeps the panel open when Back preserves the same editContent param', () => {
-                const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
+                const requestClose = stubSidePanel();
                 setPanelRequest(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=id-1' });
@@ -2911,10 +2933,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('routes Back through the guard for an open new-mode panel too (AC8)', () => {
-                const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
+                const requestClose = stubSidePanel();
                 setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
 
                 // Back removed the `new` marker entirely — the popstate handler must still close
@@ -2927,10 +2946,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('keeps a new-mode panel open when Back preserves the editContent=new marker', () => {
-                const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
+                const requestClose = stubSidePanel();
                 setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=new' });

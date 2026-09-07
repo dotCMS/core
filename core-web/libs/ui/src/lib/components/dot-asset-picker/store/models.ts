@@ -20,22 +20,22 @@ import {
 /**
  * The browse capabilities a host can opt into.
  *
- * Absent, the picker behaves exactly as it always has: assets only, no folders, no links. That is
- * the point of nesting these rather than flattening five flags onto
- * {@link DotAssetPickerConfig} — a File-field change cannot set `showFolders` by accident, and the
- * opt-in is visible at every call site.
+ * Absent, the picker behaves exactly as it always has: assets only, no links. That is the point of
+ * nesting these rather than flattening the flags onto {@link DotAssetPickerConfig} — a File-field
+ * change cannot set `showLinks` by accident, and the opt-in is visible at every call site.
+ *
+ * **Folders are not among the capabilities**, by design: the picker's list carries content only and
+ * folders are reached through the sidebar tree, so there is no flag a host could set to put one in
+ * the list (#37366).
+ *
+ * **Neither is content condition.** `showArchived` used to live here; the Status filter is its one
+ * representation now, so a caller seeds `status` and the editor can clear it (FR-014b). Both
+ * removals landed independently and compose: what is left is genuinely about *what the list may
+ * contain*, plus the version state and sort it opens with.
  *
  * Only the `browse` entry point (`openBrowserModal`) sets this today.
  */
 export interface DotAssetPickerBrowseOptions {
-    /**
-     * List folders alongside assets, and allow one to be returned.
-     *
-     * Folders are still navigated through the sidebar tree; this is about what the *list* may
-     * contain and return.
-     */
-    showFolders?: boolean;
-
     /**
      * List menu links alongside assets, and allow one to be returned.
      *
@@ -216,17 +216,18 @@ export interface DotAssetPickerPagination {
  * Cursor bookmark for one visited page.
  *
  * The drive API pages by cursor, not offset, so reaching page N means having walked pages 1..N-1.
- * Contentlets, folders and menu links each page independently, so a bookmark has to record all
- * three cursors — one cursor cannot reconstruct a page of a mixed list.
+ * Contentlets and menu links each page independently, so a bookmark has to record both cursors —
+ * one cursor cannot reconstruct a page of a mixed list.
  *
- * The folder and link cursors stay at 0 while their stream is switched off, which is the case for
- * every entry point that does not opt into {@link DotAssetPickerBrowseOptions}.
+ * No folder cursor: the picker never asks for folders, so the endpoint's folder stream is always
+ * empty for it and its cursor would be a permanent 0.
+ *
+ * The link cursor stays at 0 while its stream is switched off, which is the case for every entry
+ * point that does not opt into {@link DotAssetPickerBrowseOptions}.
  */
 export interface DotAssetPickerPage {
     contentCursor: number;
     hasMoreContent: boolean;
-    folderCursor: number;
-    hasMoreFolders: boolean;
     linkCursor: number;
     hasMoreLinks: boolean;
 }
@@ -355,9 +356,11 @@ export interface DotAssetPickerSelectionState {
     /**
      * The single item the editor has picked, or `null`.
      *
-     * Widened from `DotCMSContentlet` because the list can now return folders and menu links, which
-     * are not contentlets. What follows from that: only a contentlet can be re-fetched with its
-     * full content before the picker closes — see `DotAssetPickerComponent.confirm`.
+     * Widened from `DotCMSContentlet` because the list can return menu links, which are not
+     * contentlets. What follows from that: only a contentlet can be re-fetched with its full
+     * content before the picker closes — see `DotAssetPickerComponent.confirm`.
+     *
+     * Folders are no longer part of the reason: the list never carries one.
      */
     selectedAsset: DotContentDriveBrowseItem | null;
 }
