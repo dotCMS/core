@@ -660,7 +660,8 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     const wantsLinks = kinds.includes('link');
 
     // Callers are VTL string literals, so `kinds` can carry anything the type no longer admits —
-    // `'folder'` above all, which every template asked for until #37366. Warn and drop it: an
+    // `'folder'` above all, which `file_browser_field_render_new.vtl` asked for until #37366, and
+    // which a third-party template still might. Warn and drop it: an
     // exception here would take the whole custom field down, while the rest of the request is still
     // satisfiable. Mirrors the mimetype conflict below.
     const unsupported = kinds.filter((kind) => !SUPPORTED_KINDS.includes(kind));

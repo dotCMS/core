@@ -49,8 +49,10 @@ export interface DotBrowserOptions {
      *
      * An entry that is not a {@link DotBrowserItemKind} is **ignored with a console warning**
      * rather than throwing, since a caller is a VTL `<script>` where an exception would break the
-     * whole custom field. `'folder'` is the case this exists for: every shipped template asked for
-     * it before the kind was withdrawn.
+     * whole custom field. `'folder'` is the case this exists for: the shipped file-browser template
+     * (`file_browser_field_render_new.vtl`) asked for it before the kind was withdrawn, and a
+     * third-party template still might. The other shipped caller, `redirect_custom_field_new.vtl`,
+     * never did.
      *
      * @default ['file', 'dotasset']
      */
