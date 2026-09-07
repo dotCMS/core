@@ -6213,11 +6213,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<com.dotcms.contenttype.model.field.Field> fields = Try.of(()->contentlet.getContentType().fields()).getOrElse(Collections.emptyList());
         final Map<String, Object> map = contentlet.getMap();
+        // A property the user explicitly cleared is dropped from the map entirely by
+        // ContentletHashMap#put (it extends ConcurrentHashMap, which forbids null values), so an
+        // absent key alone cannot tell "never submitted" from "deliberately emptied". The contentlet
+        // tracks the latter in its null-properties set -- honour it, as validateContentlet does, so
+        // an unchecked checkbox is not silently restored from the field's default value.
+        final Set<String> nullProperties = contentlet.getNullProperties();
         Logger.debug(this, ()-> "Setting default values for the contentlet: " + contentlet.getIdentifier());
         // check default values for fields not coming on the map
         for (final com.dotcms.contenttype.model.field.Field field : fields) {
 
-            if (!map.containsKey(field.variable()) && UtilMethods.isSet(field.defaultValue())) {
+            if (!map.containsKey(field.variable())
+                    && !nullProperties.contains(field.variable())
+                    && UtilMethods.isSet(field.defaultValue())) {
 
                 try {
                     this.setContentletProperty(contentlet, field, field.defaultValue());
