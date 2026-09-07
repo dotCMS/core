@@ -8,6 +8,7 @@ import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
+import org.jetbrains.annotations.Nullable;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -42,13 +43,14 @@ public class CaemHttpClient {
      *
      * @param relativePath  CAEM path, e.g. {@code /v1/analytics/sessions}
      * @param queryParams   query parameters to append
-     * @param host          site context for per-site HMAC token lookup
+     * @param host          site context for per-site HMAC token lookup; {@code null} when the
+     *                      current host is resolved from the request context by the caller
      * @return {@link AnalyticsResultSet} populated from the CAEM response
      * @throws DotDataException if the response is non-2xx or the body cannot be parsed
      */
     public AnalyticsResultSet get(final String relativePath,
                                   final Map<String, String> queryParams,
-                                  final Host host) throws DotDataException {
+                                  @Nullable final Host host) throws DotDataException {
         final Map<String, String> headers = buildHeaders(host);
 
         Logger.debug(this, "CAEM query: GET " + relativePath);
@@ -150,7 +152,7 @@ public class CaemHttpClient {
         }
     }
 
-    protected Map<String, String> buildHeaders(final Host host) {
+    protected Map<String, String> buildHeaders(@Nullable final Host host) {
         final Map<String, String> headers = new HashMap<>();
         ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host)
                 .ifPresent(token -> headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + token));
