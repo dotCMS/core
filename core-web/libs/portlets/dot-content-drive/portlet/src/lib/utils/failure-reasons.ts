@@ -5,14 +5,16 @@
  * hole the author sees, so the mapping is exhaustive over a closed set and the fallback is real
  * copy rather than a placeholder.
  *
- * **This union is the client's, not the wire format.** The server's reason codes belong to the
- * submission contract, which is not settled (see the feature's `contracts/client-requirements.md`).
- * Translating whatever strings arrive into this union is a separate step and belongs with the
- * upload work; this file needs no contract at all, which is why the copy can land first.
+ * **These are the wire codes.** They are the closed set fixed by the submission contract in
+ * `specs/37166-bulk-file-upload/contracts/bulk-upload-api.md`, so a `results[].reason` off the wire
+ * resolves here directly with no translation step in between. That is deliberate: a mapping whose
+ * entries almost all sent a name to itself would be pure overhead, and the one entry that renamed
+ * anything would be exactly where the two halves drift apart. Adding a reason is a change to both
+ * halves, which is why the union is closed and the `Record` below is exhaustive over it.
  */
 export const CONTENT_DRIVE_FAILURE_REASONS = [
     'OVER_SIZE_LIMIT',
-    'DISALLOWED_TYPE',
+    'DISALLOWED_FILE_TYPE',
     'NAME_COLLISION',
     'PERMISSION_DENIED',
     'STAGED_CONTENT_UNAVAILABLE',
@@ -30,7 +32,7 @@ const MESSAGE_KEY_BY_REASON: Record<DotContentDriveFailureReason, string> = {
     // Named for the *type*, not the extension: the server resolves the media type by detection
     // rather than by trusting the file name (FR-039), so copy about extensions would describe a
     // check the product does not make.
-    DISALLOWED_TYPE: 'content-drive.upload.failure.disallowed-type',
+    DISALLOWED_FILE_TYPE: 'content-drive.upload.failure.disallowed-file-type',
     NAME_COLLISION: 'content-drive.upload.failure.name-collision',
     PERMISSION_DENIED: 'content-drive.upload.failure.permission-denied',
     STAGED_CONTENT_UNAVAILABLE: 'content-drive.upload.failure.staged-content-unavailable',

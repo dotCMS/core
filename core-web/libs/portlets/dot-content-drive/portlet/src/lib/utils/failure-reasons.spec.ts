@@ -38,7 +38,7 @@ describe('messageKeyForFailureReason', () => {
 
     it.each([
         ['OVER_SIZE_LIMIT'],
-        ['DISALLOWED_TYPE'],
+        ['DISALLOWED_FILE_TYPE'],
         ['NAME_COLLISION'],
         ['PERMISSION_DENIED'],
         ['STAGED_CONTENT_UNAVAILABLE'],
@@ -76,7 +76,7 @@ describe('messageKeyForFailureReason', () => {
             // FR-039: the server resolves the media type by detection and sniffing, not by trusting
             // the file name, so copy that says "extension" describes a check the product does not
             // make. The key itself is named for the concept, so this guards the naming too.
-            expect(messageKeyForFailureReason('DISALLOWED_TYPE')).not.toContain('extension');
+            expect(messageKeyForFailureReason('DISALLOWED_FILE_TYPE')).not.toContain('extension');
         });
     });
 });
