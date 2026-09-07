@@ -1,6 +1,6 @@
 # GitHub Project #7 — Field Reference
 
-**Contents:** [Status field](#field-status) · [Technology field](#field-technology) · [Priority field](#field-priority) · [Sprint / Iteration fields](#sprint--iteration-fields) · [Filter by status (fast)](#filter-issues-by-status-fast--flat-structure) · [Filter by sprint (GraphQL)](#filter-issues-by-sprint-iteration-graphql--full-fieldvalues) · [Team Project Views](#team-project-views) · [Team Labels](#known-team-labels) · [Type Labels](#type-label-taxonomy) · [Native Issue Types](#native-github-issue-types)
+**Contents:** [Status field](#field-status) · [Technology field](#field-technology) · [Priority field](#field-priority) · [Sprint / Iteration fields](#sprint--iteration-fields) · [Filter by status (fast)](#filter-issues-by-status-fast--flat-structure) · [Filter by sprint (GraphQL)](#filter-issues-by-sprint-iteration-graphql--full-fieldvalues) · [Team Project Views](#team-project-views) · [Team selection cascade](#team-selection-cascade) · [Team Labels](#known-team-labels) · [Type Labels](#type-label-taxonomy) · [Native Issue Types](#native-github-issue-types)
 
 ```
 Project: dotCMS - Product Planning
@@ -238,6 +238,29 @@ When a team view number is known, the URL can be constructed directly. In FIND m
 If the view number for a team is not yet in this reference, run the discovery query above once and record it here.
 
 ---
+
+## Team Selection Cascade
+
+Used by CREATE Step 6 when no default team is cached. Present with `AskUserQuestion`.
+
+**Stage 1** — the 4 highest-usage teams (by historical frequency):
+
+- `Team : Falcon`
+- `Team : Maintenance`
+- `Team : Scout`
+- `Team : Platform`
+
+If the user picks "Other" → Stage 2.
+
+**Stage 2** — next tier:
+
+- `Team : Modernization`
+- `Team : Enablement`
+- `Team : Security`
+- `Team : UX`
+
+If the user picks "Other" again, they type the team name freely — covers `Team : Architecture`,
+`Team : Lunik`, `Team : Cloud Eng`, `Team : 3rd Party`, and any new team.
 
 ## Known Team Labels
 

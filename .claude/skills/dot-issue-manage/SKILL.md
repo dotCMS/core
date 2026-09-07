@@ -7,11 +7,15 @@ description: Create GitHub issues using repository templates. Use when the user 
 
 # Create / Update / Query / Find GitHub Issues
 
-AI-agent-native skill for managing GitHub issues in `dotCMS/core`. Infers where possible — asks only what's needed.
+Manages GitHub issues in `dotCMS/core`. Infers where possible — asks only what's needed.
+
+**Issues have two audiences.** A human triager reads the first screen and decides; an agent
+implementing the work reads everything. Write for the human first and fold the depth beneath —
+see [references/issue-writing-style.md](references/issue-writing-style.md).
 
 **Contents:** [Mode Detection](#step-0--mode-detection) · [CREATE](#create-mode) · [UPDATE](#update-mode) · [QUERY](#query-mode) · [FIND](#find-mode) · [Authorization](#authorization)
 
-**References:** [feature-labels.md](references/feature-labels.md) · [project-fields.md](references/project-fields.md) · [github-apis.md](references/github-apis.md) · [issue-refinement.md](references/issue-refinement.md)
+**References:** [issue-writing-style.md](references/issue-writing-style.md) · [issue-refinement.md](references/issue-refinement.md) · [feature-labels.md](references/feature-labels.md) · [project-fields.md](references/project-fields.md) · [github-apis.md](references/github-apis.md) · [find-queries.md](references/find-queries.md)
 
 ## Step 0 — Mode Detection
 
@@ -82,7 +86,19 @@ Always read fresh — never assume structure.
 
 ### Step 3 — Generate title
 
-Concise, imperative, in English. Translate from Spanish if needed.
+The title is what a triager scans in a list of 200. In English (translate from Spanish if needed).
+
+- **≤ 12 words.** Longer means two ideas — pick the one that matters.
+- **Name the symptom, not the mechanism.** "Multi-file selection uploads only the first file"
+  beats "AssetPicker onSelect iterates files[0]".
+- One clause. No colon-plus-restatement, no comma-chained second finding.
+- Area prefix only when it disambiguates (`block-editor:`, `Asset Picker:`) — never a
+  `[DEFECT]` / `[TASK]` prefix, the labels and native type already carry that.
+
+| Bad | Rewrite |
+|---|---|
+| `Phase 2 ES read fallback never fires: content read path bypasses PhaseRouter, OpenSearch outage returns empty results` | `Phase 2: OpenSearch outage returns empty content instead of falling back to ES` |
+| `[TASK] Improve the developer onboarding experience` | `Add \`dotcms agent setup\` — one command to connect an IDE to dotCMS` |
 
 ### Step 4 — Select feature label (optional)
 
@@ -143,25 +159,11 @@ This path is user-level and stable regardless of where the skill is installed (u
    cat ~/.config/dotcms/create-issue/default-team 2>/dev/null
    ```
    If non-empty, use that team silently — no question asked. Mention it briefly in the confirmation (e.g., "Team: Enablement (default)").
-3. **No cache** → use a two-stage cascading selection. Team is determined by which team the developer belongs to — it has no relation to issue content.
+3. **No cache** → ask with `AskUserQuestion`, using the two-stage cascading list in
+   [references/project-fields.md](references/project-fields.md) — "Team selection cascade".
+   Team follows which team the developer belongs to; it has no relation to issue content.
 
-   **Stage 1** — present the 4 highest-usage teams (by historical frequency):
-   - `Team : Falcon`
-   - `Team : Maintenance`
-   - `Team : Scout`
-   - `Team : Platform`
-
-   If the user picks "Other", proceed to Stage 2.
-
-   **Stage 2** — present the next tier:
-   - `Team : Modernization`
-   - `Team : Enablement`
-   - `Team : Security`
-   - `Team : UX`
-
-   If the user picks "Other" again, they type the team name freely (covers `Team : Architecture`, `Team : Lunik`, `Team : Cloud Eng`, `Team : 3rd Party`, or any new team).
-
-   After selection at any stage, ask: "Set as default team for future issues?" If yes:
+   After selection, ask: "Set as default team for future issues?" If yes:
    ```bash
    mkdir -p ~/.config/dotcms/create-issue && echo "Team : SELECTED_TEAM" > ~/.config/dotcms/create-issue/default-team
    ```
@@ -190,8 +192,12 @@ Ask only if partially specified (e.g., "it's a sub-issue" but no number given).
 
 **Trigger:** User explicitly asks to create the issue without going through ambiguity resolution. Treat as quick-draft when the request includes any of:
 
-- **English:** "draft", "quick", "quick draft", "without full details", "skip ambiguities", "create quickly", "minimal details"
-- **Spanish:** "draft rápido", "rápido", "sin detalles completos", "sin resolver ambigüedades", "crear rápido", "sin pasar por ambigüedades"
+- **English:** "quick draft", "just draft it", "without full details", "skip ambiguities", "skip the questions", "create quickly", "minimal details"
+- **Spanish:** "draft rápido", "borrador rápido", "sin detalles completos", "sin resolver ambigüedades", "sin preguntas", "crear rápido", "sin pasar por ambigüedades"
+
+The trigger is about *skipping the clarification questions*, not about the work being small.
+"quick fix", "quick win", or "a small task" are descriptions of the issue — they do **not** set
+quick-draft.
 
 When **quick-draft** is set:
 
@@ -209,34 +215,70 @@ Read [references/issue-refinement.md](references/issue-refinement.md) and execut
 
 **Goal:** Produce unambiguous, testable Acceptance Criteria as checkbox items before the issue body is written.
 
-**Execute in strict order:**
+**Execute in strict order** (phase numbering matches the reference file):
 
 1. **Phase 1 — Decompose**: Extract problem, actor, expected behavior, business rules, out-of-scope.
 2. **Phase 2 — Ambiguity Scan**: Flag every ambiguity by type and severity (CRITICAL / MAJOR / MINOR).
-3. **Phase 3 — Clarification Questions**: For each CRITICAL and MAJOR ambiguity, ask one precise question with concrete options. Present all questions at once.
-4. **Phase 4 — Wait**: Print `>>> WAITING FOR ANSWERS.` and stop. Do NOT guess. Do NOT proceed.
-5. **Phase 5 — Re-Analyze**: After user replies, confirm resolutions, check for new ambiguities. If new CRITICAL/MAJOR found → return to Phase 3.
-6. **Phase 6 — Write AC**: When all CRITICAL + MAJOR are resolved (or loop 3 reached), write checkbox-based Acceptance Criteria covering happy path, sad path, and edge cases. Score the result (min 80/100 to proceed).
+3. **Phase 3 — Clarification Questions**: For each CRITICAL and MAJOR ambiguity, ask one precise question with concrete options. Present all questions at once, then **stop and wait**. Do NOT guess. Do NOT proceed.
+4. **Phase 4 — Re-Analyze**: After the user replies, confirm resolutions and check for new ambiguities. If new CRITICAL/MAJOR found → return to Phase 3.
+5. **Phase 5 — Write AC**: When all CRITICAL + MAJOR are resolved (or loop 3 reached), write checkbox-based Acceptance Criteria covering happy path, sad path, and edge cases.
+6. **Phase 6 — Compress**: Merge, cut, and group down to 3–7 criteria, one line each, stating observable outcomes. This phase is not optional — the refinement loop produces precision, not volume.
 
 **Loop control:** Max 3 clarification rounds. After round 3 — rewrite with best available info, flag unresolved items with `⚠ UNRESOLVED`.
 
 **Skip condition:** If the user's request is a Defect/Bug and contains reproduction steps with expected vs actual results — ambiguity scan still runs, but the bar for CRITICAL is higher (focus on missing edge cases and error handling rather than unclear outcomes).
 
-The checkbox output from Phase 6 becomes the **Acceptance Criteria section** of the issue body in Step 8.
+**The refinement conversation is not the issue body.** Ambiguity tables, resolution summaries, scores, and rejected options stay in the conversation. Only the compressed Phase 6 checkboxes go into the **Acceptance Criteria section** in Step 8.
 
 ### Step 8 — Build issue body
 
-Match the template structure read in Step 2. Populate all fields substantively from the user's description.
+Match the template structure read in Step 2. All content in English (translate Spanish if needed).
 
-**When quick-draft was set (Step 7a):** Use a short Acceptance Criteria placeholder (e.g. "To be refined" or 1–3 bullets from the description); do not run or reuse the Issue Refinement loop.
+**Issues are read by humans first.** A triager, a PM, or a developer picking the work up months
+later reads the first screen and decides whether to keep reading. Technical depth stays in the
+issue — it goes *below* the summary, not above it.
 
-Best-practice patterns:
-- Tables for comparisons
-- Code blocks for examples
-- Checkboxes for acceptance criteria
-- Numbered lists for reproduction steps
+Read [references/issue-writing-style.md](references/issue-writing-style.md) for body shapes per
+template, worked before/after examples, and the pre-publish checklist.
 
-All content in English (translate Spanish if needed).
+**Non-negotiable rules — apply to every issue, quick-draft included:**
+
+1. **Lead with the consequence.** The first sentence of the body says what is broken (or what is
+   missing) and what it costs, in plain language. One sentence, two at most, ≤ 40 words. No class
+   names, file paths, line numbers, or stack frames in it. Never open with background or
+   "As part of the X migration…".
+2. **≤ 150 words visible** before the first collapsed block, lead included. Impact goes in at most
+   4 one-line bullets.
+3. **Fold the depth.** Stack traces, code blocks over 10 lines, line-number inventories,
+   call-site enumerations, design-doc citation tables, and alternatives-considered go inside
+   `<details><summary>specific label</summary>`. GitHub collapses it for humans; the API returns
+   the full text, so agents lose nothing.
+4. **Never fold** Steps to Reproduce, Acceptance Criteria, version, severity, or links — a
+   reviewer or QA acts directly on those.
+5. **Acceptance criteria: 3–7**, one line each (≤ 25 words), one checkbox per *observable
+   outcome* — not per implementation site. Above 7, group under sub-headings. Hard cap 12.
+   Implementation specifics belong in a folded note, not in a checkbox.
+
+**When quick-draft was set (Step 7a):** rules 1–4 still apply — brevity is not an excuse for an
+unreadable lead. For Acceptance Criteria use a short placeholder ("To be refined") or 1–3 bullets
+drawn from the user's description; do not run or reuse the Issue Refinement loop.
+
+### Step 8b — Readability gate (REQUIRED before creating)
+
+Copy this checklist into your response and answer each item against the drafted body. Any `no`
+→ fix the body and re-check. Do not proceed to Step 9 with an unchecked box.
+
+```
+- [ ] First sentence is ≤ 40 words and names the consequence, not the mechanism
+- [ ] First sentence contains no file path, class name, line number, or stack frame
+- [ ] Reading only the first 10 lines tells you what it is and why it matters
+- [ ] Visible prose before the first fold is ≤ 150 words
+- [ ] Every stack trace, long code block, and line-number inventory is inside <details>
+- [ ] Every <summary> says what is inside it, specifically
+- [ ] Acceptance criteria: ≤ 7, or grouped under sub-headings
+- [ ] Every acceptance criterion is one line and states an observable outcome
+- [ ] Steps to Reproduce and Acceptance Criteria are not folded
+```
 
 ### Step 9 — Create the issue
 
@@ -357,17 +399,8 @@ Accept an issue number. Return comprehensive state.
 
 ### Flow
 
-```bash
-# Main issue data
-gh issue view ISSUE_NUM --repo dotCMS/core \
-  --json number,title,state,labels,assignees,body,projectItems,url
-
-# Sub-issues
-gh api repos/dotCMS/core/issues/ISSUE_NUM/sub_issues
-
-# Native type
-gh api repos/dotCMS/core/issues/ISSUE_NUM --jq '.type.name'
-```
+Run the three queries in Section H of [references/github-apis.md](references/github-apis.md):
+main issue data, sub-issues, native type.
 
 **Output includes:**
 - Title, state, labels, assignees, URL
@@ -376,8 +409,6 @@ gh api repos/dotCMS/core/issues/ISSUE_NUM --jq '.type.name'
 - Parent issue (if sub-issue)
 - Sub-issues list with completion status
 - Blocked-by / blocking relationships
-
-See Section H of [references/github-apis.md](references/github-apis.md) for full query patterns.
 
 ---
 
@@ -417,200 +448,33 @@ If the intent is ambiguous between Assigned and Team, run both and merge results
 
 ### Flow
 
-**Step 1 — Read cached team and resolve project view URL (if available):**
-```bash
-CACHED_TEAM=$(cat ~/.config/dotcms/create-issue/default-team 2>/dev/null)
-```
+All commands, GraphQL queries, jq patterns, and output formatting live in
+[references/find-queries.md](references/find-queries.md) — read it before running any query.
 
-If `$CACHED_TEAM` is set, look up the team's project view number from [references/project-fields.md](references/project-fields.md). If the view number is known, construct the direct board URL:
-```
-https://github.com/orgs/dotCMS/projects/7/views/N
-```
+**Step 1 — Resolve team and board URL.** Read the cached team
+(`~/.config/dotcms/create-issue/default-team`). If set, look up its project view number in
+[references/project-fields.md](references/project-fields.md) and build the board URL.
 
-If the view number is not yet recorded, discover it:
-```bash
-gh api graphql -f query='
-  {
-    organization(login: "dotCMS") {
-      projectV2(number: 7) {
-        views(first: 30) {
-          nodes { number name }
-        }
-      }
-    }
-  }' | jq -r --arg team "TEAM_NAME" \
-    '.data.organization.projectV2.views.nodes[] | select(.name | test($team; "i")) | "\(.number) \(.name)"'
-```
+**Step 1b — Resolve the sprint (only if a sprint intent was detected).** Derive the field name
+from the team (`Team : Scout` → `Scout Sprint`), then match today's date against the iterations
+to pick current / next / previous / named. Teams on kanban have no iteration field — fall back
+to Status values and say so. If no team is cached and a sprint was asked for, ask which team
+first (`AskUserQuestion`, same two-stage list as CREATE Step 6).
 
-Store the resolved view URL (if found) as `$TEAM_VIEW_URL`.
+**Step 2 — Run only the queries the intent calls for.** Assigned, Team, Keyword, or Recent; for
+**Default**, run Assigned and Team and deduplicate. Sprint-filtered searches must use the
+GraphQL query, not `gh issue list` — the CLI returns 100 oldest-first and misses recent items.
 
-**Step 1b — Resolve sprint filter (if a sprint intent was detected):**
+**Step 3 — Extract Status from `projectItems`.** Show "—" when absent.
 
-If the user's request includes a sprint filter, resolve it before querying issues.
+**Step 4 — Present as a numbered list**, grouped, with the board link, a velocity summary line
+for sprint queries, and a `⚠ stale (N months)` flag on In Progress / In Review issues untouched
+for over 30 days. Then offer:
 
-**No cached team + sprint filter:** If `$CACHED_TEAM` is empty and the user asked for a sprint-filtered view, ask which team before proceeding — sprint fields are team-specific and cannot be resolved without a team. Use `AskUserQuestion` with the same two-stage team list from Step 6 of CREATE mode.
-
-Derive the sprint field name: strip `Team : ` prefix, append ` Sprint` (e.g. `Team : Scout` → `Scout Sprint`). Known field IDs and the iteration discovery query are in [references/project-fields.md](references/project-fields.md) — "Sprint / Iteration Fields" section. Use known IDs to skip the discovery call for Falcon, Maintenance, Scout, and Platform.
-
-From the returned configuration, identify the target sprint title using today's date:
-
-| Sprint intent | Which iteration |
-|---|---|
-| Current | `iterations[]` where `startDate` ≤ today AND `startDate + duration` > today |
-| Next | `iterations[]` where `startDate` > today, earliest by `startDate` |
-| Previous / Last | `completedIterations[]`, most recent by `startDate` |
-| Named (e.g. "Sprint 42") | Match `title` in `iterations[]` or `completedIterations[]` |
-
-Store the resolved sprint title as `$SPRINT_TITLE` for use in Step 2 jq filtering.
-
-**No sprint field found (teams without iteration fields):** Teams known to use kanban / status-only workflows (Enablement, Modernization, UX, Architecture, and others not in the sprint field table in project-fields.md) do not have iteration fields. When the field query returns no match:
-
-1. Tell the user: *"[Team] doesn't use sprint iterations — showing issues by status instead."*
-2. Map the sprint intent to Status values:
-
-| Sprint intent | Status values to show |
-|---|---|
-| Current / this sprint | `In Progress`, `In Review`, `Current Sprint Backlog` |
-| Next sprint | `Next Sprint`, `Next 2-4 Sprints` |
-| Previous / last sprint | Cannot reliably reconstruct — offer to show `Done` issues updated in the last 2 weeks instead |
-
-3. Use the flat `gh issue list` + jq status filter (see [references/project-fields.md](references/project-fields.md)) rather than the GraphQL sprint query.
-
-**Step 2 — Run the appropriate queries:**
-
-> **jq shell-quoting rules (apply to all queries below):**
-> - Never use `!=` in a jq expression passed via bash — the `!` is shell-escaped as `\!` causing a compile error. Use chained `select()` calls instead: `select($x) | select(...)` rather than `select($x != null)`.
-> - Never reuse a `--arg` name as an internal `as $var` binding in the same expression. Use distinct names (e.g. `--arg sprint "..."` + internal `as $iterTitle`).
-
-**Assigned to current user (open):**
-```bash
-gh issue list --repo dotCMS/core \
-  --assignee @me \
-  --state open \
-  --json number,title,url,labels,assignees,updatedAt,projectItems \
-  --limit 50
-```
-
-**Open issues for cached team (if `$CACHED_TEAM` is set, no sprint filter):**
-```bash
-gh issue list --repo dotCMS/core \
-  --label "$CACHED_TEAM" \
-  --state open \
-  --json number,title,url,labels,assignees,updatedAt,projectItems \
-  --limit 50
-```
-
-> **Sprint filter — use GraphQL instead of `gh issue list`:** Teams have 1000+ issues; `gh issue list` returns up to 100 oldest-first and misses recent Done/closed items. Use the GraphQL sprint query from [references/project-fields.md](references/project-fields.md) — "Filter issues by sprint iteration" section. It uses `states: [OPEN, CLOSED]` and `orderBy: UPDATED_AT DESC`, filtering by `$iterTitle == $sprint`.
-
-**Keyword search:**
-```bash
-gh issue list --repo dotCMS/core \
-  --search "KEYWORD in:title,body" \
-  --state open \
-  --json number,title,url,labels,updatedAt \
-  --limit 10
-```
-
-**Recently updated (not filtered by assignee or team):**
-```bash
-gh issue list --repo dotCMS/core \
-  --state open \
-  --json number,title,url,labels,updatedAt,assignees \
-  --limit 10 \
-  --sort updated
-```
-
-Run only the queries relevant to the user's intent. For **Default**, run Assigned and Team in parallel and deduplicate by issue number.
-
----
-
-**Step 3 — Extract project fields from results:**
-
-`gh issue list --json projectItems` returns a flat structure per project — Status is directly accessible but sprint/iteration values are not. See [references/project-fields.md](references/project-fields.md) — "Filter issues by status (fast — flat structure)" for the exact extraction pattern. Show "—" when status is absent.
-
----
-
-**Step 4 — Present results:**
-
-> **Pagination note:** Sprint queries use `first: 100` with `orderBy: UPDATED_AT DESC`. This covers almost all cases since sprint work is recent. On very active teams where 100+ issues were updated more recently than the sprint's oldest items, some sprint items could be missed. If results look incomplete, paginate by adding `after: "CURSOR"` using the `pageInfo.endCursor` from a prior response — but this is rarely needed in practice.
-
-Format as a numbered list grouped by query type. Include the sprint column when a sprint filter was applied or when sprint data is present.
-
-**When results are from a sprint query, prepend a velocity summary line:**
-
-```
-5 Done · 2 In Progress · 1 In Review · 1 Current Sprint Backlog
-```
-
-Derive counts from the result set:
-```bash
-jq 'group_by(.status) | map({status: .[0].status, count: length}) | sort_by(.count) | reverse'
-```
-
-Render as `N StatusName · N StatusName · ...` ordered by count descending. Omit statuses with 0 count.
-
-For each issue show:
-- Number and title
-- Clickable URL
-- Status from Project #7 (if available)
-- Sprint assignment (if available — "—" if not set)
-- Assignee(s) — always show; helps spot misassignment or abandoned work
-- Last updated (relative: "today", "2 days ago", "3 weeks ago")
-- Exception flags (see below) — shown inline as `⚠`
-
-**Exception flag — applies when status is "In Progress" or "In Review":**
-
-| Condition | Flag |
-|---|---|
-| Last updated > 30 days ago | `⚠ stale (N months)` |
-
-Sprint assignment is shown as "—" when not set — no flag, just the data. The stale flag is the only active signal. It doesn't filter out the issue — it appears inline so the user can decide whether to investigate.
-
-Example output (no sprint filter):
-```
-**Team: Scout (In Progress)**
-Board: https://github.com/orgs/dotCMS/projects/7/views/5
-
-1. #34354 — [DEFECT] Content Drive Search leaks info with limited user
-   https://github.com/dotCMS/core/issues/34354
-   Status: In Progress | Sprint: — | Assignee: jsmith | Updated: yesterday
-
-2. #33829 — [TASK] Create Developer Onboarding Guide for Next.js with dotCMS UVE
-   https://github.com/dotCMS/core/issues/33829
-   Status: In Progress | Sprint: — | Assignee: fmontes | Updated: Nov 2025
-   ⚠ stale (3 months)
-```
-
-Example output (with sprint filter "last sprint"):
-```
-**Team: Scout — Sprint 4: Feb 24, 2026 (previous)**
-Board: https://github.com/orgs/dotCMS/projects/7/views/5
-5 Done · 0 In Progress
-
-1. #34723 — CollectionBuilder.draft() does not return draft content when deployed to Vercel
-   https://github.com/dotCMS/core/issues/34723
-   Status: Done | Assignee: — | Updated: Feb 24
-
-2. #34708 — Expose `registerStyleEditorSchema` in the `dotUVE` Global Object
-   https://github.com/dotCMS/core/issues/34708
-   Status: Done | Assignee: — | Updated: Feb 24
-```
-
-When a sprint filter is active, include the resolved sprint title and intent ("current", "next", "previous") in the group header so the user can confirm it matched the right sprint.
-
-Include the **Board** link at the top of every team-scoped group when `$TEAM_VIEW_URL` is known. Omit silently if the view number is unknown — do not show a broken URL.
-
-After listing, offer:
 > "Enter a number to query details, update, or use as a parent for a new sub-issue."
 
----
-
-**Step 5 — Handle follow-up selection:**
-
-If the user selects a number from the list:
-- Map the selection to the issue number from the results
-- Treat it as if the user had said "query issue #N", "update issue #N", or "sub-issue of #N" — proceed in the appropriate mode
-- No need to re-ask for the issue number
+**Step 5 — Handle follow-up selection.** If the user picks a number, map it to the issue number
+and continue in the matching mode (QUERY / UPDATE / CREATE sub-issue) — do not re-ask.
 
 ---
 

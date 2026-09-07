@@ -1,5 +1,7 @@
 # dotCMS Feature Labels
 
+**Contents:** [Available feature labels](#available-feature-labels) · [Selection logic](#feature-label-selection-logic) · [Keyword matching guide](#keyword-matching-guide) · [Selection strategy](#selection-strategy) · [Examples](#examples) · [Retrieving current labels](#retrieving-current-labels)
+
 This reference provides the complete list of `dotCMS : [Feature]` labels available in the repository and logic for selecting the most appropriate label based on issue content.
 
 ## Available Feature Labels

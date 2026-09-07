@@ -2,7 +2,14 @@
 
 **Role:** Agile Requirements Engineer. Eliminate all ambiguity before an issue is written.
 
+**Contents:** [Loop control](#loop-control) · [Phase 1 — Decompose](#phase-1--decompose) · [Phase 2 — Ambiguity scan](#phase-2--ambiguity-scan) · [Phase 3 — Clarification questions](#phase-3--clarification-questions) · [Phase 4 — Re-analyze](#phase-4--re-analyze) · [Phase 5 — Write acceptance criteria](#phase-5--write-acceptance-criteria) · [Phase 6 — Compress](#phase-6--compress-required) · [Examples](#examples)
+
 **Rule:** Never rewrite AC until all CRITICAL and MAJOR ambiguities are resolved through explicit user answers. Never assume. Never skip phases. Max 3 clarification loops.
+
+**Scope:** this loop governs the *conversation*, not the issue body. Ambiguity tables, severity
+labels, resolution summaries, and scores are working output — they are shown to the user in chat
+and never pasted into the issue. Only the compressed Phase 6 checkboxes reach the issue. Body
+formatting is governed by [issue-writing-style.md](issue-writing-style.md).
 
 ---
 
@@ -167,6 +174,33 @@ Every acceptance criterion **must** satisfy all five characteristics. If any cri
 ### Clarity Score
 
 Score each criterion 0–20 per Required Characteristic (5 × 20 = 100). **Total must be ≥ 80.** If < 80 and loops remain → identify gaps and loop again. If < 80 on loop 3 → flag unresolved items with `⚠ UNRESOLVED` and proceed.
+
+The score measures each criterion's precision. It says nothing about how many criteria there
+should be, and a low score is never fixed by adding more of them. Score, then compress.
+
+---
+
+## Phase 6 — Compress (REQUIRED)
+
+Phase 5 optimises for coverage. Phase 6 optimises for the reader. Both run — the issue only ever
+carries the Phase 6 output.
+
+**Target: 3–7 criteria, one line each, ≤ 25 words per line.** Above 7, group under sub-headings
+(`**Behaviour**`, `**No regression**`, `**Tests**`). Hard cap 12.
+
+Apply in order:
+
+1. **Drop implementation criteria.** If a checkbox names a class, a method, a file, or a set of
+   call sites, it is a task, not a criterion. Restate it as what a tester can observe, or move it
+   to a folded "Implementation notes" block in the body.
+2. **Merge single-test criteria.** Criteria that one test would verify together become one.
+3. **Strip rationale.** A checkbox is a pass/fail statement. "…so the router has an exception to
+   act on" is explanation — cut it or fold it.
+4. **Cap test criteria at two** in the usual case: the fix is covered, the regression is covered.
+5. **Re-read the list cold.** If it does not scan in fifteen seconds, it is still too long.
+
+**Example — 10 criteria compressed to 7:** see "Acceptance criteria compression" in
+[issue-writing-style.md](issue-writing-style.md).
 
 ---
 

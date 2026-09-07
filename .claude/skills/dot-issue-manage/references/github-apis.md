@@ -1,5 +1,7 @@
 # GitHub API Reference — dotcms-github-issues skill
 
+**Contents:** [A. Native issue type](#a-set-native-github-issue-type) · [B. Project item ID](#b-get-issues-project-item-id) · [C. Set single-select field](#c-set-a-single-select-project-field-status--technology--priority) · [D. Issue database ID](#d-get-issue-database-id) · [E. Add sub-issue](#e-add-sub-issue-child-under-parent) · [F. List sub-issues](#f-list-sub-issues-of-an-issue) · [G. Remove sub-issue](#g-remove-a-sub-issue) · [H. Full issue state query](#h-full-issue-state-query-query-mode)
+
 Exact `gh` commands for all operations. Replace placeholders in ALL_CAPS.
 
 ---
