@@ -83,14 +83,54 @@ describe('withAiEmbeddings', () => {
             expect(service.buildIndex).toHaveBeenCalledTimes(1);
         });
 
-        it('should keep the list usable when a build fails (FR-051)', () => {
-            const error = new HttpErrorResponse({ status: 500 });
+        it('should report a build failure inline, keeping the list usable (FR-051)', () => {
+            // Not through DotHttpErrorManagerService: it renders this as "Unknown Error" over a
+            // raw Java message and loses the index name.
+            const error = new HttpErrorResponse({
+                status: 500,
+                error: { error: 'Index -1 out of bounds for length 0' }
+            });
             service.buildIndex = jest.fn().mockReturnValue(throwError(() => error));
 
-            store.buildIndex({ indexName: 'blogs', query: 'q' });
+            store.buildIndex({ indexName: 'blogs', query: '+++[' });
 
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+            expect(store.indexBuildNotice()).toEqual({
+                kind: 'failed',
+                indexName: 'blogs',
+                detail: 'Index -1 out of bounds for length 0'
+            });
+            expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
             expect(store.indexesStatus()).not.toBe('ERROR');
+        });
+
+        it('should flag a build that matched nothing rather than looking successful', () => {
+            // The server answers 200 with totalToEmbed 0, and the empty index never comes back
+            // from indexCount — so silence here reads as "the build did nothing".
+            service.buildIndex = jest
+                .fn()
+                .mockReturnValue(
+                    of({ indexName: 'blogs', totalToEmbed: 0, timeToEmbeddings: '3ms' })
+                );
+
+            store.buildIndex({ indexName: 'blogs', query: '+contentType:NoSuchType' });
+
+            expect(store.indexBuildNotice()).toEqual({ kind: 'empty', indexName: 'blogs' });
+        });
+
+        it('should report how much was embedded on success', () => {
+            service.buildIndex = jest
+                .fn()
+                .mockReturnValue(
+                    of({ indexName: 'blogs', totalToEmbed: 6, timeToEmbeddings: '3ms' })
+                );
+
+            store.buildIndex({ indexName: 'blogs', query: '+contentType:Blog' });
+
+            expect(store.indexBuildNotice()).toEqual({
+                kind: 'built',
+                indexName: 'blogs',
+                detail: '6'
+            });
         });
     });
 

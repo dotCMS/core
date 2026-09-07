@@ -52,6 +52,17 @@ export function withAiEmbeddings() {
             const embeddingsService = inject(DotAiEmbeddingsService);
             const httpErrorManager = inject(DotHttpErrorManagerService);
 
+            /** The server's own words when it has any, so the reason is not thrown away. */
+            const extractReason = (error: HttpErrorResponse): string | undefined => {
+                const body = error?.error;
+
+                if (typeof body === 'string') {
+                    return body;
+                }
+
+                return body?.message ?? body?.error ?? error?.message;
+            };
+
             const fail = (error: HttpErrorResponse) => {
                 httpErrorManager.handle(error);
 
@@ -63,19 +74,61 @@ export function withAiEmbeddings() {
                     patchState(store, { indexFilter });
                 },
 
+                dismissBuildNotice(): void {
+                    patchState(store, { indexBuildNotice: null });
+                },
+
                 buildIndex: rxMethod<DotAiEmbeddingsBuildForm>(
                     pipe(
+                        tap(() => patchState(store, { indexBuildNotice: null })),
                         // exhaustMap: a double submit must not build twice.
                         exhaustMap((form) =>
                             embeddingsService.buildIndex(form).pipe(
                                 tap((result) => {
+                                    // A query that matches nothing still answers 200, and the
+                                    // empty index it makes never appears in indexCount — so
+                                    // saying nothing here reads as "the build did nothing".
+                                    if (!result.totalToEmbed) {
+                                        patchState(store, {
+                                            indexBuildNotice: {
+                                                kind: 'empty',
+                                                indexName: result.indexName
+                                            }
+                                        });
+
+                                        return;
+                                    }
+
+                                    patchState(store, {
+                                        indexBuildNotice: {
+                                            kind: 'built',
+                                            indexName: result.indexName,
+                                            detail: `${result.totalToEmbed}`
+                                        }
+                                    });
+
                                     // The response names the index authoritatively, so the
                                     // first poll does not have to infer BUILDING from a delta
                                     // that has not appeared yet.
                                     store.markIndexBuilding(result.indexName);
                                     store.loadIndexes();
                                 }),
-                                catchError(fail)
+                                // Inline rather than through DotHttpErrorManagerService: a build
+                                // failure is nearly always a malformed query, and the shared
+                                // handler renders it as "Unknown Error" over a raw Java message
+                                // with the index name lost. Same reasoning as the chat stream
+                                // (FR-014).
+                                catchError((error: HttpErrorResponse) => {
+                                    patchState(store, {
+                                        indexBuildNotice: {
+                                            kind: 'failed',
+                                            indexName: form.indexName,
+                                            detail: extractReason(error)
+                                        }
+                                    });
+
+                                    return EMPTY;
+                                })
                             )
                         )
                     )

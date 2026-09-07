@@ -24,6 +24,35 @@
         </ng-template>
     </p-toolbar>
 
+    @if (store.indexBuildNotice(); as notice) {
+        <!-- Build outcomes land here rather than in a modal: the dialog has already closed by
+             the time the answer arrives, and the shared error handler would render a malformed
+             query as "Unknown Error" with the index name lost. -->
+        <p-message
+            class="block shrink-0 px-4 pb-2"
+            [severity]="noticeSeverity(notice.kind)"
+            [closable]="true"
+            (onClose)="store.dismissBuildNotice()"
+            data-testid="dotai-embeddings-build-notice">
+            @switch (notice.kind) {
+                @case ('built') {
+                    {{
+                        'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName]
+                    }}
+                }
+                @case ('empty') {
+                    {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
+                }
+                @default {
+                    {{
+                        'dotai.embeddings.build.failed'
+                            | dm: [notice.indexName, notice.detail ?? '']
+                    }}
+                }
+            }
+        </p-message>
+    }
+
     <div class="min-h-0 flex-1 overflow-hidden">
         @if (store.indexesForbidden()) {
             <!-- indexCount requires CMS_ADMINISTRATOR_ROLE while portlet access does not, so

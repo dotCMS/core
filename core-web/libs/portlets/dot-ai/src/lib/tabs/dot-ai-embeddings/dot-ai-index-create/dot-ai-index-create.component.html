@@ -23,6 +23,12 @@
             (input)="$indexName.set($any($event.target).value)"
             [placeholder]="'dotai.index.create.name.placeholder' | dm"
             data-testid="dotai-index-create-name" />
+
+        @if ($nameError(); as error) {
+            <small class="text-sm text-red-500" data-testid="dotai-index-create-name-error">
+                {{ error | dm }}
+            </small>
+        }
     </div>
 
     <div class="field">

@@ -4,6 +4,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
+import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -16,6 +17,7 @@ import { DotMessagePipe, DotSearchInputComponent } from '@dotcms/ui';
 
 import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-create.component';
 
+import { DotAiIndexBuildNotice } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { estimateIndexCost } from '../../utils/dot-ai-index.utils';
 
@@ -33,6 +35,7 @@ import { estimateIndexCost } from '../../utils/dot-ai-index.utils';
     selector: 'dot-ai-embeddings',
     imports: [
         ToolbarModule,
+        MessageModule,
         TableModule,
         TagModule,
         ButtonModule,
@@ -59,6 +62,15 @@ export default class DotAiEmbeddingsComponent {
         table: { style: 'table-layout: fixed' },
         wrapper: { style: 'height: 100%' }
     };
+
+    /** p-message severities for the three build outcomes. */
+    protected noticeSeverity(kind: DotAiIndexBuildNotice['kind']): 'success' | 'warn' | 'error' {
+        if (kind === 'built') {
+            return 'success';
+        }
+
+        return kind === 'empty' ? 'warn' : 'error';
+    }
 
     protected openCreateDialog(): void {
         this.#dialogService

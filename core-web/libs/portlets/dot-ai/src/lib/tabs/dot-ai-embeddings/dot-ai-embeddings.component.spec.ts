@@ -35,6 +35,8 @@ describe('DotAiEmbeddingsComponent', () => {
         isConfigured: jest.fn().mockReturnValue(true),
         setIndexFilter: jest.fn(),
         buildIndex: jest.fn(),
+        indexBuildNotice: jest.fn().mockReturnValue(null),
+        dismissBuildNotice: jest.fn(),
         deleteFromIndex: jest.fn(),
         deleteIndex: jest.fn(),
         rebuildEmbeddingsDb: jest.fn()

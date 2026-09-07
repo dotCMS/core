@@ -11,6 +11,13 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 export type DotAiIndexCreateMode = 'add' | 'delete';
 
+/**
+ * The server stores whatever it is given — `bad name with spaces` is accepted verbatim, and
+ * `Blog` and `blog` become two separate indexes. Neither is useful, so the name is constrained
+ * here rather than left to produce an index nobody can find again.
+ */
+const INDEX_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
 export interface DotAiIndexCreateResult {
     mode: DotAiIndexCreateMode;
     indexName: string;
@@ -61,8 +68,28 @@ export class DotAiIndexCreateComponent {
             : 'dotai.index.create.submit.add'
     );
 
+    /** Empty until the field has been touched, so the form does not scold you on open. */
+    protected readonly $nameError = computed<string | null>(() => {
+        const name = this.$indexName().trim();
+
+        if (!name) {
+            return null;
+        }
+
+        if (!INDEX_NAME_PATTERN.test(name)) {
+            return 'dotai.index.create.name.invalid';
+        }
+
+        // Only for a build: deleting names an index that must already exist.
+        if (this.$mode() === 'add' && this.existingIndexes.includes(name)) {
+            return 'dotai.index.create.name.exists';
+        }
+
+        return null;
+    });
+
     protected readonly $canSubmit = computed(
-        () => !!this.$indexName().trim() && !!this.$query().trim()
+        () => !!this.$indexName().trim() && !!this.$query().trim() && !this.$nameError()
     );
 
     protected submit(): void {

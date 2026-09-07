@@ -38,6 +38,20 @@ export const DOT_AI_TABS = [
 export type DotAiTab = (typeof DOT_AI_TABS)[number];
 export type DotAiTabId = DotAiTab['id'];
 
+/**
+ * The outcome of the last index build, surfaced in the tab.
+ *
+ * `empty` is its own case on purpose: the server answers 200 with `totalToEmbed: 0` when the
+ * query matches nothing, and an index with no rows does not come back from `indexCount` at
+ * all — so without this the build looks like it silently did nothing.
+ */
+export interface DotAiIndexBuildNotice {
+    kind: 'built' | 'empty' | 'failed';
+    indexName: string;
+    /** Rows embedded, for `built`; the server's reason, for `failed`. */
+    detail?: string;
+}
+
 /* ------------------------------------------------------------------------------------------- */
 
 /**
@@ -109,6 +123,7 @@ export interface DotAiPortletState {
 
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
+    indexBuildNotice: DotAiIndexBuildNotice | null;
 
     // image
     image: DotAiGeneratedImage | null;
@@ -153,6 +168,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     chatStreaming: false,
 
     indexFilter: '',
+    indexBuildNotice: null,
 
     image: null,
     imageGenerating: false,
