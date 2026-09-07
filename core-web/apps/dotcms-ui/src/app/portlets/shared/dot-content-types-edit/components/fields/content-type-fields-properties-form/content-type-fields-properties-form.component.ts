@@ -12,7 +12,8 @@ import {
     inject,
     input,
     output,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
@@ -33,6 +34,7 @@ import { FieldPropertyService } from '../service';
     selector: 'dot-content-type-fields-properties-form',
     templateUrl: './content-type-fields-properties-form.component.html',
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'block'
     }
@@ -89,7 +91,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Angular lifecycle hook called when input properties change
      *
-     * @param {SimpleChanges} changes - Object containing changed properties
+     * @param changes - Object containing changed properties
      */
     ngOnChanges(changes: SimpleChanges): void {
         if (
@@ -109,10 +111,15 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * Angular lifecycle hook called after component initialization
      */
     ngOnInit(): void {
-        // TODO: Migrate to Signal Forms
         this.formFieldData = this.$formFieldData();
         if (this.formFieldData) {
-            this.init();
+            // ngOnChanges runs before ngOnInit when formFieldData is provided up-front,
+            // so the form may already be initialized. Re-running init() here would create
+            // a second FormGroup, leaving the rendered inputs bound to the old one while
+            // change detection tracks the new one (Save never enables). Only init if needed.
+            if (!this.form) {
+                this.init();
+            }
         } else {
             this.initFormGroup();
         }
@@ -145,10 +152,11 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * Transform form value before saving
      * Handles special case for custom fields with new render mode variable
      *
-     * @param {any} value - The form value to transform
-     * @returns {any} The transformed form value
+     * @param value - The form value to transform
      */
-    transformFormValue(value) {
+    transformFormValue(
+        value: Partial<DotCMSContentTypeField> & { newRenderMode?: string }
+    ): DotCMSContentTypeField {
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
             const existingVariables = this.formFieldData.fieldVariables || [];
             const otherVariables = existingVariables.filter(
@@ -171,9 +179,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                     }
                 ]
             };
-            return newFormValue;
+            return newFormValue as DotCMSContentTypeField;
         }
-        return value;
+        return value as DotCMSContentTypeField;
     }
 
     /**
@@ -201,7 +209,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Initialize the reactive form group with field properties
      *
-     * @param {string[]} [properties] - Optional array of property names to include in the form
+     * @param [properties] - Optional array of property names to include in the form
      */
     private initFormGroup(properties?: string[]): void {
         const formFields = {};
@@ -253,7 +261,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Check if the form value has been updated from the original value
      *
-     * @returns {boolean} True if the form value differs from the original value
+     * @returns True if the form value differs from the original value
      */
     private isFormValueUpdated(): boolean {
         return !isEqual(this.form.value, this.originalValue);
@@ -262,8 +270,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Check if a property should be disabled in edit mode
      *
-     * @param {string} property - The property name to check
-     * @returns {boolean} True if the property should be disabled
+     * @param property - The property name to check
+     * @returns True if the property should be disabled
      */
     private isPropertyDisabled(property: string): boolean {
         return this.fieldPropertyService.isDisabledInEditMode(property);
@@ -272,7 +280,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Sort and filter properties based on component availability and feature flags
      *
-     * @param {string[]} properties - Array of property names to sort
+     * @param properties - Array of property names to sort
      */
     private sortProperties(properties: string[]): void {
         this.fieldProperties = properties
@@ -304,7 +312,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Handle checkbox value changes and set up value change subscriptions
      *
-     * @param {AbstractControl} checkbox - The checkbox form control to handle
+     * @param checkbox - The checkbox form control to handle
      */
     private handleCheckValues(checkbox: AbstractControl): void {
         if (checkbox.value) {
@@ -325,7 +333,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Set the indexed checkbox value and handle its disabled state
      *
-     * @param {boolean} propertyValue - The value to set for the indexed property
+     * @param propertyValue - The value to set for the indexed property
      */
     private setIndexedValueChecked(propertyValue: boolean): void {
         if (this.form.get('indexed') && propertyValue) {
@@ -339,7 +347,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * Handle unique checkbox value changes
      * Sets indexed and required values, and manages their disabled states
      *
-     * @param {boolean} propertyValue - The value of the unique checkbox
+     * @param propertyValue - The value of the unique checkbox
      */
     private handleUniqueValuesChecked(propertyValue: boolean): void {
         this.setIndexedValueChecked(propertyValue);
@@ -355,7 +363,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Enable or disable the indexed form control
      *
-     * @param {boolean} disable - True to disable, false to enable
+     * @param disable - True to disable, false to enable
      */
     private handleDisabledIndexed(disable: boolean): void {
         if (this.form.get('indexed')) {
@@ -366,7 +374,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /**
      * Enable or disable the required form control
      *
-     * @param {boolean} disable - True to disable, false to enable
+     * @param disable - True to disable, false to enable
      */
     private handleDisabledRequired(disable: boolean): void {
         if (this.form.get('required')) {

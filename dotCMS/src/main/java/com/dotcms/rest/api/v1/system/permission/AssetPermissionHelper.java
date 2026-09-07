@@ -182,6 +182,9 @@ public class AssetPermissionHelper {
         final boolean canEdit = permissionAPI.doesUserHavePermission(
             asset, PermissionAPI.PERMISSION_WRITE, requestingUser, false);
 
+        final boolean canAddChildren = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, requestingUser, false);
+
         final boolean isInheriting = permissionAPI.isInheritingPermissions(asset);
 
         String parentAssetId = null;
@@ -201,6 +204,7 @@ public class AssetPermissionHelper {
             .isParentPermissionable(asset.isParentPermissionable())
             .canEditPermissions(canEditPermissions)
             .canEdit(canEdit)
+            .canAddChildren(canAddChildren)
             .parentAssetId(parentAssetId)
             .build();
     }
@@ -633,6 +637,7 @@ public class AssetPermissionHelper {
             .isParentPermissionable(metadata.isParentPermissionable())
             .canEditPermissions(metadata.canEditPermissions())
             .canEdit(metadata.canEdit())
+            .canAddChildren(metadata.canAddChildren())
             .parentAssetId(metadata.parentAssetId())
             .permissions(rolePermissions)
             .build();

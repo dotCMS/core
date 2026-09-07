@@ -2,6 +2,7 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -100,7 +101,30 @@ public class DropOldContentVersionsJob implements StatefulJob {
                             "have been found", language, language.getId()));
                     break;
                 }
-                oldContentlets.forEach(oldContentlet -> this.deleteOldVersionsFromContentlet(oldContentlet, language));
+                int deletedThisIteration = 0;
+                for (final String oldContentlet : oldContentlets) {
+                    try {
+                        deletedThisIteration +=
+                                this.deleteOldVersionsFromContentlet(oldContentlet, language);
+                    } finally {
+                        // Close per contentlet rather than per batch — a single batch
+                        // can produce thousands of version deletions on tenants with
+                        // heavy file-asset histories (the EFS bloat case this job
+                        // targets), and we don't want all of that accumulating in one
+                        // Hibernate session.
+                        HibernateUtil.closeSessionSilently();
+                    }
+                }
+                // Safety break: the query keeps returning the same identifiers until at
+                // least one of their excess versions is deleted. If a full batch made no
+                // progress, stop to avoid spinning the Quartz worker indefinitely.
+                if (deletedThisIteration == 0) {
+                    Logger.warn(this, String.format("No versions deleted for any of %d " +
+                                    "Contentlets in language '%s' [ %s ]; stopping to avoid an " +
+                                    "infinite loop. Investigate manually.",
+                            oldContentlets.size(), language, language.getId()));
+                    break;
+                }
             }
         }
         Logger.info(this.getClass(), "DropOldContentVersionsJob has finished!");
@@ -137,26 +161,33 @@ public class DropOldContentVersionsJob implements StatefulJob {
      * @param contentletId The ID of the Contentlet whose additional versions may be deleted.
      * @param language     The {@link Language} of the Contentlet versions that may be deleted.
      */
-    private void deleteOldVersionsFromContentlet(final String contentletId,
-                                                 final Language language) {
+    private int deleteOldVersionsFromContentlet(final String contentletId,
+                                                final Language language) {
+
         final List<String> contentVersions = helper.findContentVersionsGreaterThan(contentletId,
                 language.getId(), GREATER_THAN.get());
+
         Logger.info(this, String.format("-> Found %d old versions of Contentlet with ID '%s' in " +
                 "language '%s' [ %s ]. Deleting them...", contentVersions.size(), contentletId,
                 language, language.getId()));
-        contentVersions.forEach(inode -> {
-
+        int deleted = 0;
+        for (final String inode : contentVersions) {
             try {
-                final boolean deleted = helper.deleteContentVersion(inode);
-                Logger.debug(this, String.format("---> Contentlet Inode '%s' in language '%s' %s " +
-                        "deleted", inode, language, deleted ? "was" : "was NOT"));
+                if (helper.deleteContentVersion(inode)) {
+                    deleted++;
+                    Logger.debug(this, String.format("---> Contentlet Inode '%s' in language " +
+                            "'%s' was deleted", inode, language));
+                } else {
+                    Logger.debug(this, String.format("---> Contentlet Inode '%s' in language " +
+                            "'%s' was NOT deleted", inode, language));
+                }
             } catch (final Exception e) {
                 Logger.warnAndDebug(this.getClass(), String.format("An error occurred when " +
                                 "deleting Contentlet with Inode '%s' in language %s: %s", inode,
                         language.getId(), ExceptionUtil.getErrorMessage(e)), e);
             }
-
-        });
+        }
+        return deleted;
     }
 
     /**

@@ -328,6 +328,25 @@ describe('DotRouterService', () => {
         expect(service.getPortletId('#/c/edit-page?url=test')).toBe('site-browser');
     });
 
+    it('should resolve velocity-playground URL slug to its backend portlet ID', () => {
+        expect(service.getPortletId('/velocity-playground')).toBe('velocity_playground');
+        expect(service.getPortletId('/c/velocity-playground')).toBe('velocity_playground');
+        expect(service.getPortletId('#/velocity-playground?test=value')).toBe(
+            'velocity_playground'
+        );
+    });
+
+    it('should resolve the Angular Users (Beta) URL to the users-beta portlet ID', () => {
+        expect(service.getPortletId('/users-beta')).toBe('users-beta');
+        expect(service.getPortletId('#/users-beta?test=value')).toBe('users-beta');
+    });
+
+    it('should resolve the legacy /c/users URL to the users portlet ID', () => {
+        expect(service.getPortletId('/c/users')).toBe('users');
+        expect(service.getPortletId('#/c/users?test=value')).toBe('users');
+        expect(service.getPortletId('/c/users/123')).toBe('users');
+    });
+
     it('should navigate replacing URL params', () => {
         const params = { id: 'content' };
         service.replaceQueryParams(params);

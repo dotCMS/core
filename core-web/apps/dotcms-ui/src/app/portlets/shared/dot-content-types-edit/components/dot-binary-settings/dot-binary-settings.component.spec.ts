@@ -4,7 +4,7 @@ import {
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';

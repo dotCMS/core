@@ -153,7 +153,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -167,7 +167,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: true,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -217,7 +217,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: window.location.origin,
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -231,7 +231,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: window.location.origin,
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: ''
             });
         });
@@ -252,12 +252,12 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: window.location.origin,
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: ''
             });
         });
 
-        it('should handle debug and autoPageView with non-true values', () => {
+        it('should disable autoPageView when attribute is "false" and keep debug false for non-true', () => {
             const script = document.querySelector('script[data-analytics-auth]');
             script?.setAttribute('data-analytics-debug', 'false');
             script?.setAttribute('data-analytics-auto-page-view', 'false');
@@ -269,6 +269,97 @@ describe('Analytics Utils', () => {
                 debug: false,
                 autoPageView: false,
                 siteAuth: 'test-key'
+            });
+        });
+
+        describe('autoPageView opt-out semantics', () => {
+            it('should default autoPageView to true when the attribute is missing', () => {
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should enable autoPageView when the attribute is an empty string', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', '');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should disable autoPageView only when the attribute is the literal string "false"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'false');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(false);
+            });
+
+            it('should enable autoPageView when the attribute is "true"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'true');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should enable autoPageView when the attribute is "0"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', '0');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should enable autoPageView when the attribute is "no"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'no');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should respect autoPageView false from JSON config when no attribute is present', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute(
+                    'data-analytics-config',
+                    JSON.stringify({ autoPageView: false })
+                );
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(false);
+            });
+
+            it('should let attribute "false" override JSON config autoPageView true', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'false');
+                script?.setAttribute(
+                    'data-analytics-config',
+                    JSON.stringify({ autoPageView: true })
+                );
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(false);
+            });
+
+            it('should let attribute presence (empty string) override JSON config autoPageView false', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', '');
+                script?.setAttribute(
+                    'data-analytics-config',
+                    JSON.stringify({ autoPageView: false })
+                );
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
             });
         });
 
@@ -286,7 +377,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     eventBatchSize: 5
@@ -308,7 +399,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     flushInterval: 2000
@@ -333,7 +424,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     eventBatchSize: 3,
@@ -357,7 +448,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -376,7 +467,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -398,7 +489,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     eventBatchSize: 10

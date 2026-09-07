@@ -1,0 +1,3922 @@
+{
+  "contentlets": [
+    {
+      "title": "Migrating Your OSGi Plugins to dotEvergreen: Adapting to the New Index API",
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "dotCMS is continuously evolving to stay secure, modern, and maintainable. One of the most significant recent changes involves our migration away from Elasticsearch toward "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "OpenSearch 3.0"
+              },
+              {
+                "type": "text",
+                "text": " as our index provider. This transition required deep refactoring inside our core, and if you maintain custom OSGi plugins that interact with the indexing layer, this post is for you."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Why Is This Happening?"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Elasticsearch Has Reached End of Life"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Elasticsearch 7.x — the version dotCMS historically shipped with — reached "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "full end of life on January 15, 2026"
+              },
+              {
+                "type": "text",
+                "text": ". With EOL comes a halt in security patches, leaving any system running it exposed to known vulnerabilities. Indeed, Elasticsearch 7.x carries multiple documented CVEs, including authentication bypass issues (Field-Level Security), memory disclosure bugs in the 7.10–7.13 range, and denial-of-service vulnerabilities via the Grok parser."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Beyond security, Elastic changed its licensing model in 2021, moving away from the open Apache 2.0 license to the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Server Side Public License (SSPL)"
+              },
+              {
+                "type": "text",
+                "text": " and its own proprietary Elastic License, neither of which are OSI-approved open-source licenses. This has long-term implications for any platform that bundles Elasticsearch as a core dependency."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "The Move to OpenSearch 3.0"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "OpenSearch, the community-driven fork of Elasticsearch maintained under the Apache 2.0 license, released "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "OpenSearch 3.0 in December 2025"
+              },
+              {
+                "type": "text",
+                "text": ". It brings major performance improvements (up to "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://opensearch.org/announcements/opensearch-3-0-enhances-vector-database-performance/",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null,
+                      "aria-label": null
+                    }
+                  },
+                  {
+                    "type": "underline"
+                  }
+                ],
+                "text": "9.5× over earlier versions"
+              },
+              {
+                "type": "text",
+                "text": "), modern ingestion capabilities, and gRPC support — making it the right foundation for dotCMS going forward. "
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This comes at the perfect time; we are currently in the process of deprecating our dependency on Java 11 in favor of Java 25. This modernization can be seen as a direct continuation of that one, which we "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://www.dotcms.com/blog/2026-engineering-update-roadmap-java-25-and-infrastructure-modernization",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null,
+                      "aria-label": null
+                    }
+                  }
+                ],
+                "text": "discussed at length in a December blog post"
+              },
+              {
+                "type": "text",
+                "text": ". "
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Paying Technical Debt While Modernizing"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The migration to OpenSearch 3.0 is also an opportunity to pay down years of technical debt. Our core was tightly coupled to Elasticsearch-specific types — types that don't exist in OpenSearch or any other index provider. To support OpenSearch 3.0 (and potentially other providers in parallel), we introduced a "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "provider-neutral domain layer"
+              },
+              {
+                "type": "text",
+                "text": " for all indexing abstractions."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This is a compile-time change. If your plugin references the old Elasticsearch-specific classes directly, it will "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "fail to load at runtime"
+              },
+              {
+                "type": "text",
+                "text": " against dotEvergreen."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Is Your Plugin Affected?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Your plugin is affected if it imports any classes from the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "org.elasticsearch.*"
+              },
+              {
+                "type": "text",
+                "text": " namespace or return types deprecated dotCMS APIs tied to Elasticsearch, such as that of "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "APILocator.getESIndexAPI()"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The first sign you will see — if you deploy an unmodified plugin — is a runtime crash like this:"
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Caused by: java.lang.NoSuchMethodError:\n  'com.dotcms.content.elasticsearch.business.ESIndexAPI\n   com.dotmarketing.business.APILocator.getESIndexAPI()'"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This error means the method signature no longer exists; the class "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "ESIndexAPI"
+              },
+              {
+                "type": "text",
+                "text": " has been removed. "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "This change was introduced starting with dotCMS version 26.03.06-02."
+              },
+              {
+                "type": "text",
+                "text": " We recommend always building against the latest available release."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The fix requires recompiling your plugin against the new dotCMS core API. Here is how to do that."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Step 1: Configure Your Maven Project"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "dotCMS core is built with Maven, and our artifacts are published to our Artifactory repository. While you can use other build tools, "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Maven is strongly recommended"
+              },
+              {
+                "type": "text",
+                "text": " for OSGi plugin development as it integrates cleanly with the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "maven-bundle-plugin"
+              },
+              {
+                "type": "text",
+                "text": " (Apache Felix) that generates the OSGi bundle manifest."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Minimum pom.xml skeleton"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Below is a clean, ready-to-use skeleton for a dotCMS OSGi plugin project. Replace the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "groupId"
+              },
+              {
+                "type": "text",
+                "text": ", "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "artifactId"
+              },
+              {
+                "type": "text",
+                "text": ", and bundle metadata with your own values."
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0\n                             http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n    <modelVersion>4.0.0</modelVersion>\n\n    <!-- ===== Project coordinates — adjust to your plugin ===== -->\n    <groupId>com.example.dotcms.plugin</groupId>\n    <artifactId>my-OSGi-plugin</artifactId>\n    <version>1.0.0-SNAPSHOT</version>\n    <packaging>bundle</packaging>\n\n    <properties>\n        <bundle.version>1.0.0</bundle.version>\n        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n        <maven.compiler.source>11</maven.compiler.source>\n        <maven.compiler.target>11</maven.compiler.target>\n\n        <!-- Always target the latest dotCMS release -->\n        <dotcms-core.version>26.03.20-01</dotcms-core.version>\n    </properties>\n\n    <!-- ===== dotCMS Artifactory repository ===== -->\n    <repositories>\n        <repository>\n            <id>dotcms-repo</id>\n            <url>https://artifactory.dotcms.cloud/artifactory/libs-release</url>\n        </repository>\n    </repositories>\n\n    <dependencies>\n        <!-- dotCMS core — provided at runtime by the container, compile-only -->\n        <dependency>\n            <groupId>com.dotcms</groupId>\n            <artifactId>dotcms-core</artifactId>\n            <version>&#36;{dotcms-core.version}</version>\n            <scope>provided</scope>\n        </dependency>\n\n        <!--\n          Add your own compile/runtime dependencies here.\n          Use scope=compile for libs that must be embedded in the bundle.\n        -->\n    </dependencies>\n\n    <build>\n        <plugins>\n            <!-- OSGi bundle packaging via Apache Felix -->\n            <plugin>\n                <groupId>org.apache.felix</groupId>\n                <artifactId>maven-bundle-plugin</artifactId>\n                <version>5.1.9</version>\n                <extensions>true</extensions>\n                <configuration>\n                    <instructions>\n                        <Bundle-Vendor>Your Company Name</Bundle-Vendor>\n                        <Bundle-Name>My OSGi Plugin</Bundle-Name>\n                        <Bundle-Version>&#36;{bundle.version}</Bundle-Version>\n                        <Bundle-Description>Short description of what this plugin does</Bundle-Description>\n                        <Bundle-Activator>com.example.dotcms.plugin.Activator</Bundle-Activator>\n                        <Export-Package>com.example.dotcms.plugin</Export-Package>\n                        <Import-Package>*;resolution:=optional</Import-Package>\n                        <!-- Embed all compile-scoped dependencies into the bundle JAR -->\n                        <Embed-Dependency>*;scope=compile|runtime;inline=true</Embed-Dependency>\n                        <Embed-Transitive>true</Embed-Transitive>\n                    </instructions>\n                </configuration>\n            </plugin>\n        </plugins>\n    </build>\n</project>\n"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 40,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Note:"
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "dotcms-core"
+              },
+              {
+                "type": "text",
+                "text": " must be declared with "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "<scope>provided</scope>"
+              },
+              {
+                "type": "text",
+                "text": ". It is available in the dotCMS runtime environment and must "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "not"
+              },
+              {
+                "type": "text",
+                "text": " be embedded inside your bundle JAR."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Build your plugin"
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "mvn clean package"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Step 2: Expect and Fix Compilation Errors"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Once you update your "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "dotcms-core.version"
+              },
+              {
+                "type": "text",
+                "text": " to the latest release and run "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "mvn compile"
+              },
+              {
+                "type": "text",
+                "text": ", you will likely see errors like these:"
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "[ERROR] COMPILATION ERROR :\n[ERROR] .../Indexer.java:[102,49]\n    incompatible types:\n    com.dotcms.content.index.IndexAPI\n    cannot be converted to\n    com.dotcms.content.elasticsearch.business.ESIndexAPI\n\n[ERROR] .../Indexer.java:[377,66]\n    incompatible types:\n    com.dotcms.content.index.domain.CreateIndexStatus\n    cannot be converted to\n    org.elasticsearch.client.indices.CreateIndexResponse"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "These are "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "your migration checklist"
+              },
+              {
+                "type": "text",
+                "text": ". Each compilation error pinpoints exactly where an Elasticsearch-specific type needs to be replaced with its dotCMS domain equivalent. This is by design; the compiler is your guide."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Step 3: Update Your Imports and Types"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "The New Namespace"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "All provider-neutral indexing abstractions now live under:"
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "com.dotcms.content.index.domain"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The class names were intentionally kept as close as possible to the originals, so mapping old types to new ones is straightforward. Here are the most common substitutions:"
+              }
+            ]
+          },
+          {
+            "type": "table",
+            "content": [
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": "center"
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Before (Elasticsearch-specific)"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": "center"
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "After (dotCMS domain-neutral)"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "org.elasticsearch.client.indices.CreateIndexResponse"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "com.dotcms.content.index.domain.CreateIndexStatus"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "com.dotcms.content.elasticsearch.business.ESIndexAPI"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "com.dotcms.content.index.IndexAPI"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Example: Updating an Index Operation"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 4
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Before:"
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "import org.elasticsearch.client.indices.CreateIndexResponse;\nimport com.dotcms.content.elasticsearch.business.ESIndexAPI;\n\n// ...\n\nESIndexAPI indexAPI = APILocator.getESIndexAPI();\nCreateIndexResponse response = indexAPI.createIndex(indexName, settings);\n\nif (response.isAcknowledged()) {\n    // index was created\n}"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 4
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "After:"
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "import com.dotcms.content.index.domain.CreateIndexStatus;\nimport com.dotcms.content.index.IndexAPI;\n\n// ...\n\nIndexAPI indexAPI = APILocator.getESIndexAPI();\nCreateIndexStatus status = indexAPI.createIndex(indexName, settings);\n\nif (status.isAcknowledged()) {\n    // index was created\n}"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The method semantics remain the same; only the types change."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Step 4: Test Against dotEvergreen"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "After resolving all compilation errors, deploy your rebuilt bundle to a dotEvergreen instance and verify:"
+              }
+            ]
+          },
+          {
+            "type": "orderedList",
+            "attrs": {
+              "start": 1,
+              "type": null
+            },
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "The plugin activates without errors in the OSGi console."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "All indexing-related functionality behaves as expected."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "No "
+                      },
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "NoSuchMethodError"
+                      },
+                      {
+                        "type": "text",
+                        "text": " or "
+                      },
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ClassNotFoundException"
+                      },
+                      {
+                        "type": "text",
+                        "text": " appears in the logs."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A Note From the dotCMS Team"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "We want to be transparent: "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "This is a breaking change"
+              },
+              {
+                "type": "text",
+                "text": " that we are introducing, and we understand it creates work on your end. We don't take that lightly."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This refactoring is part of a necessary and long-overdue effort to modernize dotCMS's core, remove dependencies on end-of-life software, and build a more secure and sustainable platform for everyone. We know that \"necessary\" doesn't make it painless, and we genuinely appreciate your patience and understanding as we work through this transition together."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "We are committed to making the migration path as clear as possible — and we are here to help every step of the way."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "What Has Already Changed"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The following classes have had their method signatures updated as of 26.03.06-02:"
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "com.dotcms.content.elasticsearch.business.ESMappingAPIImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "com.dotmarketing.portlets.contentlet.business.ContentletFactory"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "com.dotcms.content.elasticsearch.business.ContentletIndexAPI"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "What's Coming Next"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The refactoring is ongoing. The following classes are expected to have signature changes in upcoming releases; we recommend keeping an eye on the release notes if your plugin interacts with any of them:"
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ESIndexAPI"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ESContentFactoryImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ESMappingAPIImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ContentletIndexAPIImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ReindexThread"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "PermissionBitFactoryImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ESSearchAPIImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ESSiteSearchAPI"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ESContentletAPIImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ContentTypeAPIImpl"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ClusterUtil"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "code"
+                          }
+                        ],
+                        "text": "ESContentletScrollImpl"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This list will be updated as changes are confirmed. When in doubt, compile early and compile often against the latest dotCMS release; the compiler will tell you exactly what needs attention."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Summary"
+              }
+            ]
+          },
+          {
+            "type": "table",
+            "content": [
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": "center"
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "What changed"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": "center"
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Where"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": "center"
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Since version"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "ESIndexAPI"
+                          },
+                          {
+                            "type": "text",
+                            "text": " removed"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "com.dotcms.content.elasticsearch.business"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "26.03.06-02"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "New "
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "IndexAPI"
+                          },
+                          {
+                            "type": "text",
+                            "text": " introduced"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "com.dotcms.content.index"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "26.03.06-02"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "New domain objects"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code"
+                              }
+                            ],
+                            "text": "com.dotcms.content.index.domain"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "26.03.06-02"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The bottom line: Update your "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "dotcms-core"
+              },
+              {
+                "type": "text",
+                "text": " dependency version, compile, follow the compiler errors, replace each Elasticsearch-specific type with its "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "com.dotcms.content.index.domain"
+              },
+              {
+                "type": "text",
+                "text": " equivalent, and you are done."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "If you run into issues or have questions about specific API mappings, reach out to dotCMS Support — we're here to help."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            }
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "dotCMS Engineering Team"
+              }
+            ]
+          }
+        ],
+        "attrs": {
+          "charCount": 11449,
+          "wordCount": 1226,
+          "readingTime": 5
+        }
+      }
+    },
+    {
+      "title": "How Enterprise Teams Scale Multi-Site CMS Architectures Without Chaos",
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "When you’re building and managing thousands of websites for a distributed network of partners, the key challenge isn’t just scale, it’s control. How do you give each site its own digital identity while keeping the experience cohesive and manageable?"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "In this post, "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://solvisse.com/",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null,
+                      "aria-label": null
+                    }
+                  },
+                  {
+                    "type": "underline"
+                  }
+                ],
+                "text": "Solvisse"
+              },
+              {
+                "type": "text",
+                "text": " unpacks how they engineered a multi-site architecture on top of dotCMS to "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://www.dotcms.com/blog/transforming-over-3000-websites-with-solvisse-and-dotcms",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null,
+                      "aria-label": null
+                    }
+                  }
+                ],
+                "text": "support thousands of partner websites"
+              },
+              {
+                "type": "text",
+                "text": ", without drowning in complexity."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Why Solvisse Chose dotCMS for the Core"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "dotCMS offered the hybrid flexibility Solvisse needed: structured content models, headless APIs, and multitenancy support via “hosts.” This was critical. We didn’t just want to clone sites—we wanted a single source of truth with modularity and reusability baked in."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "At the heart of our implementation sits a centralized dotCMS instance powering every site. But to make it work at this volume, we had to design a layered system that logically separates responsibilities while encouraging shared components."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Hosts: The Building Blocks of Multitenancy"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "In dotCMS, each Host represents a logically distinct website. Think of it as a semi-isolated tenant within the main instance. Each partner website is mapped to its own host, allowing content, templates, and metadata to be scoped appropriately."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Types of Hosts in Our System:"
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Partner Sites:"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Individually branded, editable by the partner via "
+                      },
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "link",
+                            "attrs": {
+                              "href": "https://www.dotcms.com/blog/transforming-over-3000-websites-with-solvisse-and-dotcms",
+                              "target": "_blank",
+                              "rel": "noopener noreferrer nofollow",
+                              "class": null,
+                              "title": null,
+                              "aria-label": null
+                            }
+                          },
+                          {
+                            "type": "underline"
+                          }
+                        ],
+                        "text": "PartnerCMS"
+                      },
+                      {
+                        "type": "text",
+                        "text": "."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Core Host: "
+                      },
+                      {
+                        "type": "text",
+                        "text": "Contains shared templates, containers, reusable content, shared pages, and global header/footer logic."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Shared Host:"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Houses custom content shared across partner groups (e.g., editorial content, localized banners)."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Seed Sites: "
+                      },
+                      {
+                        "type": "text",
+                        "text": "Template sites used to bootstrap new hosts with brand-specific default content and structure."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Content Engineering: Structured for Reuse, Built for Flexibility"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Each host follows a consistent structure and relies on contentlets, containers, and templates to define and display content. Here’s how Solvisse made that scalable:"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Content Types & Contentlets"
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Strict content types were defined to model each component (e.g., banners, tiles, videos, search widgets)."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "These types allow both marketing and partners to reuse logic and avoid duplication."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Contentlets are the individual instances of these types, scoped either locally or shared across hosts."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Templates & Containers"
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Templates define page layout; containers identify and manage content zones (e.g., carousels, sidebars, CTAs)."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Containers are centrally maintained in the Core host and referenced across all other hosts."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Each maps to a .vtl file that governs how the content is rendered and injected dynamically."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "This model minimizes design drift and simplifies global design updates."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "First-Level Contents"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A key architectural decision was the introduction of First-Level Content—a foundational layer of contentlets created on every site. These contentlets are designed to be persistent and non-deletable, forming the structural entry points for each page. Their primary function is to reference Second-Level Content, which can be either shared or localized—such as images, videos, and banners."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "By anchoring each page to a predictable set of First-Level Content, we ensure consistent layout and query behavior across the ecosystem. For instance, a BannerCarousel contentlet holds configuration data like autoplay behavior and display titles while referencing a set of images that define the actual banner visuals. This layered approach enforces structure while allowing partners to swap out content within predefined safe zones."
+              }
+            ]
+          },
+          {
+            "type": "dotImage",
+            "attrs": {
+              "textAlign": null,
+              "src": "/dA/test-placeholder/1.png",
+              "alt": null,
+              "title": null,
+              "href": null,
+              "data": {},
+              "target": null,
+              "textWrap": null
+            }
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Shared vs. Local Content"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Each site blends shared content from the Core host with local, partner-specific content. dotCMS’s cross-host referencing capabilities allow this to happen seamlessly, enabling reuse and scalability."
+              }
+            ]
+          },
+          {
+            "type": "table",
+            "content": [
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "heading",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": "center",
+                          "level": 4
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Shared Content"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "heading",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": "center",
+                          "level": 4
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Local Content"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Banners, Header/Footer"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "About Us, Contact Info, Metadata"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Tiles, Search Widget"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Custom Video Spotlight, Blog Posts"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Global Navigation (Mega Menu)"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "indent": 0,
+                          "textAlign": null
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Custom Articles via PartnerCMS"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Shared Pages and Virtual Presentation"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Instead of duplicating static pages across thousands of sites, we implemented a virtual path strategy to balance scalability with editorial control. Pages under the /vacation path represent centrally authored, globally syndicated content. Pages under /editorial are created by partners but rendered as if they exist under their own subdomains."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "To make this possible, we built a set of custom interceptors via an OSGi plugin for dotCMS. These interceptors hook into the request pipeline and analyze the HTTP path and host header. For requests to /vacation or /editorial, the plugin identifies the content source, fetches the corresponding object (regardless of its physical host), and renders it dynamically in the context of the requesting domain."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This plugin-based approach allows us to decouple content storage from content presentation. Marketing maintains centralized control over shared assets, while partners create and publish content that appears native to their site. The result is a clean, multi-tenant user experience without duplicating assets or hardcoding logic."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Rendering Logic: VTL and Dynamic Resolution"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Each page request follows a standardized flow:"
+              }
+            ]
+          },
+          {
+            "type": "orderedList",
+            "attrs": {
+              "start": 1,
+              "type": null
+            },
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "WAF Layer"
+                      },
+                      {
+                        "type": "text",
+                        "text": " (e.g., Imperva) inspects and secures incoming traffic."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "dotCMS Resolver"
+                      },
+                      {
+                        "type": "text",
+                        "text": " determines the correct host using the preserved host header."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "VTL Rendering "
+                      },
+                      {
+                        "type": "text",
+                        "text": "dynamically builds the page from containers and contentlets."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "&nbsp;"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 3
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Example:"
+              }
+            ]
+          },
+          {
+            "type": "codeBlock",
+            "attrs": {
+              "language": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "GET jdoe.mycompany.com/about-us\n\n→ routed to dotCMS\n\n→ host header = jdoe.mycompany.com\n\n→ renders /about-us from the corresponding host context"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This system supports clean URLs, SEO-friendly structure, and scoped content resolution—regardless of content location."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Meta Tags: Structured, Scoped, and Automated"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "To ensure SEO compliance at scale, we implemented a three-tier meta tag system: Global, Brand, and Page. Each layer is editable in a controlled way depending on its scope."
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Global Tags"
+                      },
+                      {
+                        "type": "text",
+                        "text": " (e.g., viewport, charset) are injected via a shared VTL file, which is rendered on every site."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Brand-Level Tags"
+                      },
+                      {
+                        "type": "text",
+                        "text": " (e.g., og:brand) live in a dedicated brand host and apply across all sites under that brand."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Page-Level Tags"
+                      },
+                      {
+                        "type": "text",
+                        "text": " are configurable by the partner via PartnerCMS—empowering them to manage titles and descriptions for pages they control."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "For shared content like marketing editorials, the central marketing team manages metadata directly in dotCMS using structured contentlets. This model enables both consistency and flexibility while maintaining strict governance."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Creating New Sites in Minutes"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "New partner sites are provisioned automatically through an orchestrated pipeline driven by brand-specific Seed Sites and a set of background CRON jobs."
+              }
+            ]
+          },
+          {
+            "type": "orderedList",
+            "attrs": {
+              "start": 1,
+              "type": null
+            },
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "The system clones the appropriate Seed Site and initializes default structure, pages, and containers."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "A domain is assigned and registered as the site’s unique key."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Scheduled CRON jobs populate partnerdata and siteconfig contentlets via secure external API calls, injecting identity, branding, and business logic."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "textAlign": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "indent": 0,
+                      "textAlign": null
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Additional CRON-driven jobs fetch rendered headers and footers from dotCMS, then cache them in Redis for rapid delivery across multiple platforms."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Within minutes, the new site is live, fully branded, and ready for customization by the partner. This modular automation pipeline enables rapid, repeatable, and reliable onboarding at scale."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null,
+              "level": 2
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Conclusions"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Building a robust multi-site platform for a distributed network of partners requires a strategic blend of architectural foresight and precise content engineering. By leveraging dotCMS’s hybrid capabilities, specifically its host-based multitenancy, structured content models, and extensible API, we at "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://www.dotcms.com/partners/solvisse",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null,
+                      "aria-label": null
+                    }
+                  },
+                  {
+                    "type": "underline"
+                  }
+                ],
+                "text": "Solvisse"
+              },
+              {
+                "type": "text",
+                "text": " created a system that balances centralized control with localized flexibility."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Our layered approach, from the strategic use of First-Level Content and Seed Sites to the implementation of virtual presentation and automated provisioning, demonstrates how to manage complexity while enabling rapid deployment and consistent branding across thousands of independent digital presences. This architecture not only solves the scale challenge but also empowers partners to tailor their digital identity within a well-governed framework, ultimately driving efficiency and brand cohesion across the entire network."
+              }
+            ]
+          },
+          {
+            "type": "horizontalRule"
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "indent": 0,
+              "textAlign": null
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://solvisse.com/insights/dotcms-content-engineering-the-multi-site-strategy-deep-dive/",
+                      "target": "_blank",
+                      "rel": "noopener noreferrer nofollow",
+                      "class": null,
+                      "title": null,
+                      "aria-label": null
+                    }
+                  },
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Visit Solvisse Insights and Stories to learn more. "
+              }
+            ]
+          }
+        ],
+        "attrs": {
+          "charCount": 8175,
+          "wordCount": 1173,
+          "readingTime": 5
+        }
+      }
+    }
+  ]
+}

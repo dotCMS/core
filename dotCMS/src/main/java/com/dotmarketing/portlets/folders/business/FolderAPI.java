@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Treeable;
@@ -537,6 +539,23 @@ import java.util.function.Predicate;
 	List<Link> getLiveLinks(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Gets the 'live' Links directly under the given host, filtered by the user's READ permission.
+	 * <p>
+	 * The Host counterpart of {@link #getLiveLinks(Folder, User, boolean)}. Prefer either of them
+	 * over {@code getLinks(parent, false, deleted, ...)} to ask for published links: the
+	 * {@code working=false} form does not express "live", and the version-table predicate it emits
+	 * does not correlate on the link, so it returns duplicates.
+	 *
+	 * @param host the host whose direct child links are wanted
+	 * @param user the user the READ filter is applied for
+	 * @param respectFrontEndPermissions whether front-end roles count towards READ
+	 * @return the live links under the host, never null
+	 * @throws DotDataException if the links cannot be read
+	 * @throws DotSecurityException if the user cannot read the host
+	 */
+	List<Link> getLiveLinks(Host host, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
+	/**
 	 *
 	 * @param parent
 	 * @param user
@@ -622,6 +641,20 @@ import java.util.function.Predicate;
 	int getContentTypeCount(final Folder folder, final User user,
 							final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Searches for folders within a site, with optional name filtering and optional path scoping.
+	 * Results are permission-filtered and returned as a paginated list.
+	 * Allowed values for {@code params.orderBy()}: {@code "folder.name"}, {@code "folder.mod_date"}.
+	 * Invalid values fall back to {@code folder.name}.
+	 *
+	 * @param params all search parameters; build via {@link FolderSearchParams#builder()}
+	 * @return paginated list with {@code totalResults} reflecting the full filtered count
+	 * @throws DotDataException     on database error
+	 * @throws DotSecurityException if the user lacks permissions
+	 */
+	PaginatedArrayList<FolderSearchView> searchFolders(FolderSearchParams params)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * Determines if the folder IDs in the current context require fixing.

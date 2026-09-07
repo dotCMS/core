@@ -83,6 +83,13 @@ public enum OSIndexProperty {
     /** Trust self-signed certificates. No ES equivalent. */
     TLS_TRUST_SELF_SIGNED("OS_TLS_TRUST_SELF_SIGNED", null),
 
+    /**
+     * Enforce TLS certificate and hostname verification.
+     * Defaults to {@code false} — set to {@code true} only when the server certificate is
+     * trusted by the JVM truststore or {@code OS_TLS_CA_CERT} is configured. No ES equivalent.
+     */
+    TLS_CERT_REQUIRED("OS_TLS_CERT_REQUIRED", null),
+
     /** Path to the PEM client certificate for mTLS. No ES equivalent. */
     TLS_CLIENT_CERT("OS_TLS_CLIENT_CERT", null),
 
@@ -149,9 +156,10 @@ public enum OSIndexProperty {
 
     /**
      * Maximum number of hits to track accurately.
-     * No ES equivalent — OpenSearch-specific feature.
+     * Falls back to {@code ES_TRACK_TOTAL_HITS} so an existing Elasticsearch track_total_hits
+     * configuration is honored under the OpenSearch read path during migration.
      */
-    TRACK_TOTAL_HITS("OS_TRACK_TOTAL_HITS", null),
+    TRACK_TOTAL_HITS("OS_TRACK_TOTAL_HITS", "ES_TRACK_TOTAL_HITS"),
 
     /**
      * Enable in-memory caching of search query results.

@@ -15,13 +15,15 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
-import { BehaviorSubject, of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { MenuItem } from 'primeng/api';
@@ -35,12 +37,12 @@ import {
     DotHttpErrorManagerService,
     DotIframeService,
     DotMessageService,
-    DotPropertiesService,
     DotRouterService,
+    DotSystemConfigService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
@@ -58,13 +60,14 @@ import {
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
-import { FieldDragDropService, FieldService } from '../fields/service';
+import { FieldDragDropService } from '../fields/service';
 import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 
 @Component({
@@ -102,16 +105,6 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-add-to-menu',
-    template: ``,
-    standalone: true
-})
-class MockDotAddToMenuComponent {
-    @Input() contentType: DotCMSContentType;
-    @Output() cancel = new EventEmitter<boolean>();
-}
-
-@Component({
     selector: 'dot-style-editor-builder',
     template: '',
     standalone: true
@@ -136,12 +129,8 @@ const fakeContentType: DotCMSContentType = {
 describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let featureFlagSubject: BehaviorSubject<boolean>;
 
-    beforeEach(() => {
-        // Default: feature enabled. Tests that need it disabled can emit false.
-        featureFlagSubject = new BehaviorSubject<boolean>(true);
-
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
@@ -153,7 +142,15 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.form.identifier': 'Identifier',
             'contenttypes.dropzone.rows.add': 'Add Row',
             'contenttypes.content.row': 'Row',
-            'contenttypes.content.add_to_menu': 'Add To Menu'
+            'contenttypes.content.add_to_menu': 'Add To Menu',
+            'contenttypes.content.add_to_menu.header': 'Add to Menu',
+            'contenttypes.content.add_to_menu.name': 'Name',
+            'contenttypes.content.add_to_menu.show_under': 'Show under',
+            'contenttypes.content.add_to_menu.default_view': 'Default view',
+            'custom.content.portlet.dataViewMode.card': 'card',
+            'custom.content.portlet.dataViewMode.list': 'list',
+            add: 'Add',
+            cancel: 'Cancel'
         });
 
         TestBed.configureTestingModule({
@@ -167,6 +164,7 @@ describe('ContentTypesLayoutComponent', () => {
                 TabsModule,
                 DotIconComponent,
                 RouterTestingModule,
+                BrowserAnimationsModule,
                 DotApiLinkComponent,
                 DotCopyLinkComponent,
                 DotSafeHtmlPipe,
@@ -184,7 +182,31 @@ describe('ContentTypesLayoutComponent', () => {
                 DotCurrentUserService,
                 DotEventsService,
                 DotAddToMenuService,
-                FieldService,
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        loadMenu: jest.fn().mockReturnValue(
+                            of([
+                                {
+                                    id: '123',
+                                    name: 'Menu 1',
+                                    label: 'Menu 1',
+                                    tabName: 'Name',
+                                    tabDescription: 'Description',
+                                    tabIcon: 'icon',
+                                    url: '/url/index',
+                                    active: false,
+                                    isOpen: false,
+                                    menuItems: []
+                                }
+                            ])
+                        )
+                    }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
                 {
                     provide: DotIframeService,
                     useValue: {
@@ -199,13 +221,6 @@ describe('ContentTypesLayoutComponent', () => {
                     useValue: { currentPortlet: { id: 'test-portlet-id' } }
                 },
                 { provide: DotUiColorsService, useValue: { setColors: jest.fn() } },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: {
-                        subscribeTo: jest.fn().mockReturnValue(of({})),
-                        subscribeToEvents: jest.fn().mockReturnValue(of({}))
-                    }
-                },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: {
@@ -234,27 +249,31 @@ describe('ContentTypesLayoutComponent', () => {
                     useValue: { confirm: jest.fn(), alert: jest.fn() }
                 },
                 {
-                    provide: DotPropertiesService,
+                    provide: ActivatedRoute,
                     useValue: {
-                        getFeatureFlag: jest.fn().mockReturnValue(featureFlagSubject.asObservable())
+                        snapshot: {
+                            data: {
+                                featuredFlags: {
+                                    [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true
+                                },
+                                tabPermissions: { showPermissionsTab: true }
+                            }
+                        },
+                        firstChild: null,
+                        events: EMPTY
                     }
                 }
             ]
-        });
-
-        // Override ContentTypesLayoutComponent to use the mock IframeComponent
-        TestBed.overrideComponent(ContentTypesLayoutComponent, {
+        }).overrideComponent(ContentTypesLayoutComponent, {
             remove: {
-                imports: [IframeComponent, DotAddToMenuComponent, DotStyleEditorBuilderComponent]
+                imports: [IframeComponent, DotStyleEditorBuilderComponent]
             },
             add: {
-                imports: [
-                    TestDotIframeComponent,
-                    MockDotAddToMenuComponent,
-                    MockDotStyleEditorBuilderComponent
-                ]
+                imports: [TestDotIframeComponent, MockDotStyleEditorBuilderComponent]
             }
         });
+
+        await TestBed.compileComponents();
 
         fixture = TestBed.createComponent(TestHostComponent);
         const originalDetectChanges = fixture.detectChanges.bind(fixture);
@@ -274,7 +293,7 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should not have a Permissions tab', () => {
-        const pTabPanel = de.query(By.css('p-tabpanel[value="2"]'));
+        const pTabPanel = de.query(By.css('p-tabpanel[value="permissions"]'));
         expect(pTabPanel).toBeFalsy();
     });
 
@@ -287,21 +306,21 @@ describe('ContentTypesLayoutComponent', () => {
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    it('should have dot-portlet-box in the Permissions tab after it has been clicked', fakeAsync(() => {
+    it('should navigate to the route and immediately update $activeTab when clicking a tab', () => {
         fixture.componentRef.setInput('contentType', fakeContentType);
         fixture.detectChanges();
 
-        const tabs = de.queryAll(By.css('p-tab'));
-        // tabs[0]=Fields, [1]=StyleEditor, [2]=Permissions
-        tabs[2].nativeElement.click();
-        fixture.detectChanges();
+        const router = fixture.debugElement.injector.get(Router);
+        jest.spyOn(router, 'navigate');
 
-        fixture.whenStable().then(() => {
-            const panels = de.queryAll(By.css('p-tabpanel'));
-            const contentTypePushHistoryPortletBox = panels[2].query(By.css('dot-portlet-box'));
-            expect(contentTypePushHistoryPortletBox).not.toBeNull();
-        });
-    }));
+        de.componentInstance.onTabChange('permissions');
+
+        expect(de.componentInstance.$activeTab()).toBe('permissions');
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['permissions'],
+            expect.objectContaining({ relativeTo: expect.anything() })
+        );
+    });
 
     describe('Edit toolBar', () => {
         beforeEach(() => {
@@ -315,33 +334,28 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should have open Add to Menu Dialog and close', () => {
-            jest.spyOn(de.componentInstance, 'addContentInMenu');
-            // Add-to-menu is now triggered programmatically (via context menu)
             de.componentInstance.addContentInMenu();
             fixture.detectChanges();
-            expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
-            expect(de.componentInstance.addToMenuContentType).toBe(true);
-            const AddToMenuDialog: MockDotAddToMenuComponent = de.query(
-                By.css('dot-add-to-menu')
-            ).componentInstance;
-            expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
-            AddToMenuDialog.cancel.emit(true);
-            de.componentInstance.addToMenuContentType = false;
+
+            expect(de.componentInstance.$addToMenuContentType()).toBe(true);
+
+            const addToMenuEl = de.query(By.css('dot-add-to-menu'));
+            expect(addToMenuEl).toBeTruthy();
+
+            const addToMenuDialog = addToMenuEl!.componentInstance as DotAddToMenuComponent;
+            addToMenuDialog.cancel.emit(true);
             fixture.detectChanges();
+
             expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();
-            expect(de.componentInstance.addToMenuContentType).toBe(false);
+            expect(de.componentInstance.$addToMenuContentType()).toBe(false);
         });
     });
 
     describe('Tabs', () => {
         let iframe: DebugElement;
-        let dotCurrentUserService: DotCurrentUserService;
 
         beforeEach(() => {
             fixture.componentRef.setInput('contentType', fakeContentType);
-            dotCurrentUserService = fixture.debugElement.injector.get(DotCurrentUserService);
-            jest.spyOn(dotCurrentUserService, 'hasAccessToPortlet').mockReturnValue(of(true));
-
             fixture.detectChanges();
         });
 
@@ -498,7 +512,7 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             it('should hide the style editor tab when feature flag is disabled', () => {
-                featureFlagSubject.next(false);
+                de.componentInstance.$showStyleEditorTab.set(false);
                 fixture.detectChanges();
 
                 const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));

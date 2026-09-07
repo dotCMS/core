@@ -1,9 +1,9 @@
-import { Component, input, inject, computed } from '@angular/core';
+import { Component, computed, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { Select } from 'primeng/select';
 
-import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
+import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/types/internal';
 
 @Component({
     selector: 'dot-uve-style-editor-field-dropdown',
@@ -15,6 +15,7 @@ import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uv
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './uve-style-editor-field-dropdown.component.html'
 })
 export class UveStyleEditorFieldDropdownComponent {

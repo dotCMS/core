@@ -1,23 +1,27 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField
+    DotCMSContentTypeField,
+    DotLanguage,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 
 import { RelationshipFieldService } from './relationship-field.service';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
 import { SelectionMode, TableColumn } from '../models/relationship.models';
 
@@ -35,6 +39,16 @@ export interface RelationshipFieldState {
         currentPage: number;
         rowsPerPage: number;
     };
+    /**
+     * Origin of the current `data`:
+     * - `'load'`: populated programmatically (initial load / locale re-init). The
+     *   field must sync the value to the form control WITHOUT marking it dirty,
+     *   otherwise the async load re-dirties the form after the pristine window and
+     *   the unsaved-changes guard fires on a content the user never touched.
+     * - `'user'`: changed by an explicit user action (relate/unrelate/reorder).
+     *   The field marks the control dirty so the guard correctly protects the edit.
+     */
+    lastChangeSource: 'load' | 'user';
 }
 
 const initialState: RelationshipFieldState = {
@@ -50,7 +64,8 @@ const initialState: RelationshipFieldState = {
         offset: 0,
         currentPage: 1,
         rowsPerPage: 6
-    }
+    },
+    lastChangeSource: 'load'
 };
 
 /**
@@ -59,6 +74,9 @@ const initialState: RelationshipFieldState = {
  */
 export const RelationshipFieldStore = signalStore(
     withState(initialState),
+    // Side-panel feature flag, batch-fetched once on init and exposed as `flags()`. The component
+    // reads it when creating related content to choose the slide-in panel vs. the centered dialog.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed((state) => ({
         /**
          * Computes the total number of pages based on the number of items and the rows per page.
@@ -112,7 +130,8 @@ export const RelationshipFieldStore = signalStore(
         (
             store,
             relationshipFieldService = inject(RelationshipFieldService),
-            dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
+            dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            dotEditContentService = inject(DotEditContentService)
         ) => ({
             /**
              * Sets the data in the state.
@@ -121,7 +140,8 @@ export const RelationshipFieldStore = signalStore(
             setData(data: DotCMSContentlet[]) {
                 patchState(store, {
                     data: [...data],
-                    pagination: { ...store.pagination(), offset: 0, currentPage: 1 }
+                    pagination: { ...store.pagination(), offset: 0, currentPage: 1 },
+                    lastChangeSource: 'user'
                 });
             },
             /**
@@ -135,34 +155,91 @@ export const RelationshipFieldStore = signalStore(
             initialize: rxMethod<{
                 field: DotCMSContentTypeField;
                 contentlet: DotCMSContentlet;
+                targetLanguageId?: number;
+                targetLanguage?: DotLanguage;
             }>(
                 pipe(
+                    // Capture existing items before the reset so manual-translation mode can reuse them.
+                    // contentlet is null in manual translation, so prepareField returns [] — without this
+                    // capture there would be nothing to resolve against the target language.
+                    map((params) => ({ ...params, existingData: store.data() })),
                     tap(() => patchState(store, initialState)),
-                    switchMap(({ field, contentlet }) => {
-                        return relationshipFieldService.prepareField({ field, contentlet }).pipe(
-                            tapResponse({
-                                next: (newState) => {
-                                    patchState(store, {
-                                        status: ComponentStatus.LOADED,
-                                        contentType: newState.contentType,
-                                        isNewEditorEnabled: newState.isNewEditorEnabled,
-                                        selectionMode: newState.selectionMode,
-                                        columns: newState.columns,
-                                        data: newState.data,
-                                        field
-                                    });
-                                },
-                                error: (error) => {
-                                    if (error instanceof HttpErrorResponse) {
-                                        dotHttpErrorManagerService.handle(error);
-                                    }
-                                    patchState(store, {
-                                        status: ComponentStatus.ERROR
-                                    });
-                                }
-                            })
-                        );
-                    })
+                    switchMap(
+                        ({ field, contentlet, targetLanguageId, targetLanguage, existingData }) => {
+                            return relationshipFieldService
+                                .prepareField({ field, contentlet })
+                                .pipe(
+                                    switchMap((newState) => {
+                                        // When contentlet is null (manual translation) prepareField returns [].
+                                        // Fall back to the pre-reset data so items are not lost.
+                                        const dataToProcess =
+                                            contentlet != null ? newState.data : existingData;
+
+                                        if (!targetLanguageId || !dataToProcess.length) {
+                                            return of({ ...newState, data: dataToProcess });
+                                        }
+
+                                        // For each related item, try to find the version in the target
+                                        // language. Falls back to the original item if not available.
+                                        // Patch `language` to the full DotLanguage object so the
+                                        // LanguagePipe (which expects DotLanguage, not a string) renders
+                                        // the column correctly.
+                                        return forkJoin(
+                                            dataToProcess.map((item) =>
+                                                dotEditContentService
+                                                    .getContentById({
+                                                        id: item.identifier,
+                                                        languageId: targetLanguageId
+                                                    })
+                                                    .pipe(
+                                                        map((fetched) =>
+                                                            targetLanguage
+                                                                ? {
+                                                                      ...fetched,
+                                                                      language: targetLanguage
+                                                                  }
+                                                                : fetched
+                                                        ),
+                                                        // Intentional: fallback keeps the original item whose
+                                                        // `language` is a plain string from the API. The language
+                                                        // column will be blank for unresolvable items — acceptable
+                                                        // since it means no translation exists for that item.
+                                                        catchError(() => of(item))
+                                                    )
+                                            )
+                                        ).pipe(
+                                            map((resolvedItems) => ({
+                                                ...newState,
+                                                data: resolvedItems
+                                            }))
+                                        );
+                                    }),
+                                    tapResponse({
+                                        next: (newState) => {
+                                            patchState(store, {
+                                                status: ComponentStatus.LOADED,
+                                                contentType: newState.contentType,
+                                                isNewEditorEnabled: newState.isNewEditorEnabled,
+                                                selectionMode: newState.selectionMode,
+                                                columns: newState.columns,
+                                                data: newState.data,
+                                                field,
+                                                // Programmatic population — must not dirty the form.
+                                                lastChangeSource: 'load'
+                                            });
+                                        },
+                                        error: (error) => {
+                                            if (error instanceof HttpErrorResponse) {
+                                                dotHttpErrorManagerService.handle(error);
+                                            }
+                                            patchState(store, {
+                                                status: ComponentStatus.ERROR
+                                            });
+                                        }
+                                    })
+                                );
+                        }
+                    )
                 )
             ),
             /**
@@ -183,7 +260,8 @@ export const RelationshipFieldStore = signalStore(
                             ...store.pagination(),
                             offset: newOffset,
                             currentPage: lastPage
-                        }
+                        },
+                        lastChangeSource: 'user'
                     });
                 } else if (newData.length === 0) {
                     patchState(store, {
@@ -192,11 +270,41 @@ export const RelationshipFieldStore = signalStore(
                             ...store.pagination(),
                             offset: 0,
                             currentPage: 1
-                        }
+                        },
+                        lastChangeSource: 'user'
                     });
                 } else {
-                    patchState(store, { data: newData });
+                    patchState(store, { data: newData, lastChangeSource: 'user' });
                 }
+            },
+            /**
+             * Replaces one item in place, matched by identifier — identifiers are stable across
+             * saves, so this finds the row even though a save mints a new inode. Used when a
+             * related content is edited elsewhere (e.g. in a side panel) and comes back saved, so
+             * its row shows the new title and status.
+             *
+             * Deliberately not `setData`, for two reasons:
+             * - it keeps the current page, like {@link reorderData}: the user is looking at the row
+             *   that changed, and snapping back to page 1 would lose their place;
+             * - it marks the change as `'load'`, because the relationship itself did not change —
+             *   only the version of one entry — so this must never dirty the form.
+             *
+             * A no-op when the identifier is not in the list.
+             *
+             * @param {DotCMSContentlet} contentlet - The saved contentlet to put in place of its row.
+             */
+            refreshItem(contentlet: DotCMSContentlet) {
+                const data = store.data();
+                const index = data.findIndex((item) => item.identifier === contentlet.identifier);
+
+                if (index === -1) {
+                    return;
+                }
+
+                patchState(store, {
+                    data: data.map((item, i) => (i === index ? contentlet : item)),
+                    lastChangeSource: 'load'
+                });
             },
             /**
              * Reorders the data without resetting the current pagination.
@@ -204,7 +312,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {DotCMSContentlet[]} data - The reordered data array.
              */
             reorderData(data: DotCMSContentlet[]) {
-                patchState(store, { data: [...data] });
+                patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
              * Advances the pagination to the next page and updates the state accordingly.

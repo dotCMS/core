@@ -146,6 +146,28 @@ public class ConfigTest {
     }
 
     @Test
+    public void testing_notfound_long_returns_default() {
+        assertEquals(789L, Config.getLongProperty("no-property", 789L));
+    }
+
+    /**
+     * When the DOT_ env alias exists but its value is not parseable as the requested type, the
+     * getter must fall back to the default rather than propagate the conversion failure.
+     */
+    @Test
+    public void testing_unparseable_env_alias_falls_back_to_default() {
+        final String envAlias = "DOT_TESTING_UNPARSEABLE";
+        try {
+            Config.props.addProperty(envAlias, "not-a-number");
+            assertEquals(42L, Config.getLongProperty("TESTING_UNPARSEABLE", 42L));
+            assertEquals(42, Config.getIntProperty("TESTING_UNPARSEABLE", 42));
+            assertEquals(4.2f, Config.getFloatProperty("TESTING_UNPARSEABLE", 4.2f), 0.0);
+        } finally {
+            Config.props.clearProperty(envAlias);
+        }
+    }
+
+    @Test
     public void test_get_integer_from_env() {
         int value = Config.getIntProperty("no-property", -99);
         assertEquals(-99, value);

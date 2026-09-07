@@ -1,0 +1,147 @@
+import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
+import { Dispatcher, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
+import { EMPTY } from 'rxjs';
+
+import { computed, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+
+import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+
+import { AUTO_PREVIEW_RETRY_LIMIT } from '../../image-editor.constants';
+import { ImageEditorState } from '../../models/image-editor.models';
+import { DotImageEditorService } from '../../services/dot-image-editor.service';
+import {
+    buildFilterChain,
+    buildPreviewUrl,
+    focalPointsEqual
+} from '../../utils/image-filter-url.builder';
+import { imageEditorLifecycleEvents } from '../image-editor.events';
+
+/**
+ * Preview feature — the heart of the "viewer". Derives the ordered server filter
+ * chain and the cache-busted preview URL from the edit state, owns the preview
+ * loading lifecycle (silent retry up to {@link AUTO_PREVIEW_RETRY_LIMIT}, then the
+ * error UI) and resolves the rendered file size (debounced) as the URL changes.
+ */
+export function withPreview() {
+    return signalStoreFeature(
+        type<{ state: ImageEditorState }>(),
+        withReducer(
+            on(imageEditorLifecycleEvents.previewLoaded, (_event, state) => ({
+                ...state,
+                previewStatus: 'loaded' as const,
+                previewRetries: 0,
+                error: null
+            })),
+            // Image GETs for heavy filter chains can fail transiently even when the URL
+            // is valid (a later HEAD/GET returns 200). Retry silently with a fresh
+            // cache-bust up to AUTO_PREVIEW_RETRY_LIMIT before surfacing the error UI.
+            on(imageEditorLifecycleEvents.previewErrored, (_event, state) => {
+                if (state.previewRetries < AUTO_PREVIEW_RETRY_LIMIT) {
+                    return {
+                        ...state,
+                        previewRetries: state.previewRetries + 1,
+                        previewStatus: 'loading' as const,
+                        cacheBust: state.cacheBust + 1
+                    };
+                }
+
+                return {
+                    ...state,
+                    previewStatus: 'error' as const,
+                    previewRetries: 0,
+                    error: 'Failed to render preview'
+                };
+            }),
+            on(imageEditorLifecycleEvents.retryRequested, (_event, state) => ({
+                ...state,
+                // A manual retry restores the silent-retry budget.
+                previewRetries: 0,
+                previewStatus: 'loading' as const,
+                cacheBust: state.cacheBust + 1
+            })),
+            on(imageEditorLifecycleEvents.previewSizeResolved, ({ payload }, state) => ({
+                ...state,
+                fileInfo: { ...state.fileInfo, currentBytes: payload }
+            }))
+        ),
+        withComputed((store) => {
+            const appliedFilters = computed(() => {
+                // Place the crop before/after the rotate/flip transforms based on which
+                // the user applied first (the history records the order). A crop made
+                // before rotating is in the un-rotated image's coordinates and must run
+                // first; one made on an already-rotated preview runs after. Use the LAST
+                // crop entry — it produced the crop slice the preview renders — so a
+                // crop -> rotate -> crop sequence orders against the second (current)
+                // crop, not the stale first one.
+                const history = store.history();
+                // Index of the LAST crop entry (avoid Array.findLastIndex — it needs an
+                // ES2023 lib the build target doesn't include).
+                const cropIndex = history.reduce(
+                    (last, entry, index) => (entry.category === 'crop' ? index : last),
+                    -1
+                );
+                const firstTransformIndex = history.findIndex(
+                    (entry) => entry.category === 'rotate' || entry.category === 'flip'
+                );
+                const cropBeforeTransforms =
+                    cropIndex !== -1 &&
+                    (firstTransformIndex === -1 || cropIndex < firstTransformIndex);
+
+                return buildFilterChain({
+                    adjust: store.adjust(),
+                    transform: store.transform(),
+                    crop: store.crop(),
+                    fileInfo: store.fileInfo(),
+                    naturalWidth: store.assetContext().naturalWidth,
+                    naturalHeight: store.assetContext().naturalHeight,
+                    cropBeforeTransforms
+                });
+            });
+
+            return {
+                /** The ordered server filter chain derived from the current edits. */
+                appliedFilters,
+                /** The fully-qualified, cache-busted preview URL for the current edits. */
+                previewUrl: computed(() =>
+                    buildPreviewUrl(store.assetContext(), appliedFilters(), store.cacheBust())
+                ),
+                /**
+                 * Whether the editor has unsaved changes: any preview filter, or a
+                 * focal point moved away from the one the asset was opened with.
+                 */
+                isDirty: computed(
+                    () =>
+                        appliedFilters().length > 0 ||
+                        !focalPointsEqual(store.focalPoint(), store.seededFocalPoint())
+                ),
+                /** Whether the editor is mid-flight loading a preview. */
+                isBusy: computed(() => store.previewStatus() === 'loading')
+            };
+        }),
+        withEventHandlers((store) => {
+            const dispatcher = inject(Dispatcher);
+            const service = inject(DotImageEditorService);
+
+            return {
+                // Resolve the edited preview size, debounced against rapid edits.
+                resolveSize$: toObservable(store.previewUrl).pipe(
+                    debounceTime(250),
+                    distinctUntilChanged(),
+                    switchMap((url) =>
+                        service.getFileSize(url).pipe(
+                            tap((bytes) =>
+                                dispatcher.dispatch(
+                                    imageEditorLifecycleEvents.previewSizeResolved(bytes)
+                                )
+                            ),
+                            // Keep the long-lived size stream alive if a dispatch ever
+                            // throws, so the file-size readout doesn't freeze for the session.
+                            catchError(() => EMPTY)
+                        )
+                    )
+                )
+            };
+        })
+    );
+}

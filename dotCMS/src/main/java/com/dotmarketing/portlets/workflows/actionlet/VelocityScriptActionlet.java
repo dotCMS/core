@@ -19,10 +19,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
@@ -109,6 +111,17 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
                                     : APILocator.systemHost().getHostname(),
                             StringPool.FORWARD_SLASH).request()
               ).request()).request();
+
+            // Propagate the workflow processor's user onto the mock request so viewtools that
+            // resolve the user via PortalUtil.getUser(req) — e.g. WorkflowTool.init() — see the
+            // actual triggering user instead of falling back to anonymous (issue #35347).
+            if (null != currentUser) {
+                request.setAttribute(WebKeys.USER, currentUser);
+                final HttpSession session = request.getSession(false);
+                if (null != session) {
+                    session.setAttribute(WebKeys.USER, currentUser);
+                }
+            }
 
             final Map<String, Object> contextParams = new HashMap<>(Map.of("workflow", processor,
                     "user", currentUser,

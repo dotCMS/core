@@ -63,5 +63,19 @@ public class NumberUtil {
             return defaultOne.get();
         }
     } // toBoolean.
-	
+
+	/**
+	 * Coerces a value that may be a {@link Number} or a numeric {@link String} (e.g. a column
+	 * value returned from a SQL result row) to an int. Returns 0 when the value is null.
+	 *
+	 * @param value the value to coerce
+	 * @return the int value, or 0 when null
+	 */
+	public static int asInt(final Object value) {
+		if (value instanceof Number) {
+			return ((Number) value).intValue();
+		}
+		return value != null ? Integer.parseInt(value.toString()) : 0;
+	} // asInt.
+
 } // E:O:F:NumberUtil

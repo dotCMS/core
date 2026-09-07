@@ -1,5 +1,6 @@
 package com.dotcms.graphql.exception;
 
+import graphql.ErrorType;
 import java.util.Map;
 
 /**
@@ -28,7 +29,12 @@ public class PermissionDeniedGraphQLException extends CustomGraphQLException {
     }
 
     @Override
+    public ErrorType getErrorType() {
+        return ErrorType.DataFetchingException;
+    }
+
+    @Override
     public Map<String, Object> getExtensions() {
-        return Map.of("code", "PERMISSION_DENIED");
+        return Map.of("code", "PERMISSION_DENIED", "status", 403);
     }
 }

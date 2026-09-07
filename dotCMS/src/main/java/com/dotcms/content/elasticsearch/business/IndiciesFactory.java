@@ -86,7 +86,12 @@ public class IndiciesFactory {
         }
         DotConnect dc = new DotConnect();
         final String insertSQL = "INSERT INTO indicies VALUES(?,?)";
-        final String deleteSQL = "DELETE from indicies where index_type=? or index_name=?";
+        // Scoped to index_version IS NULL: this legacy store only owns the ES rows (the same
+        // rows loadIndicies reads). The OS migration rows carry a non-NULL index_version in the
+        // shared table and are managed by VersionedIndicesAPI — an unscoped delete-by-type wipes
+        // them on every ES switchover, which in Phase 0 orphans the OS index store (#36471).
+        final String deleteSQL =
+                "DELETE from indicies where (index_type=? or index_name=?) and index_version is null";
         for (IndexType type : IndexType.values()) {
             final String indexType = type.toString().toLowerCase();
             final String newValue = Try.of(() -> (String) PropertyUtils

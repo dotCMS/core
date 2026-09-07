@@ -6,5 +6,5 @@ export interface DotContentState {
     deleted?: string | boolean;
     live: string | boolean;
     working: string | boolean;
-    hasLiveVersion: string | boolean;
+    hasLiveVersion?: string | boolean;
 }

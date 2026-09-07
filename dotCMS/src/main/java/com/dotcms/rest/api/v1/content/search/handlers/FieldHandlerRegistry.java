@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
@@ -45,6 +46,13 @@ public class FieldHandlerRegistry {
 
     private static final Map<Class<? extends Field>, Function<FieldContext, String>> handlers = new HashMap<>();
 
+    /**
+     * Handler for fields whose Data Type is True/False. Keyed by Data Type rather than field type, so
+     * it lives outside the {@link #handlers} map — see {@link #getHandler(Field)}.
+     */
+    private static final Function<FieldContext, String> BOOLEAN_HANDLER =
+            toHandler(FieldHandlerId.BOOLEAN);
+
     static {
         // Here, we associate each type of User Searchable field in a Content Type with their
         // specific type of Field Handler. This way, we can determine how a field can be queried via
@@ -78,11 +86,50 @@ public class FieldHandlerRegistry {
      */
     public static void registerHandler(final Set<Class<? extends Field>> fieldTypes,
                                         final FieldHandlerId fieldHandlerId) {
+        final Function<FieldContext, String> handler = toHandler(fieldHandlerId);
+        fieldTypes.forEach(fieldType -> handlers.put(fieldType, handler));
+    }
+
+    /**
+     * Wraps a {@link FieldHandlerId}'s {@link FieldStrategy} into the Field Handler function, which
+     * only generates the Lucene query when the strategy's required values are present.
+     *
+     * @param fieldHandlerId The {@link FieldHandlerId} to wrap.
+     *
+     * @return The {@link Function} that generates the Lucene query.
+     */
+    private static Function<FieldContext, String> toHandler(final FieldHandlerId fieldHandlerId) {
         final FieldStrategy strategy = FieldStrategyFactory.getStrategy(fieldHandlerId);
-        fieldTypes.forEach(fieldType -> handlers.put(fieldType,
-                context -> strategy.checkRequiredValues(context)
-                        ? strategy.generateQuery(context).trim()
-                        : BLANK));
+        return context -> strategy.checkRequiredValues(context)
+                ? strategy.generateQuery(context).trim()
+                : BLANK;
+    }
+
+    /**
+     * Retrieves the Field Handler for a given field, taking its <b>Data Type</b> into account as well
+     * as its type.
+     * <p>This is the overload callers should use. Field type alone is not enough to decide how a field
+     * can be queried: a Radio or Select field whose Data Type is True/False is mapped in Elasticsearch
+     * as a {@code boolean}, and the contains-style wildcard the TEXT handler produces for those field
+     * types is rejected outright for a boolean-mapped field — which fails the entire query and
+     * surfaces as an empty result set with no error. Such fields are routed to the
+     * {@link FieldHandlerId#BOOLEAN} handler instead.</p>
+     * <p>Note this deliberately does not affect Checkbox fields: they only accept the {@code TEXT} and
+     * {@code LONG_TEXT} Data Types, so a checkbox is never boolean-mapped even when its option value
+     * happens to be the text {@code "true"}.</p>
+     *
+     * @param field The {@link Field} whose Field Handler will be retrieved.
+     *
+     * @return The {@link Function} that generates the Lucene query for the given field.
+     */
+    public static Function<FieldContext, String> getHandler(final Field field) {
+        if (null == field) {
+            return context -> BLANK;
+        }
+        if (DataTypes.BOOL == field.dataType()) {
+            return BOOLEAN_HANDLER;
+        }
+        return getHandler(field.type());
     }
 
     /**

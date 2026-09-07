@@ -720,6 +720,7 @@ public class PermissionResource {
                     .isParentPermissionable(metadata.isParentPermissionable())
                     .canEditPermissions(metadata.canEditPermissions())
                     .canEdit(metadata.canEdit())
+                    .canAddChildren(metadata.canAddChildren())
                     .parentAssetId(metadata.parentAssetId())
                     .permissions(paginatedRoles)
                     .build())

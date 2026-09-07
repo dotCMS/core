@@ -26,9 +26,11 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAct
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DELETE;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DESTROY;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.EDIT;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.LOCK;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.NEW;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.PUBLISH;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNARCHIVE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNLOCK;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNPUBLISH;
 
 /**
@@ -72,6 +74,10 @@ public class SystemActionApiFireCommandFactory {
         this.commandMap.put(UNARCHIVE, new UnArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(DELETE,    new DeleteSystemActionApiFireCommandImpl());
         this.commandMap.put(DESTROY,   new DestroySystemActionApiFireCommandImpl());
+        // Deliberately absent from `systemActionHasActionletHandlerMap`: locking is not a workflow
+        // transition, so there is no actionlet to look for and these commands always win.
+        this.commandMap.put(LOCK,      new LockSystemActionApiFireCommandImpl());
+        this.commandMap.put(UNLOCK,    new UnlockSystemActionApiFireCommandImpl());
     }
 
     private boolean hasPublishValid (final Tuple2<WorkflowAction, Boolean> params) {
@@ -620,6 +626,74 @@ public class SystemActionApiFireCommandFactory {
                     ", will do an destroy");
 
             contentletAPI.destroy(contentlet, user, dependencies.isRespectAnonymousPermissions());
+
+            return contentlet;
+        }
+    }
+
+    //////////////////////////////
+
+    /**
+     * Implements a {@link SystemActionApiFireCommand} that locks the contentlet, covering the
+     * {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#LOCK} system
+     * action.
+     *
+     * <p>Unlike the commands above this is not a fallback for a missing actionlet — it is the only
+     * implementation. A lock is per-user state on the version info, not a step transition, so there
+     * is no workflow action to defer to and nothing to save: {@code needSave} is ignored, and body
+     * fields sent alongside a LOCK are not persisted.</p>
+     *
+     * <p>{@link com.dotmarketing.portlets.contentlet.business.ContentletAPI#lock} enforces
+     * permission itself: it delegates to {@code canLock}, which requires EDIT on the contentlet or
+     * its content type and refuses a lock already held by somebody else. Locking content the caller
+     * already holds is a no-op, so re-firing over a stale selection is harmless.</p>
+     */
+    private class LockSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @WrapInTransaction
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave,
+                final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            final User user = dependencies.getModUser();
+
+            Logger.info(this, () -> "The contentlet: " + contentlet.getIdentifier()
+                    + ", will be locked for the user: " + user.getUserId());
+
+            contentletAPI.lock(contentlet, user, dependencies.isRespectAnonymousPermissions());
+
+            return contentlet;
+        }
+    }
+
+    //////////////////////////////
+
+    /**
+     * Implements a {@link SystemActionApiFireCommand} that unlocks the contentlet, covering the
+     * {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#UNLOCK} system
+     * action.
+     *
+     * <p>{@link com.dotmarketing.portlets.contentlet.business.ContentletAPI#unlock} also goes
+     * through {@code canLock}, so releasing a lock held by another user throws unless the caller
+     * holds the CMS Administrator role. Over a collection that surfaces as a per-item failure in
+     * the response summary rather than a rejected batch, which is what lets a mixed selection
+     * partially succeed.</p>
+     */
+    private class UnlockSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @WrapInTransaction
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave,
+                final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            final User user = dependencies.getModUser();
+
+            Logger.info(this, () -> "The contentlet: " + contentlet.getIdentifier()
+                    + ", will be unlocked by the user: " + user.getUserId());
+
+            contentletAPI.unlock(contentlet, user, dependencies.isRespectAnonymousPermissions());
 
             return contentlet;
         }

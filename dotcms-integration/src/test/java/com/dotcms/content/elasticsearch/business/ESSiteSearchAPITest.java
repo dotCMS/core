@@ -11,21 +11,38 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.io.IOException;
+import io.vavr.control.Try;
+import com.dotmarketing.util.Logger;
+import java.util.ArrayList;
 import java.util.Date;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
+ * <p><strong>Phase-neutral assertions.</strong> This suite runs under every ES→OpenSearch migration
+ * phase (see the scheduled phase sweep), so it must assert through the <em>site-search</em> API,
+ * whose surface is purely logical, and never through the content-index {@link IndexAPI} or the
+ * legacy {@link IndiciesAPI}:</p>
+ * <ul>
+ *   <li>{@code IndexAPI.getIndexAlias} / {@code listIndices} key OpenSearch entries by their
+ *       {@code .os}-tagged physical name, so a logical name misses in the phases where OpenSearch
+ *       serves reads. Use {@link SiteSearchAPI#getAliasToIndexMap()} and
+ *       {@link SiteSearchAPI#listIndices()} instead.</li>
+ *   <li>{@code IndiciesAPI.loadIndicies()} only ever reads the legacy (non-versioned) rows, so its
+ *       site-search pointer is empty once activation writes the versioned store. Use
+ *       {@link SiteSearchAPI#isDefaultIndex(String)} instead.</li>
+ * </ul>
+ *
  * @author nollymar
  */
 public class ESSiteSearchAPITest {
 
     private static SiteSearchAPI siteSearchAPI;
     private static IndexAPI indexAPI;
-    private static IndiciesAPI indiciesAPI;
     private static ContentletIndexAPI contentletIndexAPI;
 
     @BeforeClass
@@ -36,7 +53,6 @@ public class ESSiteSearchAPITest {
 
         siteSearchAPI = APILocator.getSiteSearchAPI();
         indexAPI = APILocator.getESIndexAPI();
-        indiciesAPI = APILocator.getIndiciesAPI();
         contentletIndexAPI = APILocator.getContentletIndexAPI();
     }
 
@@ -52,17 +68,30 @@ public class ESSiteSearchAPITest {
         String lastCreatedIndex = "";
 
         final int indicesAmount = 115;
-        for (int i = 0; i < indicesAmount; i++) {
-            timeStamp = String.valueOf(new Date().getTime());
-            indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
-            aliasName = "indexAlias" + "_" + timeStamp;
+        final List<String> created = new ArrayList<>(indicesAmount);
+        try {
+            for (int i = 0; i < indicesAmount; i++) {
+                timeStamp = String.valueOf(new Date().getTime());
+                indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
+                aliasName = "indexAlias" + "_" + timeStamp;
 
-            siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+                siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+                created.add(indexName);
 
-            lastCreatedIndex = indexName;
+                lastCreatedIndex = indexName;
+            }
+
+            assertTrue(siteSearchAPI.listIndices().contains(lastCreatedIndex));
+        } finally {
+            // Clean up all 115: leaving them behind pollutes every later site-search assertion in
+            // this JVM (the alias map then spans 100+ indices and takes 3 batched round-trips) and
+            // is what made the reindex tests below miss their own alias.
+            for (final String leftover : created) {
+                Try.run(() -> siteSearchAPI.deleteIndex(leftover))
+                        .onFailure(e -> Logger.warn(ESSiteSearchAPITest.class,
+                                "Could not clean up site-search index " + leftover, e));
+            }
         }
-
-        assertTrue(indexAPI.listIndices().contains(lastCreatedIndex));
     }
 
     @Test
@@ -74,18 +103,18 @@ public class ESSiteSearchAPITest {
 
         siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
 
-        assertTrue(indexAPI.listIndices().contains(indexName));
+        assertTrue(siteSearchAPI.listIndices().contains(indexName));
 
         //verifies that there is no a default site search index
-        assertTrue(indiciesAPI.loadIndicies().getSiteSearch() == null || !indiciesAPI
-                .loadIndicies().getSiteSearch().equals(indexName));
+        assertFalse(siteSearchAPI.isDefaultIndex(indexName));
         siteSearchAPI.activateIndex(indexName);
 
         try {
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
-            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
-            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
+            assertTrue(siteSearchAPI.isDefaultIndex(indexName));
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            assertEquals("alias '" + aliasName + "' must resolve to '" + indexName
+                    + "'; alias->index map was " + aliasMap, indexName, aliasMap.get(aliasName));
         } finally {
             siteSearchAPI.deactivateIndex(indexName);
             indexAPI.delete(indexName);
@@ -98,7 +127,9 @@ public class ESSiteSearchAPITest {
             throws IOException, DotDataException, DotIndexException {
 
         final String timeStamp = String.valueOf(new Date().getTime());
-        final String indexName = ES_SITE_SEARCH_NAME + timeStamp;
+        // Use the "<prefix>_<timestamp>" convention every other test (and production) follows:
+        // the separator is what the index-name timestamp parsing keys off.
+        final String indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
         final String aliasName = "indexAlias" + timeStamp;
 
         String indexTimestamp = null;
@@ -110,9 +141,10 @@ public class ESSiteSearchAPITest {
         try {
             indexTimestamp = contentletIndexAPI.fullReindexStart().indexSuffixES();
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
-            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
-            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
+            assertTrue(siteSearchAPI.isDefaultIndex(indexName));
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            assertEquals("alias '" + aliasName + "' must resolve to '" + indexName
+                    + "'; alias->index map was " + aliasMap, indexName, aliasMap.get(aliasName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
@@ -131,7 +163,9 @@ public class ESSiteSearchAPITest {
             throws IOException, DotDataException, DotIndexException {
 
         final String timeStamp = String.valueOf(new Date().getTime());
-        final String indexName = ES_SITE_SEARCH_NAME + timeStamp;
+        // Use the "<prefix>_<timestamp>" convention every other test (and production) follows:
+        // the separator is what the index-name timestamp parsing keys off.
+        final String indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
         final String aliasName = "indexAlias" + timeStamp;
 
         String indexTimestamp = null;
@@ -144,9 +178,10 @@ public class ESSiteSearchAPITest {
             indexTimestamp = contentletIndexAPI.fullReindexStart().indexSuffixES();
             contentletIndexAPI.fullReindexAbort();
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
-            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
-            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
+            assertTrue(siteSearchAPI.isDefaultIndex(indexName));
+            final Map<String, String> aliasMap = siteSearchAPI.getAliasToIndexMap();
+            assertEquals("alias '" + aliasName + "' must resolve to '" + indexName
+                    + "'; alias->index map was " + aliasMap, indexName, aliasMap.get(aliasName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
@@ -188,7 +223,7 @@ public class ESSiteSearchAPITest {
         //get the list of indices
         final List<String> indices =siteSearchAPI.listIndices();
         //validate if the new default index is the first in list
-        assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(defIndex));
+        assertTrue(siteSearchAPI.isDefaultIndex(defIndex));
         assertEquals(defIndex, indices.get(0));
     }
 
@@ -236,29 +271,36 @@ public class ESSiteSearchAPITest {
      */
     @Test
     public void test_deleteOldSiteSearchIndices() throws IOException, DotDataException {
-        final String timestamp = String.valueOf(new Date().getTime());
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230101000000", "Index1_deleteTest", 1);
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230201000000", "", 1);
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_20230301000000", "", 1);
-        siteSearchAPI.createSiteSearchIndex(ES_SITE_SEARCH_NAME + "_" + timestamp, "", 1);
+        // Unique, strictly increasing timestamps per run so a class retry (rerunFailingTestsCount)
+        // never collides on a leftover fixed-name index (createSiteSearchIndex is fail-hard on
+        // already-exists). Order preserved: idxOldest < idxDefault < idxMiddle < idxNewest.
+        final long base = new Date().getTime();
+        final String idxOldest  = ES_SITE_SEARCH_NAME + "_" + (base - 3000);
+        final String idxDefault = ES_SITE_SEARCH_NAME + "_" + (base - 2000);
+        final String idxMiddle  = ES_SITE_SEARCH_NAME + "_" + (base - 1000);
+        final String idxNewest  = ES_SITE_SEARCH_NAME + "_" + base;
+        siteSearchAPI.createSiteSearchIndex(idxOldest, "Index1_deleteTest", 1);
+        siteSearchAPI.createSiteSearchIndex(idxDefault, "", 1);
+        siteSearchAPI.createSiteSearchIndex(idxMiddle, "", 1);
+        siteSearchAPI.createSiteSearchIndex(idxNewest, "", 1);
 
         //set index as default
-        siteSearchAPI.activateIndex(ES_SITE_SEARCH_NAME + "_20230201000000");
+        siteSearchAPI.activateIndex(idxDefault);
 
         //load all indices and check that all 4 indices are there
         List<String> indices = siteSearchAPI.listIndices();
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230101000000"));
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230201000000"));
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_20230301000000"));
-        assertTrue(indices.contains(ES_SITE_SEARCH_NAME + "_" + timestamp));
+        assertTrue(indices.contains(idxOldest));
+        assertTrue(indices.contains(idxDefault));
+        assertTrue(indices.contains(idxMiddle));
+        assertTrue(indices.contains(idxNewest));
         final int originalSizeOfIndices = indices.size();
 
         //Delete Old Indices
         siteSearchAPI.deleteOldSiteSearchIndices();
 
-        //load all indices and check that the index from 20230301 is not there
+        //load all indices and check that the middle (old, non-default) index is not there
         indices = siteSearchAPI.listIndices();
-        assertFalse(indices.contains(ES_SITE_SEARCH_NAME + "_20230301000000"));
+        assertFalse(indices.contains(idxMiddle));
         assertNotEquals(originalSizeOfIndices, indices.size());
 
     }

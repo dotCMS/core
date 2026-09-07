@@ -3,6 +3,12 @@
 <!-- Auto Generated Below -->
 
 
+> **[DEPRECATED]** Angular code must use `DotContentThumbnailComponent`
+(`dot-content-thumbnail`) from `@dotcms/ui` instead — pass the contentlet
+via its `contentlet`/`options` inputs or a resolved model via `thumbnail`.
+This web component remains only for Stencil-internal use
+(`dot-card-contentlet`) and legacy JSP pages. See dotCMS/core#36295.
+
 ## Properties
 
 | Property             | Attribute              | Description | Type                | Default     |

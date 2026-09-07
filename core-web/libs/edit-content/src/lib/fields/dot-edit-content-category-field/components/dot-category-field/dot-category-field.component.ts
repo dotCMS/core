@@ -1,5 +1,3 @@
-import { signalMethod } from '@ngrx/signals';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -15,7 +13,7 @@ import { NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldChipsComponent } from './../dot-category-field-chips/dot-category-field-chips.component';
@@ -24,6 +22,7 @@ import { DotCategoryFieldDialogComponent } from './../dot-category-field-dialog/
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { CategoriesService } from '../../services/categories.service';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
+import { sameInodes } from '../../utils/category-field.utils';
 
 /**
  * @class
@@ -43,10 +42,11 @@ import { CategoryFieldStore } from '../../store/content-category-field.store';
         DotMessagePipe
     ],
     templateUrl: './dot-category-field.component.html',
+    styleUrls: ['./dot-category-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
+        class: 'dot-category-field__container',
         '[class.dot-category-field__container--has-categories]': '$hasSelectedCategories()',
-        '[class.dot-category-field__container]': '!$hasSelectedCategories()',
         '[class.dot-category-field__container--disabled]': '$isDisabled()'
     },
     providers: [
@@ -87,31 +87,33 @@ export class DotCategoryFieldComponent
      */
     $hasSelectedCategories = computed(() => this.store.selected().length > 0);
 
-    constructor() {
-        super();
-        this.handleChangeValue(this.$value);
-    }
-
     /**
      * Initialize the component.
      *
      * @memberof DotEditContentCategoryFieldComponent
      */
     ngOnInit(): void {
-        // Initialize the store with field information only
-        // The contentlet data will come through ControlValueAccessor's writeValue
         this.store.load({
             field: this.$field(),
             contentlet: this.$contentlet()
         });
 
-        // Effect to sync selected categories with form control
+        // Effect to sync selected categories with form control.
+        // Only emit once the store has successfully LOADED: the async hierarchy
+        // fetch starts with `selected = []`, and emitting that empty value into
+        // the form control races with save and can blank the field.
+        // ERROR is intentionally skipped too — we'd rather keep whatever the
+        // form control holds from `writeValue` (stale but truthful) than
+        // overwrite it with an empty array derived from a failed fetch.
         effect(
             () => {
-                const categoryValues = this.store.selected();
-                const inodes = categoryValues?.map((category) => category.inode) ?? [];
+                const state = this.store.state();
+                if (state !== ComponentStatus.LOADED) {
+                    return;
+                }
 
-                // Notify form control of value change
+                const inodes = this.store.selected().map((category) => category.inode);
+
                 this.onChange(inodes);
             },
             {
@@ -134,18 +136,38 @@ export class DotCategoryFieldComponent
         this.onTouched();
     }
 
-    readonly handleChangeValue = signalMethod<string[]>((value) => {
-        if (!value) {
-            this.store.setSelectedFromInodes([]);
-
+    /**
+     * Clear all selected categories from the field without opening the dialog.
+     *
+     * @memberof DotEditContentCategoryFieldComponent
+     */
+    clearAllSelected(): void {
+        if (this.$isDisabled()) {
             return;
         }
 
-        if (!Array.isArray(value)) {
+        this.store.removeRootSelected(this.store.selected().map((category) => category.key));
+        this.onTouched();
+    }
+
+    override writeValue(value: string[]): void {
+        super.writeValue(value);
+
+        if (this.store.state() !== ComponentStatus.LOADED) {
             return;
         }
 
-        // Update store with the new value
-        this.store.setSelectedFromInodes(value);
-    });
+        const inodes = this.store.selected().map((category) => category.inode);
+        if (inodes.length === 0) {
+            return;
+        }
+
+        if (Array.isArray(value) && sameInodes(value, inodes)) {
+            return;
+        }
+
+        // Defer to microtask: Angular calls writeValue from setUpControl
+        // BEFORE assigning dir.control, so a sync onChange throws.
+        queueMicrotask(() => this.onChange(inodes));
+    }
 }

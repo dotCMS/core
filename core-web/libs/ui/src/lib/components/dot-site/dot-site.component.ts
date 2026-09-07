@@ -1,33 +1,39 @@
-import { signalState, patchState } from '@ngrx/signals';
+import { patchState, signalState } from '@ngrx/signals';
+import { merge, Subscription } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
-    model,
-    output,
-    input,
-    inject,
-    signal,
-    effect,
-    untracked,
-    forwardRef,
     computed,
-    OnInit,
+    effect,
+    forwardRef,
+    HostListener,
+    inject,
+    input,
+    model,
     OnDestroy,
-    ViewChild,
-    HostListener
+    OnInit,
+    output,
+    signal,
+    untracked,
+    ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
+import { Select, SelectLazyLoadEvent, SelectModule } from 'primeng/select';
 
-import { DotSiteService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { debounceTime, map, tap } from 'rxjs/operators';
+
+import {
+    DotEventsSocket,
+    DotSiteService,
+    DotSystemEventType,
+    SITE_REFRESH_EVENTS,
+    SITE_UNAVAILABLE_EVENTS
+} from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
@@ -89,8 +95,8 @@ interface DotSiteState {
 })
 export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy {
     private siteService = inject(DotSiteService);
-    readonly #eventsService = inject(DotcmsEventsService);
-    readonly #destroyRef = inject(DestroyRef);
+    private eventsSocket = inject(DotEventsSocket);
+    private siteEventsSub: Subscription | null = null;
 
     @HostListener('focus')
     onHostFocus(): void {
@@ -161,6 +167,15 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     onChange = output<string | null>();
 
     /**
+     * The selected site itself, rather than just its identifier.
+     *
+     * Additive alongside {@link onChange}, which stays the primary output. Consumers that need the
+     * hostname — the AssetPicker sidebar builds its tree root and asset path from it — would
+     * otherwise have to re-fetch a site the component already holds.
+     */
+    siteChange = output<DotSite | null>();
+
+    /**
      * Output event emitted when the select dropdown overlay is shown.
      * Can be used by parent components to respond to overlay display (e.g., for analytics, UI adjustments).
      */
@@ -183,6 +198,25 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
      * Can be customized; defaults to an empty string.
      */
     id = input<string>('');
+
+    /**
+     * Optional icon class rendered beside the selected hostname inside the closed control
+     * (e.g. `'pi pi-globe'`).
+     *
+     * Additive and off by default: with no icon the control renders exactly as it always has, so
+     * existing consumers are unaffected. Added for the AssetPicker sidebar, whose design shows a
+     * globe there.
+     */
+    icon = input<string>('');
+
+    /**
+     * Class applied to the dropdown overlay panel (e.g. `'mt-1'` to sit it off the trigger).
+     *
+     * Exists because the overlay is appended to `body`: a consumer cannot reach it from its own
+     * component styles, so the class has to travel through here. Additive and empty by default, so
+     * existing consumers render unchanged.
+     */
+    panelStyleClass = input<string>('');
 
     /**
      * Reactive state of the component including loaded sites, loading status, total results, and active filter.
@@ -299,24 +333,19 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
 
-        this.#eventsService
-            .subscribeToEvents([
-                'SAVE_SITE',
-                'PUBLISH_SITE',
-                'UN_ARCHIVE_SITE',
-                'UPDATE_SITE',
-                'UPDATE_SITE_PERMISSIONS',
-                'ARCHIVE_SITE',
-                'SWITCH_SITE'
-            ])
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => {
-                untracked(() => {
-                    this.loadedPages.clear();
-                    patchState(this.$state, { sites: [], totalRecords: 0, filterValue: '' });
-                    this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
-                });
-            });
+        const tagEvent = (event: DotSystemEventType) =>
+            this.eventsSocket
+                .on<{ identifier: string }>(event)
+                .pipe(map((data) => ({ ...data, event })));
+
+        // Each event immediately refreshes the selected site; list reload is debounced
+        // to coalesce rapid bursts into a single resetFilter() call.
+        this.siteEventsSub = merge(...SITE_REFRESH_EVENTS.map(tagEvent))
+            .pipe(
+                tap((siteData) => this.refreshSelectedSite(siteData)),
+                debounceTime(300)
+            )
+            .subscribe(() => this.resetFilter());
     }
 
     ngOnDestroy(): void {
@@ -324,6 +353,8 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             clearTimeout(this.filterDebounceTimeout);
             this.filterDebounceTimeout = null;
         }
+
+        this.siteEventsSub?.unsubscribe();
     }
 
     // ControlValueAccessor callback functions
@@ -352,6 +383,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         this.value.set(identifier);
         this.onTouchedCallback();
         this.onChange.emit(identifier);
+        this.siteChange.emit(site);
     }
 
     /**
@@ -677,5 +709,37 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
                     patchState(this.$state, { loading: false });
                 }
             });
+    }
+
+    /**
+     * Refreshes the selected (pinned) site when a site event fires.
+     * - Unavailable events (archive, stop, delete): switches to the default site.
+     * - Other events: re-fetches the site to reflect any name/property changes.
+     *
+     * @private
+     * @param siteData The payload from the site WebSocket event
+     */
+    private refreshSelectedSite(
+        siteData: { identifier: string; event?: DotSystemEventType } | undefined
+    ): void {
+        const pinned = this.$state.pinnedOption();
+        if (!pinned || siteData?.identifier !== pinned.identifier) {
+            return;
+        }
+
+        if (siteData.event && SITE_UNAVAILABLE_EVENTS.has(siteData.event)) {
+            this.siteService.switchSite(null).subscribe({
+                next: (defaultSite) => this.onSiteChange(defaultSite),
+                // Fall back to clearing the selection via the CVA path so the
+                // parent form sees the null value (not just a nulled pinnedOption).
+                error: () => this.onSiteChange(null)
+            });
+            return;
+        }
+
+        this.siteService.getSiteById(pinned.identifier).subscribe({
+            next: (site) => patchState(this.$state, { pinnedOption: site }),
+            error: () => this.onSiteChange(null)
+        });
     }
 }

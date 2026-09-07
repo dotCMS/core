@@ -40,3 +40,8 @@ export const waitForVisibleAndCallback = async (
 ): Promise<void> => {
     await waitForAndCallback(locator, 'visible', callback);
 };
+
+/** Unique suffix for isolated E2E content type names. */
+export function uniqueSuffix() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}

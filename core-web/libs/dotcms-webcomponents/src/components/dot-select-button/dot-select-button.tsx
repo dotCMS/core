@@ -1,6 +1,6 @@
-import { Component, Prop, h, Host, Event, EventEmitter } from '@stencil/core';
-import { DotSelectButtonOption } from '../../models/dotSelectButtonOption';
 import '@material/mwc-icon-button';
+import { Component, Event, EventEmitter, h, Host, Prop } from '@stencil/core';
+import { DotSelectButtonOption } from '../../models/dotSelectButtonOption';
 
 @Component({
     tag: 'dot-select-button',
@@ -29,6 +29,7 @@ export class DotSelectButton {
                             }}
                             icon={option.icon}
                             label={option.label}
+                            aria-label={option.label}
                             disabled={option.disabled}
                             onClick={() => {
                                 this.setSelected(option);

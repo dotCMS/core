@@ -3,7 +3,7 @@ jest.mock('@dotcms/utils', () => ({
     getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
 }));
 
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
 import { DotCMSAPIResponse, DotCategory } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
@@ -111,6 +111,24 @@ describe('DotCategoriesService', () => {
             '/api/v1/categories/children?filter=child&page=1&showChildrenCount=true&inode=parent-inode',
             HttpMethod.GET
         );
+        req.flush(mockResponse);
+    });
+
+    it('should get a category by inode or key via GET /{idOrKey}', () => {
+        const mockCategory = createFakeCategory({ categoryName: 'News' });
+        const mockResponse: DotCMSAPIResponse<DotCategory> = {
+            entity: mockCategory,
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {}
+        };
+
+        spectator.service.getCategory('i1').subscribe((res) => {
+            expect(res).toEqual(mockCategory);
+        });
+
+        const req = spectator.expectOne('/api/v1/categories/i1', HttpMethod.GET);
         req.flush(mockResponse);
     });
 

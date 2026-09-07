@@ -1,4 +1,4 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { FieldTree } from '@angular/forms/signals';

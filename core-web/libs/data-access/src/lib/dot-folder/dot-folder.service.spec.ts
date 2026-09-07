@@ -1,6 +1,6 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
-import { DotFolder, DotFolderEntity } from '@dotcms/dotcms-models';
+import { DotFolder, DotFolderEntity, DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
 import { createFakeFolder } from '@dotcms/utils-testing';
 
 import { DotFolderService } from './dot-folder.service';
@@ -136,6 +136,102 @@ describe('DotFolderService', () => {
             const req = spectator.expectOne('/api/v1/folder/byPath', HttpMethod.POST);
             expect(req.request.body).toEqual({ path: '//application/test-folder_2024/images' });
             req.flush({ entity: mockFolders });
+        });
+    });
+
+    describe('searchFolders', () => {
+        const mockSearchFolders: FolderSearchView[] = [
+            {
+                id: '1',
+                inode: 'inode-1',
+                name: 'folder1',
+                path: '/',
+                addChildrenAllowed: true,
+                hasChildren: true
+            },
+            {
+                id: '2',
+                inode: 'inode-2',
+                name: 'folder2',
+                path: '/',
+                addChildrenAllowed: false,
+                hasChildren: false
+            }
+        ];
+        const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
+
+        it('should call GET /api/v1/folder/search with required siteId and defaults', () => {
+            spectator.service
+                .searchFolders({ siteId: 'site-1' })
+                .subscribe(({ folders, pagination }) => {
+                    expect(folders).toEqual(mockSearchFolders);
+                    expect(pagination).toEqual(mockPagination);
+                });
+
+            const url = '/api/v1/folder/search?siteId=site-1&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: mockSearchFolders, pagination: mockPagination });
+        });
+
+        it('should include path, recursive, name, orderby, direction and pagination params when provided', () => {
+            spectator.service
+                .searchFolders({
+                    siteId: 'site-1',
+                    path: '/level1/',
+                    recursive: true,
+                    name: 'foo',
+                    orderby: 'mod_date',
+                    direction: 'DESC',
+                    page: 2,
+                    per_page: 10
+                })
+                .subscribe();
+
+            const url =
+                '/api/v1/folder/search?siteId=site-1&path=/level1/&recursive=true&name=foo&orderby=mod_date&direction=DESC&page=2&per_page=10';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: { currentPage: 2, perPage: 10, totalEntries: 0 } });
+        });
+
+        it('should set recursive param to false when explicitly false', () => {
+            spectator.service.searchFolders({ siteId: 'site-1', recursive: false }).subscribe();
+
+            const url = '/api/v1/folder/search?siteId=site-1&recursive=false&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: mockPagination });
+        });
+
+        it('should return an empty folders array when the API returns no entities', () => {
+            spectator.service.searchFolders({ siteId: 'site-1' }).subscribe(({ folders }) => {
+                expect(folders).toEqual([]);
+            });
+
+            const url = '/api/v1/folder/search?siteId=site-1&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } });
+        });
+
+        it('should send includePermissions when the caller opts in', () => {
+            spectator.service
+                .searchFolders({ siteId: 'site-1', includePermissions: true })
+                .subscribe();
+
+            const url =
+                '/api/v1/folder/search?siteId=site-1&includePermissions=true&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: mockPagination });
+        });
+
+        it('should omit includePermissions entirely when not requested', () => {
+            // The backend defaults it to false, so sending `includePermissions=false` on every tree
+            // request would be pure noise.
+            spectator.service
+                .searchFolders({ siteId: 'site-1', includePermissions: false })
+                .subscribe();
+
+            const url = '/api/v1/folder/search?siteId=site-1&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: mockPagination });
         });
     });
 
@@ -278,6 +374,44 @@ describe('DotFolderService', () => {
             const req = spectator.expectOne('/api/v1/assets/folders', HttpMethod.PUT);
             expect(req.request.body).toEqual(folderEntity);
             req.flush({ entity: savedFolder });
+        });
+    });
+
+    describe('deleteFolder', () => {
+        it('should delete the folder at the given path', () => {
+            let result: boolean | undefined;
+
+            spectator.service.deleteFolder('//demo.dotcms.com/old-projects/').subscribe((r) => {
+                result = r;
+            });
+
+            const req = spectator.expectOne('/api/v1/assets/folders/_delete', HttpMethod.POST);
+
+            // The endpoint keys on the path, not the id, and the trailing slash is required.
+            expect(req.request.body).toEqual({ assetPath: '//demo.dotcms.com/old-projects/' });
+            req.flush({ entity: true });
+
+            expect(result).toBe(true);
+        });
+
+        // The consumer routes this to `httpErrorManager.handle` and skips both reloads, so the
+        // observable has to actually error rather than complete quietly. Without this, a change
+        // that swallowed the failure here would keep the consumer's tests green too, since those
+        // only assert the reloads did *not* happen.
+        it('should error when the delete fails', () => {
+            let errored = false;
+
+            spectator.service.deleteFolder('//demo.dotcms.com/old-projects/').subscribe({
+                error: () => {
+                    errored = true;
+                }
+            });
+
+            spectator
+                .expectOne('/api/v1/assets/folders/_delete', HttpMethod.POST)
+                .flush({ message: 'Folder not found' }, { status: 404, statusText: 'Not Found' });
+
+            expect(errored).toBe(true);
         });
     });
 });

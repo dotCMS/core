@@ -10,6 +10,7 @@ import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.IndexBulkRequest;
+import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -295,8 +296,8 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits hits = ops.searchHits("+contenttype:" + CONTENT_TYPE, 10, 0, null);
 
         assertNotNull("searchHits must never return null", hits);
-        assertFalse("searchHits must return at least one result", hits.hits().isEmpty());
-        assertEquals("totalHits must be 1", 1L, hits.totalHits().value());
+        assertFalse("searchHits must return at least one result", hits.getHits().isEmpty());
+        assertEquals("totalHits must be 1", 1L, hits.getTotalHits().value());
     }
 
     /**
@@ -313,8 +314,8 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits hits = ops.searchHits("+contenttype:" + CONTENT_TYPE, 1, 0, null);
 
         assertNotNull("searchHits must not be null", hits);
-        assertEquals("Only 1 hit must be returned when limit=1", 1, hits.hits().size());
-        assertEquals("totalHits must reflect all 3 indexed documents", 3L, hits.totalHits().value());
+        assertEquals("Only 1 hit must be returned when limit=1", 1, hits.getHits().size());
+        assertEquals("totalHits must reflect all 3 indexed documents", 3L, hits.getTotalHits().value());
     }
 
     /**
@@ -349,7 +350,7 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits hits = ops.searchHits("+contenttype:" + CONTENT_TYPE, 10, 0, null);
 
         assertNotNull("searchHits must not return null for an empty index", hits);
-        assertTrue("Empty index must produce no hits", hits.hits().isEmpty());
+        assertTrue("Empty index must produce no hits", hits.getHits().isEmpty());
     }
 
     /**
@@ -374,14 +375,114 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits liveHits = ops.searchHits(
                 "+live:true +contenttype:" + CONTENT_TYPE, 10, 0, null);
         assertNotNull("searchHits must not return null for live query", liveHits);
-        assertFalse("Live query must find the document in the live index", liveHits.hits().isEmpty());
+        assertFalse("Live query must find the document in the live index", liveHits.getHits().isEmpty());
 
         // No +live:true → routed to working index (empty) → no results
         final SearchHits workingHits = ops.searchHits(
                 "+contenttype:" + CONTENT_TYPE, 10, 0, null);
         assertNotNull("searchHits must not return null for working query", workingHits);
         assertTrue("Working query must return no results — document is only in the live index",
-                workingHits.hits().isEmpty());
+                workingHits.getHits().isEmpty());
+    }
+
+    /**
+     * Given scenario: Three documents with strictly different relevance to the query are indexed,
+     * arranged so that the most-relevant document is the <em>oldest</em> (lowest {@code moddate}) and
+     * the least-relevant is the <em>newest</em>. The query is issued with {@code sort=score}.
+     *
+     * <p>Expected: Results come back in {@code _score} descending order (A, B, C), <strong>not</strong>
+     * in the default {@code moddate} descending order (C, B, A). This is the regression guard for
+     * issue #36494 — before the fix, the {@code score} branch of {@code addSorting} added only the
+     * secondary {@code moddate} sort and silently dropped the primary {@code _score} sort, so a
+     * relevance-sorted query returned default ordering in Phases 2/3.</p>
+     */
+    @Test
+    public void test_searchHits_sortByScore_shouldOrderByRelevanceNotModdate() throws Exception {
+        osIndexAPI.createIndex(IDX_WORKING, 1);
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+
+        // Most-relevant doc (3 matching terms) is the OLDEST; least-relevant (1 term) is the NEWEST.
+        // moddate-desc ordering would yield C, B, A — the exact reverse of relevance ordering.
+        final String inodeA = "test-cfops-score-" + RUN_ID + "-a";
+        final String inodeB = "test-cfops-score-" + RUN_ID + "-b";
+        final String inodeC = "test-cfops-score-" + RUN_ID + "-c";
+        final IndexBulkRequest req = contentletOps.createBulkRequest();
+        contentletOps.addIndexOp(req, fullWorking, inodeA + "_1_default",
+                scoringDocJson(inodeA, "snow winter storm", 1000001));
+        contentletOps.addIndexOp(req, fullWorking, inodeB + "_1_default",
+                scoringDocJson(inodeB, "snow winter", 1000002));
+        contentletOps.addIndexOp(req, fullWorking, inodeC + "_1_default",
+                scoringDocJson(inodeC, "snow", 1000003));
+        contentletOps.putToIndex(req);
+        refreshTestIndex(fullWorking);
+
+        final ControllableOps ops = new ControllableOps(fullWorking, fullWorking);
+        final SearchHits hits = ops.searchHits(
+                "+contenttype:" + CONTENT_TYPE + " +title:snow title:winter title:storm",
+                10, 0, "score");
+
+        assertNotNull("searchHits must not return null", hits);
+        assertEquals("All 3 documents must match", 3, hits.getHits().size());
+
+        // Primary sort is _score desc: scores must be non-increasing across the result page.
+        float previousScore = Float.MAX_VALUE;
+        for (final var hit : hits.getHits()) {
+            assertTrue("Scores must be in descending order (primary _score sort applied); "
+                            + "got " + hit.getScore() + " after " + previousScore,
+                    hit.getScore() <= previousScore);
+            previousScore = hit.getScore();
+        }
+
+        // Relevance order (A, B, C), NOT moddate-desc order (C, B, A).
+        final List<String> orderedIds = hits.getHits().stream().map(SearchHit::getId).toList();
+        assertEquals("sort=score must order by relevance: most-relevant (A) first",
+                inodeA + "_1_default", orderedIds.get(0));
+        assertEquals("sort=score must order by relevance: least-relevant (C) last",
+                inodeC + "_1_default", orderedIds.get(2));
+    }
+
+    /**
+     * Given scenario: Three equally-relevant documents (identical single-term title, so identical
+     * {@code _score}) are indexed with distinct {@code moddate} values. The query is issued with the
+     * secondary-sort override {@code sort=score moddate asc}.
+     *
+     * <p>Expected: With {@code _score} tied, the caller-specified secondary sort ({@code moddate asc})
+     * breaks the tie — documents come back oldest-first. Confirms acceptance criterion 3 of #36494:
+     * {@code sort=score <field> <dir>} variants apply the secondary sort after the primary
+     * {@code _score} sort.</p>
+     */
+    @Test
+    public void test_searchHits_sortByScore_secondaryOverride_shouldApplySecondarySort() throws Exception {
+        osIndexAPI.createIndex(IDX_WORKING, 1);
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+
+        // Identical title → identical _score; only moddate differs.
+        final String inode1 = "test-cfops-sec-" + RUN_ID + "-1";
+        final String inode2 = "test-cfops-sec-" + RUN_ID + "-2";
+        final String inode3 = "test-cfops-sec-" + RUN_ID + "-3";
+        final IndexBulkRequest req = contentletOps.createBulkRequest();
+        contentletOps.addIndexOp(req, fullWorking, inode1 + "_1_default",
+                scoringDocJson(inode1, "snow", 3000000));
+        contentletOps.addIndexOp(req, fullWorking, inode2 + "_1_default",
+                scoringDocJson(inode2, "snow", 1000000));
+        contentletOps.addIndexOp(req, fullWorking, inode3 + "_1_default",
+                scoringDocJson(inode3, "snow", 2000000));
+        contentletOps.putToIndex(req);
+        refreshTestIndex(fullWorking);
+
+        final ControllableOps ops = new ControllableOps(fullWorking, fullWorking);
+        final SearchHits hits = ops.searchHits(
+                "+contenttype:" + CONTENT_TYPE + " +title:snow", 10, 0, "score moddate asc");
+
+        assertNotNull("searchHits must not return null", hits);
+        assertEquals("All 3 documents must match", 3, hits.getHits().size());
+
+        // Equal score → moddate asc decides: oldest (inode2) first, newest (inode1) last.
+        final List<String> orderedIds = hits.getHits().stream().map(SearchHit::getId).toList();
+        assertEquals("Tied score → secondary moddate asc: oldest first",
+                inode2 + "_1_default", orderedIds.get(0));
+        assertEquals("Tied score → secondary moddate asc: newest last",
+                inode1 + "_1_default", orderedIds.get(2));
     }
 
     // =========================================================================
@@ -606,7 +707,7 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
 
         // Phase 1: empty index → 0 hits, result now cached
         final SearchHits hitsEmpty = ops.searchHits(query, 10, 0, null);
-        assertEquals("Empty index must return 0 hits", 0L, hitsEmpty.totalHits().value());
+        assertEquals("Empty index must return 0 hits", 0L, hitsEmpty.getTotalHits().value());
 
         // Phase 2: index a doc + refresh (OS now has 1 visible doc)
         indexSingleDoc(fullWorking);
@@ -614,13 +715,13 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         // Phase 3: cache still valid — must return the stale 0
         final SearchHits hitsCached = ops.searchHits(query, 10, 0, null);
         assertEquals("Cache must return stale 0-hit result before clear",
-                0L, hitsCached.totalHits().value());
+                0L, hitsCached.getTotalHits().value());
 
         // Phase 4: clear cache → fresh request → 1 doc
         CacheLocator.getOSQueryCache().clearCache();
         final SearchHits hitsFresh = ops.searchHits(query, 10, 0, null);
         assertEquals("After cache clear, fresh query must return the indexed document",
-                1L, hitsFresh.totalHits().value());
+                1L, hitsFresh.getTotalHits().value());
     }
 
     /**
@@ -671,23 +772,23 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         // Different limit values → independent cache entries
         final SearchHits limit2 = ops.searchHits(query, 2, 0, null);
         final SearchHits limit3 = ops.searchHits(query, 3, 0, null);
-        assertEquals("limit=2 must return 2 hits", 2, limit2.hits().size());
-        assertEquals("limit=3 must return 3 hits", 3, limit3.hits().size());
+        assertEquals("limit=2 must return 2 hits", 2, limit2.getHits().size());
+        assertEquals("limit=3 must return 3 hits", 3, limit3.getHits().size());
         assertEquals("totalHits must reflect all 3 docs regardless of limit",
-                3L, limit2.totalHits().value());
+                3L, limit2.getTotalHits().value());
 
         // Repeat limit=2 → cache hit, same result
         final SearchHits limit2Again = ops.searchHits(query, 2, 0, null);
         assertEquals("Repeated limit=2 call must return same hit count (cache hit)",
-                limit2.hits().size(), limit2Again.hits().size());
+                limit2.getHits().size(), limit2Again.getHits().size());
         assertEquals("Repeated limit=2 call must return same totalHits (cache hit)",
-                limit2.totalHits().value(), limit2Again.totalHits().value());
+                limit2.getTotalHits().value(), limit2Again.getTotalHits().value());
 
         // Different offset → independent cache entry, different page
         final SearchHits page2 = ops.searchHits(query, 2, 1, null);
-        assertEquals("limit=2,offset=1 must return 2 hits (page 2)", 2, page2.hits().size());
+        assertEquals("limit=2,offset=1 must return 2 hits (page 2)", 2, page2.getHits().size());
         assertNotEquals("Page 2 must start at a different document than page 1",
-                page2.hits().get(0).id(), limit2.hits().get(0).id());
+                page2.getHits().get(0).getId(), limit2.getHits().get(0).getId());
     }
 
     // =========================================================================
@@ -725,6 +826,21 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         }
         contentletOps.putToIndex(req);
         refreshTestIndex(fullIndexName);
+    }
+
+    /**
+     * Builds a minimal indexable JSON document with a caller-controlled {@code title} (drives the
+     * relevance {@code _score}) and {@code moddate} (drives the default secondary sort). Used by the
+     * {@code sort=score} ordering tests where relevance order must be pitted against moddate order.
+     */
+    private String scoringDocJson(final String inode, final String title, final long moddate) {
+        return "{\"identifier\":\"" + inode + "-id\","
+                + "\"inode\":\"" + inode + "\","
+                + "\"title\":\"" + title + "\","
+                + "\"language_id\":1,"
+                + "\"live\":true,"
+                + "\"moddate\":" + moddate + ","
+                + "\"contenttype\":\"" + CONTENT_TYPE + "\"}";
     }
 
     /**

@@ -6,12 +6,16 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +32,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * REST resource that proxies requests to the remote Page Scanner service for
@@ -39,23 +45,42 @@ import java.util.Date;
 @Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance")
 public class PageScannerResource {
 
-    public static final String API_URL_PROPERTY        = "DOT_PAGE_SCANNER_API_URL";
-    public static final String API_AUTH_TOKEN_PROPERTY = "DOT_PAGE_SCANNER_API_AUTH_TOKEN";
+    static final String APP_KEY = "dotPageScanner-config";
 
+    /**
+     * Backward-compatible property name retained so existing references
+     * (for example, configuration whitelists in other resources) continue
+     * to compile while the effective configuration is stored in App secrets.
+     */
+    @Deprecated
+    public static final String API_URL_PROPERTY = "PAGE_SCANNER_API_URL";
     static final String DEFAULT_API_URL =
             "https://a11y.api.dotcms.site";
+
+    /** Version prefix the upstream Page Scanner service exposes its check endpoints under. */
+    static final String UPSTREAM_API_VERSION = "v1";
 
     private static final String NOT_CONFIGURED_MSG =
             "Page Scanner service is not available.";
 
     private final WebResource webResource;
+    private final HttpClient httpClient;
 
     public PageScannerResource() {
         this.webResource = new WebResource();
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
+    }
+
+    /** Package-private constructor for unit tests. */
+    PageScannerResource(final WebResource webResource, final HttpClient httpClient) {
+        this.webResource = webResource;
+        this.httpClient = httpClient;
     }
 
     /**
-     * Proxies a POST request to the upstream {@code /a11y/check} endpoint.
+     * Proxies a POST request to the upstream {@code /v1/a11y/check} endpoint.
      *
      * @param request  the HTTP servlet request
      * @param response the HTTP servlet response
@@ -76,7 +101,7 @@ public class PageScannerResource {
     }
 
     /**
-     * Proxies a POST request to the upstream {@code /geo/check} endpoint.
+     * Proxies a POST request to the upstream {@code /v1/geo/check} endpoint.
      *
      * @param request  the HTTP servlet request
      * @param response the HTTP servlet response
@@ -114,12 +139,32 @@ public class PageScannerResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final String apiUrl       = Config.getStringProperty(API_URL_PROPERTY, DEFAULT_API_URL);
-        final String apiAuthToken = Config.getStringProperty(API_AUTH_TOKEN_PROPERTY, null);
+        final Host currentHost = Try.<Host>of(
+                () -> com.dotmarketing.business.web.WebAPILocator.getHostWebAPI().getCurrentHost(request))
+                .getOrElse(APILocator.systemHost());
+
+        final Optional<AppSecrets> appSecretsOpt = Try.of(
+                () -> APILocator.getAppsAPI().getSecrets(APP_KEY, true,
+                        currentHost, APILocator.systemUser()))
+                .getOrElse(Optional.empty());
+
+        if (appSecretsOpt.isEmpty()) {
+            Logger.warn(PageScannerResource.class,
+                    "Page Scanner App is not configured in the Apps portlet.");
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
+                    .build();
+        }
+
+        final Map<String, Secret> secrets = appSecretsOpt.get().getSecrets();
+        final String apiUrl = sanitizeSecret(Try.of(() -> secrets.get("apiUrl").getString())
+                .getOrElse(DEFAULT_API_URL));
+        final String apiAuthToken = sanitizeSecret(Try.of(() -> secrets.get("apiAuthToken").getString())
+                .getOrElse((String) null));
 
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
-                    "Page Scanner not configured: DOT_PAGE_SCANNER_API_URL and DOT_PAGE_SCANNER_API_AUTH_TOKEN must be set");
+                    "Page Scanner App is missing required configuration: apiUrl and apiAuthToken must be set.");
             return Response.status(Response.Status.SERVICE_UNAVAILABLE)
                     .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
                     .build();
@@ -177,7 +222,7 @@ public class PageScannerResource {
 
     private String buildUpstreamUrl(final String apiUrl, final CheckType checkType) {
         final String base = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
-        return base + "/" + checkType.pathSegment() + "/check";
+        return base + "/" + UPSTREAM_API_VERSION + "/" + checkType.pathSegment() + "/check";
     }
 
     private Response forwardRequest(
@@ -186,10 +231,6 @@ public class PageScannerResource {
             final String authToken) {
 
         try {
-            final HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(30))
-                    .build();
-
             final HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(upstreamUrl))
                     .timeout(Duration.ofSeconds(60))
@@ -199,7 +240,7 @@ public class PageScannerResource {
                     .build();
 
             final HttpResponse<String> upstreamResponse =
-                    client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                    httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             final int upstreamStatus = upstreamResponse.statusCode();
             Logger.debug(PageScannerResource.class,
@@ -210,7 +251,7 @@ public class PageScannerResource {
             // distinguish it from a dotCMS session error.
             if (upstreamStatus == 401 || upstreamStatus == 403) {
                 Logger.warn(PageScannerResource.class,
-                        "Upstream Page Scanner returned " + upstreamStatus + " — check DOT_PAGE_SCANNER_API_AUTH_TOKEN");
+                        "Upstream Page Scanner returned " + upstreamStatus + " — check apiAuthToken in the Page Scanner App configuration");
                 return Response.status(Response.Status.BAD_GATEWAY)
                         .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_AUTH_FAILED", "Page Scanner service authentication failed.")))
                         .build();
@@ -228,6 +269,29 @@ public class PageScannerResource {
                     .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_UNREACHABLE", "Unable to reach the Page Scanner service.")))
                     .build();
         }
+    }
+
+    /**
+     * Cleans a secret value read from the Apps portfolio before it is used in an
+     * outbound HTTP header or URL. Hidden secret fields are pasted blind, so a
+     * line-wrapped or trailing newline easily slips in. Java's {@link HttpRequest}
+     * rejects any header value char that is not a valid RFC 7230 field-vchar
+     * (see {@code jdk.internal.net.http.common.Utils#isValidValue}): control
+     * chars below {@code 0x20}, DEL ({@code 0x7F}), and anything above
+     * {@code 0xFF} (smart quotes, em-dashes, zero-width spaces, BOM, etc.). A
+     * blind paste into a hidden secret field can carry any of these, so we strip
+     * every disallowed char before the value reaches the header, then trim
+     * surrounding whitespace.
+     */
+    private String sanitizeSecret(final String value) {
+        if (value == null) {
+            return null;
+        }
+        // Keep only chars Java's HttpRequest accepts in a header value: the
+        // printable range 0x20-0xFF minus DEL (0x7F). Everything else — control
+        // chars (0x00-0x1F), DEL, and any char above 0xFF — is dropped. Then trim
+        // surrounding whitespace (0x20 / tab).
+        return value.replaceAll("[^\\u0020-\\u007E\\u0080-\\u00FF]", "").trim();
     }
 
     /**

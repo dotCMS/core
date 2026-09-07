@@ -30,6 +30,8 @@ public abstract class AbstractProperty<T> implements Serializable {
     protected final Boolean envShow;
     @JsonIgnore
     protected char[] envVarValue;
+    @JsonIgnore
+    protected boolean fromEnv;
 
     public AbstractProperty(final T value,
                             final Boolean hidden,
@@ -77,6 +79,22 @@ public abstract class AbstractProperty<T> implements Serializable {
 
     public void setEnvVarValue(char[] envVarValue) {
         this.envVarValue = envVarValue;
+    }
+
+    /**
+     * Signals whether this property's value originated from an environment variable tier rather
+     * than from a stored secrets blob. Exposed so callers (and the REST layer) can surface a
+     * boolean {@code fromEnv} indicator without leaking the resolution tier.
+     *
+     * @return {@code true} when the value was resolved from an environment variable.
+     */
+    @JsonIgnore
+    public boolean isFromEnv() {
+        return fromEnv;
+    }
+
+    public void setFromEnv(final boolean fromEnv) {
+        this.fromEnv = fromEnv;
     }
 
     @JsonIgnore

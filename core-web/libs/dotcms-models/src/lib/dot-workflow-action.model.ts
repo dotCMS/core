@@ -70,7 +70,7 @@ export interface DotCMSSystemAction {
 
 export interface DotCMSWorkflowInput {
     id: string;
-    body: any;
+    body: Record<string, unknown>;
 }
 
 export interface DotCMSContentletWorkflowActions {

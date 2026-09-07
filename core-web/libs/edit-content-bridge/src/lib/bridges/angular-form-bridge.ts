@@ -1,15 +1,26 @@
+import { Observable, Subscription, take } from 'rxjs';
+
 import { NgZone } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { AbstractControl, FormGroup } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotBrowserSelectorComponent } from '@dotcms/ui';
+import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
+import {
+    buildAssetPickerConfig,
+    buildAssetPickerDialogConfig,
+    DotAssetPickerBrowseOptions,
+    DotAssetPickerComponent
+} from '@dotcms/ui';
 
 import {
-    BrowserSelectorController,
-    BrowserSelectorOptions,
+    DotBrowserController,
+    DotBrowserItemKind,
+    DotBrowserOptions,
+    DotBrowserSelection,
     FieldCallback,
     FieldSubscription,
+    FieldValidationState,
     FormBridge,
     FormFieldAPI,
     FormFieldValue
@@ -30,6 +41,7 @@ export class AngularFormBridge implements FormBridge {
     private static refCount = 0;
     private static instanceStack: { instance: AngularFormBridge | null; refCount: number }[] = [];
     #fieldSubscriptions: Map<string, FieldSubscription> = new Map();
+    #validationSubscriptions: Set<() => void> = new Set();
     #form: FormGroup;
     #zone: NgZone;
     #dialogService: DialogService;
@@ -42,16 +54,31 @@ export class AngularFormBridge implements FormBridge {
      */
     #onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void;
 
+    /**
+     * How the bridge finds the site the asset picker browses.
+     *
+     * The picker cannot browse without one, and the bridge has no injector to reach
+     * `DotSiteService` itself — so the host that constructs it supplies this. A function rather
+     * than a fixed `DotSite` because the user can switch site between two opens, and the site has
+     * to be current each time.
+     *
+     * Optional: a host that never wires one up simply cannot browse, and `openBrowserModal` says so
+     * instead of opening a picker with nothing in it.
+     */
+    #resolveSite?: () => Observable<DotSite | null>;
+
     private constructor(
         form: FormGroup,
         zone: NgZone,
         dialogService: DialogService,
-        onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void
+        onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void,
+        resolveSite?: () => Observable<DotSite | null>
     ) {
         this.#form = form;
         this.#zone = zone;
         this.#dialogService = dialogService;
         this.#onFieldVisibilityChange = onFieldVisibilityChange;
+        this.#resolveSite = resolveSite;
     }
 
     /**
@@ -62,38 +89,65 @@ export class AngularFormBridge implements FormBridge {
      * @param zone - The NgZone for change detection
      * @param dialogService - The PrimeNG DialogService for opening dialogs
      * @param onFieldVisibilityChange - Optional callback to handle field visibility changes from show()/hide()
+     * @param resolveSite - Optional site resolver for `openBrowserModal`; see `#resolveSite`
      * @returns The singleton instance of AngularFormBridge
      */
     static getInstance(
         form: FormGroup,
         zone: NgZone,
         dialogService: DialogService,
-        onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void
+        onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void,
+        resolveSite?: () => Observable<DotSite | null>
     ): AngularFormBridge {
         if (!AngularFormBridge.instance) {
             AngularFormBridge.instance = new AngularFormBridge(
                 form,
                 zone,
                 dialogService,
-                onFieldVisibilityChange
+                onFieldVisibilityChange,
+                resolveSite
             );
-        } else {
-            if (
-                AngularFormBridge.instance.#form !== form ||
-                AngularFormBridge.instance.#zone !== zone
-            ) {
+        } else if (
+            AngularFormBridge.instance.#form !== form ||
+            AngularFormBridge.instance.#zone !== zone
+        ) {
+            // FormGroup or NgZone changed — the form component was destroyed and recreated
+            // (e.g., navigation between content items, manual locale translation, or save +
+            // re-open of "new"). The previous instance is bound to a stale form whose controls
+            // may still report touched=true from a prior Save, leaking validation state to
+            // freshly rendered custom fields. There is no reliable external call site for
+            // resetInstance() because Angular tears down the form silently via @if; detecting
+            // the change here and resetting is the only safe option.
+            if (AngularFormBridge.refCount > 1) {
+                // refCount === 1 is the routine single-consumer navigation case and
+                // is silently handled by resetInstance(). Higher counts mean multiple
+                // NativeFieldComponents still believe the old bridge is live — worth
+                // surfacing because their references will go stale.
                 console.warn(
-                    'AngularFormBridge: Attempted to get instance with different form or zone. ' +
-                        'Returning existing instance. Consider calling resetInstance() first if you need a new instance.'
+                    `AngularFormBridge: replacing instance while refCount=${AngularFormBridge.refCount}. ` +
+                        'Some custom fields may still hold a reference to the old bridge. ' +
+                        'Ensure all NativeFieldComponent instances are destroyed before the FormGroup changes.'
                 );
             }
-
+            AngularFormBridge.resetInstance();
+            AngularFormBridge.instance = new AngularFormBridge(
+                form,
+                zone,
+                dialogService,
+                onFieldVisibilityChange,
+                resolveSite
+            );
+        } else {
             if (onFieldVisibilityChange !== undefined) {
                 AngularFormBridge.instance.#onFieldVisibilityChange = onFieldVisibilityChange;
             }
 
             if (dialogService !== undefined) {
                 AngularFormBridge.instance.#dialogService = dialogService;
+            }
+
+            if (resolveSite !== undefined) {
+                AngularFormBridge.instance.#resolveSite = resolveSite;
             }
         }
 
@@ -269,6 +323,12 @@ export class AngularFormBridge implements FormBridge {
      * NativeFieldComponent's ngOnDestroy without breaking other instances.
      */
     destroy(): void {
+        // Orphan instances (replaced when the FormGroup changed) must not affect
+        // the live bridge's ref count.
+        if (this !== AngularFormBridge.instance) {
+            return;
+        }
+
         AngularFormBridge.refCount = Math.max(0, AngularFormBridge.refCount - 1);
 
         if (AngularFormBridge.refCount === 0) {
@@ -290,6 +350,9 @@ export class AngularFormBridge implements FormBridge {
             fieldSubscription.subscription.unsubscribe();
         });
         this.#fieldSubscriptions.clear();
+
+        this.#validationSubscriptions.forEach((unsubscribe) => unsubscribe());
+        this.#validationSubscriptions.clear();
 
         this.#dialogRef?.close();
         this.#dialogRef = null;
@@ -314,6 +377,84 @@ export class AngularFormBridge implements FormBridge {
 
             onChange: (callback: (value: FormFieldValue) => void): (() => void) => {
                 return this.onChangeField(fieldId, callback);
+            },
+
+            getValidationState: (): FieldValidationState => {
+                const control = this.#form.get(fieldId);
+                if (!control) {
+                    // Neutral state — "no opinion". Matches DojoFormBridge so VTL templates
+                    // that read `state.valid` get the same answer in both editors.
+                    // Real validity flows in once the control registers.
+                    return {
+                        valid: true,
+                        invalid: false,
+                        touched: false,
+                        dirty: false,
+                        errors: null
+                    };
+                }
+
+                return {
+                    valid: control.valid,
+                    invalid: control.invalid,
+                    touched: control.touched,
+                    dirty: control.dirty,
+                    errors: control.errors
+                };
+            },
+
+            onValidationChange: (callback: (state: FieldValidationState) => void): (() => void) => {
+                // The control may not be registered yet when this method is called
+                // (the custom field renders inside `@defer` and its template script
+                // can run before the FormGroup has registered every field's control).
+                // We listen to the form-level events so we re-attach to the control
+                // as soon as it appears, and re-emit on every change after that.
+                let activeControl: AbstractControl | null = null;
+                let activeControlSub: Subscription | null = null;
+
+                const emit = (control: AbstractControl) => {
+                    this.#zone.run(() =>
+                        callback({
+                            valid: control.valid,
+                            invalid: control.invalid,
+                            touched: control.touched,
+                            dirty: control.dirty,
+                            errors: control.errors
+                        })
+                    );
+                };
+
+                const reconcile = () => {
+                    const control = this.#form.get(fieldId);
+                    if (control === activeControl) {
+                        return;
+                    }
+
+                    activeControlSub?.unsubscribe();
+                    activeControl = control;
+                    activeControlSub = control
+                        ? control.events.subscribe(() => emit(control))
+                        : null;
+
+                    if (control) {
+                        emit(control);
+                    }
+                };
+
+                reconcile();
+                const formSub = this.#form.events.subscribe(() => reconcile());
+
+                const unsubscribe = () => {
+                    formSub.unsubscribe();
+                    activeControlSub?.unsubscribe();
+                    activeControl = null;
+                    activeControlSub = null;
+                    this.#validationSubscriptions.delete(unsubscribe);
+                };
+
+                this.#validationSubscriptions.add(unsubscribe);
+
+                return unsubscribe;
             },
 
             enable: (): void => {
@@ -360,105 +501,245 @@ export class AngularFormBridge implements FormBridge {
     }
 
     /**
-     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
-     * Uses PrimeNG DialogService to open the DotBrowserSelectorComponent.
+     * Opens the asset browser for a custom-field template and resolves with what the editor picked.
      *
-     * @param options - Configuration options for the browser selector.
-     * @param options.header - The title/header of the dialog. Defaults to 'Select Content' if not provided.
-     * @param options.params - The parameters for the browser selector (ContentByFolderParams).
-     * @param options.params.hostFolderId - The ID of the host folder to browse (required).
-     * @param options.params.mimeTypes - Optional array of MIME types to filter by.
-     * @param options.params.showPages - Optional flag to show pages.
-     * @param options.params.showFiles - Optional flag to show files.
-     * @param options.params.showFolders - Optional flag to show folders.
-     * @param options.params.showLinks - Optional flag to show links.
-     * @param options.params.showDotAssets - Optional flag to show dotCMS assets.
-     * @param options.params.showArchived - Optional flag to show archived content.
-     * @param options.params.showWorking - Optional flag to show working content.
-     * @param options.params.sortByDesc - Optional flag to sort in descending order.
-     * @param options.params.extensions - Optional array of file extensions to filter by.
-     * @param options.onClose - Callback function executed when the browser selector is closed.
-     * @returns A controller object to manage the dialog.
+     * Backs `DotCustomFieldApi.openBrowserModal()`. Opens the new AssetPicker — the same picker the
+     * File and Image fields use — widened here to also return pages, folders and menu links, which
+     * a browser has to offer and an asset picker does not.
+     *
+     * **Opening is asynchronous.** The picker needs a site, and finding one is a request, so the
+     * dialog appears a tick or more after this returns — which is exactly why the outcome arrives
+     * through `onClose` rather than as a return value. The controller comes back immediately, and
+     * `close()` works even before the dialog exists: it cancels the pending open.
+     *
+     * @param options What to browse, and what to do with the result. Every field is optional; the
+     * defaults browse assets only.
+     * @returns A controller for closing the dialog programmatically.
      *
      * @example
-     * // Select a page
      * bridge.openBrowserModal({
-     *   header: 'Select a Page',
-     *   params: {
-     *     hostFolderId: 'folder-id',
-     *     mimeTypes: ['application/dotpage']
-     *   },
-     *   onClose: (result) => console.log(result)
-     * });
-     *
-     * @example
-     * // Select an image
-     * bridge.openBrowserModal({
-     *   header: 'Select an Image',
-     *   params: {
-     *     hostFolderId: 'folder-id',
-     *     mimeTypes: ['image']
-     *   },
-     *   onClose: (result) => console.log(result)
-     * });
-     *
-     * @example
-     * // Select any file with additional filters
-     * bridge.openBrowserModal({
-     *   header: 'Select a File',
-     *   params: {
-     *     hostFolderId: 'folder-id',
-     *     showFiles: true,
-     *     showPages: false,
-     *     showFolders: false,
-     *     extensions: ['.jpg', '.png', '.gif']
-     *   },
-     *   onClose: (result) => console.log(result)
+     *   title: 'Select a Page',
+     *   kinds: ['page', 'link'],
+     *   status: 'live',
+     *   sort: { field: 'modDate', direction: 'desc' },
+     *   onClose: (selection) => {
+     *     if (selection) field.setValue(selection.url);
+     *   }
      * });
      */
-    openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController {
-        const header = options.header ?? 'Select Content';
+    openBrowserModal(options: DotBrowserOptions = {}): DotBrowserController {
+        // Whoever gets there first wins, and every later call is a no-op. PrimeNG can emit its own
+        // close after a programmatic `close()`, and a cancelled open races the site lookup —
+        // without this, `onClose` would fire twice.
+        let settled = false;
+        const finish = (selection: DotBrowserSelection | null) => {
+            if (settled) {
+                return;
+            }
 
-        this.#zone.run(() => {
-            this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
-                header,
-                appendTo: 'body',
-                closable: true,
-                closeOnEscape: false,
-                draggable: false,
-                keepInViewport: false,
-                maskStyleClass: 'p-dialog-mask-dynamic',
-                resizable: false,
-                modal: true,
-                width: '90%',
-                style: { 'max-width': '1040px' },
-                data: {
-                    ...options.params
-                }
-            });
+            settled = true;
+            options.onClose?.(selection);
+        };
 
-            this.#dialogRef.onClose.subscribe((content) => {
-                if (content) {
-                    options.onClose({
-                        identifier: content.identifier,
-                        inode: content.inode,
-                        title: content.title,
-                        name: content.name || content.fileName,
-                        url: content.url || content.urlMap || '',
-                        mimeType: content.mimeType,
-                        baseType: content.baseType,
-                        contentType: content.contentType
+        if (!this.#resolveSite) {
+            console.warn(
+                'DotCustomFieldApi.openBrowserModal: this host did not give the bridge a way to ' +
+                    'resolve a site, so there is nothing to browse. Pass `resolveSite` to createFormBridge().'
+            );
+            finish(null);
+
+            return { close: () => undefined };
+        }
+
+        // Per-call, not the shared `#dialogRef`: two custom fields can each hold an open picker, and
+        // a shared field would let one field's `close()` reach the other's dialog. `#dialogRef` is
+        // still set so `destroy()` can close whatever is open.
+        let ref: DynamicDialogRef | null = null;
+        let cancelled = false;
+
+        const siteSub = this.#resolveSite()
+            .pipe(take(1))
+            .subscribe({
+                next: (site) => {
+                    // `close()` beat the lookup — never open a dialog nobody is waiting for.
+                    if (cancelled || !site) {
+                        finish(null);
+
+                        return;
+                    }
+
+                    this.#zone.run(() => {
+                        ref = this.#dialogService.open(
+                            DotAssetPickerComponent,
+                            buildAssetPickerDialogConfig(
+                                buildAssetPickerConfig({
+                                    mode: 'browse',
+                                    site,
+                                    title: options.title,
+                                    initialAssetPath: options.path,
+                                    allowedBaseTypes: baseTypesFor(options.kinds),
+                                    browse: browseOptionsFor(options),
+                                    ...(options.mimeTypes?.length
+                                        ? { mimeTypes: options.mimeTypes }
+                                        : {})
+                                })
+                            )
+                        );
+                        this.#dialogRef = ref;
+
+                        ref.onClose.subscribe((item) => {
+                            finish(item ? toSelection(item) : null);
+                        });
                     });
-                } else {
-                    options.onClose(null);
+                },
+                // Nothing to browse — same as the File field, which simply does not open when no
+                // site resolves. Logged because this is the 5xx / offline / expired-session branch:
+                // to the template author `onClose(null)` is indistinguishable from the user
+                // pressing Cancel, so without this a "the browse button does nothing" report has
+                // nothing behind it.
+                error: (error) => {
+                    console.error(
+                        'DotCustomFieldApi.openBrowserModal: could not resolve the current site, ' +
+                            'so the picker did not open.',
+                        error
+                    );
+                    finish(null);
                 }
             });
-        });
 
         return {
             close: () => {
-                this.#dialogRef?.close();
+                cancelled = true;
+                siteSub.unsubscribe();
+                ref?.close();
+                finish(null);
             }
         };
     }
+}
+
+/** Base types a `kinds` list asks the selector to offer. */
+const KIND_BASE_TYPES: Partial<Record<DotBrowserItemKind, string>> = {
+    file: 'FILEASSET',
+    dotasset: 'DOTASSET',
+    page: 'HTMLPAGE'
+};
+
+/**
+ * Which base types the picker may offer.
+ *
+ * `folder` and `link` are absent on purpose — neither is a base type, so they travel as browse
+ * flags instead. An empty result means the caller asked for nothing a base type can express, and
+ * the picker falls back to its asset-only default.
+ */
+function baseTypesFor(kinds?: DotBrowserItemKind[]): string[] | undefined {
+    const baseTypes = (kinds ?? [])
+        .map((kind) => KIND_BASE_TYPES[kind])
+        .filter((baseType): baseType is string => Boolean(baseType));
+
+    return baseTypes.length ? baseTypes : undefined;
+}
+
+/**
+ * Translates the public options into the picker's own browse vocabulary.
+ *
+ * Always returns an object, even an empty one: its presence is what marks this as a `browse` open,
+ * which is what keeps folders, links and pages structurally unreachable from every other entry
+ * point.
+ */
+function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptions {
+    const kinds = options.kinds ?? [];
+    const wantsLinks = kinds.includes('link');
+
+    if (wantsLinks && options.mimeTypes?.length) {
+        // The browse endpoint drops links whenever a mimetype filter is set, because a link has no
+        // file metadata to match against. Surfaced rather than worked around: silently returning
+        // fewer kinds than asked for is the worse outcome.
+        console.warn(
+            'DotCustomFieldApi.openBrowserModal: `mimeTypes` cannot be combined with the `link` ' +
+                'kind — menu links carry no MIME type, so the server will omit them.'
+        );
+    }
+
+    return {
+        ...(kinds.includes('folder') ? { showFolders: true } : {}),
+        ...(wantsLinks ? { showLinks: true } : {}),
+        // Three states, expressed as the two flags the picker already understands.
+        ...(options.status ? { showWorking: options.status !== 'live' } : {}),
+        ...(options.status ? { showArchived: options.status === 'archived' } : {}),
+        ...(options.sort
+            ? { sortField: options.sort.field, sortByDesc: options.sort.direction === 'desc' }
+            : {})
+    };
+}
+
+/** What the picker returned, in the terms the item itself reports. */
+function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
+    if (item['type'] === 'folder') {
+        return 'folder';
+    }
+
+    if (item['type'] === 'link' || item['extension'] === 'link') {
+        return 'link';
+    }
+
+    const baseType = String(item['baseType'] ?? '');
+
+    if (baseType === 'HTMLPAGE') {
+        return 'page';
+    }
+
+    return baseType === 'DOTASSET' ? 'dotasset' : 'file';
+}
+
+/**
+ * Maps a picked row onto the published selection shape.
+ *
+ * `url` is the one guarantee: a contentlet reports `url` (or `urlMap`), a folder its path, a link
+ * its target. Contentlet-only fields are attached only for the kinds that actually have them, so a
+ * consumer can never read a mimetype off a folder.
+ */
+/**
+ * A string, or nothing.
+ *
+ * The row arrives as `Record<string, unknown>`, so a malformed one could hand back a number or an
+ * object where the contract promises a string. Narrowing here means a consumer reading `.mimeType`
+ * gets either a real string or `undefined`, never something that only claims to be one.
+ */
+function asString(value: unknown): string | undefined {
+    return typeof value === 'string' ? value : undefined;
+}
+
+function toSelection(item: DotCMSContentlet | Record<string, unknown>): DotBrowserSelection {
+    const row = item as Record<string, unknown>;
+    const kind = kindOf(row);
+    const base = {
+        kind,
+        identifier: String(row['identifier'] ?? ''),
+        inode: String(row['inode'] ?? ''),
+        title: String(row['title'] ?? ''),
+        url: String(row['url'] ?? row['urlMap'] ?? row['path'] ?? '')
+    };
+
+    if (kind === 'folder' || kind === 'link') {
+        return base as DotBrowserSelection;
+    }
+
+    if (kind === 'page') {
+        return {
+            ...base,
+            kind,
+            baseType: asString(row['baseType']),
+            contentType: asString(row['contentType'])
+        };
+    }
+
+    return {
+        ...base,
+        kind,
+        name: asString(row['name']) ?? asString(row['fileName']),
+        mimeType: asString(row['mimeType']),
+        baseType: asString(row['baseType']),
+        contentType: asString(row['contentType'])
+    };
 }

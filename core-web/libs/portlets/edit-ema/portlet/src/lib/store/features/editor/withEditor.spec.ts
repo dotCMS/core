@@ -1,6 +1,6 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,6 +12,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
@@ -30,15 +31,15 @@ import {
     ACTION_PAYLOAD_MOCK,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
+    mockCurrentUser,
     MOCK_CONTENTLET_AREA,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
-import { ActionPayload } from '../../../shared/models';
+import { ActionPayload, SelectedContentlet } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
-import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 import { withWorkflow } from '../workflow/withWorkflow';
 
@@ -60,6 +61,12 @@ const initialState = createInitialUVEState({
 const patchStoreState = (store: unknown, state: Partial<UVEState>) => {
     patchState(store as Parameters<typeof patchState>[0], state);
 };
+
+/** Wrap an ActionPayload in the SelectedContentlet shape used by editorSelected. */
+const toSelected = (payload: ActionPayload): SelectedContentlet => ({
+    bounds: { x: 0, y: 0, width: 0, height: 0 },
+    payload
+});
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
@@ -115,6 +122,83 @@ describe('withEditor', () => {
     // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
 
     describe('withComputed', () => {
+        describe('editorHasAccessToEditMode', () => {
+            const lockedByAnotherUser = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: {
+                    ...MOCK_RESPONSE_HEADLESS.page,
+                    canEdit: true,
+                    locked: true,
+                    lockedBy: 'another-user',
+                    lockedByName: 'Another User'
+                }
+            };
+
+            const lockedByCurrentUser = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: {
+                    ...MOCK_RESPONSE_HEADLESS.page,
+                    canEdit: true,
+                    locked: true,
+                    lockedBy: mockCurrentUser.userId,
+                    lockedByName: mockCurrentUser.givenName
+                }
+            };
+
+            it('should return false when the user lacks edit permission', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: { ...MOCK_RESPONSE_HEADLESS.page, canEdit: false }
+                    }
+                });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return true when the page is not locked', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return true when the page is locked by the current user', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: lockedByCurrentUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return false when the page is locked by another user', () => {
+                patchStoreState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAsset({ pageAsset: lockedByAnotherUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return false when locked by another user even with the toggle-lock feature flag enabled', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true }
+                });
+                store.setPageAsset({ pageAsset: lockedByAnotherUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return true when locked by the current user with the toggle-lock feature flag enabled', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true }
+                });
+                store.setPageAsset({ pageAsset: lockedByCurrentUser });
+
+                expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+        });
+
         describe('$areaContentType', () => {
             it('should return empty string when contentArea is null', () => {
                 patchStoreState(store, {
@@ -159,7 +243,8 @@ describe('withEditor', () => {
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_HEADLESS.page.rendered,
                     pageType: PageType.HEADLESS,
-                    enableInlineEdit: true
+                    enableInlineEdit: true,
+                    pageAssetRef: store.pageAsset()
                 });
             });
             it('should return the expected data for VTL', () => {
@@ -170,7 +255,8 @@ describe('withEditor', () => {
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_VTL.page.rendered,
                     pageType: PageType.TRADITIONAL,
-                    enableInlineEdit: true
+                    enableInlineEdit: true,
+                    pageAssetRef: store.pageAsset()
                 });
             });
         });
@@ -236,7 +322,7 @@ describe('withEditor', () => {
         describe('$styleSchema', () => {
             it('should return undefined when no activeContentlet', () => {
                 patchStoreState(store, {
-                    editorActiveContentlet: null,
+                    editorSelected: null,
                     editorStyleSchemas: []
                 });
 
@@ -245,7 +331,7 @@ describe('withEditor', () => {
 
             it('should return undefined when styleSchemas is empty', () => {
                 patchStoreState(store, {
-                    editorActiveContentlet: {
+                    editorSelected: toSelected({
                         language_id: '1',
                         pageContainers: [],
                         pageId: '123',
@@ -261,7 +347,7 @@ describe('withEditor', () => {
                             title: 'Test Contentlet',
                             contentType: 'testType'
                         }
-                    },
+                    }),
                     editorStyleSchemas: []
                 });
 
@@ -275,7 +361,7 @@ describe('withEditor', () => {
                 };
 
                 patchStoreState(store, {
-                    editorActiveContentlet: {
+                    editorSelected: toSelected({
                         language_id: '1',
                         pageContainers: [],
                         pageId: '123',
@@ -291,7 +377,7 @@ describe('withEditor', () => {
                             title: 'Test Contentlet',
                             contentType: 'testContentType'
                         }
-                    },
+                    }),
                     editorStyleSchemas: [mockSchema]
                 });
 
@@ -304,7 +390,7 @@ describe('withEditor', () => {
                 const schema3 = { contentType: 'type3', sections: [] };
 
                 patchStoreState(store, {
-                    editorActiveContentlet: {
+                    editorSelected: toSelected({
                         language_id: '1',
                         pageContainers: [],
                         pageId: '123',
@@ -320,7 +406,7 @@ describe('withEditor', () => {
                             title: 'Test Contentlet',
                             contentType: 'type2'
                         }
-                    },
+                    }),
                     editorStyleSchemas: [schema1, schema2, schema3]
                 });
 
@@ -334,7 +420,7 @@ describe('withEditor', () => {
                 };
 
                 patchStoreState(store, {
-                    editorActiveContentlet: {
+                    editorSelected: toSelected({
                         language_id: '1',
                         pageContainers: [],
                         pageId: '123',
@@ -350,11 +436,90 @@ describe('withEditor', () => {
                             title: 'Test Contentlet',
                             contentType: 'testType'
                         }
-                    },
+                    }),
                     editorStyleSchemas: [mockSchema]
                 });
 
                 expect(store.$styleSchema()).toBeUndefined();
+            });
+
+            it('should use schemas seeded from page load (via setPageAsset)', () => {
+                const mockSchema = { contentType: 'testContentType', sections: [] };
+
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            styleEditorSchemas: [mockSchema]
+                        }
+                    }
+                });
+
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testContentType'
+                        }
+                    })
+                });
+
+                expect(store.$styleSchema()).toEqual(mockSchema);
+            });
+
+            it('should prefer editorStyleSchemas over pageAsset schemas when both exist', () => {
+                // pageSchema uses a different contentType than the active contentlet.
+                // If editorStyleSchemas were bypassed in favour of pageAsset schemas,
+                // nothing would match and the result would be undefined.
+                const pageSchema = { contentType: 'pageOnlyType', sections: [] };
+                const iframeSchema = { contentType: 'iframeType', sections: [] };
+
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            styleEditorSchemas: [pageSchema]
+                        }
+                    }
+                });
+
+                patchStoreState(store, {
+                    editorSelected: toSelected({
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'iframeType'
+                        }
+                    }),
+                    editorStyleSchemas: [iframeSchema]
+                });
+
+                // editorStyleSchemas is non-empty so it is used exclusively;
+                // the pageAsset schemas (which only have 'pageOnlyType') are ignored.
+                expect(store.$styleSchema()).toEqual(iframeSchema);
             });
         });
 
@@ -580,8 +745,8 @@ describe('withEditor', () => {
             });
         });
 
-        describe('setActiveContentlet', () => {
-            it('should set the active contentlet', () => {
+        describe('setSelected', () => {
+            it('should set the selected contentlet', () => {
                 const mockContentlet: ActionPayload = {
                     language_id: '1',
                     pageContainers: [],
@@ -600,58 +765,9 @@ describe('withEditor', () => {
                     }
                 };
 
-                store.setActiveContentlet(mockContentlet);
+                store.setSelected(toSelected(mockContentlet));
 
-                expect(store.editorActiveContentlet()).toEqual(mockContentlet);
-            });
-
-            it('should open palette and set current tab to STYLE_EDITOR', () => {
-                const mockContentlet: ActionPayload = {
-                    language_id: '1',
-                    pageContainers: [],
-                    pageId: '123',
-                    container: {
-                        identifier: 'test-container-id',
-                        uuid: 'test-container-uuid',
-                        acceptTypes: 'test',
-                        maxContentlets: 1
-                    },
-                    contentlet: {
-                        identifier: 'test-contentlet-id',
-                        inode: 'test-inode',
-                        title: 'Test Contentlet',
-                        contentType: 'testType'
-                    }
-                };
-
-                store.setActiveContentlet(mockContentlet);
-
-                expect(store.editorPaletteOpen()).toBe(true);
-                // currentTab removed - now managed locally in DotUvePaletteComponent
-            });
-
-            it('should switch to STYLE_EDITOR tab even if palette was on different tab', () => {
-                const mockContentlet: ActionPayload = {
-                    language_id: '1',
-                    pageContainers: [],
-                    pageId: '123',
-                    container: {
-                        identifier: 'test-container-id',
-                        uuid: 'test-container-uuid',
-                        acceptTypes: 'test',
-                        maxContentlets: 1
-                    },
-                    contentlet: {
-                        identifier: 'test-contentlet-id',
-                        inode: 'test-inode',
-                        title: 'Test Contentlet',
-                        contentType: 'testType'
-                    }
-                };
-
-                store.setActiveContentlet(mockContentlet);
-
-                expect(store.editorActiveContentlet()).toEqual(mockContentlet);
+                expect(store.editorSelected()?.payload).toEqual(mockContentlet);
             });
         });
 

@@ -18,6 +18,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -634,6 +635,92 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Shared FROM/WHERE that defines the "scheduled" tier surfaced by the v1 publishing API:
+	 * bundles pushed with a future publish date that {@link PublisherQueueJob} has not picked up
+	 * yet. They exist in {@code publishing_queue} (non-null {@code publish_date}) but have NO row
+	 * in {@code publishing_queue_audit}. The {@code publish_date IS NOT NULL} guard intentionally
+	 * excludes unpushed/draft bundles (which also lack an audit row) — same criterion the legacy
+	 * Queue tab used via {@link #getQueueBundleIds(int, int)}.
+	 */
+	private static final String SCHEDULED_BUNDLES_FROM_WHERE =
+			"FROM publishing_queue pq " +
+			"JOIN publishing_bundle pb ON pq.bundle_id = pb.id " +
+			"WHERE pq.publish_date IS NOT NULL " +
+			"AND NOT EXISTS (SELECT 1 FROM publishing_queue_audit a WHERE a.bundle_id = pq.bundle_id) ";
+
+	private static final String SCHEDULED_BUNDLES_FILTER =
+			"AND (LOWER(pq.bundle_id) LIKE ? OR LOWER(pb.name) LIKE ?) ";
+
+	@CloseDBIfOpened
+	@Override
+	public Integer countScheduledBundleIds(final String filter) throws DotPublisherException {
+		try {
+			final boolean hasFilter = UtilMethods.isSet(filter);
+			final StringBuilder sql = new StringBuilder(
+					"SELECT COUNT(*) AS bundle_count FROM (SELECT pq.bundle_id ")
+					.append(SCHEDULED_BUNDLES_FROM_WHERE);
+			if (hasFilter) {
+				sql.append(SCHEDULED_BUNDLES_FILTER);
+			}
+			sql.append("GROUP BY pq.bundle_id) scheduled");
+
+			final DotConnect dc = new DotConnect();
+			dc.setSQL(sql.toString());
+			if (hasFilter) {
+				final String likeParam = "%" + SQLUtil.sanitizeParameter(filter).toLowerCase() + "%";
+				dc.addParam(likeParam);
+				dc.addParam(likeParam);
+			}
+			return Integer.parseInt(dc.loadObjectResults().get(0).get("bundle_count").toString());
+		} catch (Exception e) {
+			Logger.error(PublisherAPIImpl.class, e.getMessage(), e);
+			throw new DotPublisherException("Unable to count scheduled bundles: " + e.getMessage(), e);
+		}
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<Map<String, Object>> getScheduledBundleIds(final int limit, final int offset,
+			final String filter) throws DotPublisherException {
+		try {
+			final boolean hasFilter = UtilMethods.isSet(filter);
+			// One row per bundle. asset_count = queue rows (one per asset); environment_count is a
+			// correlated subquery, NOT a join, so it does not multiply the asset count.
+			final StringBuilder sql = new StringBuilder(
+					"SELECT pq.bundle_id AS bundle_id, " +
+					"MAX(pb.name) AS bundle_name, " +
+					"MAX(pb.filter_key) AS filter_key, " +
+					// publishing_queue.publish_date is the authoritative scheduled time: it is what
+					// publishBundleAssets() sets and what PublisherQueueJob reads. publishing_bundle's
+					// publish_date can be stale/null, so the queue value must win.
+					"COALESCE(MAX(pq.publish_date), MAX(pb.publish_date)) AS publish_date, " +
+					"COALESCE(MAX(pq.entered_date), MAX(pq.publish_date), MAX(pb.publish_date)) AS entered_date, " +
+					"COUNT(*) AS asset_count, " +
+					"(SELECT COUNT(*) FROM publishing_bundle_environment e WHERE e.bundle_id = pq.bundle_id) " +
+					"AS environment_count ")
+					.append(SCHEDULED_BUNDLES_FROM_WHERE);
+			if (hasFilter) {
+				sql.append(SCHEDULED_BUNDLES_FILTER);
+			}
+			sql.append("GROUP BY pq.bundle_id ORDER BY publish_date ASC");
+
+			final DotConnect dc = new DotConnect();
+			dc.setSQL(sql.toString());
+			if (hasFilter) {
+				final String likeParam = "%" + SQLUtil.sanitizeParameter(filter).toLowerCase() + "%";
+				dc.addParam(likeParam);
+				dc.addParam(likeParam);
+			}
+			dc.setMaxRows(limit);
+			dc.setStartRow(offset);
+			return dc.loadObjectResults();
+		} catch (Exception e) {
+			Logger.error(PublisherAPIImpl.class, e.getMessage(), e);
+			throw new DotPublisherException("Unable to get scheduled bundles: " + e.getMessage(), e);
 		}
 	}
 

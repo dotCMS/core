@@ -1,0 +1,177 @@
+:host {
+    display: block;
+}
+
+// Accordion section styling, aligned to the Claude Design "Edit image" spec:
+// header title 600/13px, subtitle 400/11px muted, a 26px rounded icon chip that
+// turns primary when the section is open, and the design's 14/18px density.
+// Scoped to this component's subtree via :host; pierces PrimeNG internals with
+// ::ng-deep since the header content is projected into <p-accordion-header>.
+:host ::ng-deep {
+    // Header: pinned while its content scrolls (the panel column is scrollable),
+    // like the Edit Content sidebar sections. PrimeNG sets `.p-accordionheader
+    // .p-ripple { position: relative }` which outranks this rule, so `position`
+    // needs !important to win; `top`/`z-index` have no PrimeNG rule to fight. The
+    // opaque background + hover come from the global accordion preset (PrimeNG owns
+    // `background`, so it can only be changed there, not here).
+    .p-accordionheader {
+        position: sticky !important;
+        top: 0;
+        z-index: 1;
+        padding: 14px 18px;
+        gap: 10px;
+    }
+
+    // Body padding on all four sides (the sub-panels carry none of their own).
+    .p-accordioncontent-content {
+        padding: 1rem 1.5rem;
+    }
+
+    // Section divider only, last one removed.
+    .p-accordionpanel {
+        border-bottom: 1px solid var(--p-surface-100, #f1f5f9);
+    }
+
+    .p-accordionpanel:last-child {
+        border-bottom: 0;
+    }
+
+    // Our own rotating chevron replaces PrimeNG's swapped expand/collapse icons
+    // (which can't animate); see `.ie-panel-head__chevron` below.
+    .p-accordionheader-toggle-icon {
+        display: none;
+    }
+
+    .ie-panel-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+    }
+
+    // 26px rounded icon chip; muted while collapsed.
+    .ie-panel-head__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: var(--p-surface-100, #f1f5f9);
+        color: var(--p-text-muted-color, #64748b);
+        flex-shrink: 0;
+    }
+
+    .ie-panel-head__icon .material-symbols-outlined {
+        font-size: 16px;
+    }
+
+    // Open section: chip turns primary (`.iem-acc.open .iem-acc-icon`).
+    .p-accordionpanel-active .ie-panel-head__icon {
+        background: var(--p-primary-50, #eef2ff);
+        color: var(--p-primary-700, #4338ca);
+    }
+
+    .ie-panel-head__titles {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: left;
+    }
+
+    .ie-panel-head__title {
+        font-family: var(--p-font-family);
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.2;
+        color: var(--p-text-color, #334155);
+    }
+
+    .ie-panel-head__subtitle {
+        font-family: var(--p-font-family);
+        font-weight: 400;
+        font-size: 11px;
+        line-height: 1.3;
+        color: var(--p-text-muted-color, #64748b);
+    }
+
+    // Single chevron pinned to the right that rotates on open (the Edit Content
+    // sidebar pattern), instead of PrimeNG's instant down/up icon swap.
+    .ie-panel-head__chevron {
+        margin-left: auto;
+        font-size: 0.75rem;
+        color: var(--p-text-muted-color, #64748b);
+        transition: transform 0.2s ease;
+    }
+
+    .p-accordionpanel-active .ie-panel-head__chevron {
+        transform: rotate(180deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ie-panel-head__chevron {
+            transition: none;
+        }
+    }
+}
+
+// Constrain the PrimeNG controls in every sub-panel to the (narrow) panel column
+// so nothing overflows horizontally. Scoped to this component's subtree via :host.
+:host ::ng-deep {
+    // Control labels (Brightness, Scale, Flip, Compression, …): smaller and muted
+    // rather than heavy near-black, so they read as field labels under the bolder
+    // section headers.
+    label {
+        font-size: 0.8125rem;
+        font-weight: 400;
+        color: var(--p-text-muted-color, #64748b);
+    }
+
+    // Control values (the number next to each label) match the label scale
+    // instead of being oversized.
+    .ie-field__value {
+        font-size: 0.8125rem;
+    }
+
+    // Toggle buttons (flip, compression) and number inputs share the same smaller
+    // control scale — they looked oversized once the labels/values shrank. PrimeNG
+    // only sets font-size on its sm/lg size variants, so this base override wins.
+    .p-togglebutton,
+    .p-inputnumber-input {
+        font-size: 0.8125rem;
+    }
+
+    // Sliders fill the available width.
+    .p-slider {
+        width: 100%;
+    }
+
+    // Output-dimension number inputs fill their half of the row instead of using
+    // their intrinsic width (which overflowed the column).
+    .ie-transform__dimension {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .p-inputnumber {
+        width: 100%;
+    }
+
+    .p-inputnumber-input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    // Flip toggle pair and the compression segmented control share the row evenly.
+    .ie-transform__flip,
+    .p-selectbutton {
+        display: flex;
+        width: 100%;
+    }
+
+    .ie-transform__flip .p-togglebutton,
+    .p-selectbutton .p-togglebutton {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}

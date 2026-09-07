@@ -1,5 +1,5 @@
 import { NgComponentOutlet } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { BlockEditorNode } from '@dotcms/types';
 
@@ -9,6 +9,7 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
 @Component({
     selector: 'dotcms-block-editor-renderer-grid-block',
     imports: [NgComponentOutlet],
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         <div
             data-type="gridBlock"

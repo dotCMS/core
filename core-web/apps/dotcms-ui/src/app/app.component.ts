@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { catchError, map, take } from 'rxjs/operators';
@@ -21,6 +21,7 @@ import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-co
     selector: 'dot-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [RouterOutlet, DotAlertConfirmComponent]
 })
 export class AppComponent implements OnInit {

@@ -9,7 +9,6 @@ import {
     DotContentTypeService,
     DotWorkflowActionsFireService,
     DotTagsService,
-    DotContentletService,
     DotSiteService
 } from '@dotcms/data-access';
 import {
@@ -27,12 +26,16 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
-import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
+import {
+    Activity,
+    DotContentReference,
+    DotPushPublishHistoryItem
+} from '../models/dot-edit-content.model';
+import { attachOrderedFields, parsePreservingKeyOrder } from '../utils/key-value-order.util';
 
 @Injectable()
 export class DotEditContentService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
-    readonly #dotContentletService = inject(DotContentletService);
     readonly #dotBrowsingService = inject(DotBrowsingService);
     readonly #dotTagsService = inject(DotTagsService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -63,9 +66,28 @@ export class DotEditContentService {
             httpParams = httpParams.set('depth', depth);
         }
 
-        return this.#dotContentletService
-            .getContentletByInode(id, httpParams)
-            .pipe(map((contentlet) => contentlet));
+        // Read as text and parse here, rather than through `DotContentletService`: a
+        // Key/Value field's key order is only recoverable from the raw response, and
+        // `HttpClient` would have parsed it away before any code could look.
+        //
+        // The contentlet itself is handed back untouched — the recovered copy rides
+        // along under a separate key, for the Key/Value resolver alone to read. This
+        // method serves every field type, so nothing here may reshape a field.
+        return this.#http
+            .get(`/api/v1/content/${id}`, { params: httpParams, responseType: 'text' })
+            .pipe(
+                map((raw) => {
+                    const { entity } = JSON.parse(raw) as DotCMSAPIResponse<DotCMSContentlet>;
+                    const ordered = parsePreservingKeyOrder(raw) as {
+                        entity?: Record<string, unknown>;
+                    };
+
+                    return attachOrderedFields(
+                        entity as unknown as Record<string, unknown>,
+                        ordered?.entity
+                    ) as unknown as DotCMSContentlet;
+                })
+            );
     }
 
     /**
@@ -128,8 +150,8 @@ export class DotEditContentService {
                         path: '',
                         type: 'site'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
+                    expandedIcon: 'pi pi-globe',
+                    collapsedIcon: 'pi pi-globe',
                     leaf: false
                 }))
             )
@@ -159,15 +181,21 @@ export class DotEditContentService {
     }
 
     /**
-     * Builds a hierarchical tree structure based on the provided path.
-     * Splits the path into segments and creates a nested tree structure
-     * by making multiple API calls for each path segment.
+     * Builds a hierarchical tree structure for a preselected folder path using the
+     * paginated `/folder/search` endpoint so each node gets a correct `leaf` from
+     * `hasChildren`.
      *
-     * @param {string} path - The full path to build the tree from (e.g., 'hostname/folder1/folder2')
-     * @returns {Observable<CustomTreeNode>} Observable that emits a CustomTreeNode containing the complete tree structure and the target node
+     * @param {string} siteId - Site identifier for folder search scoping
+     * @param {string} hostname - Hostname used to build folder labels/paths
+     * @param {string} folderPath - Folder path within the site (e.g. `/level1/level2/`)
+     * @returns {Observable<CustomTreeNode>} Observable that emits the resolved tree and target node
      */
-    buildTreeByPaths(path: string): Observable<CustomTreeNode> {
-        return this.#dotBrowsingService.buildTreeByPaths(path);
+    buildTreeByPaths(
+        siteId: string,
+        hostname: string,
+        folderPath: string
+    ): Observable<CustomTreeNode> {
+        return this.#dotBrowsingService.buildTreeByPaths(siteId, hostname, folderPath);
     }
 
     /**
@@ -189,6 +217,17 @@ export class DotEditContentService {
         return this.#http
             .get<{ entity: { count: number } }>(`/api/v1/content/${identifier}/references/count`)
             .pipe(map((response) => response.entity.count));
+    }
+
+    /**
+     * Get the list of pages that reference a contentlet
+     * @param identifier - The identifier of the contentlet
+     * @returns An observable that emits the list of content references
+     */
+    getContentletReferences(identifier: string): Observable<DotContentReference[]> {
+        return this.#http
+            .get<{ entity: DotContentReference[] }>(`/api/v1/content/${identifier}/references`)
+            .pipe(map((response) => response.entity ?? []));
     }
 
     /**

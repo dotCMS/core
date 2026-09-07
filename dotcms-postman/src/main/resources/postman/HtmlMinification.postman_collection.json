@@ -1,0 +1,911 @@
+{
+  "info": {
+    "name": "HTML Minification",
+    "description": "Checks that serving rendered HTML minified does not change what the page means.\n\n`FEATURE_FLAG_MINIFY_HTML` is toggled through `/api/v1/system-table` inside the run, so the same pages are rendered with minification off, then on, then off again, and the outputs compared. Both seams are covered: the REST render path (`eval()`) and the page URL itself (`VelocityLiveMode.writePage()`, which minifies before the page-cache write, checked over a cache fill and a cache hit).\n\nThe template body is deliberately awkward: indented, commented, with runs of whitespace inside attribute values, a literal `>`, an ideographic space, adjacent inline elements, script markup inside an attribute value, a commented-out script, an upper-case `SCRIPT`, and `pre`/`textarea`/`script`/`style` regions whose contents must survive byte-for-byte.\n\nOne assertion is worth calling out: markup *after* each preserved region must still be minified. A lookup that missed a closing tag would copy the rest of the document verbatim, which stays faithful while silently minifying nothing from that point on, so no integrity comparison can detect it.\n\nSee `com.dotcms.rendering.util.HtmlMinifier`; unit coverage is in `HtmlMinifierTest` and `HtmlMinifierIntegrityTest`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Ensure HTML Minification is OFF",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/FEATURE_FLAG_MINIFY_HTML",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "FEATURE_FLAG_MINIFY_HTML"
+              ]
+            },
+            "description": "Best effort, and deliberately without assertions. Newman runs with bail:true, so a failure anywhere aborts the run before the trailing clean-up request, leaving the flag set for whatever runs next. Clearing it here means a previous aborted run cannot make this one start from a minified baseline."
+          },
+          "response": []
+        },
+        {
+          "name": "Get default site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.collectionVariables.set(\"hostname\", entity.hostname);",
+                  "    pm.collectionVariables.set(\"siteId\", entity.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/site/defaultSite",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "site",
+                "defaultSite"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Minification Template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Template created\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity.identifier).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set(\"templateId\", entity.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/templates",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "templates"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"siteId\": \"{{siteId}}\",\n    \"title\": \"HTML Minification Test Template {{$timestamp}}\",\n    \"friendlyName\": \"Indented markup with whitespace-sensitive regions\",\n    \"body\": \"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n    <head>\\n        <title>HTML Minification Test</title>\\n        <!-- STRIP_ME: a plain comment, must not survive minification -->\\n        <style>\\n.probe { color: red }\\n        </style>\\n    </head>\\n    <body>\\n        <div  class=\\\"two  spaces\\\"   id=\\\"probe\\\">\\n            <p>Alpha</p>\\n            <p>Beta   Gamma</p>\\n            <p>Home > About</p>\\n            <p id=\\\"cjk\\\">CJK\\u3000spacing</p>\\n            <span>one</span> <span>two</span>\\n            <input type=\\\"hidden\\\" name=\\\"spaced\\\" value=\\\"two  spaces\\\">\\n            <div data-config='{\\\"key\\\": \\\"a   b\\\"}'>payload</div>\\n            <div data-tpl=\\\"<script>not-real</script>\\\">attribute, not markup</div>\\n            <pre>pre line 1\\n   pre line 2</pre>\\n            <textarea>area line 1\\n  area line 2</textarea>\\n        </div>\\n        <!-- <script>\\nvar commented = 1\\nvar out = 2\\n</script> -->\\n        <SCRIPT type=\\\"text/javascript\\\">\\nvar upper = 1\\nvar case2 = 2\\n</SCRIPT>\\n        <p id=\\\"after-script\\\">after script</p>\\n        <script>\\nvar a = 1\\nvar b = 2\\n</script>\\n        <p id=\\\"tail\\\">tail</p>\\n    </body>\\n</html>\\n\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Advanced template carrying every construct minification can corrupt: indentation, a comment, runs of whitespace inside attribute values, a literal '>', an ideographic space, adjacent inline elements, script markup inside an attribute value, a commented-out script, an upper-case SCRIPT, and pre/textarea/script/style regions."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Test Page",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"pageUrl\", \"html-minification-\" + Date.now());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Test page created\", function () {",
+                  "    pm.expect(pm.response.json().errors.length).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ],
+              "query": [
+                {
+                  "key": "indexPolicy",
+                  "value": "WAIT_FOR"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"HTML Minification Test Page {{$timestamp}}\",\n        \"url\": \"{{pageUrl}}\",\n        \"hostFolder\": \"{{hostname}}\",\n        \"template\": \"{{templateId}}\",\n        \"friendlyName\": \"HTML Minification Test Page\",\n        \"cachettl\": 0\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "cachettl 0: rendered through the REST seam, where the page cache is not wanted."
+          },
+          "response": []
+        },
+        {
+          "name": "Create LIVE Cache Test Page",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"livePageUrl\", \"html-minification-live-\" + Date.now());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"LIVE test page created\", function () {",
+                  "    pm.expect(pm.response.json().errors.length).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ],
+              "query": [
+                {
+                  "key": "indexPolicy",
+                  "value": "WAIT_FOR"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"HTML Minification LIVE Cache Page {{$timestamp}}\",\n        \"url\": \"{{livePageUrl}}\",\n        \"hostFolder\": \"{{hostname}}\",\n        \"template\": \"{{templateId}}\",\n        \"friendlyName\": \"HTML Minification LIVE Cache Page\",\n        \"cachettl\": 300\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "cachettl 300 so this page goes through the page cache. Requested directly rather than through the REST API, which is the only way to reach VelocityLiveMode.writePage() -- the seam that minifies before the cache write."
+          },
+          "response": []
+        }
+      ],
+      "description": "A site-local advanced template, plus two pages: one for the REST render seam and one with a cache TTL for the LIVE seam."
+    },
+    {
+      "name": "Minification Integrity",
+      "item": [
+        {
+          "name": "Render page with minification OFF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "",
+                  "pm.test(\"Baseline is un-minified\", function () {",
+                  "    pm.expect(html).to.not.be.empty;",
+                  "    pm.expect(html).to.match(/\\n\\s+<div/, 'expected indented markup with the flag off');",
+                  "    pm.expect(html).to.include('STRIP_ME', 'expected the comment to survive with the flag off');",
+                  "    pm.collectionVariables.set(\"unminifiedHtml\", html);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Baseline, captured before the flag is touched."
+          },
+          "response": []
+        },
+        {
+          "name": "Render LIVE page with minification OFF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const html = pm.response.text();",
+                  "",
+                  "pm.test(\"LIVE baseline is un-minified\", function () {",
+                  "    pm.expect(html).to.match(/\\n\\s+<div/);",
+                  "    pm.collectionVariables.set(\"unminifiedLiveHtml\", html);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/{{livePageUrl}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "{{livePageUrl}}"
+              ]
+            },
+            "description": "The page URL itself, served by VelocityLiveMode rather than the REST API."
+          },
+          "response": []
+        },
+        {
+          "name": "Turn ON HTML Minification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_MINIFY_HTML is enabled\", function () {",
+                  "    pm.expect(pm.response.json().entity).to.eql('FEATURE_FLAG_MINIFY_HTML saved/updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"key\": \"FEATURE_FLAG_MINIFY_HTML\",\n    \"value\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flush caches after enabling",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Caches flushed\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/caches/provider/all/flush",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "caches",
+                "provider",
+                "all",
+                "flush"
+              ]
+            },
+            "description": "Toggling the flag does not change anything already cached, so the cache is dropped between renders. Without this a render can return the previous one's output and the comparison passes for the wrong reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Render page with minification ON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "const unminified = pm.collectionVariables.get(\"unminifiedHtml\");",
+                  "// Crude stand-in for a DOM comparison: drop comments, then tags, then collapse whitespace.",
+                  "// Enough to catch words being joined or text disappearing, which is what matters here.",
+                  "// Comments must go FIRST. A comment can contain tags -- this template has a commented-out",
+                  "// script -- and stripping tags first would leave the comment's insides behind as text on the",
+                  "// un-minified side while the minified side has dropped the comment entirely.",
+                  "const visibleText = (s) => s",
+                  "    .replace(/<!--[\\s\\S]*?-->/g, ' ')",
+                  "    .replace(/<[^>]*>/g, ' ')",
+                  "    .replace(/\\s+/g, ' ')",
+                  "    .trim();",
+                  "",
+                  "pm.test(\"Markup is actually minified\", function () {",
+                  "    pm.expect(html.length).to.be.below(unminified.length);",
+                  "    pm.expect(html).to.include('<p>Alpha</p><p>Beta Gamma</p>');",
+                  "});",
+                  "",
+                  "pm.test(\"Comments are stripped\", function () {",
+                  "    pm.expect(html).to.not.include('STRIP_ME');",
+                  "    // A commented-out script is a comment, not a script.",
+                  "    pm.expect(html).to.not.include('var commented');",
+                  "});",
+                  "",
+                  "pm.test(\"Whitespace inside attribute values is preserved byte-for-byte\", function () {",
+                  "    pm.expect(html).to.include('value=\"two  spaces\"');",
+                  "    pm.expect(html).to.include('class=\"two  spaces\"');",
+                  "    pm.expect(html).to.include('\"key\": \"a   b\"');",
+                  "});",
+                  "",
+                  "pm.test(\"A literal '>' in text keeps its surrounding space\", function () {",
+                  "    pm.expect(html).to.include('Home > About');",
+                  "});",
+                  "",
+                  "pm.test(\"Unicode spaces that browsers render are left alone\", function () {",
+                  "    // U+3000 is whitespace to Character.isWhitespace but a rendered glyph in HTML.",
+                  "    pm.expect(html).to.include('CJK\\u3000spacing');",
+                  "});",
+                  "",
+                  "pm.test(\"Space between inline elements survives\", function () {",
+                  "    pm.expect(html).to.include('<span>one</span> <span>two</span>');",
+                  "});",
+                  "",
+                  "pm.test(\"Whitespace-sensitive regions are untouched\", function () {",
+                  "    pm.expect(html).to.include('<pre>pre line 1\\n   pre line 2</pre>');",
+                  "    pm.expect(html).to.include('area line 1\\n  area line 2');",
+                  "    // Newlines here carry meaning: JavaScript inserts semicolons at them.",
+                  "    pm.expect(html).to.include('var a = 1\\nvar b = 2');",
+                  "    pm.expect(html).to.include('var upper = 1\\nvar case2 = 2');",
+                  "});",
+                  "",
+                  "pm.test(\"Preserved-region boundaries are found, so markup after them still minifies\", function () {",
+                  "    // A lookup that missed a closing tag would copy the rest of the document verbatim:",
+                  "    // faithful, but silently minifying nothing from that point on. The upper-case SCRIPT",
+                  "    // is the case a case-sensitive lookup would miss.",
+                  "    pm.expect(html).to.include('</SCRIPT><p id=\"after-script\">');",
+                  "    pm.expect(html).to.include('</script><p id=\"tail\">');",
+                  "});",
+                  "",
+                  "pm.test(\"Script markup inside an attribute value is not treated as a region\", function () {",
+                  "    pm.expect(html).to.include('data-tpl=\"<script>not-real</script>\"');",
+                  "});",
+                  "",
+                  "pm.test(\"Visible text is unchanged\", function () {",
+                  "    pm.expect(visibleText(html)).to.eql(visibleText(unminified));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"minifiedHtml\", html);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Same page and request as the baseline, flag on."
+          },
+          "response": []
+        },
+        {
+          "name": "Render page with minification ON again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "",
+                  "pm.test(\"Repeated renders are byte-identical\", function () {",
+                  "    pm.expect(html).to.eql(pm.collectionVariables.get(\"minifiedHtml\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Guards idempotence: minifying already-minified output must be a no-op."
+          },
+          "response": []
+        },
+        {
+          "name": "Render LIVE page with minification ON (cache fill)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const html = pm.response.text();",
+                  "const unminified = pm.collectionVariables.get(\"unminifiedLiveHtml\");",
+                  "// Crude stand-in for a DOM comparison: drop comments, then tags, then collapse whitespace.",
+                  "// Enough to catch words being joined or text disappearing, which is what matters here.",
+                  "// Comments must go FIRST. A comment can contain tags -- this template has a commented-out",
+                  "// script -- and stripping tags first would leave the comment's insides behind as text on the",
+                  "// un-minified side while the minified side has dropped the comment entirely.",
+                  "const visibleText = (s) => s",
+                  "    .replace(/<!--[\\s\\S]*?-->/g, ' ')",
+                  "    .replace(/<[^>]*>/g, ' ')",
+                  "    .replace(/\\s+/g, ' ')",
+                  "    .trim();",
+                  "",
+                  "pm.test(\"LIVE output is minified\", function () {",
+                  "    pm.expect(html.length).to.be.below(unminified.length);",
+                  "    pm.expect(html).to.include('<p>Alpha</p><p>Beta Gamma</p>');",
+                  "});",
+                  "",
+                  "pm.test(\"LIVE output keeps its meaning\", function () {",
+                  "    pm.expect(visibleText(html)).to.eql(visibleText(unminified));",
+                  "    pm.expect(html).to.include('var a = 1\\nvar b = 2');",
+                  "    pm.expect(html).to.include('value=\"two  spaces\"');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set(\"minifiedLiveHtml\", html);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/{{livePageUrl}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "{{livePageUrl}}"
+              ]
+            },
+            "description": "First request after the flush, so this is the cache fill. Minification happens here, before the page cache write, which is why the cost is paid once per fill."
+          },
+          "response": []
+        },
+        {
+          "name": "Render LIVE page with minification ON (cache hit)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const html = pm.response.text();",
+                  "",
+                  "pm.test(\"The cached copy is the minified one\", function () {",
+                  "    pm.expect(html).to.eql(pm.collectionVariables.get(\"minifiedLiveHtml\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/{{livePageUrl}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "{{livePageUrl}}"
+              ]
+            },
+            "description": "Second request for the same page, now served from the page cache. Proves the cached copy is minified rather than minification re-running per request."
+          },
+          "response": []
+        },
+        {
+          "name": "Render page in EDIT_MODE with minification ON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "",
+                  "pm.test(\"UVE script is still injected before the closing body tag\", function () {",
+                  "    const lastBody = html.toLowerCase().lastIndexOf('</body>');",
+                  "    pm.expect(lastBody, 'expected a closing body tag').to.be.above(-1);",
+                  "    const uve = html.toLowerCase().lastIndexOf('dot-uve.js');",
+                  "    pm.expect(uve, 'expected the UVE script').to.be.above(-1);",
+                  "    pm.expect(uve).to.be.below(lastBody);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=EDIT_MODE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                }
+              ]
+            },
+            "description": "Minification also runs for edit mode. The UVE script is injected by searching for the last '</body>', so this checks minification has not disturbed that."
+          },
+          "response": []
+        },
+        {
+          "name": "Turn OFF HTML Minification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_MINIFY_HTML is removed\", function () {",
+                  "    pm.expect(pm.response.json().entity).to.include('Deleted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/FEATURE_FLAG_MINIFY_HTML",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "FEATURE_FLAG_MINIFY_HTML"
+              ]
+            },
+            "description": "Removed rather than set to false, so the system table is left as it was found."
+          },
+          "response": []
+        },
+        {
+          "name": "Flush caches after disabling",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Caches flushed\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/caches/provider/all/flush",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "caches",
+                "provider",
+                "all",
+                "flush"
+              ]
+            },
+            "description": "Toggling the flag does not change anything already cached, so the cache is dropped between renders. Without this a render can return the previous one's output and the comparison passes for the wrong reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Render page with minification OFF again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity || {};",
+                  "const html = (entity.page && entity.page.rendered) || entity.rendered || '';",
+                  "",
+                  "pm.test(\"Turning the flag off restores the original markup exactly\", function () {",
+                  "    pm.expect(html).to.eql(pm.collectionVariables.get(\"unminifiedHtml\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "LIVE"
+                }
+              ]
+            },
+            "description": "Proves the flag genuinely gates the behaviour."
+          },
+          "response": []
+        }
+      ],
+      "description": "Renders with the flag off, on, and off again, comparing the outputs."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "hostname",
+      "value": ""
+    },
+    {
+      "key": "siteId",
+      "value": ""
+    },
+    {
+      "key": "templateId",
+      "value": ""
+    },
+    {
+      "key": "pageUrl",
+      "value": ""
+    },
+    {
+      "key": "livePageUrl",
+      "value": ""
+    },
+    {
+      "key": "unminifiedHtml",
+      "value": ""
+    },
+    {
+      "key": "minifiedHtml",
+      "value": ""
+    },
+    {
+      "key": "unminifiedLiveHtml",
+      "value": ""
+    },
+    {
+      "key": "minifiedLiveHtml",
+      "value": ""
+    }
+  ]
+}

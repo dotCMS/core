@@ -12,10 +12,8 @@ import {
     addClassToEmptyContentlets,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
-    reportIframeHeight,
     scrollHandler,
-    setClientIsReady,
-    shouldReportIframeHeightToParent
+    setClientIsReady
 } from '../../script/utils';
 
 /**
@@ -178,6 +176,11 @@ export function createContentlet(contentType: string): void {
  * - Client ready state
  * - UVE event subscriptions
  *
+ * @param {Partial<DotCMSPageResponse>} [config] - Sent as-is to the editor as the CLIENT_READY
+ * payload. Accepts a partial shape (e.g. just `{ graphql }`) for callers that don't yet have a
+ * full page response — a failed/draft page fetch, for instance — since this only ever forwards
+ * `config` to the editor and never reads any of its fields itself.
+ *
  * @returns {Object} An object containing the cleanup function
  * @returns {Function} destroyUVESubscriptions - Function to clean up all UVE event subscriptions
  *
@@ -189,7 +192,7 @@ export function createContentlet(contentType: string): void {
  * destroyUVESubscriptions();
  * ```
  */
-export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): {
+export function initUVE(config: Partial<DotCMSPageResponse> = {}): {
     destroyUVESubscriptions: () => void;
 } {
     addClassToEmptyContentlets();
@@ -198,16 +201,12 @@ export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): 
     const { subscriptions } = registerUVEEvents();
     const { destroyScrollHandler } = scrollHandler();
     const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
-    const { destroyHeightReporter } = shouldReportIframeHeightToParent()
-        ? reportIframeHeight()
-        : { destroyHeightReporter: () => undefined };
 
     return {
         destroyUVESubscriptions: () => {
             subscriptions.forEach((subscription) => subscription.unsubscribe());
             destroyScrollHandler();
             destroyListenBlockEditorInlineEvent();
-            destroyHeightReporter();
         }
     };
 }

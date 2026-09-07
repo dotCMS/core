@@ -1,3 +1,5 @@
+import? 'justfile.local'
+
 set positional-arguments := true
 home_dir := env_var('HOME')
 # Introduction and Setup
@@ -32,6 +34,7 @@ build-no-cache:
     rm -rf ./core-web/.nx/
     rm -rf ./core-web/.angular/
     rm -rf ./core-web/node_modules/
+    rm -rf ./installs/node
     ./mvnw -DskipTests clean install -Dmaven.build.cache.enabled=false
 
 # Builds the project without running tests, skip using docker or creating image
@@ -104,6 +107,18 @@ dev-run-fixed:
         -Dtomcat.ssl.port=8443 \
         -Dmanagement.port=8090
 
+# Same as dev-run-fixed, plus OAUTH_ALLOW_INSECURE_URLS (for localhost callback URLs)
+# and SecurityLogger at DEBUG so id_token validation failures are visible in the
+# container logs.
+dev-run-headless:
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
+
 # Polls /dotmgt/readyz until dotCMS is ready or 20 retries (100s) expire
 dev-wait-ready:
     curl --retry 20 --retry-delay 5 --retry-connrefused \
@@ -124,6 +139,49 @@ dev-stop:
 # Cleans up Docker volumes associated with the development environment
 dev-clean-volumes:
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes
+
+# Stops the headless-context containers started by dev-run-headless. Needed because
+# those containers are named with context.name=dev, which the default dev-stop doesn't
+# match, so plain dev-stop silently finds nothing.
+dev-stop-headless:
+    ./mvnw -pl :dotcms-core -Pdocker-stop \
+        -Dext.default.context.name=dev
+
+# Cleans up the headless-context Docker volumes. Required before a fresh
+# dev-run-headless if you want a new starter.zip to actually import — dotCMS only
+# loads the starter on a fresh DB.
+dev-clean-volumes-headless:
+    ./mvnw -pl :dotcms-core -Pdocker-clean-volumes \
+        -Dext.default.context.name=dev
+
+# Build frontend + backend delta, then replace just the dotCMS app container.
+# DB + ES containers stay running so startup is fast and data is preserved.
+reload-headless:
+    ./mvnw install -pl :dotcms-core-web,:dotcms-core -am -DskipTests
+    docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
+
+# Nuke all caches and rebuild everything from scratch, then replace the dotCMS container.
+# DB + ES stay running. Use when incremental builds can't be trusted.
+full-reload-headless: build-no-cache
+    docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
+
+# Full reset for the headless stack: stop containers, wipe volumes, start fresh with
+# whatever starter.zip is currently staged in dotCMS/target/starter/.
+dev-reset-headless: dev-stop-headless dev-clean-volumes-headless dev-run-headless
 
 # Starts the dotCMS application in a Tomcat container on port 8087, running in the foreground
 dev-tomcat-run port="8087":
@@ -168,6 +226,44 @@ test-integration:
 # Runs only the open-search integration tests
 test-integration-open-search:
    ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true
+
+# Runs integration tests under an ES->OS migration phase (two separate clusters: ES + OS 3.x).
+# With no TEST, runs the FULL MainSuite/Junit5 battery in a single JVM (one docker bring-up).
+# Usage: just test-integration-phase [PHASE] [TEST]   e.g. `just test-integration-phase 3 ContentletIndexAPIImplTest`
+test-integration-phase phase='3' test='':
+   ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.phase={{phase}} {{ if test == '' { '' } else { '-Dit.test=' + test } }}
+
+# Runs the full integration battery under an ES->OS migration phase ONE SUITE AT A TIME
+# (forkCount=1), so each suite yields an attributable pass/fail — mirrors the CI per-suite split
+# and is the recommended way to triage what fails under a given phase. Each suite is a separate
+# Maven run, so docker containers are restarted per suite; the loop continues past failures and
+# prints a summary at the end (non-zero exit if any suite failed).
+# Usage: just test-integration-phase-per-suite [PHASE]   e.g. `just test-integration-phase-per-suite 1`
+test-integration-phase-per-suite phase='3':
+   #!/usr/bin/env bash
+   set -uo pipefail
+   suites="MainSuite1a MainSuite1b MainSuite2a MainSuite2b MainSuite3a Junit5Suite1"
+   declare -a failed=()
+   for suite in $suites; do
+       echo "==================================================================="
+       echo ">>> Integration suite ${suite} under OpenSearch phase {{phase}}"
+       echo "==================================================================="
+       if ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
+               -Dopensearch.phase={{phase}} -Dit.test="${suite}" -Dit.test.forkcount=1; then
+           echo ">>> ${suite}: PASS"
+       else
+           echo ">>> ${suite}: FAIL"
+           failed+=("${suite}")
+       fi
+   done
+   echo "==================================================================="
+   echo ">>> Phase {{phase}} summary"
+   if [ ${#failed[@]} -eq 0 ]; then
+       echo ">>> ALL SUITES PASSED under phase {{phase}}"
+   else
+       echo ">>> FAILED SUITES under phase {{phase}}: ${failed[*]}"
+       exit 1
+   fi
 
 # Suspends execution for debugging integration tests
 test-integration-debug-suspend:
@@ -352,3 +448,19 @@ check-git-mac:
         git --version; \
         echo "Git is already installed."; \
     fi
+
+###########################################################
+# Skill Governance (see .claude/skills/CONTRIBUTING.md)
+###########################################################
+
+# Scaffold a new dot-<domain>-<action> skill (interactive; prompts + duplicate check)
+new-skill *args:
+    @node .claude/tools/new-skill.mjs {{args}}
+
+# Regenerate .claude/skills/CATALOG.md from skill frontmatter
+skills-catalog:
+    @node .claude/tools/gen-skills-catalog.mjs
+
+# Validate first-party skills (naming, frontmatter, catalog freshness) — same check CI runs
+skills-lint:
+    @node .claude/tools/skill-lint.mjs

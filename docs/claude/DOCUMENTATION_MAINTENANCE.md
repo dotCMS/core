@@ -123,7 +123,7 @@ When updating documents, check for references in:
 Run tests with: `npm test`
 
 # AFTER (correct)
-Run tests with: `nx run dotcms-ui:test`
+Run tests with: `pnpm nx run dotcms-ui:test`
 Note: Uses Nx, not npm scripts
 ```
 

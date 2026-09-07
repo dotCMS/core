@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'portlets-dot-locales-data-access',
     preset: '../../../../jest.preset.js',

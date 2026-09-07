@@ -1,7 +1,9 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { createHostFactory, SpectatorHost } from '@openng/spectator';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+
+import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -41,6 +43,7 @@ describe('DotEditContentKeyValueComponent', () => {
         detectChanges: false,
         componentMocks: [DotKeyValueComponent],
         providers: [
+            ConfirmationService,
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
@@ -124,7 +127,8 @@ describe('DotEditContentKeyValueComponent', () => {
             const control = spectator.hostComponent.formGroup.get(KEY_VALUE_FIELD_MOCK.variable);
 
             control.valueChanges.subscribe((value) => {
-                expect(value).toEqual({ key14: 'value14' });
+                // JSON text, not an object, so key order survives.
+                expect(JSON.parse(value)).toEqual({ key14: 'value14' });
                 done();
             });
 
@@ -191,14 +195,14 @@ describe('DotEditContentKeyValueComponent', () => {
             expect(keyValueField.$initialValue()).toEqual([]);
         });
 
-        it('should coalesce null values to empty string after import', () => {
+        it('should display null values as the string "null" after import', () => {
             const testData = { key1: null, key2: 'value2' };
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
             keyValueField.writeValue(testData);
             spectator.detectChanges();
 
             expect(keyValueField.$initialValue()).toEqual([
-                { key: 'key1', value: '' },
+                { key: 'key1', value: 'null' },
                 { key: 'key2', value: 'value2' }
             ]);
         });
@@ -214,6 +218,22 @@ describe('DotEditContentKeyValueComponent', () => {
                 { key: 'key2', value: 'value2' },
                 { key: 'key3', value: 'value3' }
             ]);
+        });
+
+        it('should not split string values into individual characters', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue('[object Object]' as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
+        });
+
+        it('should not split array values into individual entries', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue(['key1', 'key2'] as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
         });
     });
 
@@ -238,7 +258,7 @@ describe('DotEditContentKeyValueComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should convert DotKeyValue array to object and call onChange', () => {
+        it('should report the pairs as ordered JSON and call onChange', () => {
             // Mock the callbacks
             const mockOnChange = jest.fn();
             const mockOnTouched = jest.fn();
@@ -255,7 +275,7 @@ describe('DotEditContentKeyValueComponent', () => {
 
             keyValueField.updateField(testData);
 
-            expect(mockOnChange).toHaveBeenCalledWith({ key1: 'value1', key2: 'value2' });
+            expect(mockOnChange).toHaveBeenCalledWith('{"key1":"value1","key2":"value2"}');
             expect(mockOnTouched).toHaveBeenCalled();
         });
 
@@ -271,7 +291,7 @@ describe('DotEditContentKeyValueComponent', () => {
 
             keyValueField.updateField([]);
 
-            expect(mockOnChange).toHaveBeenCalledWith({});
+            expect(JSON.parse(mockOnChange.mock.calls[0][0])).toEqual({});
             expect(mockOnTouched).toHaveBeenCalled();
         });
     });

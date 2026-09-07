@@ -39,6 +39,24 @@ describe('DotPropertiesService', () => {
         req.flush(fakeResponse);
     });
 
+    it('should get boolean-prefixed key using the unprefixed response field', (done) => {
+        const key = 'boolean:REPORT_ISSUE_INCLUDE_USER_PII';
+        const apiResponse = {
+            entity: {
+                REPORT_ISSUE_INCLUDE_USER_PII: false
+            }
+        };
+
+        service.getKey(key).subscribe((response) => {
+            expect(response).toBe(false);
+            done();
+        });
+
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${key}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
     it('should get ky as a list', (done) => {
         const key = 'list';
         expect(service).toBeTruthy();
@@ -97,9 +115,7 @@ describe('DotPropertiesService', () => {
 
         service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response[FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE]).toBe(true);
-            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(
-                FEATURE_FLAG_NOT_FOUND
-            );
+            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(true);
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
@@ -125,22 +141,15 @@ describe('DotPropertiesService', () => {
     });
 
     it('should get feature flags as booleans when API returns JSON boolean values', (done) => {
-        const featureFlags = [
-            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
-            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
-        ];
+        const featureFlags = [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR];
         const apiResponse: { entity: Record<string, string | boolean> } = {
             entity: {
-                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true,
-                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false
+                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true
             }
         };
 
         service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]).toBe(true);
-            expect(
-                response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]
-            ).toBe(false);
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
@@ -149,7 +158,7 @@ describe('DotPropertiesService', () => {
     });
 
     it('should get feature flag as true when API returns JSON boolean true', (done) => {
-        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR;
         const apiResponse: { entity: Record<string, string | boolean> } = {
             entity: { [featureFlag]: true }
         };
@@ -164,7 +173,7 @@ describe('DotPropertiesService', () => {
     });
 
     it('should get feature flag as false when API returns JSON boolean false', (done) => {
-        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR;
         const apiResponse: { entity: Record<string, string | boolean> } = {
             entity: { [featureFlag]: false }
         };
@@ -176,6 +185,47 @@ describe('DotPropertiesService', () => {
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
         expect(req.request.method).toBe('GET');
         req.flush(apiResponse);
+    });
+
+    it('should get fresh feature flag value, coercing the same way as getFeatureFlag', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR;
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: { [featureFlag]: true }
+        };
+
+        service.getFreshFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toBe(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get fresh feature flag as true when not found', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+        const apiResponse = {
+            entity: { [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: 'NOT_FOUND' }
+        };
+
+        service.getFreshFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toEqual(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should not reuse the featureFlagCache — every call re-fetches from the server', () => {
+        const featureFlag = FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE;
+
+        service.getFreshFeatureFlag(featureFlag).subscribe();
+        service.getFreshFeatureFlag(featureFlag).subscribe();
+
+        const reqs = httpMock.match(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(reqs.length).toBe(2);
+        reqs.forEach((req) => req.flush(fakeResponse));
     });
 
     afterEach(() => {

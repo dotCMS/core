@@ -40,7 +40,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.elasticsearch.search.SearchHits;
 
 public class ContentsWebAPI implements ViewTool {
 
@@ -870,7 +869,6 @@ public class ContentsWebAPI implements ViewTool {
 		int limit = 0;
 
 		List<Map> l = new ArrayList<>();
-		SearchHits hits = null;
 		List<Contentlet> c = new ArrayList<>();
 
 		try {

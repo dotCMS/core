@@ -5,61 +5,12 @@ import {
     addClassToEmptyContentlets,
     injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
-    reportIframeHeight,
     scrollHandler,
     setClientIsReady
 } from './utils';
 
 import { DOT_SECTION_ID_PREFIX } from '../internal/constants';
 import { onScrollToSection } from '../internal/events';
-import * as documentHeightObserver from '../lib/dom/document-height-observer';
-
-describe('reportIframeHeight', () => {
-    let postMessageSpy: jest.SpyInstance;
-    let destroySpy: jest.Mock;
-    let observeDocumentHeightSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
-        destroySpy = jest.fn();
-        observeDocumentHeightSpy = jest
-            .spyOn(documentHeightObserver, 'observeDocumentHeight')
-            .mockReturnValue({ destroy: destroySpy });
-    });
-
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-
-    it('delegates observation to the shared height observer', () => {
-        reportIframeHeight();
-
-        expect(observeDocumentHeightSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                onHeightChange: expect.any(Function)
-            })
-        );
-    });
-
-    it('sends IFRAME_HEIGHT when the shared observer reports a height', () => {
-        reportIframeHeight();
-
-        const onHeightChange = observeDocumentHeightSpy.mock.calls[0][0].onHeightChange;
-        onHeightChange(1000);
-
-        expect(postMessageSpy).toHaveBeenCalledWith(
-            { action: DotCMSUVEAction.IFRAME_HEIGHT, payload: { height: 1000 } },
-            '*'
-        );
-    });
-
-    it('destroys the shared observer when destroyHeightReporter is called', () => {
-        const { destroyHeightReporter } = reportIframeHeight();
-        destroyHeightReporter();
-
-        expect(destroySpy).toHaveBeenCalled();
-    });
-});
 
 describe('scrollHandler', () => {
     let postMessageSpy: jest.SpyInstance;
@@ -99,6 +50,40 @@ describe('scrollHandler', () => {
         window.dispatchEvent(new Event('scrollend'));
 
         expect(postMessageSpy).not.toHaveBeenCalled();
+    });
+
+    it('binds through Zone.js native listeners when Zone is present, not the patched ones', () => {
+        // Simulate a Zone.js-loaded page: expose the unpatched native methods
+        // under the __zone_symbol__ keys the way Zone.js stashes them.
+        const nativeAdd = jest.fn();
+        const nativeRemove = jest.fn();
+        const win = window as unknown as Record<string, unknown>;
+
+        try {
+            win['__zone_symbol__addEventListener'] = nativeAdd;
+            win['__zone_symbol__removeEventListener'] = nativeRemove;
+            (globalThis as unknown as { Zone: unknown }).Zone = {
+                __symbol__: (name: string) => `__zone_symbol__${name}`
+            };
+            const patchedAddSpy = jest.spyOn(window, 'addEventListener');
+
+            ({ destroyScrollHandler } = scrollHandler());
+
+            expect(nativeAdd).toHaveBeenCalledWith('scroll', expect.any(Function));
+            expect(nativeAdd).toHaveBeenCalledWith('scrollend', expect.any(Function));
+            // Must NOT register on the Zone-patched window.addEventListener, which
+            // goes dead after the iframe's document.open()/write()/close() rewrites.
+            expect(patchedAddSpy).not.toHaveBeenCalledWith('scroll', expect.any(Function));
+
+            destroyScrollHandler();
+            expect(nativeRemove).toHaveBeenCalledWith('scroll', expect.any(Function));
+            expect(nativeRemove).toHaveBeenCalledWith('scrollend', expect.any(Function));
+        } finally {
+            // Always clean up so Zone never leaks into other tests/suites.
+            delete win['__zone_symbol__addEventListener'];
+            delete win['__zone_symbol__removeEventListener'];
+            delete (globalThis as unknown as { Zone?: unknown }).Zone;
+        }
     });
 });
 

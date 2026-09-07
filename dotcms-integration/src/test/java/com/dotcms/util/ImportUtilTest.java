@@ -18,6 +18,7 @@ import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -69,6 +70,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
@@ -114,9 +117,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -1544,7 +1549,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             throws DotSecurityException, DotDataException, IOException {
 
         //Creates content type
-        final ContentType type = createTestContentType("selfRelatedType", "selfRelatedType");
+        final ContentType type = createTestContentType("selfRelatedType", "selfRelatedType" + new Date().getTime());
         final Structure structure = new StructureTransformer(type).asStructure();
 
         try {
@@ -1605,8 +1610,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
             final Structure parentStructure = new StructureTransformer(parentContentType).asStructure();
             final Structure childStructure = new StructureTransformer(childContentType).asStructure();
 
@@ -1671,6 +1676,72 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile}
+     * Given Scenario: A parent contentlet is imported with a relationship field that references an
+     *                 existing, unlocked child contentlet.
+     * Expected Result: After the import the related child contentlet must NOT remain locked.
+     *                  Regression test for #35222 — related content was being checked out (and
+     *                  therefore locked) during relationship resolution and never unlocked.
+     */
+    @Test
+    public void importFile_relatedContent_shouldNotRemainLocked()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
+
+        try {
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
+
+            com.dotcms.contenttype.model.field.Field field = FieldBuilder
+                    .builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(childContentType.variable()).build();
+            field = fieldAPI.save(field, user);
+
+            //Creates an unlocked child contentlet
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            assertFalse("Child must start unlocked", childContentlet.isLocked());
+
+            //CSV relating the existing child to a new parent row
+            final Reader reader = createTempFile(
+                    TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + field.variable()
+                            + "\r\n" +
+                            "Import related content test, Import related content test, "
+                            + childContentlet.getIdentifier());
+
+            importContentWithRelationships(parentContentType, reader,
+                    new String[]{parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode(),
+                            parentContentType.fieldMap().get(BODY_FIELD_NAME).inode(),
+                            field.inode()});
+
+            //The related child must not remain locked after the import (#35222)
+            final Contentlet childAfterImport = contentletAPI.findContentletByIdentifier(
+                    childContentlet.getIdentifier(), false, defaultLanguage.getId(), user, false);
+            assertFalse("Related child contentlet must not remain locked after import",
+                    childAfterImport.isLocked());
+        } finally {
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Test
     public void importFile_updateRelatedContentWithEmptyColumn_shouldWipeOutRelatedContentList()
             throws DotSecurityException, DotDataException, IOException {
@@ -1682,8 +1753,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1754,8 +1825,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1826,8 +1897,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1900,7 +1971,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         try {
 
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
 
             field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -1958,7 +2029,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal();
 
         try {
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
 
             //child field
             field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
@@ -5333,6 +5404,409 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     Logger.warn(ImportUtilTest.class, "Error cleaning up language 2", e);
                 }
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: CSV import on a site whose tagStorage differs from where an existing tag lives (tag in SYSTEM_HOST, site tagStorage points to itself).
+     * Expected Results: The imported content has exactly one tag relation for the name and no parallel Tag record is created (#35124).
+     */
+    @Test
+    public void importFile_tagFieldUnderSiteWithDifferingTagStorage_doesNotCreateDuplicateTagInodes()
+            throws DotSecurityException, DotDataException, IOException {
+
+        final TagAPI tagAPI = APILocator.getTagAPI();
+        final String suffix = String.valueOf(System.currentTimeMillis());
+        final String tagName = "susa-" + suffix;
+
+        Host testSite = null;
+        ContentType contentType = null;
+        Tag preExistingSystemHostTag = null;
+
+        try {
+            // Site with tagStorage pointing to itself, so it differs from SYSTEM_HOST.
+            testSite = new SiteDataGen()
+                    .name("import-tag-" + suffix + ".dotcms.com")
+                    .nextPersisted();
+            testSite.setTagStorage(testSite.getIdentifier());
+            testSite.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            testSite.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            testSite.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            testSite = APILocator.getHostAPI().save(testSite, user, false);
+
+            preExistingSystemHostTag = tagAPI.saveTag(tagName, "", Host.SYSTEM_HOST);
+            assertNotNull("Pre-existing tag should be created", preExistingSystemHostTag);
+            assertEquals("Pre-existing tag should live under SYSTEM_HOST",
+                    Host.SYSTEM_HOST, preExistingSystemHostTag.getHostId());
+            assertEquals("Only the SYSTEM_HOST tag should exist before import",
+                    1, tagAPI.getTagsByName(tagName).size());
+
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .next();
+            com.dotcms.contenttype.model.field.Field hostField = new FieldDataGen()
+                    .name("hostFolder")
+                    .velocityVarName("hostFolder")
+                    .type(HostFolderField.class)
+                    .next();
+            com.dotcms.contenttype.model.field.Field tagsField = new FieldDataGen()
+                    .name("tags")
+                    .velocityVarName("tags")
+                    .type(TagField.class)
+                    .next();
+
+            contentType = new ContentTypeDataGen()
+                    .field(titleField)
+                    .field(hostField)
+                    .field(tagsField)
+                    .nextPersisted();
+
+            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+            hostField = fieldAPI.byContentTypeAndVar(contentType, hostField.variable());
+            tagsField = fieldAPI.byContentTypeAndVar(contentType, tagsField.variable());
+
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(contentType).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
+            final String contentTitle = "tag-dup-repro-" + suffix;
+            final String csv = "title,hostFolder,tags\r\n" +
+                    contentTitle + "," + testSite.getIdentifier() + "," + tagName + "\r\n";
+
+            final Reader reader = createTempFile(csv);
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            final HashMap<String, List<String>> results = ImportUtil.importFile(
+                    0L,
+                    testSite.getInode(),
+                    contentType.inode(),
+                    new String[]{},
+                    false,
+                    false,
+                    user,
+                    defaultLanguage.getId(),
+                    csvHeaders,
+                    csvreader,
+                    -1,
+                    -1,
+                    reader,
+                    schemeStepActionResult1.getAction().getId(),
+                    getHttpRequest()
+            );
+
+            final List<String> errors = results.get("errors");
+            assertTrue("Import should not produce errors: " + errors,
+                    errors == null || errors.isEmpty());
+
+            final List<Contentlet> savedData = contentletAPI.findByStructure(
+                    contentType.inode(), user, false, 0, 0);
+            assertEquals("Exactly one contentlet should have been imported", 1, savedData.size());
+            final Contentlet imported = savedData.get(0);
+
+            final List<Tag> tagsOnContent = tagAPI.getTagsByInodeAndFieldVarName(
+                    imported.getInode(), tagsField.variable());
+            final long matchingByName = tagsOnContent.stream()
+                    .filter(t -> tagName.equalsIgnoreCase(t.getTagName()))
+                    .count();
+            assertEquals(
+                    "Imported content should have exactly one tag relation for '" + tagName
+                            + "' (got " + tagsOnContent.size() + " tag(s): " + tagsOnContent + ")",
+                    1L, matchingByName);
+
+            final List<Tag> tagsByName = tagAPI.getTagsByName(tagName);
+            assertEquals(
+                    "Only the original SYSTEM_HOST tag should exist after import (got: "
+                            + tagsByName + ")",
+                    1, tagsByName.size());
+            assertEquals("Surviving tag should still be the SYSTEM_HOST one",
+                    Host.SYSTEM_HOST, tagsByName.get(0).getHostId());
+
+        } finally {
+            if (contentType != null) {
+                try {
+                    final List<Contentlet> contentlets = contentletAPI.findByStructure(
+                            contentType.inode(), user, false, 0, -1);
+                    for (final Contentlet c : contentlets) {
+                        try {
+                            contentletAPI.archive(c, user, false);
+                            contentletAPI.delete(c, user, false);
+                        } catch (Exception e) {
+                            Logger.warn(ImportUtilTest.class,
+                                    "Error cleaning up imported contentlet", e);
+                        }
+                    }
+                    contentTypeApi.delete(contentType);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up content type", e);
+                }
+            }
+
+            try {
+                for (final Tag t : tagAPI.getTagsByName(tagName)) {
+                    try {
+                        tagAPI.deleteTag(t);
+                    } catch (Exception e) {
+                        Logger.warn(ImportUtilTest.class, "Error cleaning up tag " + t, e);
+                    }
+                }
+            } catch (Exception e) {
+                Logger.warn(ImportUtilTest.class, "Error listing tags for cleanup", e);
+            }
+
+            if (testSite != null) {
+                try {
+                    APILocator.getHostAPI().archive(testSite, user, false);
+                    APILocator.getHostAPI().delete(testSite, user, false);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up test site", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: A single CSV row contains multiple comma-separated tag names in the tag field.
+     * Expected Results: All listed tags are linked to the imported content, none are dropped.
+     */
+    @Test
+    public void importFile_tagFieldWithMultipleCommaSeparatedTags_linksAllTags()
+            throws DotSecurityException, DotDataException, IOException {
+
+        final TagAPI tagAPI = APILocator.getTagAPI();
+        final String suffix = String.valueOf(System.currentTimeMillis());
+        final List<String> tagNames = Arrays.asList(
+                "multi-a-" + suffix, "multi-b-" + suffix, "multi-c-" + suffix);
+
+        ContentType contentType = null;
+
+        try {
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .next();
+            com.dotcms.contenttype.model.field.Field hostField = new FieldDataGen()
+                    .name("hostFolder")
+                    .velocityVarName("hostFolder")
+                    .type(HostFolderField.class)
+                    .next();
+            com.dotcms.contenttype.model.field.Field tagsField = new FieldDataGen()
+                    .name("tags")
+                    .velocityVarName("tags")
+                    .type(TagField.class)
+                    .next();
+
+            contentType = new ContentTypeDataGen()
+                    .field(titleField)
+                    .field(hostField)
+                    .field(tagsField)
+                    .nextPersisted();
+
+            tagsField = fieldAPI.byContentTypeAndVar(contentType, tagsField.variable());
+
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(contentType).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
+            final String contentTitle = "multi-tag-" + suffix;
+            final String csv = "title,hostFolder,tags\r\n" +
+                    contentTitle + "," + defaultSite.getIdentifier() + ",\""
+                    + String.join(",", tagNames) + "\"\r\n";
+
+            final Reader reader = createTempFile(csv);
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            final String[] csvHeaders = csvreader.getHeaders();
+
+            final HashMap<String, List<String>> results = ImportUtil.importFile(
+                    0L, defaultSite.getInode(), contentType.inode(), new String[]{},
+                    false, false, user, defaultLanguage.getId(),
+                    csvHeaders, csvreader, -1, -1, reader,
+                    schemeStepActionResult1.getAction().getId(), getHttpRequest());
+
+            final List<String> errors = results.get("errors");
+            assertTrue("Import should not produce errors: " + errors,
+                    errors == null || errors.isEmpty());
+
+            final List<Contentlet> savedData = contentletAPI.findByStructure(
+                    contentType.inode(), user, false, 0, 0);
+            assertEquals("Exactly one contentlet should have been imported", 1, savedData.size());
+            final Contentlet imported = savedData.get(0);
+
+            final List<Tag> linkedTags = tagAPI.getTagsByInodeAndFieldVarName(
+                    imported.getInode(), tagsField.variable());
+            final Set<String> linkedNames = linkedTags.stream()
+                    .map(Tag::getTagName)
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            assertEquals("All comma-separated tags should be linked (got: " + linkedTags + ")",
+                    tagNames.stream().map(String::toLowerCase).collect(Collectors.toSet()),
+                    linkedNames);
+        } finally {
+            cleanUpContentType(contentType);
+            for (final String name : tagNames) {
+                cleanUpTagsByName(tagAPI, name);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Test Case: Existing content with tags is updated via CSV import (matched by unique key field) with a different set of tag names.
+     * Expected Results: After the second import the contentlet has only the new tag set; the original tags are no longer linked (strict-replace).
+     */
+    @Test
+    public void importFile_tagFieldUpdate_replacesExistingTags()
+            throws DotSecurityException, DotDataException, IOException, InterruptedException {
+
+        final TagAPI tagAPI = APILocator.getTagAPI();
+        final String suffix = String.valueOf(System.currentTimeMillis());
+        final String oldTagA = "old-a-" + suffix;
+        final String oldTagB = "old-b-" + suffix;
+        final String newTagC = "new-c-" + suffix;
+        final String newTagD = "new-d-" + suffix;
+        final List<String> allTagNames = Arrays.asList(oldTagA, oldTagB, newTagC, newTagD);
+
+        ContentType contentType = null;
+
+        try {
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .next();
+            com.dotcms.contenttype.model.field.Field hostField = new FieldDataGen()
+                    .name("hostFolder")
+                    .velocityVarName("hostFolder")
+                    .type(HostFolderField.class)
+                    .next();
+            com.dotcms.contenttype.model.field.Field tagsField = new FieldDataGen()
+                    .name("tags")
+                    .velocityVarName("tags")
+                    .type(TagField.class)
+                    .next();
+
+            contentType = new ContentTypeDataGen()
+                    .field(titleField)
+                    .field(hostField)
+                    .field(tagsField)
+                    .nextPersisted();
+            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+            tagsField = fieldAPI.byContentTypeAndVar(contentType, tagsField.variable());
+
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(contentType).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
+
+            final String contentTitle = "replace-tags-" + suffix;
+            final String firstCsv = "title,hostFolder,tags\r\n" +
+                    contentTitle + "," + defaultSite.getIdentifier() + ",\""
+                    + oldTagA + "," + oldTagB + "\"\r\n";
+
+            runImport(firstCsv, contentType, new String[]{titleField.id()});
+
+            final List<Contentlet> afterFirst = contentletAPI.findByStructure(
+                    contentType.inode(), user, false, 0, 0);
+            assertEquals("First import should produce one contentlet", 1, afterFirst.size());
+
+            final Set<String> firstTags = tagAPI.getTagsByInodeAndFieldVarName(
+                            afterFirst.get(0).getInode(), tagsField.variable())
+                    .stream().map(Tag::getTagName).map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+            assertEquals("First import should link only the original tags",
+                    new HashSet<>(Arrays.asList(oldTagA.toLowerCase(), oldTagB.toLowerCase())),
+                    firstTags);
+
+            for (final Contentlet c : afterFirst) {
+                c.setIndexPolicy(IndexPolicy.FORCE);
+            }
+            APILocator.getContentletIndexAPI().addContentToIndex(afterFirst);
+            Thread.sleep(1000);
+
+            final String secondCsv = "title,hostFolder,tags\r\n" +
+                    contentTitle + "," + defaultSite.getIdentifier() + ",\""
+                    + newTagC + "," + newTagD + "\"\r\n";
+
+            runImport(secondCsv, contentType, new String[]{titleField.id()});
+
+            final List<Contentlet> afterSecond = contentletAPI.findByStructure(
+                    contentType.inode(), user, false, 0, 0);
+            assertEquals("Update should not create a parallel contentlet",
+                    1, afterSecond.size());
+            final Contentlet updated = afterSecond.get(0);
+
+            final Set<String> updatedTags = tagAPI.getTagsByInodeAndFieldVarName(
+                            updated.getInode(), tagsField.variable())
+                    .stream().map(Tag::getTagName).map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            assertEquals("Update should strict-replace tags: only new ones should remain (got: "
+                            + updatedTags + ")",
+                    new HashSet<>(Arrays.asList(newTagC.toLowerCase(), newTagD.toLowerCase())),
+                    updatedTags);
+        } finally {
+            cleanUpContentType(contentType);
+            for (final String name : allTagNames) {
+                cleanUpTagsByName(tagAPI, name);
+            }
+        }
+    }
+
+    private void runImport(final String csv, final ContentType contentType, final String[] keyFields)
+            throws DotDataException, DotSecurityException, IOException {
+        final Reader reader = createTempFile(csv);
+        final CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        final String[] csvHeaders = csvreader.getHeaders();
+
+        final HashMap<String, List<String>> results = ImportUtil.importFile(
+                0L, defaultSite.getInode(), contentType.inode(), keyFields,
+                false, false, user, defaultLanguage.getId(),
+                csvHeaders, csvreader, -1, -1, reader,
+                schemeStepActionResult1.getAction().getId(), getHttpRequest());
+
+        final List<String> errors = results.get("errors");
+        assertTrue("Import should not produce errors: " + errors,
+                errors == null || errors.isEmpty());
+    }
+
+    private void cleanUpContentType(final ContentType contentType) {
+        if (contentType == null) {
+            return;
+        }
+        try {
+            final List<Contentlet> contentlets = contentletAPI.findByStructure(
+                    contentType.inode(), user, false, 0, -1);
+            for (final Contentlet c : contentlets) {
+                try {
+                    contentletAPI.archive(c, user, false);
+                    contentletAPI.delete(c, user, false);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class,
+                            "Error cleaning up imported contentlet", e);
+                }
+            }
+            contentTypeApi.delete(contentType);
+        } catch (Exception e) {
+            Logger.warn(ImportUtilTest.class, "Error cleaning up content type", e);
+        }
+    }
+
+    private void cleanUpTagsByName(final TagAPI tagAPI, final String tagName) {
+        try {
+            for (final Tag t : tagAPI.getTagsByName(tagName)) {
+                try {
+                    tagAPI.deleteTag(t);
+                } catch (Exception e) {
+                    Logger.warn(ImportUtilTest.class, "Error cleaning up tag " + t, e);
+                }
+            }
+        } catch (Exception e) {
+            Logger.warn(ImportUtilTest.class, "Error listing tags for cleanup", e);
         }
     }
 

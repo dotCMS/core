@@ -13,12 +13,15 @@ import com.dotcms.rendering.velocity.viewtools.JSONTool;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -160,6 +163,18 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error getting the API Key from the Apps Service: " + e.getMessage());
+            return Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK);
+        } catch (DotRuntimeException e) {
+            // An unreadable App secrets store raises since issue #36724, where it previously wiped
+            // itself and returned nothing. This method's whole purpose is to fall back to the
+            // configured property, so it must keep degrading rather than propagate. The exception
+            // arrives wrapped as a plain DotRuntimeException by the layers between here and the
+            // store, hence the cause-chain match; anything else still propagates.
+            if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                throw e;
+            }
+            Logger.debug(this, () -> "App secrets store is unreadable; falling back to the configured "
+                    + "Google Translate API key");
             return Config.getStringProperty(GOOGLE_TRANSLATE_SERVICE_API_KEY_PROPERTY, StringPool.BLANK);
         } finally {
             if(UtilMethods.isSet(appSecrets) && appSecrets.isPresent()){

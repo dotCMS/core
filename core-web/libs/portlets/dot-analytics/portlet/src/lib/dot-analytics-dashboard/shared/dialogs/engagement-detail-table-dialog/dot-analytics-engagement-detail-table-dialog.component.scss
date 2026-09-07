@@ -1,0 +1,12 @@
+:host ::ng-deep .engagement-detail-table-dialog__datatable {
+    font-size: 0.875rem;
+
+    .p-datatable-table {
+        border-collapse: collapse;
+    }
+
+    .p-paginator {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}

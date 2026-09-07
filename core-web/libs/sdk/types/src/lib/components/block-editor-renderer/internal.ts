@@ -29,6 +29,8 @@ export enum BlockEditorDefaultBlocks {
     DOT_IMAGE = 'dotImage',
     /** Represents a DotCMS video block */
     DOT_VIDEO = 'dotVideo',
+    /** Represents a DotCMS audio block */
+    DOT_AUDIO = 'dotAudio',
     /** Represents a table block */
     TABLE = 'table',
     /** Represents a DotCMS content block */

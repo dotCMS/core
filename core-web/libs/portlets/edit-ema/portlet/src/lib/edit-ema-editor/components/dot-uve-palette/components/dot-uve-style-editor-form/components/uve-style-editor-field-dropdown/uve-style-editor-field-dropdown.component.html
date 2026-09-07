@@ -1,5 +1,5 @@
-<div class="form-field">
-    <label class="field-label" [attr.for]="$field().id">{{ $field().label }}</label>
+<div class="field">
+    <label [attr.for]="$field().id">{{ $field().label }}</label>
     <p-select
         [formControlName]="$field().id"
         [options]="$options()"

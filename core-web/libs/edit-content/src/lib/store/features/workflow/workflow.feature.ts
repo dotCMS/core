@@ -12,7 +12,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { MessageService, SelectItem } from 'primeng/api';
 
@@ -30,6 +29,7 @@ import {
 import { ComponentStatus, DotCMSWorkflow, DotContentletDepths } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
 
@@ -49,6 +49,17 @@ export function withWorkflow() {
              * @returns {boolean} True if the workflow component is in a loading state, false otherwise
              */
             isLoadingWorkflow: computed(() => store.workflow().status === ComponentStatus.LOADING),
+
+            /**
+             * Computed property that determines if the allowed workflow actions are being
+             * re-fetched (e.g. after a lock/unlock toggle), so the UI can disable them while
+             * the stale list is refreshed.
+             *
+             * @returns {boolean} True while updateCurrentContentActions is in flight
+             */
+            isLoadingActions: computed(
+                () => store.actionsStatus().status === ComponentStatus.LOADING
+            ),
 
             /**
              * Gets the workflow scheme for the currently selected scheme ID
@@ -162,7 +173,7 @@ export function withWorkflow() {
                 messageService = inject(MessageService),
                 dotMessageService = inject(DotMessageService),
                 dotWorkflowService = inject(DotWorkflowService),
-                router = inject(Router)
+                host = inject(EDIT_CONTENT_HOST)
             ) => ({
                 /**
                  * Sets the selected workflow scheme ID and updates related state in the store.
@@ -198,9 +209,9 @@ export function withWorkflow() {
                  *
                  * This method triggers a sequence of events to fire a workflow action
                  * and handles the response or error. If the action is successful,
-                 * it updates the store with the new contentlet and actions. In route mode,
-                 * it also navigates to the content view with the updated contentlet.
-                 * In dialog mode, it only updates the store without navigation.
+                 * it updates the store with the new contentlet and actions and asks the
+                 * host to navigate to the saved content (the host decides how: router
+                 * navigation full-screen, in-place/no-op in a dialog).
                  * In case of an error, it updates the state with an error message.
                  *
                  * @param options The options required to fire the workflow action.
@@ -261,23 +272,15 @@ export function withWorkflow() {
                                         isReset,
                                         workflowStatus
                                     }) => {
-                                        // Only navigate if NOT in dialog mode and the inode has changed
-                                        const isDialogMode = store.isDialogMode();
-                                        if (
-                                            !isDialogMode &&
-                                            contentlet.inode !== currentContentlet?.inode
-                                        ) {
-                                            router.navigate(['/content', contentlet.inode], {
-                                                replaceUrl: true,
-                                                queryParamsHandling: 'preserve'
-                                            });
-                                        }
-
                                         const parsedCurrentActions =
                                             parseCurrentActions(currentContentActions);
 
                                         const { step } = workflowStatus;
 
+                                        // Patch state BEFORE navigating so `workflowActionSuccess`
+                                        // is set when the route guard runs canDeactivate. The
+                                        // guard treats a post-save navigation as a free pass —
+                                        // the user's changes have already been committed.
                                         if (isReset) {
                                             patchState(store, {
                                                 contentlet,
@@ -303,6 +306,20 @@ export function withWorkflow() {
                                                 workflowActionSuccess: contentlet
                                             });
                                         }
+
+                                        // Navigate to the saved content. The host decides how:
+                                        // the full-screen host reconciles the related-content
+                                        // trail and navigates when the inode changed; the dialog
+                                        // host does not navigate — it repoints its in-memory
+                                        // trail's last crumb to the new inode (and registers the
+                                        // new title).
+                                        host.goToSavedContent(
+                                            {
+                                                inode: contentlet.inode,
+                                                title: contentlet.title
+                                            },
+                                            currentContentlet?.inode
+                                        );
 
                                         messageService.clear();
                                         messageService.add({
@@ -340,6 +357,13 @@ export function withWorkflow() {
                                 return [];
                             }
 
+                            patchState(store, {
+                                actionsStatus: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null
+                                }
+                            });
+
                             return workflowActionService
                                 .getByInode(contentlet.inode, DotRenderMode.EDITING)
                                 .pipe(
@@ -349,11 +373,21 @@ export function withWorkflow() {
                                                 parseCurrentActions(actions);
 
                                             patchState(store, {
-                                                currentContentActions: parsedCurrentActions
+                                                currentContentActions: parsedCurrentActions,
+                                                actionsStatus: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                }
                                             });
                                         },
                                         error: (error: HttpErrorResponse) => {
                                             dotHttpErrorManagerService.handle(error);
+                                            patchState(store, {
+                                                actionsStatus: {
+                                                    status: ComponentStatus.ERROR,
+                                                    error: error.message
+                                                }
+                                            });
                                         }
                                     })
                                 );

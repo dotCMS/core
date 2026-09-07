@@ -1,6 +1,6 @@
 // Server-safe entry point — excludes client-only modules that import
 // browser APIs or class components (e.g. TinyMCE) which break SSR.
-// Hooks (useEditableDotCMSPage, useDotCMSShowWhen, useAISearch, useStyleEditorSchemas)
+// Hooks (useEditableDotCMSPage, useDotCMSShowWhen, useAISearch)
 // are intentionally excluded: they use useState/useEffect and have no 'use client'
 // directive, so including them here would pull React client APIs into the RSC module
 // graph and cause a build error in Next.js App Router.

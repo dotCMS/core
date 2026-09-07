@@ -1,6 +1,7 @@
 package com.dotcms.ai;
 
 import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.util.WireMockTestHelper;
@@ -9,8 +10,9 @@ import com.dotmarketing.business.APILocator;
 import com.github.tomakehurst.wiremock.WireMockServer;
 
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 
 public interface AiTest {
 
@@ -31,56 +33,33 @@ public interface AiTest {
         return wireMockServer;
     }
 
-    static Map<String, Secret> aiAppSecrets(final Host host,
-                                            final String apiKey,
-                                            final String textModels,
-                                            final String imageModels,
-                                            final String embeddingsModel) throws Exception {
-        final AppSecrets.Builder builder = new AppSecrets.Builder()
-                .withKey(AppKeys.APP_KEY)
-                .withSecret(AppKeys.API_URL.key, String.format(API_URL, PORT))
-                .withSecret(AppKeys.API_IMAGE_URL.key, String.format(API_IMAGE_URL, PORT))
-                .withSecret(AppKeys.API_EMBEDDINGS_URL.key, String.format(API_EMBEDDINGS_URL, PORT))
-                .withHiddenSecret(AppKeys.API_KEY.key, apiKey)
-                .withSecret(AppKeys.IMAGE_SIZE.key, IMAGE_SIZE)
-                .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
-                .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
-                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue);
-
-        if (Objects.nonNull(textModels)) {
-            builder.withSecret(AppKeys.TEXT_MODEL_NAMES.key, textModels);
-        }
-        if (Objects.nonNull(imageModels)) {
-            builder.withSecret(AppKeys.IMAGE_MODEL_NAMES.key, imageModels);
-        }
-        if (Objects.nonNull(embeddingsModel)) {
-            builder.withSecret(AppKeys.EMBEDDINGS_MODEL_NAMES.key, embeddingsModel);
-        }
-
-        final AppSecrets appSecrets = builder.build();
-        APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
-        TimeUnit.SECONDS.sleep(1);
-        return appSecrets.getSecrets();
-    }
-
-    static Map<String, Secret> aiAppSecrets(final Host host, final String apiKey) throws Exception {
-        return aiAppSecrets(host, apiKey, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
-    }
-
-    static Map<String, Secret> aiAppSecrets(final Host host,
-                                            final String textModels,
-                                            final String imageModels,
-                                            final String embeddingsModel) throws Exception {
-        return aiAppSecrets(host, API_KEY, textModels, imageModels, embeddingsModel);
-    }
-
-    static Map<String, Secret> aiAppSecrets(final Host host) throws Exception {
-
-        return aiAppSecrets(host, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
-    }
-
     static void removeAiAppSecrets(final Host host) throws Exception {
         APILocator.getAppsAPI().deleteSecrets(AppKeys.APP_KEY, host, APILocator.systemUser());
+    }
+
+    static String providerConfigJson(final int port, final String chatModel) {
+        final String endpoint = String.format("http://localhost:%d/", port);
+        return String.format(
+                "{" +
+                "\"chat\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"settings\":{\"listenerIndexer\":{\"default\":\"blog\"}}" +
+                "}",
+                API_KEY, chatModel, endpoint,
+                API_KEY, EMBEDDINGS_MODEL, endpoint,
+                API_KEY, IMAGE_MODEL, endpoint);
+    }
+
+    static Map<String, Secret> aiAppSecretsWithProviderConfig(
+            final Host host, final String providerConfigJson) throws Exception {
+        final AppSecrets appSecrets = new AppSecrets.Builder()
+                .withKey(AppKeys.APP_KEY)
+                .withSecret(AppKeys.PROVIDER_CONFIG.key, providerConfigJson)
+                .build();
+        APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
+        await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());
+        return appSecrets.getSecrets();
     }
 
 }

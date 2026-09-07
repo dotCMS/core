@@ -9,6 +9,7 @@ The `@dotcms/types` package contains TypeScript type definitions for the dotCMS 
 
 - [Overview](#overview)
 - [Installation](#installation)
+- [Which SDK Version Should I Use?](#which-sdk-version-should-i-use)
 - [Commonly Used Types](#commonly-used-types)
 - [Type Hierarchy (Jump to Definitions)](#type-hierarchy-jump-to-definitions)
   - [AI Search](#ai-search)
@@ -45,6 +46,34 @@ The `@dotcms/types` package contains TypeScript type definitions for the dotCMS 
 ```bash
 npm install @dotcms/types@latest --save-dev
 ```
+
+## Which SDK Version Should I Use?
+
+dotCMS SDKs are published in lockstep with dotCMS itself: every `@dotcms/*` package ships
+at the **exact same version number** as the dotCMS release it was built for (e.g. dotCMS
+`26.7.14-1` → `@dotcms/client@26.7.14-1`, `@dotcms/react@26.7.14-1`, and so on).
+
+**Simple rule of thumb: use the SDK version that matches your dotCMS instance's version.**
+
+You don't have to upgrade the SDK every time dotCMS releases a new version (or vice versa).
+Most releases don't change anything the SDKs rely on, so an older SDK usually keeps working
+fine against a newer dotCMS instance. Occasionally, though, a release does include a real
+breaking change — and if your SDK is older than that point, it will stop working correctly.
+
+You don't need to track this yourself: your dotCMS instance always knows the oldest SDK
+version it still supports, and the SDK checks itself against it automatically. If you're
+using an SDK that's too old, you'll see a clear warning in your console telling you to
+upgrade.
+
+**Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump
+them when you upgrade dotCMS — or when the console tells you to.
+
+> **On an LTS release?** LTS releases don't currently get their own matching SDK version.
+> Until that's addressed, use the SDK version published for the closest regular release at
+> or before your LTS version.
+>
+> Want more background on how dotCMS releases and support windows work? See
+> [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
 
 ## Commonly Used Types
 
@@ -246,7 +275,7 @@ We offer multiple channels to get help with the dotCMS Types library:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
 -   **Stack Overflow**: Use the tag `dotcms-types` when posting questions
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support)
 
 When reporting issues, please include:
 
@@ -305,6 +334,8 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Licensing
 
-dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
 
-This package is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).
+Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
+
+Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).

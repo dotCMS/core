@@ -1,0 +1,218 @@
+<!-- ============ ERROR BANNER ============ -->
+<!-- The single error surface for this screen: a failed scan, a failed or dropped fix
+     run, or a stop that didn't take. Spans both columns at the top of the portlet so
+     it's visible whichever pane the user is looking at, and takes no space when there
+     is no error (the host's first grid row is `auto`, and nothing else is placed in it).
+     Every child below is pinned to row 2 explicitly — without that, auto-placement puts
+     them in row 1 whenever this banner is absent, collapsing both panes to their content
+     height and leaving row 2 empty. -->
+@if (store.runError(); as error) {
+    <div
+        class="col-span-2 row-start-1 flex items-start gap-2.5 border-b border-red-100 bg-red-50 px-4 py-2.5 text-red-700"
+        data-testid="studio-run-error"
+        role="alert">
+        <span class="material-symbols-outlined mt-0.5 flex-none text-base!" aria-hidden="true">
+            warning
+        </span>
+        <div class="min-w-0">
+            <span class="font-semibold">{{ 'accessibility.studio.error.title' | dm }}</span>
+            <span class="ml-1.5 wrap-break-word text-red-600">{{ error }}</span>
+        </div>
+    </div>
+}
+
+<!-- ============ AGENT COLUMN ============ -->
+<aside class="row-start-2 flex min-h-0 flex-col border-r border-surface-200 bg-white">
+    <!-- Page context bar -->
+    <div class="flex h-13 flex-none items-center gap-2.5 border-b border-surface-100 pr-4 pl-3">
+        <p-button
+            [text]="true"
+            severity="secondary"
+            [rounded]="true"
+            (onClick)="backToPageList()"
+            [attr.aria-label]="'accessibility.studio.back' | dm"
+            [pTooltip]="'accessibility.studio.back' | dm"
+            data-testid="studio-back-btn">
+            <!-- text-base!: material-symbols-outlined sets its own font-size on the
+                 class, which a plain size utility loses to at equal specificity. -->
+            <span class="material-symbols-outlined text-base!" aria-hidden="true">arrow_back</span>
+        </p-button>
+        <span class="material-symbols-outlined text-base! text-primary" aria-hidden="true">
+            description
+        </span>
+        <div class="min-w-0">
+            <div class="truncate font-bold text-color">
+                {{ store.selected()?.title }}
+            </div>
+            <div class="truncate text-muted-color">{{ store.selected()?.path }}</div>
+        </div>
+    </div>
+
+    <!-- ============ SIDE PANEL ACCORDION ============ -->
+    <!-- Two panels: the scanner (score, issues, activity log + scan/fix actions) and
+         the changed files (list + discard/publish). `multiple` so they open and close
+         independently — a run can be watched while reviewing the files it touched.
+         The scanner starts open (it's the entry point); files start collapsed. -->
+    <!-- The accordion is a flex column that fills the aside; the panel HEADERS stay
+         put and each open panel's CONTENT scrolls on its own (see below), rather
+         than the whole accordion scrolling as one block. -->
+    <!-- The open panels live in the component's `signalState`, whose slices are
+         readonly signals — so the two-way `[(value)]` is split into a read binding
+         plus an explicit write-back (see onOpenPanelsChange). -->
+    <p-accordion
+        [multiple]="true"
+        [value]="$state.openPanels()"
+        (valueChange)="onOpenPanelsChange($event)"
+        styleClass="flex min-h-0 flex-1 flex-col"
+        data-testid="studio-panels">
+        <!-- ---------- PANEL 1: SCANNER ---------- -->
+        <!-- The scanner is the tall panel: while open it grows to take the remaining
+             height and its own content scrolls; while collapsed it's just a header. -->
+        <p-accordion-panel
+            value="scanner"
+            [class.flex]="isPanelOpen('scanner')"
+            [class.min-h-0]="isPanelOpen('scanner')"
+            [class.flex-col]="isPanelOpen('scanner')"
+            [class.flex-1]="isPanelOpen('scanner')"
+            data-testid="studio-panel-scanner">
+            <p-accordion-header>
+                <span data-testid="studio-panel-scanner-title">
+                    {{ 'accessibility.studio.panel.scanner' | dm }}
+                </span>
+            </p-accordion-header>
+            <!-- p-0!: PrimeNG's accordion content ships its own padding, and the score
+                 widget + issue list draw their own full-bleed section dividers, which the
+                 default padding would inset. min-h-0/h-full let this panel be bounded
+                 shorter than its content so it scrolls internally (see :host styles). -->
+            <p-accordion-content
+                [pt]="{
+                    root: { class: 'min-h-0 flex-1' },
+                    content: { class: 'p-0! min-h-0 h-full' }
+                }">
+                <div class="flex flex-col" data-testid="studio-panel-scanner-body">
+                    <!-- Score widget: donut + rolling open count + severity legend.
+                         Owns its own scanning skeleton and count-up animation. -->
+                    <dot-a11y-score
+                        [phase]="store.phase()"
+                        [hasResults]="store.hasResults()"
+                        [runStarted]="store.runStarted()"
+                        [openCount]="store.openCount()"
+                        [beforeCount]="store.beforeCount()"
+                        [warningCount]="store.warningCount()"
+                        [severityCounts]="store.severityCounts()" />
+
+                    <!-- Scanner body: the phase-aware section header + whichever log fits
+                         the moment (ready explainer, scan skeleton, issue types, agent
+                         activity) with the needs-review rows below. -->
+                    <dot-a11y-activity
+                        [phase]="store.phase()"
+                        [finished]="store.finished()"
+                        [steps]="store.steps()"
+                        [report]="store.report()"
+                        [heartbeat]="store.heartbeat()"
+                        [issueTypeGroups]="store.issueTypeRows()"
+                        [reviewGroups]="store.reviewGroups()" />
+
+                    <!-- Scanner actions — phase-driven, inside the scanner panel so the
+                         controls sit with the results they act on. -->
+                    <dot-a11y-actions
+                        [phase]="store.phase()"
+                        [pagePath]="store.selected()?.path ?? ''"
+                        [openCount]="store.openCount()"
+                        [fixedCount]="store.fixedCount()"
+                        [reportedCount]="store.reportedCount()"
+                        [skipCss]="store.skipCss()"
+                        (scan)="runScan()"
+                        (stopScan)="stopScan()"
+                        (fix)="startFix()"
+                        (stopAgent)="stopAgent()"
+                        (reviewFiles)="openPanel('files')"
+                        (allPages)="backToPageList()"
+                        (skipCssChange)="onSkipCssChange($event)" />
+                </div>
+            </p-accordion-content>
+        </p-accordion-panel>
+
+        <!-- ---------- PANEL 2: CHANGED FILES ---------- -->
+        <!-- Typically short: takes its content height, but its OWN content scrolls
+             once it passes 400px so a long file list never pushes the panel past
+             that or hijacks the scanner's space. flex-none = never grows. -->
+        <!-- border-t!/border-surface-200!: PrimeNG draws no divider between accordion
+             panels; this separates the files panel from the scanner above it. -->
+        <p-accordion-panel
+            value="files"
+            class="flex-none border-t! border-surface-200!"
+            data-testid="studio-panel-files">
+            <p-accordion-header>
+                <span data-testid="studio-panel-files-title">
+                    {{ 'accessibility.studio.panel.files' | dm }}
+                </span>
+            </p-accordion-header>
+            <!-- p-0!: same reason as the scanner panel — the file list owns its own
+                 padding so its rows can span the full width. -->
+            <p-accordion-content [pt]="{ content: { class: 'p-0! max-h-[400px]' } }">
+                <div class="px-4 pb-4" data-testid="studio-panel-files-body">
+                    <dot-a11y-diff
+                        [activeFileId]="$state.diffFile()?.identifier ?? null"
+                        (fileSelected)="onDiffFileSelected($event)"
+                        (changedCount)="onChangedFilesCount($event)"
+                        data-testid="studio-diff-list" />
+
+                    <!-- Discard + Publish sit together with the files they act on.
+                         Publishing the page publishes its changed source files as a
+                         unit; there is no per-file publishing. Shown whenever there
+                         are changed files, regardless of phase — working changes can
+                         predate this run (an earlier run, a manual edit), so they
+                         must be publishable without scanning first. -->
+                    @if ($hasChangedFiles()) {
+                        <div
+                            class="mt-3 flex gap-2.5 border-t border-surface-100 pt-3.5"
+                            data-testid="studio-publish-bar">
+                            <p-button
+                                [label]="'accessibility.studio.action.discard' | dm"
+                                severity="secondary"
+                                [outlined]="true"
+                                (onClick)="discardChanges()"
+                                data-testid="studio-discard-btn" />
+                            <p-button
+                                [label]="'accessibility.studio.action.apply' | dm"
+                                severity="success"
+                                styleClass="flex-1"
+                                (onClick)="applyChanges()"
+                                data-testid="studio-apply-btn" />
+                        </div>
+                    }
+                </div>
+            </p-accordion-content>
+        </p-accordion-panel>
+    </p-accordion>
+</aside>
+
+<!-- ============ RIGHT COLUMN — Preview / file diff ============ -->
+<!-- Shows the visual before/after, or the selected file's source diff when the user
+     picks one from the left panel's changed-files list. The preview stays mounted
+     (just hidden) so its iframes don't reload when returning from a diff. -->
+<div class="row-start-2 flex min-h-0 flex-col bg-surface-100">
+    <!-- The iframes stay mounted while a diff is open so returning to the preview
+         doesn't reload them. `display` is set inline rather than via a `hidden`
+         class: Tailwind's `hidden` and the component's own `flex` host class have
+         equal specificity, so the class toggle wouldn't reliably win. -->
+    <dot-a11y-preview
+        class="min-h-0 flex-1"
+        [style.display]="$state.diffFile() ? 'none' : null"
+        [page]="store.selected()"
+        [previewRevision]="store.previewRevision()"
+        [previewGroups]="store.a11yGroups()"
+        [liveGroups]="store.liveA11yGroups()"
+        [showMarkers]="store.hasResults()" />
+
+    <!-- File diff — replaces the preview while a file is selected. Mounted only
+         then, so Monaco isn't built until the user asks for a diff. -->
+    @if ($state.diffFile(); as file) {
+        <dot-a11y-diff-viewer
+            class="min-h-0 flex-1"
+            [file]="file"
+            (closed)="closeDiff()"
+            data-testid="studio-diff-viewer" />
+    }
+</div>

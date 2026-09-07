@@ -16,6 +16,21 @@ import java.util.Map;
  */
 public class KeyValueFieldUtil {
 
+  /**
+   * Parses a JSON string into a {@link LinkedHashMap} to preserve the insertion order of keys
+   * as they appear in the source JSON.
+   *
+   * <p>This is the entry point for the <em>write path</em> when a KeyValue field value arrives
+   * as a JSON string (from the REST API, legacy import, etc.). The returned {@link LinkedHashMap}
+   * is subsequently converted to a {@code List<Entry<?>>} by
+   * {@link com.dotcms.contenttype.model.field.KeyValueField#fieldValue} and stored as a JSON
+   * <em>array</em> in {@code contentlet_as_json} — the only format that guarantees key order
+   * across the DB round-trip.</p>
+   *
+   * @param json JSON object string, e.g. {@code {"D":"d","B":"b"}}
+   * @return insertion-order-preserving map of the parsed key/value pairs, or an empty map if
+   *         {@code json} is blank
+   */
   public static Map<String, Object> JSONValueToHashMap(final String json) {
     LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<>();
     if (UtilMethods.isSet(json)) {

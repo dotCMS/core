@@ -103,6 +103,60 @@ public enum PageMode {
         return DEFAULT_PAGE_MODE;
     }
 
+    /**
+     * Resolves the {@link PageMode} for a sub-resource request (a stylesheet, image, or other file asset
+     * pulled in by a rendered page) by also considering the {@code Referer}.
+     * <p>
+     * Such assets are fetched by the browser as standalone requests that carry no {@code ?mode=} of their
+     * own, and dotCMS does not persist the page mode to the session when a page is viewed with
+     * {@code ?mode=LIVE}. As a result {@link #get(HttpServletRequest)} alone falls back to a stale session
+     * value or {@code PREVIEW_MODE} (working) for a backend user, leaking unpublished content into a LIVE
+     * page view. To close that gap, when the request itself declares no {@code mode} and the caller is a
+     * backend user, the {@code mode} declared on the {@code Referer} (the page URL that requested this
+     * asset) is honored.
+     * <p>
+     * The backend-user gate preserves the security boundary: an anonymous request can never escape the
+     * forced-LIVE behavior via a spoofed {@code Referer}, because it never reaches the fallback.
+     *
+     * @param request the current sub-resource request
+     * @return the resolved {@link PageMode}
+     */
+    public static PageMode getWithReferer(final HttpServletRequest request) {
+        final PageMode requestMode = get(request);
+
+        if (request == null || null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
+            return requestMode;
+        }
+
+        final User user = PortalUtil.getUser(request);
+        if (user == null || !user.isBackendUser()) {
+            return requestMode;
+        }
+
+        final String refererMode = modeFromReferer(request.getHeader("Referer"));
+        return UtilMethods.isSet(refererMode) ? get(refererMode) : requestMode;
+    }
+
+    /**
+     * Extracts the {@code mode} query-string parameter from a {@code Referer} URL, if present.
+     *
+     * @param referer the raw {@code Referer} header value (may be {@code null})
+     * @return the {@code mode} value declared on the Referer, or {@code null} if absent/unparseable
+     */
+    private static String modeFromReferer(final String referer) {
+        if (!UtilMethods.isSet(referer) || !referer.contains("?")) {
+            return null;
+        }
+        final String query = referer.substring(referer.indexOf('?') + 1);
+        for (final String pair : query.split("&")) {
+            final int eq = pair.indexOf('=');
+            if (eq > 0 && WebKeys.PAGE_MODE_PARAMETER.equals(pair.substring(0, eq))) {
+                return pair.substring(eq + 1);
+            }
+        }
+        return null;
+    }
+
     public static PageMode setPageMode(final HttpServletRequest request, boolean contentLocked, boolean canLock) {
 
         PageMode mode = PREVIEW_MODE;

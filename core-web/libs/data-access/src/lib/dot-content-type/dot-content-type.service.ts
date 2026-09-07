@@ -55,13 +55,23 @@ export class DotContentTypeService {
     }
 
     /**
-     * Get a content type by id or variable name with render mode
+     * Get a content type by id or variable name with render mode.
+     * When an inode is provided, contentlet-specific Velocity variables
+     * ($inode, $identifier, $lang, etc.) will be resolved in custom fields.
      * @param idOrVar content type's id or variable name
+     * @param inode optional contentlet inode for Velocity variable resolution
      * @returns Content Type
      */
-    getContentTypeWithRender(idOrVar: string): Observable<DotCMSContentType> {
+    getContentTypeWithRender(idOrVar: string, inode?: string): Observable<DotCMSContentType> {
+        let params = new HttpParams();
+        if (inode) {
+            params = params.set('inode', inode);
+        }
+
         return this.#httpClient
-            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/render/id/${idOrVar}`)
+            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/render/id/${idOrVar}`, {
+                params
+            })
             .pipe(
                 take(1),
                 map((data) => data.entity)

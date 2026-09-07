@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    inject,
+    input,
+    output,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
@@ -34,6 +42,7 @@ const I18N_BASE = 'api.sites.ruleengine';
     selector: 'dot-rule-engine',
     templateUrl: './dot-rule-engine.component.html',
     imports: [AsyncPipe, ButtonModule, InputTextModule, DotRuleComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'shadow-[0px_8px_16px_0px_hsla(230,13%,9%,0.08)] p-4 px-6 flex-grow bg-white overflow-auto'
     }

@@ -1,0 +1,42 @@
+@if (vm$ | async; as vm) {
+    <p-card>
+        <ng-template #title>
+            <h2
+                class="m-0 flex items-center gap-1 font-bold uppercase"
+                data-testId="traffic-card-title">
+                <i
+                    [style.font-size.px]="16"
+                    class="material-symbols-outlined"
+                    [ngClass]="vm.trafficAllocation ? 'text-green-600' : 'text-gray-500'">
+                    check_circle
+                </i>
+                {{ 'experiments.configure.traffic.name' | dm }}
+            </h2>
+        </ng-template>
+        <p-card>
+            <div class="flex flex-row items-center justify-between gap-2">
+                <div class="flex grow flex-col">
+                    <span data-testId="card-title">
+                        {{ 'experiments.configure.traffic.load.name' | dm }}
+                    </span>
+                </div>
+                <div
+                    [pTooltip]="vm.disabledTooltipLabel | dm"
+                    [tooltipDisabled]="!vm.disabledTooltipLabel"
+                    data-testId="tooltip-on-disabled"
+                    tooltipPosition="bottom">
+                    <p-button
+                        (onClick)="changeTrafficAllocation()"
+                        [disabled]="vm.disabledTooltipLabel"
+                        [link]="true"
+                        [size]="'small'"
+                        data-testId="traffic-allocation-button"
+                        [label]="vm.trafficAllocation + '%'"
+                        type="button" />
+                </div>
+            </div>
+        </p-card>
+    </p-card>
+}
+
+<ng-container dotDynamic />

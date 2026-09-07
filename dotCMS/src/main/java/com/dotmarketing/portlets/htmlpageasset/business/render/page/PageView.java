@@ -11,12 +11,14 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -57,6 +59,7 @@ public class PageView implements Serializable {
     final boolean live;
     final VanityURLView vanityUrl;
     final Experiment runningExperiment;
+    private final List<JsonNode> styleEditorSchemas;
 
     /**
      * Creates an instance of this class with default values.
@@ -76,6 +79,7 @@ public class PageView implements Serializable {
         this.urlContent = null;
         this.runningExperiment = null;
         this.vanityUrl = null;
+        this.styleEditorSchemas = Collections.emptyList();
     }
 
     /**
@@ -97,6 +101,8 @@ public class PageView implements Serializable {
         this.urlContent = builder.urlContent;
         this.runningExperiment = builder.runningExperiment;
         this.vanityUrl = builder.vanityUrl;
+        this.styleEditorSchemas = builder.styleEditorSchemas != null
+                ? builder.styleEditorSchemas : Collections.emptyList();
     }
 
     public boolean isLive() {
@@ -220,6 +226,10 @@ public class PageView implements Serializable {
         return this.vanityUrl;
     }
 
+    public List<JsonNode> getStyleEditorSchemas() {
+        return styleEditorSchemas;
+    }
+
     public static class Builder {
 
         //  The {@link Host} where the HTML Page lives in.
@@ -240,6 +250,7 @@ public class PageView implements Serializable {
         private boolean live;
         private Experiment runningExperiment;
         private VanityURLView vanityUrl;
+        private List<JsonNode> styleEditorSchemas;
 
         public Builder site(final Host site) {
             this.site = site;
@@ -303,6 +314,11 @@ public class PageView implements Serializable {
 
         public Builder vanityUrl(final VanityURLView vanityUrl) {
             this.vanityUrl = vanityUrl;
+            return this;
+        }
+
+        public Builder styleEditorSchemas(final List<JsonNode> styleEditorSchemas) {
+            this.styleEditorSchemas = styleEditorSchemas;
             return this;
         }
 

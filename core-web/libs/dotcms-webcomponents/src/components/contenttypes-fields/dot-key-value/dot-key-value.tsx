@@ -166,6 +166,7 @@ export class DotKeyValueComponent {
             formattedValue = this.value
                 .replace(/&lt;/gi, '<')
                 .replace(/[|]/gi, '&#124;')
+                .replace(/&#x22;:null/gi, '&#x22;:&#x22;null&#x22;')
                 .replace(/&#x22;:&#x22;/gi, '|')
                 .replace(/&#x22;,&#x22;/gi, ',')
                 .replace(/{&#x22;/gi, '')

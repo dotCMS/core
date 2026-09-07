@@ -1,8 +1,11 @@
 package com.dotcms.enterprise.priv;
 
+import static org.junit.Assume.assumeFalse;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -17,6 +20,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import java.util.List;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -48,7 +52,17 @@ public class ESSearchProxyTest extends IntegrationTestBase {
 
     }
 
-
+    @Before
+    public void skipWhenOpenSearchOnly() {
+        // esSearch is an ES-only legacy API: ESSearchProxy delegates straight to the ES
+        // RestHighLevelClient and returns an org.elasticsearch SearchResponse, so it has no
+        // OpenSearch routing path. Under Phase 3 (OS-only, ES decommissioned) the ES store has
+        // no active index, so index resolution yields null and the call NPEs. Re-routing
+        // esSearch through the neutral search path is a pending product decision (#35784), so
+        // this ES-only assertion is gated to the phases where ES still serves reads (0/1/2).
+        assumeFalse("esSearch is ES-only; skipped under Phase 3 (OS-only) — see #35784",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
+    }
 
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {

@@ -26,12 +26,13 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
+    getRequestHostName,
     getOrientation,
-    getWrapperMeasures,
     normalizeQueryParams,
     convertUTCToLocalTime,
     escapeHtmlAttributeValue,
-    isSamePageNavigation
+    isSamePageNavigation,
+    isAssetPath
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -1296,6 +1297,82 @@ describe('utils functions', () => {
         });
     });
 
+    describe('getRequestHostName', () => {
+        it('should return clientHost when it is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                    clientHost: 'https://headless.example.com'
+                })
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should build the host from page hostname when clientHost is missing', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should extract origin when page hostname is a full URL', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'https://siteb.example.com/path'
+                )
+            ).toBe('https://siteb.example.com');
+        });
+
+        it('should strip path and trailing slash from a bare page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com/foo/'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should prioritize clientHost over page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                        clientHost: 'https://headless.example.com'
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should fallback to window origin when neither clientHost nor page hostname is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                })
+            ).toBe(window.location.origin);
+        });
+    });
+
     describe('getDragItemData', () => {
         it('should return correct data for content-type', () => {
             const dataset = {
@@ -1383,41 +1460,6 @@ describe('utils functions', () => {
             expect(result).toEqual(
                 'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
-        });
-    });
-
-    describe('getWrapperMeasures', () => {
-        it('should return correct measures for landscape orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '1200',
-                cssWidth: '800',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
-            expect(result).toEqual({ width: '1200px', height: '800px' });
-        });
-
-        it('should return correct measures for portrait orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '800',
-                cssWidth: '1200',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
-            expect(result).toEqual({ width: '800px', height: '1200px' });
-        });
-
-        it('should use percentage unit for default inode', () => {
-            const device: DotDevice = {
-                cssHeight: '100',
-                cssWidth: '100',
-                inode: 'default'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device);
-            expect(result).toEqual({ width: '100%', height: '100%' });
         });
     });
 
@@ -1606,5 +1648,63 @@ describe('utils functions', () => {
             expect(result.getDate()).toBe(29);
             expect(result.getHours()).toBe(12);
         });
+    });
+
+    describe('isAssetPath', () => {
+        it.each([
+            '/dA/abc123/asset/report.pdf',
+            '/dA/abc123/asset/no-extension',
+            '/dotAsset/abc123',
+            '/contentAsset/raw-data/abc123/asset',
+            '/application/files/report.pdf',
+            '/files/quarterly.docx',
+            '/media/promo.mp4',
+            '/backups/site.tar.gz',
+            '/files/REPORT.PDF',
+            // `htm` is not a dotCMS page extension: VELOCITY_PAGE_EXTENSION is `html`
+            // and `dot` is its legacy fallback, so a `.htm` upload is a file asset.
+            '/uploads/legacy-page.htm',
+            // `dot` is only the fallback VELOCITY_PAGE_EXTENSION for when the
+            // property is unset, which it never is; it is also the Word template
+            // extension, so a `.dot` upload is a file asset.
+            '/templates/letterhead.dot',
+            // Digit-initial extensions are real; only all-digit trailing tokens are slugs.
+            '/backups/archive.7z',
+            '/media/clip.3gp'
+        ])('should treat %s as a file asset', (pathname) => {
+            expect(isAssetPath(pathname)).toBe(true);
+        });
+
+        it.each([
+            '/about-us/index',
+            '/about-us/index.html',
+            '/blog/',
+            '/',
+            '/blog/release-v1.2',
+            '/news/2024.10'
+        ])('should treat %s as a page', (pathname) => {
+            expect(isAssetPath(pathname)).toBe(false);
+        });
+
+        it('should return false for an empty pathname', () => {
+            expect(isAssetPath('')).toBe(false);
+        });
+
+        it('should return false for a nullish pathname', () => {
+            expect(isAssetPath(undefined as unknown as string)).toBe(false);
+        });
+
+        // These pathnames are pages, and the heuristic knowingly reads them as file
+        // assets: a dot plus a short alpha token is indistinguishable from a real
+        // extension without asking the backend. Pinned deliberately, because the
+        // alternative (an extension allowlist) would send uncommon file types to the
+        // Page API instead, which is the failure this whole guard exists to prevent.
+        // Flipping any of these to `false` means that trade was changed, not fixed.
+        it.each(['/store/product.detail', '/pages/about.us', '/docs/getting.started'])(
+            'should knowingly misread the page %s as a file asset',
+            (pathname) => {
+                expect(isAssetPath(pathname)).toBe(true);
+            }
+        );
     });
 });

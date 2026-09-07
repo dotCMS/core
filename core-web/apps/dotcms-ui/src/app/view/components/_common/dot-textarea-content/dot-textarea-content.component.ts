@@ -168,9 +168,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @memberof DotTextareaContentComponent
      */
     writeValue(value: string): void {
-        if (value) {
-            this.value = value || '';
-        }
+        this.value = value ?? '';
     }
 
     /**

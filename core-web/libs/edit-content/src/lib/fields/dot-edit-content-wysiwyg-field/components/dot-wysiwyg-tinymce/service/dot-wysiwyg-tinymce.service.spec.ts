@@ -1,5 +1,5 @@
-import { HttpMethod } from '@ngneat/spectator';
-import { createHttpFactory, SpectatorHttp } from '@ngneat/spectator/jest';
+import { HttpMethod } from '@openng/spectator';
+import { createHttpFactory, SpectatorHttp } from '@openng/spectator/jest';
 
 import { CONFIG_PATH, DotWysiwygTinymceService } from './dot-wysiwyg-tinymce.service';
 

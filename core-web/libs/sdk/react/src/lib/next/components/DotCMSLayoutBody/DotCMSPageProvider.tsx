@@ -7,7 +7,7 @@ import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 
 interface DotCMSPageProviderProps {
-    page: DotCMSPageAsset;
+    page: DotCMSPageAsset | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     components: Record<string, React.ComponentType<any>>;
     mode: DotCMSPageRendererMode;

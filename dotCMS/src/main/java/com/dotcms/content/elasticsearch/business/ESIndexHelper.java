@@ -74,7 +74,11 @@ public class ESIndexHelper implements Serializable{
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
 		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= LicenseLevel.STANDARD.level) {
-			String currentIndexName = esIndexAPI.getAliasToIndexMap(siteSearchAPI.listIndices()).get(aliasAttr);
+			// Resolve via the site-search API for .os-aware, phase-correct alias lookup (issue #36360).
+			// Also fixes a latent bug: this previously looked up the map by the attribute KEY name
+			// (aliasAttr, e.g. "alias") instead of the alias VALUE (indexAlias), so the branch never
+			// resolved regardless of phase.
+			String currentIndexName = siteSearchAPI.getAliasToIndexMap().get(indexAlias);
 			if (UtilMethods.isSet(currentIndexName))
 				indexName = currentIndexName;
 		}

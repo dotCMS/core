@@ -100,6 +100,7 @@ node_modules/
 /core-web/dist
 /core-web/dist-lib
 /core-web/docs
+/core-web/documentation.json
 /core-web/tmp
 /core-web/out-tsc
 /core-web/karma_html
@@ -127,6 +128,7 @@ node_modules/
 /core-web/connect.lock
 /core-web/coverage
 /core-web/libpeerconnection.log
+/core-web/libs/agentic-tools/src/generated
 npm-debug.log
 yarn-error.log
 testem.log
@@ -138,7 +140,6 @@ dotsecure
 /core-web/e2e/*.js
 /core-web/e2e/*.map
 
-/core-web/storybook
 /core-web/out*/
 dist-docs/
 **/test-reports/
@@ -149,6 +150,9 @@ dist-docs/
 
 #env
 /core-web/**/.env
+.env
+.env.*
+!.env.example
 
 /**/**/*.css.map
 
@@ -215,3 +219,23 @@ __pycache__/
 *.egg-info/
 dist/
 *.egg
+.venv/
+
+# Local scratch space
+/core-web/scratch/
+
+# Spec-Kit working artifacts — process-only, kept local (see .specify/CUSTOMIZATIONS.md).
+# spec.md (and data-model.md / contracts/ when they carry verified contracts) stay tracked.
+specs/*/plan.md
+specs/*/research.md
+specs/*/tasks.md
+specs/*/quickstart.md
+specs/*/checklists/
+
+# Machine-local pointer to the active feature dir: which feature this checkout is working on,
+# rewritten by every /speckit-specify run. Per-branch, per-developer state — committing it
+# guarantees a conflict on each merge and leaves `main` pointing at whichever feature landed
+# last. SPEC_KIT_QUICK_START.md says it is "local and untracked, never committed"; it had been
+# committed by accident since #36950. Spec-Kit 0.16.1 ships this rule in a managed
+# .specify/.gitignore; this repo is pinned to 0.12.4, so it lives here until the upgrade.
+.specify/feature.json

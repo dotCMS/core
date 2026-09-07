@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectModule } from 'primeng/select';
@@ -20,6 +28,7 @@ import { DotRelationshipService } from '../services/dot-relationship.service';
 @Component({
     selector: 'dot-cardinality-selector',
     templateUrl: './dot-cardinality-selector.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [SelectModule, FormsModule, AsyncPipe]
 })
 export class DotCardinalitySelectorComponent implements OnInit {

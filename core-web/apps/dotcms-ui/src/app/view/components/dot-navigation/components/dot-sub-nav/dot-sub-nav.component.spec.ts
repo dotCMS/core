@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -39,7 +39,7 @@ describe('DotSubNavComponent', () => {
                 provide: DotSystemConfigService,
                 useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
             },
-            GlobalStore,
+            mockProvider(GlobalStore),
             provideHttpClient(),
             provideHttpClientTesting()
         ]

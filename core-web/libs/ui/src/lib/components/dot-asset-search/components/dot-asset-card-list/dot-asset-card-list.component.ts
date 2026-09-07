@@ -25,6 +25,7 @@ const squarePlus =
     selector: 'dot-asset-card-list',
     templateUrl: './dot-asset-card-list.component.html',
     styleUrls: ['./dot-asset-card-list.component.scss'],
+    host: { class: 'px-4' },
     imports: [
         ScrollerModule,
         DotAssetCardComponent,

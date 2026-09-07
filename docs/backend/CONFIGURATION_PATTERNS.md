@@ -111,12 +111,18 @@ DOT_SHUTDOWN_GRACEFUL_LOGGING=false
 
 ### ❌ Wrong Property Naming
 ```properties
-# Don't use uppercase
+# In dotmarketing-config.properties: don't use uppercase — this file follows
+# the hierarchical dot-notation convention shown above
 SHUTDOWN_TIMEOUT_SECONDS=30
 
 # Don't use dotcms prefix in properties file
 dotcms.shutdown.timeout=30
 ```
+
+> **Exception:** specialized config files that predate this convention — `dotcms-config-cluster.properties`
+> (see above), and the OpenSearch-related config in `docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md` /
+> `OPENSEARCH_MIGRATION.md` — correctly use uppercase property names. The anti-pattern above applies to
+> `dotmarketing-config.properties`, not to those files.
 
 ### ❌ Wrong Config Usage
 ```java

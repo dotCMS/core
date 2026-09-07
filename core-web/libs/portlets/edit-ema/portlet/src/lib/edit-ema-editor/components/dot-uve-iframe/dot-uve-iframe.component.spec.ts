@@ -1,22 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-jest.mock('@dotcms/uve/internal', () => ({
-    observeDocumentHeight: jest.fn()
-}));
-
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { signal, WritableSignal } from '@angular/core';
 
 import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SeoMetaTagsResult, SeoMetaTags } from '@dotcms/dotcms-models';
-import * as uveInternal from '@dotcms/uve/internal';
 
 import { DotUveIframeComponent } from './dot-uve-iframe.component';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { IframeAccessMode, PageType } from '../../../store/models';
+import { PageType } from '../../../store/models';
 import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils/ema-legacy-script-injection';
 
 describe('DotUveIframeComponent', () => {
@@ -30,11 +25,7 @@ describe('DotUveIframeComponent', () => {
     let pageTypeSignal: WritableSignal<PageType>;
     let pageRenderSignal: WritableSignal<string>;
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
-    let iframeDocHeightSignal: WritableSignal<number>;
     let legacyScriptInjectionEnabledSignal: WritableSignal<boolean>;
-    let iframeAccessModeSignal: WritableSignal<IframeAccessMode>;
-    let observeDocumentHeightSpy: jest.SpyInstance;
-    let destroySpy: jest.Mock;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -73,8 +64,6 @@ describe('DotUveIframeComponent', () => {
                     $pageRender: pageRenderSignal,
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
-                    iframeAccessMode: iframeAccessModeSignal,
-                    $viewIframeDocHeight: iframeDocHeightSignal,
                     $isEmaLegacyScriptInjectionEnabled: legacyScriptInjectionEnabledSignal,
                     setSeoData: jest.fn()
                 })
@@ -83,15 +72,9 @@ describe('DotUveIframeComponent', () => {
     });
 
     beforeEach(() => {
-        destroySpy = jest.fn();
-        (uveInternal.observeDocumentHeight as jest.Mock).mockReturnValue({ destroy: destroySpy });
-        observeDocumentHeightSpy = uveInternal.observeDocumentHeight as unknown as jest.SpyInstance;
-
         pageTypeSignal = signal(PageType.HEADLESS);
-        iframeAccessModeSignal = signal(IframeAccessMode.CROSS_ORIGIN);
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
-        iframeDocHeightSignal = signal(0);
         legacyScriptInjectionEnabledSignal = signal(false);
 
         spectator = createComponent({
@@ -194,70 +177,6 @@ describe('DotUveIframeComponent', () => {
             component.onIframeLoad();
             expect(insertSpy).not.toHaveBeenCalled();
         });
-
-        it('should emit iframe document height when the iframe document is accessible', () => {
-            iframeAccessModeSignal.set(IframeAccessMode.LOCAL);
-            const mockIframe = document.createElement('iframe');
-            const mockDoc = document.implementation.createHTMLDocument();
-            const mockWindow = {} as Window;
-
-            Object.defineProperty(mockIframe, 'contentDocument', {
-                value: mockDoc,
-                writable: true
-            });
-            Object.defineProperty(mockIframe, 'contentWindow', {
-                value: mockWindow,
-                writable: true
-            });
-
-            component.iframe = { nativeElement: mockIframe } as any;
-
-            const iframeDocHeightChangeSpy = jest.spyOn(component.iframeDocHeightChange, 'emit');
-
-            component.onIframeLoad();
-
-            expect(observeDocumentHeightSpy).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    documentRef: mockDoc,
-                    windowRef: mockWindow,
-                    onHeightChange: expect.any(Function)
-                })
-            );
-
-            const onHeightChange = observeDocumentHeightSpy.mock.calls[0][0].onHeightChange;
-            onHeightChange(900);
-
-            expect(iframeDocHeightChangeSpy).toHaveBeenCalledWith(900);
-
-            component.ngOnDestroy();
-
-            expect(destroySpy).toHaveBeenCalled();
-        });
-
-        it('should skip local height tracking when iframe access is blocked', () => {
-            iframeAccessModeSignal.set(IframeAccessMode.LOCAL);
-            const mockIframe = document.createElement('iframe');
-
-            Object.defineProperty(mockIframe, 'contentDocument', {
-                configurable: true,
-                get: () => {
-                    throw new DOMException('Blocked', 'SecurityError');
-                }
-            });
-
-            component.iframe = { nativeElement: mockIframe } as any;
-
-            expect(() => component.onIframeLoad()).not.toThrow();
-            expect(observeDocumentHeightSpy).not.toHaveBeenCalled();
-        });
-
-        it('should skip local height tracking when iframe access mode is cross-origin', () => {
-            iframeAccessModeSignal.set(IframeAccessMode.CROSS_ORIGIN);
-
-            component.onIframeLoad();
-
-            expect(observeDocumentHeightSpy).not.toHaveBeenCalled();
-        });
     });
 
     describe('onIframeLoad - TRADITIONAL page type', () => {
@@ -267,7 +186,6 @@ describe('DotUveIframeComponent', () => {
 
         beforeEach(() => {
             pageTypeSignal.set(PageType.TRADITIONAL);
-            iframeAccessModeSignal.set(IframeAccessMode.LOCAL);
 
             // Create mock iframe with contentDocument and contentWindow
             mockIframe = document.createElement('iframe');
@@ -307,65 +225,31 @@ describe('DotUveIframeComponent', () => {
             expect(setSeoSpy).toHaveBeenCalledTimes(1);
         });
 
-        it('should start local height tracking for TRADITIONAL pages when the iframe is accessible', () => {
+        it('should set srcdoc to page content on iframe load', () => {
             component.onIframeLoad();
-
-            expect(observeDocumentHeightSpy).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    documentRef: mockDoc,
-                    windowRef: mockWindow,
-                    onHeightChange: expect.any(Function)
-                })
-            );
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
         });
 
-        it('should write content to iframe document', () => {
-            const openSpy = jest.spyOn(mockDoc, 'open');
-            const writeSpy = jest.spyOn(mockDoc, 'write');
-            const closeSpy = jest.spyOn(mockDoc, 'close');
-
-            component.onIframeLoad();
-
-            expect(openSpy).toHaveBeenCalledTimes(1);
-            expect(writeSpy).toHaveBeenCalledTimes(1);
-            expect(closeSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should not insert content if iframe element is not available', () => {
+        it('should not set srcdoc if iframe element is not available', () => {
             component.iframe = undefined as any;
-            const openSpy = jest.spyOn(mockDoc, 'open');
             component.onIframeLoad();
-            expect(openSpy).not.toHaveBeenCalled();
-        });
-
-        it('should not insert content if contentDocument is not available', () => {
-            Object.defineProperty(mockIframe, 'contentDocument', {
-                value: null,
-                writable: true
-            });
-            const openSpy = jest.spyOn(mockDoc, 'open');
-            component.onIframeLoad();
-            expect(openSpy).not.toHaveBeenCalled();
+            expect(mockIframe.srcdoc).toBe('');
         });
 
         describe('legacy script injection (FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION)', () => {
             it('should inject the UVE script when the flag is enabled', () => {
                 legacyScriptInjectionEnabledSignal.set(true);
-                const writeSpy = jest.spyOn(mockDoc, 'write');
                 component.onIframeLoad();
-                expect(writeSpy).toHaveBeenCalledWith(
-                    expect.stringContaining(`<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`)
+                expect(mockIframe.srcdoc).toContain(
+                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
                 );
             });
 
             it('should NOT inject the UVE script when the flag is disabled', () => {
                 legacyScriptInjectionEnabledSignal.set(false);
-                const writeSpy = jest.spyOn(mockDoc, 'write');
                 component.onIframeLoad();
-                expect(writeSpy).toHaveBeenCalledWith(
-                    expect.not.stringContaining(
-                        `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                    )
+                expect(mockIframe.srcdoc).not.toContain(
+                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
                 );
             });
         });
@@ -574,6 +458,38 @@ describe('DotUveIframeComponent', () => {
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
+
+            it('should not emit for hash-only anchors (browser handles same-page scroll)', () => {
+                const a = doc.createElement('a');
+                a.setAttribute('href', '#page-section');
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            // Anchor links are commonly placed inside an editable contentlet area
+            // (`[data-mode]`). Without this guard the OR check below would still
+            // emit inlineEditing for the click and trigger a TinyMCE init.
+            it('should not emit for hash-only anchors nested inside [data-mode]', () => {
+                const wrapper = doc.createElement('div');
+                wrapper.setAttribute('data-mode', 'edit');
+                const a = doc.createElement('a');
+                a.setAttribute('href', '#page-section');
+                wrapper.appendChild(a);
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
         });
     });
 
@@ -627,6 +543,68 @@ describe('DotUveIframeComponent', () => {
             });
             (component as any).setSeoData();
             expect(mockDotSeoMetaTagsService.getMetaTagsResults).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('insertPageContent – de-duplicate writes', () => {
+        let mockIframe: HTMLIFrameElement;
+        let mockWindow: Window;
+
+        beforeEach(() => {
+            pageTypeSignal.set(PageType.TRADITIONAL);
+
+            mockIframe = document.createElement('iframe');
+            mockWindow = {
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn()
+            } as unknown as Window;
+
+            Object.defineProperty(mockIframe, 'contentWindow', {
+                value: mockWindow,
+                writable: true
+            });
+
+            component.iframe = { nativeElement: mockIframe } as any;
+        });
+
+        it('should set srcdoc to content on the first call', () => {
+            component.onIframeLoad();
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+        });
+
+        it('should skip srcdoc assignment on re-entrant calls with the same src and content', () => {
+            component.onIframeLoad(); // first write — srcdoc = mockPageRender
+            mockIframe.srcdoc = 'SENTINEL'; // manually change to detect re-assignment
+            component.onIframeLoad(); // same key — should not overwrite
+
+            expect(mockIframe.srcdoc).toBe('SENTINEL');
+        });
+
+        it('should re-write srcdoc when content changes (real-time canvas update)', () => {
+            const updatedRender = '<html><body>Updated Content</body></html>';
+            component.onIframeLoad();
+            pageRenderSignal.set(updatedRender);
+            component.onIframeLoad();
+
+            expect(mockIframe.srcdoc).toBe(updatedRender);
+        });
+
+        it('should re-write srcdoc when src changes (page navigation)', () => {
+            component.onIframeLoad();
+            spectator.setInput('src', 'https://example.com/new-page');
+            component.onIframeLoad();
+
+            // Content is the same but the key changed (different src) — re-write
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+        });
+
+        it('should still call handleInlineScripts on de-duplicated calls', () => {
+            const handleSpy = jest.spyOn(component as any, 'handleInlineScripts');
+            component.onIframeLoad();
+            component.onIframeLoad();
+
+            // handleInlineScripts must run on every call, not just srcdoc writes
+            expect(handleSpy).toHaveBeenCalledTimes(2);
         });
     });
 

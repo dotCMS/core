@@ -3,15 +3,21 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.*;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -24,8 +30,15 @@ import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PageResourceHelperTest {
 
@@ -294,5 +307,367 @@ public class PageResourceHelperTest {
 
         assertNotEquals(contentlet.getIdentifier(), contentletCopy.getIdentifier());
         assertNotEquals(contentlet.getInode(), contentletCopy.getInode());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has no contentlets (no MultiTree entries exist for it)
+     * Should: Return an empty list
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenPageHasNoContentlets_returnsEmpty()
+            throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final List<JsonNode> result = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has contentlets but none of their content types define DOT_STYLE_EDITOR_SCHEMA
+     * Should: Return an empty list
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenContentTypeHasNoSchema_returnsEmpty()
+            throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContentlet(contentlet)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final List<JsonNode> result = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has a contentlet whose content type defines DOT_STYLE_EDITOR_SCHEMA
+     * Should: Return one parsed schema containing the content type variable
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenContentTypeHasSchema_returnsSchema()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String schema = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+        contentType = ContentTypeBuilder.builder(contentType)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                .build();
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContentlet(contentlet)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final List<JsonNode> schemas = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertEquals(1, schemas.size());
+        assertTrue(schemas.get(0).toString().contains(contentType.variable()));
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has multiple contentlets of the same content type (which defines a schema)
+     * Should: Return only one schema entry — no duplicates per content type
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenDuplicateContentType_returnsOneSchema()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String schema = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+        contentType = ContentTypeBuilder.builder(contentType)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                .build();
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContentlet(contentlet1)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        new MultiTreeDataGen()
+                .setContentlet(contentlet2)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final List<JsonNode> schemas = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertEquals(1, schemas.size());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemas(List)}
+     * Given Scenario: Three contentlets are provided — two share the same content type (both with a
+     *                 schema) and one belongs to a different content type (also with a schema)
+     * Should: Return exactly two schemas, one per distinct content type (no duplicates)
+     */
+    @Test
+    public void getStyleEditorSchemas_whenTwoTypesThreeContentlets_returnsTwoSchemas()
+            throws DotDataException, DotSecurityException {
+        ContentType typeA = new ContentTypeDataGen().nextPersisted();
+        ContentType typeB = new ContentTypeDataGen().nextPersisted();
+
+        final String schemaA = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", typeA.variable());
+        final String schemaB = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", typeB.variable());
+
+        typeA = ContentTypeBuilder.builder(typeA)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schemaA))
+                .build();
+        typeA = APILocator.getContentTypeAPI(APILocator.systemUser()).save(typeA);
+
+        typeB = ContentTypeBuilder.builder(typeB)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schemaB))
+                .build();
+        typeB = APILocator.getContentTypeAPI(APILocator.systemUser()).save(typeB);
+
+        final Contentlet contentletA1 = new ContentletDataGen(typeA.id()).nextPersisted();
+        final Contentlet contentletA2 = new ContentletDataGen(typeA.id()).nextPersisted();
+        final Contentlet contentletB  = new ContentletDataGen(typeB.id()).nextPersisted();
+
+        final List<JsonNode> schemas = PageResourceHelper.getStyleEditorSchemas(
+                List.of(contentletA1, contentletA2, contentletB));
+
+        assertEquals(2, schemas.size());
+
+        final String allSchemas = schemas.toString();
+        assertTrue(allSchemas.contains(typeA.variable()));
+        assertTrue(allSchemas.contains(typeB.variable()));
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#copyContentlet(CopyContentletForm, User, PageMode, Language)}
+     * Given Scenario: A user has READ-only permission on a contentlet instance but Publish on the
+     *                 content type (mirrors issue #34215 reproduction steps).
+     * Should: throw DotSecurityException — the copy must be blocked at the instance level.
+     */
+    @Test
+    public void copyContentlet_whenUserHasReadOnlyPermissionOnInstance_throwsDotSecurityException()
+            throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User readOnlyUser = new UserDataGen()
+                .roles(role, TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        // Assign READ-only on the specific contentlet instance, breaking inheritance from the type
+        final List<Permission> perms = new ArrayList<>();
+        perms.add(new Permission(contentlet.getPermissionId(), role.getId(),
+                PermissionAPI.PERMISSION_READ, true));
+        APILocator.getPermissionAPI().assignPermissions(perms, contentlet, APILocator.systemUser(), false);
+
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen().setContentlet(contentlet)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final CopyContentletForm form = new CopyContentletForm.Builder()
+                .pageId(page.getIdentifier())
+                .containerId(container.getIdentifier())
+                .relationType("1")
+                .contentId(contentlet.getIdentifier())
+                .build();
+
+        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+
+        try {
+            PageResourceHelper.getInstance().copyContentlet(form, readOnlyUser, PageMode.PREVIEW_MODE, language);
+            org.junit.Assert.fail("Expected DotSecurityException — user with READ-only on contentlet instance must not be able to copy it");
+        } catch (final DotSecurityException e) {
+            assertTrue("Exception message should reference the contentlet identifier",
+                    e.getMessage().contains(contentlet.getIdentifier()));
+        }
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#copyPage(com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage, User, PageMode, Language)}
+     * Given Scenario: A user has READ-only permission on a page instance.
+     * Should: throw DotSecurityException before any copy attempt is made on the page node.
+     */
+    @Test
+    public void copyPage_whenUserHasReadOnlyPermissionOnPage_throwsDotSecurityException()
+            throws DotDataException, DotSecurityException {
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User readOnlyUser = new UserDataGen()
+                .roles(role, TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        // Assign READ-only on the page instance, breaking inheritance
+        final List<Permission> perms = new ArrayList<>();
+        perms.add(new Permission(page.getPermissionId(), role.getId(),
+                PermissionAPI.PERMISSION_READ, true));
+        APILocator.getPermissionAPI().assignPermissions(perms, page, APILocator.systemUser(), false);
+
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        try {
+            PageResourceHelper.getInstance().copyPage(page, readOnlyUser, PageMode.PREVIEW_MODE, language);
+            org.junit.Assert.fail("Expected DotSecurityException — user with READ-only on page instance must not be able to deep-copy it");
+        } catch (final DotSecurityException e) {
+            assertTrue("Exception message should reference the page identifier",
+                    e.getMessage().contains(page.getIdentifier()));
+        }
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#saveContentletStyles(String, List, User)}
+     * Given Scenario: A container holds three contentlets in order (treeOrder 0, 1, 2).
+     *                 Styles are applied only to the second contentlet (treeOrder 1).
+     * Should: Preserve the original treeOrder for every contentlet — the style-only save
+     *         must not reset the position of the edited contentlet to 0.
+     *
+     * Regression test for the bug where {@code saveMultiTrees} was called with a single-entry list,
+     * causing the edited contentlet to receive {@code treeOrder = 0} and appear first in the container.
+     */
+    @Test
+    public void saveContentletStyles_whenStyleAppliedToSecondContentlet_doesNotChangeOrder()
+            throws DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final String containerUuid = ContainerUUID.UUID_LEGACY_VALUE;
+        final Template template = new TemplateDataGen()
+                .withContainer(container, containerUuid)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet first  = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet second = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet third  = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        // Save MultiTree entries with explicit treeOrder values.
+        // MultiTreeDataGen always forces treeOrder=1, so we insert directly via the API.
+        // setPersonalization() returns void so the chain must be broken into separate calls.
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree mt0 = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(first.getIdentifier())
+                .setInstanceId(containerUuid)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name())
+                .setTreeOrder(0);
+        mt0.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTreeAPI.saveMultiTree(mt0);
+
+        final MultiTree mt1 = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(second.getIdentifier())
+                .setInstanceId(containerUuid)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name())
+                .setTreeOrder(1);
+        mt1.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTreeAPI.saveMultiTree(mt1);
+
+        final MultiTree mt2 = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(third.getIdentifier())
+                .setInstanceId(containerUuid)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name())
+                .setTreeOrder(2);
+        mt2.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTreeAPI.saveMultiTree(mt2);
+
+        // Apply styles to only the second contentlet (treeOrder=1).
+        final ContainerEntry entry = new ContainerEntry(
+                null,
+                container.getIdentifier(),
+                containerUuid,
+                List.of(second.getIdentifier()),
+                Map.of(second.getIdentifier(), Map.of("color", "red"))
+        );
+
+        PageResourceHelper.getInstance().saveContentletStyles(
+                page.getIdentifier(), List.of(entry), APILocator.systemUser());
+
+        // Verify original treeOrder is unchanged for every contentlet.
+        final Map<String, Integer> orderByContentlet = multiTreeAPI
+                .getMultiTrees(page.getIdentifier())
+                .stream()
+                .collect(Collectors.toMap(MultiTree::getContentlet, MultiTree::getTreeOrder));
+
+        assertEquals("first contentlet must keep treeOrder 0",
+                0, (int) orderByContentlet.get(first.getIdentifier()));
+        assertEquals("second contentlet must keep treeOrder 1",
+                1, (int) orderByContentlet.get(second.getIdentifier()));
+        assertEquals("third contentlet must keep treeOrder 2",
+                2, (int) orderByContentlet.get(third.getIdentifier()));
     }
 }

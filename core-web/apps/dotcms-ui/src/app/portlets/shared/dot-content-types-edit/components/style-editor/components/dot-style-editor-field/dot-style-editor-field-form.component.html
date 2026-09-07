@@ -1,0 +1,364 @@
+<p-panel
+    [toggleable]="true"
+    [collapsed]="$isCollapsed()"
+    (collapsedChange)="$isCollapsed.set($event)"
+    [pt]="$panelPT()">
+    <ng-template pTemplate="header">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+            <p-button
+                [icon]="$isCollapsed() ? 'pi pi-chevron-right' : 'pi pi-chevron-down'"
+                [text]="true"
+                size="small"
+                (onClick)="$isCollapsed.set(!$isCollapsed())" />
+            <span class="truncate text-sm font-medium text-gray-700">
+                {{ $label() || ('style.editor.form.builder.field.new' | dm) }}
+            </span>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="icons">
+        <div class="invisible flex items-center gap-0.5 group-hover/field:visible">
+            <p-button
+                data-testid="delete-field-btn"
+                icon="pi pi-trash"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                [title]="'style.editor.form.builder.field.delete.title' | dm"
+                (onClick)="delete.emit()" />
+            <span class="mx-0.5 inline-block h-4 w-px self-center bg-gray-300"></span>
+            <p-button
+                data-testid="move-up-btn"
+                icon="pi pi-chevron-up"
+                [text]="true"
+                size="small"
+                [title]="'style.editor.form.builder.field.move.up.title' | dm"
+                [disabled]="$isFirst()"
+                (onClick)="moveUp.emit()" />
+            <p-button
+                data-testid="move-down-btn"
+                icon="pi pi-chevron-down"
+                [text]="true"
+                size="small"
+                [title]="'style.editor.form.builder.field.move.down.title' | dm"
+                [disabled]="$isLast()"
+                (onClick)="moveDown.emit()" />
+        </div>
+    </ng-template>
+
+    <div class="flex flex-col gap-4">
+        <!-- Row 1: Type / Label / Identifier -->
+        <div class="grid grid-cols-3 gap-3">
+            <!-- Type -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold tracking-wide text-gray-500">
+                    {{ 'style.editor.form.builder.field.type.label' | dm }}
+                </label>
+                <p-select
+                    [ngModel]="$type()"
+                    (ngModelChange)="setType($event)"
+                    [options]="fieldTypes"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="body"
+                    styleClass="w-full" />
+            </div>
+
+            <!-- Label -->
+            <div class="flex flex-col gap-1">
+                <label
+                    class="text-xs font-semibold tracking-wide"
+                    [class.text-red-500]="!!$labelError()"
+                    [class.text-gray-500]="!$labelError()">
+                    {{ 'style.editor.form.builder.field.label.label' | dm }}
+                </label>
+                <input
+                    pInputText
+                    [ngModel]="$label()"
+                    (ngModelChange)="setLabel($event)"
+                    [placeholder]="'style.editor.form.builder.field.new' | dm"
+                    class="w-full"
+                    [class.ng-invalid]="!!$labelError()"
+                    [class.ng-dirty]="!!$labelError()" />
+                @if ($labelError()) {
+                    <small class="text-xs text-red-500">{{ $labelError() }}</small>
+                }
+            </div>
+
+            <!-- Identifier -->
+            <div class="flex flex-col gap-1">
+                <label
+                    class="text-xs font-semibold tracking-wide"
+                    [class.text-red-500]="!!$identifierError()"
+                    [class.text-gray-500]="!$identifierError()">
+                    {{ 'style.editor.form.builder.field.identifier.label' | dm }}
+                </label>
+                <div class="flex items-center gap-1">
+                    <input
+                        pInputText
+                        [ngModel]="$identifier()"
+                        (ngModelChange)="setIdentifier($event)"
+                        [placeholder]="
+                            'style.editor.form.builder.field.identifier.placeholder' | dm
+                        "
+                        class="min-w-0 flex-1 font-mono text-sm"
+                        [class.text-gray-400]="!$identifierTouched()"
+                        [class.bg-gray-50]="!$identifierTouched()"
+                        [class.ng-invalid]="!!$identifierError()"
+                        [class.ng-dirty]="!!$identifierError()" />
+                    @if ($identifierTouched()) {
+                        <p-button
+                            data-testid="reset-identifier-btn"
+                            icon="pi pi-sync"
+                            [text]="true"
+                            size="small"
+                            [title]="'style.editor.form.builder.field.identifier.reset.title' | dm"
+                            (onClick)="resetIdentifier()" />
+                    }
+                </div>
+                @if ($identifierError()) {
+                    <small class="text-xs text-red-500">{{ $identifierError() }}</small>
+                }
+            </div>
+        </div>
+
+        <!-- Input-specific: placeholder -->
+        @if ($type() === 'input') {
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-semibold tracking-wide text-gray-500">
+                    {{ 'style.editor.form.builder.field.description.label' | dm }}
+                    <span class="ml-1 font-normal text-gray-400 normal-case">
+                        {{ 'style.editor.form.builder.field.description.optional' | dm }}
+                    </span>
+                </label>
+                <input
+                    pInputText
+                    [ngModel]="$placeholder()"
+                    (ngModelChange)="setPlaceholder($event)"
+                    [placeholder]="'style.editor.form.builder.field.description.placeholder' | dm"
+                    class="w-full" />
+            </div>
+        }
+
+        <!-- Options-based types: dropdown, radio, checkboxGroup -->
+        @if ($type() !== 'input') {
+            <div class="flex flex-col gap-2">
+                <!-- Options header: label + columns toggle for radio + count error -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <label
+                            class="text-xs font-semibold tracking-wide"
+                            [class.text-red-500]="!!$optionsCountError()"
+                            [class.text-gray-500]="!$optionsCountError()">
+                            {{ 'style.editor.form.builder.field.options.label' | dm }}
+                        </label>
+                        @if ($optionsCountError()) {
+                            <small class="text-xs text-red-500">{{ $optionsCountError() }}</small>
+                        }
+                    </div>
+                    @if ($type() === 'radio') {
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500">
+                                {{ 'style.editor.form.builder.field.columns.label' | dm }}
+                            </span>
+                            <p-selectbutton
+                                [options]="columnOptions"
+                                [ngModel]="$columns()"
+                                (ngModelChange)="setColumns($event)"
+                                optionLabel="label"
+                                optionValue="value"
+                                size="small" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Options card -->
+                <div class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <!-- Column headers -->
+                    <div
+                        class="grid grid-cols-2 gap-2 pr-16 pl-6 text-xs font-medium text-gray-400">
+                        <span>
+                            {{ 'style.editor.form.builder.field.option.label.column' | dm }}
+                        </span>
+                        <span>
+                            {{
+                                $type() === 'checkboxGroup'
+                                    ? ('style.editor.form.builder.field.option.key.column' | dm)
+                                    : ('style.editor.form.builder.field.option.value.column' | dm)
+                            }}
+                        </span>
+                    </div>
+
+                    <!-- Option rows -->
+                    <div class="flex flex-col gap-3">
+                        @for (opt of $options(); track $index; let i = $index) {
+                            <div
+                                class="group/option grid grid-cols-[1rem_1fr_auto] items-center gap-x-2 gap-y-3">
+                                <!-- Col 1: decorative icon -->
+                                <div class="flex justify-center">
+                                    @if ($type() === 'radio') {
+                                        <input type="radio" disabled class="accent-gray-400" />
+                                    } @else if ($type() === 'checkboxGroup') {
+                                        <input type="checkbox" disabled class="accent-gray-400" />
+                                    }
+                                </div>
+
+                                <!-- Col 2: Label + Value/Key inputs -->
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="flex flex-col gap-0.5">
+                                        <input
+                                            pInputText
+                                            [ngModel]="opt.label"
+                                            (ngModelChange)="updateOptionLabel(i, $event)"
+                                            [placeholder]="
+                                                'style.editor.form.builder.field.option.label.placeholder'
+                                                    | dm
+                                            "
+                                            class="w-full"
+                                            [class.ng-invalid]="!!$optionErrors()[i]?.label"
+                                            [class.ng-dirty]="!!$optionErrors()[i]?.label" />
+                                        @if ($optionErrors()[i]?.label) {
+                                            <small class="text-xs text-red-500">
+                                                {{ $optionErrors()[i]?.label }}
+                                            </small>
+                                        }
+                                    </div>
+                                    @if ($type() === 'checkboxGroup') {
+                                        <div class="flex flex-col gap-0.5">
+                                            <input
+                                                pInputText
+                                                [ngModel]="opt.key"
+                                                (ngModelChange)="updateOptionKey(i, $event)"
+                                                [placeholder]="
+                                                    'style.editor.form.builder.field.option.key.placeholder'
+                                                        | dm
+                                                "
+                                                class="w-full font-mono text-sm"
+                                                [class.ng-invalid]="!!$optionErrors()[i]?.key"
+                                                [class.ng-dirty]="!!$optionErrors()[i]?.key" />
+                                            @if ($optionErrors()[i]?.key) {
+                                                <small class="text-xs text-red-500">
+                                                    {{ $optionErrors()[i]?.key }}
+                                                </small>
+                                            }
+                                        </div>
+                                    } @else {
+                                        <div class="flex flex-col gap-0.5">
+                                            <input
+                                                pInputText
+                                                [ngModel]="opt.value"
+                                                (ngModelChange)="updateOptionValue(i, $event)"
+                                                [placeholder]="
+                                                    'style.editor.form.builder.field.option.value.placeholder'
+                                                        | dm
+                                                "
+                                                class="w-full font-mono text-sm"
+                                                [class.ng-invalid]="!!$optionErrors()[i]?.value"
+                                                [class.ng-dirty]="!!$optionErrors()[i]?.value" />
+                                            @if ($optionErrors()[i]?.value) {
+                                                <small class="text-xs text-red-500">
+                                                    {{ $optionErrors()[i]?.value }}
+                                                </small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Col 3: action buttons -->
+                                <div class="flex items-center gap-1">
+                                    @if ($type() === 'radio') {
+                                        <p-button
+                                            icon="pi pi-image"
+                                            [text]="true"
+                                            size="small"
+                                            [title]="
+                                                opt.imageURL !== undefined
+                                                    ? ('style.editor.form.builder.field.option.image.remove.title'
+                                                      | dm)
+                                                    : ('style.editor.form.builder.field.option.image.add.title'
+                                                      | dm)
+                                            "
+                                            [severity]="
+                                                opt.imageURL !== undefined ? 'info' : 'secondary'
+                                            "
+                                            (onClick)="toggleOptionImageURL(i)" />
+                                    }
+                                    <p-button
+                                        data-testid="move-option-up-btn"
+                                        class="invisible group-hover/option:visible"
+                                        icon="pi pi-chevron-up"
+                                        [text]="true"
+                                        severity="secondary"
+                                        size="small"
+                                        [title]="
+                                            'style.editor.form.builder.field.option.move.up.title'
+                                                | dm
+                                        "
+                                        [disabled]="i === 0"
+                                        (onClick)="moveOptionUp(i)" />
+                                    <p-button
+                                        data-testid="move-option-down-btn"
+                                        class="invisible group-hover/option:visible"
+                                        icon="pi pi-chevron-down"
+                                        [text]="true"
+                                        severity="secondary"
+                                        size="small"
+                                        [title]="
+                                            'style.editor.form.builder.field.option.move.down.title'
+                                                | dm
+                                        "
+                                        [disabled]="i === $options().length - 1"
+                                        (onClick)="moveOptionDown(i)" />
+                                    <p-button
+                                        data-testid="remove-option-btn"
+                                        class="invisible group-hover/option:visible"
+                                        icon="pi pi-times"
+                                        [text]="true"
+                                        severity="secondary"
+                                        size="small"
+                                        [title]="
+                                            'style.editor.form.builder.field.option.remove.title'
+                                                | dm
+                                        "
+                                        (onClick)="removeOption(i)" />
+                                </div>
+
+                                <!-- Row 2: imageURL input (cols 1+2+3 as 3 direct grid children) -->
+                                @if ($type() === 'radio' && opt.imageURL !== undefined) {
+                                    <div></div>
+                                    <div class="flex flex-col gap-1">
+                                        <input
+                                            pInputText
+                                            [ngModel]="opt.imageURL"
+                                            (ngModelChange)="updateOptionImageURL(i, $event)"
+                                            [placeholder]="
+                                                'style.editor.form.builder.field.option.image.placeholder'
+                                                    | dm
+                                            "
+                                            class="w-full text-sm"
+                                            [class.ng-invalid]="!!$optionErrors()[i]?.imageURL"
+                                            [class.ng-dirty]="!!$optionErrors()[i]?.imageURL" />
+                                        @if ($optionErrors()[i]?.imageURL) {
+                                            <small class="text-xs text-red-500">
+                                                {{ $optionErrors()[i]?.imageURL }}
+                                            </small>
+                                        }
+                                    </div>
+                                    <div></div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <p-button
+                        data-testid="add-option-btn"
+                        [text]="true"
+                        icon="pi pi-plus"
+                        [label]="'style.editor.form.builder.field.option.add' | dm"
+                        size="small"
+                        styleClass="self-start"
+                        (onClick)="addOption()" />
+                </div>
+            </div>
+        }
+    </div>
+</p-panel>

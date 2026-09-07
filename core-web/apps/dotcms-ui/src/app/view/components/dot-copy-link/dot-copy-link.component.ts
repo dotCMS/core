@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, Input, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -18,6 +18,7 @@ import { DotClipboardUtil } from '@dotcms/ui';
     selector: 'dot-copy-link',
     templateUrl: './dot-copy-link.component.html',
     imports: [TooltipModule, ButtonModule],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotClipboardUtil]
 })
 export class DotCopyLinkComponent implements OnInit {

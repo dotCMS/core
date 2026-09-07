@@ -114,7 +114,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
      */
     protected readonly dropdownIconStyle = {
         dropdownIcon: {
-            class: 'text-[var(--color-palette-primary-500)]'
+            class: 'text-primary-500'
         }
     };
 

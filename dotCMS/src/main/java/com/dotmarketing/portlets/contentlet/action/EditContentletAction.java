@@ -1144,6 +1144,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			if(populateaccept){
 				contentlet = sibbling;
+				// Load tag associations from tag_inode table BEFORE clearing the inode,
+				// otherwise setTags() (called later) cannot find them via an empty inode.
+				try {
+					contentlet.setTags();
+				} catch (Exception e) {
+					Logger.warn(this, "Could not load tags for sibling " + sib, e);
+				}
 				contentlet.setInode("");
 				Structure structure = contentlet.getStructure();
 				List<Field> list = FieldsCache.getFieldsByStructureInode(structure.getInode());

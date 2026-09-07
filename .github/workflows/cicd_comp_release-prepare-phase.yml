@@ -5,6 +5,7 @@
 # - Creating release branch
 # - Setting release version in maven.config
 # - Updating LICENSE file Change Date
+# - Optionally bumping MinSdkVersion.VALUE on the release branch (see #36609/#36698)
 # - Creating initial GitHub release
 # - Caching build artifacts for subsequent phases
 #
@@ -29,6 +30,15 @@ on:
         required: false
         type: string
         default: ''
+      bump_min_sdk_version:
+        description: >-
+          Does this release include a change that breaks SDK compatibility? If true, bumps
+          MinSdkVersion.VALUE on the release branch itself (see #36609/#36698) so this
+          release advertises the new compatibility floor from the moment it ships, rather
+          than starting with some future release. Ignored for LTS releases.
+        required: false
+        type: boolean
+        default: false
     secrets:
       CI_MACHINE_TOKEN:
         required: false
@@ -83,10 +93,14 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
+      # Shallow checkout (fetch-depth: 1): this job only needs HEAD of the default
+      # branch (or the explicitly supplied release commit, fetched below) to cut
+      # the release branch from. fetch-depth: 0 pulled every branch ref
+      # (~2k+ branches, ~1.1 GB pack) and cost ~20 min per release run.
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
@@ -127,16 +141,54 @@ jobs:
             echo "date=$(/bin/date -u "+%Y-%m")"
           } >> "$GITHUB_OUTPUT"
 
+      # A GitHub Release for this version means the pipeline already got at least
+      # this far for it, so re-dispatching would republish different artifacts under
+      # a version that is already public (see #37380). Refuse before anything is
+      # mutated. There is deliberately no force override: bumping the counter on a
+      # retry is already the convention (26.08.19-01..-04), and the changelog range
+      # tolerates it because findPreviousTag skips releases with no notes.
+      - name: Reject already-released version
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          RELEASE_TAG: ${{ steps.set-version.outputs.release_tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Read the HTTP status rather than an exit code: a bare non-zero from the
+          # API can mean rate-limited, unauthorized or offline just as easily as
+          # "absent", and treating those as absent would fail the gate OPEN — the
+          # branch guard below would then clobber the release branch, i.e. exactly
+          # the corruption this step exists to stop. Only a literal 404 proceeds.
+          status=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${REPO}/releases/tags/${RELEASE_TAG}")
+          case "${status}" in
+            404)
+              echo "No existing release for ${RELEASE_TAG} — proceeding."
+              ;;
+            200)
+              echo "::error::Release ${RELEASE_TAG} already exists. Re-releasing a published version would republish different artifacts under the same version, and force-recreates its release branch. Dispatch the next counter instead."
+              exit 1
+              ;;
+            *)
+              echo "::error::Could not determine whether ${RELEASE_TAG} is already released (HTTP ${status}). Refusing to proceed."
+              exit 1
+              ;;
+          esac
+
       - name: Create Release Branch and Tag
         id: create-branch
         run: |
-          release_tag=${{ steps.set-version.outputs.release_tag }}
-          if git rev-parse "${release_tag}" >/dev/null 2>&1; then
-            echo "Tag ${release_tag} exists, removing it"
-            git push origin :refs/tags/${release_tag}
+          release_commit=${{ steps.set-version.outputs.release_commit }}
+          # Shallow checkout (fetch-depth: 1) only guarantees HEAD of the default
+          # branch. When an explicit release commit was supplied, fetch just that
+          # commit (GitHub enables uploadpack.allowAnySHA1InWant) before resetting.
+          if ! git cat-file -e "${release_commit}^{commit}" 2>/dev/null; then
+            echo "Release commit ${release_commit} not present locally, fetching it"
+            git fetch --depth=1 origin "${release_commit}"
           fi
-
-          git reset --hard ${{ steps.set-version.outputs.release_commit }}
+          git reset --hard "${release_commit}"
           release_version=${{ steps.set-version.outputs.release_version }}
           release_branch=${{ steps.set-version.outputs.release_branch }}
 
@@ -162,6 +214,31 @@ jobs:
           if ! git diff --quiet HEAD -- LICENSE; then
             echo "LICENSE file was updated, adding to commit"
             git add LICENSE
+          fi
+
+          # Bump MinSdkVersion.VALUE on the release branch itself (see #36609/#36698): a
+          # release that breaks SDK compatibility must advertise the new floor from the
+          # moment IT ships, not starting with some future release. This only ever lives on
+          # this disposable release branch (never merged to main), so a downstream
+          # build/deployment failure still can't leave main advertising a floor for a
+          # version that never actually shipped. Persisting the bump forward to main, so
+          # future releases inherit it, is still handled separately by the post-success
+          # bump-min-sdk-version job in cicd_6-release.yml.
+          if [[ "${{ inputs.bump_min_sdk_version }}" == "true" && "${{ steps.set-version.outputs.is_lts }}" != "true" ]]; then
+            MIN_SDK_FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
+            sed -i "s/VALUE = \"[^\"]*\"/VALUE = \"${release_version}\"/" "${MIN_SDK_FILE}"
+
+            # Verify the substitution actually landed, same guard as the post-release bump
+            # job — if the VALUE = "..." literal is ever reformatted, fail loudly instead of
+            # silently shipping a release that doesn't actually advertise the new floor.
+            NEW_MIN_SDK_VALUE=$(grep -oP '(?<=VALUE = ")[^"]+' "${MIN_SDK_FILE}")
+            if [ "${NEW_MIN_SDK_VALUE}" != "${release_version}" ]; then
+              echo "::error::Failed to bump MinSdkVersion.VALUE on the release branch — expected '${release_version}' but found '${NEW_MIN_SDK_VALUE}'. The VALUE = \"...\" literal in ${MIN_SDK_FILE} may have been reformatted."
+              exit 1
+            fi
+
+            echo "MinSdkVersion.VALUE bumped to ${release_version} on the release branch"
+            git add "${MIN_SDK_FILE}"
           fi
 
           git status

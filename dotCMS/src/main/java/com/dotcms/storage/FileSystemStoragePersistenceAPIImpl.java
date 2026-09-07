@@ -18,11 +18,13 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -327,12 +329,13 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
             try {
                 file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
-                if (file.exists()) {
-                    final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-                    try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
-                        object = readerDelegate.read(input);
-                    }
-                } else {
+                // Assume the file is there and open it directly — a failed open reports absence
+                // without the extra stat of an exists() pre-check, which is a hang risk on
+                // network-backed storage (issue #36498).
+                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
+                    object = readerDelegate.read(input);
+                } catch (final FileNotFoundException | NoSuchFileException absent) {
                     throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
             } catch (MismatchedInputException e) {

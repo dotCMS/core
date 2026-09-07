@@ -143,30 +143,38 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DEFAULT_METADATA_GROUP_NAME);
         for (final String binaryFieldName : basicBinaryFieldNameSet) {
 
-            final File file           = contentlet.getBinary(binaryFieldName);
             final String metadataPath = getFileName(contentlet, binaryFieldName);
 
-            if (null != file && file.exists() && file.canRead()) {
+            // A map-level check only — no filesystem stat. The binary itself is resolved
+            // lazily, and only when the metadata actually has to be regenerated: stats on
+            // network-backed storage are expensive and can hang (issue #36498).
+            if (null == contentlet.get(binaryFieldName)) {
+                //We're dealing with a  non required neither set binary field. No need to throw an exception. Just continue processing.
+                Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet with id `%s` references a binary field: `%s` that is null.", contentlet.getIdentifier(), binaryFieldName));
+                continue;
+            }
 
-                // if already included on the full, the file was already generated, just need to add the basic to the cache.
-                final Set<String> metadataFields = this.getMetadataFields(fieldMap.get(binaryFieldName).id());
-                final Predicate<String> filterBasicMetadataKey = metadataKey -> metadataFields.isEmpty() || metadataFields.contains(metadataKey);
+            // if already included on the full, the file was already generated, just need to add the basic to the cache.
+            final Set<String> metadataFields = this.getMetadataFields(fieldMap.get(binaryFieldName).id());
+            final Predicate<String> filterBasicMetadataKey = metadataKey -> metadataFields.isEmpty() || metadataFields.contains(metadataKey);
 
-                if (fullMetadata.containsKey(binaryFieldName)) {
+            if (fullMetadata.containsKey(binaryFieldName)) {
 
-                    final Metadata metadata = fullMetadata.get(binaryFieldName);
+                final Metadata metadata = fullMetadata.get(binaryFieldName);
 
-                    // if it is included on the full keys, we only have to store the meta in the cache.
-                    metadataMap = filterNonBasicMetadataFields(metadata.getMap());
-                    metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
+                // if it is included on the full keys, we only have to store the meta in the cache.
+                metadataMap = filterNonBasicMetadataFields(metadata.getMap());
+                metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
 
-                } else {
+            } else {
 
-                    //get Old metadata from cache so we don't loose any custom attributes
-                    final Metadata mergeWithMetadata = internalGetGenerateMetadata(contentlet, binaryFieldName,false, false);
-                    final String cacheKey = contentlet.getInode() + StringPool.COLON + binaryFieldName;
+                //get Old metadata from cache so we don't loose any custom attributes
+                final Metadata mergeWithMetadata = internalGetGenerateMetadata(contentlet, binaryFieldName,false, false);
+                final String cacheKey = contentlet.getInode() + StringPool.COLON + binaryFieldName;
 
-                    metadataMap = this.fileStorageAPI.generateMetaData(file,
+                try {
+                    metadataMap = this.fileStorageAPI.generateMetaData(
+                            () -> Try.of(() -> contentlet.getBinary(binaryFieldName)).getOrNull(),
                             new GenerateMetadataConfig.Builder()
                                     .full(false)
                                     .override(overrideMetadata)
@@ -179,13 +187,15 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                     .getIfOnlyHasCustomMetadata(this::getIfOnlyHasCustomMetadata)
                                     .build()
                     );
+                } catch (final IllegalArgumentException missingBinary) {
+                    // the metadata had to be regenerated but the binary is missing/unreadable —
+                    // same skip-and-continue as the old upfront file checks, minus the stats.
+                    Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet with id `%s` references a binary field: `%s` that does not exists or can not be access.", contentlet.getIdentifier(), binaryFieldName));
+                    continue;
                 }
-
-                builder.put(binaryFieldName, new Metadata( binaryFieldName, metadataMap));
-            } else {
-               //We're dealing with a  non required neither set binary field. No need to throw an exception. Just continue processing.
-               Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
             }
+
+            builder.put(binaryFieldName, new Metadata( binaryFieldName, metadataMap));
         }
         return builder.build();
     }
@@ -211,14 +221,22 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
         for (final String binaryFieldName : fullBinaryFieldNameSet) {
-            final File file = contentlet.getBinary(binaryFieldName);
             final String metadataPath = getFileName(contentlet, binaryFieldName);
-            if (null != file && file.exists() && file.canRead()) {
 
-                final Metadata mergeWithMetadata = internalGetGenerateMetadata(contentlet, binaryFieldName, false, false);
+            // A map-level check only — no filesystem stat. The binary itself is resolved
+            // lazily, and only when the metadata actually has to be regenerated (issue #36498).
+            if (null == contentlet.get(binaryFieldName)) {
+                Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet with id `%s` references a binary field: `%s` that is null.", contentlet.getIdentifier(), binaryFieldName));
+                continue;
+            }
 
-                final Set<String> metadataFields = getMetadataFields(fieldMap.get(binaryFieldName).id());
-                final Map<String, Serializable> metadataMap = fileStorageAPI.generateMetaData(file,
+            final Metadata mergeWithMetadata = internalGetGenerateMetadata(contentlet, binaryFieldName, false, false);
+
+            final Set<String> metadataFields = getMetadataFields(fieldMap.get(binaryFieldName).id());
+            final Map<String, Serializable> metadataMap;
+            try {
+                metadataMap = fileStorageAPI.generateMetaData(
+                        () -> Try.of(() -> contentlet.getBinary(binaryFieldName)).getOrNull(),
                         new GenerateMetadataConfig.Builder()
                             .full(true)
                             .override(overrideMetadata)
@@ -231,11 +249,14 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                             .getIfOnlyHasCustomMetadata(this::getIfOnlyHasCustomMetadata)
                             .build()
                         );
-
-                builder.put(binaryFieldName, new Metadata(binaryFieldName, metadataMap));
-            } else {
-                Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
+            } catch (final IllegalArgumentException missingBinary) {
+                // the metadata had to be regenerated but the binary is missing/unreadable —
+                // same skip-and-continue as the old upfront file checks, minus the stats.
+                Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet with id `%s` references a binary field: `%s` that does not exists or can not be access.", contentlet.getIdentifier(), binaryFieldName));
+                continue;
             }
+
+            builder.put(binaryFieldName, new Metadata(binaryFieldName, metadataMap));
         }
         return builder.build();
     }

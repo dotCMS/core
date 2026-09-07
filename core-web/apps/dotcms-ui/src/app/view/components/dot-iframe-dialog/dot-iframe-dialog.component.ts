@@ -5,7 +5,8 @@ import {
     OnChanges,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { DialogModule, Dialog } from 'primeng/dialog';
@@ -16,6 +17,7 @@ import { IframeComponent } from '../_common/iframe/iframe-component/iframe.compo
     selector: 'dot-iframe-dialog',
     templateUrl: './dot-iframe-dialog.component.html',
     styleUrls: ['./dot-iframe-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DialogModule, IframeComponent]
 })
 export class DotIframeDialogComponent implements OnChanges {
@@ -67,7 +69,7 @@ export class DotIframeDialogComponent implements OnChanges {
         this.keyWasDown.emit($event);
 
         if ($event.key === 'Escape') {
-            this.show = false;
+            this.onDialogHide();
         }
     }
 

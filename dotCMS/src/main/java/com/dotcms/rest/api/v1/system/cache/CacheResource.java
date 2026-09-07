@@ -17,6 +17,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PortletID;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -295,15 +296,16 @@ public class CacheResource {
                                @PathParam("provider") final String provider,
                                @PathParam("group") final String group) {
 
-        new WebResource.InitBuilder(webResource)
+        final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
-                .rejectWhenNoUser(true).init();
+                .rejectWhenNoUser(true).init().getUser();
 
-        Logger.debug(this, ()-> "Deletes objects on cache providers, group: " + group
-                + ", provider = " + provider);
+        Logger.info(this, String.format(
+                "User '%s' is flushing cache group '%s' on provider '%s'",
+                user.getUserId(), group, provider));
 
         this.getProvider(provider, group).remove(group);
         return Response.ok(new ResponseEntityView("flushed")).build();
@@ -327,15 +329,16 @@ public class CacheResource {
                                 @PathParam("group") final String group,
                                 @PathParam("id") final String id) {
 
-        new WebResource.InitBuilder(webResource)
+        final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
-                .rejectWhenNoUser(true).init();
+                .rejectWhenNoUser(true).init().getUser();
 
-        Logger.debug(this, ()-> "Deletes object on  cache providers, group: " + group
-                + ", provider = " + provider);
+        Logger.info(this, String.format(
+                "User '%s' is flushing cache object '%s' from group '%s' on provider '%s'",
+                user.getUserId(), id, group, provider));
 
         this.getProvider(provider, group).remove(group, id);
         return Response.ok(new ResponseEntityView("flushed")).build();
@@ -369,14 +372,14 @@ public class CacheResource {
                                 @Context final HttpServletResponse response,
                                 @PathParam("provider") final String provider) {
 
-        new WebResource.InitBuilder(webResource)
+        final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
-                .rejectWhenNoUser(true).init();
+                .rejectWhenNoUser(true).init().getUser();
 
-        Logger.debug(this, ()-> "Deletes all objects on  cache provider = " + provider);
+        Logger.info(this, String.format("User '%s' is flushing all caches", user.getUserId()));
 
         cacheMaintenanceHelper.flushAllCaches();
         return Response.ok(new ResponseEntityView("flushed all")).build();
@@ -505,21 +508,22 @@ public class CacheResource {
                     required = true, example = "Permission")
             @PathParam("regionName") final String regionName) {
 
-        new WebResource.InitBuilder(webResource)
+        final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
-                .rejectWhenNoUser(true).init();
+                .rejectWhenNoUser(true).init().getUser();
 
         if ("all".equalsIgnoreCase(regionName)) {
-            Logger.info(this, "Flushing all caches");
+            Logger.info(this, String.format("User '%s' is flushing all caches", user.getUserId()));
             cacheMaintenanceHelper.flushAllCaches();
             return new ResponseEntityStringView("Flushed all caches");
         }
 
         final String canonical = cacheMaintenanceHelper.flushRegion(regionName);
-        Logger.info(this, "Flushed cache region: " + canonical);
+        Logger.info(this, String.format("User '%s' flushed cache region '%s'",
+                user.getUserId(), canonical));
         return new ResponseEntityStringView("Flushed " + canonical);
     }
 
@@ -605,14 +609,14 @@ public class CacheResource {
     public ResponseEntityStringView deleteMenuCache(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response) {
 
-        new WebResource.InitBuilder(webResource)
+        final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
-                .rejectWhenNoUser(true).init();
+                .rejectWhenNoUser(true).init().getUser();
 
-        Logger.debug(this, ()-> "Deleting menu cache");
+        Logger.info(this, String.format("User '%s' is flushing the menu cache", user.getUserId()));
 
         MaintenanceUtil.deleteMenuCache();
         return new ResponseEntityStringView("flushed menucache");

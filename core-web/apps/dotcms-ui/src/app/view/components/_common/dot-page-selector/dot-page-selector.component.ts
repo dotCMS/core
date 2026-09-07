@@ -8,7 +8,8 @@ import {
     inject,
     Input,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -68,6 +69,7 @@ enum SearchType {
         DotMessagePipe,
         AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'relative'
     }

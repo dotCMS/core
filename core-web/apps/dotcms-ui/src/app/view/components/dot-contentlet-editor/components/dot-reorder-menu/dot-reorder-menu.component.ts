@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-reorder-menu',
     templateUrl: './dot-reorder-menu.component.html',
     imports: [DotMessagePipe, DotIframeDialogComponent]

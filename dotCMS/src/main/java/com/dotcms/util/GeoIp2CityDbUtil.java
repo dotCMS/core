@@ -331,6 +331,29 @@ public class GeoIp2CityDbUtil {
 	}
 
 	/**
+	 * Returns the postal/zip code the specified IP address belongs to, when the
+	 * MaxMind database provides it.
+	 *
+	 * @param ipAddress
+	 *            - The IP address to get information from.
+	 * @return The postal/zip code, or {@code null} if the database has none for
+	 *         this IP.
+	 * @throws UnknownHostException
+	 *             If the IP address of a host could not be determined.
+	 * @throws IOException
+	 *             If the connection to the GeoIP2 service could not be
+	 *             established, or the result object could not be created.
+	 * @throws GeoIp2Exception
+	 *             If the IP address is not present in the service database.
+	 */
+	public String getPostalCode(String ipAddress) throws UnknownHostException,
+			IOException, GeoIp2Exception {
+		InetAddress inetAddress = InetAddress.getByName(ipAddress);
+		CityResponse cityResponse = getDatabaseReader().city(inetAddress);
+		return cityResponse.getPostal() != null ? cityResponse.getPostal().getCode() : null;
+	}
+
+	/**
 	 * Returns the {@link TimeZone} associated with location, as specified by
 	 * the <a href="http://www.iana.org/time-zones">IANA Time Zone Database</a>.
 	 * For example: {@code "America/New_York"}.
@@ -413,7 +436,8 @@ public class GeoIp2CityDbUtil {
         .withLongitude(cityResponse.getLocation().getLongitude())
         .withSubdivision(cityResponse.getMostSpecificSubdivision().getName())
         .withIpAddress(ipAddress.getHostAddress())
-        .withSubdivisionCode(cityResponse.getMostSpecificSubdivision().getIsoCode());
+        .withSubdivisionCode(cityResponse.getMostSpecificSubdivision().getIsoCode())
+        .withPostal(cityResponse.getPostal() != null ? cityResponse.getPostal().getCode() : null);
         return builder.build();
     }
     

@@ -9,7 +9,7 @@ import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPagination, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
-import { PERSONA_KEY } from '../../shared/consts';
+import { DEFAULT_PAGE_DEPTH, PERSONA_KEY } from '../../shared/consts';
 import {
     DotPageAssetParams,
     SavePagePayload,
@@ -68,8 +68,12 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     get(queryParams: DotPageAssetParams): Observable<DotCMSPageAsset> {
-        const { clientHost, ...params } = queryParams;
+        const { clientHost, depth, ...rest } = queryParams;
         const pageType = clientHost ? 'json' : 'render';
+        // The backend skips relationship expansion entirely when `depth` is
+        // absent from the request (as opposed to falling back to a default),
+        // so we must always send a value — see DEFAULT_PAGE_DEPTH.
+        const params = { ...rest, depth: depth ?? DEFAULT_PAGE_DEPTH };
         const pageURL = getFullPageURL({ url: params.url, params });
 
         return this.http
@@ -103,6 +107,7 @@ export class DotPageApiService {
      * @param {Record<string, unknown>} payload.styleProperties - Style properties to apply.
      * @param {string} payload.pageId - The page ID where styles are being saved.
      * @param {string} payload.containerUUID - UUID of the container.
+     * @param {string} [payload.personaTag] - Persona key tag to personalize this style update for.
      * @returns {Observable<unknown>} Observable that completes when properties are saved.
      * @memberof DotPageApiService
      */
@@ -111,11 +116,13 @@ export class DotPageApiService {
         contentletIdentifier,
         styleProperties,
         pageId,
-        containerUUID
+        containerUUID,
+        personaTag
     }: SaveStylePropertiesPayload): Observable<unknown> {
         const payload = {
             identifier: containerIdentifier,
             uuid: containerUUID,
+            personaTag,
             [contentletIdentifier]: styleProperties
         };
 

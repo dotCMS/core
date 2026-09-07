@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { PopoverModule } from 'primeng/popover';
@@ -7,6 +7,7 @@ import { PopoverModule } from 'primeng/popover';
     selector: 'dot-field-helper',
     templateUrl: './dot-field-helper.component.html',
     styleUrls: ['./dot-field-helper.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ButtonModule, PopoverModule]
 })
 export class DotFieldHelperComponent {

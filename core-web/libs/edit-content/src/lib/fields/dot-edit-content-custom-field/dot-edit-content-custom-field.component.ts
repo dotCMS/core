@@ -11,6 +11,7 @@ import {
     DotRenderModes,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { IframeFieldComponent } from './components/iframe-field/iframe-field.component';
 import { NativeFieldComponent } from './components/native-field/native-field.component';
@@ -36,6 +37,7 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         InputTextModule,
         DialogModule,
         ReactiveFormsModule,
+        DotMessagePipe,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,

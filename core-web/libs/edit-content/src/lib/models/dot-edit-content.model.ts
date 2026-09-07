@@ -45,12 +45,15 @@ export interface DotWorkflowState extends DotCMSWorkflowStatus {
  * @export
  * @interface UIState
  */
+export type LocaleTab = 'all' | 'translated' | 'pending';
+
 export interface UIState {
     view: 'form' | 'compare';
     activeTab: number;
     isSidebarOpen: boolean;
     activeSidebarTab: number;
     isBetaMessageVisible: boolean;
+    localeSelectorTab: LocaleTab;
 }
 
 /**
@@ -106,6 +109,31 @@ export interface DotHistoryTimelineItemAction {
     type: DotHistoryTimelineItemActionType;
     /** The content version item the action is performed on */
     item: DotCMSContentletVersion;
+}
+
+/**
+ * Represents a single page reference for a contentlet.
+ */
+export interface DotContentReference {
+    page: {
+        title: string;
+        uri: string;
+        hostName: string;
+        ownerUserName: string;
+        identifier: string;
+    };
+    container: {
+        name: string;
+        identifier: string;
+    };
+    personaName: string | null;
+}
+
+/**
+ * Data passed to the references dialog via DynamicDialogConfig.
+ */
+export interface DotReferencesDialogData {
+    identifier: string;
 }
 
 /**

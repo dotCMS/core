@@ -69,6 +69,8 @@ public class ShortyServlet extends HttpServlet {
   private static final String  JPEG                        = "/jpeg";
   private static final String  JPEGP                       = "/jpegp";
   private static final String  WEBP                        = "/webp";
+  private static final String  AVIF                        = "/avif";
+  private static final String  SMART                       = "/smart";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
   private static final Pattern widthPattern                = Pattern.compile("/(\\d+)w\\b");
@@ -350,7 +352,10 @@ public class ShortyServlet extends HttpServlet {
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
     final boolean  webp    = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0;
+    final boolean  avif    = lowerUri.contains(AVIF);
+    // "/smart" alongside crop dimensions switches the crop filter to content-aware smartcrop
+    final boolean  smart   = lowerUri.contains(SMART);
+    final boolean  isImage = webp || jpeg || avif || width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -395,7 +400,7 @@ public class ShortyServlet extends HttpServlet {
         
 
       if(isImage) {
-      this.addImagePath(width, height, maxWidth, maxHeight, minWidth, minHeight, quality, jpeg, jpegp, webp,  pathBuilder,
+      this.addImagePath(width, height, maxWidth, maxHeight, minWidth, minHeight, quality, jpeg, jpegp, webp, avif, smart, pathBuilder,
                       focalPoint, cropWidth, cropHeight, resampleOpt, subarray);
       }
       this.doForward(request, response, pathBuilder.toString());
@@ -470,7 +475,8 @@ public class ShortyServlet extends HttpServlet {
       }
   }
 
-  private void addImagePath(
+  // package-visible for unit testing of the shorthand -> filter-param expansion
+  void addImagePath(
                             final int width,
                             final int height,
                             final int maxWidth,
@@ -481,6 +487,8 @@ public class ShortyServlet extends HttpServlet {
                             final boolean jpeg,
                             final boolean jpegp,
                             final boolean webp,
+                            final boolean avif,
+                            final boolean smart,
                             final StringBuilder pathBuilder,
                             final Optional<FocalPoint> focalPoint,
                             final int cropWidth,
@@ -488,59 +496,9 @@ public class ShortyServlet extends HttpServlet {
                             final int resampleOpt,
                             final String[] filters) {
 
-        for(String filter : filters){
-            filter = StringPool.FORWARD_SLASH + filter;
-            if(widthPattern.matcher(filter).find()){
-                pathBuilder.append(width > 0 ? "/resize_w/" + width : StringPool.BLANK);
-                continue;
-            }
-            if(heightPattern.matcher(filter).find()){
-                pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
-                continue;
-            }
-            if(maxWidthPattern.matcher(filter).find()){
-                pathBuilder.append("/resize_maxw/" + maxWidth );
-                continue;
-            }
-            if(maxHeightPattern.matcher(filter).find()){
-                pathBuilder.append("/resize_maxh/" + maxHeight );
-                continue;
-            }
-            if (minWidthPattern.matcher(filter).find()) {
-                pathBuilder.append("/resize_minw/" + minWidth);
-                continue;
-            }
-            if (minHeightPattern.matcher(filter).find()) {
-                pathBuilder.append("/resize_minh/" + minHeight);
-                continue;
-            }
-            
-            if(cropWidthPattern.matcher(filter).find()){
-                pathBuilder.append(cropWidth > 0 ? "/crop_w/" + cropWidth : StringPool.BLANK);
-                continue;
-            }
-            if(cropHeightPattern.matcher(filter).find()){
-                pathBuilder.append(cropHeight > 0 ? "/crop_h/" + cropHeight : StringPool.BLANK);
-                continue;
-            }
-            if(filter.contains("fp")){
-                pathBuilder.append(focalPoint.isPresent() ? "/fp/" + focalPoint.get() : StringPool.BLANK);
-                continue;
-            }
-            if(resampleOptsPattern.matcher(filter).find()){
-                pathBuilder.append(resampleOpt > 0 ? "/resize_ro/" + resampleOpt : StringPool.BLANK);
-                continue;
-            }
-        }
-
-        if (quality > 0) {
-            pathBuilder.append("/quality_q/" + quality);
-        } else {
-            pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
-            pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
-            pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
-        }
-        
+        ImageUriPathExpander.expand(width, height, maxWidth, maxHeight, minWidth, minHeight, quality,
+                jpeg, jpegp, webp, avif, smart, pathBuilder, focalPoint, cropWidth, cropHeight,
+                resampleOpt, filters);
   }
 
   private void addHeaders(final HttpServletResponse response, final boolean live) {

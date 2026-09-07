@@ -1,4 +1,9 @@
-import { Component, forwardRef, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import {
+    Component,
+    forwardRef,
+    CUSTOM_ELEMENTS_SCHEMA,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -13,6 +18,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         }
     ],
     imports: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotMdIconSelectorComponent implements ControlValueAccessor {

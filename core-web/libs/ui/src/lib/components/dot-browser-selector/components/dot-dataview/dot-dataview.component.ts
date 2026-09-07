@@ -2,7 +2,6 @@ import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    CUSTOM_ELEMENTS_SCHEMA,
     ElementRef,
     input,
     model,
@@ -22,6 +21,7 @@ import { TableModule } from 'primeng/table';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
+import { DotContentThumbnailComponent } from '../../../dot-content-thumbnail/dot-content-thumbnail.component';
 
 @Component({
     selector: 'dot-dataview',
@@ -34,12 +34,12 @@ import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
         MessageModule,
         SkeletonModule,
         DatePipe,
-        DotMessagePipe
+        DotMessagePipe,
+        DotContentThumbnailComponent
     ],
     templateUrl: './dot-dataview.component.html',
     styleUrls: ['./dot-dataview.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDataViewComponent {
     /**
@@ -94,6 +94,12 @@ export class DotDataViewComponent {
      * When true, the upload button is disabled (e.g. no site/folder selected yet).
      */
     $uploadDisabled = input<boolean>(false, { alias: 'uploadDisabled' });
+
+    /**
+     * Whether picking is also a place to upload from. False for a browser that lists neither files
+     * nor assets — a page or a link cannot be uploaded, so the button would be an empty promise.
+     */
+    $showUpload = input<boolean>(true, { alias: 'showUpload' });
 
     /**
      * Emits the `File` selected by the user via the OS file picker.

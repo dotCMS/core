@@ -5,7 +5,6 @@ import { SelectExistingContentDialog } from './helpers/select-existing-content-d
 
 import {
     CARDINALITY,
-    expect,
     test,
     type TestContentType,
     type TestContentlet
@@ -111,22 +110,8 @@ test.describe('Cardinality Constraints', () => {
 
             await dialog.expectRowCount(2);
 
-            let constrainedIdx = -1;
-            let freeIdx = -1;
-
-            for (let i = 0; i < 2; i++) {
-                const rowText = await dialog.rows.nth(i).textContent();
-                if (rowText?.includes('Comment 1')) {
-                    constrainedIdx = i;
-                } else {
-                    freeIdx = i;
-                }
-            }
-
-            expect(constrainedIdx, 'Comment 1 should exist in dialog').toBeGreaterThanOrEqual(0);
-
-            await dialog.expectRowConstrained(constrainedIdx);
-            await dialog.expectRowSelectable(freeIdx);
+            await dialog.expectRowConstrainedByText('Comment 1');
+            await dialog.expectRowSelectableByText('Comment 2');
         });
     });
 
@@ -226,25 +211,8 @@ test.describe('Cardinality Constraints', () => {
 
             await dialog.expectRowCount(2);
 
-            let constrainedIdx = -1;
-            let freeIdx = -1;
-
-            for (let i = 0; i < 2; i++) {
-                const rowText = await dialog.rows.nth(i).textContent();
-                if (rowText?.includes('Child 1')) {
-                    constrainedIdx = i;
-                } else {
-                    freeIdx = i;
-                }
-            }
-
-            expect(constrainedIdx, 'Child 1 should exist in dialog').toBeGreaterThanOrEqual(0);
-
-            // Child 1 disabled — already related to Parent A
-            await dialog.expectRowConstrained(constrainedIdx);
-
-            // Child 2 selectable — free
-            await dialog.expectRowSelectable(freeIdx);
+            await dialog.expectRowConstrainedByText('Child 1');
+            await dialog.expectRowSelectableByText('Child 2');
         });
 
         test('child already related appears disabled when creating new parent @critical', async ({
@@ -263,25 +231,8 @@ test.describe('Cardinality Constraints', () => {
 
             await dialog.expectRowCount(2);
 
-            let constrainedIdx = -1;
-            let freeIdx = -1;
-
-            for (let i = 0; i < 2; i++) {
-                const rowText = await dialog.rows.nth(i).textContent();
-                if (rowText?.includes('Child 1')) {
-                    constrainedIdx = i;
-                } else {
-                    freeIdx = i;
-                }
-            }
-
-            expect(constrainedIdx, 'Child 1 should exist in dialog').toBeGreaterThanOrEqual(0);
-
-            // Child 1 disabled — already related to Parent A
-            await dialog.expectRowConstrained(constrainedIdx);
-
-            // Child 2 selectable — free
-            await dialog.expectRowSelectable(freeIdx);
+            await dialog.expectRowConstrainedByText('Child 1');
+            await dialog.expectRowSelectableByText('Child 2');
         });
     });
 });

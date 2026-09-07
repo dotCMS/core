@@ -9,6 +9,7 @@ import { createFakeContentlet, createFakeSelectField } from '@dotcms/utils-testi
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { attachOrderedFields, parsePreservingKeyOrder } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 jest.mock('../../utils/relationshipFromContentlet', () => ({
@@ -105,6 +106,11 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.TEXTAREA](null, mockField);
             expect(result).toBe('default value');
         });
+
+        it('should return null when contentlet is null and isManualTranslation is true', () => {
+            const result = resolutionValue[FIELD_TYPES.TEXTAREA](null, mockField, undefined, true);
+            expect(result).toBeNull();
+        });
     });
 
     describe('textFieldResolutionFn', () => {
@@ -118,9 +124,14 @@ describe('DotEditContentFormResolutions', () => {
             expect(result).toBe('test-value');
         });
 
-        it('should handle null values', () => {
+        it('should return defaultValue when contentlet is null', () => {
             const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField);
             expect(result).toBe('default value');
+        });
+
+        it('should return null when contentlet is null and isManualTranslation is true', () => {
+            const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField, undefined, true);
+            expect(result).toBeNull();
         });
 
         it('should remove leading slash from URL field in HTMLPAGE content', () => {
@@ -289,6 +300,41 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field);
             expect(result).toBe('');
         });
+
+        describe('with queryParams', () => {
+            it('should return folderPath from queryParams when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {
+                    folderPath: 'default/level1/level2/'
+                });
+                expect(result).toBe('default/level1/level2/');
+            });
+
+            it('should return folderPath from queryParams when contentlet is undefined', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField, {
+                    folderPath: 'default/level1/'
+                });
+                expect(result).toBe('default/level1/');
+            });
+
+            it('should prefer folderPath over field defaultValue when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {
+                    folderPath: 'myhost/folder1/'
+                });
+                expect(result).toBe('myhost/folder1/');
+            });
+
+            it('should fall back to defaultValue when queryParams has no folderPath', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {});
+                expect(result).toBe('default value');
+            });
+
+            it('should ignore queryParams when contentlet has valid hostName and url', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](mockContentlet, mockField, {
+                    folderPath: 'default/should-be-ignored/'
+                });
+                expect(result).toBe('https://example.com');
+            });
+        });
     });
 
     describe('categoryResolutionFn', () => {
@@ -317,6 +363,22 @@ describe('DotEditContentFormResolutions', () => {
             delete field.defaultValue;
 
             const result = resolutionValue[FIELD_TYPES.CATEGORY](mockContentlet, field);
+            expect(result).toEqual([]);
+        });
+
+        it('should return empty array when contentlet is null and isManualTranslation is true', () => {
+            const result = resolutionValue[FIELD_TYPES.CATEGORY](null, mockField, undefined, true);
+            expect(result).toEqual([]);
+        });
+
+        it('should return empty array instead of defaultValue when isManualTranslation is true', () => {
+            const contentlet = { ...mockContentlet, testField: 'not-an-array' };
+            const result = resolutionValue[FIELD_TYPES.CATEGORY](
+                contentlet,
+                mockField,
+                undefined,
+                true
+            );
             expect(result).toEqual([]);
         });
     });
@@ -392,6 +454,16 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.SELECT](mockContentlet, mockField);
             expect(result).toBe('Option 2');
         });
+
+        it('should return null when contentlet is null and isManualTranslation is true', () => {
+            const field = createFakeSelectField({
+                values: 'Option 1|1\r\nOption 2|2',
+                defaultValue: 'Option 1',
+                variable: 'testField'
+            });
+            const result = resolutionValue[FIELD_TYPES.SELECT](null, field, undefined, true);
+            expect(result).toBeNull();
+        });
     });
 
     describe('field type mappings', () => {
@@ -411,7 +483,7 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.CUSTOM_FIELD,
                 FIELD_TYPES.HIDDEN,
                 FIELD_TYPES.JSON,
-                FIELD_TYPES.KEY_VALUE,
+                // KEY_VALUE has its own resolver — it recovers the response's key order.
                 FIELD_TYPES.MULTI_SELECT,
                 FIELD_TYPES.RADIO,
                 FIELD_TYPES.TAG,
@@ -467,6 +539,16 @@ describe('DotEditContentFormResolutions', () => {
                 const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](null, blockField);
                 expect(result).toBe(blockField.defaultValue);
             });
+
+            it('should return null when contentlet is null and isManualTranslation is true', () => {
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](
+                    null,
+                    blockField,
+                    undefined,
+                    true
+                );
+                expect(result).toBeNull();
+            });
         });
 
         it('should use dateResolutionFn for date field types', () => {
@@ -476,5 +558,107 @@ describe('DotEditContentFormResolutions', () => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.DATE]);
             });
         });
+
+        describe('dateResolutionFn', () => {
+            const dateField: DotCMSContentTypeField = {
+                ...mockField,
+                variable: 'campoDate',
+                fieldType: FIELD_TYPES.DATE,
+                dataType: 'DATE'
+            };
+
+            it('should return numeric timestamp from contentlet', () => {
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: 1736899200000
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(
+                    1736899200000
+                );
+            });
+
+            it('should parse ISO date strings from contentlet', () => {
+                const isoDate = '2025-01-15T10:30:00.000Z';
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: isoDate
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(
+                    Date.parse(isoDate)
+                );
+            });
+
+            it('should parse formatted date strings from contentlet', () => {
+                const formattedDate = '2025-01-15';
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: formattedDate
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(
+                    Date.parse(formattedDate)
+                );
+            });
+
+            it('should return null for empty date values', () => {
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: ''
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBeNull();
+            });
+        });
+    });
+});
+
+describe('KEY_VALUE resolution', () => {
+    const resolve = (contentlet: unknown, variable = 'keyValue') =>
+        resolutionValue[FIELD_TYPES.KEY_VALUE](
+            contentlet as DotCMSContentlet,
+            { variable, defaultValue: null } as unknown as DotCMSContentTypeField,
+            undefined,
+            false
+        );
+
+    /** A contentlet as `getContentById` hands it over. */
+    const loaded = (raw: string) => {
+        const { entity } = JSON.parse(raw);
+        const ordered = parsePreservingKeyOrder(raw) as { entity: unknown };
+
+        return attachOrderedFields(entity, ordered.entity);
+    };
+
+    it('should hand the form the order the response carried, not the object order', () => {
+        const raw = '{"entity":{"keyValue":{"orden 1":"a","123":"b","zzz":"c"}}}';
+
+        // The plain object has already hoisted `123`; the resolver must not use it.
+        expect(Object.keys(JSON.parse(raw).entity.keyValue)[0]).toBe('123');
+        expect(resolve(loaded(raw))).toBe('{"orden 1":"a","123":"b","zzz":"c"}');
+    });
+
+    it('should fall back to the stored value when nothing was recovered', () => {
+        // Contentlets reaching the form by another path carry no recovered copy.
+        const plain = { keyValue: { a: '1' } };
+
+        expect(resolve(plain)).toEqual({ a: '1' });
+    });
+
+    it('should resolve only its own field', () => {
+        const raw = '{"entity":{"first":{"9":"a","b":"c"},"second":{"z":"1"}}}';
+
+        expect(resolve(loaded(raw), 'first')).toBe('{"9":"a","b":"c"}');
+        expect(resolve(loaded(raw), 'second')).toBe('{"z":"1"}');
+    });
+
+    it('should leave a binary field alone even though it is reachable', () => {
+        // Only the declared field type routes here, which is the whole point: a
+        // shape-based guess used to rewrite `metaData` and break file previews.
+        const raw = '{"entity":{"metaData":{"name":"f.txt","fileSize":42}}}';
+        const contentlet = loaded(raw);
+
+        expect(contentlet.metaData).toEqual({ name: 'f.txt', fileSize: 42 });
     });
 });

@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    ElementRef,
+    inject,
+    OnInit,
+    ViewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -46,6 +54,7 @@ interface AIContentForm {
         ConfirmDialog,
         DotCopyButtonComponent
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./ai-content-prompt.component.css']
 })
 export class AIContentPromptComponent implements OnInit {

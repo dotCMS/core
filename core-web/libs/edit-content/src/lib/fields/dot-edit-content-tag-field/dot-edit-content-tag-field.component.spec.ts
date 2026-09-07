@@ -7,7 +7,7 @@ import {
     mockProvider,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
@@ -15,8 +15,13 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoComplete } from 'primeng/autocomplete';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createFakeContentlet, createFakeTagField } from '@dotcms/utils-testing';
+import {
+    createFakeContentlet,
+    createFakeTagField,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import {
     AUTO_COMPLETE_DELAY,
@@ -54,7 +59,15 @@ describe('DotEditContentTagFieldComponent', () => {
         host: MockFormComponent,
         imports: [ReactiveFormsModule],
         detectChanges: false,
-        providers: [mockProvider(DotEditContentService)]
+        providers: [
+            mockProvider(DotEditContentService),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'edit.content.form.field.tags.placeholder': 'Search tags or type to create one.'
+                })
+            }
+        ]
     });
 
     describe('Component Configuration', () => {
@@ -93,6 +106,10 @@ describe('DotEditContentTagFieldComponent', () => {
             expect(autocomplete.unique).toBe(AUTO_COMPLETE_UNIQUE);
             expect(autocomplete.minLength).toBe(AUTO_COMPLETE_MIN_LENGTH);
             expect(autocomplete.delay).toBe(AUTO_COMPLETE_DELAY);
+        });
+
+        it('should display placeholder text on the autocomplete input', () => {
+            expect(autocomplete.placeholder).toBe('Search tags or type to create one.');
         });
 
         it('should be connected to form control', () => {

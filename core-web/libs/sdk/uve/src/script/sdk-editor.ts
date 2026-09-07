@@ -5,10 +5,8 @@ import {
     injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
-    reportIframeHeight,
     scrollHandler,
-    setClientIsReady,
-    shouldReportIframeHeightToParent
+    setClientIsReady
 } from './utils';
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
@@ -18,7 +16,7 @@ import {
     reorderMenu,
     updateNavigation
 } from '../lib/editor/public';
-import { registerStyleEditorSchemas } from '../lib/style-editor/public';
+import { registerStyleEditorSchemas } from '../lib/style-editor/internal';
 
 declare global {
     interface Window {
@@ -45,8 +43,5 @@ if (uveState?.mode === UVE_MODE.EDIT) {
     addClassToEmptyContentlets();
     setClientIsReady();
     listenBlockEditorInlineEvent();
-    if (shouldReportIframeHeightToParent()) {
-        reportIframeHeight();
-    }
     injectEmptyStateStyles();
 }

@@ -1,6 +1,7 @@
 import {
-    BrowserSelectorController,
-    BrowserSelectorOptions,
+    DotBrowserController,
+    DotBrowserOptions,
+    FieldValidationState,
     FormBridge,
     FormFieldAPI,
     FormFieldValue
@@ -221,6 +222,27 @@ export class DojoFormBridge implements FormBridge {
                 return this.onChangeField(fieldId, callback);
             },
 
+            getValidationState: (): FieldValidationState => {
+                // Legacy Dojo editor has its own validation system; we surface a neutral state
+                // so consumers using the bridge API don't crash. Dojo-specific styling
+                // continues to be handled by the legacy editor itself.
+                return {
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                };
+            },
+
+            onValidationChange: (
+                _callback: (state: FieldValidationState) => void
+            ): (() => void) => {
+                // Legacy Dojo editor does not expose validation state changes through this bridge.
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                return () => {};
+            },
+
             enable: (): void => {
                 try {
                     const element = document.getElementById(fieldId);
@@ -292,24 +314,23 @@ export class DojoFormBridge implements FormBridge {
     }
 
     /**
-     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
+     * Not supported in the legacy Dojo editor — resolves `null` without opening anything.
      *
-     * @param _options - Configuration options for the browser selector.
-     * @returns A controller object to manage the dialog.
+     * The dialog has never existed on this page. What changed is that it now says so: a stub that
+     * silently resolved `null` was indistinguishable from the user pressing Cancel, leaving a
+     * template author with nothing to go on. Giving the old editor a working browser is a separate
+     * piece of work.
      *
-     * @example
-     * // Select a page
-     * bridge.openBrowserModal({
-     *   header: 'Select a Page',
-     *   mimeTypes: ['application/dotpage'],
-     *   onClose: (result) => console.log(result)
-     * });
+     * @returns A controller whose `close()` is a no-op; `onClose` is called once with `null`.
      */
-    openBrowserModal(_options: BrowserSelectorOptions): BrowserSelectorController {
-        // TODO: Implement browser selector modal for Dojo
-        return {
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            close: () => {}
-        };
+    openBrowserModal(options: DotBrowserOptions = {}): DotBrowserController {
+        console.warn(
+            'DotCustomFieldApi.openBrowserModal is not available in the legacy edit contentlet — ' +
+                'no picker will open. It is supported only in the new Edit Content.'
+        );
+
+        options.onClose?.(null);
+
+        return { close: () => undefined };
     }
 }

@@ -76,5 +76,5 @@ Before committing any code:
 
 ## Domain-Specific Security
 - **Backend**: See `/docs/backend/SECURITY_BACKEND.md`
-- **Frontend**: See `/docs/frontend/SECURITY_FRONTEND.md`
+- **Frontend**: See [`docs/frontend/`](../frontend/README.md) — start with [ANGULAR_STANDARDS.md](../frontend/ANGULAR_STANDARDS.md)
 - **Integration**: See `/docs/integration/API_CONTRACTS.md`

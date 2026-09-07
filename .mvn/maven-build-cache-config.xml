@@ -28,12 +28,19 @@ https://maven.apache.org/extensions/maven-build-cache-extension/maven-build-cach
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0 https://maven.apache.org/xsd/build-cache-config-1.0.0.xsd">
     <configuration>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <hashAlgorithm>SHA-256</hashAlgorithm>
         <validateXml>true</validateXml>
         <local>
             <maxBuildsCached>3</maxBuildsCached>
         </local>
+        <!--
+        Shared cache in S3. Off here; CI turns it on with
+        -Dmaven.build.cache.remote.enabled / .remote.url, pointed at a local
+        SigV4-signing proxy (see .github/actions/core-cicd/build-cache-remote).
+        Only the merge queue and trunk pass .remote.save.enabled=true.
+        -->
+        <remote enabled="false" id="dotcms-build-cache"/>
         <projectVersioning adjustMetaInf="true"/>
     </configuration>
     <input>

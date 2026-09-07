@@ -2,14 +2,18 @@ package com.dotcms.enterprise.publishing.remote.handler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publishing.PublisherConfig;
@@ -19,9 +23,14 @@ import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.util.xstream.XStreamHandler.TrustedListMatcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.UUIDGenerator;
+import org.apache.commons.lang3.tuple.Pair;
 import com.thoughtworks.xstream.XStream;
 import java.io.File;
 import java.io.IOException;
@@ -129,6 +138,59 @@ public class ContentHandlerTest {
         assertNotNull(savedTag);
         assertEquals(savedTag.getTagName(), tags[1]);
         assertEquals(Host.SYSTEM_HOST, savedTag.getHostId());
+    }
+
+    /**
+     * Method to test: {@link ContentHandler#findUniqueContentMatch(Contentlet, List, Pair)}
+     * When: The receiver's index still holds a document for a unique value whose contentlet is gone from the
+     * database -- the "ghost" left behind by an index/database desynchronization -- and a bundle arrives carrying
+     * that same unique value.
+     * Should: Skip the stale match and hand back the incoming content untouched, so the bundle is imported as new
+     * content instead of failing on this -- and on every single retry.
+     */
+    @Test
+    public void TEST_STALE_INDEX_DOCUMENT_DOES_NOT_BLOCK_UNIQUE_FIELD_MATCH() throws Exception {
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final String uniqueVarName = "uniqueField" + UUIDGenerator.shorty().replace("-", "");
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().type(TextField.class).velocityVarName(uniqueVarName).unique(true).next())
+                .nextPersisted();
+        final String uniqueValue = "ghost-" + UUIDGenerator.shorty();
+
+        // A contentlet that gets indexed the regular way...
+        final Contentlet ghost = new ContentletDataGen(contentType)
+                .languageId(languageId)
+                .setProperty(uniqueVarName, uniqueValue)
+                .nextPersisted();
+
+        // ...and is then wiped from the database behind the API's back, leaving its index document orphaned
+        new DotConnect().setSQL("delete from contentlet_version_info where identifier = ?")
+                .addParam(ghost.getIdentifier()).loadResult();
+        new DotConnect().setSQL("delete from contentlet where identifier = ?")
+                .addParam(ghost.getIdentifier()).loadResult();
+        CacheLocator.getContentletCache().remove(ghost.getInode());
+        CacheLocator.getIdentifierCache().removeFromCacheByVersionable(ghost);
+
+        // The ghost must really be there, otherwise this test would pass for the wrong reason
+        final List<ContentletSearch> staleMatches = APILocator.getContentletAPI().searchIndex(
+                "+structureInode:" + contentType.id() + " +working:true", 0, -1, "score",
+                APILocator.systemUser(), false);
+        assertFalse("The stale index document was not created; the scenario under test is not in place",
+                staleMatches.isEmpty());
+        assertNull("The ghost must no longer be resolvable from the database",
+                APILocator.getContentletAPI().find(ghost.getInode(), APILocator.systemUser(), false));
+
+        final Contentlet fromBundle = new Contentlet();
+        fromBundle.setContentTypeId(contentType.id());
+        fromBundle.setIdentifier(UUIDGenerator.generateUuid());
+        fromBundle.setInode(UUIDGenerator.generateUuid());
+        fromBundle.setLanguageId(languageId);
+        fromBundle.setStringProperty(uniqueVarName, uniqueValue);
+
+        final Contentlet result = new ContentHandler(new PublisherConfig()).findUniqueContentMatch(fromBundle,
+                FieldsCache.getFieldsByStructureInode(contentType.id()), Pair.of(languageId, languageId));
+
+        assertSame("The stale index document must be ignored, not matched", fromBundle, result);
     }
 
 

@@ -85,7 +85,7 @@ const I18N_BASE = 'api.sites.ruleengine';
         DotConditionGroupComponent,
         DotRuleActionComponent
     ],
-    changeDetection: ChangeDetectionStrategy.Default,
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'block'
     }

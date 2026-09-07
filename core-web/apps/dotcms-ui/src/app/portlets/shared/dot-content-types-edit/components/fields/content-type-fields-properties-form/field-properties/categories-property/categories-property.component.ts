@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -22,6 +22,7 @@ import { FieldProperty } from '../field-properties.model';
     providers: [PaginatorService],
     selector: 'dot-categories-property',
     templateUrl: './categories-property.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class CategoriesPropertyComponent implements OnInit {

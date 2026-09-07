@@ -931,9 +931,12 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		final String filter = SQLUtil.sanitizeParameter(searchCriteria.filter);
 
-		final String query = CategoryQueryBuilderResolver.getQueryBuilder(searchCriteria).build();
+		final CategoryQueryBuilder queryBuilder = CategoryQueryBuilderResolver.getQueryBuilder(searchCriteria);
+		final String query = queryBuilder.build();
 
 		final DotConnect dc = new DotConnect().setSQL(query);
+
+		queryBuilder.getQueryParams().forEach(dc::addParam);
 
 		if (UtilMethods.isSet(searchCriteria.rootInode) ) {
 			dc.addParam(searchCriteria.rootInode);

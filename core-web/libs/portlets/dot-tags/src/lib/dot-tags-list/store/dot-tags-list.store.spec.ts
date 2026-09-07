@@ -1,4 +1,4 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
@@ -76,6 +76,15 @@ describe('DotTagsListStore', () => {
         spectator.flushEffects();
     });
 
+    function readBlob(blob: Blob): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsText(blob);
+        });
+    }
+
     describe('Initial State', () => {
         it('should have default initial state values after effect triggers loadTags', () => {
             expect(store.tags()).toEqual(MOCK_TAGS);
@@ -84,6 +93,7 @@ describe('DotTagsListStore', () => {
             expect(store.page()).toBe(1);
             expect(store.rows()).toBe(25);
             expect(store.filter()).toBe('');
+            expect(store.showGlobal()).toBe(false);
             expect(store.sortField()).toBe('tagname');
             expect(store.sortOrder()).toBe('ASC');
             expect(store.status()).toBe('loaded');
@@ -95,11 +105,22 @@ describe('DotTagsListStore', () => {
             expect(tagsService.getTagsPaginated).toHaveBeenCalledWith({
                 filter: undefined,
                 site: 'site-1',
+                global: undefined,
                 page: 1,
                 per_page: 25,
                 orderBy: 'tagname',
                 direction: 'ASC'
             });
+        });
+
+        it('should send global=true when showGlobal is enabled', () => {
+            tagsService.getTagsPaginated.mockClear();
+            store.setShowGlobal(true);
+            spectator.flushEffects();
+
+            expect(tagsService.getTagsPaginated).toHaveBeenCalledWith(
+                expect.objectContaining({ global: true })
+            );
         });
 
         it('should omit filter when empty', () => {
@@ -130,6 +151,28 @@ describe('DotTagsListStore', () => {
             expect(store.filter()).toBe('test-filter');
             expect(store.page()).toBe(1);
         });
+
+        it('should preserve selection across filter changes', () => {
+            store.setSelectedTags(MOCK_TAGS);
+            store.setFilter('test-filter');
+            expect(store.selectedTags()).toEqual(MOCK_TAGS);
+        });
+    });
+
+    describe('setShowGlobal', () => {
+        it('should update showGlobal and reset page to 1', () => {
+            store.setPagination(3, 25);
+            store.setShowGlobal(true);
+
+            expect(store.showGlobal()).toBe(true);
+            expect(store.page()).toBe(1);
+        });
+
+        it('should preserve selection when toggling Show Global', () => {
+            store.setSelectedTags(MOCK_TAGS);
+            store.setShowGlobal(true);
+            expect(store.selectedTags()).toEqual(MOCK_TAGS);
+        });
     });
 
     describe('setPagination', () => {
@@ -139,6 +182,12 @@ describe('DotTagsListStore', () => {
             expect(store.page()).toBe(5);
             expect(store.rows()).toBe(50);
         });
+
+        it('should preserve selection across page navigation', () => {
+            store.setSelectedTags(MOCK_TAGS);
+            store.setPagination(2, 25);
+            expect(store.selectedTags()).toEqual(MOCK_TAGS);
+        });
     });
 
     describe('setSort', () => {
@@ -147,6 +196,12 @@ describe('DotTagsListStore', () => {
 
             expect(store.sortField()).toBe('label');
             expect(store.sortOrder()).toBe('DESC');
+        });
+
+        it('should preserve selection when sort changes', () => {
+            store.setSelectedTags(MOCK_TAGS);
+            store.setSort('label', 'DESC');
+            expect(store.selectedTags()).toEqual(MOCK_TAGS);
         });
     });
 
@@ -245,30 +300,23 @@ describe('DotTagsListStore', () => {
         });
     });
 
-    describe('exportSelectedTags', () => {
-        function readBlob(blob: Blob): Promise<string> {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsText(blob);
-            });
-        }
-
-        it('should generate CSV with correct content', async () => {
+    describe('exportSelected', () => {
+        it('should dump the selection to CSV without calling the backend', async () => {
             const mockGetDownloadLink = getDownloadLink as jest.Mock;
             mockGetDownloadLink.mockClear();
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.loadTags();
+            tagsService.getTagsPaginated.mockClear();
 
-            store.setSelectedTags(MOCK_TAGS);
-            store.exportSelectedTags();
+            store.setSelectedTags([store.tags()[0]]);
+            store.exportSelected();
 
-            expect(mockGetDownloadLink).toHaveBeenCalled();
-
+            expect(tagsService.getTagsPaginated).not.toHaveBeenCalled();
             const blob: Blob = mockGetDownloadLink.mock.calls[0][0];
             const text = await readBlob(blob);
             expect(text).toContain('"Tag Name","Host ID"');
             expect(text).toContain('"tag1","site1"');
-            expect(text).toContain('"tag2","site2"');
+            expect(text).not.toContain('"tag2"');
         });
 
         it('should escape quotes in tag names', async () => {
@@ -286,7 +334,7 @@ describe('DotTagsListStore', () => {
             ];
 
             store.setSelectedTags(tagsWithQuotes);
-            store.exportSelectedTags();
+            store.exportSelected();
 
             const blob: Blob = mockGetDownloadLink.mock.calls[0][0];
             const text = await readBlob(blob);
@@ -315,7 +363,7 @@ describe('DotTagsListStore', () => {
             ];
 
             store.setSelectedTags(dangerousTags);
-            store.exportSelectedTags();
+            store.exportSelected();
 
             const blob: Blob = mockGetDownloadLink.mock.calls[0][0];
             const text = await readBlob(blob);
@@ -323,14 +371,124 @@ describe('DotTagsListStore', () => {
             expect(text).toContain('"\'+cmd|test"');
         });
 
-        it('should not export when no tags selected', () => {
+        it('should be a no-op when nothing is selected', () => {
             const mockGetDownloadLink = getDownloadLink as jest.Mock;
             mockGetDownloadLink.mockClear();
+            tagsService.getTagsPaginated.mockClear();
 
             store.setSelectedTags([]);
-            store.exportSelectedTags();
+            store.exportSelected();
 
             expect(mockGetDownloadLink).not.toHaveBeenCalled();
+            expect(tagsService.getTagsPaginated).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('exportAll', () => {
+        it('should fetch the entire filtered set in one request sized by totalRecords', async () => {
+            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            mockGetDownloadLink.mockClear();
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.loadTags();
+            tagsService.getTagsPaginated.mockClear();
+
+            store.exportAll();
+
+            expect(tagsService.getTagsPaginated).toHaveBeenCalledTimes(1);
+            expect(tagsService.getTagsPaginated).toHaveBeenCalledWith(
+                expect.objectContaining({ page: 1, per_page: 100 })
+            );
+
+            const blob: Blob = mockGetDownloadLink.mock.calls[0][0];
+            const text = await readBlob(blob);
+            expect(text).toContain('"tag1","site1"');
+            expect(text).toContain('"tag2","site2"');
+        });
+
+        it('should be a no-op when totalRecords is 0', () => {
+            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            mockGetDownloadLink.mockClear();
+            tagsService.getTagsPaginated.mockReturnValue(
+                of({
+                    ...MOCK_API_RESPONSE_BASE,
+                    entity: [],
+                    pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
+                })
+            );
+            store.loadTags();
+            tagsService.getTagsPaginated.mockClear();
+
+            store.exportAll();
+
+            expect(tagsService.getTagsPaginated).not.toHaveBeenCalled();
+            expect(mockGetDownloadLink).not.toHaveBeenCalled();
+        });
+
+        it('should propagate the current filter and showGlobal state to the fetch', () => {
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.loadTags();
+            store.setFilter('marketing');
+            store.setShowGlobal(true);
+            tagsService.getTagsPaginated.mockClear();
+
+            store.exportAll();
+
+            expect(tagsService.getTagsPaginated).toHaveBeenCalledWith(
+                expect.objectContaining({ filter: 'marketing', global: true })
+            );
+        });
+
+        it('should handle backend errors', () => {
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.loadTags();
+            tagsService.getTagsPaginated.mockReturnValue(
+                throwError(() => new Error('export fail'))
+            );
+
+            store.exportAll();
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(store.status()).toBe('loaded');
+        });
+    });
+
+    describe('showExportAll (computed)', () => {
+        it('should be false when nothing is selected', () => {
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.loadTags();
+            store.setSelectedTags([]);
+            spectator.flushEffects();
+            expect(store.showExportAll()).toBe(false);
+        });
+
+        it('should be false on partial selection', () => {
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.loadTags();
+            store.setSelectedTags([store.tags()[0]]);
+            spectator.flushEffects();
+            expect(store.showExportAll()).toBe(false);
+        });
+
+        it('should be false when all visible selected but only one page exists', () => {
+            tagsService.getTagsPaginated.mockReturnValue(
+                of({
+                    ...MOCK_API_RESPONSE_BASE,
+                    entity: MOCK_TAGS,
+                    pagination: { currentPage: 1, perPage: 25, totalEntries: 2 }
+                })
+            );
+            store.loadTags();
+            store.setSelectedTags(store.tags());
+            spectator.flushEffects();
+            expect(store.showExportAll()).toBe(false);
+        });
+
+        it('should be true when all visible selected and there are more pages', () => {
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.loadTags();
+            store.setSelectedTags(store.tags());
+            spectator.flushEffects();
+            expect(store.showExportAll()).toBe(true);
         });
     });
 
@@ -381,18 +539,5 @@ describe('DotTagsListStore', () => {
                 expect.objectContaining({ site: 'site-2' })
             );
         });
-    });
-
-    describe('exportLabelKey (computed)', () => {
-        it('should return tags.export when selection is empty or partial', () => {
-            store.setSelectedTags([]);
-            spectator.flushEffects();
-            expect(store.exportLabelKey()).toBe('tags.export');
-
-            store.setSelectedTags([store.tags()[0]]);
-            spectator.flushEffects();
-            expect(store.exportLabelKey()).toBe('tags.export');
-        });
-        // "All selected" case (tags.export.all) is covered by the component spec via Export button label
     });
 });

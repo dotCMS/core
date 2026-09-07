@@ -1,11 +1,26 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+
+import { signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveContentletToolsComponent } from './dot-uve-contentlet-tools.component';
 
-import { ContentletPayload, VTLFile } from '../../../shared/models';
+import { ContentletPayload, SelectedContentlet, VTLFile } from '../../../shared/models';
+import { UVEStore } from '../../../store/dot-uve.store';
 import { ContentletArea } from '../ema-page-dropzone/types';
+
+/**
+ * Project a `ContentletArea` (hover shape — bounds at top level)
+ * into the unified `SelectedContentlet` shape (`{ bounds, payload }`)
+ * so the same fixture data drives both the contentletArea input and
+ * the editorSelected store mock.
+ */
+const toSelected = (area: ContentletArea): SelectedContentlet => ({
+    bounds: { x: area.x, y: area.y, width: area.width, height: area.height },
+    payload: area.payload
+});
 
 const MOCK_CONTENTLET_AREA: ContentletArea = {
     x: 100,
@@ -63,6 +78,11 @@ const MOCK_EMPTY_CONTENTLET_AREA: ContentletArea = {
 
 describe('DotUveContentletToolsComponent', () => {
     let spectator: Spectator<DotUveContentletToolsComponent>;
+    /**
+     * Writable mock for the store's `editorSelected` signal. The SDK's
+     * CONTENTLET_CLICKED handler sets this; tests drive it directly.
+     */
+    let editorSelected: ReturnType<typeof signal<SelectedContentlet | null>>;
 
     const createComponent = createComponentFactory({
         component: DotUveContentletToolsComponent,
@@ -79,12 +99,30 @@ describe('DotUveContentletToolsComponent', () => {
 
                     return messages[key] || key;
                 }
-            })
+            }),
+            {
+                provide: UVEStore,
+                useFactory: () => ({
+                    editorSelected,
+                    $iframeLayoutLocked: () => false,
+                    // Tall enough that none of the fixture areas trigger the
+                    // bottom clip offset unless a test overrides it.
+                    viewIframeHeight: () => 800,
+                    // promoteHoverToSelected calls setSelected on the store
+                    // before emitting select/quick-edit events. Stub it so
+                    // the (click) handler doesn't throw and the output fires.
+                    setSelected: jest.fn()
+                })
+            }
         ],
         detectChanges: false
     });
 
     beforeEach(() => {
+        // Tests start with the hovered contentlet also selected so the
+        // selected overlay renders alongside the hover overlay.
+        editorSelected = signal<SelectedContentlet | null>(toSelected(MOCK_CONTENTLET_AREA));
+
         spectator = createComponent({
             props: {
                 contentletArea: MOCK_CONTENTLET_AREA,
@@ -93,13 +131,6 @@ describe('DotUveContentletToolsComponent', () => {
             }
         });
         spectator.detectChanges();
-
-        // Select the contentlet by clicking the hover bounds
-        const hoverBounds = spectator.query(byTestId('bounds-hover'));
-        if (hoverBounds) {
-            spectator.click(hoverBounds);
-            spectator.detectChanges();
-        }
     });
 
     describe('Rendering', () => {
@@ -119,52 +150,98 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should render add buttons', () => {
-            const addTopButton = spectator.query(byTestId('add-top-button'));
-            const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+            const addTopButton = spectator.query(byTestId('hover-add-top-button'));
+            const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
 
             expect(addTopButton).toBeTruthy();
             expect(addBottomButton).toBeTruthy();
         });
 
         it('should render actions container when not empty', () => {
-            const actions = spectator.query(byTestId('actions'));
+            const actions = spectator.query(byTestId('hover-actions'));
             expect(actions).toBeTruthy();
         });
 
         it('should NOT render actions container when container is empty', () => {
             spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
+            editorSelected.set(toSelected(MOCK_EMPTY_CONTENTLET_AREA));
             spectator.detectChanges();
 
-            // Re-select after changing contentletArea
-            const hoverBounds = spectator.query(byTestId('bounds-hover'));
-            if (hoverBounds) {
-                spectator.click(hoverBounds);
-                spectator.detectChanges();
-            }
-
-            const actions = spectator.query(byTestId('actions'));
+            const actions = spectator.query(byTestId('hover-actions'));
             expect(actions).toBeFalsy();
         });
 
         it('should NOT render bottom add button when container is empty', () => {
             spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
+            editorSelected.set(toSelected(MOCK_EMPTY_CONTENTLET_AREA));
             spectator.detectChanges();
 
-            // Re-select after changing contentletArea
-            const hoverBounds = spectator.query(byTestId('bounds-hover'));
-            if (hoverBounds) {
-                spectator.click(hoverBounds);
-                spectator.detectChanges();
-            }
-
-            const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+            const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
             expect(addBottomButton).toBeFalsy();
+        });
+    });
+
+    describe('Hover overlay', () => {
+        beforeEach(() => {
+            // Hover overlay shows when the hovered contentlet is different
+            // from the selected one. Set selection to a different contentlet
+            // so the overlay is visible for these tests.
+            editorSelected.set(null);
+            spectator.detectChanges();
+        });
+
+        it('renders the hover overlay when a contentlet is hovered', () => {
+            const hoverBounds = spectator.query(byTestId('bounds-hover'));
+            expect(hoverBounds).toBeTruthy();
+        });
+
+        it('renders the content type label inside the hover overlay', () => {
+            const label = spectator.query(byTestId('bounds-hover-label'));
+            expect(label).toBeTruthy();
+            expect(label?.textContent?.trim()).toBe(
+                MOCK_CONTENTLET_AREA.payload?.contentlet?.contentType
+            );
+        });
+
+        it('shows the no-content-type fallback when contentType is the empty sentinel', () => {
+            const areaWithSentinel = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_AREA.payload?.contentlet,
+                        contentType: TEMP_EMPTY_CONTENTLET_TYPE
+                    }
+                }
+            } as unknown as ContentletArea;
+            spectator.setInput('contentletArea', areaWithSentinel);
+            spectator.detectChanges();
+
+            const label = spectator.query(byTestId('bounds-hover-label'));
+            expect(label?.textContent?.trim()).toBe('uve.no-content-type');
+        });
+
+        it('omits the label when the hovered contentlet has no contentType', () => {
+            const areaWithoutType = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_AREA.payload?.contentlet,
+                        contentType: undefined
+                    }
+                }
+            } as unknown as ContentletArea;
+            spectator.setInput('contentletArea', areaWithoutType);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('bounds-hover-label'))).toBeFalsy();
         });
     });
 
     describe('Actions buttons', () => {
         it('should render edit VTL button when vtl files exist', () => {
-            const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+            const editVtlButton = spectator.query(byTestId('hover-edit-vtl-button'));
             expect(editVtlButton).toBeTruthy();
         });
 
@@ -182,30 +259,25 @@ describe('DotUveContentletToolsComponent', () => {
                 }
             };
             spectator.setInput('contentletArea', areaWithoutVtl);
+            editorSelected.set(toSelected(areaWithoutVtl));
             spectator.detectChanges();
 
-            // Re-select after changing contentletArea
-            const hoverBounds = spectator.query(byTestId('bounds-hover'));
-            expect(hoverBounds).toBeTruthy();
-            spectator.click(hoverBounds);
-            spectator.detectChanges();
-
-            const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+            const editVtlButton = spectator.query(byTestId('hover-edit-vtl-button'));
             expect(editVtlButton).toBeFalsy();
         });
 
         it('should render drag button', () => {
-            const dragButton = spectator.query(byTestId('drag-button'));
+            const dragButton = spectator.query(byTestId('hover-drag-button'));
             expect(dragButton).toBeTruthy();
         });
 
         it('should render delete button', () => {
-            const deleteButton = spectator.query(byTestId('delete-button'));
+            const deleteButton = spectator.query(byTestId('hover-delete-button'));
             expect(deleteButton).toBeTruthy();
         });
 
         it('should render edit button', () => {
-            const editButton = spectator.query(byTestId('edit-button'));
+            const editButton = spectator.query(byTestId('hover-edit-button'));
             expect(editButton).toBeTruthy();
         });
 
@@ -213,7 +285,7 @@ describe('DotUveContentletToolsComponent', () => {
             spectator.setInput('allowContentDelete', false);
             spectator.detectChanges();
 
-            const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+            const deleteButton = spectator.query(byTestId('hover-delete-button')) as HTMLElement;
             const button = deleteButton.querySelector('button');
             expect(button?.disabled).toBe(true);
         });
@@ -222,7 +294,7 @@ describe('DotUveContentletToolsComponent', () => {
             spectator.setInput('allowContentDelete', true);
             spectator.detectChanges();
 
-            const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+            const deleteButton = spectator.query(byTestId('hover-delete-button')) as HTMLElement;
             const button = deleteButton.querySelector('button');
             expect(button?.disabled).toBe(false);
         });
@@ -234,10 +306,12 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.detectChanges();
 
-                const paletteButton = spectator.query(byTestId('palette-button')) as Element;
+                const paletteButton = spectator.query(
+                    byTestId('hover-palette-button')
+                ) as HTMLElement;
                 const handler = jest.fn();
                 spectator.output('selectContent').subscribe(handler);
-                spectator.click(paletteButton);
+                spectator.click(paletteButton.querySelector('button') as Element);
 
                 expect(handler).toHaveBeenCalledWith({
                     ...MOCK_CONTENTLET_AREA.payload,
@@ -246,15 +320,32 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
-        describe('edit button', () => {
-            it('should emit openQuickEdit when clicking edit button', () => {
+        describe('quick-edit (bolt) button', () => {
+            it('should emit openQuickEdit when clicking the bolt button', () => {
                 const handler = jest.fn();
                 spectator.output('openQuickEdit').subscribe(handler);
 
-                const editButton = spectator.query(byTestId('edit-button')) as HTMLElement;
-                spectator.click(editButton.querySelector('button') as Element);
+                const boltButton = spectator.query(
+                    byTestId('hover-quick-edit-button')
+                ) as HTMLElement;
+                spectator.click(boltButton.querySelector('button') as Element);
 
                 expect(handler).toHaveBeenCalled();
+            });
+        });
+
+        describe('full-editor (pencil) button', () => {
+            it('should emit openFullEditor with the hovered payload', () => {
+                const handler = jest.fn();
+                spectator.output('openFullEditor').subscribe(handler);
+
+                const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
+                spectator.click(editButton.querySelector('button') as Element);
+
+                expect(handler).toHaveBeenCalledWith({
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    position: 'after'
+                });
             });
         });
 
@@ -263,7 +354,9 @@ describe('DotUveContentletToolsComponent', () => {
                 const handler = jest.fn();
                 spectator.output('deleteContent').subscribe(handler);
 
-                const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+                const deleteButton = spectator.query(
+                    byTestId('hover-delete-button')
+                ) as HTMLElement;
                 spectator.click(deleteButton.querySelector('button') as Element);
 
                 expect(handler).toHaveBeenCalledWith({
@@ -275,7 +368,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('addContent', () => {
             it('should emit addContent with type "content" when selecting content from menu', () => {
-                const addTopButton = spectator.query(byTestId('add-top-button'));
+                const addTopButton = spectator.query(byTestId('hover-add-top-button'));
                 const button = addTopButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
@@ -296,7 +389,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should emit addContent with type "widget" when selecting widget from menu', () => {
-                const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+                const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
@@ -317,7 +410,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should emit addContent with type "form" when selecting form from menu', () => {
-                const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+                const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
@@ -345,7 +438,7 @@ describe('DotUveContentletToolsComponent', () => {
                     name: 'template1.vtl'
                 };
 
-                const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+                const editVtlButton = spectator.query(byTestId('hover-edit-vtl-button'));
                 const button = editVtlButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
@@ -365,7 +458,7 @@ describe('DotUveContentletToolsComponent', () => {
                     name: 'template2.vtl'
                 };
 
-                const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
+                const editVtlButton = spectator.query(byTestId('hover-edit-vtl-button'));
                 const button = editVtlButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
@@ -391,7 +484,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should update position to "before" when clicking top add button', () => {
-                const addTopButton = spectator.query(byTestId('add-top-button'));
+                const addTopButton = spectator.query(byTestId('hover-add-top-button'));
                 const button = addTopButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
@@ -400,7 +493,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should update position to "after" when clicking bottom add button', () => {
-                const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+                const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
@@ -455,7 +548,9 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('allowContentDelete', true);
                 spectator.detectChanges();
 
-                const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+                const deleteButton = spectator.query(
+                    byTestId('hover-delete-button')
+                ) as HTMLElement;
                 const button = deleteButton?.querySelector('button');
 
                 expect(button?.disabled).toBe(false);
@@ -465,7 +560,9 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('allowContentDelete', false);
                 spectator.detectChanges();
 
-                const deleteButton = spectator.query(byTestId('delete-button')) as HTMLElement;
+                const deleteButton = spectator.query(
+                    byTestId('hover-delete-button')
+                ) as HTMLElement;
                 const button = deleteButton?.querySelector('button');
 
                 expect(button?.disabled).toBe(true);
@@ -504,12 +601,7 @@ describe('DotUveContentletToolsComponent', () => {
                     }
                 };
                 spectator.setInput('contentletArea', areaWithoutVtl);
-                spectator.detectChanges();
-
-                // Re-select after changing contentletArea so selected state reflects new area
-                const hoverBounds = spectator.query(byTestId('bounds-hover'));
-                expect(hoverBounds).toBeTruthy();
-                spectator.click(hoverBounds);
+                editorSelected.set(toSelected(areaWithoutVtl));
                 spectator.detectChanges();
 
                 expect(spectator.component.vtlMenuItems()).toBeUndefined();
@@ -527,36 +619,105 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should default to 0px when contentletArea values are undefined', () => {
-                // Use a different contentlet id so the hover overlay is shown when we set areaWithUndefined
-                const areaWithDifferentId = {
+                const areaWithUndefined = {
                     ...MOCK_CONTENTLET_AREA,
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        contentlet: {
-                            ...MOCK_CONTENTLET_AREA.payload.contentlet,
-                            identifier: 'other-contentlet-id'
-                        }
-                    }
-                };
-                spectator.setInput('contentletArea', areaWithDifferentId);
-                spectator.detectChanges();
-                const hoverBoundsOther = spectator.query(byTestId('bounds-hover'));
-                spectator.click(hoverBoundsOther as Element);
-                spectator.detectChanges();
-
-                const areaWithUndefined = { ...MOCK_CONTENTLET_AREA, x: undefined };
-                spectator.setInput('contentletArea', areaWithUndefined as ContentletArea);
-                spectator.detectChanges();
-
-                const hoverBounds = spectator.query(byTestId('bounds-hover'));
-                expect(hoverBounds).toBeTruthy();
-                spectator.click(hoverBounds as Element);
+                    x: undefined
+                } as unknown as ContentletArea;
+                editorSelected.set(toSelected(areaWithUndefined));
                 spectator.detectChanges();
 
                 const bounds = spectator.query(byTestId('bounds-selected')) as HTMLElement;
                 expect(bounds).toBeTruthy();
                 // The computed uses ?? operator, so undefined x should default to 0
                 expect(parseInt(bounds.style.left, 10)).toBe(0);
+            });
+        });
+
+        describe('hoverTopClipOffset', () => {
+            it('should be null when the top edge is visible', () => {
+                expect(spectator.component.hoverTopClipOffset()).toBeNull();
+            });
+
+            it('should offset the top toolbar row when the top edge is scrolled above the iframe', () => {
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -50 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverTopClipOffset()).toBe(50);
+
+                const actions = spectator.query(byTestId('hover-actions')) as HTMLElement;
+                expect(actions.style.top).toBe('50px');
+                expect(actions.style.transform).toBe('translate(0, 0)');
+            });
+
+            it('should cap the offset at the contentlet height so it never overshoots the box', () => {
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -500 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverTopClipOffset()).toBe(scrolledArea.height);
+            });
+        });
+
+        describe('hoverBottomClipOffset', () => {
+            it('should be null when the bottom edge is visible', () => {
+                expect(spectator.component.hoverBottomClipOffset()).toBeNull();
+            });
+
+            it('should offset the bottom add button when the bottom edge overflows the iframe', () => {
+                // Store mock reports an 800px-tall iframe; y(200) + height(400) - 800 = -200 (fits).
+                // Push the area down so it overflows by 100px.
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: 500 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverBottomClipOffset()).toBe(100);
+
+                const addBottomButton = spectator.query(
+                    byTestId('hover-add-bottom-button')
+                ) as HTMLElement;
+                expect(addBottomButton.style.bottom).toBe('100px');
+                expect(addBottomButton.style.transform).toBe('translate(-50%, 0)');
+            });
+        });
+
+        describe('hoverDragButtonTopOffset', () => {
+            it('should be null when the natural vertical center is visible', () => {
+                // center = y(200) + height(400) / 2 = 400, within the 800px mock iframe.
+                expect(spectator.component.hoverDragButtonTopOffset()).toBeNull();
+            });
+
+            it('should clamp the handle to the top of the iframe when the center is scrolled above it', () => {
+                // center = y(-300) + height(400) / 2 = -100, above the iframe top (0).
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -300 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                // clampedCenter(0) - y(-300) = 300
+                expect(spectator.component.hoverDragButtonTopOffset()).toBe(300);
+
+                const dragButton = spectator.query(byTestId('hover-drag-button'))
+                    ?.parentElement as HTMLElement;
+                expect(dragButton.style.top).toBe('300px');
+            });
+
+            it('should clamp the handle to the bottom of the iframe when the center is scrolled below it', () => {
+                // Store mock reports an 800px-tall iframe.
+                // center = y(700) + height(400) / 2 = 900, below the iframe bottom (800).
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: 700 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                // clampedCenter(800) - y(700) = 100
+                expect(spectator.component.hoverDragButtonTopOffset()).toBe(100);
+            });
+
+            it('should never exceed the contentlet height', () => {
+                const scrolledArea = { ...MOCK_CONTENTLET_AREA, y: -5000 };
+                spectator.setInput('contentletArea', scrolledArea);
+                spectator.detectChanges();
+
+                expect(spectator.component.hoverDragButtonTopOffset()).toBe(scrolledArea.height);
             });
         });
 
@@ -580,14 +741,8 @@ describe('DotUveContentletToolsComponent', () => {
                     }
                 };
                 spectator.setInput('contentletArea', areaWithoutContentlet);
+                editorSelected.set(toSelected(areaWithoutContentlet));
                 spectator.detectChanges();
-
-                // Re-select after changing contentletArea so selected state reflects new area
-                const hoverBounds = spectator.query(byTestId('bounds-hover'));
-                if (hoverBounds) {
-                    spectator.click(hoverBounds);
-                    spectator.detectChanges();
-                }
 
                 const payload = spectator.component.dragPayload();
                 expect(payload).toEqual({
@@ -605,7 +760,7 @@ describe('DotUveContentletToolsComponent', () => {
             const handler = jest.fn();
             spectator.output('addContent').subscribe(handler);
 
-            const addTopButton = spectator.query(byTestId('add-top-button'));
+            const addTopButton = spectator.query(byTestId('hover-add-top-button'));
             const button = addTopButton?.querySelector('button');
             spectator.click(button as Element);
             spectator.detectChanges();
@@ -626,7 +781,7 @@ describe('DotUveContentletToolsComponent', () => {
             const handler = jest.fn();
             spectator.output('addContent').subscribe(handler);
 
-            const addBottomButton = spectator.query(byTestId('add-bottom-button'));
+            const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
             const button = addBottomButton?.querySelector('button');
             spectator.click(button as Element);
             spectator.detectChanges();
@@ -650,7 +805,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('showStyleEditorOption', false);
                 spectator.detectChanges();
 
-                const paletteButton = spectator.query(byTestId('palette-button'));
+                const paletteButton = spectator.query(byTestId('hover-palette-button'));
                 expect(paletteButton).toBeFalsy();
             });
 
@@ -658,7 +813,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.detectChanges();
 
-                const paletteButton = spectator.query(byTestId('palette-button'));
+                const paletteButton = spectator.query(byTestId('hover-palette-button'));
                 expect(paletteButton).toBeTruthy();
             });
 
@@ -667,30 +822,24 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.detectChanges();
 
-                let paletteButton = spectator.query(byTestId('palette-button'));
+                let paletteButton = spectator.query(byTestId('hover-palette-button'));
                 expect(paletteButton).toBeTruthy();
 
                 // Then disable it
                 spectator.setInput('showStyleEditorOption', false);
                 spectator.detectChanges();
 
-                paletteButton = spectator.query(byTestId('palette-button'));
+                paletteButton = spectator.query(byTestId('hover-palette-button'));
                 expect(paletteButton).toBeFalsy();
             });
 
             it('should NOT render palette button when container is empty even if showStyleEditorOption is true', () => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
+                editorSelected.set(toSelected(MOCK_EMPTY_CONTENTLET_AREA));
                 spectator.detectChanges();
 
-                // Re-select after changing contentletArea
-                const hoverBounds = spectator.query(byTestId('bounds-hover'));
-                if (hoverBounds) {
-                    spectator.click(hoverBounds);
-                    spectator.detectChanges();
-                }
-
-                const paletteButton = spectator.query(byTestId('palette-button'));
+                const paletteButton = spectator.query(byTestId('hover-palette-button'));
                 expect(paletteButton).toBeFalsy();
             });
         });
@@ -699,7 +848,7 @@ describe('DotUveContentletToolsComponent', () => {
     describe('Effect behavior', () => {
         it('should hide menus when contentletArea changes', () => {
             // Open a menu by clicking the add button
-            const addTopButton = spectator.query(byTestId('add-top-button'));
+            const addTopButton = spectator.query(byTestId('hover-add-top-button'));
             const button = addTopButton?.querySelector('button');
             spectator.click(button as Element);
             spectator.detectChanges();
@@ -721,7 +870,7 @@ describe('DotUveContentletToolsComponent', () => {
 
     describe('Drag attributes', () => {
         it('should set correct drag attributes on drag button', () => {
-            const dragButton = spectator.query(byTestId('drag-button')) as HTMLElement;
+            const dragButton = spectator.query(byTestId('hover-drag-button')) as HTMLElement;
 
             expect(dragButton?.getAttribute('draggable')).toBe('true');
             expect(dragButton?.getAttribute('data-type')).toBe('contentlet');
@@ -729,7 +878,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should include drag payload in data-item attribute', () => {
-            const dragButton = spectator.query(byTestId('drag-button')) as HTMLElement;
+            const dragButton = spectator.query(byTestId('hover-drag-button')) as HTMLElement;
             const dataItem = dragButton?.getAttribute('data-item');
 
             expect(dataItem).toBeTruthy();

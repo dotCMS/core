@@ -23,7 +23,7 @@ describe('DotIconComponent', () => {
     it('should have css classes based on attributes', () => {
         fixture.detectChanges();
         const icon = de.query(By.css('i')).nativeElement;
-        expect(icon.classList).toContain('material-icons');
+        expect(icon.classList).toContain('material-symbols-outlined');
         expect(icon.innerText).toBe(comp.name);
         expect(icon.style.fontSize).toBe('');
     });

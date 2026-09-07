@@ -7,20 +7,20 @@
     "tags": ["type:data-access", "scope:dotcms-ui", "portlet:languages"],
     "targets": {
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}",
+                "{workspaceRoot}/target/core-web-reports"
+            ],
             "options": {
-                "jestConfig": "libs/portlets/dot-locales/data-access/jest.config.ts"
+                "passWithNoTests": true
             },
             "configurations": {
                 "ci": {
-                    "verbose": false
+                    "ci": true,
+                    "verbose": false,
+                    "coverage": true
                 }
             }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
         }
     }
 }

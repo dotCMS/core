@@ -6,7 +6,8 @@ import {
     HostBinding,
     Input,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
@@ -35,6 +36,7 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
     selector: 'dot-sub-nav',
     templateUrl: './dot-sub-nav.component.html',
     styleUrls: ['./dot-sub-nav.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [RouterModule]
 })
 export class DotSubNavComponent {

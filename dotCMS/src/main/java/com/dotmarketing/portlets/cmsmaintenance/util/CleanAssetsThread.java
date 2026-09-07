@@ -19,11 +19,11 @@ import org.apache.commons.beanutils.BeanUtils;
  */
 public class CleanAssetsThread extends Thread {
     public static class BasicProcessStatus {
-        private int totalFiles=0;
-        private int currentFiles=0;
-        private int deleted=0;
-        private boolean running=false;
-        private String status="";
+        private volatile int totalFiles=0;
+        private volatile int currentFiles=0;
+        private volatile int deleted=0;
+        private volatile boolean running=false;
+        private volatile String status="";
         
         public int getDeleted() {
             return deleted;
@@ -73,7 +73,7 @@ public class CleanAssetsThread extends Thread {
      * @param restartIfDied creates or not a new instance depending of the current thread is alive or not
      * @return
      */
-    public static CleanAssetsThread getInstance ( Boolean restartIfDied, boolean processBinary ) {
+    public static synchronized CleanAssetsThread getInstance ( Boolean restartIfDied, boolean processBinary ) {
 
         if ( instance == null ) {
 

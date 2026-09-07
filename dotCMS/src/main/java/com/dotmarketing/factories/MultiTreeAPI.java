@@ -127,11 +127,23 @@ public interface MultiTreeAPI {
 
     /**
      * Saves a list of MultiTrees
-     * 
+     *
      * @param mTrees
      * @throws DotDataException
      */
     void saveMultiTrees(List<MultiTree> mTrees) throws DotDataException;
+
+    /**
+     * Persists style-property changes for a list of MultiTree entries without altering their
+     * {@code treeOrder}. Use this instead of {@link #saveMultiTrees(List)} when only style
+     * properties are being modified, so the existing contentlet ordering within each container is
+     * preserved.
+     *
+     * @param mTrees the MultiTree entries to update; each entry must already carry the correct
+     *               {@code treeOrder} value as loaded from the database
+     * @throws DotDataException if any database operation fails
+     */
+    void updateStyleProperties(List<MultiTree> mTrees) throws DotDataException;
 
     /**
      * Deletes a list of MultiTrees

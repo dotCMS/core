@@ -30,6 +30,11 @@ shellcheck = "latest"
 _.python.venv = { path = ".venv", create = true }
 
 [settings]
+# Read tool versions from the repo's canonical version files instead of
+# duplicating them here: java from .sdkmanrc (25.0.2-ms -> microsoft-25.0.2),
+# node from .nvmrc. Keeps CI (which parses .sdkmanrc) and mise in sync.
+idiomatic_version_file_enable_tools = ["java", "node"]
+
 # Experimental features
 experimental = true
 

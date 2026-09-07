@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -31,6 +31,7 @@ export const ProductsTableTemplate = `
 `;
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-p-dynamic-dialog',
     template: ProductsTableTemplate
 })

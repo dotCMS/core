@@ -2,7 +2,7 @@
     @if (rowState === 'add') {
         <div
             [class.dot-add-rows__add]="rowState === 'add'"
-            class="flex w-full items-baseline justify-center h-49.5">
+            class="flex h-49.5 w-full items-baseline justify-center">
             <p-splitButton
                 (onClick)="setColumnSelect()"
                 [disabled]="$disabled()"
@@ -13,8 +13,8 @@
     }
 
     @if (rowState === 'select') {
-        <div class="bg-white block h-49.5 p-3 relative w-full">
-            <div class="flex justify-between items-center mb-4">
+        <div class="relative block h-49.5 w-full bg-white p-3">
+            <div class="mb-4 flex items-center justify-between">
                 <div class="text-lg">
                     {{ 'contenttypes.content.add_column_title' | dm }}
                 </div>
@@ -27,7 +27,7 @@
             </div>
             <ul
                 [class.dot-add-rows__select]="rowState === 'select'"
-                class="flex p-0 w-full list-none m-0"
+                class="m-0 flex w-full list-none p-0"
                 #colContainer>
                 @for (colNum of $columns(); track colNum; let i = $index) {
                     <li
@@ -39,15 +39,15 @@
                         [class.ring-2]="i === selectedColumnIndex"
                         [class.ring-primary-200]="i === selectedColumnIndex"
                         [class.bg-gray-200]="i !== selectedColumnIndex"
-                        class="cursor-pointer block grow mr-3 outline-none p-3 last:mr-0 transition-colors duration-200 rounded-md"
+                        class="mr-3 block grow cursor-pointer rounded-md p-3 transition-colors duration-200 outline-none last:mr-0"
                         tabindex="-1">
-                        <span class="text-gray-700 text-sm mb-2 block font-semibold">
+                        <span class="mb-2 block text-sm font-semibold text-gray-700">
                             {{ setColumnValue(i) }}
                         </span>
                         <div class="flex">
                             @for (col of numberOfCols(colNum); track $index) {
                                 <div
-                                    class="bg-gray-800 grow h-15 mx-1 first:ml-0 last:mr-0 rounded"></div>
+                                    class="mx-1 h-15 grow rounded-sm bg-gray-800 first:ml-0 last:mr-0"></div>
                             }
                         </div>
                     </li>

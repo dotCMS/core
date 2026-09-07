@@ -570,9 +570,13 @@ function submitSchedule() {
 
 	//Based on the error invalid_alias_name_exception returned by the ES
 	//Alias must not contain the following characters [ , \", *, \\, <, |, ,, >, /, ?]"}]
+	//The upper bound is 255 (the engine's index/alias name limit), not 60: this field also accepts a
+	//raw index name for indices that carry no alias, and a crawl-built name
+	//(sitesearch_<timestamp>_<uuid>) is 62 chars — a 60-char cap made those indices impossible to
+	//schedule at all (issue #36983).
 	let indexAlias = dojo.byId("indexAlias").value.trim();
 	indexAlias = indexAlias.replace(/\s/g, '');
-	let aliasTestResult = /^(?=.{3,60}$)^(?![-_])[a-zA-Z0-9_()-]+$/.test(indexAlias);
+	let aliasTestResult = /^(?=.{3,255}$)^(?![-_])[a-zA-Z0-9_()-]+$/.test(indexAlias);
 
 	if(!aliasTestResult) {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");

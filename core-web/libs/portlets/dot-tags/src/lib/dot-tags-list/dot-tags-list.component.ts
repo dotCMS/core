@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -34,6 +35,7 @@ import { DotTagsImportComponent } from '../dot-tags-import/dot-tags-import.compo
         FormsModule,
         TableModule,
         ButtonModule,
+        CheckboxModule,
         InputTextModule,
         IconFieldModule,
         InputIconModule,
@@ -78,6 +80,23 @@ export class DotTagsListComponent {
             command: () => this.openImportDialog()
         }
     ];
+
+    /**
+     * Menu items for the Export split-button. "Export All" is disabled when only
+     * one page of results exists (the current selection already covers everything),
+     * but kept in the menu for discoverability.
+     */
+    readonly $exportMenuItems = computed((): MenuItem[] => [
+        {
+            label: this.dotMessageService.get('tags.export.selected'),
+            command: () => this.store.exportSelected()
+        },
+        {
+            label: this.dotMessageService.get('tags.export.all'),
+            disabled: !this.store.showExportAll(),
+            command: () => this.store.exportAll()
+        }
+    ]);
 
     constructor() {
         this.searchSubject

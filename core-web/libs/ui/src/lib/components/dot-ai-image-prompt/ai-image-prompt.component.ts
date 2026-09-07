@@ -16,7 +16,6 @@ import { DotAiImagePromptStore } from './store/ai-image-prompt.store';
 @Component({
     selector: 'dot-ai-image-prompt',
     templateUrl: './ai-image-prompt.component.html',
-    styleUrls: ['./ai-image-prompt.component.scss'],
     imports: [
         DotMessagePipe,
         Button,

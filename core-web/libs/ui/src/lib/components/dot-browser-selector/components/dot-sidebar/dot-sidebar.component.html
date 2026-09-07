@@ -1,22 +1,31 @@
 @let loading = $loading();
 
 @if (!loading) {
-    <p-tree
-        [value]="$state().folders"
-        [loading]="loading"
+    <dot-folder-tree
+        [folders]="$folders()"
+        [loading]="false"
+        [selectedNode]="$selectedNode()"
         selectionMode="single"
-        [(selection)]="$state().selectedFile"
-        loadingMode="icon"
-        class="w-full h-full"
-        styleClass="w-full h-full"
-        (onNodeSelect)="onNodeSelect.emit($event)"
-        (onNodeExpand)="onNodeExpand.emit($event)">
-        <ng-template let-node pTemplate="default">
-            <span>{{ node.label | dotTruncatePath }}</span>
+        styleClass="size-full w-full h-full min-w-0"
+        [pt]="treePt"
+        [showFolderIcons]="true"
+        treeTestId="browser-selector-folder-tree"
+        loadMoreTestId="browser-selector-load-more"
+        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+        [showLoadMorePlusIcon]="true"
+        (onNodeSelect)="handleNodeSelect($event)"
+        (onNodeExpand)="onNodeExpand.emit($event)"
+        (loadMore)="loadMore.emit($event)">
+        <ng-template #folderTreeNodeLabel let-node>
+            <dot-truncated-label>
+                <span data-testid="tree-node-label" class="font-normal">
+                    {{ node.label | dotFolderName }}
+                </span>
+            </dot-truncated-label>
         </ng-template>
-    </p-tree>
+    </dot-folder-tree>
 } @else {
-    <div class="flex w-full h-full flex-col p-2">
+    <div class="flex size-full flex-col p-2">
         @for (col of $fakeColumns(); track $index) {
             <p-skeleton styleClass="mb-4" [width]="col" />
         }

@@ -1,0 +1,25 @@
+/* Scanning shows a skeleton with the SAME footprint as the results, so swapping to
+   the real data is a pure crossfade — no layout shift. Both the skeleton and the
+   results just fade in.
+
+   Shared by the score widget and the activity log, which crossfade in step. Styles
+   are view-encapsulated, so each component that uses the class needs the rule —
+   hence a file both pull in rather than a copy in each. */
+@keyframes studio-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.studio-fade-in {
+    animation: studio-fade-in 0.25s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .studio-fade-in {
+        animation: none;
+    }
+}

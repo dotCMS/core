@@ -47,6 +47,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,6 +58,7 @@ import org.quartz.SchedulerException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -1027,6 +1029,7 @@ public class SiteResource implements Serializable {
     @POST
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "createSite",
             summary = "Create a new site",
@@ -1043,6 +1046,9 @@ public class SiteResource implements Serializable {
     })
     public Response createNewSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
+                                  @RequestBody(description = "Site properties to create. 'siteName' (the hostname) is required.",
+                                          required = true,
+                                          content = @Content(schema = @Schema(implementation = SiteForm.class)))
                                   final SiteForm newSiteForm)
             throws DotDataException, DotSecurityException, AlreadyExistException, LanguageException {
 
@@ -1157,8 +1163,9 @@ public class SiteResource implements Serializable {
             site.setDefault(siteForm.isDefault());
         }
 
-        final long languageId = 0 == siteForm.getLanguageId()?
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
+        final long languageId = 0 == siteForm.getLanguageId()
+                ? APILocator.getLanguageAPI().getDefaultLanguage().getId()
+                : siteForm.getLanguageId();
 
         site.setLanguageId(languageId);
     }
@@ -1386,6 +1393,7 @@ public class SiteResource implements Serializable {
     @PUT
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(operationId = "updateSite",
             summary = "Update an existing site",
@@ -1405,6 +1413,9 @@ public class SiteResource implements Serializable {
                                   @Context final HttpServletResponse httpServletResponse,
                                   @Parameter(description = "Identifier of the site to update (siteId/hostId are used interchangeably)", required = true)
                                   @QueryParam("id") final String  siteIdentifier,
+                                  @RequestBody(description = "Updated site properties. 'siteName' (the hostname) is required.",
+                                          required = true,
+                                          content = @Content(schema = @Schema(implementation = SiteForm.class)))
                                   final SiteForm newSiteForm)
             throws DotDataException, DotSecurityException, LanguageException {
 

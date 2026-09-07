@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider, byTestId } from '@openng/spectator/jest';
 import { of, NEVER } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -96,7 +96,7 @@ describe('DotLocalesListComponent', () => {
         spectator.detectChanges();
         tick();
 
-        expect(spectator.query('.p-tag-success')).toHaveText('Default');
+        expect(spectator.query('p-chip')).toHaveText('Default');
     }));
 
     it('should open edit dialog when row is clicked', fakeAsync(() => {

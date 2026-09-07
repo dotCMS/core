@@ -1,0 +1,50 @@
+<!--
+    Body only — the shell owns the header and the Action Center's pinned footer owns Continue, which is
+    where the in-flight disabled state lives. No padding or scrolling either: the host stacks this with
+    other sections inside one scroll container. See the move step for the same split.
+-->
+<div data-testid="bundle-target">
+    <div class="form">
+        <div class="field">
+            <label for="bundleTarget">
+                {{ 'content-drive.action-center.bundle.target' | dm }}
+            </label>
+
+            <!--
+                `editable` is the whole feature: picking from the list adds to an existing bundle,
+                typing a name creates one. That is why the value is a `DotBundle | string`.
+            -->
+            <p-select
+                id="bundleTarget"
+                editable="true"
+                optionLabel="name"
+                appendTo="body"
+                [options]="$bundles()"
+                [placeholder]="$placeholder() | dm"
+                [disabled]="disabled() || $loading()"
+                [ngModel]="$value()"
+                data-testid="bundle-target-select"
+                (ngModelChange)="onValueChange($event)" />
+
+            <small class="text-surface-500">
+                {{
+                    'content-drive.action-center.bundle.target.hint' | dm: [assetCount().toString()]
+                }}
+            </small>
+
+            <!--
+                A bundle holds one entry per identifier, so language versions of the same contentlet
+                collapse into one asset. Said before the fact, because the result toast reports the
+                server's deduped count and an unexplained smaller number reads as a partial failure.
+            -->
+            @if (collapsedCount() > 0) {
+                <small class="text-surface-500" data-testid="bundle-target-collapsed">
+                    {{
+                        'content-drive.action-center.bundle.languages-collapsed'
+                            | dm: [collapsedCount().toString()]
+                    }}
+                </small>
+            }
+        </div>
+    </div>
+</div>

@@ -1,4 +1,11 @@
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
 import {
@@ -37,6 +44,7 @@ interface DotCSMSavePageEvent {
     selector: 'dot-contentlet-wrapper',
     templateUrl: './dot-contentlet-wrapper.component.html',
     styleUrls: ['./dot-contentlet-wrapper.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotIframeDialogComponent]
 })
 export class DotContentletWrapperComponent {

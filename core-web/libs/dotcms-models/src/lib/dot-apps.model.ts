@@ -10,6 +10,10 @@ export interface DotApp {
     configurationsCount?: number;
     description?: string;
     iconUrl?: string;
+    /** Material icon name used when `iconUrl` is not set. */
+    icon?: string;
+    /** Hex color (e.g. `#3b82f6`) or PrimeNG token (e.g. `blue`) used to tint the icon. */
+    color?: string;
     key: string;
     name: string;
     sites?: DotAppsSite[];

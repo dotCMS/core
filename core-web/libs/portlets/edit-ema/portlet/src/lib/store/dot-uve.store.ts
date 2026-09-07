@@ -1,11 +1,12 @@
 import { patchState, signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 
+import { withFlags } from '@dotcms/store';
 import { DotCMSPageAsset } from '@dotcms/types';
 
 import { withContentTypeCache } from './features/content-type-cache/withContentTypeCache';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
-import { withFlags } from './features/flags/withFlags';
+import { withSelectionAnchor } from './features/editor/withSelectionAnchor';
 import { withLayout } from './features/layout/withLayout';
 import { withPage } from './features/page/withPage';
 import { withPageApi } from './features/page-api/withPageApi';
@@ -14,12 +15,7 @@ import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { IframeAccessMode, Orientation, PageType, UVEState } from './models';
 
-import {
-    DEFAULT_DEVICE,
-    DEFAULT_IFRAME_DOC_HEIGHT,
-    DEFAULT_VIEW_ZOOM_LEVEL,
-    UVE_FEATURE_FLAGS
-} from '../shared/consts';
+import { DEFAULT_DEVICE, DEFAULT_VIEW_ZOOM_LEVEL, UVE_FEATURE_FLAGS } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 
 // Some properties can be computed
@@ -28,8 +24,9 @@ const initialState: UVEState = {
     // UVE system state (managed by withUve)
     uveStatus: UVE_STATUS.LOADING,
     uveCurrentUser: null,
-    // Flags (managed by withFlags)
-    flags: {}, // Will be populated by withFlags feature
+    // Flags — withFlags populates this on init; see the note on UVEState.flags for why the slice
+    // is also declared here rather than left entirely to the feature.
+    flags: {},
     // Page state (managed by withPage)
     pageParams: null,
     pageLanguages: [],
@@ -47,8 +44,8 @@ const initialState: UVEState = {
     editorDragItem: null,
     editorBounds: [],
     editorState: EDITOR_STATE.IDLE,
-    editorActiveContentlet: null,
     editorContentArea: null,
+    editorSelected: null,
     editorPaletteOpen: true,
     editorEditPanelOpen: false,
     editorOgTags: null,
@@ -60,7 +57,13 @@ const initialState: UVEState = {
     viewParams: null,
     viewOgTagsResults: null,
     viewZoomLevel: DEFAULT_VIEW_ZOOM_LEVEL,
-    viewZoomIframeDocHeight: DEFAULT_IFRAME_DOC_HEIGHT
+    // Iframe size is initialized to 0; the editor sets it from the canvas viewport
+    // synchronously in ngAfterViewInit before the first paint. Device presets and
+    // resize handles update it afterward.
+    viewIframeWidth: 0,
+    viewIframeHeight: 0,
+    viewCanvasAvailableWidth: 0,
+    viewCanvasAvailableHeight: 0
 };
 
 /**
@@ -133,13 +136,17 @@ export const UVEStore = signalStore(
     withView(),
     // 10. Editor UI
     withEditor(),
-    // 11. Content type cache (on-demand fetch + permanent session cache)
+    // 11. Selection anchor (depends on withEditor's methods/computeds)
+    withSelectionAnchor(),
+    // 12. Content type cache (on-demand fetch + permanent session cache)
     withContentTypeCache(),
-    // 12. Backend API (must be last - needs all dependencies above)
+    // 13. Backend API (must be last - needs all dependencies above)
     withFeature((store) =>
         withPageApi({
             // Client configuration
             resetClientConfiguration: () => store.resetClientConfiguration(),
+            markPageLoading: () => store.markPageLoading(),
+            resetRequestMetadata: () => store.resetRequestMetadata(),
 
             // Request metadata
             requestMetadata: () => store.requestMetadata(),

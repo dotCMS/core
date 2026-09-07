@@ -11,7 +11,8 @@ import {
     ViewChild,
     ElementRef,
     computed,
-    HostListener
+    HostListener,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -79,6 +80,7 @@ const REL_OPTIONS = [
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
     styleUrls: ['./dot-link-editor-popover.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [FormsModule, Listbox, InputText, Select, Skeleton, Button, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {

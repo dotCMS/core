@@ -1,7 +1,14 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { mergeMap, map, switchMap, toArray } from 'rxjs/operators';
 
@@ -36,6 +43,7 @@ interface CardinalitySorted {
     selector: 'dot-edit-relationships',
     templateUrl: './dot-edit-relationships.component.html',
     imports: [SearchableDropdownComponent, AsyncPipe, DotMessagePipe],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [PaginatorService]
 })
 export class DotEditRelationshipsComponent implements OnInit {

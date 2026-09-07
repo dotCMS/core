@@ -1,0 +1,220 @@
+<div
+    class="flex min-h-0 flex-1 flex-col border-t border-surface-200"
+    data-testid="users-dialog-body">
+    <header
+        class="flex items-center gap-5 border-b border-surface-200 px-7 py-6"
+        data-testid="users-dialog-header">
+        <p-avatar
+            [label]="$initials()"
+            shape="circle"
+            size="xlarge"
+            styleClass="bg-primary-100 text-primary"
+            data-testid="users-dialog-avatar" />
+        <div class="flex min-w-0 flex-col gap-2">
+            <h2 class="m-0 truncate text-xl font-semibold" data-testid="users-dialog-title">
+                {{ $displayName() }}
+            </h2>
+            @if (isEdit) {
+                <div class="flex flex-wrap items-center gap-2">
+                    <p-tag
+                        [value]="
+                            ($isActive()
+                                ? 'users.dialog.status.active'
+                                : 'users.dialog.status.inactive'
+                            ) | dm
+                        "
+                        [severity]="$isActive() ? 'success' : 'secondary'"
+                        [rounded]="true"
+                        data-testid="users-dialog-header-status" />
+                    @if ($canLoginToAdmin()) {
+                        <p-tag
+                            [value]="'users.dialog.header.can-login' | dm"
+                            severity="info"
+                            [rounded]="true"
+                            data-testid="users-dialog-header-can-login" />
+                    }
+                </div>
+            }
+        </div>
+    </header>
+
+    @if ($isLoading()) {
+        <div
+            class="flex min-h-0 flex-1 flex-col gap-4 px-7 py-6"
+            data-testid="users-dialog-loading">
+            <p-skeleton height="2.5rem" width="60%" />
+            <p-skeleton height="1rem" width="90%" />
+            <p-skeleton height="1rem" width="85%" />
+            <p-skeleton height="1rem" width="80%" />
+            <p-skeleton height="1rem" width="70%" />
+        </div>
+    } @else {
+        <p-tabs [(value)]="$activeTab" class="flex min-h-0 flex-1 flex-col">
+            <div class="border-b border-surface-200 px-7 pt-6">
+                <p-tablist>
+                    <p-tab [value]="0" data-testid="users-dialog-tab-profile">
+                        {{ 'users.dialog.tabs.profile' | dm }}
+                    </p-tab>
+                    <p-tab [value]="1" data-testid="users-dialog-tab-roles">
+                        {{ 'users.dialog.tabs.roles' | dm }}
+                    </p-tab>
+                    <p-tab [value]="2" data-testid="users-dialog-tab-permissions">
+                        {{ 'users.dialog.tabs.permissions' | dm }}
+                    </p-tab>
+                    <p-tab [value]="3" data-testid="users-dialog-tab-api-tokens">
+                        {{ 'users.dialog.tabs.api-tokens' | dm }}
+                    </p-tab>
+                </p-tablist>
+            </div>
+
+            <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+                <p-tabpanel [value]="0" class="block min-h-0 flex-1 overflow-auto">
+                    <div class="px-7 pt-6 pb-7">
+                        <dot-users-profile-tab
+                            [form]="form"
+                            [isEdit]="isEdit"
+                            [user]="user"
+                            (deleteRequested)="openDeleteConfirm()"
+                            data-testid="users-dialog-profile-tab" />
+                    </div>
+                </p-tabpanel>
+                <p-tabpanel [value]="1" class="block min-h-0 flex-1 overflow-auto">
+                    <div class="px-7 pt-6 pb-7">
+                        <!--
+                            Defer the roles tab until the user actually
+                            opens it — otherwise `loadRoles()` fires on
+                            every dialog open (including plain profile
+                            edits) since PrimeNG keeps every p-tabpanel
+                            in the DOM. `@defer (when …)` triggers once
+                            and doesn't retract, so subsequent tab
+                            switches keep the loaded tree.
+                        -->
+                        @defer (when $activeTab() === 1) {
+                            <dot-users-roles-tab
+                                [initialGrantedKeys]="initialGrantedRoleKeys()"
+                                (grantedChange)="onGrantedRolesChange($event)"
+                                data-testid="users-dialog-roles-tab" />
+                        }
+                    </div>
+                </p-tabpanel>
+                <p-tabpanel [value]="2" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <dot-users-permissions-tab
+                        [userId]="user?.userId ?? null"
+                        class="flex min-h-0 flex-1 flex-col"
+                        data-testid="users-dialog-permissions-tab" />
+                </p-tabpanel>
+                <p-tabpanel [value]="3" class="block min-h-0 flex-1 overflow-auto">
+                    <div class="px-7 pt-6 pb-7">
+                        <dot-users-api-tokens-tab
+                            [userId]="user?.userId ?? null"
+                            data-testid="users-dialog-api-tokens-tab" />
+                    </div>
+                </p-tabpanel>
+            </p-tabpanels>
+        </p-tabs>
+    }
+</div>
+
+<footer
+    class="flex items-center justify-end gap-2 border-t border-surface-200 px-6 py-4"
+    data-testid="users-dialog-footer">
+    <p-button
+        [label]="'users.cancel' | dm"
+        severity="secondary"
+        [text]="true"
+        (onClick)="close()"
+        data-testid="users-dialog-cancel-btn" />
+    <!--
+        The tooltip lives on a wrapper, not on the button: a disabled
+        native button suppresses pointer events, so `pTooltip` bound
+        directly to it would never fire — exactly when we need it to
+        explain why Save is off. Same pattern as
+        `dot-experiments-configuration-targeting`.
+    -->
+    <div
+        class="inline-block"
+        [pTooltip]="'users.dialog.permissions.own-save' | dm"
+        [tooltipDisabled]="!$isPermissionsTabOpen()"
+        tooltipPosition="top"
+        data-testid="users-dialog-save-tooltip">
+        <p-button
+            [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
+            [disabled]="$isSaveDisabled()"
+            (onClick)="save()"
+            data-testid="users-dialog-save-btn" />
+    </div>
+</footer>
+
+<p-dialog
+    [visible]="$deleteConfirmVisible()"
+    (visibleChange)="$deleteConfirmVisible.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    [header]="'users.dialog.delete-confirm.header' | dm"
+    data-testid="users-delete-confirm-dialog">
+    <div class="flex flex-col gap-4">
+        <p class="m-0 text-color">
+            {{ 'users.dialog.delete-confirm.message' | dm }}
+        </p>
+        <div class="field flex flex-col gap-2">
+            <label class="p-label-input-required" for="users-delete-replacement-picker">
+                {{ 'users.dialog.delete-confirm.replacement-label' | dm }}
+            </label>
+            <dot-users-replacement-picker
+                inputId="users-delete-replacement-picker"
+                [value]="$replacementUser()"
+                [excludedUserIds]="excludedReplacementIds"
+                [invalid]="!!$replacementError()"
+                (selectionChange)="onReplacementSelect($event)"
+                data-testid="users-delete-replacement-picker" />
+            @if ($replacementError(); as key) {
+                <small class="text-red-600" data-testid="users-delete-replacement-error">
+                    {{ key | dm }}
+                </small>
+            } @else {
+                <small class="text-color-secondary">
+                    {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
+                </small>
+            }
+        </div>
+        <div class="field flex flex-col gap-2">
+            <label class="p-label-input-required" for="users-delete-confirm-input">
+                {{ 'users.dialog.delete-confirm.confirm-label' | dm }}
+                @if (user?.emailAddress) {
+                    <span class="font-mono text-sm">&mdash; {{ user?.emailAddress }}</span>
+                }
+            </label>
+            <input
+                pInputText
+                id="users-delete-confirm-input"
+                [ngModel]="$deleteConfirmationInput()"
+                (ngModelChange)="onDeleteInputChange($event)"
+                [placeholder]="'users.dialog.delete-confirm.confirm-placeholder' | dm"
+                [class.ng-invalid]="!!$emailConfirmError()"
+                [class.ng-dirty]="!!$emailConfirmError()"
+                [attr.aria-required]="true"
+                data-testid="users-delete-confirm-input" />
+            @if ($emailConfirmError(); as key) {
+                <small class="text-red-600" data-testid="users-delete-confirm-error">
+                    {{ key | dm }}
+                </small>
+            }
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'users.cancel' | dm"
+            severity="secondary"
+            [text]="true"
+            (onClick)="closeDeleteConfirm()"
+            data-testid="users-delete-confirm-cancel-btn" />
+        <p-button
+            [label]="'users.dialog.delete.button' | dm"
+            severity="danger"
+            (onClick)="confirmDelete()"
+            data-testid="users-delete-confirm-btn" />
+    </ng-template>
+</p-dialog>

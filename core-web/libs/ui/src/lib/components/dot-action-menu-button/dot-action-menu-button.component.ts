@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -23,6 +23,7 @@ interface DotActionMenuClickEvent {
     selector: 'dot-action-menu-button',
     styleUrls: ['./dot-action-menu-button.component.scss'],
     templateUrl: 'dot-action-menu-button.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotMenuComponent, ButtonModule, TooltipModule]
 })
 export class DotActionMenuButtonComponent implements OnInit {

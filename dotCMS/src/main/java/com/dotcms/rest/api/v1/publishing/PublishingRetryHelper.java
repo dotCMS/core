@@ -27,6 +27,7 @@ import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReaderFactory;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -62,6 +63,7 @@ public class PublishingRetryHelper {
     private final BundleAPI bundleAPI;
     private final EnvironmentAPI environmentAPI;
     private final PublishingEndPointAPI publishingEndPointAPI;
+    private final PermissionAPI permissionAPI;
 
     /**
      * Default constructor using APILocator for dependencies.
@@ -71,7 +73,8 @@ public class PublishingRetryHelper {
              PublishAuditAPI.getInstance(),
              APILocator.getBundleAPI(),
              APILocator.getEnvironmentAPI(),
-             APILocator.getPublisherEndPointAPI());
+             APILocator.getPublisherEndPointAPI(),
+             APILocator.getPermissionAPI());
     }
 
     /**
@@ -82,12 +85,14 @@ public class PublishingRetryHelper {
                                   final PublishAuditAPI publishAuditAPI,
                                   final BundleAPI bundleAPI,
                                   final EnvironmentAPI environmentAPI,
-                                  final PublishingEndPointAPI publishingEndPointAPI) {
+                                  final PublishingEndPointAPI publishingEndPointAPI,
+                                  final PermissionAPI permissionAPI) {
         this.publisherAPI = publisherAPI;
         this.publishAuditAPI = publishAuditAPI;
         this.bundleAPI = bundleAPI;
         this.environmentAPI = environmentAPI;
         this.publishingEndPointAPI = publishingEndPointAPI;
+        this.permissionAPI = permissionAPI;
     }
 
     /**
@@ -132,6 +137,11 @@ public class PublishingRetryHelper {
                             status.getStatus().name()));
         }
 
+        // Authorization: retry re-sends the bundle to every environment it targets, so the caller
+        // must hold USE permission on each of them (push enforces the same check via
+        // PublishingJobsHelper#validateEnvironmentPermissions). Admins pass automatically.
+        validateRetryEnvironmentPermissions(trimmedBundleId, user);
+
         // Check if bundle is already in queue
         final List<PublishQueueElement> foundBundles =
                 publisherAPI.getQueueElementsByBundleId(trimmedBundleId);
@@ -157,6 +167,32 @@ public class PublishingRetryHelper {
             // Handle push publishing
             return retryPushBundle(trimmedBundleId, forcePush, deliveryStrategy,
                     auditHistory, status, user, request, basicConfig);
+        }
+    }
+
+    /**
+     * Verifies the caller is allowed to re-send the given bundle.
+     *
+     * <p>Unlike {@code push} (where the caller selects a permitted subset of environments), retry
+     * re-fires the bundle to <b>all</b> of its already-configured environments at once. The caller
+     * must therefore hold {@link PermissionAPI#PERMISSION_USE} on every one of them; lacking it on
+     * any single environment rejects the whole retry. CMS Administrators pass automatically via the
+     * {@link PermissionAPI}.</p>
+     *
+     * @param bundleId the bundle being retried
+     * @param user     the user requesting the retry
+     * @throws DotPublisherException if the user lacks USE permission on any targeted environment
+     * @throws DotDataException      if a data access error occurs while resolving permissions
+     */
+    private void validateRetryEnvironmentPermissions(final String bundleId, final User user)
+            throws DotDataException, DotPublisherException {
+        final List<Environment> environments = environmentAPI.findEnvironmentsByBundleId(bundleId);
+        for (final Environment environment : environments) {
+            if (!permissionAPI.doesUserHavePermission(environment, PermissionAPI.PERMISSION_USE, user)) {
+                throw new DotPublisherException(String.format(
+                        "User '%s' cannot push bundle '%s' because it does not have permission to use environment '%s'",
+                        user.getUserId(), bundleId, environment.getName()));
+            }
         }
     }
 

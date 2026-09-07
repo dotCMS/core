@@ -82,7 +82,7 @@ on:
         required: false
         type: string
       java_version:
-        description: 'Override Java version (SDKMAN format, e.g., 25.0.2-ms). Leave empty to use default Java 21 from .sdkmanrc.'
+        description: 'Override Java version (SDKMAN format, e.g., 21.0.8-ms). Leave empty to use default Java 25 from .sdkmanrc.'
         required: false
         type: string
         default: ''

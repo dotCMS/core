@@ -603,6 +603,69 @@ describe('DotContentletService', () => {
             req.flush({ entity: responseEntity });
         });
 
+        it('should pass inode as query param when provided', (done) => {
+            const id = 'inode-param-test';
+            const inode = 'abc-123-def-456';
+            const contentTypeExpected: DotCMSContentType = {
+                ...dotcmsContentTypeBasicMock,
+                clazz: 'clazz' as DotCMSClazz,
+                defaultType: false,
+                fixed: false,
+                folder: 'folder',
+                host: 'host',
+                id: id,
+                name: 'Inode Param Test',
+                owner: 'user',
+                system: false
+            };
+
+            dotContentTypeService
+                .getContentTypeWithRender(id, inode)
+                .subscribe((contentType: DotCMSContentType) => {
+                    expect(contentType).toEqual(contentTypeExpected);
+                    done();
+                });
+
+            const req = httpMock.expectOne(
+                (request) =>
+                    request.url === `/api/v1/contenttype/render/id/${id}` &&
+                    request.params.get('inode') === inode
+            );
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: contentTypeExpected });
+        });
+
+        it('should not include inode param when not provided', (done) => {
+            const id = 'no-inode-test';
+            const contentTypeExpected: DotCMSContentType = {
+                ...dotcmsContentTypeBasicMock,
+                clazz: 'clazz' as DotCMSClazz,
+                defaultType: false,
+                fixed: false,
+                folder: 'folder',
+                host: 'host',
+                id: id,
+                name: 'No Inode Test',
+                owner: 'user',
+                system: false
+            };
+
+            dotContentTypeService
+                .getContentTypeWithRender(id)
+                .subscribe((contentType: DotCMSContentType) => {
+                    expect(contentType).toEqual(contentTypeExpected);
+                    done();
+                });
+
+            const req = httpMock.expectOne(
+                (request) =>
+                    request.url === `/api/v1/contenttype/render/id/${id}` &&
+                    !request.params.has('inode')
+            );
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: contentTypeExpected });
+        });
+
         it('should only take the first emission due to take(1) operator', (done) => {
             const id = 'take-operator-test';
             const contentTypeExpected: DotCMSContentType = {

@@ -195,7 +195,7 @@ Advanced configurations allow you to customize and optimize your development env
 
 * Another way is to set up the following environment variable:
 	```sh
-	DOT_STARTER_DATA_LOAD =	'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240213/starter-20240213.zip'
+	DOT_STARTER_DATA_LOAD =	'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260630/starter-20260630.zip'
 	```
 	Finally, once the change is made (using one of the previous options), remember to **recompile** the code so that the changes will take effect, running the following command:
 	

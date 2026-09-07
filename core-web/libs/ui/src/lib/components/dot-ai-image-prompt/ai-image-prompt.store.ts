@@ -10,8 +10,8 @@ import { DotAiService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     AIImagePrompt,
+    DEFAULT_IMAGE_SIZE,
     DotAIImageContent,
-    DotAIImageOrientation,
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
@@ -48,7 +48,7 @@ const initialState: DotAiImagePromptComponentState = {
     formValue: {
         text: '',
         type: DEFAULT_INPUT_PROMPT,
-        size: DotAIImageOrientation.HORIZONTAL
+        size: DEFAULT_IMAGE_SIZE
     }
 };
 

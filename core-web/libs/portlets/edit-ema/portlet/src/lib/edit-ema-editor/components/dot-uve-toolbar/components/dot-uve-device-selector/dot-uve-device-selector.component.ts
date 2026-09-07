@@ -15,25 +15,9 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../../../shared/consts';
-import { Orientation } from '../../../../../store/models';
+import { DeviceSelectorChange, DeviceSelectorState } from './dot-uve-device-selector.models';
 
-/**
- * State - what the user has selected (changes frequently)
- */
-export interface DeviceSelectorState {
-    device: DotDevice | null;
-    socialMedia: string | null;
-    orientation: Orientation | null;
-}
-
-/**
- * Change events - discriminated union for type-safe event handling
- */
-export type DeviceSelectorChange =
-    | { type: 'device'; device: DotDevice }
-    | { type: 'socialMedia'; socialMedia: string }
-    | { type: 'orientation'; orientation: Orientation };
+import { DEFAULT_DEVICE } from '../../../../../shared/consts';
 
 @Component({
     selector: 'dot-uve-device-selector',
@@ -47,18 +31,13 @@ export type DeviceSelectorChange =
 export class DotUveDeviceSelectorComponent {
     #messageService = inject(DotMessageService);
 
-    // State input - what's currently selected
     $state = input.required<DeviceSelectorState>({ alias: 'state' });
 
-    // Config inputs - available options and settings
     $devices = input<DotDeviceListItem[]>([], { alias: 'devices' });
     $isTraditionalPage = input<boolean>(true, { alias: 'isTraditionalPage' });
 
-    // Single output - unified state change event
     stateChange = output<DeviceSelectorChange>();
 
-    readonly Orientation = Orientation;
-    readonly defaultDevices = DEFAULT_DEVICES;
     readonly socialMediaMenu = {
         label: this.#messageService.get('uve.preview.mode.social.media.subheader'),
         id: 'social-media',
@@ -69,11 +48,6 @@ export class DotUveDeviceSelectorComponent {
         id: 'search-engine',
         items: this.#getSocialMediaMenuItems(SEARCH_ENGINE_TILES)
     };
-    readonly $disableOrientation = computed(
-        () =>
-            this.$state().device?.inode === DEFAULT_DEVICE.inode ||
-            this.$state().socialMedia !== null
-    );
 
     readonly $menuItems = computed(() => {
         const isTraditionalPage = this.$isTraditionalPage();
@@ -82,13 +56,11 @@ export class DotUveDeviceSelectorComponent {
         const extraDevices = this.$devices().filter((device) => !device._isDefault);
 
         if (extraDevices.length) {
-            const customDevices = {
+            menu.push({
                 label: this.#messageService.get('uve.preview.mode.device.subheader'),
                 id: 'custom-devices',
                 items: this.#getDeviceMenuItems(extraDevices)
-            };
-
-            menu.push(customDevices);
+            });
         }
 
         if (isTraditionalPage) {
@@ -118,69 +90,29 @@ export class DotUveDeviceSelectorComponent {
         return socialMedia || deviceInode;
     });
 
-    readonly $currentDevice = computed(() => this.$state().device);
-    readonly $currentOrientation = computed(() => this.$state().orientation);
     readonly $isMoreButtonActive = computed(() => !this.$state().device?._isDefault);
 
-    /**
-     * Select a social media
-     * Emits unified state change event to parent container
-     *
-     * @param {string} socialMedia
-     * @memberof DotUveDeviceSelectorComponent
-     */
     onSocialMediaSelect(socialMedia: string): void {
         const isSameSocialMedia = this.$state().socialMedia === socialMedia;
 
         if (isSameSocialMedia) {
-            // Emit default device to clear social media
             this.stateChange.emit({ type: 'device', device: DEFAULT_DEVICE });
 
             return;
         }
 
-        // Emit social media selection
         this.stateChange.emit({ type: 'socialMedia', socialMedia });
     }
 
-    /**
-     * Select a device
-     * Emits unified state change event to parent container
-     *
-     * @param {DotDevice} device
-     * @memberof DotUveDeviceSelectorComponent
-     */
     onDeviceSelect(device: DotDevice): void {
-        const currentDevice = this.$state().device;
-        const isSameDevice = currentDevice?.inode === device.inode;
+        const isSameDevice = this.$state().device?.inode === device.inode;
 
-        // Emit device selection (or default to clear)
         this.stateChange.emit({
             type: 'device',
             device: isSameDevice ? DEFAULT_DEVICE : device
         });
     }
 
-    /**
-     * Toggle orientation
-     * Emits unified state change event to parent container
-     *
-     * @memberof DotUveDeviceSelectorComponent
-     */
-    onOrientationChange(): void {
-        const newOrientation =
-            this.$state().orientation === Orientation.LANDSCAPE
-                ? Orientation.PORTRAIT
-                : Orientation.LANDSCAPE;
-
-        // Emit orientation change
-        this.stateChange.emit({ type: 'orientation', orientation: newOrientation });
-    }
-
-    /**
-     * Menu items are actions (MenuItem.command), not navigations, so we render them as buttons.
-     * We also close the menu after executing the command.
-     */
     onMoreMenuItemClick(event: MouseEvent, item: MenuItem, menu: Menu): void {
         if (item.disabled || item.separator) return;
 
@@ -191,13 +123,6 @@ export class DotUveDeviceSelectorComponent {
         menu.hide();
     }
 
-    /**
-     * Get the menu items for social media
-     *
-     * @param {Record<string, SocialMediaOption>} options
-     * @return {*}  {MenuItem[]}
-     * @memberof DotUveDeviceSelectorComponent
-     */
     #getSocialMediaMenuItems(options: Record<string, SocialMediaOption>): MenuItem[] {
         return Object.values(options).map((item) => ({
             label: item.label,
@@ -207,13 +132,6 @@ export class DotUveDeviceSelectorComponent {
         }));
     }
 
-    /**
-     * Get the menu items for devices
-     *
-     * @param {DotDeviceListItem[]} devices
-     * @return {*}  {MenuItem[]}
-     * @memberof DotUveDeviceSelectorComponent
-     */
     #getDeviceMenuItems(devices: DotDeviceListItem[]): MenuItem[] {
         return devices.map((device) => ({
             label: `${this.#messageService.get(device.name)} (${device.cssWidth}x${device.cssHeight})`,

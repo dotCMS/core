@@ -1,1 +1,9 @@
-{}
+{
+    "tailwindCSS.experimental.configFile": "apps/dotcms-ui/src/style.css",
+    "files.associations": {
+        "*.css": "tailwindcss"
+    },
+    "editor.quickSuggestions": {
+        "strings": "on"
+    }
+}

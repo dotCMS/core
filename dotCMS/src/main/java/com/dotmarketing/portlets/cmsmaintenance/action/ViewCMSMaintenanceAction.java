@@ -37,6 +37,7 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
@@ -130,6 +131,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		//Manage all the cache Task
 		if(cmd.equals("cache")){
 
+			final User cacheUser = _getUser(req);
+			final String cacheUserId = null != cacheUser ? cacheUser.getUserId() : "unknown";
 			String cacheName = ccf.getCacheName();
 			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX))
 			{
@@ -165,7 +168,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				}
 			} else if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES))
 			{
-				Logger.info(this, "Deleting Menu Files");
+				Logger.info(this, String.format("User '%s' is deleting Menu Files", cacheUserId));
 				_deleteMenusCache();
 				message = "message.cmsmaintenance.cache.flushmenucaches";
 			} else if (cacheName.equals("flushCache"))
@@ -177,7 +180,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				}catch (NullPointerException e) {
 					isAllCachesFlush = true;//is a NPE is returned means it's cleaning all the caches
 				}
-				final String msgLogger = isAllCachesFlush ? "Flushing All Caches" : "Flushing " + cacheToFlush +" Cache";
+				final String msgLogger = isAllCachesFlush
+						? String.format("User '%s' is flushing All Caches", cacheUserId)
+						: String.format("User '%s' is flushing %s Cache", cacheUserId, cacheToFlush);
 				Logger.info(this, msgLogger);
 				_flush(cacheToFlush);
 				//Reloads PushPublishing Filters if all cache or system cache is flushed
@@ -186,7 +191,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				}
 				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
 			} else {
-				Logger.info(this, "Flushing Live and Working File Cache");
+				Logger.info(this, String.format(
+						"User '%s' is flushing Live and Working File Cache", cacheUserId));
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
 
@@ -493,7 +499,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	@CloseDBIfOpened
 	private void downloadRemainingRecordsAsCsv(final HttpServletResponse response) {
 		final String fileName = "failed_reindex_records" + new java.util.Date().getTime();
-		final String[] fileColumns = new String[] { "ID", "Identifier To Index", "Priority", "Cause" };
+		final String[] fileColumns = new String[] { "ID", "Identifier To Index", "Operation", "Priority", "Cause" };
 		PrintWriter pr = null;
 		try {
 			response.setContentType("application/octet-stream; charset=UTF-8");
@@ -509,6 +515,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					final StringBuilder entry = new StringBuilder();
 					entry.append(row.getId()).append(", ");
 					entry.append(row.getIdentToIndex()).append(", ");
+					// A parked removal has no contentlet left to look up; saying so here is what
+					// keeps the row actionable rather than reading as an empty reindex (#37276).
+					entry.append(row.isDelete() ? "delete" : "reindex").append(", ");
 					entry.append(row.getPriority()).append(",");
                     entry.append(row.getLastResult());
 					pr.print(entry.toString());

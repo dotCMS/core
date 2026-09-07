@@ -210,7 +210,7 @@ export class DotContainersService {
     copy(identifier: string): Observable<DotContainer | null> {
         const url = `${CONTAINER_API_URL}${identifier}/_copy`;
 
-        return this.http.put<DotCMSResponse<DotContainer>>(url, {}).pipe(
+        return this.http.post<DotCMSResponse<DotContainer>>(url, {}).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) => this.handleError<DotContainer>(error))
         );

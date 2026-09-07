@@ -1,23 +1,27 @@
 import { MarkdownComponent } from 'ngx-markdown';
 
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp } from '@dotcms/dotcms-models';
-import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     selector: 'dot-apps-configuration-header',
     templateUrl: './dot-apps-configuration-header.component.html',
-    styleUrls: ['./dot-apps-configuration-header.component.scss'],
+    host: {
+        class: 'flex items-start gap-4 p-6 bg-white border-b border-gray-300 sticky top-0 z-10'
+    },
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         AvatarModule,
         MarkdownComponent,
         DotAvatarDirective,
+        DotColorIconComponent,
         DotCopyLinkComponent,
         DotMessagePipe
     ]

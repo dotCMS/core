@@ -1,13 +1,13 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockComponent, ngMocks } from 'ng-mocks';
 
 import { computed, signal } from '@angular/core';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 
-import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
+import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
-import { DotUVEPaletteListTypes } from './models';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
@@ -37,6 +37,7 @@ const mockUVEStore = {
     pageURI: signal('/test/page/path'),
     pageLanguageId: signal(1),
     pageVariantId: signal('DEFAULT'),
+    $allowedContentTypes: signal<Record<string, true>>({}),
     $isStyleEditorEnabled: signal(false),
     $canEditStyles: () => false, // Computed property used by component
     $styleSchema: signal(undefined),
@@ -67,6 +68,15 @@ describe('DotUvePaletteComponent', () => {
     const createComponent = createComponentFactory({
         component: DotUvePaletteComponent,
         imports: [DotUvePaletteComponent, MockComponent(DotUvePaletteListComponent)],
+        overrideComponents: [
+            [
+                DotUvePaletteComponent,
+                {
+                    remove: { imports: [DotRowReorderComponent] },
+                    add: { imports: [MockComponent(DotRowReorderComponent)] }
+                }
+            ]
+        ],
         mocks: [DotPageLayoutService]
     });
 
@@ -80,6 +90,7 @@ describe('DotUvePaletteComponent', () => {
         mockUVEStore.pageVariantId.set('DEFAULT');
         mockUVEStore.$isStyleEditorEnabled.set(false);
         mockUVEStore.$styleSchema.set(undefined);
+        mockUVEStore.$allowedContentTypes.set({});
         // Reset activeContentlet to prevent auto-switch to STYLE_EDITOR
         // editor is now a computed that reflects mockActiveContentlet automatically
         mockActiveContentlet.set(null);
@@ -176,6 +187,43 @@ describe('DotUvePaletteComponent', () => {
         });
     });
 
+    describe('Layers tab', () => {
+        // The LAYERS tab branches on whether the page's template is
+        // standard (drawed=true → render row-reorder) or advanced
+        // (drawed=false → render an empty-state explaining why layers
+        // are not available). See $isStandardTemplate.
+        it('renders dot-row-reorder when the template is standard (drawed=true)', () => {
+            mockUVEStore.pageAsset.set({ template: { drawed: true } });
+            spectator.detectChanges();
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
+
+            expect(spectator.query('dot-row-reorder')).toBeTruthy();
+            expect(spectator.query('[data-testid="layers-advanced-template-empty"]')).toBeNull();
+        });
+
+        it('renders the advanced-template empty-state when drawed=false', () => {
+            mockUVEStore.pageAsset.set({ template: { drawed: false } });
+            spectator.detectChanges();
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
+
+            expect(spectator.query('dot-row-reorder')).toBeNull();
+            expect(spectator.query('[data-testid="layers-advanced-template-empty"]')).toBeTruthy();
+        });
+
+        it('defaults to the standard branch while pageAsset is still loading', () => {
+            // pageAsset null = page still loading; we should not flash
+            // the empty-state at users with standard templates.
+            mockUVEStore.pageAsset.set(null);
+            spectator.detectChanges();
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
+
+            expect(spectator.query('dot-row-reorder')).toBeTruthy();
+        });
+    });
+
     describe('Store Integration', () => {
         it('should initialize with correct default values from store and local state', () => {
             expect(spectator.component.$languageId()).toBe(1);
@@ -264,6 +312,16 @@ describe('DotUvePaletteComponent', () => {
             expect(ngMocks.input(paletteListDebugEl, 'languageId')).toBe(1);
             expect(ngMocks.input(paletteListDebugEl, 'pagePath')).toBe('/test/page/path');
             expect(ngMocks.input(paletteListDebugEl, 'variantId')).toBe('DEFAULT');
+        });
+
+        it('should thread allowedContentTypes from the store to the Favorites palette list', () => {
+            const allowed = { blog: true, banner: true } as Record<string, true>;
+            mockUVEStore.$allowedContentTypes.set(allowed);
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
+
+            const paletteListDebugEl = ngMocks.find(DotUvePaletteListComponent);
+            expect(ngMocks.input(paletteListDebugEl, 'allowedContentTypes')).toEqual(allowed);
         });
     });
 });

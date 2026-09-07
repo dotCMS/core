@@ -3,15 +3,15 @@
 This document follows [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): use the `$` prefix for signals in component examples, `setInput()` for inputs, `byTestId()` for selection, and Spectator as the single testing harness.
 
 ## Tech Stack for Testing
-- **Testing Framework**: Jest or Vitest
-- **Testing Library**: **Spectator (required)** — use `@ngneat/spectator` with `@ngneat/spectator/jest` (Jest) or `@ngneat/spectator` (Vitest)
-- **Coverage Tool**: Jest Coverage / Vitest coverage
-- **Mocking**: Jest/Vitest + `mockProvider` from Spectator; **domain mocks** from `@dotcms/utils-testing` (createFake functions)
+- **Testing Framework**: Jest
+- **Testing Library**: **Spectator (required)** — use `@openng/spectator` with the `@openng/spectator/jest` entry point
+- **Coverage Tool**: Jest Coverage
+- **Mocking**: Jest + `mockProvider` from Spectator; **domain mocks** from `@dotcms/utils-testing` (createFake functions)
 - **E2E**: Playwright (when needed)
 
 ## Spectator API (Required)
 
-Always use Spectator with Jest or Vitest via the `@ngneat/spectator` package. Use these APIs consistently:
+Always use Spectator with Jest via the `@openng/spectator` package. Use these APIs consistently:
 
 | API | Use for |
 |-----|--------|
@@ -63,8 +63,8 @@ component-name/
 Use **`createComponentFactory`** to create the factory, the **`Spectator`** class to type the instance, **`mockProvider`** for mocks, **`byTestId`** for selection, **`setInput`** for inputs, **`detectChanges`** after changes, and **`click`** for user actions.
 
 ```typescript
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
-import { mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+import { mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 describe('DotMyComponent', () => {
@@ -96,7 +96,7 @@ describe('DotMyComponent', () => {
 });
 ```
 
-For **Vitest**, use `@ngneat/spectator` (or the Vitest-specific entry if your version provides one) and replace `jest.fn()` with `vi.fn()`.
+`core-web` standardizes on **Jest** — always import from `@openng/spectator/jest`, never the package root or the `/vitest` entry point.
 
 ### Required Testing Patterns
 
@@ -230,8 +230,7 @@ Templates should expose `data-testid` on interactive and assertable elements so 
 @Component({
   selector: 'dot-form',
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './dot-form.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-form.component.html'
 })
 export class DotFormComponent {
   readonly formGroup = this.fb.group({ name: [''], status: ['active'] });
@@ -301,8 +300,8 @@ it('should compute filtered items correctly', () => {
 Use **`createServiceFactory`** from Spectator for service tests so you get a typed **`SpectatorService<MyService>`** and consistent setup with **`mockProvider`**.
 
 ```typescript
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
-import { mockProvider } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 import { MyService } from './my.service';
 import { HttpClient } from '@angular/common/http';
@@ -367,8 +366,10 @@ Use **`detectChanges`** after changing state so the template updates. Use **sepa
 
 ```typescript
 it('should apply correct CSS classes', () => {
+  // Icons are Material Symbols: the class is fixed, the icon name is text content
   const icon = spectator.query(byTestId('status-icon'));
-  expect(icon).toHaveClass('pi', 'pi-check');
+  expect(icon).toHaveClass('material-symbols-outlined');
+  expect(icon).toHaveText('check_circle');
 
   spectator.component.$isActive.set(true);
   spectator.detectChanges();
@@ -741,5 +742,5 @@ expect(element).toHaveClass('class1', 'class2');
 - **Test files**: Alongside the file under test with `.spec.ts` suffix
 - **Test utilities**: `libs/utils/src/lib/testing/`
 - **Mock data**: Use `@dotcms/utils-testing` createFake functions; fallback to `*.mock.ts` only when no createFake exists
-- **Spectator**: `@ngneat/spectator` (Jest: `@ngneat/spectator/jest`). Use **createComponentFactory**, **createDirectiveFactory**, **createPipeFactory**, **createServiceFactory**, **createHostFactory**, **createRoutingFactory**, **createHttpFactory**, **Spectator**, **byTestId**, **mockProvider**, **detectChanges**, **setInput**, **click** as documented above.
+- **Spectator**: `@openng/spectator` (Jest: `@openng/spectator/jest`). Use **createComponentFactory**, **createDirectiveFactory**, **createPipeFactory**, **createServiceFactory**, **createHostFactory**, **createRoutingFactory**, **createHttpFactory**, **Spectator**, **byTestId**, **mockProvider**, **detectChanges**, **setInput**, **click** as documented above.
 - **See also**: [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md), [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) (testing stores), [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md), [docs/frontend/README.md](./README.md)

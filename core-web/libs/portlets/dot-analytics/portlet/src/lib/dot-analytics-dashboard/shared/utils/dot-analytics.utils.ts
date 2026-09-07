@@ -6,6 +6,37 @@ import { TIME_RANGE_OPTIONS, TimeRange } from '@dotcms/portlets/dot-analytics/da
 export const MIN_CUSTOM_DATE_RANGE_DAYS = 7;
 
 /**
+ * Distributes integer percentages using the Largest Remainder Method,
+ * guaranteeing the sum equals exactly 100.
+ *
+ * @param values - Raw numeric values to convert to percentages
+ * @returns Array of integer percentages summing to 100
+ */
+export function distributePercentages(values: number[]): number[] {
+    const total = values.reduce((sum, v) => sum + v, 0);
+    if (total <= 0) {
+        return values.map(() => 0);
+    }
+
+    const rawPercentages = values.map((v) => (v / total) * 100);
+    const floored = rawPercentages.map(Math.floor);
+    const remainders = rawPercentages.map((val, i) => val - floored[i]);
+    let remaining = 100 - floored.reduce((sum, v) => sum + v, 0);
+
+    const indices = remainders.map((r, i) => ({ r, i })).sort((a, b) => b.r - a.r);
+
+    for (const { i } of indices) {
+        if (remaining <= 0) {
+            break;
+        }
+        floored[i]++;
+        remaining--;
+    }
+
+    return floored;
+}
+
+/**
  * Validates custom date range parameters.
  * The range must span at least MIN_CUSTOM_DATE_RANGE_DAYS days (inclusive).
  * @param fromDate - Start date string (yyyy-MM-dd)

@@ -358,6 +358,28 @@ describe('dot-key-value', () => {
                 ]);
             });
 
+            it('should handle null values in HTML-encoded JSON', async () => {
+                element.setProperty('value', '{&#x22;my-value&#x22;:null}');
+                await page.waitForChanges();
+                const list = await getList();
+                expect(await list.getProperty('items')).toEqual([
+                    { key: 'my-value', value: 'null' }
+                ]);
+            });
+
+            it('should handle mixed null and non-null values in HTML-encoded JSON', async () => {
+                element.setProperty(
+                    'value',
+                    '{&#x22;key1&#x22;:null,&#x22;key2&#x22;:&#x22;value2&#x22;}'
+                );
+                await page.waitForChanges();
+                const list = await getList();
+                expect(await list.getProperty('items')).toEqual([
+                    { key: 'key1', value: 'null' },
+                    { key: 'key2', value: 'value2' }
+                ]);
+            });
+
             it('should handle invalid format', async () => {
                 element.setProperty('value', 'hello/world*hola,mundo');
                 await page.waitForChanges();

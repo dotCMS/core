@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -12,6 +12,7 @@ import { DotTemplateCreateEditResolver } from '../resolvers/dot-template-create-
 @Component({
     selector: 'dot-dot-template-new',
     templateUrl: './dot-template-new.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DialogService, DotTemplateCreateEditResolver]
 })
 export class DotTemplateNewComponent implements OnInit {

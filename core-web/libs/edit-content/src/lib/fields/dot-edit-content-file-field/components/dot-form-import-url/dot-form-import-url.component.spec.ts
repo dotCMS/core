@@ -1,5 +1,5 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';

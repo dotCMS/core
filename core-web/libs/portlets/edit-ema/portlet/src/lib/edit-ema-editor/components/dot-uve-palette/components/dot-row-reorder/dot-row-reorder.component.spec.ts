@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
 
 import { CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { computed, signal } from '@angular/core';

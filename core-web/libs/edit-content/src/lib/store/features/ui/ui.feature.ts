@@ -48,7 +48,8 @@ export function withUI() {
             /**
              * Computed property that returns the beta message visibility state
              */
-            isBetaMessageVisible: computed(() => store.uiState().isBetaMessageVisible)
+            isBetaMessageVisible: computed(() => store.uiState().isBetaMessageVisible),
+            localeSelectorTab: computed(() => store.uiState().localeSelectorTab ?? 'all')
         })),
         withMethods((store) => ({
             /**
@@ -97,19 +98,10 @@ export function withUI() {
                 patchState(store, { uiState: newState });
             },
 
-            /**
-             * Enables dialog mode to bypass route-based initialization
-             * This should be called when the store is used from DotCreateContentDialogComponent
-             */
-            enableDialogMode(): void {
-                patchState(store, { isDialogMode: true });
-            },
-
-            /**
-             * Disables dialog mode to enable route-based initialization
-             */
-            disableDialogMode(): void {
-                patchState(store, { isDialogMode: false });
+            setLocaleSelectorTab(tab: 'all' | 'translated' | 'pending'): void {
+                patchState(store, {
+                    uiState: { ...store.uiState(), localeSelectorTab: tab }
+                });
             }
         })),
         withHooks({

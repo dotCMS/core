@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Component that renders the appropriate icon based on message severity
@@ -9,6 +9,7 @@ import { Component, input } from '@angular/core';
  */
 @Component({
     selector: 'dot-severity-icon',
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './dot-severity-icon.component.html'
 })
 export class DotSeverityIconComponent {

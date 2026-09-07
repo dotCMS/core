@@ -1,0 +1,27 @@
+// Layout on :host comes from the host tailwind class
+// (`flex h-full min-h-0 flex-col`) — keeping only the PrimeNG-preset
+// override below.
+
+// Force the flex-fill chain from the body wrapper down to each p-tabpanel.
+// Tailwind's `flex`/`block` utilities lose against PrimeNG's default block
+// display on `.p-tabpanel` (higher specificity via the injected preset), so
+// we assert the layout explicitly here.
+:host ::ng-deep {
+    p-tabs,
+    p-tabpanels {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    // Only the active tab receives layout — the others carry the `hidden`
+    // attribute which resolves to `display: none` before this ever applies.
+    p-tabpanel {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        padding: 0;
+    }
+}

@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -178,10 +179,22 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
      * @param contentlet The {@link Contentlet} whose Story Block fields will be inspected.
      */
     private static void refreshStoryBlockReferences(final Contentlet contentlet) {
-        final StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshReferences(contentlet);
-        if (result.isRefreshed()) {
-            Logger.debug(ContentletTransformer.class,
-                    ()-> "Refreshed story block dependencies for the contentlet: " + contentlet.getIdentifier());
+        try {
+            final StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshReferences(contentlet);
+            if (result.isRefreshed()) {
+                Logger.debug(ContentletTransformer.class,
+                        () -> "Refreshed story block dependencies for the contentlet: " + contentlet.getIdentifier());
+            }
+        } catch (final Exception e) {
+            // Story Block hydration is a best-effort enrichment. A single bad
+            // contentlet (e.g. malformed JSON, scalar-only field values, broken
+            // reference) must not abort the entire transform and take down the
+            // surrounding /api/content/_search response.
+            Logger.warnAndDebug(ContentletTransformer.class, String.format(
+                    "Failed to refresh Story Block references for contentlet '%s' (inode '%s'); "
+                            + "returning the contentlet with un-refreshed Story Block data: %s",
+                    contentlet.getIdentifier(), contentlet.getInode(),
+                    ExceptionUtil.getErrorMessage(e)), e);
         }
     }
 

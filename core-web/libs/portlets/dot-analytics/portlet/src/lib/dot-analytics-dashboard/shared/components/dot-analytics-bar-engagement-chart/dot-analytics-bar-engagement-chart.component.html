@@ -1,0 +1,92 @@
+@let isError = $isError();
+@let isLoading = $isLoading();
+@let isEmpty = $isEmpty();
+
+<p-card
+    class="bar-engagement-chart-card"
+    [dt]="{ body: { padding: '1.5rem' } }"
+    data-testid="analytics-bar-engagement-chart">
+    <ng-template #title>
+        @if ($resolvedCardHeader(); as cardTitle) {
+            <span data-testid="analytics-bar-engagement-chart-title">{{ cardTitle }}</span>
+        }
+    </ng-template>
+    <ng-template #subtitle>
+        @if (!isError && !isLoading && !isEmpty) {
+            <span data-testid="analytics-bar-engagement-chart-subtitle">
+                {{ 'analytics.engagement.charts.subtitle' | dm }}
+            </span>
+        }
+    </ng-template>
+    @if (isError) {
+        <div
+            class="bar-engagement-chart__pane flex min-h-0 w-full flex-1 flex-col items-center justify-center">
+            <dot-analytics-state-message
+                message="analytics.charts.error.loading"
+                icon="pi-exclamation-triangle" />
+        </div>
+    } @else if (isLoading) {
+        <div
+            class="bar-engagement-chart__pane flex min-h-0 w-full flex-1 flex-col gap-3 py-2"
+            data-testid="analytics-bar-engagement-chart-skeleton">
+            <div
+                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[minmax(8rem,max-content)_minmax(0,1fr)_auto]">
+                @for (i of [1, 2, 3, 4, 5]; track i) {
+                    <div class="contents">
+                        <p-skeleton height="0.75rem" width="4rem" />
+                        <p-skeleton class="min-w-0" height="1rem" width="100%" />
+                        <p-skeleton height="0.75rem" width="5rem" />
+                    </div>
+                }
+            </div>
+        </div>
+    } @else if (isEmpty) {
+        <dot-analytics-empty-state class="bar-engagement-chart__pane min-h-48 w-full flex-1" />
+    } @else {
+        <div
+            class="bar-engagement-chart__pane flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3"
+            data-testid="analytics-bar-engagement-chart-body">
+            <div
+                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[minmax(8rem,max-content)_minmax(0,1fr)_auto]"
+                data-testid="analytics-bar-engagement-list">
+                @for (row of $displayRows(); track row.name) {
+                    <div
+                        class="contents"
+                        data-testid="analytics-bar-engagement-row"
+                        [attr.aria-label]="row.ariaLabel">
+                        <span
+                            class="whitespace-nowrap text-sm text-color"
+                            data-testid="analytics-bar-engagement-row-label">
+                            {{ row.name }}
+                        </span>
+                        <div class="bar-engagement-row__bar-wrap min-w-0">
+                            <dot-analytics-stacked-bar
+                                [engagedSessions]="row.engagedSessions"
+                                [notEngagedSessions]="row.notEngagedSessions"
+                                [totalSessions]="row.totalSessions"
+                                height="1rem" />
+                        </div>
+                        <span
+                            class="text-sm tabular-nums text-color"
+                            data-testid="analytics-bar-engagement-sessions-total"
+                            [attr.title]="row.sessionsTotalsTitle">
+                            {{ row.totalSessions | dotAnalyticsCount }}
+                        </span>
+                    </div>
+                }
+            </div>
+            @if ($showDetailsFooter()) {
+                <div class="shrink-0 mt-auto pt-3 border-t border-surface flex justify-end">
+                    <p-button
+                        [label]="'analytics.engagement.charts.view-details-link' | dm"
+                        icon="pi pi-arrow-right"
+                        iconPos="right"
+                        [link]="true"
+                        styleClass="bar-engagement-chart__view-details p-button-sm"
+                        data-testid="analytics-bar-engagement-chart-view-details"
+                        (onClick)="openEngagementDetailDialog()" />
+                </div>
+            }
+        </div>
+    }
+</p-card>

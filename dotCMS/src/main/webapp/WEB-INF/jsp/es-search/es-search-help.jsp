@@ -184,7 +184,7 @@ $results.response&lt;br&gt;
     }
 }'
 </code></pre>
-<p>curl for aggregations (the /api/es/raw endpoint gives you the the raw SearchResponse directly from ElasticSearch)</p>
+<p>curl for aggregations (the /api/es/raw endpoint gives you the search response directly from the search engine, in the Elasticsearch-wire JSON shape with hits, took and aggregations)</p>
 <pre><code>curl -H "Content-Type: application/json" -XPOST http://localhost:8080/api/es/raw -d '
     {
         "query" : { "query_string" : {"query" : "gas*"} },

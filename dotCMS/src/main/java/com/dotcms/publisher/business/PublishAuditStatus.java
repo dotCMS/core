@@ -44,7 +44,17 @@ public class PublishAuditStatus implements Serializable {
 		LICENSE_REQUIRED(16),
 
         SUCCESS_WITH_WARNINGS(17),
-        FAILED_INTEGRITY_CHECK(18);
+        FAILED_INTEGRITY_CHECK(18),
+
+		/**
+		 * Synthetic status for bundles that have been pushed with a future publish date but have
+		 * not yet been picked up by {@code PublisherQueueJob} — i.e. they exist in
+		 * {@code publishing_queue} (with a non-null {@code publish_date}) but have no row in
+		 * {@code publishing_queue_audit} yet. These rows are synthesized at read time by the
+		 * v1 publishing API and are NEVER persisted, so the code is a negative sentinel that can
+		 * never collide with a real {@code publishing_queue_audit.status} value (always 1-18).
+		 */
+		SCHEDULED(-1);
 
 		private int code;
 		private Status(int code) {

@@ -50,6 +50,76 @@ const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
 } as unknown;
 
+const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [
+        {
+            key: 'customBlocks',
+            value: JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'addCustomGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            })
+        }
+    ]
+} as unknown;
+
+const CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [
+        {
+            key: 'customBlocks',
+            value: JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'addCustomGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            },
+                            {
+                                command: 'addBynderImage',
+                                menuLabel: '',
+                                icon: 'image',
+                                name: 'bynderImage'
+                            },
+                            {
+                                command: 'addParagraphDuplicate',
+                                menuLabel: 'Paragraph Duplicate',
+                                icon: 'notes',
+                                name: 'paragraph'
+                            },
+                            {
+                                command: 'missingName',
+                                menuLabel: 'Missing Name',
+                                icon: 'warning'
+                            }
+                        ]
+                    }
+                ]
+            })
+        }
+    ]
+} as unknown;
+
+const MALFORMED_CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [{ key: 'customBlocks', value: '{ not json' }]
+} as unknown;
+
 describe('DotBlockEditorSettingsComponent', () => {
     describe('with existing variables', () => {
         let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
@@ -231,6 +301,22 @@ describe('DotBlockEditorSettingsComponent', () => {
             expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
             expect(dotFieldVariableService.save).not.toHaveBeenCalled();
         });
+
+        it('should persist custom remote block names exactly like built-in blocks', () => {
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            component.form.get('allowedBlocks').setValue(['customGallery']);
+            component.saveSettings();
+
+            expect(dotFieldVariableService.save).toHaveBeenCalledWith(
+                CUSTOM_BLOCK_FIELD,
+                expect.objectContaining({
+                    key: 'allowedBlocks',
+                    value: 'customGallery'
+                })
+            );
+        });
     });
 
     describe('Options', () => {
@@ -273,6 +359,69 @@ describe('DotBlockEditorSettingsComponent', () => {
             );
 
             expect(paragraphOption).not.toBeDefined();
+        });
+
+        it('should append remote custom block options after the built-in list', () => {
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            const options = fixture.componentInstance.settingsMap.allowedBlocks.options;
+            const builtInOptions = getEditorBlockOptions();
+
+            expect(options).toHaveLength(builtInOptions.length + 1);
+            expect(options.slice(0, builtInOptions.length)).toEqual(builtInOptions);
+            expect(options.at(-1)).toEqual({ code: 'customGallery', label: 'Custom Gallery' });
+        });
+
+        it('should fallback the label to name, drop duplicates, and warn on missing names', () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK);
+            fixture.detectChanges();
+
+            const options = fixture.componentInstance.settingsMap.allowedBlocks.options;
+            const builtInOptions = getEditorBlockOptions();
+
+            expect(options).toContainEqual({ code: 'customGallery', label: 'Custom Gallery' });
+            expect(options).toContainEqual({ code: 'bynderImage', label: 'bynderImage' });
+            expect(options.filter((option) => option.code === 'paragraph')).toHaveLength(1);
+            expect(options).toHaveLength(builtInOptions.length + 3);
+            expect(warn).toHaveBeenCalled();
+
+            warn.mockRestore();
+        });
+
+        it('should ignore malformed customBlocks payloads gracefully', () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MALFORMED_CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options).toEqual(
+                getEditorBlockOptions()
+            );
+            expect(warn).toHaveBeenCalled();
+
+            warn.mockRestore();
+        });
+
+        it('should recompute the options when the field input changes after init', () => {
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options).toEqual(
+                getEditorBlockOptions()
+            );
+
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options.at(-1)).toEqual({
+                code: 'customGallery',
+                label: 'Custom Gallery'
+            });
         });
     });
 });

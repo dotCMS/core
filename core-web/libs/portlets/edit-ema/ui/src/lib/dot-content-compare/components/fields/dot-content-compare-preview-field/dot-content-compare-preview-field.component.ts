@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -6,6 +6,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-content-compare-preview-field',
     templateUrl: './dot-content-compare-preview-field.component.html',
     styleUrls: ['./dot-content-compare-preview-field.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotMessagePipe]
 })
 export class DotContentComparePreviewFieldComponent implements OnChanges {

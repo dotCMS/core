@@ -40,6 +40,9 @@ public interface AbstractFolderView extends WebAssetView {
         String defaultFileType();
 
         @Nullable
+        String defaultBaseType();
+
+        @Nullable
         @JsonUnwrapped
         AssetVersionsView assets();
         @Nullable

@@ -8,18 +8,18 @@
     <div class="skeleton-table" data-testid="content-conversions-loading">
         <div class="skeleton-table__header">
             <div class="flex-1"><p-skeleton height="1rem" width="60%" /></div>
-            <div class="flex-[2]"><p-skeleton height="1rem" width="50%" /></div>
+            <div class="flex-2"><p-skeleton height="1rem" width="50%" /></div>
             <div class="w-20"><p-skeleton height="1rem" width="80%" /></div>
             <div class="w-24"><p-skeleton height="1rem" width="80%" /></div>
-            <div class="w-[5.5rem]"><p-skeleton height="1rem" width="80%" /></div>
+            <div class="w-22"><p-skeleton height="1rem" width="80%" /></div>
         </div>
         @for (i of [1, 2, 3, 4, 5]; track i) {
             <div class="skeleton-table__row">
                 <div class="flex-1"><p-skeleton height="1rem" width="70%" /></div>
-                <div class="flex-[2]"><p-skeleton height="1rem" width="60%" /></div>
+                <div class="flex-2"><p-skeleton height="1rem" width="60%" /></div>
                 <div class="w-20"><p-skeleton height="1rem" width="50%" /></div>
                 <div class="w-24"><p-skeleton height="1rem" width="50%" /></div>
-                <div class="w-[5.5rem]"><p-skeleton height="1rem" width="60%" /></div>
+                <div class="w-22"><p-skeleton height="1rem" width="60%" /></div>
             </div>
         }
         <div class="skeleton-table__pagination">
@@ -126,7 +126,7 @@
                     </div>
                 </td>
                 <td class="text-right">{{ row.events | number }}</td>
-                <td class="text-right text-primary font-semibold">
+                <td class="text-right font-semibold text-primary">
                     {{ row.conversions | number }}
                 </td>
                 <td class="text-right">{{ row.conversionRate | number: '1.0-2' }}%</td>

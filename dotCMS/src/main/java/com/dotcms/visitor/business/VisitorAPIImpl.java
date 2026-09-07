@@ -147,7 +147,7 @@ public class VisitorAPIImpl implements VisitorAPI {
         }
 
         final Language selectedLanguage = languageWebAPI.getLanguage(request);
-        final Locale locale = new Locale(selectedLanguage.getLanguageCode(), selectedLanguage.getCountryCode());
+        final Locale locale = selectedLanguage.asLocale();
         final UserAgent userAgent = UserAgent.parseUserAgentString(request.getHeader("User-Agent"));
         final UUID dmid = lookupDMID(request);
         final boolean isNewVisitor = isNewVisitor(request);

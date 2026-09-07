@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
-import { observeDocumentHeight } from '../lib/dom/document-height-observer';
-import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
+import { computeScrollIsInBottom, getNativeEventBinder } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
 
@@ -33,13 +31,18 @@ export function scrollHandler() {
         });
     };
 
-    window.addEventListener('scroll', scrollCallback);
-    window.addEventListener('scrollend', scrollEndCallback);
+    // Native binder: scroll survives the iframe rewrite under Zone.js. It can't
+    // move to a fresh `documentElement` like hover/click (viewport scroll only
+    // fires on `window`). See getNativeEventBinder.
+    const { addEventListener, removeEventListener } = getNativeEventBinder(window);
+
+    addEventListener('scroll', scrollCallback);
+    addEventListener('scrollend', scrollEndCallback);
 
     return {
         destroyScrollHandler: () => {
-            window.removeEventListener('scroll', scrollCallback);
-            window.removeEventListener('scrollend', scrollEndCallback);
+            removeEventListener('scroll', scrollCallback);
+            removeEventListener('scrollend', scrollEndCallback);
         }
     };
 }
@@ -84,13 +87,6 @@ export function registerUVEEvents() {
         window.location.reload();
     });
 
-    const requestBoundsSubscription = createUVESubscription(
-        UVEEventType.REQUEST_BOUNDS,
-        (bounds) => {
-            setBounds(bounds);
-        }
-    );
-
     const iframeScrollSubscription = createUVESubscription(
         UVEEventType.IFRAME_SCROLL,
         (direction) => {
@@ -118,6 +114,16 @@ export function registerUVEEvents() {
         }
     );
 
+    const contentletClickedSubscription = createUVESubscription(
+        UVEEventType.CONTENTLET_CLICKED,
+        (contentletClicked) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SET_SELECTED_CONTENTLET,
+                payload: contentletClicked
+            });
+        }
+    );
+
     const scrollToSectionSubscription = createUVESubscription(
         UVEEventType.SCROLL_TO_SECTION,
         (payload) => {
@@ -128,13 +134,25 @@ export function registerUVEEvents() {
         }
     );
 
+    // The single bounds-sync channel. The SDK observes layout changes
+    // inside the iframe (media-query reflows, image/font load shifts,
+    // container mount/unmount, scroll, etc.) and emits SET_BOUNDS on the
+    // trailing edge of a debounce window. The editor can also send a
+    // UVE_FLUSH_BOUNDS message to request an immediate synchronous emit
+    // (used during drag/drop, where the dropzone needs current bounds
+    // before the user moves another pixel).
+    const autoBoundsSubscription = createUVESubscription(UVEEventType.AUTO_BOUNDS, (bounds) => {
+        setBounds(bounds);
+    });
+
     return {
         subscriptions: [
             pageReloadSubscription,
-            requestBoundsSubscription,
             iframeScrollSubscription,
             contentletHoveredSubscription,
-            scrollToSectionSubscription
+            contentletClickedSubscription,
+            scrollToSectionSubscription,
+            autoBoundsSubscription
         ]
     };
 }
@@ -149,7 +167,7 @@ export function registerUVEEvents() {
  * This is typically called after all UVE event handlers and DOM listeners
  * have been set up successfully.
  */
-export function setClientIsReady(config?: DotCMSPageResponse): void {
+export function setClientIsReady(config?: Partial<DotCMSPageResponse>): void {
     sendMessageToUVE({
         action: DotCMSUVEAction.CLIENT_READY,
         payload: config
@@ -171,71 +189,18 @@ export function listenBlockEditorInlineEvent() {
         };
     }
 
-    // If the page is not fully loaded, listen for the DOMContentLoaded event
+    // Native binder: `DOMContentLoaded` fires on `document` (not `<html>`), so
+    // it survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const handleDOMContentLoaded = () => {
         listenBlockEditorClick();
     };
 
-    document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
+    const { addEventListener, removeEventListener } = getNativeEventBinder(document);
+    addEventListener('DOMContentLoaded', handleDOMContentLoaded);
 
     return {
         destroyListenBlockEditorInlineEvent: () => {
-            document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
-        }
-    };
-}
-
-/**
- * Returns whether iframe height must be synchronized via postMessage.
- *
- * Same-origin parents can measure iframe content directly, so they do not need
- * child-driven height reporting. Cross-origin parents cannot access the iframe
- * DOM, so they still need the reporter fallback.
- */
-export function shouldReportIframeHeightToParent(): boolean {
-    if (window.parent === window) {
-        return false;
-    }
-
-    try {
-        const parentDocument = window.parent.document;
-
-        return !parentDocument;
-    } catch {
-        return true;
-    }
-}
-
-/**
- * Reports the iframe document height to the parent UVE shell via postMessage.
- *
- * Uses ResizeObserver on <html> for viewport/font/image-driven size changes, and
- * MutationObserver on <body> to catch DOM removals (e.g. contentlets deleted by
- * the editor) that shrink the page without triggering a resize event.
- *
- * Measurement reads `document.documentElement.offsetHeight` — the actual rendered
- * height of the <html> element after layout. `scrollHeight` is intentionally avoided
- * because it does not reliably decrease when content is removed from the DOM.
- *
- * Height sends are coalesced to at most one per double-requestAnimationFrame pair
- * so they always run after layout and paint have settled.
- *
- * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
- * all listeners and disconnects the observers.
- */
-export function reportIframeHeight(): { destroyHeightReporter: () => void } {
-    const { destroy } = observeDocumentHeight({
-        onHeightChange: (height) => {
-            sendMessageToUVE({
-                action: DotCMSUVEAction.IFRAME_HEIGHT,
-                payload: { height }
-            });
-        }
-    });
-
-    return {
-        destroyHeightReporter: () => {
-            destroy();
+            removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
         }
     };
 }

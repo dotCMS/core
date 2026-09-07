@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * The DotIconComponent uses google material design icons
@@ -10,6 +10,7 @@ import { Component, Input } from '@angular/core';
 @Component({
     selector: 'dot-icon',
     styleUrls: ['./dot-icon.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './dot-icon.component.html'
 })
 export class DotIconComponent {

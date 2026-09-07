@@ -1,6 +1,13 @@
 import { Props } from 'tippy.js';
 
-import { Component, ElementRef, HostListener, input, ViewChild } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    HostListener,
+    input,
+    ViewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { Button } from 'primeng/button';
@@ -18,6 +25,7 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
     selector: 'dot-image-editor-popover',
     templateUrl: './dot-image-editor-popover.component.html',
     styleUrls: ['./dot-image-editor-popover.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [EditorModalDirective, InputText, ReactiveFormsModule, Button]
 })
 export class DotImageEditorPopoverComponent {

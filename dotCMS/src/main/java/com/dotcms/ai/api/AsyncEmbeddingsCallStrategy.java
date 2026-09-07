@@ -15,7 +15,7 @@ public class AsyncEmbeddingsCallStrategy implements EmbeddingsCallStrategy {
 
     @Override
     public void bulkEmbed(final List<String> inodes, final EmbeddingsForm embeddingsForm) {
-        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new BulkEmbeddingsRunner(inodes, embeddingsForm));
+        DotConcurrentFactory.getInstance().getSubmitter(AI_THREAD_POOL_KEY).submit(new BulkEmbeddingsRunner(inodes, embeddingsForm));
     }
 
     @Override
@@ -23,7 +23,7 @@ public class AsyncEmbeddingsCallStrategy implements EmbeddingsCallStrategy {
                       final Contentlet contentlet,
                       final String content,
                       final String indexName) {
-        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(embeddingsAPI, contentlet, content, indexName));
+        DotConcurrentFactory.getInstance().getSubmitter(AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(embeddingsAPI, contentlet, content, indexName));
     }
 
 }

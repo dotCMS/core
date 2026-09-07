@@ -9,7 +9,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -46,6 +47,7 @@ interface MonacoEditor {
     selector: 'dot-template-advanced',
     templateUrl: './dot-template-advanced.component.html',
     styleUrls: ['./dot-template-advanced.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotContainerSelectorComponent,
         DotTextareaContentComponent,

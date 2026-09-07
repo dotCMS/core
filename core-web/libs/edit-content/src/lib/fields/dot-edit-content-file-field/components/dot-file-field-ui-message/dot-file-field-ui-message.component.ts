@@ -9,6 +9,7 @@ import { UIMessage } from '../../../../models/dot-edit-content-file.model';
     selector: 'dot-file-field-ui-message',
     imports: [DotMessagePipe, NgClass],
     templateUrl: './dot-file-field-ui-message.component.html',
+    styleUrls: ['./dot-file-field-ui-message.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFileFieldUiMessageComponent {

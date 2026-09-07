@@ -1,0 +1,699 @@
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+
+import { Location } from '@angular/common';
+import { Component, input, output } from '@angular/core';
+import { Router } from '@angular/router';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { AgentHeartbeat, AgentRunStep } from '@dotcms/dotcms-models';
+import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotA11yActionsComponent } from './a11y-actions/a11y-actions.component';
+import { DotA11yActivityComponent } from './a11y-activity/a11y-activity.component';
+import { DotA11yPreviewComponent } from './a11y-preview/a11y-preview.component';
+import { DotA11yRunComponent } from './a11y-run.component';
+import { DotA11yScoreComponent } from './a11y-score/a11y-score.component';
+
+import { DotA11yDiffViewerComponent } from '../a11y-diff/a11y-diff-viewer.component';
+import { DotA11yDiffComponent } from '../a11y-diff/a11y-diff.component';
+import { A11Y_PAGE_LIST_ROUTE } from '../a11y.constants';
+import {
+    FixReport,
+    NEEDS_ATTENTION_STATUSES,
+    RESEARCH_RULE_ID,
+    StudioPageRow,
+    StudioPhase
+} from '../models/accessibility-studio.models';
+import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+import { PageDiffFile } from '../models/page-render-sources.models';
+import { A11yRunStore } from '../store/a11y-run.store';
+
+/**
+ * Stubs for the diff pieces so the run spec doesn't pull in Monaco / HTTP. The list
+ * emits the picked file; the viewer just records what it was handed.
+ */
+@Component({ selector: 'dot-a11y-diff', standalone: true, template: '' })
+class DotA11yDiffStubComponent {
+    readonly activeFileId = input<string | null>(null);
+    readonly fileSelected = output<PageDiffFile | null>();
+    readonly changedCount = output<number>();
+}
+
+@Component({ selector: 'dot-a11y-diff-viewer', standalone: true, template: '' })
+class DotA11yDiffViewerStubComponent {
+    readonly file = input<PageDiffFile | null>(null);
+    readonly closed = output<void>();
+}
+
+/**
+ * Stub for the preview pane: the real one frames two live page renders and injects
+ * marker layers into them, which this spec has no business booting. What the shell
+ * owes it is the right inputs — asserted below, exercised in its own spec.
+ */
+@Component({ selector: 'dot-a11y-preview', standalone: true, template: '' })
+class DotA11yPreviewStubComponent {
+    readonly page = input<StudioPageRow | null>(null);
+    readonly previewRevision = input(0);
+    readonly previewGroups = input<A11yGroup[]>([]);
+    readonly liveGroups = input<A11yGroup[]>([]);
+    readonly showMarkers = input(false);
+}
+
+const DIFF_FILE: PageDiffFile = {
+    identifier: 'vtl-1',
+    path: '//demo/application/containers/awazon/a.vtl',
+    name: 'a.vtl',
+    extension: 'vtl',
+    origin: 'container',
+    working: 'new',
+    live: 'old',
+    added: 1,
+    removed: 1
+};
+
+const MOCK_PAGE: StudioPageRow = {
+    identifier: 'id-1',
+    title: 'About Us',
+    path: '/about-us',
+    type: 'htmlpageasset',
+    languageId: 1,
+    hostId: 'host-id-1',
+    hostName: 'demo.dotcms.com',
+    modDate: '04/09/2026',
+    modUserName: 'Admin User',
+    live: true
+};
+
+describe('DotA11yRunComponent', () => {
+    let spectator: Spectator<DotA11yRunComponent>;
+
+    const runScan = jest.fn();
+    const stopScan = jest.fn();
+    const startFix = jest.fn();
+    const stopAgent = jest.fn();
+    const publish = jest.fn();
+    const discard = jest.fn();
+    const setSkipCss = jest.fn();
+    const openSelectedPage = jest.fn();
+    const navigate = jest.fn().mockResolvedValue(true);
+
+    // Mutable per-test state read by the store mock's reactive getters.
+    let phase: StudioPhase = 'ready';
+    let report: FixReport | null = null;
+    let steps: AgentRunStep[] = [];
+    let runError: string | null = null;
+    let heartbeat: AgentHeartbeat | null = null;
+    // Bumped when the working render changes → preview iframe cache-buster.
+    let previewRevision = 0;
+    // Whether a scan result is present (drives report vs. iframe in the pane).
+    let hasScan = false;
+    // The page path (as URL segments) the run component reads on init.
+    /** The row the page list "handed over" via router state for the current test. */
+    let handoverRow: StudioPageRow | null = null;
+    // The current site — the run rehydrate effect waits for it before fetching.
+
+    // Two error groups (5 elements) + one warning group (2 elements).
+    /**
+     * The LIVE frame's findings, deliberately DIFFERENT from the preview's. The two frames
+     * run separate scans, so a test that fed both the same array could not tell a correct
+     * pairing from an inverted one.
+     */
+    const MOCK_LIVE_GROUPS: A11yGroup[] = [
+        {
+            code: 'link-name',
+            type: 'error',
+            message: 'Links must have discernible text',
+            impact: 'serious',
+            helpUrl: 'https://example.com/link-name',
+            items: [{ context: '<a>', selector: 'a.live-only' }],
+            count: 1
+        }
+    ];
+
+    const MOCK_GROUPS: A11yGroup[] = [
+        {
+            code: 'image-alt',
+            type: 'error',
+            message: 'Images must have alternate text',
+            impact: 'critical',
+            helpUrl: 'https://example.com/image-alt',
+            items: [
+                { context: '<img>', selector: 'img.a' },
+                { context: '<img>', selector: 'img.b' },
+                { context: '<img>', selector: 'img.c' }
+            ],
+            count: 3
+        },
+        {
+            code: 'button-name',
+            type: 'error',
+            message: 'Buttons must have discernible text',
+            impact: 'serious',
+            helpUrl: 'https://example.com/button-name',
+            items: [
+                { context: '<button>', selector: 'button.x' },
+                { context: '<button>', selector: 'button.y' }
+            ],
+            count: 2
+        },
+        {
+            code: 'color-contrast',
+            type: 'warning',
+            message: 'Elements must have sufficient color contrast',
+            impact: 'moderate',
+            helpUrl: 'https://example.com/color-contrast',
+            items: [{ context: '<a>', selector: 'a.l1' }],
+            count: 1
+        }
+    ];
+
+    const storeMock = {
+        phase: () => phase,
+        report: () => report,
+        steps: () => steps,
+        runError: () => runError,
+        latestStep: () => (steps.length ? steps[steps.length - 1] : null),
+        heartbeat: () => heartbeat,
+        selected: () => MOCK_PAGE,
+        skipCss: () => false,
+        scanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
+        liveScanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
+        a11yGroups: () => (hasScan ? MOCK_GROUPS : []),
+        liveA11yGroups: () => (hasScan ? MOCK_LIVE_GROUPS : []),
+        errorCount: () => (hasScan ? 5 : 0),
+        warningCount: () => (hasScan ? 2 : 0),
+        isWorking: () => phase === 'scanning' || phase === 'fixing',
+        finished: () => ['done', 'published'].includes(phase),
+        runStarted: () => ['fixing', 'done', 'published'].includes(phase),
+        hasResults: () => ['scanned', 'fixing', 'done', 'published'].includes(phase),
+        beforeCount: () => (hasScan ? 5 : 0),
+        afterCount: () => report?.scan.after.violations ?? 0,
+        openCount: () => report?.scan.after.violations ?? (hasScan ? 5 : 0),
+        // 3 critical (image-alt) + 2 serious (button-name) + 0 moderate/minor errors.
+        severityCounts: () => ({
+            critical: hasScan ? 3 : 0,
+            serious: hasScan ? 2 : 0,
+            moderate: 0,
+            minor: 0
+        }),
+        issueTypeRows: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'error') : []),
+        reviewGroups: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'warning') : []),
+        fixedResults: () =>
+            report?.results.filter(
+                (r) => r.status === 'fixed-to-working' && r.ruleId !== RESEARCH_RULE_ID
+            ) ?? [],
+        reportedResults: () =>
+            report?.results.filter((r) => NEEDS_ATTENTION_STATUSES.includes(r.status)) ?? [],
+        // Both counts come from the before/after rescan, not from row statuses — the
+        // rows only log the deterministic pass. See the real store's computeds.
+        fixedCount: () =>
+            report ? Math.max(0, report.scan.before.violations - report.scan.after.violations) : 0,
+        reportedCount: () => report?.scan.after.violations ?? 0,
+        previewRevision: () => previewRevision,
+        runScan,
+        stopScan,
+        startFix,
+        stopAgent,
+        publish,
+        discard,
+        setSkipCss,
+        openSelectedPage
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotA11yRunComponent,
+        overrideComponents: [
+            [
+                DotA11yRunComponent,
+                {
+                    remove: {
+                        imports: [
+                            DotA11yDiffComponent,
+                            DotA11yDiffViewerComponent,
+                            DotA11yPreviewComponent
+                        ]
+                    },
+                    add: {
+                        imports: [
+                            DotA11yDiffStubComponent,
+                            DotA11yDiffViewerStubComponent,
+                            DotA11yPreviewStubComponent
+                        ]
+                    }
+                }
+            ]
+        ],
+        componentProviders: [{ provide: A11yRunStore, useValue: storeMock }],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'accessibility.studio.working.thinking': 'Thinking…',
+                    'accessibility.studio.working.analyzing': 'Analyzing the page…',
+                    'accessibility.studio.working.reasoning': 'Working through the fix…',
+                    'accessibility.studio.working.stillworking': 'Still working on it…',
+                    'accessibility.studio.working.elapsed': '{0}s'
+                })
+            },
+            { provide: Router, useValue: { navigate } },
+            {
+                provide: Location,
+                // useFactory so each test's `handoverRow` is read at injection time.
+                useFactory: () => ({ getState: () => (handoverRow ? { row: handoverRow } : null) })
+            }
+        ]
+    });
+
+    function render(
+        nextPhase: StudioPhase,
+        nextReport: FixReport | null = null,
+        nextSteps: AgentRunStep[] = [],
+        nextRunError: string | null = null
+    ) {
+        phase = nextPhase;
+        report = nextReport;
+        steps = nextSteps;
+        runError = nextRunError;
+        // A scan result exists once the page has been scanned.
+        hasScan = ['scanned', 'fixing', 'done', 'published'].includes(nextPhase);
+        spectator = createComponent();
+        spectator.detectChanges();
+    }
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        phase = 'ready';
+        report = null;
+        steps = [];
+        runError = null;
+        heartbeat = null;
+        previewRevision = 0;
+        hasScan = false;
+        handoverRow = MOCK_PAGE;
+        // Report reduced-motion so the score count-up snaps to its final value
+        // synchronously (no requestAnimationFrame timing in the DOM assertions).
+        window.matchMedia = jest
+            .fn()
+            .mockReturnValue({ matches: true }) as unknown as typeof matchMedia;
+    });
+
+    describe('side panel accordion', () => {
+        beforeEach(() => render('ready'));
+
+        /** Click a panel's PrimeNG accordion header. */
+        const clickHeader = (panel: 'scanner' | 'files') => {
+            const header = spectator
+                .query(byTestId(`studio-panel-${panel}`))
+                ?.querySelector('p-accordion-header') as HTMLElement;
+            spectator.click(header);
+            spectator.detectChanges();
+        };
+
+        it('opens with the scanner panel expanded and files collapsed', () => {
+            expect(spectator.component.isPanelOpen('scanner')).toBe(true);
+            expect(spectator.component.isPanelOpen('files')).toBe(false);
+            // p-accordion-content keeps content mounted (hideStrategy="visibility"),
+            // so the files list keeps resolving the delta while collapsed.
+            expect(spectator.query(byTestId('studio-panel-files-body'))).toBeTruthy();
+        });
+
+        it('both panels can be open at once', () => {
+            clickHeader('files');
+
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
+            // Opening files must NOT collapse the scanner.
+            expect(spectator.component.isPanelOpen('scanner')).toBe(true);
+            expect(spectator.component.$state.openPanels()).toEqual(['scanner', 'files']);
+        });
+
+        it('each panel collapses independently', () => {
+            clickHeader('files');
+            clickHeader('scanner');
+
+            expect(spectator.component.isPanelOpen('scanner')).toBe(false);
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
+        });
+
+        it('both panels can be closed at once', () => {
+            clickHeader('scanner');
+
+            expect(spectator.component.isPanelOpen('scanner')).toBe(false);
+            expect(spectator.component.isPanelOpen('files')).toBe(false);
+            expect(spectator.component.$state.openPanels()).toEqual([]);
+        });
+
+        it('tracks the changed-file count reported by the diff list', () => {
+            expect(spectator.component.$state.changedFileCount()).toBe(0);
+            expect(spectator.component.$hasChangedFiles()).toBe(false);
+
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.changedCount.emit(2);
+            spectator.detectChanges();
+
+            expect(spectator.component.$state.changedFileCount()).toBe(2);
+            expect(spectator.component.$hasChangedFiles()).toBe(true);
+        });
+    });
+
+    describe('files panel actions', () => {
+        beforeEach(() => render('done', MOCK_FIX_REPORT));
+
+        /** Report N changed files from the stubbed list. */
+        const reportFiles = (n: number) => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.changedCount.emit(n);
+            spectator.detectChanges();
+        };
+
+        it('shows no action bar until there are files to publish', () => {
+            expect(spectator.query(byTestId('studio-publish-bar'))).toBeFalsy();
+        });
+
+        it('shows Discard next to Publish once files changed', () => {
+            reportFiles(2);
+
+            expect(spectator.query(byTestId('studio-publish-bar'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-apply-btn'))).toBeTruthy();
+        });
+
+        it('Publish publishes the page', () => {
+            reportFiles(1);
+            spectator.click(
+                spectator
+                    .query(byTestId('studio-apply-btn'))
+                    ?.querySelector('button') as HTMLElement
+            );
+            expect(publish).toHaveBeenCalled();
+        });
+
+        it('Discard drops the working fixes', () => {
+            reportFiles(1);
+            spectator.click(
+                spectator
+                    .query(byTestId('studio-discard-btn'))
+                    ?.querySelector('button') as HTMLElement
+            );
+            expect(discard).toHaveBeenCalled();
+        });
+
+        // The changed files may predate this run (an earlier run, a manual edit), so
+        // the actions are gated on the files existing — not on the run's phase.
+        it.each(['ready', 'scanned', 'published'] as StudioPhase[])(
+            'shows both actions in the %s phase when files changed',
+            (studioPhase) => {
+                render(studioPhase, studioPhase === 'ready' ? null : MOCK_FIX_REPORT);
+                reportFiles(2);
+
+                expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+                expect(spectator.query(byTestId('studio-apply-btn'))).toBeTruthy();
+            }
+        );
+    });
+
+    describe('what the panel children are handed', () => {
+        // Each child renders its own slice (covered in its own spec); the shell's job
+        // is handing every one of them the right store signal.
+        it('gives the score widget the counts and the phase', () => {
+            render('scanned', MOCK_FIX_REPORT);
+            const score = spectator.query(DotA11yScoreComponent) as DotA11yScoreComponent;
+
+            expect(score.phase()).toBe('scanned');
+            expect(score.hasResults()).toBe(true);
+            expect(score.openCount()).toBe(5);
+            expect(score.warningCount()).toBe(2);
+            expect(score.severityCounts()).toEqual({
+                critical: 3,
+                serious: 2,
+                moderate: 0,
+                minor: 0
+            });
+        });
+
+        it('gives the activity log the stream, the report and both group lists', () => {
+            const steps: AgentRunStep[] = [{ message: 'working', meta: { phase: 'fix' } }];
+            render('fixing', MOCK_FIX_REPORT, steps);
+            const activity = spectator.query(DotA11yActivityComponent) as DotA11yActivityComponent;
+
+            expect(activity.phase()).toBe('fixing');
+            expect(activity.steps()).toEqual(steps);
+            expect(activity.report()).toEqual(MOCK_FIX_REPORT);
+            // Errors go to the issue-type list, warnings to needs-review — swapping
+            // them would put unconfirmed findings in the fix list.
+            expect(activity.issueTypeGroups().map((g) => g.code)).toEqual([
+                'image-alt',
+                'button-name'
+            ]);
+            expect(activity.reviewGroups().map((g) => g.code)).toEqual(['color-contrast']);
+        });
+
+        it('gives the action footer the phase and the counts its copy interpolates', () => {
+            render('done', MOCK_FIX_REPORT);
+            const actions = spectator.query(DotA11yActionsComponent) as DotA11yActionsComponent;
+
+            expect(actions.phase()).toBe('done');
+            expect(actions.pagePath()).toBe('/about-us');
+            expect(actions.fixedCount()).toBe(
+                MOCK_FIX_REPORT.scan.before.violations - MOCK_FIX_REPORT.scan.after.violations
+            );
+            expect(actions.reportedCount()).toBe(MOCK_FIX_REPORT.scan.after.violations);
+        });
+
+        it('shows the changed-files list before a run completes', () => {
+            // The list resolves the working-vs-live delta itself, so it's present
+            // (and loading) from the moment the page opens — no scan required.
+            render('ready');
+
+            expect(spectator.query(DotA11yDiffStubComponent)).toBeTruthy();
+        });
+
+        it('shows the preview, not a diff, until a file is picked', () => {
+            render('ready');
+
+            expect(spectator.component.$state.diffFile()).toBeNull();
+            expect(spectator.query(DotA11yPreviewStubComponent)).toBeTruthy();
+            expect(spectator.query(DotA11yDiffViewerStubComponent)).toBeFalsy();
+        });
+    });
+
+    describe('the footer actions drive the run', () => {
+        // The footer only emits; these assert the shell turns each emission into the
+        // right store call. Which button each phase offers is the footer's own spec.
+        it.each([
+            ['ready', 'studio-scan-btn', () => runScan],
+            ['scanning', 'studio-stopscan-btn', () => stopScan],
+            ['scanned', 'studio-rescan-btn', () => runScan],
+            ['scanned', 'studio-fix-btn', () => startFix],
+            ['fixing', 'studio-stopagent-btn', () => stopAgent]
+        ])('%s: %s calls the store', (studioPhase, testId, pickSpy) => {
+            render(studioPhase as StudioPhase, MOCK_FIX_REPORT);
+
+            const btn = spectator.query(byTestId(testId))?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+
+            expect(pickSpy()).toHaveBeenCalled();
+        });
+
+        it('passes the skip-css choice to the store', () => {
+            render('scanned', MOCK_FIX_REPORT);
+
+            spectator.triggerEventHandler('p-toggleswitch', 'ngModelChange', true);
+
+            expect(setSkipCss).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe('preview pane wiring', () => {
+        // What the pane DOES with these (markers, scroll sync, urls) is covered in
+        // a11y-preview.component.spec.ts. What matters here is that each store signal
+        // reaches the right input — a swapped preview/live pair would draw each
+        // frame's markers on the other one.
+        function previewPane() {
+            return spectator.query(DotA11yPreviewStubComponent) as DotA11yPreviewStubComponent;
+        }
+
+        it('hands each frame its own scan findings, plus the page and revision', () => {
+            previewRevision = 3;
+            render('scanned', MOCK_FIX_REPORT);
+
+            expect(previewPane().page()).toEqual(MOCK_PAGE);
+            expect(previewPane().previewRevision()).toBe(3);
+            expect(previewPane().previewGroups()).toEqual(MOCK_GROUPS);
+            expect(previewPane().liveGroups()).toEqual(MOCK_LIVE_GROUPS);
+        });
+
+        it.each([
+            ['ready', false],
+            ['scanned', true],
+            // The LIVE frame is still unfixed after a run, so markers stay on.
+            ['done', true]
+        ])('gates the markers on a scan having results (%s)', (nextPhase, expected) => {
+            render(nextPhase as StudioPhase, MOCK_FIX_REPORT);
+
+            expect(previewPane().showMarkers()).toBe(expected);
+        });
+    });
+
+    it('crossfades a whole-screen skeleton while scanning — score and issue list together', () => {
+        // Both skeletons carry the results' footprint, so the swap to real data is a
+        // crossfade with no layout shift; one arriving without the other would jump.
+        render('scanning');
+
+        expect(spectator.query(byTestId('studio-score-skeleton'))).toBeTruthy();
+        expect(spectator.query(byTestId('studio-issue-type-skeleton'))).toBeTruthy();
+        expect(spectator.query(byTestId('studio-score-ring'))).toBeFalsy();
+        expect(spectator.query(byTestId('studio-issue-type-list'))).toBeFalsy();
+    });
+
+    it('streams the live steps into the activity log while fixing', () => {
+        // The copy the log shows (and its cycling thinking line) is covered in
+        // a11y-activity.component.spec.ts; here it just has to be wired to the stream
+        // and rendering while the agent works.
+        render('fixing', null, [
+            { message: 'Scanning live + working baseline', meta: { phase: 'scan' } },
+            { message: 'Fixing color-contrast → .btn', meta: { phase: 'fix' } }
+        ]);
+
+        expect(spectator.queryAll(byTestId('agent-message')).length).toBe(2);
+        expect(spectator.query(byTestId('agent-thinking'))).not.toBeNull();
+    });
+
+    describe('run error state', () => {
+        beforeEach(() => render('scanned', MOCK_FIX_REPORT, [], 'render unreliable'));
+
+        it('surfaces the error in the banner at the top of the portlet', () => {
+            const error = spectator.query(byTestId('studio-run-error'));
+            expect(error).toHaveText('render unreliable');
+        });
+
+        it('renders no banner when there is no error', () => {
+            render('scanned', MOCK_FIX_REPORT);
+            expect(spectator.query(byTestId('studio-run-error'))).toBeFalsy();
+        });
+    });
+
+    describe('done phase', () => {
+        beforeEach(() => render('done', MOCK_FIX_REPORT));
+
+        it('offers a jump to the files panel — discard/publish live there', () => {
+            expect(spectator.query(byTestId('studio-reviewfiles-btn'))).toBeTruthy();
+            // Both actions belong to the files panel, and it has no files yet.
+            expect(spectator.query(byTestId('studio-discard-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('studio-apply-btn'))).toBeFalsy();
+        });
+
+        it('Review files opens the files panel, leaving the scanner open', () => {
+            const btn = spectator
+                .query(byTestId('studio-reviewfiles-btn'))
+                ?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            spectator.detectChanges();
+
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
+            expect(spectator.component.isPanelOpen('scanner')).toBe(true);
+        });
+
+        it('Review files is idempotent — it opens rather than toggles', () => {
+            const btn = () =>
+                spectator.query(byTestId('studio-reviewfiles-btn'))?.querySelector('button');
+            spectator.click(btn() as HTMLElement);
+            spectator.detectChanges();
+            spectator.click(btn() as HTMLElement);
+            spectator.detectChanges();
+
+            // A second press must not close the panel it just opened.
+            expect(spectator.component.isPanelOpen('files')).toBe(true);
+        });
+
+        it('picking a file in the list opens its diff in the right pane', () => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.fileSelected.emit(DIFF_FILE);
+            spectator.detectChanges();
+
+            expect(spectator.component.$state.diffFile()).toEqual(DIFF_FILE);
+            expect(spectator.query(DotA11yDiffViewerStubComponent)?.file()).toEqual(DIFF_FILE);
+            // Opening a diff is a view swap, not a navigation — run state is kept.
+            expect(navigate).not.toHaveBeenCalled();
+        });
+
+        it("the viewer's close action returns to the preview and clears the list", () => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.fileSelected.emit(DIFF_FILE);
+            spectator.detectChanges();
+            // The list's highlighted row tracks the pane via activeFileId.
+            expect(list.activeFileId()).toBe(DIFF_FILE.identifier);
+
+            const viewer = spectator.query(
+                DotA11yDiffViewerStubComponent
+            ) as DotA11yDiffViewerStubComponent;
+            viewer.closed.emit();
+            spectator.detectChanges();
+
+            expect(spectator.component.$state.diffFile()).toBeNull();
+            expect(spectator.query(DotA11yDiffViewerStubComponent)).toBeFalsy();
+            expect(list.activeFileId()).toBeNull();
+        });
+
+        it('the list can also clear the selection itself (back to preview)', () => {
+            const list = spectator.query(DotA11yDiffStubComponent) as DotA11yDiffStubComponent;
+            list.fileSelected.emit(DIFF_FILE);
+            spectator.detectChanges();
+            expect(spectator.component.$state.diffFile()).toEqual(DIFF_FILE);
+
+            list.fileSelected.emit(null);
+            spectator.detectChanges();
+            expect(spectator.component.$state.diffFile()).toBeNull();
+        });
+    });
+
+    describe('published phase', () => {
+        beforeEach(() => render('published', MOCK_FIX_REPORT));
+
+        it('shows the all-pages button', () => {
+            expect(spectator.query(byTestId('studio-allpages-btn'))).toBeTruthy();
+        });
+    });
+
+    it('navigates up to the page list from the back button', () => {
+        render('ready');
+        const btn = spectator.query(byTestId('studio-back-btn'))?.querySelector('button');
+        spectator.click(btn as HTMLElement);
+        // No store reset — the per-route run store is destroyed on navigation.
+        // Absolute, not relative: a `..` from the multi-segment `**` run route lands on
+        // `**` again and leaves the user on the same screen.
+        expect(navigate).toHaveBeenCalledWith([A11Y_PAGE_LIST_ROUTE]);
+    });
+
+    describe('page handover from the page list', () => {
+        it('adopts the row handed over in the navigation state on init', () => {
+            handoverRow = MOCK_PAGE;
+            render('ready');
+            expect(openSelectedPage).toHaveBeenCalledWith(MOCK_PAGE);
+        });
+
+        it('bounces back to the page list when no row was handed over (cold load)', () => {
+            handoverRow = null;
+            render('ready');
+            expect(openSelectedPage).not.toHaveBeenCalled();
+            expect(navigate).toHaveBeenCalledWith([A11Y_PAGE_LIST_ROUTE]);
+        });
+
+        it.each([
+            ['a row missing its identifier', { hostId: 'h', languageId: 1 }],
+            ['a row missing its hostId', { identifier: 'id-1', languageId: 1 }],
+            ['a row missing its languageId', { identifier: 'id-1', hostId: 'h' }],
+            ['a row with an empty identifier', { identifier: '', hostId: 'h', languageId: 1 }],
+            ['a non-object row', 'not-a-row'],
+            ['a languageId of the wrong type', { identifier: 'id-1', hostId: 'h', languageId: '1' }]
+        ])('bounces rather than adopting %s', (_label, row) => {
+            // `history.state` survives a reload and anything can write to it, so the three
+            // fields the run screen cannot work without are validated. A partial row would
+            // scan the wrong page, or none, with no error to explain it.
+            handoverRow = row as never;
+            render('ready');
+            expect(openSelectedPage).not.toHaveBeenCalled();
+            expect(navigate).toHaveBeenCalledWith([A11Y_PAGE_LIST_ROUTE]);
+        });
+    });
+});

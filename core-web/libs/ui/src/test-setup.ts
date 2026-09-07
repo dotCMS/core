@@ -36,8 +36,12 @@ Object.defineProperty(window, 'localStorage', { value: mock() });
 Object.defineProperty(window, 'sessionStorage', { value: mock() });
 Object.defineProperty(window, 'getComputedStyle', {
     value: () => ({
-        getPropertyValue: (prop: string) => '',
-        setProperty: (propertyName: string, value: string) => {}
+        getPropertyValue: () => '',
+        setProperty: () => {},
+        transitionDelay: '0s',
+        transitionDuration: '0s',
+        animationDelay: '0s',
+        animationDuration: '0s'
     })
 });
 

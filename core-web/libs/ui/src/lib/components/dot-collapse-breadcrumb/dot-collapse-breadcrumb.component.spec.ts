@@ -1,4 +1,4 @@
-import { byTestId, createRoutingFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createRoutingFactory, Spectator } from '@openng/spectator/jest';
 
 import { ActivatedRoute } from '@angular/router';
 

@@ -42,7 +42,7 @@ const initialState: FormFileEditorState = {
         extension: '.txt',
         language: 'text'
     },
-    allowFileNameEdit: false,
+    allowFileNameEdit: true,
     status: ComponentStatus.INIT,
     error: null,
     monacoOptions: DEFAULT_MONACO_CONFIG,
@@ -98,6 +98,31 @@ export const FormFileEditorStore = signalStore(
                 });
             },
             /**
+             * Re-detects the language metadata from the current file name.
+             *
+             * Monaco resolves languages from its registry, which only exists once the
+             * editor has loaded (it is lazy). `initLoad` runs in `ngOnInit` — before
+             * Monaco is available — so {@link getInfoByLang} falls back to `'text'` and
+             * the editor renders without syntax highlighting. The component calls this
+             * from `onEditorInit` (Monaco now ready) to recover the real language (and
+             * the upload mime type).
+             */
+            refreshLanguage() {
+                const file = store.file();
+
+                const extension = extractFileExtension(file.name);
+                const info = getInfoByLang(extension);
+
+                patchState(store, {
+                    file: {
+                        ...file,
+                        mimeType: info.mimeType,
+                        extension: info.extension,
+                        language: info.lang
+                    }
+                });
+            },
+            /**
              * Initializes the file editor state with the provided options.
              *
              * @param params - The parameters for initializing the file editor.
@@ -135,7 +160,10 @@ export const FormFileEditorStore = signalStore(
                 if (uploadedFile) {
                     const { file, source } = uploadedFile;
 
-                    const name = source === 'contentlet' ? file.title : file.fileName;
+                    const name =
+                        source === 'contentlet'
+                            ? (file.metaData?.name ?? file.title)
+                            : file.fileName;
                     const extension = extractFileExtension(name);
                     const info = getInfoByLang(extension);
 
@@ -177,8 +205,17 @@ export const FormFileEditorStore = signalStore(
                             .pipe(
                                 tapResponse({
                                     next: (uploadedFile) => {
+                                        // Inject the editor content into the temp file so the
+                                        // preview renders immediately without a re-fetch.
+                                        const withContent =
+                                            uploadedFile.source === 'temp'
+                                                ? {
+                                                      source: 'temp' as const,
+                                                      file: { ...uploadedFile.file, content }
+                                                  }
+                                                : uploadedFile;
                                         patchState(store, {
-                                            uploadedFile,
+                                            uploadedFile: withContent,
                                             status: ComponentStatus.LOADED
                                         });
                                     },

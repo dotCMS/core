@@ -118,25 +118,55 @@ The `server.ts` file implements a secure API architecture:
 3. **Site Components**: Add to `components/` folder for site-wide usage
 4. **dotCMS Components**: Add to `dotcms/components/` for content rendering
 
-## Vercel Deployment
+## Deploy to Vercel
 
-This Angular SSR application is configured for deployment on Vercel with the following setup:
+### Environment variables
 
-### Configuration Files
-- **`vercel.json`**: Routes all requests through the serverless function
-- **`api/index.js`**: Entry point that imports the compiled Angular server
-- **`src/indexFile.html`**: Renamed from `index.html` to prevent Vercel from serving it directly
+Set these in your Vercel project for **both Production and Preview**:
 
-### Server Export Configuration
-The Express app is exported as the default export in `server.ts` to allow Vercel's serverless function to import and use it. This enables the Angular SSR application to run in Vercel's serverless environment.
+| Variable | Description |
+| --- | --- |
+| `DOTCMS_URL` | Your dotCMS instance URL |
+| `DOTCMS_AUTH_TOKEN` | dotCMS API authentication token |
+| `DOTCMS_SITE_ID` | Your dotCMS site identifier |
 
-### Environment Variables
-Set these in your Vercel project settings:
-- `DOTCMS_URL`: Your dotCMS instance URL
-- `DOTCMS_AUTH_TOKEN`: Authentication token for dotCMS API
-- `DOTCMS_SITE_ID`: Your dotCMS site identifier
+Custom domain? Add it to `NG_ALLOWED_HOSTS` (comma-separated). `localhost` and
+`*.vercel.app` are allowed by default.
 
-The application automatically handles the serverless environment and properly initializes dotCMS integration on each request.
+### How it works
+
+Vercel runs the Angular SSR app as a serverless function, behind a proxy. Three
+things differ from a plain Node server, each handled in code:
+
+**1. Routing — `vercel.json` + `api/index.js`**
+All requests are rewritten to the `api/index.js` function, which imports the
+compiled Express app from `server.ts` and calls it. `app.listen()` never runs:
+Vercel invokes the function directly, so there is no listening port.
+
+**2. SSR data fetch runs in-process**
+During SSR the app calls its own `/data/page` endpoint via a relative URL.
+Angular resolves relative URLs against the request host, so the server would
+fetch *itself* over the public network — unreachable on Vercel (no listening
+port; the public URL round-trips through the edge). A server-only HTTP
+interceptor (`src/app/server-base-url.interceptor.ts`) instead dispatches these
+calls through the Express `app` **in-process** (passed in via `requestContext`
+in `server.ts`). No network, no port. The dotCMS auth token never leaves the
+server — only `/data/page` reads it.
+
+**3. Host validation behind the proxy**
+Angular 20.3+ validates the request host to prevent SSRF. Behind Vercel's proxy
+the real host is in `x-forwarded-host` while `host` is an internal value.
+`api/index.js` promotes `x-forwarded-host` to `host` and strips `x-forwarded-*`,
+so Angular validates one clean host against the allowlist. Allowlisting the
+deployment host is the app's responsibility by design
+([angular/angular-cli#32616](https://github.com/angular/angular-cli/issues/32616)).
+
+> A missing `DOTCMS_AUTH_TOKEN` makes `/data/page` fail; the app logs the cause
+> and renders the page shell instead of crashing. If a deploy renders empty,
+> check the function logs and the environment variables.
+
+`src/indexFile.html` is the renamed `index.html` — Angular's default name would
+be served statically by Vercel and bypass SSR.
 
 ## Additional Resources
 

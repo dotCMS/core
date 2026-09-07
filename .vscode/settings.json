@@ -66,5 +66,6 @@
         "**/node_modules": true,
         "**/dist": true
     },
-    "java.compile.nullAnalysis.mode": "disabled"
+    "java.compile.nullAnalysis.mode": "disabled",
+    "angular.enable-strict-mode-prompt": false
 }

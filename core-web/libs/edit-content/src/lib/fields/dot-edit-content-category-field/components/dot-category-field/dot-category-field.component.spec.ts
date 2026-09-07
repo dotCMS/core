@@ -4,12 +4,12 @@ import {
     mockProvider,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
-import { fakeAsync } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -96,6 +96,67 @@ describe('DotCategoryFieldComponent', () => {
                 expect(selectBtn.type).toBe('button');
             });
 
+            it('should render the `Select` button as primary', () => {
+                spectator.detectChanges();
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
+                expect(selectBtn.classList).not.toContain('p-button-secondary');
+                expect(selectBtn.classList).not.toContain('p-button-text');
+            });
+
+            it('should render a `Clear all` button when there are selected categories', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('clear-all-btn'))).not.toBeNull();
+            });
+
+            it('should invoke `clearAllSelected` method when the `Clear all` button is clicked', () => {
+                spectator.detectChanges();
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                const clearAllSelectedSpy = jest.spyOn(spectator.component, 'clearAllSelected');
+                expect(clearAllBtn).not.toBeNull();
+
+                spectator.click(clearAllBtn);
+
+                expect(clearAllSelectedSpy).toHaveBeenCalled();
+            });
+
+            it('should clear the store selection and emit an empty value when `Clear all` is clicked', fakeAsync(() => {
+                spectator.detectChanges();
+                spectator.component.ngOnInit();
+                spectator.detectChanges();
+                expect(spectator.component.store.selected().length).toBe(2);
+
+                // `onChange` is the ControlValueAccessor callback the effect() in
+                // ngOnInit calls whenever `store.selected()` changes; spying on it
+                // directly is more reliable in this test harness than reading the
+                // value back off the shared host FormGroup (see the disabled tests
+                // at the bottom of this file for the same limitation).
+                const onChangeSpy = jest.spyOn(
+                    spectator.component as unknown as { onChange: (value: unknown) => void },
+                    'onChange'
+                );
+
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                spectator.click(clearAllBtn);
+                spectator.detectChanges();
+                spectator.flushEffects();
+                tick();
+
+                expect(spectator.component.store.selected().length).toBe(0);
+                expect(onChangeSpy).toHaveBeenCalledWith([]);
+            }));
+
+            it('should not render the `Clear all` button after clearing all selected categories', fakeAsync(() => {
+                spectator.detectChanges();
+                spectator.component.ngOnInit();
+                spectator.detectChanges();
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                spectator.click(clearAllBtn);
+                spectator.detectChanges();
+                tick();
+
+                expect(spectator.query(byTestId('clear-all-btn'))).toBeNull();
+            }));
+
             it('should display the category list with chips when there are categories', async () => {
                 spectator.detectChanges();
                 spectator.component.ngOnInit();
@@ -144,6 +205,32 @@ describe('DotCategoryFieldComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('category-chip-list'))).toBeNull();
+        });
+
+        it('should not render the `Clear all` button when there are no categories', () => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-category-field [field]="field" [contentlet]="contentlet" formControlName="categorias" [hasError]="hasError" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: FAKE_FORM_GROUP,
+                        field: CATEGORY_FIELD_MOCK,
+                        contentlet: {
+                            ...CATEGORY_FIELD_CONTENTLET_MOCK,
+                            [CATEGORY_FIELD_MOCK.variable]: []
+                        },
+                        hasError: false
+                    }
+                }
+            );
+
+            service = spectator.inject(CategoriesService, true);
+            service.getSelectedHierarchy.mockReturnValue(of([]));
+
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('clear-all-btn'))).toBeNull();
         });
     });
 

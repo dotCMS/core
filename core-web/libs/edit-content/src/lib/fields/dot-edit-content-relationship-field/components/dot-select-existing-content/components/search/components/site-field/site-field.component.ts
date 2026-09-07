@@ -23,7 +23,7 @@ import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 import { skipWhile } from 'rxjs/operators';
 
 import { TreeNodeItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
+import { DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 
 import { SiteFieldStore } from './site-field.store';
 
@@ -34,7 +34,7 @@ import { SiteFieldStore } from './site-field.store';
  */
 @Component({
     selector: 'dot-site-field',
-    imports: [ReactiveFormsModule, TreeSelectModule, DotTruncatePathPipe, DotMessagePipe],
+    imports: [ReactiveFormsModule, TreeSelectModule, DotFolderNamePipe, DotMessagePipe],
     providers: [
         SiteFieldStore,
         {
@@ -124,6 +124,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
         // noop
     };
 
+    // eslint-disable-next-line no-unused-private-class-members -- ControlValueAccessor callback stored via registerOnTouched
     #onTouched = (): void => {
         // noop
     };

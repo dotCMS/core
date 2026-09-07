@@ -49,6 +49,9 @@ import static org.mockito.Mockito.when;
  */
 public class BrowserAjaxTest {
 
+    /** Synthetic MIME type the legacy browser dialogs send for Pages. See {@code PageViewStrategy}. */
+    private static final String DOTPAGE_MIME_TYPE = "application/dotpage";
+
     private static Host testSite = null;
     private static Folder parentFolderOne = null;
     private static Folder parentFolderTwo = null;
@@ -360,5 +363,39 @@ public class BrowserAjaxTest {
         //should contain the system host as a limited user
         assertTrue(hosts.stream().anyMatch(host -> host.get("identifier").equals(APILocator.systemHost().getIdentifier())) && loggedInUser.getFirstName().equals(user.getFirstName()) );
         setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getFolderContentWithDotAssets(String, int, int, String,
+     *     List, List, boolean, boolean, boolean, String, boolean, boolean, boolean)}</li>
+     *     <li><b>Given Scenario:</b> The legacy "Select a file" / "Select link" dialog browses a folder that
+     *     contains a Page, passing the synthetic {@code application/dotpage} MIME type. This is the exact call the
+     *     redirect target picker makes from a Page's Properties.</li>
+     *     <li><b>Expected Result:</b> The Page is listed and {@code total} is greater than zero -- instead of the
+     *     {@code {total: 0, list: []}} the dialog reports today.</li>
+     * </ul>
+     * AC-001 and AC-003 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentWithDotAssets_dotPageMimeType_returnsPages() throws Exception {
+        setUpDwrContext(APILocator.getUserAPI().getSystemUser());
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        final BrowserAjax browserAjax = new BrowserAjax();
+        final Map<String, Object> results = browserAjax.getFolderContentWithDotAssets(folder.getIdentifier(), 0,
+                100, "", List.of(DOTPAGE_MIME_TYPE), List.of(), false, true, false, "moddate", true, true, false);
+
+        assertNotNull("The dialog must always get a result map back", results);
+        final List<Map<String, Object>> contentList = (List<Map<String, Object>>) results.get("list");
+        assertNotNull("The dialog result must carry a list", contentList);
+        assertTrue("The dialog must report at least one item for a folder that contains a Page, but reported: "
+                + results.get("total"), ((Integer) results.get("total")) > 0);
+        assertTrue("The Page must be listed for an '" + DOTPAGE_MIME_TYPE + "' browse",
+                contentList.stream().anyMatch(item -> page.getIdentifier().equals(item.get("identifier"))));
     }
 }

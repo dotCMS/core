@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, Signal, untracked } from '@angular/core';
+import { computed, Signal } from '@angular/core';
 
 import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
@@ -83,12 +83,30 @@ export interface WithPageMethods extends PageComputed {
         query: string;
         variables: Record<string, string>;
     }) => void;
+    /**
+     * Drops the stored client GraphQL request (CLIENT_READY config).
+     * Called on cross-page navigation: the stored query/variables belong
+     * to the page being left, so the next page must be fetched through
+     * the standard Page API until its own CLIENT_READY installs fresh
+     * request metadata.
+     */
+    resetRequestMetadata: () => void;
     /** Updates page asset (and optionally content). Omit content to merge; include content to replace. */
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
     }) => void;
     resetClientConfiguration: () => void;
+    /**
+     * Mark the page as loading without unmounting the current asset.
+     * Resets `isClientReady` and history so the about-to-arrive page
+     * can install its own readiness state, but leaves
+     * `pageAssetResponse` intact so chrome (toolbars, sidebars,
+     * navigation, overlays) keeps rendering the previous page's data
+     * during the in-flight fetch — preventing a full unmount/remount
+     * flash on navigation.
+     */
+    markPageLoading: () => void;
     addCurrentPageToHistory: () => void;
     resetHistoryToCurrent: () => void;
 
@@ -141,6 +159,9 @@ export function withPage() {
                         }
                     });
                 },
+                resetRequestMetadata: () => {
+                    patchState(store, { requestMetadata: null });
+                },
                 setPageAsset: (payload) => {
                     const current = store.pageAssetResponse();
                     const content = 'content' in payload ? payload.content : current?.content;
@@ -148,7 +169,10 @@ export function withPage() {
                         pageAsset: payload.pageAsset,
                         ...(content !== undefined && { content })
                     };
-                    patchState(store, { pageAssetResponse: nextResponse });
+                    patchState(store, {
+                        pageAssetResponse: nextResponse,
+                        editorStyleSchemas: payload.pageAsset.page.styleEditorSchemas ?? []
+                    });
                 },
                 setPageAssetResponseOptimistic: (
                     pageAssetResponse: PageLoadingConfigState['pageAssetResponse']
@@ -171,6 +195,18 @@ export function withPage() {
                 resetClientConfiguration: () => {
                     patchState(store, {
                         pageAssetResponse: null,
+                        isClientReady: false,
+                        history: [],
+                        historyPointer: -1
+                    });
+                },
+                markPageLoading: () => {
+                    // Reset readiness + history so the next page installs
+                    // fresh state, but keep `pageAssetResponse` so chrome
+                    // and overlays don't unmount mid-navigation. The new
+                    // asset will replace the old via setPageAsset when the
+                    // fetch resolves.
+                    patchState(store, {
                         isClientReady: false,
                         history: [],
                         historyPointer: -1
@@ -247,8 +283,12 @@ export function withPage() {
                 const pageDataValue = pageAsset()?.page as DotCMSPage;
                 const viewAsData = pageAsset()?.viewAs;
                 const languageId = viewAsData?.language?.id;
-                const translatedLanguages = untracked(() => store.pageLanguages());
-                const currentLanguage = translatedLanguages.find((lang) => lang.id === languageId);
+                // Reactive on both pageAsset and pageLanguages. Angular batches synchronous
+                // signal writes before flushing effects, so updating both in the same tap
+                // callback results in a single effect execution with consistent state.
+                const currentLanguage = store
+                    .pageLanguages()
+                    .find((lang) => lang.id === languageId);
 
                 return {
                     page: pageDataValue,

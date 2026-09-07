@@ -1,0 +1,50 @@
+:host {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+}
+
+.focal-overlay {
+    position: absolute;
+    inset: 0;
+}
+
+.focal-surface {
+    position: absolute;
+    inset: 0;
+    cursor: crosshair;
+    pointer-events: auto;
+}
+
+.focal-marker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--p-surface-0, #ffffff);
+    border-radius: 9999px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+    cursor: grab;
+    pointer-events: auto;
+    outline: none;
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 6px;
+        height: 6px;
+        transform: translate(-50%, -50%);
+        // Red target dot: high-contrast against arbitrary image content and the
+        // conventional colour for a focal-point marker (distinct from the UI primary).
+        background-color: var(--p-red-500, #ef4444);
+        border-radius: 9999px;
+    }
+
+    &:focus-visible {
+        border-color: var(--p-red-500, #ef4444);
+    }
+}

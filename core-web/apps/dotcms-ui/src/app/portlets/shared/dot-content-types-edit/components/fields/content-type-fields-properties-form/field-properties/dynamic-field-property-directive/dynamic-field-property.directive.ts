@@ -23,7 +23,7 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     private viewContainerRef = inject(ViewContainerRef);
     private fieldPropertyService = inject(FieldPropertyService);
     private componentRef: ComponentRef<DotDynamicFieldComponent> | null = null;
-    private previousFieldId: string | null = null;
+    private previousField: DotCMSContentTypeField | null = null;
     private previousPropertyName: string | null = null;
 
     @Input() propertyName: string;
@@ -45,19 +45,22 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
                 groupChanged?.firstChange ||
                 groupChanged?.previousValue !== groupChanged?.currentValue)
         ) {
-            const currentFieldId = this.field?.id || null;
             const currentPropertyName = this.propertyName;
 
-            // Check if we need to recreate the component
+            // Recreate the inner component whenever the field identity changes.
+            // Comparing field references (not just id) is required because new
+            // fields all share a null id — reusing the component then leaks
+            // state (e.g. the Monaco editor content in values-property) from
+            // the previous field into the next.
             const shouldRecreate =
                 !this.componentRef ||
-                this.previousFieldId !== currentFieldId ||
+                this.previousField !== this.field ||
                 this.previousPropertyName !== currentPropertyName;
 
             if (shouldRecreate) {
                 this.destroyComponent();
                 this.createComponent(this.propertyName);
-                this.previousFieldId = currentFieldId;
+                this.previousField = this.field;
                 this.previousPropertyName = currentPropertyName;
             } else {
                 // Update existing component instance if field or group changed but same field/property

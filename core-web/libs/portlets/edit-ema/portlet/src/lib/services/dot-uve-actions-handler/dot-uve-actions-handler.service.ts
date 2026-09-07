@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -14,9 +14,8 @@ import {
     DotCMSInlineEditingType,
     DotCMSUVEAction
 } from '@dotcms/types';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
+import { __DOTCMS_UVE_EVENT__, StyleEditorFormSchema } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
@@ -47,8 +46,6 @@ export interface ActionsHandlerDependencies {
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
-    /** Called after iframe document height is applied (e.g. keep editor scroll in bounds). */
-    clampScrollWithinBounds?: () => void;
     /** Called when the iframe reports the offsetTop of a section so the editor can scroll to it. */
     onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
 }
@@ -68,7 +65,6 @@ export class DotUveActionsHandlerService {
             contentWindow,
             host,
             onCopyContent,
-            clampScrollWithinBounds,
             onSectionOffset
         } = deps;
 
@@ -94,9 +90,23 @@ export class DotUveActionsHandlerService {
                 }
             },
             [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
-                uveStore.setEditorBounds(payload);
+                // The store's `withSelectionAnchor` slice owns the
+                // re-anchor logic: patches editorBounds, looks up the
+                // selected contentlet by inode+container key, updates
+                // editorSelected with fresh coords, and
+                // releases the iframe-layout lock if it was held.
+                uveStore.applyBoundsForSelection(payload);
             },
-            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
+            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea | null) => {
+                // SDK signals "no hover" with a null payload when the pointer
+                // leaves the last hovered contentlet onto dead space (or out
+                // of the document entirely). Clear the hover overlay so it
+                // doesn't linger.
+                if (!coords) {
+                    uveStore.resetContentletArea();
+                    return;
+                }
+
                 const actionPayload = uveStore.getPageSavePayload(coords.payload);
 
                 uveStore.setContentletArea({
@@ -107,21 +117,85 @@ export class DotUveActionsHandlerService {
                     payload: actionPayload
                 });
             },
+            [DotCMSUVEAction.SET_SELECTED_CONTENTLET]: (coords: ClientContentletArea) => {
+                // The user clicked a contentlet inside the iframe. Bounds
+                // and payload travel together in the unified `editorSelected`
+                // record — one write drives both the floating overlay and
+                // the side panel's data binding.
+                const actionPayload = uveStore.getPageSavePayload(coords.payload);
+                uveStore.setSelected({
+                    bounds: {
+                        x: coords.x,
+                        y: coords.y,
+                        width: coords.width,
+                        height: coords.height
+                    },
+                    payload: actionPayload
+                });
+            },
             [DotCMSUVEAction.IFRAME_SCROLL]: () => {
                 uveStore.updateEditorScrollState();
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
-                uveStore.updateEditorOnScrollEnd();
+                // No-op on purpose. We used to flip IDLE here, but that
+                // races SET_BOUNDS — the overlay would un-hide before the
+                // re-anchored coords arrived, causing a visible jump from
+                // stale-position to correct-position. Now SET_BOUNDS itself
+                // flips IDLE once the new bounds are patched, guaranteeing
+                // the overlay reappears at the right spot.
             },
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
+                const contentArea = uveStore.editorContentArea();
+                const { contentlet, container } = contentArea.payload;
+
+                // Move focus to an inline field that has already cleared (or does
+                // not need) the copy/edit decision: headless via postMessage,
+                // traditional via TinyMCE init.
+                const focusInlineField = (data: {
+                    oldInode: string;
+                    inode: string;
+                    fieldName: string;
+                    mode: string;
+                    language: string;
+                }) => {
+                    if (uveStore.pageType() === PageType.HEADLESS) {
+                        contentWindow?.postMessage(
+                            {
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                payload: data
+                            },
+                            host
+                        );
+
+                        return;
+                    }
+
+                    inlineEditingService.setTargetInlineMCEDataset(data);
+                    inlineEditingService.initEditor();
+                };
+
                 if (uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
+                    // Already inline-editing. When the click targets another field
+                    // on the SAME contentlet, the copy/edit decision was already
+                    // made for it — just move focus to the new field instead of
+                    // re-opening the dialog. Without this the guard silently drops
+                    // the click and the user cannot edit any other field on a
+                    // content that has many inline-editable fields.
+                    if (contentlet?.inode === payload.dataset.inode) {
+                        focusInlineField({
+                            oldInode: payload.dataset.inode,
+                            inode: payload.dataset.inode,
+                            fieldName: payload.dataset.fieldName,
+                            mode: payload.dataset.mode,
+                            language: payload.dataset.language
+                        });
+                    }
+
                     return;
                 }
 
-                const contentArea = uveStore.editorContentArea();
-                const { contentlet, container } = contentArea.payload;
                 const currentTreeNode = uveStore.getCurrentTreeNode(container, contentlet);
 
                 this.dotCopyContentModalService
@@ -226,18 +300,26 @@ export class DotUveActionsHandlerService {
             }) => {
                 const isClientReady = uveStore.isClientReady();
 
-                if (isClientReady) {
-                    return;
-                }
-
                 const { graphql, params } = devConfig || {};
                 const { query, variables } = graphql || {};
 
+                // Always refresh the stored client request — it is page-scoped.
+                // When the app re-announces itself on a client-side route change,
+                // the new page's CLIENT_READY arrives right before its
+                // NAVIGATION_UPDATE; installing the config here lets the upcoming
+                // pageLoad fetch the new page with its own query/variables instead
+                // of the previous page's.
                 if (query) {
                     uveStore.setCustomClient({
                         query,
                         variables: (variables ?? {}) as Record<string, string>
                     });
+                }
+
+                if (isClientReady) {
+                    // Already initialized: don't reload. The navigation (if any)
+                    // drives the fetch; a duplicate CLIENT_READY is a no-op.
+                    return;
                 }
 
                 const pageParams = convertClientParamsToPageParams(params);
@@ -301,9 +383,8 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.GET_PAGE_DATA]: () => {
                 /* Get page data - handled by bridge service */
             },
-            [DotCMSUVEAction.IFRAME_HEIGHT]: (payload: { height: number }) => {
-                uveStore.viewSetIframeDocHeight(payload.height);
-                clampScrollWithinBounds?.();
+            [DotCMSUVEAction.IFRAME_HEIGHT]: () => {
+                /* No-op. Iframe height is editor-controlled, not page-controlled. */
             },
             [DotCMSUVEAction.SECTION_OFFSET]: (payload: {
                 sectionIndex: number;

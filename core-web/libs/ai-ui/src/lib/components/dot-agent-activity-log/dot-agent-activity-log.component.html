@@ -1,0 +1,10 @@
+<!-- Settled steps (finished) — one bubble each. -->
+@for (message of messages(); track message.id; let last = $last) {
+    <dot-agent-message [message]="message" [last]="last" />
+}
+
+<!-- Live thinking / working indicator — its own distinct "loading pill",
+     shown below the steps while the agent is running. -->
+@if (working()) {
+    <dot-agent-thinking [text]="workingText()" [sub]="workingSub()" />
+}

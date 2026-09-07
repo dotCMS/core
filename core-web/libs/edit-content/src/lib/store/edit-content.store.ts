@@ -1,7 +1,6 @@
-import { signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
+import { patchState, signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
 import {
     ComponentStatus,
@@ -18,7 +17,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { withActivities } from './features/activities/activities.feature';
-import { withContent, DialogInitializationOptions } from './features/content/content.feature';
+import { withContent } from './features/content/content.feature';
 import { withFieldVisibility } from './features/field-visibility/field-visibility.feature';
 import { withForm } from './features/form/form.feature';
 import { withHistory } from './features/history/history.feature';
@@ -38,12 +37,12 @@ import {
     UIState,
     DotPushPublishHistoryItem
 } from '../models/dot-edit-content.model';
+import { EDIT_CONTENT_HOST } from '../services/host/edit-content-host.model';
 
 export interface EditContentState {
     // Root state
     state: ComponentStatus;
     error: string | null;
-    isDialogMode: boolean;
 
     // Content state
     contentType: DotCMSContentType | null;
@@ -58,6 +57,7 @@ export interface EditContentState {
         }
     >;
     initialContentletState: DotContentletState;
+    isManualTranslation: boolean;
 
     // Workflow state
     currentSchemeId: string | null;
@@ -65,6 +65,12 @@ export interface EditContentState {
     currentStep: WorkflowStep | null;
     lastTask: WorkflowTask | null;
     workflow: {
+        status: ComponentStatus;
+        error: string | null;
+    };
+    // Status of the allowed-actions re-fetch (updateCurrentContentActions). Lets the UI
+    // disable the workflow actions while the list is being refreshed (e.g. after a lock toggle).
+    actionsStatus: {
         status: ComponentStatus;
         error: string | null;
     };
@@ -85,6 +91,7 @@ export interface EditContentState {
 
     // Lock state
     lockError: string | null;
+    lockStatus: ComponentStatus;
     canLock: boolean;
     lockSwitchLabel: string;
 
@@ -101,6 +108,13 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string;
     };
+    /**
+     * Inode of the content we were editing right before switching to an
+     * untranslated locale (populate/manual). The new translation has no inode yet,
+     * so related-content navigation uses this as the trail origin (the version we
+     * came from) instead of starting a fresh trail.
+     */
+    translationSourceInode: string | null;
 
     // Activities state
     activities: Activity[];
@@ -138,6 +152,8 @@ export interface EditContentState {
     isViewingHistoricalVersion: boolean;
     historicalVersionInode: string | null;
     originalContentlet: DotCMSContentlet | null;
+    /** Inode of the version currently being fetched (view/compare click), for loading feedback */
+    loadingVersionInode: string | null;
 
     /**
      * Map of field variable names currently hidden via the BridgeAPI show()/hide() methods.
@@ -146,13 +162,27 @@ export interface EditContentState {
      * (Redux DevTools, state snapshots, hydration).
      */
     hiddenFields: Record<string, boolean>;
+
+    /**
+     * Query params captured from the URL when initializing as a portlet.
+     * Used to pre-fill form fields (e.g., folderPath for Host or Folder).
+     */
+    queryParams: EditContentQueryParams;
+}
+
+/**
+ * Supported query params for the edit-content route.
+ * Add new properties here as more params are needed.
+ */
+export interface EditContentQueryParams {
+    /** Pre-fill path for the Host or Folder field. Format: "hostname/folder1/folder2/" */
+    folderPath?: string;
 }
 
 export const initialRootState: EditContentState = {
     // Root state
     state: ComponentStatus.INIT,
     error: null,
-    isDialogMode: false,
 
     // Content state
     contentType: null,
@@ -160,6 +190,7 @@ export const initialRootState: EditContentState = {
     compareContentlet: null,
     schemes: {},
     initialContentletState: 'new',
+    isManualTranslation: false,
 
     // Workflow state
     currentSchemeId: null,
@@ -167,6 +198,10 @@ export const initialRootState: EditContentState = {
     currentStep: null,
     lastTask: null,
     workflow: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
+    actionsStatus: {
         status: ComponentStatus.INIT,
         error: null
     },
@@ -181,7 +216,8 @@ export const initialRootState: EditContentState = {
         activeTab: 0,
         isSidebarOpen: true,
         activeSidebarTab: 0,
-        isBetaMessageVisible: true
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
     },
 
     // Information state
@@ -193,6 +229,7 @@ export const initialRootState: EditContentState = {
 
     // Lock state
     lockError: null,
+    lockStatus: ComponentStatus.IDLE,
     canLock: false,
     lockSwitchLabel: 'edit.content.unlocked',
 
@@ -209,6 +246,7 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
+    translationSourceInode: null,
 
     // Activities state
     activities: [],
@@ -238,9 +276,13 @@ export const initialRootState: EditContentState = {
     isViewingHistoricalVersion: false,
     historicalVersionInode: null,
     originalContentlet: null,
+    loadingVersionInode: null,
 
     // Field visibility state (controlled by BridgeAPI)
-    hiddenFields: {} as Record<string, boolean>
+    hiddenFields: {} as Record<string, boolean>,
+
+    // Query params from URL
+    queryParams: {}
 };
 
 /**
@@ -270,65 +312,30 @@ export const DotEditContentStore = signalStore(
     }),
     // Add methods after all features to have access to all store methods
     // Now that withUI comes before withContent, this method can access both UI and content methods
-    withMethods((store) => {
-        // Inject ActivatedRoute in the proper injection context (within the factory function)
-        const activatedRoute = inject(ActivatedRoute);
+    withMethods((store, host = inject(EDIT_CONTENT_HOST)) => ({
+        /**
+         * Initializes the editor from the identity resolved by the host — the
+         * route params in full-screen, the dialog config in overlay mode. This is
+         * the single, presentation-agnostic entry point (there is no separate
+         * route-vs-dialog path). Called once by the layout after the store exists.
+         */
+        initialize(): void {
+            const { inode, contentTypeId, folderPath } = host.resolveIdentity();
 
-        return {
-            /**
-             * Initializes the store for dialog mode with the provided parameters.
-             * This method handles all the logic for dialog initialization including:
-             * - Enabling dialog mode
-             * - Initializing content based on provided parameters
-             * - Handling both new content creation and existing content editing
-             *
-             * @param options - The dialog initialization options
-             * @param options.contentTypeId - Content type ID for creating new content
-             * @param options.contentletInode - Contentlet inode for editing existing content
-             */
-            initializeDialogMode(options: DialogInitializationOptions): void {
-                const { contentTypeId, contentletInode } = options;
-
-                // Enable dialog mode to prevent route-based initialization
-                store.enableDialogMode();
-
-                // Initialize based on provided parameters
-                if (contentTypeId) {
-                    store.initializeNewContent(contentTypeId);
-                } else if (contentletInode) {
-                    store.initializeExistingContent({
-                        inode: contentletInode,
-                        depth: DotContentletDepths.TWO
-                    });
-                }
-            },
-
-            /**
-             * Initializes the store for route-based mode using ActivatedRoute parameters.
-             * This method should be called by route-based components after the store is created.
-             * It will only initialize if dialog mode is not enabled.
-             */
-            initializeAsPortlet(): void {
-                // Skip route-based initialization if in dialog mode
-                if (store.isDialogMode()) {
-                    return;
-                }
-
-                // Use the ActivatedRoute that was injected in the closure
-                const params = activatedRoute.snapshot?.params;
-
-                if (params) {
-                    const contentType = params['contentType'];
-                    const inode = params['id'];
-
-                    // TODO: refactor this when we will use EditContent as sidebar
-                    if (inode) {
-                        store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
-                    } else if (contentType) {
-                        store.initializeNewContent(contentType);
-                    }
-                }
+            // Store query params first (synchronous) so they are available when the
+            // async content initialization completes and the form reads them.
+            const supportedQueryParams: EditContentQueryParams = {};
+            if (folderPath) {
+                supportedQueryParams.folderPath = folderPath;
             }
-        };
-    })
+
+            patchState(store, { queryParams: supportedQueryParams });
+
+            if (inode) {
+                store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+            } else if (contentTypeId) {
+                store.initializeNewContent(contentTypeId);
+            }
+        }
+    }))
 );

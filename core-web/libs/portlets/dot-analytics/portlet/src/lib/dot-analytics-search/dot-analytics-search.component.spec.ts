@@ -1,5 +1,5 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MockModule } from 'ng-mocks';
 
 import { provideHttpClient } from '@angular/common/http';

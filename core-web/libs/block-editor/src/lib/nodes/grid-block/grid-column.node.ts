@@ -14,6 +14,7 @@ const GRID_COLUMN_CONTENT_MAP: Record<string, string> = {
     horizontalRule: 'horizontalRule',
     image: 'dotImage',
     video: 'dotVideo',
+    audio: 'dotAudio',
     dotContent: 'dotContent'
 };
 

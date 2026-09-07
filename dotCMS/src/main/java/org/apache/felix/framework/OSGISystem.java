@@ -36,6 +36,7 @@ public class OSGISystem {
     private static final String AUTO_DEPLOY_DIR_PROPERTY = AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
+    private static final String FELIX_LOG_LEVEL = "felix.log.level";
     private static final String UTF_8 = "utf-8";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     private final Framework felixFramework;
@@ -91,7 +92,8 @@ public class OSGISystem {
         felixProps.put("felix.fileinstall.log.level", "3");
         felixProps.put("org.osgi.framework.startlevel.beginning", "2");
         felixProps.put("org.osgi.framework.storage.clean", "onFirstInit");
-        felixProps.put("felix.log.level", "3");
+        // felix.log.level: 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG.
+        felixProps.put(FELIX_LOG_LEVEL, Config.getStringProperty("system." + FELIX_LOG_LEVEL, "3"));
         felixProps.put("felix.fileinstall.disableNio2", "true");
         felixProps.put("gosh.args", "--noi");
 

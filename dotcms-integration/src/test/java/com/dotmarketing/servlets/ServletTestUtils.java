@@ -32,12 +32,13 @@ import java.util.List;
 import java.util.function.Function;
 
 import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class ServletTestUtils {
@@ -74,9 +75,36 @@ public class ServletTestUtils {
     }
 
     /**
-     * Test a servlet with an authenticated user
-     * First, the servlet is tested with an unauthenticated user and the status code is verified to be 401
-     * Then, the servlet is tested with an authenticated user and the request is verified to be forwarded
+     * Add anonymous READ permission to a contentlet, making it publicly readable.
+     * @param contentlet contentlet to make publicly readable
+     * @throws DotDataException if there is a data error adding permissions
+     * @throws DotSecurityException if there is a permissions error adding permissions
+     */
+    public static void addAnonymousReadPermission(final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.systemUser();
+        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+
+        final Permission anonPermission = new Permission();
+        anonPermission.setInode(contentlet.getPermissionId());
+        anonPermission.setRoleId(anonymousRole.getId());
+        anonPermission.setPermission(PermissionAPI.PERMISSION_READ);
+
+        APILocator.getPermissionAPI().save(
+                List.of(anonPermission), contentlet, systemUser, false);
+    }
+
+    /**
+     * Test that a servlet serving an asset does not reject the request when an unrelated/invalid
+     * BASIC {@code Authorization} header is present — instead it falls through to anonymous and
+     * delegates permission enforcement to the downstream {@code /contentAsset} servlet.
+     * <p>
+     * Both an invalid (non-dotCMS-user) credential and a valid dotCMS credential must result in the
+     * request being forwarded; neither is rejected with a {@code 401} at this servlet. This is the
+     * behavior fixed in dotCMS/core#35536: before the fix, an invalid/foreign credential aborted
+     * with {@code 401} before any permission check.
+     *
      * @param servlet servlet to test
      * @param urlGenerator function to generate a URL for the servlet
      * @throws DotDataException if there is a data error
@@ -126,14 +154,16 @@ public class ServletTestUtils {
             final HttpServletResponse response = new MockHttpStatusResponse(
                     mock(HttpServletResponse.class));
 
-            // Send request to the servlet with a non-authenticated user
+            // Send request with an invalid (non-dotCMS-user) credential. Per #35536 the servlet must
+            // NOT reject with 401 here; it falls through to anonymous and forwards, delegating
+            // permission enforcement to the downstream /contentAsset (BinaryExporterServlet).
             request.setHeader("Authorization",
                     "Basic " + Base64.getEncoder().encodeToString(
                             userEmailAndInvalidPassword.getBytes()));
             servlet.service(request, response);
 
-            // Verify that the status code is 401
-            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+            // Verify the auth step did not abort the request with a 401
+            assertNotEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
 
             // Send request to the servlet with an authenticated user
             request.setHeader("Authorization",
@@ -141,8 +171,8 @@ public class ServletTestUtils {
                             userEmailAndPassword.getBytes()));
             servlet.service(request, response);
 
-            // Verify that the request was forwarded
-            verify(dispatcher).forward(any(), any());
+            // Verify that the request was forwarded for both the invalid and the valid credential
+            verify(dispatcher, times(2)).forward(any(), any());
 
         } finally {
             // Clean up
@@ -158,6 +188,66 @@ public class ServletTestUtils {
             }
             if (testUser != null) {
                 UserDataGen.remove(testUser);
+            }
+        }
+    }
+
+    /**
+     * Regression test for dotCMS/core#35536: an anonymously-readable (public) asset must still be
+     * served when the request carries an unrelated/foreign BASIC {@code Authorization} header whose
+     * credentials are not a valid dotCMS user (e.g. a credential replayed by an upstream Basic-Auth
+     * gating layer on a sub-resource request per RFC 7617). The servlet must fall through to
+     * anonymous and forward the request rather than rejecting it with a {@code 401}.
+     *
+     * @param servlet servlet to test
+     * @param urlGenerator function to generate a URL for the servlet
+     * @throws DotDataException if there is a data error
+     * @throws DotSecurityException if there is a security error
+     * @throws ServletException if there is a servlet error
+     * @throws IOException if there is an I/O error
+     */
+    public static void testPublicAssetServedWithForeignBasicAuth(
+            final HttpServlet servlet, final Function<String, String> urlGenerator)
+            throws DotDataException, DotSecurityException, ServletException, IOException {
+        Host testHost = null;
+        try {
+            testHost = new SiteDataGen().nextPersisted();
+
+            // Create a publicly-readable (anonymous READ) dot asset and publish it
+            final Folder folder = new FolderDataGen().site(testHost).nextPersisted();
+            final Contentlet dotAsset = TestDataUtils.getDotAssetLikeContentlet(folder);
+            addAnonymousReadPermission(dotAsset);
+            ContentletDataGen.publish(dotAsset);
+
+            final String assetUrl = urlGenerator.apply(dotAsset.getIdentifier());
+
+            final MockHeaderRequest request = spy(new MockHeaderRequest(
+                    new MockHttpRequestIntegrationTest("localhost", assetUrl).request()));
+
+            final RequestDispatcher dispatcher = mock(RequestDispatcher.class);
+            doReturn(dispatcher).when(request).getRequestDispatcher(anyString());
+
+            final HttpServletResponse response = new MockHttpStatusResponse(
+                    mock(HttpServletResponse.class));
+
+            // Foreign / non-dotCMS-user BASIC credentials, as an upstream gateway would replay
+            final String foreignCredentials = "gateway-user:" + RandomStringUtils.randomAlphabetic(8);
+            request.setHeader("Authorization",
+                    "Basic " + Base64.getEncoder().encodeToString(foreignCredentials.getBytes()));
+
+            servlet.service(request, response);
+
+            // The public asset must be served (forwarded), not rejected with a 401
+            assertNotEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+            verify(dispatcher).forward(any(), any());
+
+        } finally {
+            if (testHost != null) {
+                final User systemUser = APILocator.systemUser();
+                testHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                APILocator.getHostAPI().unpublish(testHost, systemUser, false);
+                APILocator.getHostAPI().archive(testHost, systemUser, false);
+                APILocator.getHostAPI().delete(testHost, systemUser, false);
             }
         }
     }

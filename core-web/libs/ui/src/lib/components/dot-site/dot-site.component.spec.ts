@@ -1,3 +1,4 @@
+import { patchState } from '@ngrx/signals';
 import {
     createComponentFactory,
     createHostFactory,
@@ -5,20 +6,18 @@ import {
     Spectator,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
-import { EMPTY, of, throwError } from 'rxjs';
+} from '@openng/spectator/jest';
+import { of, Subject, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
-import { fakeAsync, tick, flush } from '@angular/core/testing';
+import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { Select, SelectLazyLoadEvent } from 'primeng/select';
 
-import { DotSiteService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotEventsSocket, DotSiteService } from '@dotcms/data-access';
 import { DotPagination, DotSite } from '@dotcms/dotcms-models';
 
 import { DotSiteComponent } from './dot-site.component';
@@ -68,9 +67,7 @@ describe('DotSiteComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotSiteService),
-            mockProvider(DotcmsEventsService, {
-                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
-            }),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting()
         ]
@@ -551,6 +548,57 @@ describe('DotSiteComponent', () => {
     describe('Component Inputs', () => {
         beforeEach(() => {
             spectator.detectChanges();
+        });
+
+        // Added for the AssetPicker sidebar (#37208), whose design shows a globe inside the closed
+        // control. Additive and off by default: every existing consumer must be unaffected.
+        /**
+         * The icon rides inside `p-select`'s *closed* label, which this harness never renders: even
+         * without the template, asserting the plain hostname in `.p-select-label` fails here — the
+         * label comes out as the empty placeholder. So what can be checked at this layer is the
+         * contract (the input exists, and nothing appears unless it is set); that the glyph actually
+         * paints is asserted in the AssetPicker sidebar e2e, which runs a real browser.
+         */
+        describe('icon', () => {
+            it('should default to no icon', () => {
+                expect(spectator.component.icon()).toBe('');
+            });
+
+            it('should render no icon element when unset', () => {
+                spectator.component.value.set('site1');
+                spectator.flushEffects();
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="dot-site-icon"]')).toBeNull();
+            });
+
+            // The classes on the icon element cannot be asserted here: it lives inside
+            // `p-select`'s closed label, which this harness never renders (see the note above).
+            // `[class]` replaces the class attribute, so the layout classes had to be folded into
+            // the binding — that they survive is asserted in the AssetPicker sidebar e2e.
+
+            it('should accept an icon class', () => {
+                spectator.setInput('icon', 'pi pi-globe');
+                spectator.detectChanges();
+
+                expect(spectator.component.icon()).toBe('pi pi-globe');
+            });
+        });
+
+        // The overlay is appended to `body`, so a consumer cannot reach it from its own styles —
+        // the class has to travel through the component. Added for the AssetPicker sidebar, whose
+        // dropdown sat flush against the trigger with no gap.
+        describe('panelStyleClass', () => {
+            it('should default to no class', () => {
+                expect(spectator.component.panelStyleClass()).toBe('');
+            });
+
+            it('should pass the class through to the overlay panel', () => {
+                spectator.setInput('panelStyleClass', 'mt-1');
+                spectator.detectChanges();
+
+                expect(spectator.query(Select).panelStyleClass).toBe('mt-1');
+            });
         });
 
         it('should update value model signal', () => {
@@ -1062,6 +1110,146 @@ describe('DotSiteComponent', () => {
             expect(options.find((s) => s.identifier === 'site99')).toBeTruthy();
         }));
     });
+
+    describe('WebSocket site events', () => {
+        let eventsSocket: SpyObject<DotEventsSocket>;
+        let siteEventSubjects: Record<string, Subject<{ identifier: string }>>;
+
+        beforeEach(() => {
+            eventsSocket = spectator.inject(DotEventsSocket, true);
+            siteEventSubjects = {};
+
+            eventsSocket.on.mockImplementation(<T>(eventType: string) => {
+                siteEventSubjects[eventType] = new Subject<{ identifier: string }>();
+                return siteEventSubjects[eventType].asObservable() as unknown as ReturnType<
+                    typeof eventsSocket.on<T>
+                >;
+            });
+
+            spectator.detectChanges();
+        });
+
+        it('should call resetFilter after debounce when any site event fires', fakeAsync(() => {
+            jest.clearAllMocks();
+            siteEventSubjects['PUBLISH_SITE'].next({ identifier: 'site1' });
+            tick(299);
+            expect(siteService.getSites).not.toHaveBeenCalled();
+
+            tick(1);
+            expect(siteService.getSites).toHaveBeenCalled();
+        }));
+
+        it('should debounce multiple rapid events into a single resetFilter call', fakeAsync(() => {
+            jest.clearAllMocks();
+            siteEventSubjects['SAVE_SITE'].next({ identifier: 'site1' });
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site2' });
+            siteEventSubjects['PUBLISH_SITE'].next({ identifier: 'site3' });
+            tick(300);
+
+            expect(siteService.getSites).toHaveBeenCalledTimes(1);
+        }));
+
+        it('should re-fetch the selected site when a non-unavailable event fires for it', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.getSiteById.mockReturnValue(of(mockSites[0]));
+            jest.clearAllMocks();
+
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site1' });
+
+            expect(siteService.getSiteById).toHaveBeenCalledWith('site1');
+            tick(300);
+        }));
+
+        it('should NOT re-fetch when the event is for a different site', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            jest.clearAllMocks();
+
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site2' });
+            tick(300);
+
+            expect(siteService.getSiteById).not.toHaveBeenCalled();
+        }));
+
+        it('should switch to default site when ARCHIVE_SITE fires for the selected site', fakeAsync(() => {
+            const defaultSite: DotSite = {
+                hostname: 'default.com',
+                identifier: 'default',
+                archived: false,
+                aliases: null
+            };
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite.mockReturnValue(of(defaultSite as DotSite));
+            jest.clearAllMocks();
+
+            siteEventSubjects['ARCHIVE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(siteService.switchSite).toHaveBeenCalledWith(null);
+            expect(spectator.component.$state.pinnedOption()).toEqual(defaultSite);
+        }));
+
+        it('should switch to default site when UN_PUBLISH_SITE fires for the selected site', fakeAsync(() => {
+            const defaultSite: DotSite = {
+                hostname: 'default.com',
+                identifier: 'default',
+                archived: false,
+                aliases: null
+            };
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite.mockReturnValue(of(defaultSite as DotSite));
+
+            siteEventSubjects['UN_PUBLISH_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(siteService.switchSite).toHaveBeenCalledWith(null);
+            expect(spectator.component.value()).toBe('default');
+        }));
+
+        it('should switch to default site when DELETE_SITE fires for the selected site', fakeAsync(() => {
+            const defaultSite: DotSite = {
+                hostname: 'default.com',
+                identifier: 'default',
+                archived: false,
+                aliases: null
+            };
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite.mockReturnValue(of(defaultSite as DotSite));
+
+            siteEventSubjects['DELETE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(siteService.switchSite).toHaveBeenCalledWith(null);
+        }));
+
+        it('should set pinnedOption to null when switchSite fails', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite.mockReturnValueOnce(
+                throwError(() => new Error('switchSite failed'))
+            );
+
+            siteEventSubjects['ARCHIVE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(spectator.component.$state.pinnedOption()).toBeNull();
+        }));
+
+        it('should set pinnedOption to null when getSiteById fails on re-fetch', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.getSiteById.mockReturnValue(throwError(() => new Error('not found')));
+
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(spectator.component.$state.pinnedOption()).toBeNull();
+        }));
+
+        it('should unsubscribe from site events on destroy', () => {
+            const sub = spectator.component['siteEventsSub'];
+            const unsubscribeSpy = jest.spyOn(sub, 'unsubscribe');
+            spectator.component.ngOnDestroy();
+            expect(unsubscribeSpy).toHaveBeenCalled();
+        });
+    });
 });
 
 describe('DotSiteComponent - ControlValueAccessor Integration', () => {
@@ -1071,9 +1259,7 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotSiteService),
-            mockProvider(DotcmsEventsService, {
-                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
-            }),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting()
         ],

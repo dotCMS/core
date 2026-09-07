@@ -1,4 +1,4 @@
-import { TimeRange, TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
+import { TIME_RANGE_OPTIONS, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { FilterOption } from '../types';
 
@@ -25,6 +25,21 @@ export const TABLE_CONFIG = {
     DATA_KEY: 'path',
     ROWS_PER_PAGE: 10
 } as const;
+
+/** PrimeNG tables inside analytics detail dialogs (DynamicDialog overlays). */
+export const ANALYTICS_DETAIL_DIALOG_TABLE = {
+    DATA_KEY: 'dimensionLabel',
+    ROWS_PER_PAGE: 10,
+    /** Mutable `number[]` — PrimeNG `rowsPerPageOptions` is typed as `any[]`, not readonly tuples. */
+    ROWS_PER_PAGE_OPTIONS: [10, 25, 50],
+    /** Hide paginator when all rows fit on one page. */
+    ALWAYS_SHOW_PAGINATOR: false
+} satisfies {
+    readonly DATA_KEY: string;
+    readonly ROWS_PER_PAGE: number;
+    readonly ROWS_PER_PAGE_OPTIONS: number[];
+    readonly ALWAYS_SHOW_PAGINATOR: boolean;
+};
 
 /** Table column configuration for top pages analytics table */
 export const TOP_PAGES_TABLE_COLUMNS = [

@@ -23,35 +23,35 @@
             [utcTimezone]="systemTimezone"
             [contentType]="$contentType()" />
     </dot-card-field-content>
-    <dot-card-field-footer>
-        <div class="flex justify-between items-center">
-            <div class="grow">
-                @if (fieldHasError) {
-                    @if (isRequired) {
+    @if ((fieldHasError && isRequired) || hasHint) {
+        <dot-card-field-footer>
+            <div class="flex justify-between items-center">
+                <div class="grow">
+                    @if (fieldHasError && isRequired) {
                         <small class="p-field-error">
                             {{ 'dot.edit.content.form.field.required' | dm }}
                         </small>
                     }
-                }
 
-                @if (!fieldHasError && !hasTimezone && hasHint) {
-                    <small
-                        class="p-field-hint"
-                        [attr.data-testId]="'hint-' + field.variable"
-                        data-testid="calendar-field-hint">
-                        {{ field.hint }}
-                    </small>
-                }
-                @if (!fieldHasError && hasTimezone && hasHint) {
-                    <small
-                        data-testid="calendar-field-timezone"
-                        class="p-field-hint"
-                        role="status"
-                        aria-live="polite">
-                        {{ systemTimezone.label }}
-                    </small>
-                }
+                    @if (!fieldHasError && !hasTimezone && hasHint) {
+                        <small
+                            class="p-field-hint"
+                            [attr.data-testId]="'hint-' + field.variable"
+                            data-testid="calendar-field-hint">
+                            {{ field.hint }}
+                        </small>
+                    }
+                    @if (!fieldHasError && hasTimezone && hasHint) {
+                        <small
+                            data-testid="calendar-field-timezone"
+                            class="p-field-hint"
+                            role="status"
+                            aria-live="polite">
+                            {{ systemTimezone.label }}
+                        </small>
+                    }
+                </div>
             </div>
-        </div>
-    </dot-card-field-footer>
+        </dot-card-field-footer>
+    }
 </dot-card-field>

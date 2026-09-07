@@ -98,8 +98,18 @@ export class App {
         url: '/',
         params: pageParams,
       })
-      .subscribe((response) => {
-        this.content.set(response?.content);
+      .subscribe({
+        next: (response) => {
+          this.content.set(response?.content);
+        },
+        // Without an error handler, a failed `/data/page` call (e.g. a missing
+        // DOTCMS_AUTH_TOKEN) throws during SSR and crashes the render, which
+        // then surfaces as a cryptic "index.csr.html does not exist" fallback.
+        // Log the real cause and degrade gracefully to the page shell instead.
+        error: (error) => {
+          console.error('Failed to load page data from /data/page:', error?.message ?? error);
+          this.content.set(undefined);
+        },
       });
   }
 }

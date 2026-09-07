@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -11,14 +11,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import {
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
@@ -68,16 +61,6 @@ describe('DotIframeDialogComponent', () => {
         DotIframeService,
         DotRouterService,
         DotUiColorsService,
-        DotcmsEventsService,
-        DotEventsSocket,
-        {
-            provide: DotEventsSocketURL,
-            useFactory: () =>
-                new DotEventsSocketURL(
-                    `${typeof window !== 'undefined' ? window.location.hostname : ''}:${typeof window !== 'undefined' ? window.location.port : ''}/api/ws/v1/system/events`,
-                    typeof window !== 'undefined' && window.location.protocol === 'https:'
-                )
-        },
         DotLoadingIndicatorService,
         LoggerService,
         StringUtils,
@@ -220,9 +203,14 @@ describe('DotIframeDialogComponent', () => {
                         });
                     });
 
-                    it('should call close method on dot-dialog on dot-iframe escape key', () => {
+                    it('should run the same close/teardown as the X button on Escape key', () => {
                         dotIframeDe?.triggerEventHandler('keyWasDown', { key: 'Escape' });
                         expect(component.keyWasDown.emit).toHaveBeenCalledTimes(1);
+                        // Escape must funnel through onDialogHide() exactly like the X button
+                        expect(component.url).toBe(null);
+                        expect(component.show).toBe(false);
+                        expect(component.header).toBe('');
+                        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
                     });
                 });
 

@@ -1,5 +1,12 @@
 import { DatePipe, LowerCasePipe } from '@angular/common';
-import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    inject,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SiteService } from '@dotcms/dotcms-js';
@@ -13,6 +20,7 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
     selector: 'dot-toolbar-announcements',
     templateUrl: './dot-toolbar-announcements.component.html',
     imports: [DotMessagePipe, LowerCasePipe, DatePipe, DotToolbarBtnOverlayComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent implements OnInit {

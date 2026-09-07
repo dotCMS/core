@@ -1,18 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { signalStore, withState, patchState } from '@ngrx/signals';
 import {
     createServiceFactory,
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { signalStore, withState, patchState } from '@ngrx/signals';
+} from '@openng/spectator/jest';
 import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import {
@@ -30,12 +29,12 @@ import {
     DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { withContent } from './content.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { MOCK_WORKFLOW_STATUS } from '../../../utils/edit-content.mock';
 import { CONTENT_TYPE_MOCK } from '../../../utils/mocks';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
@@ -50,8 +49,17 @@ describe('ContentFeature', () => {
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
     let workflowService: SpyObject<DotWorkflowService>;
     let router: SpyObject<Router>;
-    let title: SpyObject<Title>;
     let dotMessageService: SpyObject<DotMessageService>;
+
+    // Chrome/navigation concerns are delegated to the EditContentHost port.
+    // In full-screen the RouterEditContentHost fulfils these; here we assert
+    // the feature states the intent (title/breadcrumb) against the port.
+    const mockHost = {
+        setContentTitle: jest.fn(),
+        addBreadcrumb: jest.fn(),
+        goToSavedContent: jest.fn(),
+        goToRestoredVersion: jest.fn()
+    };
 
     const createStore = createServiceFactory({
         service: signalStore(
@@ -64,7 +72,6 @@ describe('ContentFeature', () => {
             DotHttpErrorManagerService,
             DotWorkflowsActionsService,
             DotWorkflowService,
-            Title,
             DotMessageService
         ],
         providers: [
@@ -75,13 +82,14 @@ describe('ContentFeature', () => {
             }),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
-            mockProvider(GlobalStore, { addNewBreadcrumb: jest.fn() }),
+            { provide: EDIT_CONTENT_HOST, useValue: mockHost },
             provideHttpClient(),
             provideHttpClientTesting()
         ]
     });
 
     beforeEach(() => {
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
         spectator = createStore();
         store = spectator.service;
         contentTypeService = spectator.inject(DotContentTypeService);
@@ -89,7 +97,6 @@ describe('ContentFeature', () => {
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
         workflowService = spectator.inject(DotWorkflowService);
         router = spectator.inject(Router);
-        title = spectator.inject(Title);
         dotMessageService = spectator.inject(DotMessageService);
 
         dotMessageService.get.mockImplementation((key) => {
@@ -306,15 +313,17 @@ describe('ContentFeature', () => {
             expect(store.currentSchemeId()).toBe(MOCK_SINGLE_WORKFLOW_ACTIONS[0].scheme.id);
         }));
 
-        it('should set the correct title for new content', fakeAsync(() => {
+        it('should set the title and breadcrumb via the host for new content', fakeAsync(() => {
             store.initializeNewContent('testContentType');
             tick();
 
             expect(dotMessageService.get).toHaveBeenCalledWith('New');
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dotcms.content.management.platform.title'
-            );
-            expect(title.setTitle).toHaveBeenCalledWith('New Test - DotCMS');
+            // The feature passes the raw label; the host appends any platform suffix.
+            expect(mockHost.setContentTitle).toHaveBeenCalledWith('New Test');
+            expect(mockHost.addBreadcrumb).toHaveBeenCalledWith({
+                label: 'New Test',
+                url: '/dotAdmin/#/content/new/Test'
+            });
         }));
 
         it('should reset hiddenFields immediately when initializing new content', fakeAsync(() => {
@@ -387,14 +396,15 @@ describe('ContentFeature', () => {
             tick();
         }));
 
-        it('should set the correct title for existing content', fakeAsync(() => {
+        it('should set the title and breadcrumb via the host for existing content', fakeAsync(() => {
             store.initializeExistingContent({ inode: '123' });
             tick();
 
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dotcms.content.management.platform.title'
-            );
-            expect(title.setTitle).toHaveBeenCalledWith('Test Content Title - DotCMS');
+            expect(mockHost.setContentTitle).toHaveBeenCalledWith('Test Content Title');
+            expect(mockHost.addBreadcrumb).toHaveBeenCalledWith({
+                label: 'Test Content Title',
+                url: `/dotAdmin/#/content/${testInode}`
+            });
         }));
 
         it('should handle error when initializing existing content', fakeAsync(() => {
@@ -409,6 +419,16 @@ describe('ContentFeature', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+        }));
+
+        it('should pass inode to getContentTypeWithRender for Velocity variable resolution', fakeAsync(() => {
+            store.initializeExistingContent({ inode: testInode });
+            tick();
+
+            expect(contentTypeService.getContentTypeWithRender).toHaveBeenCalledWith(
+                mockContentlet.contentType,
+                testInode
+            );
         }));
 
         it('should set initialContentletState to reset when no scheme or step', fakeAsync(() => {

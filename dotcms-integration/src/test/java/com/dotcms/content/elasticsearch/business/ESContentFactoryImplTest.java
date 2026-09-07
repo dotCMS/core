@@ -268,15 +268,15 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
 
         //Starting some validations
-        assertNotNull(searchHits.totalHits());
-        assertTrue(searchHits.totalHits().value() > 0);
+        assertNotNull(searchHits.getTotalHits());
+        assertTrue(searchHits.getTotalHits().value() > 0);
 
-        List<SearchHit> hits = searchHits.hits();
-        float maxScore = hits.get(0).score();
+        List<SearchHit> hits = searchHits.getHits();
+        float maxScore = hits.get(0).getScore();
         //With this query all the results must have the same score
         for ( SearchHit searchHit : hits ) {
-            Logger.info(this, "Blog - SearchHit Score: " + searchHit.score() + " inode: "+ searchHit.sourceAsMap().get("inode"));
-            assertTrue(searchHit.score() == maxScore);
+            Logger.info(this, "Blog - SearchHit Score: " + searchHit.getScore() + " inode: "+ searchHit.getSourceAsMap().get("inode"));
+            assertTrue(searchHit.getScore() == maxScore);
         }
 
         //+++++++++++++++++++++++++++
@@ -284,24 +284,24 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         searchHits = instance.indexSearch("+contenttype:"+blogId + " " + blogId + ".title:bullish*", 20, 0, "score");
 
         //Starting some validations
-        assertNotNull(searchHits.totalHits());
-        assertTrue(searchHits.totalHits().value() > 0);
+        assertNotNull(searchHits.getTotalHits());
+        assertTrue(searchHits.getTotalHits().value() > 0);
 
-        hits = searchHits.hits();
+        hits = searchHits.getHits();
         maxScore = getMaxScore(hits);
 
 
         //With this query the first result must have a higher score than the others
-        assertTrue(maxScore == searchHits.hits().get(0).score());
+        assertTrue(maxScore == searchHits.getHits().get(0).getScore());
         //The second record should have a lower score
-        assertTrue(maxScore != searchHits.hits().get(1).score());
-        assertTrue(searchHits.hits().get(0).score() > searchHits.hits().get(1).score());
+        assertTrue(maxScore != searchHits.getHits().get(1).getScore());
+        assertTrue(searchHits.getHits().get(0).getScore() > searchHits.getHits().get(1).getScore());
     }
 
     @Test
     public void testModDateDotRawFormatIsValid(){
         final SearchHits searchHits = instance.indexSearch("+moddate_dotraw: *t*", 20, 0, "modDate desc");
-        assertFalse(UtilMethods.isSet(searchHits.hits()));
+        assertFalse(UtilMethods.isSet(searchHits.getHits()));
     }
 
 
@@ -316,20 +316,20 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     public void test_trying_with_bad_sorts() {
         final SearchHits descendingHits = instance.indexSearch("*", 20, 0, "desc");
         // we should have hits, as we are ignoring the invalid sort
-        assertFalse(descendingHits.hits().isEmpty());
+        assertFalse(descendingHits.getHits().isEmpty());
 
 
         final SearchHits ascendingHits = instance.indexSearch("*", 20, 0, "asc");
      // we should have hits, as we are ignoring the invalid sort
-        assertFalse (ascendingHits.hits().isEmpty());
+        assertFalse (ascendingHits.getHits().isEmpty());
 
         final SearchHits descendingHitsUpper = instance.indexSearch("*", 20, 0, "DESC");
         // we should have hits, as we are ignoring the invalid sort
-        assertFalse (descendingHitsUpper.hits().isEmpty());
+        assertFalse (descendingHitsUpper.getHits().isEmpty());
 
         final SearchHits ascHitsUpper = instance.indexSearch("*", 20, 0, "DESC");
         // we should have hits, as we are ignoring the invalid sort
-        assertFalse (ascHitsUpper.hits().isEmpty());
+        assertFalse (ascHitsUpper.getHits().isEmpty());
 
 
     }
@@ -344,7 +344,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         float maxScore = java.lang.Float.MIN_VALUE;
 
         for (SearchHit hit : hits) {
-            float score = hit.score();
+            float score = hit.getScore();
 
             if (maxScore < score){
                 maxScore = score;
@@ -502,11 +502,11 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final SearchHits searchHits = instance.indexSearch(query,-1, -1, null);
 
         //Validate results
-        assertNotNull(searchHits.totalHits());
-        assertTrue(searchHits.totalHits().value() > 0);
+        assertNotNull(searchHits.getTotalHits());
+        assertTrue(searchHits.getTotalHits().value() > 0);
 
-        final List<SearchHit> hits = searchHits.hits();
-        assertEquals(contentlet.getInode(), hits.get(0).sourceAsMap().get("inode"));
+        final List<SearchHit> hits = searchHits.getHits();
+        assertEquals(contentlet.getInode(), hits.get(0).getSourceAsMap().get("inode"));
     }
 
     @Test
@@ -576,7 +576,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         SearchHits hits = instance.indexSearch(liveQuery, 10, 0, null);
 
         //assert we have results
-        assertTrue(hits.totalHits().value() > 0);
+        assertTrue(hits.getTotalHits().value() > 0);
 
         SearchHits hits2 = instance.indexSearch(liveQuery, 10, 0, null);
 
@@ -595,7 +595,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         // Checking in a new piece of content flushed the esQuerycache, we get new results
         assertNotSame(hits, hits3);
-        assertTrue(hits3.totalHits().value() > 0);
+        assertTrue(hits3.getTotalHits().value() > 0);
     }
 
 
@@ -645,28 +645,28 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
 
         //assert we have results
-        assertTrue(hits.totalHits().value() > 0);
+        assertTrue(hits.getTotalHits().value() > 0);
 
         // all parameters are being taken into account when building the cache key
         assertNotSame(hits, hits1);
         assertNotEquals(hits , hits1);
-        assertTrue(hits1.totalHits().value() > 0);
+        assertTrue(hits1.getTotalHits().value() > 0);
 
         assertNotSame(hits, hits2);
         assertNotEquals(hits , hits2);
-        assertTrue(hits2.totalHits().value() > 0);
+        assertTrue(hits2.getTotalHits().value() > 0);
 
         assertNotSame(hits, hits3);
         assertNotEquals(hits , hits3);
-        assertTrue(hits3.totalHits().value() > 0);
+        assertTrue(hits3.getTotalHits().value() > 0);
 
         assertNotSame(hits, hits4);
         assertNotEquals(hits , hits4);
-        assertTrue(hits4.totalHits().value() > 0);
+        assertTrue(hits4.getTotalHits().value() > 0);
 
         assertNotSame(hits, hits5);
         assertNotEquals(hits , hits5);
-        assertTrue(hits5.totalHits().value() > 0);
+        assertTrue(hits5.getTotalHits().value() > 0);
 
 
     }
@@ -861,8 +861,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         //There are 60 items but ES can only retrieve a max of 40.
         SearchHits searchHits = instance
                 .indexSearch(queryString, MAX_LIMIT, 0, null);
-        assertEquals(newContentTypeItems, searchHits.hits().size());
-        assertEquals(newContentTypeItems, searchHits.totalHits().value());
+        assertEquals(newContentTypeItems, searchHits.getHits().size());
+        assertEquals(newContentTypeItems, searchHits.getTotalHits().value());
         assertEquals(newContentTypeItems, instance.indexCount(queryString));
 
         final String savedValue = Config.getStringProperty(ES_TRACK_TOTAL_HITS);
@@ -874,8 +874,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 //We're always removing cache, otherwise we would get the same number of pre-cached items
                 esQueryCache.clearCache();
                 searchHits = instance.indexSearch(queryString, MAX_LIMIT, 0, null);
-                assertEquals(newContentTypeItems, searchHits.hits().size());
-                assertEquals(searchHits.totalHits().value(), i);
+                assertEquals(newContentTypeItems, searchHits.getHits().size());
+                assertEquals(searchHits.getTotalHits().value(), i);
                 //Regardless of the track_hits count flag. index count should always get you the accurate number.
                 // as it works independently of that flag.
                 assertEquals(newContentTypeItems, instance.indexCount(queryString));

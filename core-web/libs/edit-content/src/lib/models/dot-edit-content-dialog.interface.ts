@@ -20,9 +20,37 @@ export interface EditContentDialogData {
     contentletInode?: string;
 
     /**
+     * For edit content: the stable identifier of the content (does not change across saves/
+     * versions, unlike the inode). Used to build a shareable URL that reopens this content.
+     */
+    identifier?: string;
+
+    /**
+     * For edit content: the language the opened version belongs to.
+     *
+     * An identifier has one version -- and one inode -- per language, so the identifier alone does not
+     * say which one is open. Callers that already know it (any row click does) pass it so a shareable
+     * URL can carry it and reopen the very same version, instead of the consumer having to guess.
+     */
+    languageId?: number;
+
+    /**
      * Depth for loading existing content (defaults to TWO)
      */
     depth?: number;
+
+    /**
+     * Optional header label for the side panel (e.g. the content title when editing, or the
+     * content type name when creating). Shown in the panel header; ignored by the dialog.
+     */
+    title?: string;
+
+    /**
+     * For new content: pre-fills a Host-or-Folder field with this `hostname/path`, so content
+     * created from a folder context (e.g. Content Drive) lands in that folder. Mirrors the
+     * `folderPath` query param the full-screen editor reads.
+     */
+    folderPath?: string;
 
     /**
      * Optional relationship information when creating content for relationships

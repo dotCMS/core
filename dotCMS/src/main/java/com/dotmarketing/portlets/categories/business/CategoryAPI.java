@@ -12,6 +12,7 @@ import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 /**
  * 
  * This class defines the API contract of methods usable to control cms categories
@@ -394,11 +395,31 @@ public interface CategoryAPI {
 	 */
 	List<Category>  removeAllChildren(Category parentCategory, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
-	 * Recursive Method that deletes all the parent categories along with their children
-	 * @param categoriesToDelete
-	 * @return The List of parent categories that could not be deleted
+	 * Failure reasons reported by {@link #deleteCategoryAndChildren(List, User, boolean)}.
+	 * The {@code %s} placeholder is the name of the category that caused the failure.
 	 */
-	HashMap<String, Category> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
+	String DELETE_FAIL_REASON_NOT_FOUND = "Category does not exist";
+	String DELETE_FAIL_REASON_NO_PERMISSION =
+			"Insufficient permissions to delete Category '%s'";
+	String DELETE_FAIL_REASON_PROTECTED_DESCENDANT =
+			"Category '%s' in this subtree is protected by individual permissions";
+
+	/**
+	 * Deletes each of the given categories along with every descendant at every depth.
+	 * For each selected category, EDIT permission is validated on the category and on every
+	 * descendant BEFORE anything is deleted. Descendants without individual permissions
+	 * inherit from their parent, so the descendant validation only differs from the root
+	 * check when a descendant carries an individual permission override.
+	 * A category that fails validation — or does not exist — is skipped whole (nothing in
+	 * its subtree is deleted) and reported in the result; the remaining categories in the
+	 * batch are still processed.
+	 *
+	 * @param categoriesToDelete inodes of the categories to delete
+	 * @return the total number of categories removed — descendants included, which is why it
+	 *         is normally larger than {@code categoriesToDelete.size()} — together with the
+	 *         failures keyed by inode. See {@link CategoryDeleteResult}.
+	 */
+	CategoryDeleteResult deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 	/**
 	 * Retrieves a list all the line of parent categories of the given child category

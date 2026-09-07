@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import {
     DotCMSBasicContentlet,
     DotCMSGraphQLPageContainer,
@@ -44,7 +42,12 @@ export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | 
     } = page;
     const data = (_map || {}) as Record<string, unknown>;
 
-    const typedPageAsset = pageAsset as unknown as DotCMSPage;
+    // styleEditorSchemas comes back as null from GraphQL outside EDIT_MODE. Separate it from the
+    // rest of the page fields so it can be omitted entirely when it has no value. Emitting
+    // `undefined` (the previous behaviour) breaks JSON serialization for consumers like Next.js
+    // Pages Router (getServerSideProps/getStaticProps), while omitting the key keeps the optional
+    // DotCMSPage.styleEditorSchemas type accurate.
+    const { styleEditorSchemas, ...typedPageAsset } = pageAsset as unknown as DotCMSPage;
 
     // Merge all urlContentMap keys into _map, except _map itself
     const mergedUrlContentMap = {
@@ -72,7 +75,9 @@ export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | 
         containers: parseContainers(containers as []),
         page: {
             ...data,
-            ...typedPageAsset
+            ...typedPageAsset,
+            // Only re-add styleEditorSchemas when it actually has a value (see destructure above).
+            ...(styleEditorSchemas ? { styleEditorSchemas } : {})
         }
     };
 };

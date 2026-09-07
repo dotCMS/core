@@ -21,6 +21,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
+import static com.dotmarketing.business.Role.DOTCMS_FRONT_END_USER;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -56,6 +57,7 @@ import java.util.Base64;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -326,6 +328,45 @@ public class BinaryExporterServletTest {
 
         }
 
+    }
+
+    /**
+     * Method to test: {@link BinaryExporterServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: An authenticated front-end user (logged in, non-anonymous) requests a
+     * protected file asset they do NOT have READ permission on.
+     * Expected result: A clean 403 Forbidden is returned (matching VelocityServlet page behavior),
+     * and REDIRECT_AFTER_LOGIN is NOT set, so SAML sites do not enter an infinite redirect loop.
+     * See issue #36541.
+     */
+    @Test
+    public void requestBinaryFile_authenticatedUserWithoutPermission_returns403()
+            throws DotDataException, DotSecurityException, ServletException, IOException {
+
+        // Front-end user WITHOUT the role that grants READ on sharedFileAssetWithPerms
+        final User frontEndUser = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadRoleByKey(DOTCMS_FRONT_END_USER))
+                .nextPersisted();
+
+        try (TmpBinaryFile tmpTargetFile = new TmpBinaryFile(false)) {
+
+            final String fileURI = "/contentAsset/raw-data/"
+                    + sharedFileAssetWithPerms.getIdentifier() + "/fileAsset/";
+            final MockHeaderRequest request = new MockHeaderRequest(mockServletRequest(fileURI));
+
+            // Simulate an authenticated front-end user on the request (as a session login would)
+            request.setAttribute(WebKeys.USER, frontEndUser);
+
+            final HttpServletResponse response = mockServletResponse(tmpTargetFile);
+
+            sendRequest(request, response);
+
+            // Authenticated-but-unauthorized user must get a clean 403, not a 401 redirect-to-login
+            assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+            assertNull(request.getSession().getAttribute(
+                    com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN));
+        } finally {
+            UserDataGen.remove(frontEndUser);
+        }
     }
 
     @Test

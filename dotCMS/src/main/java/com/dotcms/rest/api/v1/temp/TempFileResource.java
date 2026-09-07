@@ -35,6 +35,7 @@ import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -98,12 +99,35 @@ public class TempFileResource {
             description = "Uploads one or more files as temporary resources via multipart form data. " +
                     "Files are stored temporarily and can be referenced when creating content. " +
                     "The response streams back a JSON object with the created temporary file references. " +
-                    "Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.",
+                    "Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.\n\n" +
+                    "**Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) " +
+                    "when creating or updating contentlets. After uploading, pass `tempFiles[0].id` " +
+                    "(e.g. `\"temp_5311313004\"`) as the field value in the workflow fire endpoint. " +
+                    "See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Temporary files created successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(type = "object",
-                                            description = "Streamed JSON object containing a 'tempFiles' array with DotTempFile references for each uploaded file"))),
+                                    schema = @Schema(implementation = TempFilesView.class),
+                                    examples = @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"tempFiles\": [\n" +
+                                                    "    {\n" +
+                                                    "      \"id\": \"temp_5311313004\",\n" +
+                                                    "      \"fileName\": \"hero.jpg\",\n" +
+                                                    "      \"length\": 84471,\n" +
+                                                    "      \"mimeType\": \"image/jpeg\",\n" +
+                                                    "      \"image\": true,\n" +
+                                                    "      \"referenceUrl\": \"/dA/temp_5311313004/tmp/hero.jpg\",\n" +
+                                                    "      \"metadata\": {\n" +
+                                                    "        \"contentType\": \"image/jpeg\",\n" +
+                                                    "        \"height\": 522,\n" +
+                                                    "        \"width\": 900,\n" +
+                                                    "        \"fileSize\": 84471,\n" +
+                                                    "        \"isImage\": true\n" +
+                                                    "      }\n" +
+                                                    "    }\n" +
+                                                    "  ]\n" +
+                                                    "}"))),
                     @ApiResponse(responseCode = "400", description = "Invalid file, origin, or referer"),
                     @ApiResponse(responseCode = "401", description = "Authentication required (when anonymous access is disabled)"),
                     @ApiResponse(responseCode = "404", description = "Temp file resource is not enabled")
@@ -286,12 +310,35 @@ public class TempFileResource {
             description = "Downloads a file from the specified remote URL and stores it as a temporary resource. " +
                     "The temporary file can then be referenced when creating content. " +
                     "The URL must pass validation to prevent SSRF attacks. " +
-                    "Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.",
+                    "Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.\n\n" +
+                    "**Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) " +
+                    "when a file is already accessible by URL. Send `{\"remoteUrl\": \"https://example.com/image.jpg\"}` " +
+                    "and pass `tempFiles[0].id` (e.g. `\"temp_5311313004\"`) as the field value in the workflow fire endpoint. " +
+                    "See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Temporary file created from URL successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(type = "object",
-                                            description = "Map containing a 'tempFiles' array with DotTempFile references for the downloaded file"))),
+                                    schema = @Schema(implementation = TempFilesView.class),
+                                    examples = @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"tempFiles\": [\n" +
+                                                    "    {\n" +
+                                                    "      \"id\": \"temp_5311313004\",\n" +
+                                                    "      \"fileName\": \"hero.jpg\",\n" +
+                                                    "      \"length\": 84471,\n" +
+                                                    "      \"mimeType\": \"image/jpeg\",\n" +
+                                                    "      \"image\": true,\n" +
+                                                    "      \"referenceUrl\": \"/dA/temp_5311313004/tmp/hero.jpg\",\n" +
+                                                    "      \"metadata\": {\n" +
+                                                    "        \"contentType\": \"image/jpeg\",\n" +
+                                                    "        \"height\": 522,\n" +
+                                                    "        \"width\": 900,\n" +
+                                                    "        \"fileSize\": 84471,\n" +
+                                                    "        \"isImage\": true\n" +
+                                                    "      }\n" +
+                                                    "    }\n" +
+                                                    "  ]\n" +
+                                                    "}"))),
                     @ApiResponse(responseCode = "400", description = "Invalid URL, missing URL, or invalid origin/referer"),
                     @ApiResponse(responseCode = "401", description = "Authentication required (when anonymous access is disabled)"),
                     @ApiResponse(responseCode = "404", description = "Temp file resource is not enabled")

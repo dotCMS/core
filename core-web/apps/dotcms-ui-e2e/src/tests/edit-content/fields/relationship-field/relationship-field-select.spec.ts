@@ -332,28 +332,29 @@ test.describe('Create New Inline', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
-        await expect(createDialog).toBeVisible({ timeout: 10000 });
+        // With the side-panel feature flag on, "New content" opens the editor in a slide-in
+        // panel (p-drawer, teleported to body), not the centered create dialog.
+        const sidePanel = adminPage.locator('.p-drawer');
+        await expect(sidePanel).toBeVisible({ timeout: 10000 });
 
-        const titleInput = createDialog.getByTestId('title').first();
+        const titleInput = sidePanel.getByTestId('title').first();
         await titleInput.waitFor({ state: 'visible', timeout: 10000 });
         await titleInput.fill(`Inline Author ${testSuffix}`);
 
         const responsePromise = adminPage.waitForResponse((response) =>
             response.url().includes('/api/v1/workflow/actions/')
         );
-        const saveButton = createDialog.getByRole('button', { name: /Save/ });
+        const saveButton = sidePanel.getByRole('button', { name: /Save/ });
         await saveButton.waitFor({ state: 'visible', timeout: 5000 });
         await saveButton.click();
         await responsePromise;
 
-        // Dialog stays open after save — close via X button
-        const closeButton = createDialog.locator(
-            '.p-dialog-header-close, button[aria-label="Close"]'
-        );
+        // Panel stays open after save — close via the header X. Closing fires onContentSaved,
+        // which adds the newly created content to the relationship.
+        const closeButton = sidePanel.getByTestId('side-panel-close');
         await closeButton.waitFor({ state: 'visible', timeout: 5000 });
         await closeButton.click();
-        await expect(createDialog).toBeHidden({ timeout: 10000 });
+        await expect(sidePanel).toBeHidden({ timeout: 10000 });
 
         await relationshipField.expectRowCount(1);
     });
@@ -371,34 +372,32 @@ test.describe('Create New Inline', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
-        await expect(createDialog).toBeVisible({ timeout: 10000 });
+        const sidePanel = adminPage.locator('.p-drawer');
+        await expect(sidePanel).toBeVisible({ timeout: 10000 });
 
         await adminPage.keyboard.press('Escape');
-        await expect(createDialog).toBeHidden({ timeout: 5000 });
+        await expect(sidePanel).toBeHidden({ timeout: 5000 });
 
         const textField = adminPage.getByTestId('title');
         await expect(textField).toHaveValue(outerTitle);
         await relationshipField.expectEmpty();
     });
 
-    test('dismiss create dialog via X button @smoke', async ({ adminPage }) => {
+    test('dismiss create panel via X button @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
-        await expect(createDialog).toBeVisible({ timeout: 10000 });
+        const sidePanel = adminPage.locator('.p-drawer');
+        await expect(sidePanel).toBeVisible({ timeout: 10000 });
 
-        const closeButton = createDialog.locator(
-            '.p-dialog-header-close, button[aria-label="Close"]'
-        );
+        const closeButton = sidePanel.getByTestId('side-panel-close');
         await expect(closeButton).toBeVisible({ timeout: 5000 });
         await closeButton.click();
 
-        await expect(createDialog).toBeHidden({ timeout: 5000 });
+        await expect(sidePanel).toBeHidden({ timeout: 5000 });
         await relationshipField.expectEmpty();
     });
 });
@@ -442,16 +441,18 @@ test.describe('New Content Disabled (No New Editor)', () => {
 // ─── Menu Disabled in Single Mode (Item Already Exists) ─────────
 
 test.describe('Menu Disabled When Single Item Exists', () => {
-    // Serial: beforeEach shares mutable `let` vars across tests.
-    test.describe.configure({ mode: 'serial' });
-
+    // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
+    // If a second test is added, move setup into each test with try/finally cleanup.
+    let authorTypeId: string | undefined;
     let authorTypeVariable: string;
+    let blogTypeId: string | undefined;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`SingleFull_${testSuffix}`)
         );
+        authorTypeId = authorType.id;
         authorTypeVariable = authorType.variable;
 
         const blogType = await apiHelpers.createContentType(
@@ -464,12 +465,22 @@ test.describe('Menu Disabled When Single Item Exists', () => {
                 CARDINALITY.ONE_TO_ONE
             )
         );
+        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         await apiHelpers.createContentlet(authorTypeVariable, {
             title: `Author SingleFull ${testSuffix}`,
             bio: 'Bio'
         });
+    });
+
+    test.afterEach(async ({ apiHelpers }) => {
+        if (blogTypeId) {
+            await apiHelpers.deleteContentType(blogTypeId);
+        }
+        if (authorTypeId) {
+            await apiHelpers.deleteContentType(authorTypeId);
+        }
     });
 
     test('existing content disabled after selecting item @smoke', async ({ adminPage }) => {

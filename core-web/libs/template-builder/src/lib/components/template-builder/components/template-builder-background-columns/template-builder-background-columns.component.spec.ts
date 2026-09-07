@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { NgFor, NgStyle } from '@angular/common';
 import { By } from '@angular/platform-browser';

@@ -35,13 +35,26 @@ public class SerializationHelperTest {
             Logger.debug(SerializationHelperTest.class,"Loaded src/main/webapp/WEB-INF/portlet.xml:"+portletList.toString());
             Logger.info(SerializationHelperTest.class, "Loaded portlet.xml: found: " + portletList.getPortlets().size() + " portlets");
             assertNotNull("Deserialized PortletList should not be null", portletList);
-            assertEquals("PortletList should contain exactly 51 portlets", 51, portletList.getPortlets().size());
+            // Containment assertions below are the contract this test protects. An exact
+            // count would break on every future portlet addition/removal for no real
+            // regression — the file legitimately grows with the product.
+            assertTrue("PortletList should not be empty", !portletList.getPortlets().isEmpty());
 
             // Check for specific portlets
+            assertTrue("PortletList should contain 'dotAuth' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotAuth")));
             assertTrue("PortletList should contain 'categories' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories")));
+            assertTrue("PortletList should contain 'experiments' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("experiments")));
             assertTrue("PortletList should contain 'categories-legacy' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories-legacy")));
+            assertTrue("PortletList should contain 'es-search' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search")));
+            assertTrue("PortletList should contain 'es-search-legacy' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search-legacy")));
+            assertTrue("PortletList should contain 'query-tool-legacy' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("query-tool-legacy")));
             assertTrue("PortletList should contain 'dotai' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotai")));
             assertTrue("PortletList should contain 'analytics-search' portlet",
@@ -52,6 +65,16 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("plugins")));
             assertTrue("PortletList should contain 'plugins-legacy' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("plugins-legacy")));
+            assertTrue("PortletList should contain 'publishing-queue' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue")));
+            assertTrue("PortletList should contain 'publishing-queue-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue-beta")));
+            assertTrue("PortletList should contain 'users' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users")));
+            assertTrue("PortletList should contain 'users-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users-beta")));
+            assertTrue("PortletList should contain 'roles-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("roles-beta")));
 
             // Check the Angular categories portlet
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()

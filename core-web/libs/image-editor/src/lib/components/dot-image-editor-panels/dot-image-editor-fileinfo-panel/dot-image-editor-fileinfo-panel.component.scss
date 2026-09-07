@@ -1,0 +1,29 @@
+.ie-fileinfo {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.ie-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    &--inline {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+}
+
+.ie-field__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ie-field__value {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-color-secondary);
+}

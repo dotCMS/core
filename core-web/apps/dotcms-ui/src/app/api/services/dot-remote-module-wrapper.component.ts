@@ -5,7 +5,8 @@ import {
     inject,
     NgZone,
     OnDestroy,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -24,6 +25,7 @@ type MountFn = (el: HTMLElement) => Promise<() => void>;
 @Component({
     selector: 'dot-remote-module-wrapper',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: '<div #container style="width: 100%; height: 100%;"></div>'
 })
 export class DotRemoteModuleWrapperComponent implements AfterViewInit, OnDestroy {

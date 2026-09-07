@@ -24,7 +24,7 @@ let mapIdCounter = 1;
     selector: 'dot-area-picker-dialog-component',
     templateUrl: './dot-area-picker-dialog.component.html',
     imports: [DialogModule, ButtonModule, SharedModule],
-    changeDetection: ChangeDetectionStrategy.Default
+    changeDetection: ChangeDetectionStrategy.Eager
 })
 export class DotAreaPickerDialogComponent {
     private readonly mapsService = inject(GoogleMapService);

@@ -215,7 +215,27 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			createDefaultLanguageLock.set(defaultLanguage);
 		}
 
-		return createDefaultLanguageLock.get();
+		final Language resolved = createDefaultLanguageLock.get();
+
+		// Guard (issue #35780): the lock can transiently hold the LANG_404 sentinel
+		// (id=-1) while a concurrent caller is still resolving the default, and a
+		// cleared/uninitialized cache can surface the same sentinel. A non-positive
+		// language id must never reach callers: it causes fk_contentlet_lang FK
+		// violations on contentlet save and HTMLPageAssetNotFound (404) on page
+		// lookups. When that happens, resolve the default synchronously instead of
+		// handing back the sentinel.
+		if (resolved == null || resolved.getId() <= 0) {
+			final Language fresh = transactionalGetDefaultLanguage();
+			if (fresh != null && fresh.getId() > 0) {
+				languageCache.setDefaultLanguage(fresh);
+				createDefaultLanguageLock.set(fresh);
+				return fresh;
+			}
+			Logger.warn(this, "getDefaultLanguage could not resolve a valid default language; "
+					+ "returning " + resolved);
+		}
+
+		return resolved;
 	}
 
 	/**

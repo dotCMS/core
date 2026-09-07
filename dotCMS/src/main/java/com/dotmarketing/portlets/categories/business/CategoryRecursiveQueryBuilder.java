@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +90,7 @@ import java.util.Map;
 public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
     private boolean parentList;
+    private String pathParamValue = null;
     private final static String QUERY_TEMPLATE = "WITH RECURSIVE CategoryHierarchy AS ( " +
             "SELECT c.*, 1 AS level :parentList_1 " +
             "FROM Category c :levelFilter_1 :rootFilter " +
@@ -135,6 +137,11 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
         ));
     }
 
+    @Override
+    public List<Object> getQueryParams() {
+        return pathParamValue != null ? Collections.singletonList(pathParamValue) : Collections.emptyList();
+    }
+
     protected String getFilterCategories() {
         return "AND (LOWER(category_name) LIKE ?  OR " +
                     "LOWER(category_key) LIKE ?  OR " +
@@ -161,8 +168,9 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
                         .build());
 
                 final String json = JsonUtil.getJsonStringFromObject(rootParentListWithRootInode);
+                pathParamValue = json.substring(1, json.length() - 1);
 
-                return ",'" + json.substring(1, json.length() - 1) + "' AS path";
+                return ", ?::varchar AS path";
             }
 
             return  ", json_build_object('inode', inode, 'name', category_name, 'key', category_key)::varchar AS path";

@@ -13,118 +13,124 @@
 @let iconClasses = $iconClasses();
 @let trendData = $trendData();
 
-@if (hasTitle) {
-    <h3 class="text-lg font-bold mb-2" data-testid="metric-title">
-        {{ metricTitle | dm }}
-        <ng-content select="[titleAction]" />
-    </h3>
-}
-
-<p-card class="h-full" data-testid="metric-card">
-    @if (isErrorState) {
-        <div class="metric-fade-in flex flex-col justify-center items-center h-full">
-            <dot-analytics-state-message
-                message="analytics.metrics.error.reload"
-                icon="pi-exclamation-triangle" />
-        </div>
-    } @else if (isEmptyState) {
-        <!-- Empty state: dash preserves card layout -->
-        <div class="metric-fade-in flex flex-col justify-between h-full gap-2">
-            <div class="flex justify-between items-start gap-1">
-                <div
-                    class="text-[2rem] font-bold text-gray-400 m-0 leading-tight"
-                    data-testid="metric-value">
-                    &mdash;
-                </div>
-                @if (hasIcon) {
-                    <i [class]="iconClasses" class="shrink-0 pi" data-testid="metric-icon"></i>
-                }
+<p-card class="metric-card h-full" data-testid="metric-card" [dt]="{ body: { padding: '1.5rem' } }">
+    <ng-template #title>
+        @if (hasTitle) {
+            <span class="flex items-center gap-1" data-testid="metric-title">
+                {{ metricTitle | dm }}
+                <ng-content select="[titleAction]" />
+            </span>
+        }
+    </ng-template>
+    <div class="metric-card-stack flex min-h-0 w-full flex-1 flex-col gap-3">
+        @if (isErrorState) {
+            <div class="metric-fade-in flex h-full flex-col items-center justify-center">
+                <dot-analytics-state-message
+                    message="analytics.metrics.error.reload"
+                    icon="pi-exclamation-triangle" />
             </div>
+        } @else if (isEmptyState) {
+            <!-- Empty state: dash preserves card layout -->
             <div
-                class="text-sm text-gray-600 m-0 flex items-center gap-2"
-                data-testid="metric-subtitle">
-                {{ 'analytics.metrics.empty.no-activity' | dm }}
-            </div>
-        </div>
-    } @else if (isLoadingState) {
-        <!-- Loading state with skeleton (mirrors loaded structure) -->
-        <div class="flex flex-col justify-between h-full w-full gap-2">
-            <!-- Row: value + icon (same layout as loaded state) -->
-            <div class="flex justify-between items-start w-full gap-1">
-                <p-skeleton width="5rem" height="2.2rem" />
-                @if (hasIcon) {
-                    <span class="shrink-0">
-                        <p-skeleton width="1.5rem" height="1.5rem" shape="circle" />
-                    </span>
-                }
-            </div>
-            <!-- Subtitle skeleton (separate row, same as loaded state) -->
-            <p-skeleton width="4rem" height="1.03rem" />
-        </div>
-    } @else {
-        <!-- Normal content - only shown when LOADED -->
-        <div class="flex flex-col justify-between h-full gap-2">
-            @let animated = $animated();
-            @let duration = $animationDuration();
-            <div class="metric-fade-in flex justify-between items-start gap-1">
-                @let numericVal = $numericValue();
-                <div
-                    class="metric-value text-[2rem] font-bold text-gray-900 m-0 leading-tight"
-                    data-testid="metric-value">
-                    @if (numericVal !== null && animated) {
-                        <span
-                            [dotCountUp]="numericVal.value"
-                            [duration]="duration"
-                            [suffix]="numericVal.suffix"
-                            [format]="numericVal.format"></span>
-                    } @else {
-                        {{ formattedValue }}
+                class="metric-body metric-fade-in flex flex-1 min-h-0 flex-col justify-between gap-2">
+                <div class="flex justify-between items-start gap-1">
+                    <div
+                        class="text-[2rem] font-bold text-gray-400 m-0 leading-tight"
+                        data-testid="metric-value">
+                        &mdash;
+                    </div>
+                    @if (hasIcon) {
+                        <i [class]="iconClasses" class="shrink-0 pi" data-testid="metric-icon"></i>
                     }
                 </div>
-                @if (hasIcon) {
-                    <i [class]="iconClasses" class="shrink-0 pi" data-testid="metric-icon"></i>
-                }
-            </div>
-            @if (hasSubtitle || trendData || hasComparisonLabel) {
                 <div
-                    class="metric-fade-in text-sm text-gray-600 m-0 flex items-center gap-2"
+                    class="text-sm text-gray-600 m-0 flex items-center gap-2"
                     data-testid="metric-subtitle">
-                    @if (trendData) {
-                        <span
-                            class="inline-flex items-center gap-1 text-sm font-semibold px-1 rounded-md"
-                            [class]="trendData.colorClasses">
-                            @if (!trendData.isNeutral) {
-                                <i
-                                    class="pi text-sm w-4"
-                                    [class]="
-                                        trendData.isPositive ? 'pi-arrow-up' : 'pi-arrow-down'
-                                    "></i>
-                            }
-                            {{ trendData.prefix }}{{ trendData.value }}%
+                    {{ 'analytics.metrics.empty.no-activity' | dm }}
+                </div>
+            </div>
+        } @else if (isLoadingState) {
+            <!-- Loading state with skeleton (mirrors loaded structure) -->
+            <div class="metric-body flex flex-1 min-h-0 w-full flex-col gap-2">
+                <!-- Row: value + icon (same layout as loaded state) -->
+                <div class="flex justify-between items-start w-full gap-1">
+                    <p-skeleton width="5rem" height="2.2rem" />
+                    @if (hasIcon) {
+                        <span class="shrink-0">
+                            <p-skeleton width="1.5rem" height="1.5rem" shape="circle" />
                         </span>
-                        @if (hasComparisonLabel) {
-                            <span class="text-xs text-gray-500" data-testid="metric-comparison">
-                                {{ comparisonLabel }}
+                    }
+                </div>
+                <!-- Subtitle skeleton (separate row, same as loaded state) -->
+                <p-skeleton width="4rem" height="1.03rem" />
+            </div>
+        } @else {
+            <!-- Normal content - only shown when LOADED -->
+            <div class="metric-body flex flex-1 min-h-0 flex-col justify-between gap-2">
+                @let animated = $animated();
+                @let duration = $animationDuration();
+                <div class="metric-fade-in flex justify-between items-start gap-1">
+                    @let numericVal = $numericValue();
+                    <div
+                        class="metric-value text-[2rem] font-bold text-gray-900 m-0 leading-tight"
+                        data-testid="metric-value">
+                        @if (numericVal !== null && animated) {
+                            <span
+                                [dotCountUp]="numericVal.value"
+                                [duration]="duration"
+                                [suffix]="numericVal.suffix"
+                                [format]="numericVal.format"></span>
+                        } @else {
+                            {{ formattedValue }}
+                        }
+                    </div>
+                    @if (hasIcon) {
+                        <i [class]="iconClasses" class="shrink-0 pi" data-testid="metric-icon"></i>
+                    }
+                </div>
+                @if (hasSubtitle || trendData || hasComparisonLabel) {
+                    <div
+                        class="metric-fade-in text-sm text-gray-600 m-0 flex items-center gap-2"
+                        data-testid="metric-subtitle">
+                        @if (trendData) {
+                            <span
+                                class="inline-flex items-center gap-1 text-sm font-semibold px-1 rounded-md"
+                                [class]="trendData.colorClasses">
+                                @if (!trendData.isNeutral) {
+                                    <i
+                                        class="pi text-sm w-4"
+                                        [class]="
+                                            trendData.isPositive ? 'pi-arrow-up' : 'pi-arrow-down'
+                                        "></i>
+                                }
+                                {{ trendData.prefix }}{{ trendData.value }}%
+                            </span>
+                            @if (hasComparisonLabel) {
+                                <span class="text-xs text-gray-500" data-testid="metric-comparison">
+                                    {{ comparisonLabel }}
+                                </span>
+                            }
+                        } @else if (hasComparisonLabel) {
+                            <span
+                                class="text-xs text-gray-400 italic"
+                                data-testid="metric-no-prior">
+                                {{ 'analytics.metrics.no-prior-data' | dm }}
                             </span>
                         }
-                    } @else if (hasComparisonLabel) {
-                        <span class="text-xs text-gray-400 italic" data-testid="metric-no-prior">
-                            {{ 'analytics.metrics.no-prior-data' | dm }}
-                        </span>
-                    }
-                    @if (hasSubtitle) {
-                        {{ metricSubtitle | dm }}
-                    }
-                </div>
-            }
-        </div>
-    }
+                        @if (hasSubtitle) {
+                            {{ metricSubtitle | dm }}
+                        }
+                    </div>
+                }
+            </div>
+        }
 
-    <div
-        class="flex flex-col flex-1 w-full mt-3 empty:hidden"
-        [class.invisible]="isErrorState"
-        [class.pointer-events-none]="isErrorState"
-        data-testid="metric-projected-content">
-        <ng-content />
+        <div
+            class="empty:hidden mt-auto flex w-full shrink-0 flex-col"
+            [class.hidden]="isErrorState"
+            [class.pointer-events-none]="isErrorState"
+            data-testid="metric-projected-content">
+            <ng-content />
+        </div>
     </div>
 </p-card>

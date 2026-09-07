@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
 import { By } from '@angular/platform-browser';

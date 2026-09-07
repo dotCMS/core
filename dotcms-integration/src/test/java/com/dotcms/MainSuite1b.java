@@ -44,12 +44,15 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.model.field.layout.FieldLayoutTest.class,
         com.dotcms.workflow.helper.TestSystemActionMappingsHandlerMerger.class,
         com.dotcms.concurrent.lock.DotKeyLockManagerTest.class,
+        com.dotcms.rendering.velocity.ASTMethodTest.class,
         com.dotcms.rendering.velocity.VelocityMacroCacheTest.class,
         com.dotcms.rendering.velocity.VelocityUtilTest.class,
         com.dotcms.rendering.velocity.viewtools.navigation.NavToolTest.class,
         com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentMapTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentToolTest.class,
+        com.dotcms.rendering.velocity.viewtools.ContentSearchToolTest.class,
+        com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPITest.class,
         com.dotcms.rendering.velocity.viewtools.WorkflowToolTest.class,
         com.dotcms.rendering.velocity.viewtools.WebsiteToolTest.class,
         com.dotcms.rendering.velocity.viewtools.LanguageWebAPITest.class,
@@ -62,6 +65,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.datafetcher.page.RunningExperimentFetcherTest.class,
         com.dotcms.graphql.datafetcher.CategoryFieldDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.FolderCollectionDataFetcherTest.class,
+        com.dotcms.graphql.datafetcher.StoryBlockFieldDataFetcherIntegrationTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
         com.dotcms.rest.api.v2.tags.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
@@ -70,6 +74,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
         com.dotcms.rest.api.v1.page.PageResourceTest.class,
+        com.dotcms.rest.api.v1.page.PageRenderSourcesResourceTest.class,
         com.dotcms.rest.api.v1.temp.TempFileResourceTest.class,
         com.dotcms.rest.api.v1.content.ContentVersionResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.content.ContentResourceIntegrationTest.class,
@@ -91,7 +96,12 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
-        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
+        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
+        com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class,
+        com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class
 })
 
 public class MainSuite1b {

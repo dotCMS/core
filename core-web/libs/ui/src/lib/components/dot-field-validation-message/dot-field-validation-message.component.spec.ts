@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';
@@ -17,7 +15,8 @@ const messageServiceMock = new MockDotMessageService({
     'error.form.validator.maxlength': 'Max length error',
     'error.form.validator.required': 'Required error',
     'error.form.validator.pattern': 'Pattern error',
-    'contentType.form.variable.placeholder': 'Will be auto-generated if left empty'
+    'contentType.form.variable.placeholder': 'Will be auto-generated if left empty',
+    'custom.required.message': 'Custom required error'
 });
 
 @Component({ selector: 'dot-custom-host', template: '', standalone: false })
@@ -89,6 +88,36 @@ describe('FieldValidationComponent', () => {
             expect(spectator.hostComponent.control.dirty).toBe(true);
 
             expect(spectator.queryHost(byTestId('error-msg'))).toExist();
+            expect(spectator.queryHost(byTestId('error-msg'))).toContainText('Pattern error');
+        });
+    });
+
+    describe('Using requiredErrorMessage', () => {
+        beforeEach(() => {
+            spectator = createHost(
+                `
+        <input [formControl]="control" />
+        <dot-field-validation-message [field]="control" [requiredErrorMessage]="'custom.required.message'"></dot-field-validation-message>`
+            );
+        });
+
+        it('should show the custom required message instead of the generic one', () => {
+            spectator.hostComponent.control.setValue('');
+            spectator.hostComponent.control.markAsDirty();
+
+            spectator.detectComponentChanges();
+
+            expect(spectator.queryHost(byTestId('error-msg'))).toContainText(
+                'Custom required error'
+            );
+        });
+
+        it('should still show the pattern message when the error is not required', () => {
+            spectator.hostComponent.control.setValue('not match pattern');
+            spectator.hostComponent.control.markAsDirty();
+
+            spectator.detectComponentChanges();
+
             expect(spectator.queryHost(byTestId('error-msg'))).toContainText('Pattern error');
         });
     });

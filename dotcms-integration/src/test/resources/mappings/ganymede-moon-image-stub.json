@@ -1,11 +1,8 @@
 {
   "request": {
     "method": "POST",
-    "url": "/i",
+    "urlPathPattern": "/images/generations",
     "headers": {
-      "Content-Type": {
-        "equalTo": "application/json"
-      },
       "Authorization": {
         "equalTo": "Bearer some-api-key-1a2bc3"
       }

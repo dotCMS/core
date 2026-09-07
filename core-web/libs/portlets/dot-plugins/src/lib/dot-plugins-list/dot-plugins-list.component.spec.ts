@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { EMPTY, of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
@@ -8,12 +8,13 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     BUNDLE_STATE,
+    DotEventsSocket,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotOsgiService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotEnvironment } from '@dotcms/dotcms-models';
 
 import { DotPluginsListComponent } from './dot-plugins-list.component';
@@ -46,7 +47,7 @@ describe('DotPluginsListComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             ConfirmationService,
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
-            mockProvider(DotcmsEventsService, { subscribeTo: jest.fn().mockReturnValue(EMPTY) }),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(EMPTY) }),
             mockProvider(ActivatedRoute, {
                 snapshot: { data: { pushPublishEnvironments: [], isEnterprise: false } }
             }),

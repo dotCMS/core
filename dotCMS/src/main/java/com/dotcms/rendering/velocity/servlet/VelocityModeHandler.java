@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -105,12 +106,11 @@ public abstract class VelocityModeHandler {
         try(ByteArrayOutputStream out = new ByteArrayOutputStream(4096)) {
             serve(out);
 
-            if (ContentSecurityPolicyUtil.isConfig()) {
-                final String htmlCode = new String(out.toByteArray(), StandardCharsets.UTF_8);
-                return ContentSecurityPolicyUtil.apply(htmlCode);
-            } else {
-                return new String(out.toByteArray(), StandardCharsets.UTF_8);
-            }
+            final String htmlCode = new String(out.toByteArray(), StandardCharsets.UTF_8);
+
+            return ContentSecurityPolicyUtil.isConfig()
+                    ? HtmlMinifier.minifyIfEnabled(ContentSecurityPolicyUtil.apply(htmlCode))
+                    : HtmlMinifier.minifyIfEnabled(htmlCode);
         } catch (DotDataException | IOException | DotSecurityException e) {
             Logger.debug(VelocityModeHandler.class, e.getMessage(), e);
             throw new DotRuntimeException(e);

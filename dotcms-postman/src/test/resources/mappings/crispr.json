@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -12,9 +11,10 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What is CRISPR, and why is it important.*"
+        "matches": ".*\"content\" : \"What is CRISPR, and why is it important.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,
@@ -25,10 +25,13 @@
       "model": "gpt-3.5-turbo-16k",
       "choices": [
         {
-          "text": "CRISPR (Clustered Regularly Interspaced Short Palindromic Repeats) is a revolutionary gene-editing technology. It allows scientists to precisely alter DNA sequences and modify gene function. CRISPR is important for its potential applications in medicine, agriculture, and biology, including curing genetic diseases, creating disease-resistant crops, and advancing biological research.",
           "index": 0,
           "logprobs": null,
-          "finish_reason": "stop"
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "CRISPR (Clustered Regularly Interspaced Short Palindromic Repeats) is a revolutionary gene-editing technology. It allows scientists to precisely alter DNA sequences and modify gene function. CRISPR is important for its potential applications in medicine, agriculture, and biology, including curing genetic diseases, creating disease-resistant crops, and advancing biological research."
+          }
         }
       ],
       "usage": {

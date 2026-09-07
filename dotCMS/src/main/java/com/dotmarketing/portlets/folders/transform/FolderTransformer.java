@@ -49,6 +49,7 @@ public class FolderTransformer implements DBTransformer {
         folder.setFilesMasks((String) map.get("files_masks"));
         folder.setIdentifier((String) map.get("identifier"));
         folder.setDefaultFileType((String) map.get("default_file_type"));
+        folder.setDefaultBaseType((String) map.get("default_base_type"));
         folder.setModDate((Date) map.get("mod_date"));
 
         final Identifier identifier = Try.of(

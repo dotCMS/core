@@ -50,6 +50,8 @@ public class GeoIp2CityDbUtilTest {
         assertEquals(geo.getSubdivision(), "Massachusetts");
         assertEquals(geo.getSubdivisionCode(), "MA");
         assertEquals(geo.getIpAddress(), ipAddress);
+        assertEquals(geo.getPostal(), "01810");
+        assertEquals(GeoIp2CityDbUtil.getInstance().getPostalCode(ipAddress), "01810");
     }
 
     @Test

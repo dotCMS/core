@@ -19,7 +19,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 
-import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
@@ -45,7 +44,6 @@ public class VisitorFilter implements Filter {
 
     private final LanguageWebAPI languageWebAPI;
     private final UserWebAPI userWebAPI;
-    private final static String CMS_HOME_PAGE = "/cmsHomePage";
     public  final static  String VANITY_URL_ATTRIBUTE="VANITY_URL_ATTRIBUTE";
     public  final static  String DOTPAGE_PROCESSING_TIME="DOTPAGE_PROCESSING_TIME";
 

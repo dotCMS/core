@@ -1,0 +1,47 @@
+{
+    "name": "@dotcms/vue",
+    "version": "1.5.5",
+    "peerDependencies": {
+        "vue": ">=3.4"
+    },
+    "dependencies": {
+        "@dotcms/uve": "latest",
+        "@dotcms/client": "latest",
+        "@tinymce/tinymce-vue": "^6.1.0"
+    },
+    "devDependencies": {
+        "@dotcms/types": "latest"
+    },
+    "description": "Official Vue components library to render a dotCMS page.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dotCMS/core.git#main"
+    },
+    "keywords": [
+        "dotCMS",
+        "CMS",
+        "Content Management",
+        "API Client",
+        "REST API",
+        "Vue",
+        "Vue 3",
+        "Components"
+    ],
+    "type": "module",
+    "main": "./index.js",
+    "module": "./index.js",
+    "types": "./index.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.js"
+        }
+    },
+    "author": "dotcms <dev@dotcms.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/dotCMS/core/issues"
+    },
+    "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/vue/README.md"
+}

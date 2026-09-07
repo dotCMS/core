@@ -89,9 +89,10 @@ public class NavResource {
     @Operation(
             operationId = "getNavigationTree",
             summary = "Get site navigation tree",
-            description = "Returns navigation metadata in JSON format for objects marked as 'show on menu'. "
-                    + "Builds a tree structure starting from the given URI path, up to the specified depth. "
-                    + "Example: /api/v1/nav/about-us?depth=2&languageId=1 returns the navigation tree under /about-us, 2 levels deep."
+            description = "Returns the dotCMS site navigation tree starting at the given **folder** URI, up to the specified depth. "
+                    + "Only objects marked as 'show on menu' are included. "
+                    + "The URI must resolve to a folder — page URIs (e.g., '/index', '/about-us/team') will return 404. "
+                    + "Use '/' to fetch the navigation tree for the site root."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Navigation tree retrieved successfully",
@@ -107,11 +108,19 @@ public class NavResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{uri: .*}")
     public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @Parameter(description = "Starting URI path for the navigation tree (e.g., 'about-us')", required = true)
+            @Parameter(description = "Starting folder URI for the navigation tree (e.g., '/about-us', '/blog', or '/' for the site root). "
+                    + "Must resolve to a folder — page URIs return 404.", required = true)
             @PathParam("uri") final String uri,
-            @Parameter(description = "Number of levels deep to include in the tree (default: 1)")
+            @Parameter(description = "Total number of levels to include, counting the starting node as level 1. "
+                    + "depth=1 returns only the starting node with no children; depth=2 returns the node plus its direct children. "
+                    + "Values exceeding the actual tree depth return the full subtree. Values less than 1 are treated as 1. (default: 1)",
+                    schema = @Schema(type = "integer", format = "int32"))
             @QueryParam("depth") final String depth,
-            @Parameter(description = "Language ID for the navigation content (defaults to the request language)")
+            @Parameter(description = "Tags each returned node with this language ID. "
+                    + "Note: folder names are language-neutral in dotCMS and are not translated — "
+                    + "this parameter only affects the 'languageId' attribute on each node, not the visible 'title'. "
+                    + "Defaults to the language of the current request.",
+                    schema = @Schema(type = "integer", format = "int64"))
             @QueryParam("languageId") final String languageId) {
 
         final InitDataObject auth = webResource.init(request, response, true);

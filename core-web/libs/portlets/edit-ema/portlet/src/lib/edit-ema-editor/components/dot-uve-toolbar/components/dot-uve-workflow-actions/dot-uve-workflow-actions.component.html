@@ -1,6 +1,7 @@
 <dot-workflow-actions
     (actionFired)="handleActionTrigger($event)"
     [size]="'small'"
+    [groupActions]="true"
     [loading]="loading()"
     [disabled]="!canEdit()"
     [actions]="actions()" />

@@ -176,10 +176,44 @@ class DotFieldInterceptorManager {
         input.type = 'hidden';
         input.name = variable;
         input.id = variable;
+        input.setAttribute('data-dot-hidden', 'true');
         input.setAttribute('dojoType', 'dijit.form.TextBox');
         input.value = value || '';
         this.bodyElement.appendChild(input);
         return this.addSmartInterceptor(input, variable);
+    }
+
+    /**
+     * Finds the visible text input or textarea for a field.
+     * Searches by name first (reliable form-field attribute, unaffected by non-input elements
+     * sharing the same id), then falls back to id. Excludes manager-owned hidden inputs, and
+     * input types that cannot be updated by setting .value (checkbox, radio, file).
+     * @param {string} variable - Field variable name
+     * @returns {HTMLInputElement|HTMLTextAreaElement|null}
+     */
+    findVisibleFieldElement(variable) {
+        const escaped = CSS.escape(variable);
+        const textInputFilter =
+            ':not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"])';
+        const element =
+            document.querySelector(
+                `input[name="${escaped}"]${textInputFilter}, textarea[name="${escaped}"]`
+            ) ||
+            document.querySelector(
+                `input#${escaped}:not([data-dot-hidden])${textInputFilter}, textarea#${escaped}:not([data-dot-hidden])`
+            );
+        return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement
+            ? element
+            : null;
+    }
+
+    /**
+     * Dispatches input and change events so iframe listeners (jQuery, select2, etc.) react.
+     * @param {HTMLInputElement|HTMLTextAreaElement} element - Target element
+     */
+    dispatchFieldChangeEvents(element) {
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     /**
@@ -192,6 +226,7 @@ class DotFieldInterceptorManager {
         if (input._dotIntercepted) return input;
 
         let isAngularUpdate = false;
+        const manager = this;
         const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
 
         try {
@@ -200,7 +235,7 @@ class DotFieldInterceptorManager {
                 set(value) {
                     const oldValue = valueDescriptor.get.apply(this);
                     valueDescriptor.set.apply(this, [value]);
-                    if (oldValue !== value && !isAngularUpdate) {
+                    if (oldValue !== value && !isAngularUpdate && manager._dotAngularPush !== variable) {
                         if (window.DotCustomFieldApi) {
                             window.DotCustomFieldApi.set(variable, value);
                         }
@@ -255,6 +290,8 @@ class DotFieldInterceptorManager {
      * Installs global interceptors for input tracking and value changes
      */
     installGlobalInterceptors() {
+        const manager = this;
+
         // Intercept setAttribute calls
         const originalSetAttribute = HTMLInputElement.prototype.setAttribute;
         HTMLInputElement.prototype.setAttribute = function(name, value) {
@@ -262,7 +299,7 @@ class DotFieldInterceptorManager {
             originalSetAttribute.call(this, name, value);
             if (name === 'value' && oldValue !== value && this.hasAttribute('data-angular-tracked')) {
                 const variable = this.name || this.id;
-                if (variable && window.DotCustomFieldApi) {
+                if (variable && manager._dotAngularPush !== variable && window.DotCustomFieldApi) {
                     window.DotCustomFieldApi.set(variable, value);
                 }
             }
@@ -333,8 +370,10 @@ class DotFieldInterceptorManager {
             if (target && target.tagName === 'INPUT') {
                 const variable = target.name || target.id;
 
-                // Direct field match
+                // Direct field match — skip if the event was dispatched by an Angular push
+                // to avoid an onChangeField → dispatchChangeEvent → syncFieldValues → set() loop.
                 if (variable && this.allFields.some(f => f.variable === variable)) {
+                    if (this._dotAngularPush === variable) return;
                     this.syncFieldValues(variable, target.value);
                 }
                 // Widget input (like cachettlbox -> cachettl)
@@ -413,9 +452,28 @@ class DotFieldInterceptorManager {
             window.DotCustomFieldApi?.ready(() => {
                 this.allFields.forEach(({ variable }) => {
                     window.DotCustomFieldApi.onChangeField?.(variable, value => {
-                        const dijitWidget = dijit.byId(variable);
-                        if (dijitWidget?.setValue) {
-                            dijitWidget.setValue(value);
+                        // Guard against the change event dispatched below re-entering
+                        // syncFieldValues → DotCustomFieldApi.set() → this callback.
+                        this._dotAngularPush = variable;
+                        try {
+                            const dijitWidget = dijit.byId(variable);
+                            if (dijitWidget?.setValue) {
+                                dijitWidget.setValue(value);
+                            }
+
+                            // Text inputs and textareas only; select/checkbox/radio out of scope (#35839)
+                            const element = this.findVisibleFieldElement(variable);
+                            if (element) {
+                                const strValue = String(value ?? '');
+                                if (element.setFromAngular) {
+                                    element.setFromAngular(strValue);
+                                } else {
+                                    element.value = strValue;
+                                }
+                                this.dispatchFieldChangeEvents(element);
+                            }
+                        } finally {
+                            this._dotAngularPush = null;
                         }
                     });
                 });

@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { EMPTY, Observable, of } from 'rxjs';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Injectable } from '@angular/core';
+import { ApplicationRef } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
@@ -17,7 +15,6 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
@@ -29,52 +26,19 @@ import {
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     DotWorkflowServiceMock,
-    MockDotMessageService,
     mockWorkflows,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
+import {
+    createContentTypesFormMessageServiceMock,
+    MockDotLicenseService
+} from './content-types-form.testing';
 
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 
-@Injectable()
-class MockDotLicenseService {
-    isEnterprise(): Observable<boolean> {
-        return of(false);
-    }
-}
-
-const messageServiceMock = new MockDotMessageService({
-    'contenttypes.form.field.detail.page': 'Detail Page',
-    'contenttypes.form.field.expire.date.field': 'Expire Date Field',
-    'contenttypes.form.field.host_folder.label': 'Host or Folder',
-    'contenttypes.form.identifier': 'Identifier',
-    'contenttypes.form.label.publish.date.field': 'Publish Date Field',
-    'contenttypes.hint.URL.map.pattern.hint1': 'Hello World',
-    'contenttypes.form.label.URL.pattern': 'URL Pattern',
-    'contenttypes.content.variable': 'Variable',
-    'contenttypes.form.label.workflow': 'Workflow',
-    'contenttypes.action.cancel': 'Cancel',
-    'contenttypes.form.label.description': 'Description',
-    'contenttypes.form.name': 'Name',
-    'contenttypes.action.save': 'Save',
-    'contenttypes.action.update': 'Update',
-    'contenttypes.action.create': 'Create',
-    'contenttypes.action.edit': 'Edit',
-    'contenttypes.action.delete': 'Delete',
-    'contenttypes.form.name.error.required': 'Error is wrong',
-    'contenttypes.action.form.cancel': 'Cancel',
-    'contenttypes.content.contenttype': 'content type',
-    'contenttypes.content.fileasset': 'fileasset',
-    'contenttypes.content.content': 'Content',
-    'contenttypes.content.form': 'Form',
-    'contenttypes.content.persona': 'Persona',
-    'contenttypes.content.widget': 'Widget',
-    'contenttypes.content.htmlpage': 'Page',
-    'contenttypes.content.key_value': 'Key Value',
-    'contenttypes.content.vanity_url:': 'Vanity Url'
-});
+const messageServiceMock = createContentTypesFormMessageServiceMock();
 
 const mockActivatedRoute = {
     snapshot: {
@@ -162,10 +126,6 @@ describe('ContentTypesFormComponent', () => {
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            },
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotWorkflowsActionsService),
             {
@@ -211,7 +171,23 @@ describe('ContentTypesFormComponent', () => {
             baseType: 'CONTENT'
         });
         spectator.detectChanges();
+        // The focus runs in an afterNextRender hook, which fires on the application tick.
+        spectator.inject(ApplicationRef).tick();
+
         expect(spectator.component.$inputName().nativeElement).toBe(document.activeElement);
+    });
+
+    it('should not focus the name on edit mode', () => {
+        spectator.setInput('contentType', {
+            ...dotcmsContentTypeBasicMock,
+            baseType: 'CONTENT',
+            id: '1234-5678-edit'
+        });
+        spectator.detectChanges();
+        spectator.inject(ApplicationRef).tick();
+
+        // Editing an existing content type must not steal focus into the already-filled Name field.
+        expect(document.activeElement).not.toBe(spectator.component.$inputName().nativeElement);
     });
 
     it('should have canSave property false by default (form is invalid)', () => {
@@ -309,7 +285,6 @@ describe('ContentTypesFormComponent', () => {
         expect(spectator.component.canSave).toBe(false); // revert the change button disabled set it to false
     });
 
-    // eslint-disable-next-line max-len
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', async () => {
         spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,

@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -17,6 +25,7 @@ import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-con
     selector: 'dot-edit-contentlet',
     templateUrl: './dot-edit-contentlet.component.html',
     styleUrls: ['./dot-edit-contentlet.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotContentletWrapperComponent, AsyncPipe]
 })
 export class DotEditContentletComponent implements OnInit {

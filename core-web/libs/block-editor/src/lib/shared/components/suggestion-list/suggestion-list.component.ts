@@ -9,7 +9,8 @@ import {
     HostListener,
     Input,
     OnDestroy,
-    QueryList
+    QueryList,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 // Components
@@ -25,6 +26,7 @@ import { DotMenuItem } from '../suggestions/suggestions.component';
     selector: 'dot-suggestion-list',
     templateUrl: './suggestion-list.component.html',
     styleUrls: ['./suggestion-list.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SuggestionListComponent implements AfterViewInit, OnDestroy {

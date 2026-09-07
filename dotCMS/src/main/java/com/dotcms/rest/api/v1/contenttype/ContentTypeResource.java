@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
+import com.dotcms.rest.PATCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
@@ -29,12 +30,12 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.PaginationUtilParams.Builder;
 import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
@@ -256,11 +257,13 @@ public class ContentTypeResource implements Serializable {
 														 "| Property |  Type  | Description |\n" +
 														 "|----------|--------|-------------|\n" +
 														 "| `name`   | String | **Required.** Name of new content type |\n" +
-														 "| `variable` | String | System variable of new content type |\n" +
+														 "| `variable` | String | Velocity variable name of the new content type |\n" +
 														 "| `folder`   | String | Folder in which new content type will live |\n" +
 														 "| `host`   | String | Site or host to which the new content type will belong |\n" +
 														 "| `icon`   | String | System icon to represent content type |\n\n" +
-														 "Values not specified default to values of the original content type.",
+														 "The copy preserves: `description`, `host`, `folder`, full `fields[]` (with new field IDs), " +
+														 "layout (Row/Column markers), `metadata`, and workflow assignments. " +
+														 "Unspecified values default to those of the original content type.",
 										   required = true,
 										   content = @Content(
 												   schema = @Schema(implementation = CopyContentTypeForm.class),
@@ -484,24 +487,51 @@ public class ContentTypeResource implements Serializable {
 	public final Response createType(@Context final HttpServletRequest req,
 									 @Context final HttpServletResponse res,
 									 @RequestBody(
-											 description = "Payload may consist of a single content type JSON object, or a list " +
-														   "containing multiple content type objects.\n\n" +
-														   "Objects require `clazz` and `name` properties at minimum.\n\n" +
-														   "May optionally include the following special properties:\n\n" +
-														   "| Property | Value | Description |\n" +
-														   "|-|-|-|\n" +
-														   "| `systemActionMappings` | JSON Object | Maps " +
-														   "[Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) " +
-														   "to workflow action identifiers (as values) for this content type.|\n" +
-														   "| `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.",
+											 description = "Accepts either a single content-type object or an array. " +
+														   "The body is the content-type object directly (not wrapped in a 'contentType' envelope).\n\n" +
+														   "**Required properties:**\n" +
+														   "- `clazz` *(string)* — the base type, as a case-insensitive base-type name: " +
+														   "`CONTENT`, `WIDGET`, `FORM`, `FILEASSET`, `HTMLPAGE`, `PERSONA`, `VANITY_URL`, `KEY_VALUE`, or `DOTASSET`.\n" +
+														   "- `name` *(string)* — display name\n\n" +
+														   "**Common optional properties:**\n" +
+														   "- `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)\n" +
+														   "- `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)\n" +
+														   "- `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)\n" +
+														   "- `description` *(string)*\n" +
+														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
+														   "⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — " +
+														   "clients round-tripping an object must rename this key.\n" +
+														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
+														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
+														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
+														   "**WIDGET content types:** Creating `clazz: WIDGET` automatically adds `widgetTitle`, `widgetUsage`, `widgetCode`, and `widgetPreexecute`. " +
+														   "`widgetCode` is an `ImmutableConstantField`; set the field's `values` property on the content type. " +
+														   "Putting `widgetCode` in a workflow contentlet body is silently ignored.\n\n" +
+														   "**Field object schema** (each item in `fields[]`):\n" +
+														   "- `clazz` *(string, required)* — the field type as a case-insensitive short name: " +
+														   "`TEXT`, `TEXT_AREA`, `STORY_BLOCK_FIELD`, `WYSIWYG`, `BINARY`, `IMAGE`, `FILE`, `TAG`, `CATEGORY`, " +
+														   "`CHECKBOX`, `RADIO`, `SELECT`, `MULTI_SELECT`, `DATE`, `TIME`, `DATE_TIME`, `KEY_VALUE`, `JSON_FIELD`, " +
+														   "`CONSTANT`, `HIDDEN`, `CUSTOM_FIELD`, `RELATIONSHIP`, `ROW_FIELD` *(layout marker)*, `COLUMN_FIELD` *(layout marker)*. " +
+														   "The fully-qualified `Immutable*` class name is also accepted.\n" +
+														   "- `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), " +
+														   "`required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*\n" +
+														   "- ⚠️ **`dataType` is the storage type, not the UI type.** Asset-reference fields — " +
+														   "`ImmutableImageField`, `ImmutableFileField`, `ImmutableBinaryField` — use `dataType: TEXT` " +
+														   "(they store a reference in a text column), **never** `SYSTEM`. Reserve `SYSTEM` for true " +
+														   "layout/tab/relationship system fields (rows, columns, dividers, permission/relationship tabs).\n" +
+														   "- `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. " +
+														   "For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\\r\\nFalse|false'` — there is no dedicated Boolean field class.\n\n" +
+														   "**Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. " +
+														   "`ImmutableRowField` begins a new row; `ImmutableColumnField` begins a new column inside that row; " +
+														   "following content fields belong to the most-recent column until the next marker.",
 											 required = true,
 											 content = @Content(
-													 schema = @Schema(implementation = ContentTypeForm.class),
+													 schema = @Schema(implementation = ContentTypeRequestView.class),
 													 examples = {
 															 @ExampleObject(
 																	 value = "[\n" +
 																			 "  {\n" +
-																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"clazz\": \"CONTENT\",\n" +
 																			 "    \"defaultType\": false,\n" +
 																			 "    \"name\": \"The Content Type 1\",\n" +
 																			 "    \"description\": \"THE DESCRIPTION\",\n" +
@@ -520,7 +550,7 @@ public class ContentTypeResource implements Serializable {
 																			 "    ]\n" +
 																			 "  },\n" +
 																			 "  {\n" +
-																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"clazz\": \"CONTENT\",\n" +
 																			 "    \"defaultType\": false,\n" +
 																			 "    \"name\": \"The Content Type 2\",\n" +
 																			 "    \"description\": \"THE DESCRIPTION\",\n" +
@@ -627,10 +657,21 @@ public class ContentTypeResource implements Serializable {
 			operationId = "putContentTypeUpdate",
 			summary = "Updates a content type",
 			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
-					"Returns a copy of the updated content type object.\n\n" +
-					"> **Caution:** When updating a content type, any editable fields omitted from the request body " +
-					"will be removed from the content type. To update selected properties without deleting others," +
-					"submit the full JSON entity with the desired items edited.",
+			"⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. " +
+			"Any editable property (including items in `fields[]`) absent from the body will be removed. " +
+			"**Exception: `metadata`** — if the `metadata` key is absent from the request body, the server " +
+			"preserves the existing metadata unchanged. To explicitly clear all metadata, send `\"metadata\": null`.\n\n" +
+			"**Recommended update pattern:**\n" +
+			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
+			"2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.\n" +
+			"3. PUT the entire mutated object back.\n\n" +
+			"This is also the only supported way to add, remove, or modify individual fields — " +
+			"the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.\n\n" +
+			"⚠️ **`systemActionMappings` is validated on write.** Each entry's `workflowAction.id` must still exist; " +
+			"if a mapping points to a deleted workflow action, the entire PUT fails with " +
+			"`\"The workflow action with the id <uuid> does not exists\"`. When round-tripping the object, prune " +
+			"`systemActionMappings` entries you do not intend to update — or omit the `systemActionMappings` property " +
+			"entirely if no mapping changes are needed.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type updated successfully",
@@ -701,7 +742,7 @@ public class ContentTypeResource implements Serializable {
 												"schemes to be associated with the content type.",
 										required = true,
 										content = @Content(
-												schema = @Schema(implementation = ContentTypeForm.class),
+												schema = @Schema(implementation = ContentTypeRequestView.class),
 												examples = {
 														@ExampleObject(
 																value = "{\n" +
@@ -737,12 +778,15 @@ public class ContentTypeResource implements Serializable {
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
-			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
+			ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
 					idOrVar, form.getContentType(), user, false
 			);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
 			checkNotEmpty(contentType.id(), BadRequestException.class,
 					"Content Type 'id' attribute must be set");
+
+			contentType = contentTypeHelper.preserveMetadataIfAbsent(
+					contentType, form.getRequestJson(), contentTypeAPI);
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
 					this.saveContentTypeAndDependencies(contentType, user,
@@ -989,7 +1033,9 @@ public class ContentTypeResource implements Serializable {
 			operationId = "deleteContentType",
 			summary = "Deletes a content type",
 			description = "Deletes the content type based on the provided ID or Velocity variable name.\n\n" +
-					"Returns JSON string containing the identifier of the deleted content type.",
+			"⚠️ **Note:** The `entity` field in the response is a **JSON-encoded string**, not an object. " +
+			"Typed clients must call `JSON.parse(entity)` before use to get `{ \"deleted\": \"<typeId>\" }`. " +
+			"This differs from other endpoints in the same family where `entity` is a direct object.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type deleted successfully",
@@ -1056,7 +1102,13 @@ public class ContentTypeResource implements Serializable {
 	@Operation(
 			operationId = "getContentTypeIdVar",
 			summary = "Retrieves a single content type",
-			description = "Returns one content type based on the provided ID or Velocity variable name.",
+			description = "Returns one content type based on the provided ID or Velocity variable name.\n\n" +
+					"The response includes a `fields[]` array describing every field on the type. " +
+					"Each field has a `clazz` property (e.g. `ImmutableBinaryField`, `ImmutableImageField`, `ImmutableTextField`) " +
+					"that determines what values the field accepts. This is particularly important for file-like fields: " +
+					"`ImmutableBinaryField` only accepts a `temp_<id>` from `POST /api/v1/temp`; " +
+					"`ImmutableImageField` accepts a `temp_<id>` or a dotAsset `identifier`. " +
+					"Always inspect `fields[].clazz` before attempting to set binary or image field values via the workflow fire endpoint.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
@@ -1127,7 +1179,7 @@ public class ContentTypeResource implements Serializable {
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
 					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false);
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false, null);
 	}
 
 	@GET
@@ -1208,9 +1260,14 @@ public class ContentTypeResource implements Serializable {
 					schema = @Schema(type = "integer")) final Long languageId,
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
-					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+					schema = @Schema(type = "boolean")) final Boolean paramLive,
+			@QueryParam("inode") @Parameter(
+					description = "Optional contentlet inode. When provided, contentlet-specific " +
+								  "Velocity variables ($inode, $identifier, $lang, etc.) will be " +
+								  "available when rendering Custom Fields.",
+					schema = @Schema(type = "string")) final String contentletInode) throws DotDataException {
 		req.setAttribute("contentTypeId", idOrVar);
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true);
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true, contentletInode);
 	}
 
 	/**
@@ -1225,6 +1282,8 @@ public class ContentTypeResource implements Serializable {
 	 *                           the returned object.
 	 * @param renderCustomFields If the Velocity code in all Custom Fields must be parsed, set this
 	 *                           to {@code true}.
+	 * @param contentletInode    Optional contentlet inode for providing contentlet-specific
+	 *                           Velocity variables when rendering Custom Fields.
 	 *
 	 * @return The specified {@link ContentType} in its JSON format.
 	 *
@@ -1233,7 +1292,8 @@ public class ContentTypeResource implements Serializable {
 	private Response retrieveContentType(final HttpServletRequest httpRequest,
 										 final HttpServletResponse httpResponse, final String idOrVar,
 										 final Long languageId, final Boolean paramLive,
-										 final boolean renderCustomFields) throws DotDataException {
+										 final boolean renderCustomFields,
+										 final String contentletInode) throws DotDataException {
 		final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, false, null);
 		final User user = initData.getUser();
 		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
@@ -1260,7 +1320,8 @@ public class ContentTypeResource implements Serializable {
 					new ContentTypeInternationalization(languageId, live, user) : null;
 			final ImmutableMap<String, Object> resultMap = ImmutableMap.<String, Object>builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
-							contentTypeInternationalization, renderCustomFields, user))
+							contentTypeInternationalization, renderCustomFields, user,
+							contentletInode))
 					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
 							type.id(), initData.getUser()))
 					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
@@ -1320,7 +1381,9 @@ public class ContentTypeResource implements Serializable {
 	@Operation(
 			operationId = "postContentTypeFilter",
 			summary = "Filters content types",
-			description = "Returns the list of content type objects that match the specified filter, with optional pagination criteria.",
+			description = "Returns the list of content type objects that match the specified filter, with optional pagination criteria.\n\n" +
+			"For simple substring filtering without pagination control, `GET /api/v1/contenttype?filter=<string>` " +
+			"is equivalent and simpler. Use `_filter` when you need pagination, ordering, and direction together.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content types filtered successfully",
@@ -1653,7 +1716,14 @@ public class ContentTypeResource implements Serializable {
             @QueryParam(ContentTypesPaginator.ENSURE) @Parameter(schema = @Schema(type = "string"),
                     description = "Guarantee Content Types to be included in the response: " +
                             "Comma-separated content type keys (e.g. `activity, blog, product`)."
-            ) String ensureContentTypesParam) throws DotDataException {
+            ) String ensureContentTypesParam,
+            @QueryParam(ContentTypesPaginator.SYSTEM_PARAMETER_NAME) @Parameter(
+                    schema = @Schema(type = "boolean", defaultValue = "true"),
+                    description = "Whether to include system Content Types (e.g. Host, Favorite " +
+                            "Page) in the response.\n\nWhen `true` or omitted, system Content " +
+                            "Types are included (default, backward-compatible). When `false`, " +
+                            "they are excluded. Combines with `filter`."
+            ) final Boolean system) throws DotDataException {
 
 		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(httpRequest, httpResponse)
@@ -1700,6 +1770,10 @@ public class ContentTypeResource implements Serializable {
             if (ensureContentTypesParam != null) {
                 extraParams.put(ContentTypesPaginator.ENSURE,
                         contentTypeHelper.getEnsuredContentTypes(ensureContentTypesParam));
+            }
+
+            if (null != system) {
+                extraParams.put(ContentTypesPaginator.SYSTEM_PARAMETER_NAME, system);
             }
 
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
@@ -1961,6 +2035,106 @@ public class ContentTypeResource implements Serializable {
         }
         return util.getPageView(builder.build());
 	}
+
+    @PATCH
+    @Path("/id/{idOrVar}/metadata")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Operation(
+            operationId = "updateContentTypeMetadata",
+            summary = "Updates the metadata of a Content Type",
+            description = "Merges the provided key/value pairs into the Content Type's `metadata` " +
+                    "map without touching fields, workflows, or any other structural property. " +
+                    "Keys present in the body are added or overwritten; keys absent from the body " +
+                    "are left unchanged. To remove a key, set its value explicitly to `null`.\n\n" +
+                    "Known metadata keys:\n" +
+                    "- `CONTENT_EDITOR2_ENABLED` *(boolean)* — enables the new content editor\n" +
+                    "- `DOT_STYLE_EDITOR_SCHEMA` *(JSON string)* — Style Editor schema definition",
+            tags = {"Content Type"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Metadata updated successfully",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request — invalid JSON body"),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "User does not have permission to edit this Content Type"),
+                    @ApiResponse(responseCode = "404", description = "Content Type not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public final Response updateContentTypeMetadata(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("idOrVar") @Parameter(
+                    required = true,
+                    description = "The ID or Velocity variable name of the Content Type to update.\n\n" +
+                            "Example value: `htmlpageasset` (Default page content type)",
+                    schema = @Schema(type = "string")
+            ) final String idOrVar,
+            @RequestBody(
+                    description = "A flat JSON object whose keys are merged into the Content Type's " +
+                            "existing metadata. Set a key's value to `null` to remove it. " +
+                            "An absent or empty body is treated as a no-op — the current metadata " +
+                            "is returned unchanged with HTTP 200.",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(type = "object", description = "Metadata key/value pairs to merge"),
+                            examples = @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"DOT_STYLE_EDITOR_SCHEMA\": \"{\\\"contentType\\\":\\\"htmlpageasset\\\"," +
+                                            "\\\"sections\\\":[{\\\"title\\\":\\\"New Section\\\",\\\"fields\\\":" +
+                                            "[{\\\"type\\\":\\\"dropdown\\\",\\\"label\\\":\\\"Color\\\"," +
+                                            "\\\"id\\\":\\\"color\\\",\\\"config\\\":{\\\"options\\\":" +
+                                            "[{\\\"label\\\":\\\"Red\\\",\\\"value\\\":\\\"red\\\"}]}}]}]}\"\n" +
+                                            "}"
+                            )
+                    )
+            ) final Map<String, Object> metadataPatch) {
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+        try {
+            if (!UtilMethods.isSet(idOrVar)) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+
+            if (metadataPatch == null || metadataPatch.isEmpty()) {
+                Logger.warn(this, "No metadata patch found for " + idOrVar);
+                final ContentType existing = contentTypeAPI.find(idOrVar);
+                return Response.ok(new ResponseEntityContentTypeDetailView(
+                        new HashMap<>(contentTypeHelper.contentTypeToMap(existing, user)))).build();
+            }
+
+            final ContentType saved = contentTypeHelper.mergeAndSaveMetadata(idOrVar, metadataPatch, contentTypeAPI);
+            return Response.ok(new ResponseEntityContentTypeDetailView(
+                    new HashMap<>(contentTypeHelper.contentTypeToMap(saved, user)))).build();
+        } catch (final NotFoundInDbException e) {
+            Logger.warn(this, String.format("Content Type '%s' was not found", idOrVar));
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityContentTypeDetailView(
+                            List.of(new ErrorEntity("CONTENT_TYPE_NOT_FOUND", "Content type not found", idOrVar))
+                    )).build();
+        } catch (final BadRequestException e) {
+            Logger.warn(this, String.format("Bad metadata patch for Content Type '%s': %s", idOrVar, e.getMessage()));
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityContentTypeDetailView(
+                            List.of(new ErrorEntity("INVALID_METADATA", e.getMessage(), "DOT_STYLE_EDITOR_SCHEMA"))
+                    )).build();
+        } catch (final DotSecurityException e) {
+            throw new ForbiddenException(e);
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Error updating metadata for Content Type '%s'", idOrVar), e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 	private static long getLanguageId(final String language) {
 

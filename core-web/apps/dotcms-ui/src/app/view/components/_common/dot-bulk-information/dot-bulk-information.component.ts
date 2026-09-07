@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -9,6 +9,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-bulk-information',
     templateUrl: './dot-bulk-information.component.html',
     styleUrls: ['./dot-bulk-information.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotMessagePipe]
 })
 export class DotBulkInformationComponent implements OnInit {

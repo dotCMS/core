@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, input } from '@angular/core';
+import { Component, ViewChild, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -13,6 +13,7 @@ import { Menu, MenuModule } from 'primeng/menu';
 @Component({
     selector: 'dot-menu',
     templateUrl: './dot-menu.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ButtonModule, MenuModule]
 })
 export class DotMenuComponent {

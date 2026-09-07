@@ -1,6 +1,6 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
 import { of } from 'rxjs';
-import { Instance, Props } from 'tippy.js';
+import { Instance } from 'tippy.js';
 
 import {
     ChangeDetectionStrategy,
@@ -177,33 +177,19 @@ export class DotBubbleMenuComponent implements OnInit {
         }
     ];
 
-    protected readonly tippyOptions: Partial<Props> = {
-        maxWidth: '100%',
-        placement: 'top-start',
-        trigger: 'manual',
-        onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        onClickOutside: this.onClickOutside.bind(this),
-        appendTo: (element) => {
-            // Append it to the block editor host, so it is outside of the editor container
-            const blockEditorHost = element?.parentElement?.parentElement ?? document.body;
-
-            return blockEditorHost;
-        },
-        popperOptions: {
-            modifiers: [
-                // This modifier is needed to flip the bubble menu when it is too close to the edge of the screen
-                {
-                    name: 'animate-flip',
-                    options: {
-                        fallbackPlacements: ['top', 'bottom']
-                    }
-                },
-                // This modifier adds an attribute to the tippy element to hide it when the reference is hidden
-                {
-                    name: 'hide',
-                    phase: 'main'
-                }
-            ]
+    // ngx-tiptap v14 dropped tippy for floating-ui. Map the relevant options:
+    //   - `placement` and `flip` map directly.
+    //   - Default `strategy: 'absolute'` (floating-ui default) keeps the menu anchored to its
+    //      reference text and scrolling with the page; `'fixed'` mis-positioned on first show.
+    //   - `onUpdate` replaces tippy's `onBeforeUpdate` for refreshing the dropdown's selected node
+    //      whenever the bubble menu re-positions; without it the dropdown shows no value.
+    //   - tippy-only callbacks (`onClickOutside`, `trigger`, `maxWidth`) have no floating-ui equivalent
+    //      and are dropped — outside-click dismissal is handled by the bubble menu plugin lifecycle.
+    protected readonly bubbleOptions = {
+        placement: 'top-start' as const,
+        flip: { fallbackPlacements: ['top' as const, 'bottom' as const] },
+        onUpdate: () => {
+            this.onBeforeUpdate();
         }
     };
 
@@ -303,6 +289,22 @@ export class DotBubbleMenuComponent implements OnInit {
         this.imageTextAlign.set(resolvedAlign);
         this.imageTextWrap.set(null);
     }
+    /**
+     * Toggles superscript on the selected text, removing subscript first to
+     * ensure the two marks are mutually exclusive.
+     */
+    protected toggleSuperscript() {
+        this.editor().chain().focus().unsetSubscript().toggleSuperscript().run();
+    }
+
+    /**
+     * Toggles subscript on the selected text, removing superscript first to
+     * ensure the two marks are mutually exclusive.
+     */
+    protected toggleSubscript() {
+        this.editor().chain().focus().unsetSuperscript().toggleSubscript().run();
+    }
+
     protected goToContentlet() {
         // Validate selection exists before proceeding
 

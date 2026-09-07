@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpectatorHttp,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 
 import { DotCMSPersonalizedItem } from '@dotcms/dotcms-models';
 

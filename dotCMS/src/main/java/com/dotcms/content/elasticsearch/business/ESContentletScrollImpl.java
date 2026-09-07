@@ -8,6 +8,7 @@ import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -97,11 +98,11 @@ class ESContentletScrollImpl implements IndexContentletScroll {
 
             // Convert to domain SearchHits
             final SearchHits searchHits = SearchHits.from(esSearchHits);
-            this.totalHits = Objects.requireNonNull(searchHits.totalHits()).value();
+            this.totalHits = Objects.requireNonNull(searchHits.getTotalHits()).value();
 
             // Convert hits to ContentletSearch
             final List<ContentletSearch> results = getContentletSearchFromSearchHits(searchHits);
-            this.hasMoreResults = (searchHits.hits() != null && !searchHits.hits().isEmpty());
+            this.hasMoreResults = (searchHits.getHits() != null && !searchHits.getHits().isEmpty());
 
             Logger.debug(this.getClass(),
                     () -> String.format("Scroll initialized: scrollId=%s, totalHits=%d, firstBatchSize=%d",
@@ -143,7 +144,7 @@ class ESContentletScrollImpl implements IndexContentletScroll {
             // Convert to domain SearchHits
             final SearchHits searchHits = SearchHits.from(esSearchHits);
             final List<ContentletSearch> results = getContentletSearchFromSearchHits(searchHits);
-            this.hasMoreResults = (searchHits.hits() != null && !searchHits.hits().isEmpty());
+            this.hasMoreResults = (searchHits.getHits() != null && !searchHits.getHits().isEmpty());
 
             Logger.debug(this.getClass(),
                     () -> String.format("Scroll next batch: batchSize=%d, hasMore=%b",
@@ -191,19 +192,18 @@ class ESContentletScrollImpl implements IndexContentletScroll {
 
     private List<ContentletSearch> getContentletSearchFromSearchHits(final SearchHits searchHits) {
         PaginatedArrayList<ContentletSearch> list=new PaginatedArrayList<>();
-        list.setTotalResults(searchHits.totalHits().value());
+        list.setTotalResults(searchHits.getTotalHits().value());
 
-        for (SearchHit sh : searchHits.hits()) {
+        for (SearchHit sh : searchHits.getHits()) {
             try{
-                Map<String, Object> sourceMap = sh.sourceAsMap();
-                ContentletSearch conwrapper= new ContentletSearch();
-                conwrapper.setId(sh.id());
-                conwrapper.setIndex(sh.index());
-                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                conwrapper.setInode(sourceMap.get("inode").toString());
-                conwrapper.setScore(sh.score());
-
-                list.add(conwrapper);
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                list.add(ImmutableContentletSearch.builder()
+                        .id(sh.getId())
+                        .index(sh.getIndex())
+                        .identifier(sourceMap.get("identifier").toString())
+                        .inode(sourceMap.get("inode").toString())
+                        .score(sh.getScore())
+                        .build());
             }
             catch(Exception e){
                 Logger.error(this,e.getMessage(),e);

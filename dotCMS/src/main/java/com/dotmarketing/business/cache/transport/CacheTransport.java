@@ -56,6 +56,41 @@ public interface CacheTransport {
     default boolean requiresAutowiring() {
         return true;
     }
+
+    /**
+     * Number of cache invalidation messages this transport has dropped because it was asked to
+     * send while not initialized, counted only from the first successful {@link #init(Server)}
+     * onwards. Used by health checks and metrics to surface silent invalidation loss in a cluster.
+     *
+     * Drops from before the transport ever came up are reported by
+     * {@link #getStartupDroppedMessages()} instead: they are an unavoidable consequence of boot
+     * order and would otherwise dominate this counter permanently.
+     */
+    default long getDroppedMessages() {
+        return 0;
+    }
+
+    /**
+     * Number of cache invalidation messages dropped before this transport was initialized for the
+     * first time, which is expected during startup and is not an operational problem on its own.
+     * Kept out of {@link #getDroppedMessages()} so that counter stays usable for alerting.
+     */
+    default long getStartupDroppedMessages() {
+        return 0;
+    }
+
+    /**
+     * Number of cache invalidation messages this transport tried to send and that the underlying
+     * provider reported as failed -- as opposed to {@link #getDroppedMessages()}, which counts
+     * messages never attempted because the transport was not initialized.
+     *
+     * The distinction is operational: dropped means "the transport is down, fix the transport",
+     * failed means "the transport believes it is up but sends are erroring". Both lose cluster
+     * invalidations, but only the first is visible from {@link #isInitialized()}.
+     */
+    default long getFailedMessages() {
+        return 0;
+    }
     
 
     public interface CacheTransportInfo extends Serializable {

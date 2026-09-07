@@ -30,7 +30,7 @@
     } @else if (isEmpty) {
         <div class="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
             <span
-                class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-100 text-surface-600">
+                class="flex size-12 items-center justify-center rounded-full bg-surface-100 text-surface-600">
                 <i class="pi pi-star text-2xl"></i>
             </span>
             <div class="text-base font-semibold text-surface-900">
@@ -42,7 +42,7 @@
                 innerHTML="{{ 'favoritePage.listing.empty.content' | dm }}"></p>
         </div>
     } @else {
-        <div class="grid gap-6 [grid-template-columns:repeat(auto-fill,250px)]">
+        <div class="grid grid-cols-[repeat(auto-fill,250px)] gap-6">
             @for (favoritePage of favoritePages; track $index; let i = $index) {
                 <dot-pages-card
                     [actionButtonId]="'favoritePageActionButton-' + i"

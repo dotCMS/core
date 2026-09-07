@@ -1,4 +1,4 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -12,7 +12,7 @@ import {
     DotMessageService,
     DotFormatDateService
 } from '@dotcms/data-access';
-import { DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSWorkflowActionEvent,
     DotWizardStep,
@@ -32,13 +32,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEmaWorkflowActionsService } from './dot-ema-workflow-actions.service';
-
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
 
 @Injectable()
 export class MockPushPublishService {
@@ -143,7 +136,6 @@ describe('DotEmaWorkflowActionsService', () => {
                 provide: LoginService,
                 useClass: LoginServiceMock
             },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
         ]
     });

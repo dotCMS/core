@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -8,6 +8,7 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     selector: 'dot-default-value-property',
     templateUrl: './default-value-property.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DefaultValuePropertyComponent implements OnInit {

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -31,15 +29,7 @@ import {
     DotSiteBrowserService,
     DotGlobalMessageService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -51,8 +41,6 @@ import {
 import { DotAddVariableComponent } from './dot-add-variable.component';
 import { FilteredFieldTypes } from './dot-add-variable.models';
 import { DOT_CONTENT_MAP, DotFieldsService } from './services/dot-fields.service';
-
-import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -227,13 +215,10 @@ describe('DotAddVariableComponent', () => {
                         }
                     }
                 },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 StringUtils,
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 {
                     provide: DotMessageDisplayService,

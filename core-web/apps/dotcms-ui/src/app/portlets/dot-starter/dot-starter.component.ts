@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotColorIconComponent } from '@dotcms/ui';
 
@@ -10,6 +10,7 @@ export type UserProfile = 'developer' | 'marketer';
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotColorIconComponent, DotOnboardingDevComponent, DotOnboardingAuthorComponent]
 })
 export class DotStarterComponent implements OnInit {

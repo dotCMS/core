@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { DotCMSColumnContainer } from '@dotcms/types';

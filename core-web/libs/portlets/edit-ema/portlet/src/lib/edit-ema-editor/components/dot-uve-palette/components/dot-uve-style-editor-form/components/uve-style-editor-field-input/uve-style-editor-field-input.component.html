@@ -1,5 +1,5 @@
-<div class="form-field">
-    <label class="field-label" [attr.for]="$field().id">{{ $field().label }}</label>
+<div class="field">
+    <label [attr.for]="$field().id">{{ $field().label }}</label>
     <input
         pInputText
         [formControlName]="$field().id"
@@ -7,5 +7,7 @@
         class="w-full"
         [placeholder]="
             $field().config?.placeholder ?? ('style.editor.text.field.default.placeholder' | dm)
-        " />
+        "
+        (blur)="commit.emit()"
+        (keydown.enter)="commit.emit()" />
 </div>

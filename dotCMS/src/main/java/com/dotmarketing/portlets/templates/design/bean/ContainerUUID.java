@@ -5,6 +5,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,6 +28,21 @@ public class ContainerUUID implements Serializable{
     public static final String UUID_START_VALUE = "1";
     public static final String UUID_DEFAULT_VALUE = "-1";
 
+    @Schema(description =
+            "Reference to the Container placed in this layout slot. Accepts any ONE of three forms:\n"
+            + "- a Container **identifier** for a database-backed Container — a full UUID "
+            + "('2cef9f97-5faf-4d18-8c9b-df22b6c17111') or a dotCMS 'shorty' (short) id; or\n"
+            + "- a **file path** for a file-based (Container-as-File) Container — host-qualified "
+            + "('//demo.dotcms.com/application/containers/default/') or host-relative "
+            + "('/application/containers/default/', resolved against the current site); or\n"
+            + "- the literal string 'SYSTEM_CONTAINER' for the built-in system Container.\n"
+            + "The server chooses the resolution strategy by inspecting the value: a string containing "
+            + "'/application/containers' is resolved as a file-path Container, 'SYSTEM_CONTAINER' resolves to "
+            + "the system Container, and anything else is looked up as a database identifier. A value that does "
+            + "not resolve to an existing Container produces no container at render time (the slot renders "
+            + "empty) rather than falling back to another Container — pass the exact identifier or the full "
+            + "host-qualified path.",
+            example = "//demo.dotcms.com/application/containers/default/")
     private final String identifier;
     private String uuid;
 

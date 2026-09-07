@@ -1,14 +1,14 @@
 <div
     class="flex items-center gap-4 py-2 pl-1 pr-4 w-fit bg-white border-[1.5px] border-primary-500 rounded-md">
-    <i class="material-icons text-base text-gray-500">drag_indicator</i>
+    <i class="material-symbols-outlined text-base text-gray-500">drag_indicator</i>
     <div class="flex justify-center items-center gap-3">
         <div class="flex justify-center items-center min-w-6 min-h-6">
             @if (!imageError) {
                 <img (error)="imageError = true" [src]="icon" alt="drag-icon" draggable="false" />
             } @else {
                 <i
-                    class="material-icons text-base text-gray-500"
-                    data-testId="material-icons-fallback">
+                    class="material-symbols-outlined text-base text-gray-500"
+                    data-testId="material-symbols-outlined-fallback">
                     {{ icon }}
                 </i>
             }

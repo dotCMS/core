@@ -1,4 +1,4 @@
-<div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
+<div class="portlet-wrapper flex flex-col" data-testid="analytics-dashboard">
     @if ($showMessage()) {
         <p-message
             severity="info"
@@ -15,38 +15,52 @@
         </p-message>
     }
 
-    <div class="bg-gray-100 border-b border-gray-300 p-4 py-6">
-        <div class="flex justify-between items-center">
-            <dot-analytics-filters
-                [timeRange]="store.timeRange()"
-                (changeFilters)="onTimeRangeChange($event)"
-                data-testid="analytics-filters" />
-            <p-button
-                [label]="'analytics.dashboard.refresh.button' | dm"
-                severity="primary"
-                size="small"
-                (onClick)="onRefresh()"
-                data-testid="refresh-button" />
+    <p-tabs [lazy]="true">
+        <div class="analytics-dashboard-toolbar border-b border-gray-300 bg-gray-100 px-4">
+            <div class="flex min-h-12 items-center justify-between gap-4">
+                <div class="flex min-w-0 items-center gap-4">
+                    <p-tablist
+                        class="min-w-0 shrink-0 border-0 bg-transparent shadow-none"
+                        [pt]="tabListPt">
+                        @for (tab of tabs; track tab.id) {
+                            <p-tab
+                                [routerLink]="tab.route"
+                                queryParamsHandling="preserve"
+                                [routerLinkActive]="['p-tab-active']">
+                                {{ tab.label | dm }}
+                            </p-tab>
+                        }
+                    </p-tablist>
+                    <p-divider layout="vertical" />
+                    <dot-analytics-filters
+                        [timeRange]="store.timeRange()"
+                        (changeFilters)="onTimeRangeChange($event)"
+                        data-testid="analytics-filters" />
+                </div>
+                <p-button
+                    [label]="'analytics.dashboard.refresh.button' | dm"
+                    severity="primary"
+                    size="small"
+                    (onClick)="onRefresh()"
+                    data-testid="refresh-button" />
+            </div>
         </div>
-    </div>
-
-    <div class="px-4">
-        <!-- Tabs -->
-        <p-tabs [lazy]="true" [value]="store.currentTab()" (valueChange)="onTabChange($event)">
-            <p-tablist>
-                @for (tab of tabs; track tab.id) {
-                    <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
-                }
-            </p-tablist>
-            <p-tabpanels class="dashboard-panels w-full max-w-[1600px] mx-auto">
-                @for (tab of tabs; track tab.id) {
-                    <p-tabpanel [value]="tab.id" styleClass="w-full">
-                        <ng-template #content>
-                            <ng-container *ngComponentOutlet="tabComponents[tab.id]" />
-                        </ng-template>
-                    </p-tabpanel>
-                }
-            </p-tabpanels>
-        </p-tabs>
+    </p-tabs>
+    <div class="analytics-dashboard-body relative p-8">
+        <!-- Full-report loading overlay: mirrors dot-edit-content-layout's reload overlay
+             (same spinner + semi-transparent backdrop) so the ~2s customer-environment load
+             time for each tab reads consistently with the rest of the app, instead of just
+             the per-widget skeletons underneath. -->
+        @if (store.$isReportLoading()) {
+            <div
+                class="analytics-dashboard-body__loading-overlay absolute inset-0 z-10 flex items-center justify-center bg-white/60"
+                role="status"
+                aria-live="polite"
+                [attr.aria-label]="'Loading' | dm"
+                data-testid="analytics-dashboard-loading-overlay">
+                <i class="pi pi-spin pi-spinner text-4xl text-gray-500" aria-hidden="true"></i>
+            </div>
+        }
+        <router-outlet />
     </div>
 </div>

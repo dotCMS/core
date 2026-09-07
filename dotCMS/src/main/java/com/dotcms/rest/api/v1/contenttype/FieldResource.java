@@ -44,6 +44,7 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -105,9 +106,10 @@ public class FieldResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Response updateFields(@Parameter(description = "Content type ID", required = true)
 								 @PathParam("typeId") final String typeId, 
-								 @RequestBody(description = "Fields JSON data", 
+								 @RequestBody(description = "Array of field objects to save on the content type.",
 											required = true,
-											content = @Content(schema = @Schema(implementation = String.class)))
+											content = @Content(
+													array = @ArraySchema(schema = @Schema(implementation = ContentTypeFieldView.class))))
 								 final String fieldsJson,
 								 @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
@@ -173,9 +175,14 @@ public class FieldResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Response createContentTypeField(@Parameter(description = "Content type ID", required = true)
 										   @PathParam("typeId") final String typeId, 
-										   @RequestBody(description = "Field JSON data", 
+										   @RequestBody(description = "A SINGLE field object to create on the content type. "
+												   + "This endpoint creates exactly one field: if you pass a JSON array, only the "
+												   + "first element is saved (it returns 200 and silently drops the rest). To add "
+												   + "multiple fields at once, use PUT /api/v1/contenttype/{typeId}/fields (which takes "
+												   + "an array), or include them inline as the 'fields' array when creating the content "
+												   + "type via POST /api/v1/contenttype.",
 													  required = true,
-													  content = @Content(schema = @Schema(implementation = String.class)))
+													  content = @Content(schema = @Schema(implementation = ContentTypeFieldView.class)))
 										   final String fieldJson,
 										   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 

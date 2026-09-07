@@ -287,4 +287,106 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertEquals(expectedTitle, DotJSON.class.cast(result.get("dotJSON")).get("title"));
     }
 
+    /**
+     * Regression test for #35347. The mock request the actionlet builds for the script
+     * engine had no {@code WebKeys.USER} attribute, so any viewtool resolving the user via
+     * {@code PortalUtil.getUser(req)} — including {@code WorkflowTool.init()} — fell back
+     * to the anonymous user and {@code $workflowtool.fire(...)} 403'd whenever the target
+     * action wasn't readable by anonymous. The fix sets {@code WebKeys.USER} on the mock
+     * request before the script runs; this test reads that attribute back from inside the
+     * script and asserts it resolves to the firing user.
+     */
+    @Test
+    public void Test_Velocity_Script_Actionlet_PropagatesTriggeringUser_OntoMockRequest() throws Exception {
+
+        final User admin = APILocator.systemUser();
+
+        WorkflowScheme userBindScheme = null;
+        ContentType userBindContentType = null;
+        Contentlet checkedIn = null;
+
+        try {
+            userBindContentType = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .host(Host.SYSTEM_HOST)
+                            .name("UserBindTest" + System.currentTimeMillis())
+                            .variable("UserBindTest" + System.currentTimeMillis())
+                            .build());
+
+            final CreateSchemeStepActionResult userBindResult = createSchemeStepActionActionlet(
+                    "UserBindScheme" + UUIDGenerator.generateUuid(), "step1", "action1",
+                    VelocityScriptActionlet.class);
+            userBindScheme = userBindResult.getScheme();
+
+            // Read WebKeys.USER ("USER") off the mock request the actionlet builds.
+            // Pre-fix: this attribute was never set, so getAttribute returned null and
+            // PortalUtil.getUser(req) — used by WorkflowTool.init() — fell through to the
+            // anonymous user.
+            final String script =
+                    "#set($attrUser = $request.getAttribute(\"USER\"))\n" +
+                    "#if($attrUser)\n" +
+                    "$dotJSON.put(\"userId\", $attrUser.getUserId())\n" +
+                    "$dotJSON.put(\"isAnonymous\", $attrUser.isAnonymousUser())\n" +
+                    "#else\n" +
+                    "$dotJSON.put(\"userId\", \"MISSING\")\n" +
+                    "$dotJSON.put(\"isAnonymous\", true)\n" +
+                    "#end\n";
+
+            final WorkflowActionClass actionClass = userBindResult.getActionClass();
+            final List<WorkflowActionClassParameter> params = new ArrayList<>();
+            final WorkflowActionClassParameter scriptParam = new WorkflowActionClassParameter();
+            scriptParam.setActionClassId(actionClass.getId());
+            scriptParam.setKey("script");
+            scriptParam.setValue(script);
+            params.add(scriptParam);
+            final WorkflowActionClassParameter resultKeyParam = new WorkflowActionClassParameter();
+            resultKeyParam.setActionClassId(actionClass.getId());
+            resultKeyParam.setKey("resultKey");
+            resultKeyParam.setValue("result");
+            params.add(resultKeyParam);
+            workflowAPI.saveWorkflowActionClassParameters(params, admin);
+
+            workflowAPI.saveSchemesForStruct(
+                    new StructureTransformer(userBindContentType).asStructure(),
+                    List.of(userBindScheme));
+
+            final Contentlet contentlet = new Contentlet();
+            contentlet.setContentType(userBindContentType);
+            checkedIn = contentletAPI.checkin(contentlet, admin, false);
+
+            final Contentlet result = workflowAPI.fireContentWorkflow(checkedIn,
+                    new ContentletDependencies.Builder()
+                            .modUser(admin)
+                            .workflowActionId(userBindResult.getAction().getId())
+                            .build());
+
+            Assert.assertNotNull(result);
+            final Map<String, Object> resultMap = (Map<String, Object>) result.get("result");
+            Assert.assertNotNull("Actionlet must store a result map", resultMap);
+            final DotJSON dotJSON = (DotJSON) resultMap.get("dotJSON");
+            Assert.assertNotNull("dotJSON must be present in the result", dotJSON);
+            Assert.assertEquals(
+                    "WebKeys.USER on the mock request must be the triggering admin, not missing or anonymous",
+                    admin.getUserId(), dotJSON.get("userId"));
+            Assert.assertEquals(
+                    "Triggering user must not resolve to anonymous",
+                    false, dotJSON.get("isAnonymous"));
+
+        } finally {
+            try {
+                if (null != checkedIn) {
+                    contentletAPI.destroy(checkedIn, admin, false);
+                }
+            } catch (Exception ignored) { /* best-effort */ }
+
+            if (null != userBindScheme) {
+                cleanScheme(userBindScheme);
+            }
+            if (null != userBindContentType) {
+                contentTypeAPI.delete(userBindContentType);
+            }
+        }
+    }
+
 }

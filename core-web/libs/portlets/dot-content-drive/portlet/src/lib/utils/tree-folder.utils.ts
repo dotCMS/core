@@ -1,7 +1,35 @@
-import { DotFolder } from '@dotcms/dotcms-models';
+import { DotFolder, DotSite } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { BuildTreeFolderNodesParams } from '../shared/models';
+
+/**
+ * Builds the tree's root node for a site.
+ *
+ * The row is the site: it is named by the hostname, marked with a globe, and selecting it browses the
+ * site root. The site's folders hang off it as children, so its chevron collapses the site.
+ *
+ * Its empty `path` is what distinguishes it from a folder, since every folder node carries one. That
+ * is also why it offers no folder actions: this node describes a site, and the site root folder's
+ * permissions are not part of what the tree loaded.
+ *
+ * @param {DotSite} site - The site the drive is browsing
+ * @returns {DotFolderTreeNodeItem} The root node for that site
+ */
+export const createSiteNode = (site: DotSite): DotFolderTreeNodeItem => ({
+    key: site.identifier,
+    label: site.hostname,
+    loading: false,
+    icon: 'pi pi-globe',
+    leaf: false,
+    expanded: true,
+    data: {
+        type: 'folder',
+        path: '',
+        hostname: site.hostname,
+        id: site.identifier
+    }
+});
 
 /**
  * Generates all parent paths from a target path
@@ -37,11 +65,25 @@ export const createTreeNode = (
         label: folder.path,
         data: {
             id: folder.id,
+            inode: folder.inode,
             hostname: folder.hostName,
             path: folder.path,
-            type: 'folder'
+            type: 'folder',
+            defaultBaseType: folder.defaultBaseType,
+            // Carried so a right-click can gate the shared context menu and pre-populate the
+            // "Edit folder" dialog without refetching. Every folder-search call behind this one
+            // asks for `permissions`, so a node arrives ready to gate however it reached the tree.
+            name: folder.name,
+            title: folder.title,
+            sortOrder: folder.sortOrder,
+            filesMasks: folder.filesMasks,
+            defaultFileType: folder.defaultFileType,
+            showOnMenu: folder.showOnMenu,
+            permissions: folder.permissions
         },
-        leaf: false
+        // Hide the expand toggle for folders the search endpoint reports as having no visible
+        // children. When `hasChildren` is undefined (legacy source) the folder stays expandable.
+        leaf: folder.hasChildren === false
     };
 
     if (parent) {
@@ -78,17 +120,25 @@ export const buildTreeFolderNodes = ({
     /**
      * Checks if a folder node belongs to the active target path
      */
-    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) =>
-        expectedPaths[levelIndex] === node.data.path;
+    const isOnTargetPath = (levelIndex: number, node: DotFolderTreeNodeItem) => {
+        const data = node.data;
+        return !!data && data.type !== 'load-more' && expectedPaths[levelIndex] === data.path;
+    };
 
     /**
-     * Checks if a folder node is a leaf
+     * Whether an on-path node has a level of children below it in this fetch.
+     *
+     * Level `i + 1` holds the children of the node matched at level `i`, so a node is a leaf only
+     * when that level does not exist or came back empty. Previously this read
+     * `folderHierarchyLevels.length >= levelIndex + 1`, which is true for *every* on-path node —
+     * so a folder was marked a leaf in the same breath as its children were attached to it. PrimeNG
+     * hides the toggler for a leaf, so the children were in the model but unreachable, and creating
+     * a folder looked like the tree had not reloaded.
      */
-    const isLeaf = (levelIndex: number) => folderHierarchyLevels.length >= levelIndex + 1;
+    const isLeaf = (levelIndex: number) =>
+        (folderHierarchyLevels[levelIndex + 1]?.length ?? 0) === 0;
 
-    folderHierarchyLevels.forEach((levelFolders, levelIndex) => {
-        // Each level starts with a placeholder parent we don't render
-        const [, ...folders] = levelFolders;
+    folderHierarchyLevels.forEach((folders, levelIndex) => {
         const parentNode = activeParents[levelIndex];
 
         folders.forEach((folder) => {

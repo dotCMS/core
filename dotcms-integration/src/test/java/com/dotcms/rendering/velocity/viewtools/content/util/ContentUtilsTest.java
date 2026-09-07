@@ -1366,6 +1366,111 @@ public class ContentUtilsTest {
     }
 
     /**
+     * Method to test:
+     * {@link ContentUtils#addRelationships(Contentlet, User, PageMode, long, int,
+     * HttpServletRequest, HttpServletResponse, boolean)} (the {@code languageFallback} overload,
+     * issue #35862, read/display side).
+     * <p>
+     * Given Scenario: A parent (Article) is related to three children with mixed language coverage —
+     * AuthorA (EN + ES), AuthorB (EN only), AuthorD (ES only). The relationships are viewed in
+     * Spanish.
+     * <p>
+     * Expected Result: With {@code languageFallback = true} the relationship field lists ALL three
+     * related identifiers (each once) regardless of language — AuthorB has no Spanish version but is
+     * still listed via fallback. With {@code languageFallback = false} (current frontend behavior),
+     * AuthorB is dropped because it has no Spanish version — locking in that the flag is what changes
+     * the behavior and the default path is untouched.
+     */
+    @Test
+    public void test_add_relationships_languageFallback_listsAllRelatedRegardlessOfLanguage()
+            throws DotDataException, DotSecurityException {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long spanishLang = TestDataUtils.getSpanishLanguage().getId();
+
+        // Author (child) + Article (parent) content types with a many-to-many relationship field
+        final ContentType authorType = new ContentTypeDataGen()
+                .velocityVarName("author" + System.currentTimeMillis()).nextPersisted();
+        final ContentType articleType = new ContentTypeDataGen()
+                .velocityVarName("article" + System.currentTimeMillis()).nextPersisted();
+        final Field relField = FieldBuilder.builder(RelationshipField.class).name("authors")
+                .contentTypeId(articleType.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(authorType.variable()).build();
+        APILocator.getContentTypeFieldAPI().save(relField, APILocator.systemUser());
+
+        // AuthorA: English + Spanish versions
+        final Contentlet authorAEn = new ContentletDataGen(authorType.id())
+                .languageId(defaultLang).setPolicy(IndexPolicy.FORCE).nextPersisted();
+        final Contentlet authorAEs = contentletAPI.checkout(authorAEn.getInode(), user, false);
+        authorAEs.setLanguageId(spanishLang);
+        authorAEs.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.checkin(authorAEs, user, false);
+
+        // AuthorB: English only (no Spanish version)
+        final Contentlet authorBEn = new ContentletDataGen(authorType.id())
+                .languageId(defaultLang).setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+        // AuthorD: Spanish only
+        final Contentlet authorDEs = new ContentletDataGen(authorType.id())
+                .languageId(spanishLang).setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+        // Article (EN) related to all three in a deliberate, non-alphabetical order (D, A, B) so the
+        // test verifies the relationship order is preserved end-to-end (saved as tree_order, read back
+        // in the same order).
+        final Contentlet article = new ContentletDataGen(articleType.id())
+                .languageId(defaultLang)
+                .setProperty("authors", Arrays.asList(authorDEs, authorAEn, authorBEn))
+                .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest("localhost",
+                "/api/v1/test").request();
+        final HttpServletResponse response = new MockHttpResponse().response();
+
+        // --- languageFallback = true: viewing in Spanish lists all three (B via fallback) ---
+        final Contentlet viewedInEs = contentletAPI
+                .findContentletByIdentifierAnyLanguage(article.getIdentifier());
+        ContentUtils.addRelationships(viewedInEs, user, PageMode.EDIT_MODE, spanishLang, 0,
+                request, response, true);
+
+        final Object relatedWithFallback = viewedInEs.get("authors");
+        Assert.assertTrue(relatedWithFallback instanceof Collection);
+        final Collection<String> rawWithFallback = (Collection<String>) relatedWithFallback;
+        // Raw list size: a multilingual related contentlet (AuthorA: EN+ES) must appear ONCE,
+        // not once per language version. Asserting the raw collection (not a Set) guards against
+        // the duplicate-row regression.
+        Assert.assertEquals("Multilingual related content must not be duplicated",
+                3, rawWithFallback.size());
+        // Order must match the saved (submitted) order: D, A, B
+        Assert.assertEquals("Related content order must be preserved (saved tree_order)",
+                Arrays.asList(authorDEs.getIdentifier(), authorAEn.getIdentifier(),
+                        authorBEn.getIdentifier()),
+                new ArrayList<>(rawWithFallback));
+        final Set<String> idsWithFallback = new HashSet<>(rawWithFallback);
+        Assert.assertEquals("All related authors must be listed regardless of language",
+                3, idsWithFallback.size());
+        Assert.assertTrue(idsWithFallback.contains(authorAEn.getIdentifier()));
+        Assert.assertTrue("AuthorB (EN only) must be listed via fallback",
+                idsWithFallback.contains(authorBEn.getIdentifier()));
+        Assert.assertTrue(idsWithFallback.contains(authorDEs.getIdentifier()));
+
+        // --- languageFallback = false: current behavior still drops AuthorB (no ES version) ---
+        final Contentlet viewedInEsStrict = contentletAPI
+                .findContentletByIdentifierAnyLanguage(article.getIdentifier());
+        ContentUtils.addRelationships(viewedInEsStrict, user, PageMode.EDIT_MODE, spanishLang, 0,
+                request, response, false);
+
+        final Object relatedStrict = viewedInEsStrict.get("authors");
+        Assert.assertTrue(relatedStrict instanceof Collection);
+        final Set<String> idsStrict = new HashSet<>((Collection<String>) relatedStrict);
+        Assert.assertTrue(idsStrict.contains(authorAEn.getIdentifier()));
+        Assert.assertTrue(idsStrict.contains(authorDEs.getIdentifier()));
+        Assert.assertFalse("Default (non-fallback) path keeps per-language filtering",
+                idsStrict.contains(authorBEn.getIdentifier()));
+    }
+
+    /**
      * Test method: testFuturePublishDateContentRetrieval
      * <p>
      * Given: - Two versions of the same content (same identifier, different inodes) - V1 is

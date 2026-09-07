@@ -22,6 +22,32 @@ export interface DotCategoryImportResult {
     fails: string[];
 }
 
+/**
+ * A single category the backend refused to delete, with the reason why.
+ * `element` is the category inode; `errorMessage` is a human-readable reason
+ * (does not exist, insufficient permissions, permission-protected descendant).
+ */
+export interface DotCategoryDeleteFailure {
+    element: string;
+    errorMessage: string;
+}
+
+/**
+ * Result of a bulk delete. The endpoint answers 200 with per-item outcomes:
+ * categories that could not be deleted are reported in `fails` rather than
+ * failing the whole request, so a partial success is a normal response.
+ *
+ * `successCount` counts the inodes that were requested and deleted, while
+ * `deletedCount` counts every category the cascade actually removed — deleting
+ * one parent of a 15-category subtree reports `successCount: 1, deletedCount: 15`.
+ */
+export interface DotCategoryDeleteResult {
+    successCount: number;
+    skippedCount: number;
+    deletedCount: number;
+    fails: DotCategoryDeleteFailure[];
+}
+
 export interface DotCategoryForm {
     categoryName: string;
     key?: string;
@@ -80,6 +106,19 @@ export class DotCategoriesService {
     }
 
     /**
+     * Retrieves a single category by its inode or key. The endpoint resolves by inode first, then
+     * key, so a caller holding a persisted category inode (e.g. restored from a URL) can look up
+     * its display name. GET /api/v1/categories/{idOrKey}.
+     * @param idOrKey - Category inode or key.
+     * @returns Observable with the resolved category.
+     */
+    getCategory(idOrKey: string): Observable<DotCategory> {
+        return this.#http
+            .get<DotCMSAPIResponse<DotCategory>>(`/api/v1/categories/${idOrKey}`)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
      * Creates a new category.
      * @param form - The category form data.
      * @returns Observable with the created category.
@@ -98,14 +137,13 @@ export class DotCategoriesService {
     }
 
     /**
-     * Deletes categories by their inodes.
+     * Deletes categories by their inodes, along with every descendant at any depth.
      * @param inodes - Array of category inodes to delete.
-     * @returns Observable with the deletion result.
+     * @returns Observable with the per-item deletion result; inspect `fails` for
+     * categories the backend refused to delete.
      */
-    deleteCategories(
-        inodes: string[]
-    ): Observable<DotCMSAPIResponse<{ successCount: number; fails: unknown[] }>> {
-        return this.#http.request<DotCMSAPIResponse<{ successCount: number; fails: unknown[] }>>(
+    deleteCategories(inodes: string[]): Observable<DotCMSAPIResponse<DotCategoryDeleteResult>> {
+        return this.#http.request<DotCMSAPIResponse<DotCategoryDeleteResult>>(
             'DELETE',
             '/api/v1/categories',
             { body: inodes }

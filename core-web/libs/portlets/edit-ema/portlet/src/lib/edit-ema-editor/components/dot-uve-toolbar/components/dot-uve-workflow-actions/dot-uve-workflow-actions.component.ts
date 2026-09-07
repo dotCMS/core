@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -27,6 +27,7 @@ import { getPageURI, compareUrlPaths } from '../../../../../utils';
         DotHttpErrorManagerService
     ],
     templateUrl: './dot-uve-workflow-actions.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './dot-uve-workflow-actions.component.css'
 })
 export class DotUveWorkflowActionsComponent {

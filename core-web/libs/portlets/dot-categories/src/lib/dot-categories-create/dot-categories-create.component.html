@@ -2,10 +2,12 @@
     @if (parentName) {
         <p-message
             severity="info"
-            icon="pi pi-info-circle"
             class="-mx-6"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="category-parent-hint">
+            <ng-template #icon>
+                <span class="material-symbols-rounded" aria-hidden="true">info</span>
+            </ng-template>
             {{ 'categories.form.parent.hint' | dm: [parentName] }}
         </p-message>
     }
@@ -46,7 +48,7 @@
             class="w-full"
             rows="3"></textarea>
     </div>
-    <div class="flex justify-end gap-2 mt-4">
+    <div class="mt-4 flex justify-end gap-2">
         <p-button
             [label]="'categories.cancel' | dm"
             severity="secondary"

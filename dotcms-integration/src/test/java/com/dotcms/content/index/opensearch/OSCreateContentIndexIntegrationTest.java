@@ -68,6 +68,15 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
     @Inject
     private OSClientProvider clientProvider;
 
+    /**
+     * Canonical OS physical name (cluster prefix + {@code .os} tag, e.g.
+     * {@code cluster_xxx.content_xxxxxxxx.os}). Resolved once per test in {@link #setUp()} via
+     * {@link ContentletIndexOperationsOS#toPhysicalName}. Safe to pass to any dotCMS API surface
+     * (idempotent on the cluster prefix and the tag) and to the raw OS client (matches the
+     * actual cluster index name).
+     */
+    private String physicalName;
+
     // =========================================================================
     // Lifecycle
     // =========================================================================
@@ -79,6 +88,7 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
 
     @Before
     public void setUp() {
+        physicalName = opsOS.toPhysicalName(IDX);
         cleanupTestIndex();
     }
 
@@ -99,12 +109,12 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
     @Test
     public void test_createContentIndex_shouldCreateIndexInOpenSearch() throws Exception {
         assertFalse("Pre-condition: index must not exist before creation",
-                osIndexAPI.indexExists(IDX));
+                osIndexAPI.indexExists(physicalName));
 
-        opsOS.createContentIndex(opsOS.toPhysicalName(IDX), 1);
+        opsOS.createContentIndex(physicalName, 1);
 
         assertTrue("Index must exist in OpenSearch after createContentIndex",
-                osIndexAPI.indexExists(IDX));
+                osIndexAPI.indexExists(physicalName));
         Logger.info(this, "✅ test_createContentIndex_shouldCreateIndexInOpenSearch passed");
     }
 
@@ -119,7 +129,7 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_createContentIndex_shouldApplyDotCMSDynamicTemplates() throws Exception {
-        opsOS.createContentIndex(opsOS.toPhysicalName(IDX), 1);
+        opsOS.createContentIndex(physicalName, 1);
 
         final String mapping = mappingOps.getMapping(IDX);
         assertNotNull("getMapping must return a non-null string", mapping);
@@ -159,7 +169,6 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_dynamicTemplates_shouldResolveCorrectFieldTypes() throws Exception {
-        final String physicalName = opsOS.toPhysicalName(IDX);
         opsOS.createContentIndex(physicalName, 1);
 
         // Index a document with one field per dynamic template under test
@@ -205,7 +214,6 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_createContentIndex_shouldHaveAutoExpandReplicasSetting() throws Exception {
-        final String physicalName = opsOS.toPhysicalName(IDX);
         opsOS.createContentIndex(physicalName, 1);
 
         final OpenSearchClient client = clientProvider.getClient();
@@ -230,7 +238,6 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_createContentIndex_shouldConfigureCustomAnalysers() throws Exception {
-        final String physicalName = opsOS.toPhysicalName(IDX);
         opsOS.createContentIndex(physicalName, 1);
 
         final OpenSearchClient client = clientProvider.getClient();
@@ -254,17 +261,39 @@ public class OSCreateContentIndexIntegrationTest extends IntegrationTestBase {
                 + " – analysers: " + analyzers.keySet());
     }
 
+    /**
+     * Tests the idempotence of the {@link ContentletIndexOperationsOS#toPhysicalName} method.
+     *
+     * Given scenario:
+     * - {@link ContentletIndexOperationsOS#toPhysicalName} is called with a logical index name.
+     *
+     * Expected:
+     * - The generated physical name should remain consistent when passed back into the same method.
+     * - If the input name has already been converted to a physical name, the method should return it unchanged.
+     *
+     * This ensures that {@link ContentletIndexOperationsOS#toPhysicalName} behaves in a consistent and idempotent manner.
+     *
+     * @throws Exception if an unexpected error occurs during the test execution.
+     */
+    @Test
+    public void test_physicalName_Idempotent() throws Exception {
+        final String physicalName = opsOS.toPhysicalName(IDX);
+        assertEquals("Physical name must be consistent",
+                physicalName,
+                opsOS.toPhysicalName(physicalName));
+    }
+
     // =========================================================================
     // Helper
     // =========================================================================
 
     private void cleanupTestIndex() {
         try {
-            if (osIndexAPI.indexExists(IDX)) {
-                osIndexAPI.delete(IDX);
+            if (osIndexAPI.indexExists(physicalName)) {
+                osIndexAPI.delete(physicalName);
             }
         } catch (Exception e) {
-            Logger.warn(this, "Cleanup: error removing OS index '" + IDX
+            Logger.warn(this, "Cleanup: error removing OS index '" + physicalName
                     + "': " + e.getMessage());
         }
     }

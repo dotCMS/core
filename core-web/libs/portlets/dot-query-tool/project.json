@@ -1,0 +1,21 @@
+{
+    "name": "portlets-dot-query-tool-portlet",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-query-tool/src",
+    "prefix": "dot",
+    "projectType": "library",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:query-tool"],
+    "targets": {
+        "test": {
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
+            }
+        }
+    }
+}

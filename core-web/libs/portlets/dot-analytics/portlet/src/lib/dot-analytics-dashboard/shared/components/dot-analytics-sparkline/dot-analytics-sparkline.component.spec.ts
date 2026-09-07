@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';

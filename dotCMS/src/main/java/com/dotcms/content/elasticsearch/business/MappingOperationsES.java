@@ -84,8 +84,13 @@ public class MappingOperationsES implements IndexMappingRestOperations {
     @Override
     public Map<String, Object> getFieldMappingAsMap(final String index,
             final String fieldName) throws IOException {
+        // Normalize the index name to its cluster-prefixed physical form, mirroring putMapping above
+        // (and the OS provider). This lets callers pass a logical name (e.g. from getActiveIndexName)
+        // and keeps ES/OS symmetric. getNameWithClusterIDPrefix is idempotent, so an already-prefixed
+        // name is unchanged.
+        final String physical = esIndexAPI.getNameWithClusterIDPrefix(index);
         final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
-        request.indices(index).fields(fieldName);
+        request.indices(physical).fields(fieldName);
 
         final GetFieldMappingsResponse response = RestHighLevelClientProvider.getInstance()
                 .getClient()
@@ -93,7 +98,7 @@ public class MappingOperationsES implements IndexMappingRestOperations {
                 .getFieldMapping(request, RequestOptions.DEFAULT);
 
         final GetFieldMappingsResponse.FieldMappingMetadata meta =
-                response.mappings().getOrDefault(index, Collections.emptyMap()).get(fieldName);
+                response.mappings().getOrDefault(physical, Collections.emptyMap()).get(fieldName);
 
         return meta != null ? meta.sourceAsMap() : Collections.emptyMap();
     }

@@ -2,8 +2,14 @@ import { DotHttpError } from '@dotcms/types';
 
 import { FetchHttpClient } from './fetch-http-client';
 
+import { checkSdkCompatibility } from '../../utils/sdk-compatibility';
+
 // Mock fetch globally
 global.fetch = jest.fn();
+
+jest.mock('../../utils/sdk-compatibility', () => ({
+    checkSdkCompatibility: jest.fn()
+}));
 
 describe('FetchHttpClient', () => {
     let httpClient: FetchHttpClient;
@@ -13,6 +19,28 @@ describe('FetchHttpClient', () => {
         httpClient = new FetchHttpClient();
         mockFetch = fetch as jest.MockedFunction<typeof fetch>;
         mockFetch.mockClear();
+        (checkSdkCompatibility as jest.Mock).mockClear();
+    });
+
+    describe('SDK compatibility check', () => {
+        it('calls checkSdkCompatibility with the response headers and the SDK version', async () => {
+            const mockHeaders = new Headers({
+                'content-type': 'application/json',
+                'x-dotcms-version': '26.7.13',
+                'x-dotcms-min-sdk': '26.5.1'
+            });
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                headers: mockHeaders,
+                json: jest.fn().mockResolvedValue({ data: 'test' })
+            } as unknown as Response);
+
+            await httpClient.request('https://api.example.com/test');
+
+            expect(checkSdkCompatibility).toHaveBeenCalledTimes(1);
+            expect(checkSdkCompatibility).toHaveBeenCalledWith(mockHeaders, '0.0.0-test');
+        });
     });
 
     describe('request', () => {

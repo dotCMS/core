@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { BlockEditorNode, UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-unknown',
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         @if (isEditMode) {
             <div [style]="style" data-testid="unknown-block-type">

@@ -1660,8 +1660,8 @@ public class HTMLPageAssetRenderedTest {
             // has no EN version and is correctly excluded — it will not appear in the rendered output.
             final String regexExpected =
                     "<div data-dot-object=\"container\" .* data-dot-uuid=\"dotParser_.*\" .*>" +
-                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
-                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
+                            "<div class=\"dotcms-contentlet\" data-dot-object=\"contentlet\" .*>.*</div>" +
+                            "<div class=\"dotcms-contentlet\" data-dot-object=\"contentlet\" .*>.*</div>" +
                             "</div>";
 
             assertTrue(html.matches(regexExpected));

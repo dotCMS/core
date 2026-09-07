@@ -1,0 +1,102 @@
+<div class="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <!-- Header -->
+    <div class="flex items-start gap-3">
+        <i class="text-lg text-gray-500" [class]="meta().icon"></i>
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-semibold text-gray-900">{{ meta().title | dm }}</span>
+                <p-tag [value]="badgeLabel() | dm" [severity]="badgeSeverity()" />
+            </div>
+            <span class="text-sm text-gray-500">{{ meta().description | dm }}</span>
+        </div>
+        <p-toggleswitch
+            [ngModel]="enabled()"
+            (ngModelChange)="onToggleEnabled($event)"
+            [attr.data-testid]="'toggle-' + meta().sectionKey" />
+    </div>
+
+    @if (enabled()) {
+        <!-- Provider grid -->
+        <div class="flex flex-col gap-2">
+            <span class="text-xs font-medium tracking-wide text-gray-600 uppercase">
+                {{ 'apps.ai.provider.label' | dm }}
+            </span>
+            <div class="grid grid-cols-4 gap-2">
+                @for (provider of orderedProviders(); track provider.provider) {
+                    <button
+                        type="button"
+                        class="flex flex-col items-start gap-0.5 rounded-md border p-2 text-left transition-colors"
+                        [class.border-indigo-500]="providerId() === provider.provider"
+                        [class.bg-indigo-50]="providerId() === provider.provider"
+                        [class.ring-1]="providerId() === provider.provider"
+                        [class.ring-indigo-500]="providerId() === provider.provider"
+                        [class.border-gray-200]="providerId() !== provider.provider"
+                        [class.cursor-not-allowed]="!isProviderSupported(provider)"
+                        [class.opacity-50]="!isProviderSupported(provider)"
+                        [disabled]="!isProviderSupported(provider)"
+                        [attr.data-testid]="'provider-tile-' + provider.provider"
+                        (click)="selectProvider(provider)">
+                        <span class="text-sm font-medium text-gray-800">
+                            {{ displayNameFor(provider.provider) }}
+                        </span>
+                        <span class="text-xs text-gray-400">{{ providerCaption(provider) }}</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Visible fields (required, plus credentials/identity fields shown by default) -->
+        @if (visibleFields().length > 0) {
+            <div class="grid grid-cols-2 gap-4">
+                @for (field of visibleFields(); track field.name) {
+                    <dot-ai-dynamic-field [field]="field" [formGroup]="fieldsGroup()" />
+                }
+            </div>
+        }
+
+        <!-- Advanced (tuning fields + additional properties) -->
+        <p-panel
+            [toggleable]="true"
+            [toggler]="'header'"
+            [collapsed]="true"
+            [header]="
+                'apps.ai.advanced.optional.fields.header' | dm: [advancedFields().length.toString()]
+            "
+            transitionOptions="250ms cubic-bezier(0.4, 0, 0.2, 1)"
+            styleClass="text-sm">
+            <div class="flex flex-col gap-4">
+                @if (advancedFields().length > 0) {
+                    <div class="grid grid-cols-2 gap-4">
+                        @for (field of advancedFields(); track field.name) {
+                            <dot-ai-dynamic-field [field]="field" [formGroup]="fieldsGroup()" />
+                        }
+                    </div>
+                }
+                <dot-ai-additional-properties [properties]="additionalProperties" />
+            </div>
+        </p-panel>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <p-button
+                [label]="'apps.ai.button.test-connection' | dm"
+                [outlined]="true"
+                [loading]="testing()"
+                severity="secondary"
+                size="small"
+                (onClick)="testConnection()" />
+
+            @if (testResult(); as result) {
+                <span
+                    class="flex items-center gap-1.5 text-sm"
+                    [class.text-green-600]="result.success"
+                    [class.text-red-600]="!result.success">
+                    <i
+                        class="pi"
+                        [class.pi-check-circle]="result.success"
+                        [class.pi-times-circle]="!result.success"></i>
+                    {{ result.message | dm }}
+                </span>
+            }
+        </div>
+    }
+</div>

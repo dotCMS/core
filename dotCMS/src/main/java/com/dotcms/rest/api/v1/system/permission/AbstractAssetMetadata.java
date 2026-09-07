@@ -59,6 +59,13 @@ public interface AbstractAssetMetadata {
     boolean canEdit();
 
     /**
+     * Indicates if the requesting user can add children to this asset.
+     *
+     * @return true if user has CAN_ADD_CHILDREN permission
+     */
+    boolean canAddChildren();
+
+    /**
      * Gets the parent asset identifier if one exists.
      *
      * @return Parent asset ID, or null if no parent

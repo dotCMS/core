@@ -1,26 +1,29 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
+import { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
 import { delay } from 'rxjs/operators';
 
 import { DotFolderService, DotMessageService } from '@dotcms/data-access';
-import { DotFolder } from '@dotcms/dotcms-models';
+import { DotFolder, PermissionType, PERMISSIONS_TYPE } from '@dotcms/dotcms-models';
 import {
     DotContentDriveUploadFiles,
     DotTreeFolderComponent,
+    DotFolderTreeNodeContentData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems,
-    ALL_FOLDER
+    LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { createFakeSite } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { createSiteNode } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
@@ -32,15 +35,13 @@ describe('DotContentDriveSidebarComponent', () => {
         siteName: 'Demo Site'
     };
 
-    const realAllFolder: DotFolderTreeNodeItem = {
-        ...ALL_FOLDER,
-        data: {
-            hostname: mockSiteDetails.hostname,
-            path: '',
-            type: 'folder',
-            id: mockSiteDetails.identifier
-        }
-    };
+    // The row that stands for the site: no folder path, which is what tells it apart from a folder.
+    const siteNode: DotFolderTreeNodeItem = createSiteNode(
+        createFakeSite({
+            identifier: mockSiteDetails.identifier,
+            hostname: mockSiteDetails.hostname
+        })
+    );
 
     const mockFolders: DotFolder[] = [
         {
@@ -65,7 +66,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     const mockTreeNodes: DotFolderTreeNodeItem[] = [
         {
-            ...realAllFolder,
+            ...siteNode,
             data: {
                 hostname: mockSiteDetails.hostname,
                 path: '',
@@ -124,6 +125,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 sidebarLoading: jest.fn().mockReturnValue(false),
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
+                patchContextMenu: jest.fn(),
                 updateFolders: jest.fn(),
                 setSelectedNode: jest.fn()
             }),
@@ -169,12 +171,7 @@ describe('DotContentDriveSidebarComponent', () => {
         it('should pass correct selectedNode input to dot-tree-folder', () => {
             const treeComponent = spectator.query(DotTreeFolderComponent);
             const selectedNode = mockTreeNodes[1];
-            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
-        });
-
-        it('should pass showFolderIconOnFirstOnly as true to dot-tree-folder', () => {
-            const treeComponent = spectator.query(DotTreeFolderComponent);
-            expect(treeComponent?.$showFolderIconOnFirstOnly()).toBe(true);
+            expect(treeComponent?.$selectedNode()).toEqual(selectedNode);
         });
 
         it('should update dot-tree-folder inputs when signals change', () => {
@@ -201,7 +198,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             const treeComponent = spectator.query(DotTreeFolderComponent);
             expect(treeComponent?.$folders()).toEqual(newTreeNodes);
-            expect(treeComponent?.$selectedNode()).toEqual([selectedNode]);
+            expect(treeComponent?.$selectedNode()).toEqual(selectedNode);
             expect(treeComponent?.$loading()).toBe(true);
         });
     });
@@ -248,7 +245,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 // Mock the store's loadChildFolders method to return an observable
                 const mockChildFolders: DotFolderTreeNodeItem[] = [];
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: mockChildFolders })
+                    of({ folders: mockChildFolders, totalEntries: mockChildFolders.length })
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -314,7 +311,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 // Mock the store's loadChildFolders method to return a delayed observable
                 const mockChildFolders: DotFolderTreeNodeItem[] = [];
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: mockChildFolders }).pipe(delay(500))
+                    of({ folders: mockChildFolders, totalEntries: mockChildFolders.length }).pipe(
+                        delay(500)
+                    )
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -359,7 +358,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 ];
 
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: loadedChildFolders })
+                    of({ folders: loadedChildFolders, totalEntries: loadedChildFolders.length })
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -390,7 +389,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             it('should handle error when loading child folders', () => {
                 contentDriveStore.loadChildFolders.mockReturnValue(
-                    of({ parent: mockFolders[0], folders: [] })
+                    of({ folders: [], totalEntries: 0 })
                 );
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
@@ -417,48 +416,364 @@ describe('DotContentDriveSidebarComponent', () => {
                 expect(nodeWithoutChildren.loading).toBe(false);
                 expect(nodeWithoutChildren.expanded).toBe(true);
             });
-        });
 
-        describe('onNodeCollapse', () => {
-            it('should handle onNodeCollapse event for regular nodes', () => {
-                const regularNode: DotFolderTreeNodeItem = {
-                    key: 'regular-folder',
-                    label: '/regular/',
+            it('should append a "Load more" node when the level has more children than a page', () => {
+                const firstPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'c1',
+                        label: '/big/c1/',
+                        data: {
+                            id: 'c1',
+                            hostname: 'demo.dotcms.com',
+                            path: '/big/c1/',
+                            type: 'folder'
+                        },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: firstPage, totalEntries: 120 })
+                );
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                const node: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
                     data: {
-                        id: 'regular-folder',
+                        id: 'big-folder',
                         hostname: 'demo.dotcms.com',
-                        path: '/regular/',
+                        path: '/big/',
                         type: 'folder'
                     },
                     leaf: false,
-                    expanded: true
+                    children: []
                 };
 
-                const mockEvent: TreeNodeCollapseEvent = {
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', {
                     originalEvent: new Event('click'),
-                    node: regularNode
-                };
+                    node
+                });
 
-                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeCollapse', mockEvent);
-
-                // Regular nodes should be able to collapse (no action needed)
-                expect(regularNode.expanded).toBe(true); // No change for regular nodes
+                expect(node.children).toHaveLength(2);
+                const loadMore = node.children?.[1];
+                expect(loadMore?.data.type).toBe('load-more');
+                expect(loadMore?.data.nextPage).toBe(2);
+                expect(loadMore?.data.remaining).toBe(119);
+                expect(loadMore?.selectable).toBe(false);
             });
 
-            it('should prevent root from collapsing', () => {
-                const allFolderNode: DotFolderTreeNodeItem = {
-                    ...realAllFolder,
-                    expanded: true
+            it('should NOT append a "Load more" node when the page holds the whole level', () => {
+                const onlyPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'c1',
+                        label: '/small/c1/',
+                        data: {
+                            id: 'c1',
+                            hostname: 'demo.dotcms.com',
+                            path: '/small/c1/',
+                            type: 'folder'
+                        },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: onlyPage, totalEntries: 1 })
+                );
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                const node: DotFolderTreeNodeItem = {
+                    key: 'small-folder',
+                    label: '/small/',
+                    data: {
+                        id: 'small-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/small/',
+                        type: 'folder'
+                    },
+                    leaf: false,
+                    children: []
                 };
 
-                const mockEvent: TreeNodeCollapseEvent = {
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeExpand', {
                     originalEvent: new Event('click'),
-                    node: allFolderNode
+                    node
+                });
+
+                expect(node.children).toHaveLength(1);
+                expect(node.children?.some((child) => child.data.type === 'load-more')).toBe(false);
+            });
+        });
+
+        describe('onLoadMore', () => {
+            it('should append the next page and remove the "Load more" node when the level is exhausted', () => {
+                const existingChild: DotFolderTreeNodeItem = {
+                    key: 'a',
+                    label: '/big/a/',
+                    data: { id: 'a', hostname: 'demo.dotcms.com', path: '/big/a/', type: 'folder' },
+                    leaf: false
                 };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/big/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/big/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/big/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                const parent: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
+                    leaf: false,
+                    expanded: true,
+                    children: [existingChild, loadMoreNode]
+                };
+                contentDriveStore.folders.mockReturnValue([parent]);
 
-                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeCollapse', mockEvent);
+                const nextPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'b',
+                        label: '/big/b/',
+                        data: {
+                            id: 'b',
+                            hostname: 'demo.dotcms.com',
+                            path: '/big/b/',
+                            type: 'folder'
+                        },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: nextPage, totalEntries: 2 })
+                );
 
-                expect(allFolderNode.expanded).toBe(true);
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                expect(contentDriveStore.loadChildFolders).toHaveBeenCalledWith(
+                    '/big/',
+                    'demo.dotcms.com',
+                    2
+                );
+                expect(parent.children?.map((child) => child.key)).toEqual(['a', 'b']);
+                expect(parent.children?.some((child) => child.data.type === 'load-more')).toBe(
+                    false
+                );
+                expect(contentDriveStore.updateFolders).toHaveBeenCalled();
+            });
+
+            it('should render a pinned folder once when paging reaches its real position', () => {
+                // The hierarchy pins a deep-linked folder to the top of its level, out of sort
+                // order. Page far enough and the same folder comes back in its proper place.
+                const pinned: DotFolderTreeNodeItem = {
+                    key: 'z',
+                    label: '/big/z/',
+                    data: { id: 'z', hostname: 'demo.dotcms.com', path: '/big/z/', type: 'folder' },
+                    leaf: false,
+                    expanded: true,
+                    children: [
+                        {
+                            key: 'inner',
+                            label: '/big/z/inner/',
+                            data: {
+                                id: 'inner',
+                                hostname: 'demo.dotcms.com',
+                                path: '/big/z/inner/',
+                                type: 'folder'
+                            },
+                            leaf: true
+                        }
+                    ]
+                };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/big/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/big/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/big/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                const parent: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
+                    leaf: false,
+                    expanded: true,
+                    children: [pinned, loadMoreNode]
+                };
+                contentDriveStore.folders.mockReturnValue([parent]);
+
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            {
+                                key: 'z',
+                                label: '/big/z/',
+                                data: {
+                                    id: 'z',
+                                    hostname: 'demo.dotcms.com',
+                                    path: '/big/z/',
+                                    type: 'folder'
+                                },
+                                leaf: false
+                            }
+                        ],
+                        totalEntries: 1
+                    })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                expect(parent.children?.map((child) => child.key)).toEqual(['z']);
+                // The on-screen node is kept, not the bare copy from the page, so the branch the
+                // user already has open does not collapse under them.
+                expect(parent.children?.[0]).toBe(pinned);
+                expect(parent.children?.[0].children).toHaveLength(1);
+            });
+
+            it('should render a pinned root folder once when paging reaches its real position', () => {
+                const pinned: DotFolderTreeNodeItem = {
+                    key: 'z',
+                    label: '/z/',
+                    data: { id: 'z', hostname: 'demo.dotcms.com', path: '/z/', type: 'folder' },
+                    leaf: false
+                };
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/',
+                        nextPage: 2,
+                        remaining: 1
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                // Root folders and their "Load more" are the site node's children, so this is the
+                // shape the root-level branch merges.
+                const siteRow: DotFolderTreeNodeItem = {
+                    ...siteNode,
+                    children: [pinned, loadMoreNode]
+                };
+                contentDriveStore.folders.mockReturnValue([siteRow]);
+
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            {
+                                key: 'z',
+                                label: '/z/',
+                                data: {
+                                    id: 'z',
+                                    hostname: 'demo.dotcms.com',
+                                    path: '/z/',
+                                    type: 'folder'
+                                },
+                                leaf: false
+                            }
+                        ],
+                        totalEntries: 1
+                    })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                // The pinned folder appears once: the page that returns it again is merged into the
+                // children already loaded, not concatenated onto them.
+                expect(contentDriveStore.updateFolders).toHaveBeenCalledWith([
+                    { ...siteNode, children: [pinned] }
+                ]);
+            });
+
+            it('should keep a refreshed "Load more" node when more pages still remain', () => {
+                const loadMoreNode: DotFolderTreeNodeItem = {
+                    key: 'load-more:/big/',
+                    label: 'content-drive.tree.load-more',
+                    data: {
+                        type: 'load-more',
+                        path: '/big/',
+                        hostname: 'demo.dotcms.com',
+                        id: 'load-more:/big/',
+                        nextPage: 2,
+                        remaining: 100
+                    },
+                    leaf: true,
+                    selectable: false
+                };
+                const parent: DotFolderTreeNodeItem = {
+                    key: 'big-folder',
+                    label: '/big/',
+                    data: {
+                        id: 'big-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/big/',
+                        type: 'folder'
+                    },
+                    leaf: false,
+                    expanded: true,
+                    children: [
+                        {
+                            key: 'a',
+                            label: '/big/a/',
+                            data: {
+                                id: 'a',
+                                hostname: 'demo.dotcms.com',
+                                path: '/big/a/',
+                                type: 'folder'
+                            },
+                            leaf: false
+                        },
+                        loadMoreNode
+                    ]
+                };
+                contentDriveStore.folders.mockReturnValue([parent]);
+
+                const nextPage: DotFolderTreeNodeItem[] = [
+                    {
+                        key: 'b',
+                        label: '/big/b/',
+                        data: {
+                            id: 'b',
+                            hostname: 'demo.dotcms.com',
+                            path: '/big/b/',
+                            type: 'folder'
+                        },
+                        leaf: false
+                    }
+                ];
+                contentDriveStore.loadChildFolders.mockReturnValue(
+                    of({ folders: nextPage, totalEntries: 150 })
+                );
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'loadMore', loadMoreNode);
+
+                const refreshed = parent.children?.find((child) => child.data.type === 'load-more');
+                expect(refreshed?.data.nextPage).toBe(3);
+                expect(refreshed?.data.remaining).toBe(148);
             });
         });
 
@@ -572,22 +887,6 @@ describe('DotContentDriveSidebarComponent', () => {
         });
     });
 
-    describe('Current site hostname', () => {
-        it('should render the current site hostname', () => {
-            const currentSiteHostname = spectator.query('[data-testid="current-site-hostname"]');
-
-            expect(currentSiteHostname?.textContent).toContain(mockSiteDetails.hostname);
-        });
-
-        it('should handle null current site gracefully', () => {
-            contentDriveStore.currentSite.mockReturnValue(null);
-            spectator.detectComponentChanges();
-
-            const currentSiteHostname = spectator.query('[data-testid="current-site-hostname"]');
-            expect(currentSiteHostname?.textContent.trim()).toBe('');
-        });
-    });
-
     describe('Effects', () => {
         it('should have getSiteFoldersEffect that calls loadFolders when site is available', () => {
             // The effect is set up during component initialization
@@ -610,12 +909,87 @@ describe('DotContentDriveSidebarComponent', () => {
             // The effect checks currentSite at the start, so if it's null, loadFolders won't be called
             // We verify this by checking that after setting null, loadFolders is not called
             spectator.detectComponentChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             // Since currentSite is null, the effect should return early and not call loadFolders
             // Note: This test verifies the effect logic, not the actual effect execution
             // The effect code checks: if (!currentSite) return;
             expect(contentDriveStore.currentSite()).toBeNull();
+        });
+    });
+
+    describe('revealing the folder the drive opened on', () => {
+        const targetNode: DotFolderTreeNodeItem = {
+            key: 'deep-folder',
+            label: '/documents/reports/',
+            data: {
+                id: 'deep-folder',
+                hostname: 'demo.dotcms.com',
+                path: '/documents/reports/',
+                type: 'folder'
+            },
+            leaf: false
+        };
+
+        let scrollIntoView: jest.Mock;
+
+        beforeEach(() => {
+            scrollIntoView = jest.fn();
+            const treeFolder = spectator.query(DotTreeFolderComponent);
+            jest.spyOn(treeFolder.elementRef.nativeElement, 'querySelector').mockReturnValue({
+                scrollIntoView
+            } as unknown as Element);
+        });
+
+        it('should bring the selected folder into view once the cold load finishes', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).toHaveBeenCalledWith({
+                // Instant: this is where the tree should have opened, not somewhere to animate to.
+                behavior: 'instant',
+                block: 'center'
+            });
+        });
+
+        it('should not scroll while the tree is still loading', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(true);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
+        it('should wait for the tree to render rather than scrolling as the store publishes', () => {
+            contentDriveStore.selectedNode.mockReturnValue(targetNode);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+
+            // The loading placeholder is still mounted at this point, so there is no row yet.
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
+        it('should not scroll when the selection is a load-more sentinel', () => {
+            contentDriveStore.selectedNode.mockReturnValue({
+                key: 'load-more:/documents/',
+                label: '',
+                data: {
+                    type: LOAD_MORE_NODE_TYPE,
+                    id: 'load-more:/documents/',
+                    path: '/documents/',
+                    hostname: 'demo.dotcms.com',
+                    nextPage: 2,
+                    remaining: 5
+                }
+            } as DotFolderTreeNodeItem);
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
         });
     });
 
@@ -655,7 +1029,7 @@ describe('DotContentDriveSidebarComponent', () => {
             // slice(0, -1) removes the last segment, so it becomes ['documents']
             contentDriveStore.folders.mockReturnValue(mockTreeNodes);
             contentDriveStore.loadChildFolders.mockReturnValue(
-                of({ parent: mockFolders[0], folders: [] })
+                of({ folders: [], totalEntries: 0 })
             );
 
             // Call the method directly - this is what the effect would call
@@ -665,7 +1039,9 @@ describe('DotContentDriveSidebarComponent', () => {
             // The method calls it with just segments, which defaults to this.$folders()
             expect(recursiveExpandSpy).toHaveBeenCalledWith(['documents']);
 
-            // Verify scrollIntoView was called if element was found
+            // The reveal waits for the tree to render the row before scrolling to it.
+            spectator.detectChanges();
+
             expect(mockScrollIntoView).toHaveBeenCalledWith({
                 behavior: 'smooth',
                 block: 'center'
@@ -699,7 +1075,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             contentDriveStore.folders.mockReturnValue(mockTreeNodes);
             contentDriveStore.loadChildFolders.mockReturnValue(
-                of({ parent: mockFolders[0], folders: [] })
+                of({ folders: [], totalEntries: 0 })
             );
 
             // Should not throw error even if element is not found
@@ -742,9 +1118,10 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     describe('Tree Toggler', () => {
-        it('should render dot-content-drive-tree-toggler component', () => {
+        it('should not render its own toggler, since the toolbar keeps one in both states', () => {
             const treeToggler = spectator.query('[data-testid="tree-toggler"]');
-            expect(treeToggler).toBeTruthy();
+
+            expect(treeToggler).toBeNull();
         });
     });
 
@@ -769,7 +1146,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             contentDriveStore.folders.mockReturnValue(testFolders);
             contentDriveStore.loadChildFolders.mockReturnValue(
-                of({ parent: mockFolders[0], folders: [] })
+                of({ folders: [], totalEntries: 0 })
             );
 
             // Call recursiveExpandOneNode with path segments
@@ -821,7 +1198,6 @@ describe('DotContentDriveSidebarComponent', () => {
             contentDriveStore.folders.mockReturnValue(nestedFolders);
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({
-                    parent: mockFolders[0],
                     folders: [
                         {
                             key: 'level2',
@@ -835,7 +1211,8 @@ describe('DotContentDriveSidebarComponent', () => {
                             leaf: false,
                             children: []
                         }
-                    ]
+                    ],
+                    totalEntries: 1
                 })
             );
 
@@ -878,31 +1255,6 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
         });
 
-        it('should handle onNodeCollapse for non-ALL_FOLDER nodes', () => {
-            const regularNode: DotFolderTreeNodeItem = {
-                key: 'regular-folder',
-                label: '/regular/',
-                data: {
-                    id: 'regular-folder',
-                    hostname: 'demo.dotcms.com',
-                    path: '/regular/',
-                    type: 'folder'
-                },
-                leaf: false,
-                expanded: true
-            };
-
-            const mockEvent: TreeNodeCollapseEvent = {
-                originalEvent: new Event('click'),
-                node: regularNode
-            };
-
-            spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeCollapse', mockEvent);
-
-            // Regular nodes can collapse, so expanded should remain true (no change)
-            expect(regularNode.expanded).toBe(true);
-        });
-
         it('should handle onNodeExpand when node already has children', () => {
             jest.clearAllMocks();
 
@@ -929,6 +1281,91 @@ describe('DotContentDriveSidebarComponent', () => {
 
             expect(nodeWithChildren.expanded).toBe(true);
             expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('right-click context menu', () => {
+        beforeEach(() => {
+            // The store mock is built once by the component factory, so its jest.fn call counts
+            // accumulate across tests in this file. Clear them (implementations are preserved) and
+            // restore the default lookup so each case starts from a known state.
+            jest.clearAllMocks();
+        });
+
+        const buildFolderData = (permissions?: PermissionType[]): DotFolderTreeNodeContentData => ({
+            id: 'docs-id',
+            inode: 'docs-inode',
+            hostname: 'demo.dotcms.com',
+            path: '/documents/reports/',
+            type: 'folder',
+            name: 'reports',
+            title: 'Reports',
+            sortOrder: 2,
+            filesMasks: '*.pdf',
+            defaultFileType: 'FileAsset',
+            defaultBaseType: 'DOTASSET',
+            showOnMenu: true,
+            permissions
+        });
+
+        const rightClick = (data: DotFolderTreeNodeContentData) => {
+            const event = new MouseEvent('contextmenu');
+            spectator.triggerEventHandler(DotTreeFolderComponent, 'rightClick', { event, data });
+
+            return event;
+        };
+
+        it('should publish the folder to the store in the shape the menu and dialog consume', () => {
+            const event = rightClick(
+                buildFolderData([PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT])
+            );
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith({
+                triggeredEvent: event,
+                contentlet: {
+                    type: 'folder',
+                    identifier: 'docs-id',
+                    name: 'reports',
+                    path: '/documents/reports/',
+                    title: 'Reports',
+                    sortOrder: 2,
+                    showOnMenu: true,
+                    filesMasks: '*.pdf',
+                    defaultFileType: 'FileAsset',
+                    defaultBaseType: 'DOTASSET',
+                    permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
+                }
+            });
+        });
+
+        it('should treat an empty permissions array as a resolved "no grants"', () => {
+            rightClick(buildFolderData([]));
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentlet: expect.objectContaining({ permissions: [] })
+                })
+            );
+        });
+
+        it('should open an empty menu rather than throwing for a folder without permissions', () => {
+            // Every source now resolves permissions, but an older backend or a rolled-back search
+            // can still deliver a folder without them; gating must degrade, not blow up.
+            rightClick(buildFolderData(undefined));
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentlet: expect.objectContaining({ permissions: [] })
+                })
+            );
+        });
+
+        it('should anchor the menu on the originating event', () => {
+            const event = rightClick(buildFolderData([PERMISSIONS_TYPE.EDIT]));
+
+            expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
+                expect.objectContaining({ triggeredEvent: event })
+            );
         });
     });
 });

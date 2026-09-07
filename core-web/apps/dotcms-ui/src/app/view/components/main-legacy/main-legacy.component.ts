@@ -1,4 +1,10 @@
-import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    ViewEncapsulation,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -20,6 +26,7 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-main-component',
     templateUrl: './main-legacy.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         RouterOutlet,
         DotCreateContentletComponent,

@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -12,9 +11,10 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What is the theory of relativity.*"
+        "matches": ".*\"content\" : \"What is the theory of relativity.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,
@@ -25,10 +25,13 @@
       "model": "gpt-3.5-turbo-16k",
       "choices": [
         {
-          "text": "The theory of relativity, developed by Albert Einstein, consists of two parts: special relativity and general relativity. Special relativity deals with objects moving at constant speeds, particularly those moving at the speed of light. It introduced the famous equation E=mc², showing that energy and mass are interchangeable. General relativity extends this to include gravity, describing it as a curvature of spacetime caused by mass.",
           "index": 0,
           "logprobs": null,
-          "finish_reason": "stop"
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "The theory of relativity, developed by Albert Einstein, consists of two parts: special relativity and general relativity. Special relativity deals with objects moving at constant speeds, particularly those moving at the speed of light. It introduced the famous equation E=mc\u00b2, showing that energy and mass are interchangeable. General relativity extends this to include gravity, describing it as a curvature of spacetime caused by mass."
+          }
         }
       ],
       "usage": {

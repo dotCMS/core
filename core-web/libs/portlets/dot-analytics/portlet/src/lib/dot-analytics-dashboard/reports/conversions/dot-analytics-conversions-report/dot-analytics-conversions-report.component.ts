@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
+import { CardModule } from 'primeng/card';
+
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ContentConversionRow,
-    ConversionsOverviewEntity,
     DotAnalyticsDashboardStore,
     MetricData,
     transformContentConversionsData,
@@ -17,15 +18,6 @@ import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-anal
 import { TIME_PERIOD_OPTIONS } from '../../../shared/constants';
 import { ChartData } from '../../../shared/types';
 import DotAnalyticsContentConversionsTableComponent from '../dot-analytics-content-conversions-table/dot-analytics-content-conversions-table.component';
-import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conversions-overview-table/dot-analytics-conversions-overview-table.component';
-
-/** Safely parse a string to integer, returning null for NaN/undefined/null */
-function safeParseInt(value: string | undefined | null): number | null {
-    if (value == null) return null;
-    const n = parseInt(value, 10);
-
-    return Number.isFinite(n) ? n : null;
-}
 
 /**
  * Conversions Report Component
@@ -40,10 +32,10 @@ function safeParseInt(value: string | undefined | null): number | null {
 @Component({
     selector: 'dot-analytics-conversions-report',
     imports: [
+        CardModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsContentConversionsTableComponent,
-        DotAnalyticsConversionsOverviewTableComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-conversions-report.component.html',
@@ -77,7 +69,7 @@ export default class DotAnalyticsConversionsReportComponent {
         return timeRangeLabel ? `${baseTitle} (${timeRangeLabel})` : baseTitle;
     });
 
-    /** Transformed rows for the content conversions table (from ContentAttribution cube) */
+    /** Transformed rows for the content conversions table */
     protected readonly $contentConversionsData = computed<ContentConversionRow[]>(() => {
         const contentConversions = this.store.contentConversions();
 
@@ -88,34 +80,17 @@ export default class DotAnalyticsConversionsReportComponent {
         () => this.store.contentConversions().status
     );
 
-    /** Data rows for the conversions overview table (from Conversion cube) */
-    protected readonly $conversionsOverviewData = computed<ConversionsOverviewEntity[]>(() => {
-        const conversionsOverview = this.store.conversionsOverview();
-
-        return conversionsOverview.data ?? [];
-    });
-
-    /** Loading/error status for the conversions overview table */
-    protected readonly $conversionsOverviewStatus = computed(
-        () => this.store.conversionsOverview().status
-    );
-
     /** Aggregated metric cards data (total conversions, converting visitors, conversion rate) */
     protected readonly $metricsData = computed((): MetricData[] => {
         const totalConversions = this.store.totalConversions();
         const convertingVisitors = this.store.convertingVisitors();
 
-        const totalConversionsRaw = safeParseInt(
-            totalConversions.data?.['EventSummary.totalEvents']
-        );
-        const totalConversionsValue = totalConversionsRaw === 0 ? null : totalConversionsRaw;
+        const totalEvents = totalConversions.data?.totalEvents;
+        /** `0` is a valid aggregate; only hide when still loading/error (no payload). */
+        const totalConversionsValue = totalEvents == null ? null : totalEvents;
 
-        const uniqueVisitors = safeParseInt(
-            convertingVisitors.data?.['EventSummary.uniqueVisitors']
-        );
-        const uniqueConvertingVisitors = safeParseInt(
-            convertingVisitors.data?.['EventSummary.uniqueConvertingVisitors']
-        );
+        const uniqueVisitors = convertingVisitors.data?.uniqueVisitors ?? null;
+        const uniqueConvertingVisitors = convertingVisitors.data?.uniqueConvertingVisitors ?? null;
 
         const hasVisitorData = uniqueVisitors != null && uniqueVisitors > 0;
 

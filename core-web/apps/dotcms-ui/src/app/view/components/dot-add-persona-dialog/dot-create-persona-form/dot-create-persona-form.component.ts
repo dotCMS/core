@@ -1,6 +1,15 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     ReactiveFormsModule,
     UntypedFormBuilder,
@@ -23,6 +32,7 @@ import { DotFileUpload } from '../../../../shared/models/dot-file-upload/dot-fil
 import { DotAutocompleteTagsComponent } from '../../_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-create-persona-form',
     templateUrl: './dot-create-persona-form.component.html',
     styleUrls: ['./dot-create-persona-form.component.scss'],

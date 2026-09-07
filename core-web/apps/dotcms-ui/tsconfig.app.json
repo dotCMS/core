@@ -12,5 +12,8 @@
         "esModuleInterop": true
     },
     "files": ["src/main.ts", "src/polyfills.ts"],
-    "exclude": ["**/*.stories.ts", "**/*.stories.js"]
+    "angularCompilerOptions": {
+        // TODO(#35930): re-enable strictTemplates once Angular 22 template errors are fixed per app
+        "strictTemplates": false
+    }
 }

@@ -9,7 +9,8 @@ import {
     OnInit,
     computed,
     inject,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
@@ -40,6 +41,7 @@ import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-d
     selector: 'dot-apps-configuration',
     templateUrl: './dot-apps-configuration.component.html',
     styleUrls: ['./dot-apps-configuration.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         InputTextModule,
         ButtonModule,

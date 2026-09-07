@@ -1,9 +1,9 @@
-<div class="flex h-[257px] border border-primary rounded-md -z-[2] active:shadow-sm">
+<div class="-z-2 flex h-[257px] rounded-md border border-primary active:shadow-sm">
     <div class="flex-1 px-2">
         <ng-content />
     </div>
     <div
-        class="flex justify-between items-center w-[2.625rem] flex-col gap-2 py-2 bg-gray-200 border-l border-primary rounded-r-md">
+        class="flex w-10.5 flex-col items-center justify-between gap-2 rounded-r-md border-l border-primary bg-gray-200 py-2">
         <p-button
             (onClick)="editClasses()"
             data-testid="row-style-class-button"
@@ -14,7 +14,7 @@
         <div class="p-3 hover:cursor-grab active:cursor-grabbing">
             <i
                 [style.font-size.px]="20"
-                class="text-primary-500 select-none material-icons"
+                class="material-symbols-outlined text-primary-500 select-none"
                 data-testid="row-drag-handler">
                 drag_indicator
             </i>
@@ -22,6 +22,6 @@
         <dotcms-remove-confirm-dialog (deleteConfirmed)="deleteRow()" />
     </div>
     <dotcms-template-builder-background-columns
-        class="absolute top-4 right-[3.625rem] bottom-6 left-4 -z-[1] transition-opacity duration-350 ease-in-out"
+        class="absolute top-4 right-14.5 bottom-6 left-4 -z-1 transition-opacity duration-350 ease-in-out"
         [style.opacity]="isResizing ? 1 : 0" />
 </div>

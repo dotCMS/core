@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 
 import { FormsModule } from '@angular/forms';
 

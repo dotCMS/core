@@ -3,7 +3,7 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRouteSnapshot } from '@angular/router';

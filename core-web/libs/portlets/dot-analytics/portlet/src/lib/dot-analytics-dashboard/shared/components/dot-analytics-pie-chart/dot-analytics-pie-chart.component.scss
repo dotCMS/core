@@ -1,0 +1,87 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.pie-chart-card {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    ::ng-deep .p-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+
+        .p-card-body {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .p-card-content {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+    }
+}
+
+.pie-chart-host {
+    position: relative;
+    min-height: 12.5rem;
+}
+
+.pie-chart__measure-wrap {
+    min-height: 8rem;
+}
+
+.pie-chart__square {
+    position: relative;
+    overflow: visible;
+}
+
+.pie-chart__legend-row {
+    margin: -0.25rem -0.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: $border-radius-md;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+
+    &:focus-visible {
+        outline: 2px solid var(--p-primary-color, #3b82f6);
+        outline-offset: 2px;
+    }
+
+    &--active {
+        background: var(--p-gray-50, #f9fafb);
+        box-shadow: inset 0 0 0 1px var(--p-primary-200, #bfdbfe);
+    }
+}
+
+.chart-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.chart-skeleton {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    ::ng-deep .p-skeleton {
+        border-radius: $border-radius-md;
+    }
+}

@@ -1,10 +1,13 @@
 <p-dialog
-    [(visible)]="dialogShow"
+    [visible]="dialogShow"
     [header]="eventData?.title"
     [modal]="true"
     [draggable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
     [style]="{ width: '35rem' }"
-    (visibleChange)="close()">
+    appendTo="body"
+    (visibleChange)="onVisibleChange($event)">
     @if (eventData) {
         <dot-push-publish-form
             (value)="formData = $event"

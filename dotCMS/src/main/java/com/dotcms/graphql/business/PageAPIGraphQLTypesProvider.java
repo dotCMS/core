@@ -18,10 +18,11 @@ import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
+import com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
-import com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RunningExperimentFetcher;
+import com.dotcms.graphql.datafetcher.page.StyleEditorSchemasDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.VanityURLFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
@@ -33,7 +34,7 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -49,6 +50,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.util.Logger;
 import eu.bitwalker.useragentutils.Browser;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
@@ -167,7 +169,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 GraphQLString, new RunningExperimentFetcher())
         );
         pageFields.put("numberContents", new TypeFetcher(GraphQLInt, new NumberContentsDataFetcher()));
-        
+
+        pageFields.put("styleEditorSchemas", new TypeFetcher(list(ExtendedScalars.Json),
+                new StyleEditorSchemasDataFetcher()));
+
         // Expose the page as its underlying contentlet type to enable inline fragments
         // for accessing content-type-specific fields like SEO metadata
         pageFields.put("page", new TypeFetcher(
@@ -328,6 +333,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<Geolocation>("subdivision")));
         geoFields.put("subdivisionCode", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<Geolocation>("subdivisionCode")));
+        geoFields.put("postal", new TypeFetcher(GraphQLString,
+                new PropertyDataFetcher<Geolocation>("postal")));
         geoFields.put("ipAddress", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<Geolocation>("ipAddress")));
 
@@ -508,10 +515,14 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new UserDataFetcher()));
         containerFields.put("parentPermissionable", new TypeFetcher(
                 GraphQLTypeReference.typeRef(CustomFieldType.SITE.getTypeName()),
+                // Resolved from the Container's own Site and not from getParentPermissionable():
+                // a File Asset Container inherits its permissions from the Container folder, so its
+                // parent Permissionable is a Folder, and this field is declared as a Site.
                 PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
-                        (containerRaw)-> (Host) Try.of(()->
-                                containerRaw.getContainer().getParentPermissionable())
-                                .getOrElse((Permissionable) null))));
+                        (containerRaw)-> Try.of(()-> APILocator.getHostAPI().find(
+                                        containerRaw.getContainer().getHostId(),
+                                        APILocator.systemUser(), false))
+                                .getOrElse((Host) null))));
         containerFields.put("path", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)-> {

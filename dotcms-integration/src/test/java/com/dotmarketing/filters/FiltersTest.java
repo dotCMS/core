@@ -1,7 +1,7 @@
 package com.dotmarketing.filters;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
+import static com.dotcms.vanityurl.business.VanityUrlAPI.LEGACY_CMS_HOME_PAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.startsWith;

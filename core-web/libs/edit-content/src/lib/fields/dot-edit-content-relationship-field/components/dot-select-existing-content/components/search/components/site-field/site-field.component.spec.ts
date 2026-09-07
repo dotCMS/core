@@ -1,5 +1,5 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { createFakeEvent } from '@openng/spectator';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { ReactiveFormsModule } from '@angular/forms';
@@ -8,7 +8,7 @@ import { TreeSelectModule } from 'primeng/treeselect';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTruncatePathPipe, DotBrowsingService } from '@dotcms/ui';
+import { DotBrowsingService, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SiteFieldComponent } from './site-field.component';
@@ -63,7 +63,7 @@ describe('SiteFieldComponent', () => {
 
     const createComponent = createComponentFactory({
         component: SiteFieldComponent,
-        imports: [ReactiveFormsModule, TreeSelectModule, DotTruncatePathPipe, DotMessagePipe],
+        imports: [ReactiveFormsModule, TreeSelectModule, DotFolderNamePipe, DotMessagePipe],
         componentProviders: [SiteFieldStore],
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },

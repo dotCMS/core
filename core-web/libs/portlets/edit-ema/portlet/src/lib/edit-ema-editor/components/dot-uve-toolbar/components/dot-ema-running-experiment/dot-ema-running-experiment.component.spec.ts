@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';

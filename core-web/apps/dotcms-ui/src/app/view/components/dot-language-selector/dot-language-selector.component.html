@@ -1,6 +1,6 @@
-<div class="dot-language-selector h-full flex-auto flex items-center gap-2">
+<div class="dot-language-selector flex h-full flex-auto items-center gap-2">
     <span class="icon-lg"><i class="pi pi-globe"></i></span>
-    <div class="language-selector__field grow flex">
+    <div class="language-selector__field flex grow">
         @if (!readonly) {
             <p-select
                 (onChange)="selectedItem($event.value)"
@@ -12,7 +12,7 @@
                 dataKey="id"
                 optionLabel="language" />
         } @else {
-            <div class="h-full w-full flex items-center gap-4">
+            <div class="flex size-full items-center gap-4">
                 <span>
                     {{ value.language }}
                     @if (value.countryCode) {

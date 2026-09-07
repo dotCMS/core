@@ -1,0 +1,103 @@
+<p-accordion
+    [multiple]="true"
+    [value]="$openPanels()"
+    (valueChange)="onOpenPanelsChange($event)"
+    expandIcon=" "
+    collapseIcon=" "
+    transitionOptions="200ms cubic-bezier(0.86, 0, 0.07, 1)">
+    <p-accordion-panel value="adjust" data-testid="image-editor-panel-adjust">
+        <p-accordion-header>
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="material-symbols-outlined">tune</i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
+                        {{ 'edit.content.image-editor.panel.adjust.title' | dm }}
+                    </span>
+                    <span class="ie-panel-head__subtitle">
+                        {{ 'edit.content.image-editor.panel.adjust.subtitle' | dm }}
+                    </span>
+                </span>
+                <i class="material-symbols-outlined ie-panel-head__chevron" aria-hidden="true">
+                    expand_more
+                </i>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-adjust-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+
+    <p-accordion-panel value="transform" data-testid="image-editor-panel-transform">
+        <p-accordion-header>
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="material-symbols-outlined">transform</i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
+                        {{ 'edit.content.image-editor.panel.transform.title' | dm }}
+                    </span>
+                    <span class="ie-panel-head__subtitle">
+                        {{ 'edit.content.image-editor.panel.transform.subtitle' | dm }}
+                    </span>
+                </span>
+                <i class="material-symbols-outlined ie-panel-head__chevron" aria-hidden="true">
+                    expand_more
+                </i>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-transform-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+
+    <p-accordion-panel value="fileinfo" data-testid="image-editor-panel-fileinfo">
+        <p-accordion-header>
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="material-symbols-outlined">description</i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
+                        {{ 'edit.content.image-editor.panel.fileinfo.title' | dm }}
+                    </span>
+                    <span class="ie-panel-head__subtitle">
+                        {{ 'edit.content.image-editor.panel.fileinfo.subtitle' | dm }}
+                    </span>
+                </span>
+                <i class="material-symbols-outlined ie-panel-head__chevron" aria-hidden="true">
+                    expand_more
+                </i>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-fileinfo-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+
+    <p-accordion-panel value="history" data-testid="image-editor-panel-history">
+        <p-accordion-header>
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="material-symbols-outlined">history</i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
+                        {{ 'edit.content.image-editor.panel.history.title' | dm }}
+                    </span>
+                    <span class="ie-panel-head__subtitle">
+                        {{ 'edit.content.image-editor.panel.history.subtitle' | dm }}
+                    </span>
+                </span>
+                <i class="material-symbols-outlined ie-panel-head__chevron" aria-hidden="true">
+                    expand_more
+                </i>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-history-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+</p-accordion>

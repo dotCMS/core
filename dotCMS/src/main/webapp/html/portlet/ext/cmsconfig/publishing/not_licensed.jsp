@@ -14,7 +14,7 @@
 </style>
 <div class="portlet-wrapper">
     <div class="unlicense-content">
-        <i class="material-icons" style="font-size: 120px;">cloud_upload</i>
+        <i class="material-symbols-outlined" style="font-size: 120px;">cloud_upload</i>
         <h4><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.publishing-queue")%></h4>
         <p><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.publishing-queue")%> <%=LanguageUtil.get(pageContext, "only-available-in-enterprise")%></p>
         <ul>

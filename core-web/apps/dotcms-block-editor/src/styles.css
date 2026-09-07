@@ -1,7 +1,4 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
-
-.p-dialog-mask.p-component-overlay.p-dialog-mask-scrollblocker {
-    background-color: transparent;
-    backdrop-filter: none;
-}
+@import '../../../libs/dotcms-scss/tailwind/theme.css';
+@plugin '@tailwindcss/typography';

@@ -1,14 +1,9 @@
-import {
-    Spectator,
-    SpyObject,
-    byTestId,
-    createComponentFactory,
-    mockProvider
-} from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import {
-    DotCrudService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService
@@ -38,13 +33,26 @@ const MOCK_CONTENT_TYPE = {
     metadata: {}
 } as DotCMSContentType;
 
+// Content type with fields, workflows, and systemActionMappings to verify none of these
+// bleed into the metadata-only PATCH payload.
+const MOCK_CONTENT_TYPE_WITH_FIELDS_AND_WORKFLOWS = {
+    ...MOCK_CONTENT_TYPE,
+    fields: [{ id: 'field-1', variable: 'title', name: 'Title' }],
+    workflows: [{ id: 'workflow-scheme-id', name: 'Default Workflow' }],
+    systemActionMappings: { NEW: { id: 'wf-action-id' } }
+} as unknown as DotCMSContentType;
+
+const METADATA_URL = `v1/contenttype/id/${MOCK_CONTENT_TYPE.id}/metadata`;
+
 describe('DotStyleEditorBuilderComponent', () => {
     let spectator: Spectator<DotStyleEditorBuilderComponent>;
+    let httpController: HttpTestingController;
 
     const createComponent = createComponentFactory({
         component: DotStyleEditorBuilderComponent,
         providers: [
-            mockProvider(DotCrudService, { putData: jest.fn().mockReturnValue(of({})) }),
+            provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
             {
@@ -62,6 +70,7 @@ describe('DotStyleEditorBuilderComponent', () => {
 
     function setup(contentType?: DotCMSContentType): void {
         spectator = createComponent();
+        httpController = spectator.inject(HttpTestingController);
         if (contentType) {
             spectator.setInput('contentType', contentType);
         }
@@ -84,6 +93,18 @@ describe('DotStyleEditorBuilderComponent', () => {
         input.dispatchEvent(new Event('input'));
         spectator.detectChanges();
     }
+
+    function typeInLabelInput(index: number, value: string): void {
+        const inputs = spectator.queryAll('input[placeholder="New Field"]') as HTMLInputElement[];
+        const input = inputs[index];
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+        spectator.detectChanges();
+    }
+
+    afterEach(() => {
+        httpController.verify();
+    });
 
     describe('Sections', () => {
         it('should add a section when "Add New Section" is clicked', () => {
@@ -241,28 +262,51 @@ describe('DotStyleEditorBuilderComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$saveAttempted()).toBe(true);
-            expect(spectator.inject(DotCrudService).putData).not.toHaveBeenCalled();
+            httpController.expectNone(METADATA_URL);
         });
 
-        it('should call the CRUD API when the form is valid', () => {
+        it('should call the metadata PATCH endpoint when the form is valid', () => {
             setup(MOCK_CONTENT_TYPE);
-            // No sections → empty form is valid (nothing to validate)
+
             spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
 
-            expect(spectator.inject(DotCrudService).putData).toHaveBeenCalledWith(
-                `v1/contenttype/id/${MOCK_CONTENT_TYPE.id}`,
-                expect.anything()
-            );
+            const req = httpController.expectOne(METADATA_URL);
+            expect(req.request.method).toBe('PATCH');
+            req.flush({ entity: {} });
+        });
+
+        it('should send null for the schema key when there are no sections', () => {
+            setup(MOCK_CONTENT_TYPE);
+
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            const req = httpController.expectOne(METADATA_URL);
+            expect(req.request.body).toEqual({ DOT_STYLE_EDITOR_SCHEMA: null });
+            req.flush({ entity: {} });
+        });
+
+        it('should send only the schema key in the payload — no fields, workflows or other CT properties', () => {
+            setup(MOCK_CONTENT_TYPE_WITH_FIELDS_AND_WORKFLOWS);
+
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            const req = httpController.expectOne(METADATA_URL);
+            expect(Object.keys(req.request.body)).toEqual(['DOT_STYLE_EDITOR_SCHEMA']);
+            req.flush({ entity: {} });
         });
 
         it('should handle API errors by calling the error manager', () => {
             setup(MOCK_CONTENT_TYPE);
 
-            const crudService: SpyObject<DotCrudService> = spectator.inject(DotCrudService);
-            crudService.putData.mockReturnValue(throwError(() => new Error('Server error')));
-
             spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            httpController
+                .expectOne(METADATA_URL)
+                .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
             spectator.detectChanges();
 
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
@@ -270,55 +314,66 @@ describe('DotStyleEditorBuilderComponent', () => {
     });
 
     describe('Duplicate identifier validation', () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
-
-        it('should detect a duplicate when two fields in the same section share the default identifier', () => {
+        it('should detect a duplicate when two fields in the same section share an identifier', () => {
             setup(MOCK_CONTENT_TYPE);
 
-            // One section is added with one field (identifier: 'newField').
-            // Adding a second field produces another field with the same default identifier.
             clickAddSection();
             clickAddField();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
 
-            expect(spectator.component.$duplicateIdentifiers().has('newField')).toBe(true);
+            expect(spectator.component.$duplicateIdentifiers().has('sharedId')).toBe(true);
         });
 
-        it('should detect a duplicate when fields in different sections share the default identifier', () => {
+        it('should detect a duplicate when fields in different sections share an identifier', () => {
             setup(MOCK_CONTENT_TYPE);
 
-            // Each section starts with one field (identifier: 'newField'), producing a cross-section clash.
             clickAddSection();
             clickAddSection();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
 
-            expect(spectator.component.$duplicateIdentifiers().has('newField')).toBe(true);
+            expect(spectator.component.$duplicateIdentifiers().has('sharedId')).toBe(true);
         });
 
         it('should block the API call and mark the save as attempted when duplicate identifiers exist', () => {
             setup(MOCK_CONTENT_TYPE);
             clickAddSection();
             clickAddField();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
 
             spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
 
             expect(spectator.component.$saveAttempted()).toBe(true);
-            expect(spectator.inject(DotCrudService).putData).not.toHaveBeenCalled();
+            httpController.expectNone(METADATA_URL);
         });
 
         it('should call the API after the user renames one of the duplicate identifiers to make it unique', () => {
             setup(MOCK_CONTENT_TYPE);
             clickAddSection();
             clickAddField();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
 
-            // Both fields now share 'newField'. Rename the first one to resolve the clash.
+            // Both fields share 'sharedId'. Rename the first one to resolve the clash.
             typeInIdentifierInput(0, 'uniqueId');
 
             spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
 
-            expect(spectator.inject(DotCrudService).putData).toHaveBeenCalled();
+            const req = httpController.expectOne(METADATA_URL);
+            expect(req.request.method).toBe('PATCH');
+            req.flush({ entity: {} });
         });
     });
 });

@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'sdk-analytics',
     preset: '../../../jest.preset.js',

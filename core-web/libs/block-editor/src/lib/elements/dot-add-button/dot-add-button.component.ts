@@ -14,7 +14,7 @@ import { PluginKey } from '@tiptap/pm/state';
             tiptapFloatingMenu
             [editor]="$editor()"
             [pluginKey]="pluginKey"
-            [tippyOptions]="tippyOptions">
+            [options]="floatingOptions">
             <p-button
                 class="add-button flex  items-center justify-center cursor-pointer"
                 (onClick)="onClick()"
@@ -30,9 +30,12 @@ import { PluginKey } from '@tiptap/pm/state';
 export class DotAddButtonComponent {
     $editor = input.required<Editor>({ alias: 'editor' });
     protected readonly pluginKey = new PluginKey('dotCMSPlusButton');
-    protected readonly tippyOptions = {
-        placement: 'left',
-        appendTo: () => document.body
+    // ngx-tiptap v14 swapped tippy for floating-ui — `placement`/`strategy` map to floating-ui;
+    // `strategy: 'fixed'` is the closest equivalent to the previous `appendTo: document.body`
+    // (positions relative to viewport so the button isn't clipped by the editor container).
+    protected readonly floatingOptions = {
+        placement: 'left' as const,
+        strategy: 'fixed' as const
     };
 
     protected onClick(): void {

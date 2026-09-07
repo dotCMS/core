@@ -28,7 +28,6 @@
         <module>dotcms-integration</module>
         <module>dotcms-postman</module>
         <module>reports</module>
-        <module>e2e/dotcms-e2e-java</module>
         <module>core-web/apps/dotcms-ui-e2e</module>
         <module>test-karate</module>
     </modules>

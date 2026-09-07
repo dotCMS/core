@@ -266,6 +266,11 @@ import com.dotmarketing.startup.runonce.Task260324AddIdentifierPathTriggerIndex;
 import com.dotmarketing.startup.runonce.Task260403SetLz4CompressionOnTextColumns;
 import com.dotmarketing.startup.runonce.Task260403SetPermissionReferenceUnlogged;
 import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifier;
+import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenu;
+import com.dotmarketing.startup.runonce.Task260507CreateS3VanityAliasTable;
+import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLength;
+import com.dotmarketing.startup.runonce.Task260420AddDotAuthPortletToMenu;
+import com.dotmarketing.startup.runonce.Task260720AddDefaultBaseTypeToFolderTable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -606,6 +611,10 @@ public class TaskLocatorUtil {
         .add(Task260403SetLz4CompressionOnTextColumns.class)
         .add(Task260403SetPermissionReferenceUnlogged.class)
         .add(Task260407AddBaseTypeColumnToIdentifier.class)
+        .add(Task260505AddPluginsPortletToMenu.class)
+        .add(Task260507CreateS3VanityAliasTable.class)
+        .add(Task260615AlterClusterIdLength.class)
+        .add(Task260720AddDefaultBaseTypeToFolderTable.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -632,6 +641,9 @@ public class TaskLocatorUtil {
 		ret.add(Task00002LoadClusterLicenses.class);
 		ret.add(Task00040CheckAnonymousUser.class);
 		ret.add(Task00050LoadAppsSecrets.class);
+		// run-always reconcile, not version-gated: the bundled starter can record a db_version
+		// past this task's number while its layouts predate the dotAuth portlet (fresh-install gap)
+		ret.add(Task260420AddDotAuthPortletToMenu.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

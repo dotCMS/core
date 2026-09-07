@@ -1,8 +1,8 @@
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
+<%@page import="com.dotmarketing.util.Logger"%>
 <%@ include file="/html/common/init.jsp"%>
 <%
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
@@ -16,9 +16,18 @@ if(request.getParameter("jobName") != null){
 	}
 }
 
-ESIndexAPI iapi=new ESIndexAPI();
 List<String> indexes = ssapi.listIndices();
-Map<String,String> alias = iapi.getIndexAlias(indexes);
+// Site-search .os-aware alias resolution (issue #36983): resolve through the site-search API and
+// reverse (alias->index) into index->alias for the selector. The content-index router (ESIndexAPI)
+// misses site-search aliases in Phases 2/3 because the physical OpenSearch index is .os-tagged, so
+// the selector fell back to the raw internal index name — which is then saved as the job's
+// `indexAlias` and later re-applied as the new index's alias by the crawl, destroying the real one.
+// AllEngines: this list is a union of both engines, so the alias view must cover the same set or an
+// index living only on the non-read engine renders (and gets saved) as a raw name again.
+Map<String,String> alias = new HashMap<String,String>();
+for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
+	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
+}
 
 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 SimpleDateFormat tdf = new SimpleDateFormat("HH:mm:ss");
@@ -66,7 +75,10 @@ for(String x : indexHosts){
 	catch(Exception e){}
 }
 
-boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch() != null;
+// Phase-aware default (issue #36983) — see the note in site_search_index_stats.jsp.
+String defaultSiteSearchIndex = null;
+try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (Exception e) { Logger.warn(this.getClass(), "Could not resolve the default site-search index: " + e.getMessage()); }
+boolean hasDefaultIndex = defaultSiteSearchIndex != null;
 
 
 List<Language> langs=APILocator.getLanguageAPI().getLanguages();
@@ -77,7 +89,7 @@ String includeExclude = (String) props.get("includeExclude") ==null ? "all": (St
 
 boolean hasPath = false;
 
-final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
+final String siteSearch = defaultSiteSearchIndex;
 
 %>
 

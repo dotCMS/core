@@ -21,6 +21,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -198,20 +199,28 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     // Index lifecycle
     // =========================================================================
 
+
     @Override
     public IndexAPI indexAPI() {
         return osIndexAPI;
     }
 
+    /**
+     * Returns the physical OS index name: cluster-ID prefix + logical name + {@code .os} suffix.
+     *
+     * <p>Example: {@code working_20230101} → {@code cluster_e0f4fa027f.working_20230101.os}</p>
+     * <p>Idempotent: names that already end in {@code .os} are returned unchanged.</p>
+     */
+    @Override
+    public String toPhysicalName(final String indexName) {
+        final String clustered = indexAPI().getNameWithClusterIDPrefix(indexName);
+        return IndexTag.OS.isTagged(clustered) ? clustered : IndexTag.OS.tag(clustered);
+    }
+
     @Override
     public boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
-        String settings = null;
-        try {
-            settings = JsonUtil.getJsonFileContentAsString(OS_SETTINGS_FILE);
-        } catch (Exception e) {
-            Logger.error(this, "cannot load " + OS_SETTINGS_FILE + ", skipping", e);
-        }
+        final String settings = JsonUtil.getJsonFileContentAsString(OS_SETTINGS_FILE);
 
         final String mapping = JsonUtil.getJsonFileContentAsString(CONTENT_MAPPING_FILE);
         final CreateIndexStatus status = osIndexAPI.createIndex(indexName, settings, shards);
@@ -285,21 +294,55 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                         }
                         return b;
                     }));
-            if (response.errors()) {
-                for (final BulkResponseItem item : response.items()) {
-                    if (item.error() != null) {
-                        Logger.error(this,
-                                "OS bulk putToIndex error — id=" + item.id()
-                                        + " op=" + item.operationType()
-                                        + " type=" + item.error().type()
-                                        + " reason=" + item.error().reason());
-                    }
-                }
-            }
+            handleBulkResponse(response);
         } catch (final Exception e) {
             Logger.warnAndDebug(ContentletIndexOperationsOS.class, e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Decides what a bulk response means to the caller.
+     *
+     * <p>Extracted from {@link #putToIndex(IndexBulkRequest)} so the policy can be exercised
+     * without a cluster — the HTTP call is not what is interesting here, the verdict is.</p>
+     *
+     * @param response the response from the bulk call; {@code null} is tolerated
+     */
+    @VisibleForTesting
+    void handleBulkResponse(final BulkResponse response) {
+        if (response == null || !response.errors()) {
+            return;
+        }
+
+        // Same contract as the Elasticsearch provider (#37276, loss point L3): a bulk that
+        // returns normally while rejecting items must not read as success to the caller.
+        //
+        // This matters most in phase 3, where OpenSearch is the sole provider and there is no
+        // shadow leg to absorb the loss. In dual-write phases the router already isolates the
+        // shadow (ContentletIndexAPIImpl#putToIndex), so raising here keeps ADR-0009 intact:
+        // an OS failure is still swallowed while OS is the shadow, and propagates once primary.
+        final StringBuilder detail = new StringBuilder();
+        for (final BulkResponseItem item : response.items()) {
+            if (item.error() != null) {
+                final String itemMessage = "OS bulk index operation error — id=" + item.id()
+                        + " op=" + item.operationType()
+                        + " type=" + item.error().type()
+                        + " reason=" + item.error().reason();
+                Logger.error(this, itemMessage);
+                if (detail.length() > 0) {
+                    detail.append("; ");
+                }
+                detail.append(itemMessage);
+            }
+        }
+
+        // errors() is expected to imply at least one item carrying an error, but if that ever
+        // stops holding we must not hand the caller a blank exception — a failure with no
+        // message is barely better than the silent return this replaced.
+        throw new DotRuntimeException(detail.length() > 0
+                ? detail.toString()
+                : "OS bulk reported errors but no item carried an error cause");
     }
 
     // =========================================================================
@@ -364,9 +407,17 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         try {
             final OpenSearchClient client = getClientProvider().getClient();
             for (final String indexName : indices) {
+                final String physical = toPhysicalName(indexName);
                 final org.opensearch.client.opensearch.core.DeleteByQueryRequest deleteByQuery =
                         org.opensearch.client.opensearch.core.DeleteByQueryRequest.of(r -> r
-                                .index(indexName)
+                                .index(physical)
+                                // Proceed past version conflicts instead of aborting: a document
+                                // updated concurrently (e.g. just published) would otherwise return
+                                // HTTP 409 version_conflict_engine_exception and fail the whole
+                                // content-type removal, which callers swallow — orphaning downstream
+                                // cleanup (e.g. the unique_fields table). Matches ES delete_by_query
+                                // tolerance and keeps the operation best-effort.
+                                .conflicts(org.opensearch.client.opensearch._types.Conflicts.Proceed)
                                 .query(q -> q.queryString(
                                         QueryStringQuery.of(qs -> qs.query(
                                                 "contenttype:" + structureName.toLowerCase())))));
@@ -374,7 +425,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                         client.deleteByQuery(deleteByQuery);
                 Logger.info(this, "OS: Deleted " + response.deleted()
                         + " records of contentType " + structureName
-                        + " from index " + indexName);
+                        + " from index " + physical);
             }
         } catch (final Exception e) {
             throw new DotDataException("Error removing content type from OS index: "

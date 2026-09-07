@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
 import { AsyncPipe } from '@angular/common';
-import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
+import { AfterViewInit, Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
     FormArray,
     FormBuilder,
@@ -68,6 +68,7 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
         ButtonModule,
         AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotContainerPropertiesStore, DotContainersService]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {

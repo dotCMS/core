@@ -7,7 +7,6 @@ import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFiel
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 import static com.liferay.util.StringPool.BLANK;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategy;
@@ -63,7 +62,6 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
     @Override
     @WrapInTransaction
-    @CloseDBIfOpened
     public void innerValidate(final Contentlet contentlet, final Field field, final Object fieldValue,
                        final ContentType contentType) throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
 
@@ -77,7 +75,6 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
     @Override
     @WrapInTransaction
-    @CloseDBIfOpened
     public void innerValidateInPreview(final Contentlet contentlet, final Field field, final Object fieldValue,
                                         final ContentType contentType)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {

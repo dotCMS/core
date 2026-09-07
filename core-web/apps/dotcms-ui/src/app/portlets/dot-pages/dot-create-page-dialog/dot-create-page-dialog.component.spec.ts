@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -319,7 +319,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.setInput('visibility', true);
             spectator.detectChanges();
 
-            const icons = spectator.queryAll('.material-icons');
+            const icons = spectator.queryAll('.material-symbols-outlined');
             expect(icons.length).toBeGreaterThan(0);
             expect(icons[0]?.textContent?.trim()).toBe('description');
         });

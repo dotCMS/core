@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 

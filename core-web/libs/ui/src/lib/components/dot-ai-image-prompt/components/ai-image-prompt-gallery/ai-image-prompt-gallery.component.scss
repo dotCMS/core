@@ -1,10 +1,5 @@
 @use "../../../../../../../dotcms-scss/shared/colors";
 @use "../../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
-$max-galleria-dimension: 28.75rem;
 
 :host {
     display: flex;
@@ -19,6 +14,7 @@ $max-galleria-dimension: 28.75rem;
     align-items: center;
     border-radius: common.$border-radius-md;
     align-self: center;
+    aspect-ratio: 1/1;
 
     &.s1024x1792 {
         aspect-ratio: 1/1.25;
@@ -34,35 +30,56 @@ $max-galleria-dimension: 28.75rem;
 }
 
 p-galleria {
-    height: 34rem;
     display: flex;
     align-items: center;
-    padding: spacing.$spacing-3;
+    padding: 0.75rem;
     border-radius: common.$border-radius-md;
     background-color: colors.$color-palette-gray-100;
 }
 
-.ai-image-gallery__count {
-    margin-top: spacing.$spacing-1;
-}
-
 :host ::ng-deep {
     .ai-image-gallery__img {
-        width: 100%;
+        max-width: 100%;
         max-height: 32rem;
         border-radius: common.$border-radius-md;
     }
 
-    p-galleriacontent {
+    p-galleriacontent,
+    .p-galleria,
+    .p-galleria-content,
+    .p-galleria-items-container,
+    .p-galleria-items {
         width: 100%;
     }
 
-    dot-empty-container .message__icon {
-        color: colors.$red;
+    .p-galleria-item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+
+    .p-image {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    dot-empty-container {
+        width: 100%;
+        min-height: 20rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .pi {
+            width: inherit;
+        }
     }
 
     .message__principal-wrapper {
-        padding: 0 4.5rem;
+        padding: 0 2rem;
+        text-align: center;
     }
 
     .p-image-preview {
@@ -73,15 +90,4 @@ p-galleria {
     .p-image-toolbar button:not(:last-child) {
         display: none;
     }
-}
-
-.ai-image-gallery_skeleton {
-    width: 100%;
-    height: $max-galleria-dimension;
-    display: flex;
-}
-
-.ai-image-gallery__count-skeleton {
-    margin-top: spacing.$spacing-1;
-    align-self: center;
 }

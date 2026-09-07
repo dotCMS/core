@@ -157,6 +157,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String VALIDATE_EMPTY_FILE = "_validateEmptyFile_";
   public static final String STYLE_PROPERTIES_KEY = "dotStyleProperties";
 
+  /**
+   * Transient map key holding {@code List<String>} advisory warnings produced while converting
+   * a Story Block field value (Markdown/HTML → Tiptap JSON) on the save path. The REST layer
+   * pops this key off the fired contentlet and surfaces each entry in the response envelope's
+   * {@code messages}; it is never persisted (stripped with the other transient workflow keys).
+   */
+  public static final String STORY_BLOCK_CONVERSION_WARNINGS_KEY = "__storyBlockConversionWarnings__";
+
   // means the contentlet is being used on unit test mode.
   // this is only for unit test. do not use on production.
   @VisibleForTesting
@@ -397,11 +405,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 							break; // found one
 						}
 
-						// if it is a binary
+						// if it is a binary — use the in-memory value's name only: getBinary()
+						// stats the filesystem, and a hung stat on network-backed storage here
+						// froze the whole reindex pipeline (issue #36498)
 						if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
-							final File binaryFile = this.getBinary(field.getVelocityVarName());
-							if (null != binaryFile) {
-								binaryValue = binaryFile.getName();
+							final Object rawBinary = this.map.get(field.getVelocityVarName());
+							if (rawBinary instanceof File) {
+								binaryValue = ((File) rawBinary).getName();
 							}
 						}
 					}
@@ -443,8 +453,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
 						final String dotAssetName     = this.getStringProperty(transientNameKey);
 						String assetName              = dotAssetName;
-						if (!isSet(dotAssetName) && null != this.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
-							assetName = this.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
+						// use the in-memory value's name only — getBinary() stats the
+						// filesystem, a hang risk on network-backed storage (issue #36498)
+						final Object rawAsset = this.map.get(DotAssetContentType.ASSET_FIELD_VAR);
+						if (!isSet(dotAssetName) && rawAsset instanceof File) {
+							assetName = ((File) rawAsset).getName();
 							this.setStringProperty(transientNameKey, assetName);
 						}
 
@@ -1201,7 +1214,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
-		File f = (File) map.get(velocityVarName);
+		final Object rawValue = map.get(velocityVarName);
+		File f = (rawValue instanceof File) ? (File) rawValue : null;
 		if((f==null || !f.exists()) ){
 			f=null;
 			map.remove(velocityVarName);
@@ -1538,6 +1552,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String fieldVarName = foundTagInode.getFieldVarName();
 
 						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
+						// INVARIANT (issue #35861): this containsKey guard is what lets a tag clear stick. When a tag field is
+						// cleared, ESContentletAPIImpl.clearOrNullifyProperty stores an empty string ("") rather than null so the
+						// key stays in the map; that blocks the re-hydration below from resurrecting the prior version's tags.
+						// Do not relax this guard (e.g. to also re-hydrate when the value is blank) without revisiting that fix.
 						if (!map.containsKey(fieldVarName)) {
 							StringBuilder contentletTagsBuilder = new StringBuilder();
 

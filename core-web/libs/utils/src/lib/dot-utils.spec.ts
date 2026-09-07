@@ -5,10 +5,14 @@ import {
 } from '@dotcms/dotcms-models';
 
 import {
+    buildCurlSnippet,
+    buildFetchSnippet,
     getImageAssetUrl,
     ellipsizeText,
     getRunnableLink,
     hasValidValue,
+    isDotIdentifier,
+    isSameOriginRelativeUrl,
     mapQueryParamsToCDParams,
     mapParamsFromEditContentlet
 } from './dot-utils';
@@ -537,6 +541,118 @@ describe('Dot Utils', () => {
             const cdParams = new URLSearchParams('');
 
             expect(mapParamsFromEditContentlet(cdParams)).toEqual({});
+        });
+    });
+
+    describe('buildCurlSnippet', () => {
+        it('produces a POST curl command with JSON body', () => {
+            const snippet = buildCurlSnippet({
+                url: 'https://demo.dotcms.com/api/v1/content/_search',
+                body: { query: '+live:true', limit: 20 }
+            });
+
+            expect(snippet).toContain(
+                'curl -X POST "https://demo.dotcms.com/api/v1/content/_search"'
+            );
+            expect(snippet).toContain('"Content-Type: application/json"');
+            expect(snippet).toContain(`-d '{"query":"+live:true","limit":20}'`);
+        });
+
+        it('escapes single quotes in the body using POSIX shell quoting', () => {
+            const snippet = buildCurlSnippet({
+                url: 'https://x/y',
+                body: { title: "it's" }
+            });
+            expect(snippet).toContain(`"title":"it'\\''s"`);
+            expect(snippet).not.toContain(`"title":"it's"`);
+        });
+    });
+
+    describe('buildFetchSnippet', () => {
+        it('emits a fetch() POST with credentials and an indented body', () => {
+            const snippet = buildFetchSnippet({
+                url: '/api/v1/content/_search',
+                body: { query: '+live:true', limit: 20 }
+            });
+
+            expect(snippet).toContain(`fetch('/api/v1/content/_search'`);
+            expect(snippet).toContain(`method: 'POST'`);
+            expect(snippet).toContain(`credentials: 'include'`);
+            expect(snippet).toContain(`"query": "+live:true"`);
+            expect(snippet).toContain(`"limit": 20`);
+        });
+    });
+
+    describe('isDotIdentifier', () => {
+        const VALID = '65e105ad-4338-45f4-a8ad-1a6a1e325e6e';
+
+        it('accepts a 36-character UUID, in either case', () => {
+            expect(isDotIdentifier(VALID)).toBe(true);
+            expect(isDotIdentifier(VALID.toUpperCase())).toBe(true);
+            expect(isDotIdentifier(`  ${VALID}  `)).toBe(true);
+        });
+
+        it('rejects an absent value', () => {
+            expect(isDotIdentifier(null)).toBe(false);
+            expect(isDotIdentifier(undefined)).toBe(false);
+            expect(isDotIdentifier('')).toBe(false);
+        });
+
+        /**
+         * The point of the check: these are what would widen a Lucene query instead of matching
+         * an identifier, which is how a crafted value reaches an unintended contentlet.
+         */
+        it('rejects anything carrying Lucene syntax or whitespace', () => {
+            expect(isDotIdentifier(`${VALID} OR +contentType:Host`)).toBe(false);
+            expect(isDotIdentifier('* ')).toBe(false);
+            expect(isDotIdentifier('+identifier:x')).toBe(false);
+            expect(isDotIdentifier(`${VALID}*`)).toBe(false);
+            expect(isDotIdentifier('not-a-uuid')).toBe(false);
+        });
+    });
+});
+
+describe('isSameOriginRelativeUrl', () => {
+    describe('accepts same-origin relative paths', () => {
+        it.each([
+            '/html/portlet/ext/folders/push_history.jsp?folderIdentifier=abc&popup=true',
+            '/html/portlet/ext/folders/permissions.jsp?folderIdentifier=abc&popup=true',
+            '/html/portlet/ext/categories/permissions.jsp?categoryInode=inode-123&popup=true',
+            '/normal/path',
+            '/'
+        ])('should accept %s', (url) => {
+            expect(isSameOriginRelativeUrl(url)).toBe(true);
+        });
+
+        it('should accept an encoded double slash, which stays on this origin', () => {
+            expect(isSameOriginRelativeUrl('/%2f%2fevil.example.com')).toBe(true);
+        });
+    });
+
+    describe('rejects anything that is not a same-origin relative path', () => {
+        it.each([
+            ['empty string', ''],
+            ['absolute http URL', 'http://evil.example.com/x'],
+            ['absolute https URL', 'https://evil.example.com/x'],
+            ['protocol-relative URL', '//evil.example.com'],
+            ['javascript: scheme', 'javascript:alert(1)'],
+            ['data: scheme', 'data:text/html,<script>alert(1)</script>'],
+            ['path not starting with a slash', 'html/portlet/ext/folders/push_history.jsp']
+        ])('should reject %s', (_label, url) => {
+            expect(isSameOriginRelativeUrl(url)).toBe(false);
+        });
+
+        // Browsers normalize backslashes and strip control characters before parsing, so each of
+        // these resolves cross-origin despite starting with a single slash. A guard that only
+        // rejects a leading `//` lets them through.
+        it.each([
+            ['a backslash in the authority position', '/\\evil.example.com'],
+            ['a backslash followed by a slash', '/\\/evil.example.com'],
+            ['a tab', '/\t/evil.example.com'],
+            ['a newline', '/\n/evil.example.com'],
+            ['a carriage return', '/\r/evil.example.com']
+        ])('should reject %s', (_label, url) => {
+            expect(isSameOriginRelativeUrl(url)).toBe(false);
         });
     });
 });

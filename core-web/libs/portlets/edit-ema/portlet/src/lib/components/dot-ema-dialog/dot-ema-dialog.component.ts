@@ -245,6 +245,14 @@ export class DotEmaDialogComponent {
                     });
                 } else {
                     this.callEmbeddedFunction(callback, args);
+                    // Reload so pageLanguages reflects the post-action state. The workflow
+                    // action triggers an async save inside the iframe; by the time
+                    // saveContentCallback fires LANGUAGE_IS_CHANGED, the dialog may already
+                    // be closed and its iframe listener gone. Firing here — while the dialog
+                    // is still open — guarantees the reload runs. The Spanish draft already
+                    // exists at this point (created when the user selected the language),
+                    // so getLanguagesUsedPage correctly returns translated: true.
+                    this.reloadFromDialog.emit();
                     this.messageService.add({
                         severity: 'success',
                         summary: this.dotMessageService.get('Workflow-Action'),

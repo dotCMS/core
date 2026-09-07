@@ -3,7 +3,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl.ContentletVersionInfo;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -149,7 +149,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         Assert.assertEquals(0, count);
 
         final Set<String> inodes = contentTypeAndInode._2();
-        //Test no content is left hang around
+        //Test no content is left to hang around
         for (String inode:inodes) {
             count = new DotConnect().setSQL("select count(*) as x from contentlet where inode = ? ").addParam(inode).getInt("x");
             Assert.assertEquals(0, count);
@@ -164,7 +164,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         Assert.assertTrue(searchIndex(anyInode.get(), false).isEmpty());
     }
 
-    private ESSearchResults searchIndex(final ContentType contentType, final boolean live )
+    private ContentSearchResults searchIndex(final ContentType contentType, final boolean live )
             throws DotDataException, DotSecurityException {
 
         final String esQuery = String.format("{\n"
@@ -175,12 +175,12 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
                 + "        }\n"
                 + "}", contentType.variable());
 
-            return APILocator.getEsSearchAPI()
-                    .esSearch(esQuery, live, APILocator.systemUser(), false);
+        return APILocator.getSearchAPI()
+                .search(esQuery, live, APILocator.systemUser(), false);
     }
 
 
-    private ESSearchResults searchIndex(final String inode, final boolean live )
+    private ContentSearchResults searchIndex(final String inode, final boolean live )
             throws DotDataException, DotSecurityException {
 
         final String esQuery = String.format("{\n"
@@ -191,8 +191,8 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
                 + "        }\n"
                 + "}", inode);
 
-        return APILocator.getEsSearchAPI()
-                .esSearch(esQuery, live, APILocator.systemUser(), false);
+        return APILocator.getSearchAPI()
+                .search(esQuery, live, APILocator.systemUser(), false);
     }
     /**
      * Given Scenario: We create a Content Type with a relationship field

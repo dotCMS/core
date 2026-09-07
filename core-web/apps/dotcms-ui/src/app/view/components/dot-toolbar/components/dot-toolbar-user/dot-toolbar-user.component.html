@@ -25,4 +25,8 @@
     @defer (when vm.showLoginAs) {
         <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs" />
     }
+
+    @defer (when $showReportIssue()) {
+        <dot-report-issue (shutdown)="closeReportIssue()" [visible]="$showReportIssue()" />
+    }
 }

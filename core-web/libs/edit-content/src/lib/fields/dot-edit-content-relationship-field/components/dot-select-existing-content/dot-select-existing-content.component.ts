@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    CUSTOM_ELEMENTS_SCHEMA,
+    computed,
     effect,
     inject,
     model,
@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -26,12 +26,15 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { InitLoadParams } from '../../models/relationship.models';
 
@@ -46,6 +49,7 @@ const STATIC_COLUMNS = 6;
     imports: [
         TableModule,
         ButtonModule,
+        CheckboxModule,
         MenuModule,
         DotMessagePipe,
         DialogModule,
@@ -54,18 +58,17 @@ const STATIC_COLUMNS = 6;
         InputTextModule,
         InputGroupModule,
         PopoverModule,
-        ContentletStatusPipe,
+        DotContentletStatusBadgeComponent,
         LanguagePipe,
         DatePipe,
-        ChipModule,
         FormsModule,
         TooltipModule,
         SearchComponent,
-        ToggleSwitchModule
+        ToggleSwitchModule,
+        DotContentThumbnailComponent
     ],
     templateUrl: './dot-select-existing-content.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSelectExistingContentComponent implements OnInit {
     /**
@@ -91,6 +94,66 @@ export class DotSelectExistingContentComponent implements OnInit {
      * It is used to store the static columns.
      */
     $staticColumns = signal(STATIC_COLUMNS);
+
+    /**
+     * Items that are selectable — excludes rows marked as constrained
+     * (already related under a cardinality-restricted relationship).
+     */
+    $selectableItems = computed(() => {
+        const isConstrained = this.store.isItemConstrained();
+
+        return this.store.filteredData().filter((item) => !isConstrained(item.identifier));
+    });
+
+    /**
+     * True when some — but not all — selectable items are currently selected.
+     * Drives the header checkbox's indeterminate state for parity with the
+     * native p-tableHeaderCheckbox it replaces.
+     */
+    $isPartiallySelected = computed(() => {
+        if (this.store.isSelectedView()) {
+            return false;
+        }
+
+        const selectable = this.$selectableItems();
+
+        if (selectable.length === 0) {
+            return false;
+        }
+
+        const selectedInodes = new Set(this.store.currentItems().map((item) => item.inode));
+        const matchCount = selectable.reduce(
+            (acc, item) => (selectedInodes.has(item.inode) ? acc + 1 : acc),
+            0
+        );
+
+        return matchCount > 0 && matchCount < selectable.length;
+    });
+
+    /**
+     * State of the header "Select All" checkbox. True when there is at least one
+     * selectable item and every selectable item is currently selected.
+     *
+     * Forced to false in "selected view" mode to avoid a trivially-checked state
+     * (filteredData is already filtered to the current selection), which would
+     * otherwise let a single header click wipe the whole selection.
+     */
+    $selectAll = computed(() => {
+        if (this.store.isSelectedView()) {
+            return false;
+        }
+
+        const selectable = this.$selectableItems();
+
+        if (selectable.length === 0) {
+            return false;
+        }
+
+        const selection = this.store.currentItems();
+        const selectedInodes = new Set(selection.map((item) => item.inode));
+
+        return selectable.every((item) => selectedInodes.has(item.inode));
+    });
 
     constructor() {
         effect(() => {
@@ -142,5 +205,24 @@ export class DotSelectExistingContentComponent implements OnInit {
         const items = this.store.currentItems();
 
         return items.some((selectedItem) => selectedItem.inode === item.inode);
+    }
+
+    /**
+     * Handles the header "Select All" toggle, excluding constrained (already related) rows
+     * so they are never added to the selection. A custom p-checkbox is used instead of
+     * p-tableHeaderCheckbox because the latter ignores per-row [disabled] state.
+     *
+     * Operates only on items in the current view — selections from other pages or prior
+     * searches are preserved so a Select All / Unselect All in one page never silently
+     * discards items picked elsewhere.
+     */
+    onSelectAllChange(event: { checked: boolean }) {
+        const current = this.store.currentItems();
+        const visibleInodes = new Set(this.store.filteredData().map((item) => item.inode));
+        const preserved = current.filter((item) => !visibleInodes.has(item.inode));
+
+        this.$selectionItems.set(
+            event.checked ? [...preserved, ...this.$selectableItems()] : preserved
+        );
     }
 }

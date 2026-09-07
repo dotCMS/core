@@ -1,0 +1,19 @@
+<!-- Spinner + gradient-text shimmer (AI-chatbot style): the spinner is the clear
+     motion cue; the shimmer sweeps a band through the label as it works. The
+     shimmer is plain CSS (see the component styles) so it never clips the text. -->
+<!-- text-base!: material-symbols-outlined sets its own 24px font-size on the class,
+     which a plain size utility loses to at equal specificity. -->
+<span
+    class="material-symbols-outlined flex-none animate-spin text-base! text-primary"
+    aria-hidden="true"
+    data-testid="agent-thinking-spinner">
+    progress_activity
+</span>
+<span class="agent-shimmer min-w-0 font-medium" data-testid="agent-thinking-text">
+    {{ text() }}
+</span>
+@if (sub()) {
+    <span class="flex-none text-muted-color tabular-nums" data-testid="agent-thinking-sub">
+        {{ sub() }}
+    </span>
+}

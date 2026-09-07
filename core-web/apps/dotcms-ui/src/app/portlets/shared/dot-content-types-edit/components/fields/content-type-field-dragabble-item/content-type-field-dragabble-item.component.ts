@@ -15,7 +15,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { camelCase } from '@dotcms/utils';
 
-import { FieldService } from '../service';
+import { getFieldIcon } from '../content-types-fields-list/content-types-fields-icon-map';
 
 /**
  * This display field after being dropped into a Content Type Drop zone
@@ -33,7 +33,6 @@ import { FieldService } from '../service';
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
-    fieldService = inject(FieldService);
 
     readonly $isSmall = input<boolean>(false, { alias: 'isSmall' });
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
@@ -83,7 +82,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
 
         this.fieldAttributesString = this.fieldAttributesArray.join(', ');
 
-        this.icon = this.fieldService.getIcon(this.field.clazz);
+        this.icon = getFieldIcon(this.field.clazz);
     }
 
     /**

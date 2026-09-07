@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation } from '@angular/core';
+import { Component, Input, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -15,6 +15,7 @@ import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar/dot-lay
     templateUrl: './dot-layout-properties.component.html',
     styleUrls: ['./dot-layout-properties.component.scss'],
     encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotLayoutPropertiesItemComponent,
         DotLayoutSidebarComponent,

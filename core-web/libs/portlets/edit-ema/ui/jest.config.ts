@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'edit-ema-ui',
     preset: '../../../../jest.preset.js',
@@ -14,7 +13,7 @@ export default {
         ]
     },
     transformIgnorePatterns: [
-        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap|marked))'
+        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap|marked|lowlight|devlop))'
     ],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',

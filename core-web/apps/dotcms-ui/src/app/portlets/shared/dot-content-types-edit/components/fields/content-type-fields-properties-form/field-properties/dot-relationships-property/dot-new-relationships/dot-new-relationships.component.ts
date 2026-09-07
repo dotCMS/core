@@ -5,7 +5,8 @@ import {
     OnChanges,
     Output,
     SimpleChanges,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -19,6 +20,7 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
 @Component({
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotContentTypeComponent,
         DotCardinalitySelectorComponent,

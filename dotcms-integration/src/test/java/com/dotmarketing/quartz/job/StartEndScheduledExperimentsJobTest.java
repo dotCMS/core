@@ -17,6 +17,9 @@ import org.quartz.SchedulerException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
+
+import org.awaitility.Awaitility;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -46,11 +49,13 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
     @Test
     public void testJob()
             throws SchedulerException, InterruptedException, DotDataException, DotSecurityException {
-        final Instant NOW_PLUS_TWO_MINUTES = Instant.now().plus(2, ChronoUnit.MINUTES);
+        // Short windows: validateScheduling only requires dates after now-1min, so seconds
+        // are enough — the old 1/2-minute windows forced a 2-minute Thread.sleep
+        final Instant NOW_PLUS_TWENTY_SECONDS = Instant.now().plus(20, ChronoUnit.SECONDS);
 
         // create experiment that will end soon
         Experiment scheduledToEndExperiment = new ExperimentDataGen()
-                .scheduling(Scheduling.builder().endDate(NOW_PLUS_TWO_MINUTES).build())
+                .scheduling(Scheduling.builder().endDate(NOW_PLUS_TWENTY_SECONDS).build())
                 .status(Status.RUNNING)
                 .nextPersisted();
 
@@ -61,28 +66,34 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
             assertEquals(Status.RUNNING, scheduledToEndExperiment.status());
 
             // create experiment that should have started
-            final Instant NOW_PLUS_ONE_MINUTE = Instant.now().plus(1, ChronoUnit.MINUTES);
+            final Instant NOW_PLUS_TEN_SECONDS = Instant.now().plus(10, ChronoUnit.SECONDS);
 
             scheduledToStartExperiment = new ExperimentDataGen()
-                    .scheduling(Scheduling.builder().startDate(NOW_PLUS_ONE_MINUTE).build())
+                    .scheduling(Scheduling.builder().startDate(NOW_PLUS_TEN_SECONDS).build())
                     .nextPersisted();
 
             scheduledToStartExperiment = experimentsAPI.start(scheduledToStartExperiment.id().orElseThrow(),
                     APILocator.systemUser());
 
-            // wait some minutes for its end date to be reached
-            Thread.sleep(2 * 60 * 1000);
-
             assertEquals(Status.SCHEDULED, scheduledToStartExperiment.status());
 
-            new StartEndScheduledExperimentsJob().run(null);
-
-            assertEquals(Status.RUNNING,
-                    experimentsAPI.find(scheduledToStartExperiment.id().orElseThrow()
-                            , APILocator.systemUser()).orElseThrow().status());
-            assertEquals(Status.ENDED,
-                    experimentsAPI.find(scheduledToEndExperiment.id().orElseThrow()
-                            , APILocator.systemUser()).orElseThrow().status());
+            // Re-run the job (as Quartz would) until both scheduling dates have passed and
+            // the transitions land: no fixed sleep, completes as soon as the dates are
+            // reached (~20s); the 2-minute cap is failure-path only, sized for slow runners
+            final String startId = scheduledToStartExperiment.id().orElseThrow();
+            final String endId = scheduledToEndExperiment.id().orElseThrow();
+            Awaitility.await()
+                    .atMost(2, TimeUnit.MINUTES)
+                    .pollInterval(2, TimeUnit.SECONDS)
+                    .untilAsserted(() -> {
+                        new StartEndScheduledExperimentsJob().run(null);
+                        assertEquals(Status.RUNNING,
+                                experimentsAPI.find(startId, APILocator.systemUser())
+                                        .orElseThrow().status());
+                        assertEquals(Status.ENDED,
+                                experimentsAPI.find(endId, APILocator.systemUser())
+                                        .orElseThrow().status());
+                    });
         } finally {
             final Experiment shouldBeRunning = experimentsAPI.find(scheduledToStartExperiment.id().orElseThrow()
                     , APILocator.systemUser()).orElseThrow();

@@ -211,7 +211,8 @@ public class ContentResource {
             operationId = "saveDraft",
             summary = "Saves a content draft",
             description = "Creates or updates a draft version of a contentlet without triggering workflow. " +
-                    "Drafts allow content editors to save work in progress without publishing.",
+                    "Drafts allow content editors to save work in progress without publishing." +
+                    com.dotcms.rest.api.v1.workflow.WorkflowResource.BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Draft saved successfully",
@@ -253,8 +254,15 @@ public class ContentResource {
         APILocator.getContentletAPI().saveDraft(contentlet,
                 (ContentletRelationships) contentlet.get(Contentlet.RELATIONSHIP_KEY), categories.orElse(null), null,
                 initDataObject.getUser(), false);
-        return new ResponseEntityContentletView(
-                new DotTransformerBuilder().defaultOptions().content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+        // Popped BEFORE the transformer builds the entity map so the transient warnings key
+        // never leaks into the response entity; surfaced as advisory messages (#36658).
+        final List<MessageEntity> conversionMessages =
+                MapToContentletPopulator.popStoryBlockConversionMessages(contentlet);
+        final Map<String, Object> entityMap = new DotTransformerBuilder().defaultOptions()
+                .content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        return null != conversionMessages
+                ? new ResponseEntityContentletView(entityMap, conversionMessages)
+                : new ResponseEntityContentletView(entityMap);
     }
 
     /**
@@ -412,7 +420,7 @@ public class ContentResource {
 
         if (-1 != depth) {
             ContentUtils.addRelationships(contentlet, user, mode,
-                    contentlet.getLanguageId(), depth, request, response);
+                    contentlet.getLanguageId(), depth, request, response, true);
         }
         final String variant = contentlet.getVariantId();
         contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
@@ -459,7 +467,7 @@ public class ContentResource {
 
         new WebResource.InitBuilder(this.webResource)
                         .requestAndResponse(request, response)
-                        .requiredAnonAccess(AnonymousAccess.READ)
+                        .requiredAnonAccess(AnonymousAccess.NONE)
                         .init();
 
         Logger.debug(this, () -> "Finding the counts for contentlet id: " + identifier);
@@ -494,6 +502,9 @@ public class ContentResource {
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user lacks read permission on the contentlet",
+                    content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404",
                     description = "Not found - contentlet not found",
                     content = @Content(mediaType = "application/json"))
@@ -512,7 +523,7 @@ public class ContentResource {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
-                .requiredAnonAccess(AnonymousAccess.READ)
+                .requiredAnonAccess(AnonymousAccess.NONE)
                 .init().getUser();
 
         Logger.debug(this, () -> "Finding the references for contentlet id: " + inodeOrIdentifier);
@@ -530,7 +541,7 @@ public class ContentResource {
                 .map(reference -> new ContentReferenceView(
                         (IHTMLPage) reference.get("page"),
                         new ContainerView((Container) reference.get("container")),
-                        (String) reference.get("personaName")))
+                        (String) reference.get("persona")))
                 .collect(Collectors.toList()):
                 List.of();
         return new ResponseEntityContentReferenceListView(contentReferenceViews);

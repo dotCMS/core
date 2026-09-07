@@ -8,10 +8,12 @@ import {
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRelationshipFieldComponent } from './components/dot-relationship-field/dot-relationship-field.component';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
 import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseWrapperField } from '../shared/base-wrapper-field';
@@ -22,8 +24,10 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         ReactiveFormsModule,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
+        DotCardFieldFooterComponent,
         DotCardFieldLabelComponent,
-        DotRelationshipFieldComponent
+        DotRelationshipFieldComponent,
+        DotMessagePipe
     ],
     templateUrl: './dot-edit-content-relationship-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

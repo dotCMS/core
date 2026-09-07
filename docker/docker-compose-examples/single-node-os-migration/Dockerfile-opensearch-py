@@ -1,0 +1,5 @@
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+
+COPY opensearch.py /app/opensearch.py
+
+ENTRYPOINT ["uv", "run", "--python", "3.14", "--python-preference", "managed", "--script", "/app/opensearch.py"]

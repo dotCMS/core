@@ -4,10 +4,7 @@
     "projectType": "library",
     "sourceRoot": "libs/utils-testing/src",
     "prefix": "dotcms",
-    "targets": {
-        "lint": {
-            "executor": "@nx/eslint:lint"
-        }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    "tags": ["skip:test", "skip:lint"],
+    "// targets": "to see all targets run: nx show project utils-testing --web",
+    "targets": {}
 }

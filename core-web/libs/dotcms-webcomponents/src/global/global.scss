@@ -1,0 +1,13 @@
+// Global styles injected into every component of the dotcms-webcomponents lib.
+//
+// @material/mwc-icon renders icons inside shadow DOM with
+// `font-family: var(--mdc-icon-font, 'Material Icons')`. Overriding
+// `--mdc-icon-font` at :root lets every mwc-icon pick up the Material
+// Symbols font without changing any component markup.
+//
+// The consuming app (dotcms-ui) is responsible for loading the
+// `Material Symbols Outlined` font face (see
+// `libs/dotcms-scss/shared/_material-symbols-outlined.scss`).
+:root {
+    --mdc-icon-font: "Material Symbols Outlined";
+}
