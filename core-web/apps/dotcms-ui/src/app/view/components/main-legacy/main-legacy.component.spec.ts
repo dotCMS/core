@@ -200,7 +200,9 @@ describe('MainLegacyComponent', () => {
         fixture.detectChanges();
     });
     it('should have basic layout elements', () => {
-        expect(de.query(By.css('dot-alert-confirm')) !== null).toBe(true);
+        // No dot-alert-confirm: app.component.html renders one at the root for every route.
+        // Having a second host here made every alert and confirm render twice.
+        expect(de.query(By.css('dot-alert-confirm'))).toBeNull();
         expect(de.query(By.css('dot-toolbar')) !== null).toBe(true);
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
