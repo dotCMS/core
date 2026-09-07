@@ -3432,8 +3432,9 @@ describe('DotFolderListViewComponent', () => {
 
         // Review finding: the rows take focus and ranges extend, but nothing told assistive
         // technology what was selected. `aria-selected` is a partial measure without `role="grid"`
-        // (deliberately out of scope, it brings the full grid keyboard contract), but it is the
-        // difference between a screen-reader user hearing nothing and hearing the state change.
+        // (deliberately out of scope, it brings the full grid keyboard contract — see the row block
+        // in the template and #37439), but it is the difference between a screen-reader user
+        // hearing nothing and hearing the state change.
         it('should mark selected rows for assistive technology', () => {
             spectator.setInput('items', mockItems);
             spectator.setInput('selection', [mockItems[1], mockItems[2]]);
@@ -3444,14 +3445,18 @@ describe('DotFolderListViewComponent', () => {
             expect(selected).toEqual(['false', 'true', 'true', 'false', 'false']);
         });
 
-        it('should announce the listing as multi-selectable', () => {
+        // Pins the half-wiring back out. `aria-multiselectable` is not a supported property of
+        // `role="table"`, which is the role PrimeNG renders and the one this listing keeps, so
+        // setting it announces nothing and reads to the next person like the ARIA work is finished.
+        // It belongs with the rest of the grid contract in #37439, not on its own.
+        it('should not claim selection semantics its container role cannot carry', () => {
             spectator.setInput('items', mockItems);
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testId="table"] table')).toHaveAttribute(
-                'aria-multiselectable',
-                'true'
-            );
+            const table = spectator.query('[data-testId="table"] table');
+
+            expect(table).not.toHaveAttribute('role', 'grid');
+            expect(table?.hasAttribute('aria-multiselectable')).toBe(false);
         });
 
         // T012 — the single-selection consumer (the asset selection dialog) shares this component.
@@ -3465,6 +3470,7 @@ describe('DotFolderListViewComponent', () => {
         // What this test guards is that the row-index binding did not *change* that consumer. The
         // asserted value is today's behaviour on trunk, so if someone later makes single-selection
         // focusable properly, this test fails and points them here rather than silently passing.
+        // That work is tracked in #37441 — update this test, do not delete it.
         it('should leave single-selection tab behaviour exactly as it was', () => {
             spectator.setInput('items', mockItems);
             spectator.setInput('selectionMode', 'single');

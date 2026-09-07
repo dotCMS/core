@@ -581,18 +581,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
                         'min-width': `calc(100% + ${extras.map((column) => column.width).join(' + ')})`
                     }),
                     ...(this.$items().length === 0 && { height: '100%', width: '100%' })
-                },
-                // Announce that this table's rows carry a selection state, so `aria-selected` on the
-                // row below means something to assistive technology. PrimeNG renders a plain
-                // `role="table"` and sets no selection ARIA of its own — its row host bindings are
-                // only `class`, `tabindex` and `data-p-selectable-row`.
-                //
-                // Deliberately NOT switching to `role="grid"`: that brings the full grid keyboard
-                // contract (cell-level navigation) with it, which is a much larger change and is
-                // listed as out of scope. `aria-selected` on a row outside a grid is a partial
-                // measure, but it is the difference between a screen-reader user hearing nothing
-                // about the selection and hearing its state change.
-                'aria-multiselectable': this.$selectionMode() === 'multiple' ? 'true' : 'false'
+                }
+                // No `aria-multiselectable` here, deliberately, and no `role="grid"` either. See
+                // `aria-selected` on the row in the template for the whole of the reasoning; the
+                // short version is that `aria-multiselectable` is not a supported property of
+                // `role="table"`, so setting it is wiring that only looks connected.
             }
         };
     });

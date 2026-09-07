@@ -91,7 +91,21 @@
             <!-- `pSelectableRowIndex`: every range operation in the table keys off this index. Left
                  unbound it is `undefined`, which silently disabled shift-click ranges and the table's
                  own range shortcuts, and broke the tab-stop calculation in both directions (every row
-                 tabbable on load, none reachable after a sort). -->
+                 tabbable on load, none reachable after a sort).
+
+                 `aria-selected` is a **partial** selection announcement, and knowingly so. The
+                 property is only fully meaningful on a row inside `role="grid"`, and this table
+                 keeps PrimeNG's `role="table"`. Switching would take the grid keyboard contract
+                 with it: a screen reader enters focus mode on a grid row, and Left/Right — which
+                 read cell by cell in browse mode today — would then do nothing, because cell-level
+                 navigation is not implemented. That is a worse listing to read, so the role stays
+                 and the property is left as the improvement it is: some assistive technology
+                 ignores it, none is misled by it, and the alternative is announcing nothing at all.
+                 `aria-multiselectable` is deliberately absent for the same reason — `role="table"`
+                 does not support it, so it would be decoration.
+
+                 Full `role="grid"` wiring (cell navigation, `aria-rowcount`/`aria-colindex`) is
+                 tracked in #37439. -->
             <tr
                 class="group transition-colors duration-200"
                 [class.cursor-grabbing]="state.isDragging()"

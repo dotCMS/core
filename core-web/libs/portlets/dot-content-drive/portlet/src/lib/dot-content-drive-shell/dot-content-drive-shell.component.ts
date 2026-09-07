@@ -727,14 +727,29 @@ export class DotContentDriveShellComponent {
                 {
                     combination: 'mod+b',
                     label: 'content-drive.shortcut.toggle-tree',
-                    handler: () => {
-                        this.#store.setIsTreeExpanded(!this.#store.isTreeExpanded());
-
-                        return true;
-                    }
+                    handler: () => this.#onToggleTree()
                 }
             ])
         );
+    }
+
+    /**
+     * Collapses or expands the folder tree.
+     *
+     * Stands down while an overlay is above the portlet, for the same reason Escape does: a dialog
+     * covers the tree, so the toggle would rearrange a layout the user cannot see and they would
+     * find it changed when the dialog closes. Declining also leaves the combination free for
+     * whatever is on top, which may want it — a rich text surface inside a dialog reads Cmd+B as
+     * bold.
+     */
+    #onToggleTree(): boolean {
+        if (hasOverlayAbove()) {
+            return false;
+        }
+
+        this.#store.setIsTreeExpanded(!this.#store.isTreeExpanded());
+
+        return true;
     }
 
     /**

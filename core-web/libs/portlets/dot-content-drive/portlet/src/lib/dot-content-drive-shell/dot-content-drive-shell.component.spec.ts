@@ -504,6 +504,39 @@ describe('DotContentDriveShellComponent', () => {
 
                 expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
             });
+
+            // Review finding: the same reasoning as Escape. A dialog covers the tree, so toggling it
+            // rearranges a layout the user cannot see and they meet it changed once the dialog
+            // closes. Declining also leaves the combination to whatever is on top, which may want
+            // it — a rich text surface inside a dialog reads Cmd+B as bold.
+            it('should do nothing while an overlay is above the listing', () => {
+                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+
+            it('should resume toggling once the overlay closes', () => {
+                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                stack.mockReturnValue(0);
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
+            });
+
+            it('should leave the browser default alone when it declines', () => {
+                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+
+                const event = pressModB();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
         });
 
         // The listing is rendered for real here, so this is the only test that exercises the whole

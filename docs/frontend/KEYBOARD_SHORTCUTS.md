@@ -21,6 +21,9 @@ which cannot arbitrate between two surfaces that want the same key.
 `Mod` is the platform's primary modifier: Command on macOS, Control on Windows and Linux. One
 registration covers both.
 
+Both Content Drive shell claims decline while an overlay is stacked above the listing, so a dialog
+gets the key instead — see [A surface with its own document listener cannot be arbitrated](#a-surface-with-its-own-document-listener-cannot-be-arbitrated).
+
 The labels shown to authors come from each registration's `label`, which is required. A shortcut
 therefore cannot ship undocumented: `activeShortcuts()` is the live list.
 
@@ -106,21 +109,42 @@ Every `<p-dialog closeOnEscape="true">` binds its **own** document keydown liste
 **never consults `defaultPrevented`**, so it closes regardless of what the registry did. It is
 third-party code, so it cannot be brought into the registry.
 
-**Fix: a surface underneath must decline while one of its overlays is open**, or Escape will both
-dismiss the dialog and act on the listing behind it. Content Drive does this in `#onEscape`.
+**Fix: a surface underneath must decline while an overlay is above it**, or Escape will both dismiss
+the dialog and act on the listing behind it.
 
-### How to ask "is one of my dialogs open?"
+This is not only about Escape. Content Drive's `Mod + B` declines for the same reason: a dialog covers
+the tree, so toggling it rearranges a layout the user cannot see and they meet it changed once the
+dialog closes — and declining leaves the combination to whatever is on top, which may want it (a rich
+text surface inside a dialog reads `Mod + B` as bold).
 
-**Check your own visibility state.** Content Drive's `#onEscape` gates on `$dialogVisible()` and
-`$uploadModalVisible()` — the signals it already owns for the dialogs it renders. The cost is that the
-list has to grow when a dialog is added; the benefit is that it is exactly true, every time.
+### How to ask "is an overlay above me?"
 
-> ⚠️ **Do not reach for PrimeNG's `ZIndexUtils` stack to answer this from a base-layer surface.** It
-> looks like a general solution and is not: a surface with no element in the stack compares against
-> `0`, which turns the question into "has any overlay ever registered and not reverted" rather than
-> "is one open now". Measured in the Content Drive shell, the stack reads **1102** with nothing
-> visible, which would disable Escape outright. The comparison is only sound for a surface checking
-> against *its own* container, which is what the content side panel does.
+Use the shared helper, `hasOverlayAbove()` from `@dotcms/ui`:
+
+```ts
+#onEscape(): boolean {
+    if (hasOverlayAbove()) {
+        return false;
+    }
+    // ...
+}
+```
+
+Every PrimeNG overlay registers itself in the shared `ZIndexUtils` stack when it opens, so comparing
+the top of that stack against your own element's z-index answers the question without matching on
+overlay class names, which differ per component and change across versions. It covers dialogs,
+confirm popups, select panels and anything added later, rather than a list of visibility flags
+somebody has to remember to extend.
+
+Pass **your own overlay element** if you are one (the content side panel does). Omit the argument
+from a base-layer surface such as a portlet shell: it has no element in the stack, `ZIndexUtils.get(undefined)`
+is `0`, and the question becomes "is any overlay open at all" — which is the right question there.
+
+> ⚠️ **In tests, mock `ZIndexUtils.getCurrent`.** The stack is a module-level singleton, and an
+> overlay torn down without closing leaves its entry behind. That does not happen in the application,
+> where overlays revert on close, but it does across tests in one file: the Content Drive shell suite
+> reads **1102** with nothing visible once an earlier test has opened a dialog. Pin it in a
+> `beforeEach` so every test states its own overlay state.
 
 ## Selection semantics in the shared listing
 
@@ -139,6 +163,21 @@ matters and was a deliberate choice.
 APG's listbox model instead toggles each row you land on, which can leave holes in the middle of what
 looked like a contiguous drag. File managers avoid that, and this is a file manager.
 
+### Known gap: the listing's ARIA is partial
+
+Rows carry `aria-selected`, but the container keeps PrimeNG's `role="table"`. `aria-selected` is only
+fully meaningful on a row inside `role="grid"`, so some assistive technology ignores it. That is a
+recorded decision, not an oversight: `role="grid"` brings the grid keyboard contract with it, a screen
+reader enters focus mode on a grid row, and Left/Right — which read cell by cell in browse mode today
+— would then do nothing, because cell-level navigation is not implemented. Half a grid reads worse
+than a table.
+
+So: `aria-selected` stays (ignored by some, misleading to none, better than silence),
+`aria-multiselectable` is deliberately absent (`role="table"` does not support it, so it would be
+decoration), and the full wiring — cell navigation, `aria-rowcount`/`aria-colindex`, verification
+against a real screen reader — is tracked in
+[#37439](https://github.com/dotCMS/core/issues/37439). Do not add half of it.
+
 ## Testing shortcuts: synthesise the whole sequence
 
 Three bugs shipped past a green suite during this feature because synthetic events were unlike real
@@ -153,6 +192,12 @@ ones. If you test keyboard or pointer behaviour, reproduce the browser's full ev
 
 Also note that the table's own row handlers run *before* a template binding on the same row. Anything
 that must observe a key before focus moves has to be in the capture phase.
+
+Every one of those three was found by hand in a browser, not by the suite, which is why the shortcuts
+also have a Playwright suite driving real key and pointer events:
+`core-web/apps/dotcms-ui-e2e/src/tests/content-drive/content-drive-keyboard.spec.ts`. If you change
+keyboard behaviour in the listing, add the case there as well as in Jest — a unit test can only prove
+the handler does what you told it to, not that the browser calls it.
 
 ## Related
 
