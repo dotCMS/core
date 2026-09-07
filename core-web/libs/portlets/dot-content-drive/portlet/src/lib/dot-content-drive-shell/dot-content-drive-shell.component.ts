@@ -58,6 +58,7 @@ import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
     DotKeyboardShortcutService,
+    hasOverlayAbove,
     DotMessagePipe,
     DotToastComponent,
     DotUploadDropzoneComponent,
@@ -748,6 +749,19 @@ export class DotContentDriveShellComponent {
      * elsewhere instead of being silently swallowed here.
      */
     #onEscape(): boolean {
+        // Stand down while any overlay is above this listing. PrimeNG keeps its own `closeOnEscape`
+        // handling — a `<p-dialog>` binds its own document listener and closes on a z-index
+        // comparison, never consulting `defaultPrevented` — so without this both fire: Escape
+        // dismisses the dialog *and* silently wipes every active filter, or wipes the very selection
+        // the Action Center is operating on.
+        //
+        // Asked of the z-index stack rather than a list of visibility signals, so confirm popups,
+        // select panels and any dialog added later are covered without anyone remembering to extend
+        // a list. The side panel asks the same question against its own container.
+        if (hasOverlayAbove()) {
+            return false;
+        }
+
         if (this.#store.selectedItems().length) {
             this.#store.setSelectedItems([]);
 

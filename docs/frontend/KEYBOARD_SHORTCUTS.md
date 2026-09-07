@@ -85,14 +85,42 @@ phase and needs no cooperation.
 ## A surface with its own document listener cannot be arbitrated
 
 `preventDefault` does not stop other listeners on the same node. Two document-level listeners for the
-same key both fire, and the registry has no say.
+same key both fire, and the registry has no say. Order between them is **registration order**, not
+focus and not DOM depth, so the registry usually wins simply because it attaches on its first claim.
 
-This is not hypothetical. The content side panel used to bind `(document:keydown.escape)` directly, so
-once Content Drive claimed Escape both would have run: the panel would close *and* the listing behind
-it would clear its selection. The panel was migrated to the registry for exactly this reason.
+Two ways this bites, and they need different answers.
 
-**If a component handles a key at document level, move it to the registry.** Handling a key on the
-component's *own element* is fine and needs no change, because bubbling already resolves it.
+### 1. Our own components
+
+The content side panel used to bind `(document:keydown.escape)` directly, so once Content Drive
+claimed Escape both would have run: the panel would close *and* the listing behind it would clear its
+selection.
+
+**Fix: move it to the registry.** Handling a key on the component's *own element* is fine and needs no
+change, because bubbling already resolves it. Only document-level bindings need migrating.
+
+### 2. PrimeNG overlays, which we cannot migrate
+
+Every `<p-dialog closeOnEscape="true">` binds its **own** document keydown listener when it opens
+(`primeng/fesm2022/primeng-dialog.mjs`, `bindDocumentEscapeListener`). It compares z-indexes and
+**never consults `defaultPrevented`**, so it closes regardless of what the registry did. It is
+third-party code, so it cannot be brought into the registry.
+
+**Fix: a surface underneath must decline while one of its overlays is open**, or Escape will both
+dismiss the dialog and act on the listing behind it. Content Drive does this in `#onEscape`.
+
+### How to ask "is one of my dialogs open?"
+
+**Check your own visibility state.** Content Drive's `#onEscape` gates on `$dialogVisible()` and
+`$uploadModalVisible()` — the signals it already owns for the dialogs it renders. The cost is that the
+list has to grow when a dialog is added; the benefit is that it is exactly true, every time.
+
+> ⚠️ **Do not reach for PrimeNG's `ZIndexUtils` stack to answer this from a base-layer surface.** It
+> looks like a general solution and is not: a surface with no element in the stack compares against
+> `0`, which turns the question into "has any overlay ever registered and not reverted" rather than
+> "is one open now". Measured in the Content Drive shell, the stack reads **1102** with nothing
+> visible, which would disable Escape outright. The comparison is only sound for a surface checking
+> against *its own* container, which is what the content side panel does.
 
 ## Selection semantics in the shared listing
 

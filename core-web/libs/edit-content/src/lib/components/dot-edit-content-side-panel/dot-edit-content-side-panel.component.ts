@@ -18,7 +18,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
-import { ZIndexUtils } from 'primeng/utils';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
@@ -26,7 +25,8 @@ import {
     ASSET_PICKER_LAUNCHER,
     AngularAssetPickerLauncher,
     DotKeyboardShortcutService,
-    DotMessagePipe
+    DotMessagePipe,
+    hasOverlayAbove
 } from '@dotcms/ui';
 
 import {
@@ -124,6 +124,9 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #navController = inject(DotSidePanelNavController);
     readonly #shortcuts = inject(DotKeyboardShortcutService);
 
+    /** Withdraws the Escape claim; called from `ngOnDestroy` alongside the other teardown. */
+    #withdrawShortcuts: () => void = () => undefined;
+
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
 
@@ -173,13 +176,11 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         // the other one, so the portlet behind would clear its selection at the same moment this
         // panel closed. The registry gives the key to the most recent claim, and the panel opens
         // after the portlet, so it wins for exactly as long as it is open.
-        this.#destroyRef.onDestroy(
-            this.#shortcuts.register({
-                combination: 'escape',
-                label: 'edit-content.side-panel.shortcut.close',
-                handler: () => this.#onEscape()
-            })
-        );
+        this.#withdrawShortcuts = this.#shortcuts.register({
+            combination: 'escape',
+            label: 'edit.content.side-panel.shortcut.close',
+            handler: () => this.#onEscape()
+        });
 
         // Collapse the main navigation while the panel is open (restored on close), and register
         // this panel on the stack so ESC only closes the frontmost one. In afterNextRender so the
@@ -231,16 +232,11 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * Whether another PrimeNG overlay is stacked on top of this panel — the image editor dialog, a
      * confirm popup, an open select panel, or a second side panel.
      *
-     * Such an overlay owns the ESC key, but it is appended to `body` outside this component's DOM,
-     * so the document-level listener would still fire and close the panel underneath it. Every
-     * PrimeNG overlay registers itself in the shared `ZIndexUtils` stack when it opens, so comparing
-     * the top of that stack against this drawer's own z-index answers "is something above me?"
-     * without matching on overlay class names, which differ per component and change across versions.
+     * Delegates to the shared helper in `@dotcms/ui`: the portlet shell asks the same question for
+     * its own dialogs, and two copies of a z-index comparison would drift.
      */
     #hasOverlayAbove(): boolean {
-        const container = this.$drawer()?.container;
-
-        return !!container && ZIndexUtils.getCurrent() > ZIndexUtils.get(container);
+        return hasOverlayAbove(this.$drawer()?.container);
     }
 
     /**
@@ -319,5 +315,8 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         popFormBridge();
         // Restore the main navigation once the last panel closes.
         this.#navController.release(this);
+        // Withdrawn here rather than through `DestroyRef` so every teardown this component owns is
+        // in one place. `DestroyRef` stays for `takeUntilDestroyed` on the `saved$` subscription.
+        this.#withdrawShortcuts();
     }
 }

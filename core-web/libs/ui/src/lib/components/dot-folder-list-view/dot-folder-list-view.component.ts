@@ -3,7 +3,6 @@ import { patchState, signalState } from '@ngrx/signals';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
     afterEveryRender,
-    afterNextRender,
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
@@ -13,6 +12,7 @@ import {
     ElementRef,
     inject,
     input,
+    NgZone,
     OnDestroy,
     OnInit,
     output,
@@ -65,6 +65,14 @@ import { SYSTEM_HOST_ID } from '../dot-folder-tree/constants';
 /**
  * Marks a row the table considers selectable. Set by PrimeNG's selectable-row directive, and the only
  * reliable way to enumerate rendered rows in the order the keyboard walks them.
+ *
+ * ⚠️ PrimeNG sets this **statically** (`'attr.data-p-selectable-row': 'true'`), with no reference to
+ * `pSelectableRowDisabled`, so it matches disabled rows as well as enabled ones. Harmless while
+ * disabling is all-or-nothing, because the roving tab-stop write has its own `interactive` check. The
+ * day per-row unselectable state arrives, this selector will hand a disabled row a `tabIndex` of 0
+ * and include it in the arrow walk, and `interactive` cannot help because it is a whole-listing flag.
+ * Filtering on a `:not(...)` selector will not work either — PrimeNG emits no disabled attribute — so
+ * whoever adds per-row disabling has to reflect it themselves.
  */
 const SELECTABLE_ROW_SELECTOR = '[data-p-selectable-row="true"]';
 
@@ -112,6 +120,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     private readonly renderer = inject(Renderer2);
     readonly #hostElement = inject(ElementRef);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #zone = inject(NgZone);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
     dataTable = viewChild<Table>('dataTable');
@@ -572,7 +581,18 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
                         'min-width': `calc(100% + ${extras.map((column) => column.width).join(' + ')})`
                     }),
                     ...(this.$items().length === 0 && { height: '100%', width: '100%' })
-                }
+                },
+                // Announce that this table's rows carry a selection state, so `aria-selected` on the
+                // row below means something to assistive technology. PrimeNG renders a plain
+                // `role="table"` and sets no selection ARIA of its own — its row host bindings are
+                // only `class`, `tabindex` and `data-p-selectable-row`.
+                //
+                // Deliberately NOT switching to `role="grid"`: that brings the full grid keyboard
+                // contract (cell-level navigation) with it, which is a much larger change and is
+                // listed as out of scope. `aria-selected` on a row outside a grid is a partial
+                // measure, but it is the difference between a screen-reader user hearing nothing
+                // about the selection and hearing its state change.
+                'aria-multiselectable': this.$selectionMode() === 'multiple' ? 'true' : 'false'
             }
         };
     });
@@ -650,15 +670,38 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * A listing that cannot be interacted with gets no tab stop at all: `null` matches no row index,
      * which is exactly the state the table itself uses to mean "nothing anchored".
      */
-    protected readonly $seedRovingTabStop = effect(() => {
-        // Every dependency is read up front: a guard placed before a read would drop that signal as
-        // a dependency and the tab stop would stop being re-seeded when it changed.
-        this.$items();
-        this.$disabled();
-        this.$readOnly();
-        this.$offset();
+    #seedRovingTabStop(): void {
+        effect(() => {
+            // Every dependency is read up front: a guard placed before a read would drop that signal as
+            // a dependency and the tab stop would stop being re-seeded when it changed.
+            this.$items();
+            this.$disabled();
+            this.$readOnly();
+            this.$offset();
 
-        this.#seedTabStop();
+            // The active row goes back to the top with the anchor. These two must not drift: the write
+            // below looks for `index === activeIndex` among the *new* rows, so an active index left
+            // pointing past the end of a shorter list matches nothing and leaves every row at -1, which
+            // is the listing being keyboard-unreachable all over again. Reachable by focusing a row far
+            // down and then filtering or searching so fewer results come back.
+            this.$activeRowIndex.set(0);
+            this.#seedTabStop();
+        });
+    }
+
+    /**
+     * Keys of the currently selected rows, for the row's `aria-selected`.
+     *
+     * A set rather than an `includes` scan so the template does not run an O(n) lookup per row on
+     * every change detection pass. Keyed the same way the table is (`dataKey`), so a listing keyed on
+     * `inode` distinguishes language versions of one identifier exactly as its checkboxes do.
+     */
+    protected readonly $selectedKeys = computed(() => {
+        const key = this.$dataKey();
+
+        return new Set(
+            this.#asSelectedArray(this.selectedItems).map((item) => item[key as keyof typeof item])
+        );
     });
 
     /**
@@ -685,6 +728,13 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * A post-render write is not the same thing as a competing binding: it is the last write in the
      * frame, so there is nothing to lose a race against. The anchor is still driven alongside it,
      * because that is what ranges extend from.
+     *
+     * **`afterEveryRender`, not `afterRenderEffect`, and that is deliberate.** The reactive form only
+     * re-runs when the signals it reads change, and the case this exists for changes none of them: a
+     * column sort leaves `$activeRowIndex`, `$disabled` and `$readOnly` untouched while the table
+     * nulls its own anchor and rewrites every row to `-1`. The write has to reassert unconditionally
+     * or the listing goes back to being keyboard-unreachable after a sort. Tried and measured: the
+     * swap turns that test red on its own.
      */
     #applyRovingTabStop(): void {
         afterEveryRender({
@@ -704,8 +754,12 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
                     host.querySelectorAll<HTMLElement>(SELECTABLE_ROW_SELECTOR)
                 );
 
+                // Clamped as a second guarantee: even if the active index and the rendered rows were to
+                // drift, the listing keeps exactly one tab stop rather than losing all of them.
+                const safeIndex = Math.min(activeIndex, Math.max(rows.length - 1, 0));
+
                 rows.forEach((row, index) => {
-                    const tabIndex = interactive && index === activeIndex ? 0 : -1;
+                    const tabIndex = interactive && index === safeIndex ? 0 : -1;
 
                     // Guarded so a render that changed nothing does not dirty the DOM.
                     if (row.tabIndex !== tabIndex) {
@@ -735,6 +789,9 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
     /**
      * Keeps the tab stop on whichever row the user actually moved to.
+     *
+     * Bound once on the table rather than per row: `focusin` bubbles, and this resolves the row from
+     * the event target anyway, so one listener does the work of twenty.
      *
      * PrimeNG's arrow handlers move DOM focus but never touch the anchor, so without this the tab
      * stop would stay pinned to the first row while focus walked away from it, and tabbing out and
@@ -798,21 +855,32 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     #focusIntent: DotRowFocusIntent = 'anchor';
 
     #trackFocusIntent(): void {
-        afterNextRender(() => {
-            const host = this.#hostElement.nativeElement as HTMLElement;
+        // Attached straight away rather than in `afterNextRender`: the host element exists before the
+        // instance does, so deferring a render cycle bought nothing but indirection.
+        //
+        // Outside the Angular zone deliberately. This app is still zone-based, so a listener
+        // registered from inside it is patched and every keydown and mousedown in the listing would
+        // schedule a change detection pass. Both handlers write plain, non-reactive class fields
+        // (`#focusIntent`, `#rangeBase`), so not one of those passes would be needed — and each would
+        // re-run the roving tab-stop write below it. The `(focusin)` template binding stays in the
+        // zone, which is correct: that one does write a signal.
+        const host = this.#hostElement.nativeElement as HTMLElement;
 
+        this.#zone.runOutsideAngular(() => {
             host.addEventListener('keydown', this.#onKeydownCapture, true);
             host.addEventListener('mousedown', this.#onMousedownCapture, true);
-            this.#destroyRef.onDestroy(() => {
-                host.removeEventListener('keydown', this.#onKeydownCapture, true);
-                host.removeEventListener('mousedown', this.#onMousedownCapture, true);
-            });
+        });
+
+        this.#destroyRef.onDestroy(() => {
+            host.removeEventListener('keydown', this.#onKeydownCapture, true);
+            host.removeEventListener('mousedown', this.#onMousedownCapture, true);
         });
     }
 
     constructor() {
         // Both register render-phase work whose only purpose is the side effect, so they are called
         // rather than assigned: a private field nothing reads is exactly what the lint rule is for.
+        this.#seedRovingTabStop();
         this.#applyRovingTabStop();
         this.#trackFocusIntent();
     }

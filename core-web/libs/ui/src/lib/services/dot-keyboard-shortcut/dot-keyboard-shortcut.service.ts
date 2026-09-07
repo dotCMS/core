@@ -208,12 +208,10 @@ export class DotKeyboardShortcutService {
      * `register()` call: a duplicate would collapse two shortcuts into one indistinguishable entry.
      */
     activeShortcuts(): { combination: string; label: string }[] {
-        return Array.from(this.#claims.entries())
-            .map(([combination, stack]) => ({
-                combination,
-                label: stack[stack.length - 1].label
-            }))
-            .filter((shortcut) => Boolean(shortcut.label));
+        return Array.from(this.#claims.entries()).map(([combination, stack]) => ({
+            combination,
+            label: stack[stack.length - 1].label
+        }));
     }
 
     #dispatch(event: KeyboardEvent): void {

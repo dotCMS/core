@@ -71,6 +71,9 @@ export class DotSearchInputComponent {
     readonly search = output<string>();
 
     /** The text field itself, so a host can hand it focus. */
+    // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a
+    // signal query on an ES-private field: "Cannot use 'viewChild' on a class member that is
+    // declared as ES private." The standard cannot be followed here.
     private readonly $input = viewChild<ElementRef<HTMLInputElement>>('input');
 
     /**

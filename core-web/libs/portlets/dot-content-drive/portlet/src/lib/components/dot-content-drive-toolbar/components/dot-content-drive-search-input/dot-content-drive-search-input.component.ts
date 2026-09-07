@@ -30,7 +30,10 @@ export class DotContentDriveSearchInputComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #shortcuts = inject(DotKeyboardShortcutService);
 
-    private readonly $searchInput = viewChild(DotSearchInputComponent);
+    // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a
+    // signal query on an ES-private field: "Cannot use 'viewChild' on a class member that is
+    // declared as ES private." The standard cannot be followed here.
+    private readonly $searchInput = viewChild.required(DotSearchInputComponent);
 
     protected readonly $searchTerm = computed(
         () => (this.#store.getFilterValue('title') as string) ?? ''
@@ -48,16 +51,12 @@ export class DotContentDriveSearchInputComponent {
         const unregister = this.#shortcuts.register({
             combination: 'mod+k',
             label: 'content-drive.shortcut.search',
+            // `viewChild.required`: the search box is rendered unconditionally in this template, so
+            // it always resolves by the time a keypress can reach here. The earlier defensive branch
+            // described a fall-through this component can never be in, which would have had a reader
+            // preserving a fallback that protects nothing.
             handler: () => {
-                const input = this.$searchInput();
-
-                // Declines rather than swallowing the key if the box is not rendered, so the
-                // combination falls through instead of silently doing nothing.
-                if (!input) {
-                    return false;
-                }
-
-                input.focus();
+                this.$searchInput().focus();
 
                 return true;
             }

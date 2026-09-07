@@ -3325,6 +3325,22 @@ describe('DotFolderListViewComponent', () => {
             expect(tabStopCount()).toBe(1);
         });
 
+        // Review finding: T007 misses this because it never moves focus first, so index 0 still
+        // exists in the shorter list. Focus a row further down and the active index outlives the row
+        // it pointed at, matching nothing and taking every tab stop with it. Real trigger: click or
+        // focus a row down the listing, then search or filter so fewer results come back.
+        it('should keep a tab stop when the list shrinks under the focused row', () => {
+            renderRows();
+            pressOnRow(3, 'ArrowDown');
+
+            expect(tabStopCount()).toBe(1);
+
+            spectator.setInput('items', [mockItems[0], mockItems[1]]);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(1);
+        });
+
         // T007
         it('should still expose one tab stop after a new page of rows arrives', () => {
             renderRows();
@@ -3412,6 +3428,30 @@ describe('DotFolderListViewComponent', () => {
             pressOnRow(0, 'ArrowDown');
 
             expect(selectionChangeSpy).not.toHaveBeenCalled();
+        });
+
+        // Review finding: the rows take focus and ranges extend, but nothing told assistive
+        // technology what was selected. `aria-selected` is a partial measure without `role="grid"`
+        // (deliberately out of scope, it brings the full grid keyboard contract), but it is the
+        // difference between a screen-reader user hearing nothing and hearing the state change.
+        it('should mark selected rows for assistive technology', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[1], mockItems[2]]);
+            spectator.detectChanges();
+
+            const selected = rowsOf().map((row) => row.getAttribute('aria-selected'));
+
+            expect(selected).toEqual(['false', 'true', 'true', 'false', 'false']);
+        });
+
+        it('should announce the listing as multi-selectable', () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="table"] table')).toHaveAttribute(
+                'aria-multiselectable',
+                'true'
+            );
         });
 
         // T012 — the single-selection consumer (the asset selection dialog) shares this component.

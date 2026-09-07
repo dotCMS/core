@@ -17,6 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
+import { ZIndexUtils } from 'primeng/utils';
 
 import {
     AddToBundleService,
@@ -374,8 +375,14 @@ describe('DotContentDriveShellComponent', () => {
         const pressModB = () => press({ key: 'b', metaKey: true });
 
         beforeEach(() => {
+            // `ZIndexUtils` is a module-level singleton shared by the whole file, and a dialog torn
+            // down by an earlier test leaves its entry behind: this suite reads 1102 with nothing
+            // visible. Pinned to an empty stack so each test states its own overlay state.
+            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(0);
             spectator.detectChanges();
         });
+
+        afterEach(() => jest.restoreAllMocks());
 
         describe('Escape', () => {
             it('should clear the selection and leave the filters alone', () => {
@@ -421,6 +428,39 @@ describe('DotContentDriveShellComponent', () => {
                 pressEscape();
 
                 expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            // Review finding: the shell's own p-dialogs close through PrimeNG's separate document
+            // listener, which never consults `defaultPrevented`. Without declining here, Escape to
+            // dismiss a dialog would also wipe the filters or the selection it was operating on.
+            it('should do nothing while an overlay is above the listing', () => {
+                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+                expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            // Deliberately not asserting `defaultPrevented` here. With a dialog open PrimeNG's own
+            // Escape handler runs and prevents the default itself, which is the outcome we want but
+            // makes the flag unable to tell "the shell declined" from "the shell swallowed it". What
+            // matters is that the shell does not act, which the test above covers; that declining
+            // falls through to the next claimant is covered in the registry's own spec.
+            it('should resume clearing once the overlay closes', () => {
+                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+                spectator.detectChanges();
+
+                pressEscape();
+
+                stack.mockReturnValue(0);
+                pressEscape();
+
+                expect(store.setSelectedItems).toHaveBeenCalledWith([]);
             });
 
             it('should not change the browsed folder', () => {

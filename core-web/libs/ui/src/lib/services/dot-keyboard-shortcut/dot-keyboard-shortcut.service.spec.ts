@@ -11,6 +11,12 @@ describe('DotKeyboardShortcutService', () => {
     const createService = createServiceFactory(DotKeyboardShortcutService);
 
     /**
+     * `jest` here comes from `@jest/globals`, so a bare `jest.fn()` is `Mock<UnknownFunction>` and
+     * returns `unknown`, which is not assignable to a handler's `boolean | void`.
+     */
+    const handlerMock = () => jest.fn<(event: KeyboardEvent) => boolean | void>();
+
+    /**
      * Registrations made through this are withdrawn after every test.
      *
      * The service listens on the document, so a claim left standing outlives its test: the stale
@@ -51,7 +57,7 @@ describe('DotKeyboardShortcutService', () => {
 
     describe('registration and dispatch', () => {
         it('should run the handler for a claimed combination', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler });
 
             pressModK();
@@ -60,7 +66,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should not run the handler for a different combination', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler });
 
             press({ key: 'j', metaKey: true });
@@ -69,7 +75,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should treat Control as the primary modifier too, so one claim serves every platform', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler });
 
             press({ key: 'k', ctrlKey: true });
@@ -78,7 +84,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should not run a modifier combination when the modifier is absent', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler });
 
             press({ key: 'k' });
@@ -87,8 +93,8 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should distinguish a shift-modified combination from the plain one', () => {
-            const plain = jest.fn();
-            const shifted = jest.fn();
+            const plain = handlerMock();
+            const shifted = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler: plain });
             register({ combination: 'shift+mod+k', label: 'other', handler: shifted });
 
@@ -99,7 +105,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should support a combination with no modifier', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             register({ combination: 'escape', label: 'dismiss', handler });
 
             press({ key: 'Escape' });
@@ -110,8 +116,8 @@ describe('DotKeyboardShortcutService', () => {
 
     describe('last-in-wins arbitration', () => {
         it('should give the key to the most recent claim on that combination', () => {
-            const first = jest.fn();
-            const second = jest.fn();
+            const first = handlerMock();
+            const second = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler: first });
             register({ combination: 'mod+k', label: 'search', handler: second });
 
@@ -122,8 +128,8 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should restore the previous claim when the newer one is withdrawn', () => {
-            const first = jest.fn();
-            const second = jest.fn();
+            const first = handlerMock();
+            const second = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler: first });
             const unregister = register({
                 combination: 'mod+k',
@@ -139,7 +145,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should leave a combination unclaimed once every claim is withdrawn', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             const unregister = register({
                 combination: 'mod+k',
                 label: 'search',
@@ -154,7 +160,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should tolerate withdrawing the same registration twice', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             const unregister = register({
                 combination: 'mod+k',
                 label: 'search',
@@ -168,8 +174,8 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should not disturb another combination when one is withdrawn', () => {
-            const search = jest.fn();
-            const dismiss = jest.fn();
+            const search = handlerMock();
+            const dismiss = handlerMock();
             const unregisterSearch = register({
                 combination: 'mod+k',
                 label: 'search',
@@ -186,8 +192,8 @@ describe('DotKeyboardShortcutService', () => {
         // The case that rules out "topmost surface wins outright": a surface opening over another
         // must not swallow combinations it never claimed.
         it('should leave a combination with the earlier claimant when a newer surface claims a different one', () => {
-            const portletEscape = jest.fn();
-            const dialogSearch = jest.fn();
+            const portletEscape = handlerMock();
+            const dialogSearch = handlerMock();
             register({ combination: 'escape', label: 'dismiss', handler: portletEscape });
             register({ combination: 'mod+k', label: 'search', handler: dialogSearch });
 
@@ -201,9 +207,9 @@ describe('DotKeyboardShortcutService', () => {
     // claim puts the burden of remembering all of them on every caller, so a batch returns one.
     describe('registering a batch', () => {
         it('should claim every combination in the array', () => {
-            const search = jest.fn();
-            const dismiss = jest.fn();
-            const toggle = jest.fn();
+            const search = handlerMock();
+            const dismiss = handlerMock();
+            const toggle = handlerMock();
             register([
                 { combination: 'mod+k', label: 'search', handler: search },
                 { combination: 'escape', label: 'dismiss', handler: dismiss },
@@ -220,8 +226,8 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should withdraw the whole batch with a single call', () => {
-            const search = jest.fn();
-            const dismiss = jest.fn();
+            const search = handlerMock();
+            const dismiss = handlerMock();
             const unregister = register([
                 { combination: 'mod+k', label: 'search', handler: search },
                 { combination: 'escape', label: 'dismiss', handler: dismiss }
@@ -239,7 +245,7 @@ describe('DotKeyboardShortcutService', () => {
             const portletSearch = jest.fn();
             register({ combination: 'mod+k', label: 'portlet search', handler: portletSearch });
 
-            const dialogSearch = jest.fn();
+            const dialogSearch = handlerMock();
             const unregisterDialog = register([
                 { combination: 'mod+k', label: 'dialog search', handler: dialogSearch }
             ]);
@@ -252,7 +258,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should tolerate withdrawing a batch twice', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             const unregister = register([
                 { combination: 'mod+k', label: 'search', handler },
                 { combination: 'escape', label: 'dismiss', handler }
@@ -265,7 +271,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should accept a single shortcut without an array', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             register({ combination: 'mod+k', label: 'search', handler });
 
             pressModK();
@@ -279,14 +285,14 @@ describe('DotKeyboardShortcutService', () => {
         it('should reject the same label used twice in one call', () => {
             expect(() =>
                 register([
-                    { combination: 'mod+k', label: 'search', handler: jest.fn() },
-                    { combination: 'escape', label: 'search', handler: jest.fn() }
+                    { combination: 'mod+k', label: 'search', handler: handlerMock() },
+                    { combination: 'escape', label: 'search', handler: handlerMock() }
                 ])
             ).toThrow(/search/);
         });
 
         it('should register nothing at all when a batch is rejected', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
 
             expect(() =>
                 register([
@@ -304,8 +310,8 @@ describe('DotKeyboardShortcutService', () => {
         // The model's own rule, which the label check must not break: a combination may be claimed
         // more than once and the most recent claim wins.
         it('should still allow the same combination twice in one call', () => {
-            const first = jest.fn();
-            const second = jest.fn();
+            const first = handlerMock();
+            const second = handlerMock();
 
             expect(() =>
                 register([
@@ -322,8 +328,8 @@ describe('DotKeyboardShortcutService', () => {
 
         it('should allow separate calls to reuse a label, since only a batch is checked', () => {
             expect(() => {
-                register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
-                register({ combination: 'escape', label: 'search', handler: jest.fn() });
+                register({ combination: 'mod+k', label: 'search', handler: handlerMock() });
+                register({ combination: 'escape', label: 'search', handler: handlerMock() });
             }).not.toThrow();
         });
 
@@ -337,7 +343,7 @@ describe('DotKeyboardShortcutService', () => {
 
     describe('declining', () => {
         it('should fall through to the previous claimant when the newest declines', () => {
-            const first = jest.fn();
+            const first = handlerMock();
             const second = jest.fn(() => false);
             register({ combination: 'mod+k', label: 'search', handler: first });
             register({ combination: 'mod+k', label: 'search', handler: second });
@@ -363,7 +369,7 @@ describe('DotKeyboardShortcutService', () => {
 
     describe('browser defaults', () => {
         it('should suppress the browser default for a claimed combination', () => {
-            register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
+            register({ combination: 'mod+k', label: 'search', handler: handlerMock() });
 
             const event = pressModK();
 
@@ -371,7 +377,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should never suppress a combination nothing claims', () => {
-            register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
+            register({ combination: 'mod+k', label: 'search', handler: handlerMock() });
 
             const event = press({ key: 'p', metaKey: true });
 
@@ -381,7 +387,7 @@ describe('DotKeyboardShortcutService', () => {
         // A component that handled the key on its own element is closer to the target and has already
         // marked the event. The registry must not act on it a second time.
         it('should ignore an event a nested handler already consumed', () => {
-            const handler = jest.fn();
+            const handler = handlerMock();
             register({ combination: 'mod+b', label: 'toggle', handler });
 
             const event = new KeyboardEvent('keydown', {
@@ -399,8 +405,8 @@ describe('DotKeyboardShortcutService', () => {
 
     describe('documentation surface', () => {
         it('should expose the active shortcuts with their labels', () => {
-            register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
-            register({ combination: 'escape', label: 'dismiss', handler: jest.fn() });
+            register({ combination: 'mod+k', label: 'search', handler: handlerMock() });
+            register({ combination: 'escape', label: 'dismiss', handler: handlerMock() });
 
             expect(service.activeShortcuts()).toEqual([
                 { combination: 'mod+k', label: 'search' },
@@ -409,8 +415,8 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should report only the claim that would actually receive the key', () => {
-            register({ combination: 'mod+k', label: 'portlet search', handler: jest.fn() });
-            register({ combination: 'mod+k', label: 'dialog search', handler: jest.fn() });
+            register({ combination: 'mod+k', label: 'portlet search', handler: handlerMock() });
+            register({ combination: 'mod+k', label: 'dialog search', handler: handlerMock() });
 
             expect(service.activeShortcuts()).toEqual([
                 { combination: 'mod+k', label: 'dialog search' }
