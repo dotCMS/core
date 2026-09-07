@@ -49,8 +49,11 @@ const initialState: DotAssetPickerBrowseState = {
  *
  * Mirrors the shape of Content Drive's request builder, minus everything the picker has no use for
  * (workflow filters, user-searchable fields) and plus the two things it needs: a silent mimetype
- * restriction, and folders and menu links switched off unless the caller opts in through
+ * restriction, and menu links switched off unless the caller opts in through
  * `DotAssetPickerBrowseOptions`.
+ *
+ * Folders are switched off unconditionally — the list carries content only, and the sidebar tree is
+ * where folders are navigated.
  */
 export function withAssetBrowse() {
     return signalStoreFeature(
@@ -71,19 +74,21 @@ export function withAssetBrowse() {
              * page beyond to keep the arrow live; once none of them do, the page is the last one and
              * the exact total is knowable. Mirrors Content Drive's `$totalItems`.
              *
-             * All three streams matter, not just content: contentlets, folders and menu links page
-             * independently, so a page whose content ran out while folders kept going would
-             * otherwise report the rows already on screen as the grand total. PrimeNG then sees
-             * `first + rows >= totalRecords`, disables Next, and those folders become unreachable.
+             * Both streams matter, not just content: contentlets and menu links page independently,
+             * so a page whose content ran out while links kept going would otherwise report the rows
+             * already on screen as the grand total. PrimeNG then sees
+             * `first + rows >= totalRecords`, disables Next, and those links become unreachable.
+             *
+             * The response also carries `hasMoreFolders`, and it is deliberately NOT read: the
+             * picker never asks for folders, so folder rows can never be on screen and claiming a
+             * page for them would offer a page the user cannot fill.
              */
             $totalRecords: computed(() => {
                 const { page, limit } = pagination();
                 // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMore*` flags
                 // answer "is there anything past what is on screen".
                 const bookmark = pages()[page];
-                const hasMore = bookmark
-                    ? bookmark.hasMoreContent || bookmark.hasMoreFolders || bookmark.hasMoreLinks
-                    : false;
+                const hasMore = bookmark ? bookmark.hasMoreContent || bookmark.hasMoreLinks : false;
 
                 return hasMore ? limit * (page + 1) : limit * (page - 1) + items().length;
             }),
@@ -126,8 +131,6 @@ export function withAssetBrowse() {
 
                     // Once a stream is exhausted the endpoint asks us to switch it off, so later
                     // pages stop paying for a query with nothing left to return.
-                    const showFolders =
-                        Boolean(browse?.showFolders) && (bookmark?.hasMoreFolders ?? true);
                     const showLinks =
                         Boolean(browse?.showLinks) && (bookmark?.hasMoreLinks ?? true);
 
@@ -145,10 +148,9 @@ export function withAssetBrowse() {
                             ? pickerConfig.mimeTypes
                             : undefined,
                         contentCursor: bookmark?.contentCursor ?? 0,
-                        // No longer pinned. It stays 0 while folders are switched off — which is
-                        // every entry point but `openBrowserModal` — but a caller that asks for
-                        // folders pages through them like any other stream.
-                        folderCursor: bookmark?.folderCursor ?? 0,
+                        // No `folderCursor`: with `showFolders: false` the endpoint runs no folder
+                        // query, so there is nothing to resume from. Its server-side default is 0,
+                        // which is what the key would have carried anyway.
                         ...(browse?.showLinks
                             ? { showLinks, linkCursor: bookmark?.linkCursor ?? 0 }
                             : {}),
@@ -163,10 +165,14 @@ export function withAssetBrowse() {
                         // wants, so the key is omitted unless a caller explicitly asked for
                         // live-only.
                         ...(browse?.showWorking === false ? { live: true } : {}),
-                        // Default, not an invariant any more: the picker's list is for assets, and
-                        // folders are navigated through the sidebar tree — unless the caller
-                        // explicitly asked for them.
-                        showFolders
+                        // An invariant, and hardcoded rather than derived from `browse` so that no
+                        // configuration can reach it: the picker's list carries content only, and
+                        // folders are navigated through the sidebar tree.
+                        //
+                        // Sent, never omitted. The endpoint defaults `showFolders` to TRUE
+                        // (AbstractDriveRequestForm#showFolders), so dropping the key would list
+                        // folders again — silently, since nothing here would look wrong.
+                        showFolders: false
                     };
                 },
                 // Structural dedupe so a no-op recompute doesn't refire the search.
@@ -208,14 +214,18 @@ export function withAssetBrowse() {
                                 pages[page] = {
                                     contentCursor: response.nextContentCursor,
                                     hasMoreContent: response.hasMoreContent,
-                                    folderCursor: response.nextFolderCursor,
-                                    hasMoreFolders: response.hasMoreFolders,
-                                    // Only a `showLinks` response carries these, and unlike the
-                                    // folder pair they are both optional — so a response could
-                                    // report more links without saying where to resume. Falling
-                                    // back to the cursor we sent keeps the stream from rewinding to
-                                    // 0 and re-serving links that were already shown; once there
-                                    // are no more, 0 is correct because nothing will read it again.
+                                    // `nextFolderCursor` / `hasMoreFolders` are deliberately not
+                                    // bookmarked: with `showFolders: false` the endpoint leaves
+                                    // them at their initial values, so recording them would store
+                                    // two constants and let a stream the picker never asked for
+                                    // influence its paging.
+                                    //
+                                    // Only a `showLinks` response carries the link pair, and both
+                                    // of its fields are optional — so a response could report more
+                                    // links without saying where to resume. Falling back to the
+                                    // cursor we sent keeps the stream from rewinding to 0 and
+                                    // re-serving links that were already shown; once there are no
+                                    // more, 0 is correct because nothing will read it again.
                                     linkCursor: response.hasMoreLinks
                                         ? (response.nextLinkCursor ?? sent?.linkCursor ?? 0)
                                         : 0,
