@@ -137,6 +137,20 @@ control's options today.
 | Published only (`live: true`) | `LOCKED` |
 | Working included (the default) | `ARCHIVED`, `UNPUBLISHED`, `LOCKED` |
 
+**Rule (FR-014f)**: a second bound applies to *which entry point* opened the picker, independently
+of version state. A field picker is choosing an asset for other content to point at, and archived
+content is not served:
+
+| Entry point | Status options offered |
+|---|---|
+| A field (File, Image, video, audio) | `UNPUBLISHED`, `LOCKED` |
+| `openBrowserModal` | as the version-state table above |
+
+Both bounds come from **one** function (`allowedStatusesFor`), applied twice — to the control's
+options and to the caller's seeds — because a seed arrives before any chip exists. The entry point
+is read off the *presence* of `config.browse`, which `buildAssetPickerConfig` attaches for browse
+mode even when the caller opted into no capabilities, precisely so the discriminator holds.
+
 **Rule (FR-010)**: `config.mimeTypes` and `config.allowedBaseTypes` are **not** filters and never
 enter the bag. They are applied when the request is built and survive every clear. The existing
 comment on `DotAssetPickerConfig.mimeTypes` — "Deliberately NOT part of `DotAssetPickerFilters`" —
