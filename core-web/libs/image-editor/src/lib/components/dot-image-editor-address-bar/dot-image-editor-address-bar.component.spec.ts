@@ -37,10 +37,17 @@ describe('DotImageEditorAddressBarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotImageEditorAddressBarComponent,
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        // `MessageService` sits in the ANCESTOR injector, not in `componentProviders`, because
+        // that mirrors the real topology after #37398: `DotImageEditorComponent` provides it for
+        // the whole editor subtree and this component resolves it by walking up. Scoping the mock
+        // to the address bar itself would let the component pass even if nothing above it provided
+        // one — which is exactly how the NG0201 crash stayed invisible to this suite.
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(MessageService)
+        ],
         componentProviders: [
             Dispatcher,
-            mockProvider(MessageService),
             mockProvider(ImageEditorStore, {
                 previewUrl,
                 zoom,
@@ -83,7 +90,7 @@ describe('DotImageEditorAddressBarComponent', () => {
     });
 
     it('should copy the full (absolute) preview URL to the clipboard and toast success', async () => {
-        const messageService = spectator.inject(MessageService, true);
+        const messageService = spectator.inject(MessageService);
         spectator.click(button('image-editor-copy-url-btn'));
 
         expect(writeText).toHaveBeenCalledWith(document.location.origin + PREVIEW_URL);
@@ -98,7 +105,7 @@ describe('DotImageEditorAddressBarComponent', () => {
 
     it('should toast an error when copying to the clipboard fails', async () => {
         writeText.mockRejectedValueOnce(new Error('clipboard denied'));
-        const messageService = spectator.inject(MessageService, true);
+        const messageService = spectator.inject(MessageService);
 
         spectator.click(button('image-editor-copy-url-btn'));
         await spectator.fixture.whenStable();
