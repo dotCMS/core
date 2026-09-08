@@ -2,8 +2,8 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
     inject,
+    OnDestroy,
     output,
     viewChild
 } from '@angular/core';
@@ -16,6 +16,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { DotKeyboardShortcutService } from '../../../../services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
+import { DotKeyboardShortcutUnregister } from '../../../../services/dot-keyboard-shortcut/models';
 import { DotContentTypeFilterChipComponent } from '../../../dot-filter-bar/chips/dot-content-type-filter-chip/dot-content-type-filter-chip.component';
 import { DotFieldFilterComponent } from '../../../dot-filter-bar/chips/dot-field-filter/dot-field-filter.component';
 import { DotFieldFilterMenuComponent } from '../../../dot-filter-bar/chips/dot-field-filter-menu/dot-field-filter-menu.component';
@@ -59,9 +60,12 @@ import { allowedStatusesFor } from '../../store/filter-defaults';
     ],
     host: { class: 'block w-full' }
 })
-export class DotAssetPickerToolbarComponent {
+export class DotAssetPickerToolbarComponent implements OnDestroy {
     readonly store = inject(DotAssetPickerStore);
     readonly #shortcuts = inject(DotKeyboardShortcutService);
+
+    /** Withdrawals for the claims made in the constructor, released in {@link ngOnDestroy}. */
+    #withdrawShortcuts: DotKeyboardShortcutUnregister[] = [];
 
     /** Re-emitted to the shell, which owns the upload flow. */
     readonly upload = output<MouseEvent>();
@@ -103,15 +107,22 @@ export class DotAssetPickerToolbarComponent {
         // Both keys the portlet claims, so the dialog shadows the whole search shortcut rather than
         // half of it — otherwise `/` would still reach the listing behind this dialog. Two calls
         // because labels must be unique within a single `register()` call.
-        const withdrawals = ['/', 'mod+k'].map((combination) =>
+        this.#withdrawShortcuts = ['/', 'mod+k'].map((combination) =>
             this.#shortcuts.register({
                 combination,
                 label: 'dot.asset.picker.shortcut.search',
                 handler: focusSearch
             })
         );
+    }
 
-        inject(DestroyRef).onDestroy(() => withdrawals.forEach((withdraw) => withdraw()));
+    /**
+     * Hands both combinations back to the surface underneath. This is the half that makes the
+     * shadowing correct: without it the picker would keep the shortcut after closing, and the
+     * portlet behind would lose it for the rest of the session.
+     */
+    ngOnDestroy(): void {
+        this.#withdrawShortcuts.forEach((withdraw) => withdraw());
     }
 
     protected readonly $searchTerm = computed(() => this.store.filters().title ?? '');

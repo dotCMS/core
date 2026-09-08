@@ -2,12 +2,16 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
     inject,
+    OnDestroy,
     viewChild
 } from '@angular/core';
 
-import { DotKeyboardShortcutService, DotSearchInputComponent } from '@dotcms/ui';
+import {
+    DotKeyboardShortcutService,
+    DotKeyboardShortcutUnregister,
+    DotSearchInputComponent
+} from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
@@ -26,9 +30,12 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     imports: [DotSearchInputComponent],
     host: { class: 'w-full' }
 })
-export class DotContentDriveSearchInputComponent {
+export class DotContentDriveSearchInputComponent implements OnDestroy {
     readonly #store = inject(DotContentDriveStore);
     readonly #shortcuts = inject(DotKeyboardShortcutService);
+
+    /** Withdrawals for the claims made in the constructor, released in {@link ngOnDestroy}. */
+    #withdrawShortcuts: DotKeyboardShortcutUnregister[] = [];
 
     // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a
     // signal query on an ES-private field: "Cannot use 'viewChild' on a class member that is
@@ -65,15 +72,21 @@ export class DotContentDriveSearchInputComponent {
             return true;
         };
 
-        const withdrawals = ['/', 'mod+k'].map((combination) =>
+        this.#withdrawShortcuts = ['/', 'mod+k'].map((combination) =>
             this.#shortcuts.register({
                 combination,
                 label: 'content-drive.shortcut.search',
                 handler: focusSearch
             })
         );
+    }
 
-        inject(DestroyRef).onDestroy(() => withdrawals.forEach((withdraw) => withdraw()));
+    /**
+     * Hands the combinations back. Without this the claim outlives the toolbar and the surface
+     * underneath never gets its shortcut returned.
+     */
+    ngOnDestroy(): void {
+        this.#withdrawShortcuts.forEach((withdraw) => withdraw());
     }
 
     /**

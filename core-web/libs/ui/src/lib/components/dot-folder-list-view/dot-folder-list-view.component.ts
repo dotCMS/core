@@ -7,7 +7,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
     effect,
     ElementRef,
     inject,
@@ -119,7 +118,6 @@ const TYPE_COLUMN_ORDER =
 export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly renderer = inject(Renderer2);
     readonly #hostElement = inject(ElementRef);
-    readonly #destroyRef = inject(DestroyRef);
     readonly #zone = inject(NgZone);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
@@ -864,11 +862,13 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             host.addEventListener('mousedown', this.#onMousedownCapture, true);
         });
 
-        this.#destroyRef.onDestroy(() => {
-            host.removeEventListener('keydown', this.#onKeydownCapture, true);
-            host.removeEventListener('mousedown', this.#onMousedownCapture, true);
-        });
+        // Removed in `ngOnDestroy` alongside the scroll listener, so this class keeps a single
+        // teardown path rather than splitting cleanup across two mechanisms.
+        this.#captureHost = host;
     }
+
+    /** Host the capture listeners are bound to, held so `ngOnDestroy` can detach them. */
+    #captureHost?: HTMLElement;
 
     constructor() {
         // Both register render-phase work whose only purpose is the side effect, so they are called
@@ -1131,6 +1131,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         if (tableBody) {
             tableBody.removeEventListener('scroll', this.boundScrollHandler);
         }
+
+        // The two capture listeners from `#trackFocusIntent`. Both are attached outside the Angular
+        // zone and neither is bound through the template, so nothing detaches them for us.
+        this.#captureHost?.removeEventListener('keydown', this.#onKeydownCapture, true);
+        this.#captureHost?.removeEventListener('mousedown', this.#onMousedownCapture, true);
     }
 
     /**

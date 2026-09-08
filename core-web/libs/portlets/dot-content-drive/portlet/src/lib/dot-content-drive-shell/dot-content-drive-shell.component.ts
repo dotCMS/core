@@ -1,15 +1,15 @@
 import { signalMethod } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { of, SubscriptionLike } from 'rxjs';
 
 import { Location, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
     effect,
     ElementRef,
     inject,
+    OnDestroy,
     signal,
     untracked,
     viewChild
@@ -59,6 +59,7 @@ import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
     DotKeyboardShortcutService,
+    DotKeyboardShortcutUnregister,
     hasOverlayAbove,
     DotMessagePipe,
     DotToastComponent,
@@ -153,7 +154,7 @@ import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
         class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
     }
 })
-export class DotContentDriveShellComponent {
+export class DotContentDriveShellComponent implements OnDestroy {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
@@ -161,9 +162,14 @@ export class DotContentDriveShellComponent {
 
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
-    readonly #destroyRef = inject(DestroyRef);
 
     readonly #shortcuts = inject(DotKeyboardShortcutService);
+
+    /** Withdraws the portlet-level shortcut claims. Released in {@link ngOnDestroy}. */
+    #withdrawShortcuts?: DotKeyboardShortcutUnregister;
+
+    /** Browser history subscription for the edit-panel guard. Released in {@link ngOnDestroy}. */
+    #locationSubscription?: SubscriptionLike;
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
@@ -438,7 +444,7 @@ export class DotContentDriveShellComponent {
                 this.$sidePanel()?.requestClose();
             }
         });
-        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
+        this.#locationSubscription = locationSubscription;
     }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
@@ -728,20 +734,30 @@ export class DotContentDriveShellComponent {
      * hand it back on close.
      */
     #registerShortcuts(): void {
-        this.#destroyRef.onDestroy(
-            this.#shortcuts.register([
-                {
-                    combination: 'escape',
-                    label: 'content-drive.shortcut.escape',
-                    handler: () => this.#onEscape()
-                },
-                {
-                    combination: 'mod+b',
-                    label: 'content-drive.shortcut.toggle-tree',
-                    handler: () => this.#onToggleTree()
-                }
-            ])
-        );
+        this.#withdrawShortcuts = this.#shortcuts.register([
+            {
+                combination: 'escape',
+                label: 'content-drive.shortcut.escape',
+                handler: () => this.#onEscape()
+            },
+            {
+                combination: 'mod+b',
+                label: 'content-drive.shortcut.toggle-tree',
+                handler: () => this.#onToggleTree()
+            }
+        ]);
+    }
+
+    /**
+     * One teardown path for the whole shell.
+     *
+     * Both of these outlive Angular's own cleanup if left alone: the shortcut claims sit in a
+     * root-provided registry, and the history subscription is a plain RxJS one. Withdrawing the
+     * claims here is also what lets a dialog that shadowed a combination get it handed back.
+     */
+    ngOnDestroy(): void {
+        this.#withdrawShortcuts?.();
+        this.#locationSubscription?.unsubscribe();
     }
 
     /**
