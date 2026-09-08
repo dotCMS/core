@@ -19,8 +19,9 @@
         <input
             pInputText
             id="dotai-index-name"
-            [value]="$indexName()"
-            (input)="$indexName.set($any($event.target).value)"
+            [ngModel]="$indexName()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="$indexName.set($event)"
             [placeholder]="'dotai.index.create.name.placeholder' | dm"
             data-testid="dotai-index-create-name" />
 
@@ -37,8 +38,9 @@
             pTextarea
             id="dotai-index-query"
             rows="3"
-            [value]="$query()"
-            (input)="$query.set($any($event.target).value)"
+            [ngModel]="$query()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="$query.set($event)"
             [placeholder]="'dotai.index.create.query.placeholder' | dm"
             data-testid="dotai-index-create-query"></textarea>
         <small class="p-field-hint">{{ 'dotai.index.create.query.hint' | dm }}</small>
@@ -51,8 +53,9 @@
             <input
                 pInputText
                 id="dotai-index-fields"
-                [value]="$fields()"
-                (input)="$fields.set($any($event.target).value)"
+                [ngModel]="$fields()"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="$fields.set($event)"
                 [placeholder]="'dotai.index.create.fields.placeholder' | dm"
                 data-testid="dotai-index-create-fields" />
             <small class="p-field-hint">{{ 'dotai.index.create.fields.hint' | dm }}</small>
@@ -64,8 +67,9 @@
                 pTextarea
                 id="dotai-index-template"
                 rows="2"
-                [value]="$velocityTemplate()"
-                (input)="$velocityTemplate.set($any($event.target).value)"
+                [ngModel]="$velocityTemplate()"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="$velocityTemplate.set($event)"
                 data-testid="dotai-index-create-template"></textarea>
         </div>
     }

@@ -54,7 +54,7 @@ export function withAiIndexes() {
                 // An index that has settled is no longer a candidate for the next poll.
                 const stillBuilding = store
                     .indexBuildSeeds()
-                    .filter((name) => statuses[name] === 'BUILDING');
+                    .filter((name) => statuses[name] === DOT_AI_INDEX_STATUS.BUILDING);
 
                 patchState(store, {
                     indexes,
@@ -115,7 +115,10 @@ export function withAiIndexes() {
                 markIndexBuilding(indexName: string): void {
                     patchState(store, {
                         indexBuildSeeds: [...new Set([...store.indexBuildSeeds(), indexName])],
-                        indexStatuses: { ...store.indexStatuses(), [indexName]: 'BUILDING' }
+                        indexStatuses: {
+                            ...store.indexStatuses(),
+                            [indexName]: DOT_AI_INDEX_STATUS.BUILDING
+                        }
                     });
                 }
             };

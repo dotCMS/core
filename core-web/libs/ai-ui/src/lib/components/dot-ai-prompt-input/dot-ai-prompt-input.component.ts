@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 import { TextareaModule } from 'primeng/textarea';
 
@@ -25,7 +25,6 @@ import { TextareaModule } from 'primeng/textarea';
     selector: 'dot-ai-prompt-input',
     imports: [TextareaModule],
     templateUrl: './dot-ai-prompt-input.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block' }
 })
 export class DotAiPromptInputComponent {

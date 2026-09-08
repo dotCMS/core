@@ -21,6 +21,12 @@ import { SubscriptionSlot } from '@dotcms/store';
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 
 /**
+ * How long deltas accumulate before landing in the store. Fast enough to read as continuous,
+ * slow enough that a long answer is parsed a few times a second rather than once per token.
+ */
+const DELTA_FLUSH_MS = 80;
+
+/**
  * Chat: one streamed answer at a time, stoppable mid-flight.
  *
  * **Holds a single answer, not a transcript.** The completions endpoint takes one `prompt` and
@@ -38,12 +44,6 @@ import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
  * every stream failure is recoverable by just asking again. Same reasoning, and the same
  * precedent, as `runError` in the a11y run store.
  */
-/**
- * How long deltas accumulate before landing in the store. Fast enough to read as continuous,
- * slow enough that a long answer is parsed a few times a second rather than once per token.
- */
-const DELTA_FLUSH_MS = 80;
-
 export function withAiChat() {
     return signalStoreFeature(
         type<{

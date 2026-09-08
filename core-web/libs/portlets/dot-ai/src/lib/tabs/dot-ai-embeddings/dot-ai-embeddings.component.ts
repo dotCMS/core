@@ -57,10 +57,10 @@ export default class DotAiEmbeddingsComponent {
 
     protected readonly statuses = DOT_AI_INDEX_STATUS;
 
-    /** `table-layout: fixed` + full height keeps the empty state from collapsing the table. */
+    /** Fixed layout plus full height keeps the empty state from collapsing the table. */
     protected readonly tablePt = {
-        table: { style: 'table-layout: fixed' },
-        wrapper: { style: 'height: 100%' }
+        table: { class: 'table-fixed' },
+        wrapper: { class: 'h-full' }
     };
 
     /** p-message severities for the three build outcomes. */

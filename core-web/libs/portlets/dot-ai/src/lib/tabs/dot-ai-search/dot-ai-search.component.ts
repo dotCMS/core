@@ -42,6 +42,16 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 export default class DotAiSearchComponent {
     protected readonly store = inject(DotAiStore);
 
+    /**
+     * Typed rather than `$any($event.target).value`, and a handler rather than `ngModel`:
+     * `disabled` is an *input on NgModel*, which applies it a microtask after the binding, so
+     * this field would render briefly enabled on an unconfigured instance. Same shape as
+     * `DotAiPromptInputComponent.onInput`.
+     */
+    protected onPromptInput(event: Event): void {
+        this.store.setSearchPrompt((event.target as HTMLInputElement).value);
+    }
+
     /** Closeness for the result bar. See `toClosenessPercent` for why it normalises. */
     protected readonly toCloseness = toClosenessPercent;
 

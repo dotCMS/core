@@ -138,8 +138,9 @@
         <input
             pInputText
             id="dotai-settings-content-types"
-            [value]="store.settingsContentTypes()"
-            (input)="store.setSettings({ settingsContentTypes: $any($event.target).value })"
+            [ngModel]="store.settingsContentTypes()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsContentTypes: $event })"
             [placeholder]="'dotai.settings.content-types.placeholder' | dm"
             data-testid="dotai-settings-content-types" />
         <small class="p-field-hint">{{ 'dotai.settings.content-types.hint' | dm }}</small>

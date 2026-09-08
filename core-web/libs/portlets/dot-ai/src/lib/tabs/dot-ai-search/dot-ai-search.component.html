@@ -11,7 +11,7 @@
                     pInputText
                     class="text-lg"
                     [value]="store.searchPrompt()"
-                    (input)="store.setSearchPrompt($any($event.target).value)"
+                    (input)="onPromptInput($event)"
                     (keydown.enter)="onSearch()"
                     [disabled]="!store.isConfigured()"
                     [attr.aria-label]="'dotai.search.input.aria' | dm"

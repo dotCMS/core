@@ -57,6 +57,9 @@ export default class DotAiShellComponent {
     protected readonly store = inject(DotAiStore);
     protected readonly tabs = DOT_AI_TABS;
 
+    /** Restores the bottom rule the dotCMS theme zeroes out. See the template comment. */
+    protected readonly tabsDt = { tablist: { border: { width: '0 0 1px 0' } } };
+
     /** Active tab id, derived from the URL so a deep link and a click agree. */
     protected readonly $activeTab = toSignal(
         this.#router.events.pipe(

@@ -17,15 +17,7 @@ import { Component, input } from '@angular/core';
  */
 @Component({
     selector: 'dot-ai-empty-state',
-    template: `
-        <div class="p-8 text-center">
-            <h2 class="text-2xl font-medium">{{ title() }}</h2>
-
-            @if (subtitle()) {
-                <p class="mt-1 text-muted-color">{{ subtitle() }}</p>
-            }
-        </div>
-    `,
+    templateUrl: './dot-ai-empty-state.component.html',
     // data-testid stays on the call site rather than an input: written there it lands on
     // this host element in the parent's own template, so it is present whether or not a test
     // renders this component for real.

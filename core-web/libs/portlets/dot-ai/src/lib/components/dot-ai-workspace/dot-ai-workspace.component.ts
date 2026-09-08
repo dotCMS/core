@@ -25,6 +25,11 @@ export class DotAiWorkspaceComponent {
     /** Distinct per tab, so the two splits are remembered separately. */
     readonly stateKey = input.required<string>();
 
-    /** The dotCMS preset gives p-splitter a border and radius no consumer of it wants. */
-    protected readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
+    /**
+     * The dotCMS preset gives p-splitter a border and radius no consumer of it wants.
+     *
+     * `panel: {}` is a no-op at runtime and present only to satisfy `SplitterPassThrough`,
+     * which requires the key — same shape `dot-query-tool` uses.
+     */
+    protected readonly splitterPt = { root: { class: 'border-0! rounded-none!' }, panel: {} };
 }
