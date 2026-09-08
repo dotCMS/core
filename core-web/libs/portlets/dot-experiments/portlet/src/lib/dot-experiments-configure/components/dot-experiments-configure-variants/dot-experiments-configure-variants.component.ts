@@ -26,7 +26,6 @@ import {
     DEFAULT_VARIANT_NAME,
     DotMessageSeverity,
     DotMessageType,
-    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     MAX_INPUT_TITLE_LENGTH,
     Variant,
     TrafficProportionTypes
@@ -175,10 +174,9 @@ export class DotExperimentsConfigureVariantsComponent {
         const disabledTooltipKey = this.store.$disabledTooltipKey();
         const previewUrl = this.#previewUrl();
 
-        // An OR over three independent conditions, evaluated per row because only the first of
-        // them varies by row. NOT `!!disabledTooltipKey`: that is null for the control on an
-        // editable draft, which would open the Original for editing (FR-008).
-        const experimentIsReadOnly = this.store.$isLocked() || this.store.$lockedByAnotherUser();
+        // Evaluated per row because only the control condition varies by row. NOT `!!disabledTooltipKey`:
+        // that is null for the control on an editable draft, which would open the Original for editing (FR-008).
+        const experimentIsReadOnly = this.store.$isLocked();
 
         return this.store.$variants().map((variant, index) => {
             const isControl = isControlVariant(variant);
@@ -217,18 +215,6 @@ export class DotExperimentsConfigureVariantsComponent {
         );
     });
 
-    /**
-     * The lock reason, stated rather than only hinted (#37005, FR-010).
-     *
-     * `$disabledTooltipKey` already carries it, but only into a `pTooltip` on the weight cell —
-     * which says nothing to a user who never hovers. FR-010 requires the reason "stated to the
-     * user", so it also renders as an inline note. The tooltip stays: it explains the frozen
-     * *field* where the note explains the frozen *card*.
-     */
-    readonly $lockedByAnotherUserKey = computed<string | null>(() =>
-        this.store.$lockedByAnotherUser() ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED : null
-    );
-
     /** True while nothing on the card may be changed: not a draft, or the page is locked. */
     readonly $isDisabled = computed<boolean>(() => !!this.store.$disabledTooltipKey());
 
@@ -237,7 +223,20 @@ export class DotExperimentsConfigureVariantsComponent {
 
     /** Adding needs an experiment id to add the variant to, so it waits for the creation POST. */
     readonly $isAddDisabled = computed<boolean>(
-        () => this.$isAtVariantCap() || this.$isBeforeCreation()
+        () => this.$isDisabled() || this.$isAtVariantCap() || this.$isBeforeCreation()
+    );
+
+    /**
+     * Why Add is closed, or `null` when it is open.
+     *
+     * The button is disabled rather than removed: a control that vanishes leaves the reader with
+     * an absence and nowhere to read the reason, and the reason lives on the button itself. The
+     * lock comes first — it freezes the whole card, so the cap is beside the point while it holds.
+     */
+    readonly $addDisabledTooltipKey = computed<string>(
+        () =>
+            this.store.$disabledTooltipKey() ??
+            (this.$isAtVariantCap() ? 'experiments.configure.variants.cap-reached' : '')
     );
 
     /** Rebuilt by `onRowMenuToggle` for whichever row is opening the kebab. */
@@ -317,6 +316,19 @@ export class DotExperimentsConfigureVariantsComponent {
 
     constructor() {
         this.#resplitWeightsAfterAdd();
+    }
+
+    /**
+     * Identity of a row, for the table's own diffing.
+     *
+     * `$rows()` rebuilds every view model whenever the variants change, so the table's default
+     * `trackBy` — which compares the objects themselves — sees an entirely new set each time and
+     * tears down every row. Tracking by variant id is what keeps a rename or a re-split from
+     * re-creating rows that did not move, and it is what leaves the enter/leave animation firing
+     * only on the variant actually added or deleted.
+     */
+    trackVariantById(_index: number, row: VariantRowViewModel): string {
+        return row.id;
     }
 
     /** Persists a renamed variant. The variant endpoint takes the name on its own. */

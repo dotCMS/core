@@ -20,6 +20,7 @@ import {
     applyEach,
     disabled,
     form,
+    FormRoot,
     max,
     maxDate,
     maxLength,
@@ -123,6 +124,7 @@ const VARIANTS_SECTION_SELECTOR = '[data-testid="configure-section-variants"]';
 @Component({
     selector: 'dot-experiments-configure',
     imports: [
+        FormRoot,
         ConfirmDialogModule,
         ProgressBarModule,
         SkeletonModule,
@@ -144,7 +146,9 @@ const VARIANTS_SECTION_SELECTOR = '[data-testid="configure-section-variants"]';
         DotExperimentsService,
         DotPagesBrowserService
     ],
-    host: { class: 'flex flex-col h-full min-h-0 overflow-hidden' }
+    host: {
+        class: 'flex flex-col h-full min-h-0 overflow-hidden animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
+    }
 })
 export class DotExperimentsConfigureComponent {
     readonly store = inject(DotExperimentsConfigureStore);

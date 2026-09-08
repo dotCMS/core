@@ -18,7 +18,6 @@ import {
     DotExperimentStatus,
     DotMessageSeverity,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
-    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     EXPERIMENT_RETURN_PARAM,
     MAX_VARIANTS_ALLOWED,
     TrafficProportionTypes,
@@ -72,7 +71,6 @@ const ADD_DIALOG_HEADER = 'Add Variant';
 const CAP_REACHED_COPY = 'Maximum number of variants reached';
 const EDIT_CONTENT_UNAVAILABLE_COPY = 'Available soon';
 const CANT_EDIT_COPY = 'Only a draft experiment can be edited';
-const PAGE_BLOCKED_COPY = 'Another user is editing this page';
 const HINT_COPY = 'Up to {0} variants';
 
 const messageServiceMock = new MockDotMessageService({
@@ -87,8 +85,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.hint': HINT_COPY,
     'experiments.configure.variants.hint.locked': 'Locked',
     'experiments.configure.variants.share-of-all': '{0}%',
-    [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY,
-    [EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED]: PAGE_BLOCKED_COPY
+    [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY
 });
 
 /**
@@ -100,10 +97,7 @@ const createStoreMock = () => ({
     experiment: jest.fn().mockReturnValue(EXPERIMENT),
     $variants: jest.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
     $disabledTooltipKey: jest.fn().mockReturnValue(null),
-    // The two halves of read-only, kept separate on purpose: the mode is an OR across them and
-    // the control, not a read of `$disabledTooltipKey`, which reports only the strongest reason.
     $isLocked: jest.fn().mockReturnValue(false),
-    $lockedByAnotherUser: jest.fn().mockReturnValue(false),
     $validationErrors: jest.fn().mockReturnValue([]),
     selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE),
     // What the "of all traffic" column multiplies each split against.
@@ -983,11 +977,21 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             expect(proportionType()).toBe(TrafficProportionTypes.SPLIT_EVENLY);
         });
 
-        it('should not offer the Add control while the card is disabled', () => {
+        it('should keep Add on screen while the card is disabled, and say why', () => {
+            // Removing it would leave an absence with nowhere to read the reason, which is what
+            // the legacy screen avoided by disabling rather than hiding.
             storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
             render();
 
-            expect(spectator.query(byTestId('variants-add-btn'))).toBeNull();
+            expect(spectator.query(byTestId('variants-add-btn'))).not.toBeNull();
+            expect(isButtonDisabled('variants-add-btn')).toBe(true);
+
+            // The tooltip hangs off the wrapper: a disabled button emits no pointer events, so one
+            // bound to the button itself could never open.
+            const tooltip = tooltipOf('variants-add-tooltip');
+
+            expect(tooltip.content).toBe(CANT_EDIT_COPY);
+            expect(tooltip.disabled).toBe(false);
         });
 
         it('should disable Add and say why once the cap is reached', () => {
@@ -996,7 +1000,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
 
             expect(isButtonDisabled('variants-add-btn')).toBe(true);
 
-            const tooltip = tooltipOf('variants-add-btn');
+            const tooltip = tooltipOf('variants-add-tooltip');
 
             expect(tooltip.content).toBe(CAP_REACHED_COPY);
             expect(tooltip.disabled).toBe(false);
@@ -1246,43 +1250,12 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             });
         });
 
-        // FR-010.
-        describe('a page locked by another user', () => {
-            beforeEach(() => {
-                storeMock.$lockedByAnotherUser.mockReturnValue(true);
-                storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
-            });
-
-            it('should open every variant read-only', () => {
-                render();
-
-                expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.PREVIEW);
-            });
-
-            it('should state the reason to the user', () => {
-                render();
-
-                expect(spectator.query(byTestId('variants-card'))?.textContent).toContain(
-                    PAGE_BLOCKED_COPY
-                );
-            });
-        });
-
-        // The page being locked by *me* is not a reason to freeze anything: I hold the lock.
-        it('should stay editable when the page is locked by the current user', () => {
-            storeMock.$lockedByAnotherUser.mockReturnValue(false);
-            render();
-
-            expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.EDIT);
-        });
-
         // The trap this whole describe exists to catch. On a draft, unlocked page
         // `$disabledTooltipKey()` is null — so a mode derived from it would call the control
         // editable.
         it('should not derive the mode from the disabled-tooltip key', () => {
             storeMock.$disabledTooltipKey.mockReturnValue(null);
             storeMock.$isLocked.mockReturnValue(false);
-            storeMock.$lockedByAnotherUser.mockReturnValue(false);
             render();
 
             expect(modeSentTo(CONTROL_ROW)).toBe(UVE_MODE.PREVIEW);
