@@ -5,6 +5,9 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIIntegrationTest;
 import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessorIntegrationTest;
 import com.dotcms.jobs.business.queue.PostgresJobQueueIntegrationTest;
+import com.dotcms.jobs.business.batch.JobItemResultFactoryIT;
+import com.dotcms.jobs.business.processor.impl.BulkUploadProcessorIT;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadResourceIT;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
 import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
@@ -32,6 +35,9 @@ import org.junit.platform.suite.api.Suite;
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,
         BulkRefreshResourceIntegrationTest.class,
+        JobItemResultFactoryIT.class,
+        BulkUploadResourceIT.class,
+        BulkUploadProcessorIT.class,
         JobProcessorDiscoveryTest.class
 })
 public class Junit5Suite1 {

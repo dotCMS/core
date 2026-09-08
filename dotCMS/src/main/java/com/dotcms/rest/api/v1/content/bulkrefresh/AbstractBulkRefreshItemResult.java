@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.content.bulkrefresh;
 
+import com.dotcms.jobs.business.batch.BatchFailureReason;
+import com.dotcms.jobs.business.batch.BatchItemResult;
+import com.dotcms.jobs.business.batch.BatchItemStatus;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
@@ -51,5 +54,32 @@ public interface AbstractBulkRefreshItemResult {
     @Value.Default
     default int versionsIndexed() {
         return 0;
+    }
+
+    /**
+     * This record read as the shared per-item outcome (spec FR-018, research R3).
+     * <p>
+     * <b>Extraction, not modification.</b> Everything above stays exactly as it shipped —
+     * {@link #identifier()}, {@link #inodes()} and {@link #versionsIndexed()} are untouched, so the
+     * existing consumer and its tests are unaffected (SC-006). This adds a way to <i>read</i> the
+     * record through the generic shape that {@code #37062} and {@code #37063} also consume, so the
+     * product ends with one batch-outcome contract rather than three.
+     * <p>
+     * The identifier becomes the generic {@code key()}: for a reindex that is what the item is, the
+     * same way a file name is for an upload and a path is for a folder operation.
+     */
+    default BatchItemResult asBatchItemResult() {
+        final BatchItemResult.Builder builder = BatchItemResult.builder()
+                .key(identifier().orElse(""))
+                .status(BatchItemStatus.valueOf(status().name()));
+
+        // The shipped record carries a message and no code, which is exactly the gap the shared
+        // type closes. Reindex failures were never classified, so they map to UNCLASSIFIED rather
+        // than inventing a reason this consumer never produced.
+        errorMessage().ifPresent(message -> builder
+                .reason(BatchFailureReason.UNCLASSIFIED)
+                .message(message));
+
+        return builder.build();
     }
 }
