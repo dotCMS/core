@@ -1067,6 +1067,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
                 page: SELECTED_PAGE,
                 variantId: SECOND_VARIANT.id,
                 experimentId: EXPERIMENT.id,
+                experimentPageId: EXPERIMENT.pageId,
                 mode: UVE_MODE.EDIT
             });
 
