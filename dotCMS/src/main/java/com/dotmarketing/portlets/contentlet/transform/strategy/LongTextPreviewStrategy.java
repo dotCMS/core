@@ -102,8 +102,15 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         return truncate(textBuilder.toString());
     }
 
-    /** Recursively walks a Story Block JSON-tree node, collecting every {@code text} leaf value. */
+    /**
+     * Recursively walks a Story Block JSON-tree node, collecting every {@code text} leaf value.
+     * Stops once enough text has been collected for the preview bound, so a large story block is
+     * not fully traversed/concatenated just to be truncated away afterward (found in review).
+     */
     private static void collectText(final Object node, final StringBuilder out) {
+        if (out.length() >= MAX_PREVIEW_LENGTH) {
+            return;
+        }
         if (node instanceof Map) {
             final Map<?, ?> nodeMap = (Map<?, ?>) node;
             final Object text = nodeMap.get("text");
@@ -116,11 +123,17 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
             final Object content = nodeMap.get("content");
             if (content instanceof List) {
                 for (final Object child : (List<?>) content) {
+                    if (out.length() >= MAX_PREVIEW_LENGTH) {
+                        break;
+                    }
                     collectText(child, out);
                 }
             }
         } else if (node instanceof List) {
             for (final Object child : (List<?>) node) {
+                if (out.length() >= MAX_PREVIEW_LENGTH) {
+                    break;
+                }
                 collectText(child, out);
             }
         }
@@ -130,7 +143,14 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         if (null == text) {
             return StringPool.BLANK;
         }
-        return text.length() <= MAX_PREVIEW_LENGTH ? text : text.substring(0, MAX_PREVIEW_LENGTH);
+        if (text.length() <= MAX_PREVIEW_LENGTH) {
+            return text;
+        }
+        // Avoid splitting a UTF-16 surrogate pair (e.g. an emoji) at the boundary -- that would
+        // leave a lone high surrogate at the end of the preview (found in review).
+        final int cutIndex = Character.isHighSurrogate(text.charAt(MAX_PREVIEW_LENGTH - 1))
+                ? MAX_PREVIEW_LENGTH - 1 : MAX_PREVIEW_LENGTH;
+        return text.substring(0, cutIndex);
     }
 
 }
