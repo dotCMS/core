@@ -1,5 +1,3 @@
-/// <reference types="jest" />
-
 import { Mock, vi } from 'vitest';
 
 import {
