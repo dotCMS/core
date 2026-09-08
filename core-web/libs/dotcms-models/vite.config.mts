@@ -91,11 +91,21 @@ export default defineConfig(() => ({
                 ]
             }
         },
-        reporters: [
-            'default',
-            'github-actions',
-            ['junit', { outputFile: '../../target/core-web-reports/dotcms-models.xml' }]
-        ],
+        // 'github-actions' is GATED, not dropped: an explicit reporters array replaces
+        // Vitest's environment-based auto-selection, so deleting the entry would take
+        // the CI annotations with it — while leaving it in emitted ::error commands on
+        // every local run, where nothing parses them. junit stays unconditional; CI
+        // consumes those XML files (generates_test_results in .github/test-matrix.yml).
+        reporters: process.env.GITHUB_ACTIONS
+            ? [
+                  'default',
+                  'github-actions',
+                  ['junit', { outputFile: '../../target/core-web-reports/dotcms-models.xml' }]
+              ]
+            : [
+                  'default',
+                  ['junit', { outputFile: '../../target/core-web-reports/dotcms-models.xml' }]
+              ],
         coverage: {
             reportsDirectory: '../../coverage/libs/dotcms-models',
             reporter: ['html', 'lcov', 'text'],

@@ -97,7 +97,11 @@
         },
         "test": {
             "cache": true,
-            "inputs": ["default", "^production"]
+            "inputs": ["default", "^production", { "externalDependencies": ["vitest"] }],
+            "outputs": [
+                "{workspaceRoot}/target/core-web-reports/{projectName}.xml",
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ]
         },
         "e2e": {
             "cache": true,

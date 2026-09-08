@@ -92,14 +92,33 @@ export default defineConfig(() => ({
                 ]
             }
         },
-        reporters: [
-            'default',
-            'github-actions',
-            [
-                'junit',
-                { outputFile: '../../../target/core-web-reports/portlets-dot-auth-portlet.xml' }
-            ]
-        ],
+        // 'github-actions' is GATED, not dropped: an explicit reporters array replaces
+        // Vitest's environment-based auto-selection, so deleting the entry would take
+        // the CI annotations with it — while leaving it in emitted ::error commands on
+        // every local run, where nothing parses them. junit stays unconditional; CI
+        // consumes those XML files (generates_test_results in .github/test-matrix.yml).
+        reporters: process.env.GITHUB_ACTIONS
+            ? [
+                  'default',
+                  'github-actions',
+                  [
+                      'junit',
+                      {
+                          outputFile:
+                              '../../../target/core-web-reports/portlets-dot-auth-portlet.xml'
+                      }
+                  ]
+              ]
+            : [
+                  'default',
+                  [
+                      'junit',
+                      {
+                          outputFile:
+                              '../../../target/core-web-reports/portlets-dot-auth-portlet.xml'
+                      }
+                  ]
+              ],
         coverage: {
             reportsDirectory: '../../../coverage/libs/portlets/dot-auth',
             reporter: ['html', 'lcov', 'text'],

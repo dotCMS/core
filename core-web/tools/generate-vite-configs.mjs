@@ -315,16 +315,45 @@ function environmentOptionsFor(env) {
  * is what the Angular compiler actually chokes on, with
  * `Cannot parse … Expected ',', got ':'`, and that took all 18 of sdk-react's files
  * down before any of them ran.
+ *
+ * ANGULAR IS DETECTED, NOT ASSUMED. This function used to `return tsx ? 'react' :
+ * 'angular'`, making Angular the fallback for anything that was neither Vue nor React.
+ * That is how apps/mcp-server and libs/sdk/{ai,client,uve,create-app} — plain
+ * TypeScript, not one `@angular/*` import between them — each ended up loading
+ * @analogjs/vite-plugin-angular plus the full Angular deps.inline guard: AOT/JIT
+ * transform machinery over files that never mention Angular. It shows up as `transform`
+ * time in `pnpm test:profile` and buys nothing.
+ *
+ * 'none' means no framework plugin and no Angular instance guard. Vite handles plain TS
+ * natively and tsconfigPaths still resolves the workspace, so nothing is lost.
  */
 function frameworkFor(dir) {
     let tsx = false;
     let vue = false;
+    let angular = false;
     const walk = (rel) => {
         for (const e of readdirSync(join(CW, rel), { withFileTypes: true })) {
             if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
-            if (e.isDirectory()) walk(`${rel}/${e.name}`);
-            else if (/\.(spec|test)\.tsx$/.test(e.name)) tsx = true;
+            const child = `${rel}/${e.name}`;
+            if (e.isDirectory()) {
+                walk(child);
+                continue;
+            }
+            if (/\.(spec|test)\.tsx$/.test(e.name)) tsx = true;
             else if (e.name.endsWith('.vue')) vue = true;
+
+            // An actual import, not the mere string '@angular/'. libs/sdk/create-app
+            // SCAFFOLDS Angular apps: its constants list '@angular/core',
+            // '@angular/forms' and friends as packages to write into someone else's
+            // package.json. A substring test reads that as an Angular project and hands
+            // it back the compiler it was trying to avoid.
+            if (!angular && /\.[cm]?ts$/.test(e.name)) {
+                try {
+                    if (/(?:from|import\s*\(?)\s*['"]@angular\//.test(readFileSync(join(CW, child), 'utf8'))) angular = true;
+                } catch {
+                    /* unreadable file tells us nothing */
+                }
+            }
         }
     };
     try {
@@ -333,7 +362,8 @@ function frameworkFor(dir) {
         /* nothing to walk */
     }
     if (vue) return 'vue';
-    return tsx ? 'react' : 'angular';
+    if (tsx) return 'react';
+    return angular ? 'angular' : 'none';
 }
 
 /**
@@ -388,18 +418,28 @@ function generate(dir) {
     // Only `/` is escaped in these package regexes. Escaping `@` as well produces
     // `\@`, which eslint's no-useless-escape rejects and which broke the pre-commit
     // hook on 8 generated configs.
-    const inline = [...angularInstanceGuard(), ...cfg.esm.map((p) => `/${p.replace(/\//g, '\\/')}/`)];
+    // The Angular instance guard is the expensive half of this list and only Angular
+    // projects need it. A plain-TS project still gets the workspace-source entry — its
+    // siblings are consumed from source through tsconfig paths, not from node_modules —
+    // plus whatever its old transformIgnorePatterns named.
+    const inline =
+        framework === 'none'
+            ? ['/[\\\\/](libs|apps)[\\\\/]/', ...cfg.esm.map((p) => `/${p.replace(/\//g, '\\/')}/`)]
+            : [...angularInstanceGuard(), ...cfg.esm.map((p) => `/${p.replace(/\//g, '\\/')}/`)];
 
     const pluginImport = {
         angular: "import angular from '@analogjs/vite-plugin-angular';",
         react: "import react from '@vitejs/plugin-react';",
-        vue: "import vue from '@vitejs/plugin-vue';"
+        vue: "import vue from '@vitejs/plugin-vue';",
+        none: ''
     }[framework];
-    const pluginCall = { angular: 'angular()', react: 'react()', vue: 'vue()' }[framework];
-    const generatorHint =
-        framework === 'angular'
-            ? '@nx/angular:library --unitTestRunner=vitest-analog'
-            : `@nx/${framework}:library --unitTestRunner=vitest`;
+    const pluginCall = { angular: 'angular()', react: 'react()', vue: 'vue()', none: null }[framework];
+    const generatorHint = {
+        angular: '@nx/angular:library --unitTestRunner=vitest-analog',
+        react: '@nx/react:library --unitTestRunner=vitest',
+        vue: '@nx/vue:library --unitTestRunner=vitest',
+        none: '@nx/js:library --unitTestRunner=vitest'
+    }[framework];
 
     const aliasBlock = cfg.aliases.length
         ? `
@@ -421,8 +461,7 @@ ${cfg.aliases
         : '';
 
     const body = `/// <reference types='vitest' />
-${pluginImport}
-import tsconfigPaths from 'vite-tsconfig-paths';
+${pluginImport ? `${pluginImport}\n` : ''}import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vite';
 
 import { resolve } from 'path';
@@ -438,9 +477,16 @@ import { resolve } from 'path';
  *                          surface does not change (FR-007). Nx defaults to jsdom.
  *   reporters / coverage   reproduce the CI artifacts the pipeline already consumes
  *                          (FR-008). Nx emits 'default' only.
- *   deps.inline            everything importing @angular/core must resolve to one
+${
+     framework === 'none'
+         ? ` *   no framework plugin    nothing here imports @angular/*, so this project gets neither
+ *                          the Angular plugin nor the Angular deps.inline guard — both
+ *                          were pure transform cost. deps.inline keeps only the
+ *                          workspace sources and this project's own ESM packages.`
+         : ` *   deps.inline            everything importing @angular/core must resolve to one
  *                          instance; without it components fail on 'ngModule' of
- *                          null. See the generator for the measurement.
+ *                          null. See the generator for the measurement.`
+ }
  */
 export default defineConfig(() => ({
     root: __dirname,
@@ -461,8 +507,7 @@ export default defineConfig(() => ({
     //             "Cannot find module '@dotcms/types'". Naming the base config takes
     //             the source paths and nothing else.
     plugins: [
-        ${pluginCall},
-        tsconfigPaths({ root: resolve(__dirname, '${workspaceRel}'), projects: ['tsconfig.base.json'] })
+${pluginCall ? `        ${pluginCall},\n` : ''}        tsconfigPaths({ root: resolve(__dirname, '${workspaceRel}'), projects: ['tsconfig.base.json'] })
     ],${aliasBlock}
     test: {
         name: '${name}',
@@ -488,11 +533,14 @@ export default defineConfig(() => ({
                 inline: [${inline.join(', ')}]
             }
         },
-        reporters: [
-            'default',
-            'github-actions',
-            ['junit', { outputFile: '${up}target/core-web-reports/${name}.xml' }]
-        ],
+        // 'github-actions' is GATED, not dropped: an explicit reporters array replaces
+        // Vitest's environment-based auto-selection, so deleting the entry would take
+        // the CI annotations with it — while leaving it in emitted ::error commands on
+        // every local run, where nothing parses them. junit stays unconditional; CI
+        // consumes those XML files (generates_test_results in .github/test-matrix.yml).
+        reporters: process.env.GITHUB_ACTIONS
+            ? ['default', 'github-actions', ['junit', { outputFile: '${up}target/core-web-reports/${name}.xml' }]]
+            : ['default', ['junit', { outputFile: '${up}target/core-web-reports/${name}.xml' }]],
         coverage: {
             reportsDirectory: '${up}${coverageDirWs}',
             reporter: ['html', 'lcov', 'text'],

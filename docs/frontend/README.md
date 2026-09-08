@@ -17,6 +17,7 @@
 | [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md) | Strict types, inference, `unknown`, `as const`, `#` private |
 | [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) | Writing tests: Spectator, Vitest, `byTestId`, `setInput`, `data-testid` |
 | [TESTING_REVIEW_RULES.md](./TESTING_REVIEW_RULES.md) | **Reviewing** test files: condensed violation checklist, severity-ranked |
+| [TESTING_PERFORMANCE.md](./TESTING_PERFORMANCE.md) | Suite **run time**: `pnpm test:profile`, the five-phase breakdown, which Vitest options are measured regressions, `isolate` policy |
 | [BREADCRUMBS.md](./BREADCRUMBS.md) | GlobalStore breadcrumbs: `addNewBreadcrumb`, `setBreadcrumbs`, `id`/`url` for tabs, duplicate prevention |
 | [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) | Shortcut registry: per-combination last-in-wins, bubble phase, adding one, selection semantics, event-synthesis testing hazards |
 
@@ -24,6 +25,7 @@
 
 - **Writing or fixing a test** → `TESTING_FRONTEND.md` (full patterns and examples)
 - **Reviewing someone else's test** → `TESTING_REVIEW_RULES.md` (condensed pass/fail rules)
+- **Making the suite faster** → `TESTING_PERFORMANCE.md` (measure first; several obvious knobs are measured regressions)
 
 ## Cross-cutting conventions
 

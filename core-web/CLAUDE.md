@@ -125,6 +125,12 @@ against a different runtime, and components fail with
 `Cannot read properties of null (reading 'firstCreatePass')`. Regenerate configs with
 `node tools/generate-vite-configs.mjs <project>` rather than hand-editing.
 
+### Suite run time
+
+Measure with `pnpm test:profile <project>` before changing any Vitest performance option — test
+execution is under 2% of the suite's work, and `pool: 'threads'` and `happy-dom` are both **measured
+regressions** here. See [Testing Performance](../docs/frontend/TESTING_PERFORMANCE.md).
+
 ### SignalStore Tests
 
 - Use `createServiceFactory` from Spectator
