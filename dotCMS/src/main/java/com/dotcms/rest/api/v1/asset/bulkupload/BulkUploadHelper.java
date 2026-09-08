@@ -43,6 +43,19 @@ public class BulkUploadHelper {
 
     private final JobQueueManagerAPI jobQueueManagerAPI;
 
+    /**
+     * Required by CDI, never called by this code.
+     * <p>
+     * {@code @ApplicationScoped} is a normal scope, so Weld injects a client proxy rather than the
+     * bean, and building that proxy needs a no-args constructor. Without one the container fails
+     * validation at deployment — {@code WELD-001435, not proxyable} — which does not degrade this
+     * endpoint, it stops dotCMS from starting at all. {@code BulkRefreshHelper} keeps the same
+     * constructor for the same reason.
+     */
+    public BulkUploadHelper() {
+        this.jobQueueManagerAPI = null;
+    }
+
     @Inject
     public BulkUploadHelper(final JobQueueManagerAPI jobQueueManagerAPI) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;

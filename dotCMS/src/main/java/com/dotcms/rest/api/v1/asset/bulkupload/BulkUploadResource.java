@@ -60,6 +60,12 @@ public class BulkUploadResource {
     private final WebResource webResource;
     private final BulkUploadHelper helper;
 
+    /** Required by CDI for proxying, never called by this code — see {@link BulkUploadHelper}. */
+    public BulkUploadResource() {
+        this.webResource = new WebResource();
+        this.helper = null;
+    }
+
     @Inject
     public BulkUploadResource(final BulkUploadHelper helper) {
         this.webResource = new WebResource();

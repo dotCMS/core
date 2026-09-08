@@ -9,7 +9,6 @@ import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -46,8 +45,17 @@ import org.junit.jupiter.api.Test;
 @EnableWeld
 public class BulkUploadResourceIT extends Junit5WeldBaseTest {
 
+    /**
+     * Injected, not constructed.
+     * <p>
+     * An earlier version did {@code new BulkUploadHelper(jobQueueManagerAPI)}, which passed while
+     * the real deployment failed: {@code @ApplicationScoped} needs a no-args constructor for Weld
+     * to proxy, and without one the container aborts at validation — WELD-001435 — so dotCMS did
+     * not start and every URL answered 404. Direct construction bypasses exactly the machinery that
+     * was broken. Taking the bean from the container is what makes these tests notice.
+     */
     @Inject
-    JobQueueManagerAPI jobQueueManagerAPI;
+    BulkUploadHelper helper;
 
     private static User admin;
     private static Host site;
@@ -59,9 +67,8 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
         site = new SiteDataGen().nextPersisted();
     }
 
-    /** Built per test rather than once: the injected API is an instance field. */
     private BulkUploadHelper helper() {
-        return new BulkUploadHelper(jobQueueManagerAPI);
+        return helper;
     }
 
     /** A folder the admin can add children to. */
