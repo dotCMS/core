@@ -1,6 +1,10 @@
 import { patchState, signalStoreFeature, type, withHooks, withMethods } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { Observable } from 'rxjs';
 
-import { effect, untracked } from '@angular/core';
+import { computed } from '@angular/core';
+
+import { debounceTime, skip, tap } from 'rxjs/operators';
 
 import { readJson, writeJson } from '@dotcms/data-access';
 
@@ -22,24 +26,15 @@ const PREFERENCES_KEY = 'dotcms.devtools.dotai.settings';
  */
 const PREFERENCES_VERSION = 2;
 
+/** Matches `withPersistedQuery`'s cadence. */
+const PERSIST_DEBOUNCE_MS = 300;
+
 /** Keys a stored blob gives up when it predates the current version. */
 const RE_DEFAULTED_KEYS: Record<number, ReadonlySet<string>> = {
     2: new Set(['settingsThreshold'])
 };
 
 /** Exactly the retrieval-panel controls. Nothing else is persisted. */
-type DotAiPreferences = Pick<
-    DotAiPortletState,
-    | 'settingsIndexName'
-    | 'settingsSite'
-    | 'settingsContentTypes'
-    | 'settingsThreshold'
-    | 'settingsOperator'
-    | 'settingsModel'
-    | 'settingsTemperature'
-    | 'settingsResponseLength'
->;
-
 const PREFERENCE_KEYS = [
     'settingsIndexName',
     'settingsSite',
@@ -51,8 +46,8 @@ const PREFERENCE_KEYS = [
     'settingsTemperature'
 ] as const;
 
-const pick = (state: DotAiPortletState): DotAiPreferences =>
-    PREFERENCE_KEYS.reduce((acc, key) => ({ ...acc, [key]: state[key] }), {} as DotAiPreferences);
+/** Derived from the list above, so the two cannot drift apart. */
+type DotAiPreferences = Pick<DotAiPortletState, (typeof PREFERENCE_KEYS)[number]>;
 
 /**
  * Persists the retrieval-settings panel between visits.
@@ -115,23 +110,29 @@ export function withDotAiPreferences() {
             onInit(store) {
                 store.hydratePreferences();
 
-                effect(() => {
-                    // Track every persisted field, then write outside the reactive context.
-                    const snapshot = pick({
-                        settingsIndexName: store.settingsIndexName(),
-                        settingsSite: store.settingsSite(),
-                        settingsContentTypes: store.settingsContentTypes(),
-                        settingsThreshold: store.settingsThreshold(),
-                        settingsOperator: store.settingsOperator(),
-                        settingsModel: store.settingsModel(),
-                        settingsTemperature: store.settingsTemperature(),
-                        settingsResponseLength: store.settingsResponseLength()
-                    } as DotAiPortletState);
+                const snapshot = computed<DotAiPreferences>(() =>
+                    PREFERENCE_KEYS.reduce(
+                        (acc, key) => ({ ...acc, [key]: store[key]() }),
+                        {} as DotAiPreferences
+                    )
+                );
 
-                    untracked(() =>
-                        writeJson(PREFERENCES_KEY, { ...snapshot, version: PREFERENCES_VERSION })
-                    );
-                });
+                // Debounced, like `withPersistedQuery`: the panel writes straight into the
+                // store on every keystroke and number-spinner tick, and each write is a
+                // synchronous localStorage round trip on the typing path. `skip(1)` drops the
+                // value just hydrated instead of writing it straight back.
+                rxMethod<DotAiPreferences>((source$: Observable<DotAiPreferences>) =>
+                    source$.pipe(
+                        skip(1),
+                        debounceTime(PERSIST_DEBOUNCE_MS),
+                        tap((value: DotAiPreferences) =>
+                            writeJson(PREFERENCES_KEY, {
+                                ...value,
+                                version: PREFERENCES_VERSION
+                            })
+                        )
+                    )
+                )(snapshot);
             }
         })
     );

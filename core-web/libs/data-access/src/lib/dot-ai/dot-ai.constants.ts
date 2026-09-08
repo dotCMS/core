@@ -7,9 +7,6 @@ export const AI_API_ENDPOINT = '/api/v1/ai';
 /** Workflow action used to publish a generated image as a dotAsset. */
 export const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
 
-export const AI_PLUGIN_KEY = {
-    NOT_SET: 'NOT SET'
-};
 
 /**
  * Returned by the backend in place of `providerConfig` when redaction itself fails. It is a

@@ -23,8 +23,27 @@ describe('withDotAiPreferences', () => {
 
     const createService = createServiceFactory({ service: TestStore });
 
-    beforeEach(() => localStorage.clear());
-    afterEach(() => localStorage.clear());
+    /**
+     * Writes are debounced, and rxMethod reads its signal source inside an effect. Flushing
+     * once on creation consumes the hydrated emission that `skip(1)` is there to drop —
+     * without it the first real change is the one skipped, and nothing is ever written.
+     */
+    const startTracking = () => spectator.flushEffects();
+
+    const settleWrite = () => {
+        spectator.flushEffects();
+        jest.advanceTimersByTime(400);
+    };
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        localStorage.clear();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        localStorage.clear();
+    });
 
     it('should restore stored settings on init (FR-018)', () => {
         localStorage.setItem(
@@ -89,18 +108,40 @@ describe('withDotAiPreferences', () => {
 
     it('should persist a changed setting', () => {
         spectator = createService();
+        startTracking();
 
         spectator.service.setSettings({ settingsThreshold: 0.9 });
-        spectator.flushEffects();
+        settleWrite();
 
         expect(JSON.parse(localStorage.getItem(KEY) ?? '{}').settingsThreshold).toBe(0.9);
     });
 
+    it('should coalesce rapid edits into a single write', () => {
+        // The panel writes into the store on every keystroke and spinner tick, and each write
+        // is a synchronous localStorage round trip.
+        spectator = createService();
+        startTracking();
+        const setItem = jest.spyOn(Storage.prototype, 'setItem');
+
+        spectator.service.setSettings({ settingsThreshold: 0.3 });
+        spectator.flushEffects();
+        spectator.service.setSettings({ settingsThreshold: 0.6 });
+        spectator.flushEffects();
+        spectator.service.setSettings({ settingsThreshold: 0.9 });
+        settleWrite();
+
+        expect(setItem).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(localStorage.getItem(KEY) ?? '{}').settingsThreshold).toBe(0.9);
+
+        setItem.mockRestore();
+    });
+
     it('should stamp the version when persisting, so the migration runs once', () => {
         spectator = createService();
+        startTracking();
 
         spectator.service.setSettings({ settingsThreshold: 0.9 });
-        spectator.flushEffects();
+        settleWrite();
 
         expect(JSON.parse(localStorage.getItem(KEY) ?? '{}').version).toBe(VERSION);
     });

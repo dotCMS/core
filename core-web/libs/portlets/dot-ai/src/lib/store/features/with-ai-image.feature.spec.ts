@@ -1,4 +1,4 @@
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, Subject, throwError } from 'rxjs';
 
@@ -121,7 +121,7 @@ describe('withAiImage', () => {
 
         it('should do nothing when there is no image', () => {
             service.createAndPublishContentlet = jest.fn();
-            store.clearImage();
+            patchState(store, { image: null });
 
             store.saveImage();
 

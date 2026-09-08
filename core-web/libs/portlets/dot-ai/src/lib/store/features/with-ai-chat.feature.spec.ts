@@ -34,12 +34,18 @@ describe('withAiChat', () => {
         ]
     });
 
+    /** Deltas are coalesced on a timer, so tests drive the clock rather than wait on it. */
+    const flushDeltas = () => jest.advanceTimersByTime(100);
+
     beforeEach(() => {
+        jest.useFakeTimers();
         spectator = createService();
         store = spectator.service;
         stream$ = new Subject<DotAiStreamEvent>();
         spectator.inject(DotAiCompletionsStreamService).stream = jest.fn().mockReturnValue(stream$);
     });
+
+    afterEach(() => jest.useRealTimers());
 
     const assistant = () => store.chatAnswer();
 
@@ -57,14 +63,19 @@ describe('withAiChat', () => {
 
         stream$.next({ type: 'delta', content: 'Hello' });
         stream$.next({ type: 'delta', content: ' world' });
+        flushDeltas();
 
         expect(assistant()?.content).toBe('Hello world');
     });
 
     it('should complete the turn when the stream ends', () => {
+        // No flush here on purpose: completing must land the buffered text itself, or the tail
+        // of every answer would be dropped.
         store.sendChat('q');
         stream$.next({ type: 'delta', content: 'done' });
         stream$.complete();
+
+        expect(assistant()?.content).toBe('done');
 
         expect(assistant()?.state).toBe(DOT_AI_ANSWER_STATE.COMPLETE);
         expect(store.isStreaming()).toBe(false);
@@ -108,6 +119,7 @@ describe('withAiChat', () => {
             store.stopChat();
 
             stream$.next({ type: 'delta', content: ' MORE' });
+            flushDeltas();
 
             expect(assistant()?.content).toBe('partial');
         });
@@ -126,6 +138,7 @@ describe('withAiChat', () => {
         // The first stream is unsubscribed, so a late delta cannot bleed into the new turn.
         stream$.next({ type: 'delta', content: ' LATE' });
         second$.next({ type: 'delta', content: 'two' });
+        flushDeltas();
 
         // Replaced, not appended: there is only ever one answer on screen.
         expect(assistant()?.content).toBe('two');

@@ -96,7 +96,6 @@ export interface DotAiPortletState {
     indexFragmentSnapshot: Record<string, number>;
     indexBuildSeeds: string[];
     indexesForbidden: boolean;
-    indexesStatus: ComponentStatus;
     settingsIndexSeeded: boolean;
 
     // shared retrieval settings
@@ -146,7 +145,6 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     indexFragmentSnapshot: {},
     indexBuildSeeds: [],
     indexesForbidden: false,
-    indexesStatus: ComponentStatus.INIT,
     settingsIndexSeeded: false,
 
     settingsIndexName: 'default',

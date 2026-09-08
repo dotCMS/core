@@ -100,7 +100,6 @@ describe('withAiEmbeddings', () => {
                 detail: 'Index -1 out of bounds for length 0'
             });
             expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
-            expect(store.indexesStatus()).not.toBe('ERROR');
         });
 
         it('should flag a build that matched nothing rather than looking successful', () => {

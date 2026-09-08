@@ -45,10 +45,6 @@ export function withAiImage() {
                     patchState(store, { imageOrientation });
                 },
 
-                clearImage(): void {
-                    patchState(store, { image: null });
-                },
-
                 generateImage: rxMethod<string>(
                     pipe(
                         exhaustMap((prompt) => {

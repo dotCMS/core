@@ -3,13 +3,12 @@ import { MarkdownModule } from 'ngx-markdown';
 import { Component, inject, signal, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { SplitterModule } from 'primeng/splitter';
 
 import { DotAgentThinkingComponent, DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DOT_AI_ANSWER_STATE } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAiSettingsPanelComponent } from '../../components/dot-ai-settings-panel/dot-ai-settings-panel.component';
+import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 
 /**
@@ -29,11 +28,10 @@ import { DotAiStore } from '../../store/dot-ai.store';
     selector: 'dot-ai-chat',
     imports: [
         ButtonModule,
-        SplitterModule,
         MarkdownModule,
         DotAgentThinkingComponent,
         DotAiPromptInputComponent,
-        DotAiSettingsPanelComponent,
+        DotAiWorkspaceComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-ai-chat.component.html',
@@ -43,7 +41,6 @@ export default class DotAiChatComponent {
     protected readonly store = inject(DotAiStore);
 
     protected readonly states = DOT_AI_ANSWER_STATE;
-    protected readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
 
     protected readonly $draft = signal('');
 

@@ -10,12 +10,12 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, interval, pipe, Subscription } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, effect, inject, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, inject, untracked } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotAiEmbeddingsService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { ComponentStatus, DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
+import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
 
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 import { deriveIndexStatuses, toIndexOptions } from '../../utils/dot-ai-index.utils';
@@ -67,7 +67,6 @@ export function withAiIndexes() {
                         {}
                     ),
                     indexesForbidden: false,
-                    indexesStatus: ComponentStatus.LOADED,
                     // Seed the picker once, so a later poll cannot yank the user's choice.
                     ...(store.settingsIndexSeeded() || !indexes.length
                         ? {}
@@ -89,15 +88,13 @@ export function withAiIndexes() {
                                     if (error?.status === 403) {
                                         patchState(store, {
                                             indexesForbidden: true,
-                                            indexes: [],
-                                            indexesStatus: ComponentStatus.LOADED
+                                            indexes: []
                                         });
 
                                         return EMPTY;
                                     }
 
                                     httpErrorManager.handle(error);
-                                    patchState(store, { indexesStatus: ComponentStatus.LOADED });
 
                                     return EMPTY;
                                 })
@@ -129,6 +126,14 @@ export function withAiIndexes() {
                 // settles — an idle screen should not talk to the server (FR-027).
                 let poll: Subscription | null = null;
 
+                // The effect does NOT own this subscription: destroying an effect does not
+                // re-run its body, so the stop branch below never fires on teardown and a poll
+                // outstanding when you leave the screen would tick on for the page's lifetime.
+                inject(DestroyRef).onDestroy(() => {
+                    poll?.unsubscribe();
+                    poll = null;
+                });
+
                 effect(() => {
                     const building = Object.values(store.indexStatuses()).includes(
                         DOT_AI_INDEX_STATUS.BUILDING
@@ -147,10 +152,6 @@ export function withAiIndexes() {
                         }
                     });
                 });
-            },
-            onDestroy() {
-                // The effect's teardown owns the subscription; nothing to do beyond letting
-                // the injection context dispose it.
             }
         })
     );

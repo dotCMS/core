@@ -38,6 +38,12 @@ import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
  * every stream failure is recoverable by just asking again. Same reasoning, and the same
  * precedent, as `runError` in the a11y run store.
  */
+/**
+ * How long deltas accumulate before landing in the store. Fast enough to read as continuous,
+ * slow enough that a long answer is parsed a few times a second rather than once per token.
+ */
+const DELTA_FLUSH_MS = 80;
+
 export function withAiChat() {
     return signalStoreFeature(
         type<{
@@ -52,24 +58,53 @@ export function withAiChat() {
             const streamService = inject(DotAiCompletionsStreamService);
             const slot = new SubscriptionSlot();
 
-            /** Rewrites the current answer; every stream event lands through here. */
-            const patchAnswer = (change: Partial<DotAiChatAnswer>, onlyWhileStreaming = true) => {
+            /** Buffered deltas, and the handle of the flush they are waiting on. */
+            let pending = '';
+            let flushHandle: ReturnType<typeof setTimeout> | null = null;
+
+            /**
+             * Rewrites the current answer.
+             *
+             * Only while streaming: after a stop, late frames from a stream still winding down
+             * must not resurrect the answer.
+             */
+            const patchAnswer = (change: Partial<DotAiChatAnswer>) => {
                 const current = store.chatAnswer();
 
-                if (!current) {
-                    return;
-                }
-
-                // After a stop, late frames from a stream still winding down must not
-                // resurrect the answer.
-                if (onlyWhileStreaming && current.state !== DOT_AI_ANSWER_STATE.STREAMING) {
+                if (!current || current.state !== DOT_AI_ANSWER_STATE.STREAMING) {
                     return;
                 }
 
                 patchState(store, { chatAnswer: { ...current, ...change } });
             };
 
+            const flushDeltas = () => {
+                flushHandle = null;
+
+                if (!pending) {
+                    return;
+                }
+
+                const text = pending;
+                pending = '';
+
+                patchAnswer({ content: (store.chatAnswer()?.content ?? '') + text });
+            };
+
+            const cancelFlush = () => {
+                if (flushHandle) {
+                    clearTimeout(flushHandle);
+                    flushHandle = null;
+                }
+
+                pending = '';
+            };
+
             const finish = (state: DotAiAnswerState, error?: string) => {
+                // Land whatever is buffered before the state change closes patchAnswer's guard.
+                flushDeltas();
+                cancelFlush();
+
                 patchAnswer({ state, ...(error ? { error } : {}) });
                 patchState(store, { chatStreaming: false });
             };
@@ -81,6 +116,8 @@ export function withAiChat() {
                     if (!trimmed) {
                         return;
                     }
+
+                    cancelFlush();
 
                     // Replaces whatever was on screen. Each submit is its own request.
                     patchState(store, {
@@ -101,13 +138,13 @@ export function withAiChat() {
                                         return;
                                     }
 
-                                    const current = store.chatAnswer();
-
-                                    if (!current) {
-                                        return;
-                                    }
-
-                                    patchAnswer({ content: current.content + event.content });
+                                    // Deltas are coalesced rather than written per frame: the
+                                    // answer renders through ngx-markdown, which re-parses and
+                                    // re-sanitises the whole string on every change. Writing per
+                                    // token makes that O(n^2) in answer length and wipes any text
+                                    // selection each frame.
+                                    pending += event.content;
+                                    flushHandle ??= setTimeout(flushDeltas, DELTA_FLUSH_MS);
                                 },
                                 error: (error: unknown) =>
                                     finish(
@@ -123,11 +160,6 @@ export function withAiChat() {
                 stopChat(): void {
                     slot.cancel();
                     finish(DOT_AI_ANSWER_STATE.STOPPED);
-                },
-
-                clearChat(): void {
-                    slot.cancel();
-                    patchState(store, { chatAnswer: null, chatStreaming: false });
                 }
             };
         }),
