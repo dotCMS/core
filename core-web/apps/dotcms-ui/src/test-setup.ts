@@ -3,6 +3,7 @@
 /* eslint-disable no-console */
 
 // This file is required by jest and is used for setup for each test file.
+import '@analogjs/vitest-angular/setup-zone';
 import '@angular/compiler';
 import '@analogjs/vitest-angular/setup-snapshots';
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';

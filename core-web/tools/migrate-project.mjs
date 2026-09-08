@@ -128,8 +128,8 @@ function migrateTestSetup(dir, dry) {
 
     // 1. Drop the old bootstrap IMPORT lines, one line at a time.
     s = s.replace(/^import\s*\{\s*setupZoneTestEnv\s*\}\s*from\s*'jest-preset-angular\/setup-env\/zone';[ \t]*\r?\n/m, '');
-    s = s.replace(/^import\s*'@analogjs\/vitest-angular\/setup-zone';[ \t]*\r?\n/m, '');
-    s = s.replace(/^import\s*'zone\.js(?:\/testing)?';[ \t]*\r?\n/gm, '');
+    // setup-zone is KEPT — it is the piece that patches Vitest for zone.js.
+    // NOT stripping the zone imports: they are required (see the head block below).
     s = s.replace(/^import\s*\{\s*getTestBed\s*\}\s*from\s*'@angular\/core\/testing';[ \t]*\r?\n/m, '');
     s = s.replace(/^import\s*\{[^}]*platformBrowserTesting[^}]*\}\s*from\s*'@angular\/platform-browser\/testing';[ \t]*\r?\n/m, '');
 
@@ -143,6 +143,18 @@ function migrateTestSetup(dir, dry) {
 
     // 3. Prepend the imports Nx's generator puts first, without duplicating them.
     const head = [];
+    // Analog's setup-zone FIRST, and it replaces raw `import 'zone.js/testing'`.
+    //
+    // Three bootstraps were measured. Nx's generated `setupTestBed` alone leaves 88
+    // "zone-testing.js is needed for the fakeAsync() test helper" errors, and because
+    // those fail at file level the projects report fewer tests with ZERO failures —
+    // the silent-skip shape. Raw zone.js imports fix the loading (96% of the baseline
+    // running) but do not patch Vitest, so 1,653 tests then fail with
+    // "Expected to be running in 'ProxyZone'". setup-zone does both: on data-access,
+    // ProxyZone errors went 104 -> 2 and 850 of 851 tests pass.
+    //
+    // So it is setup-zone AND setupTestBed, not either one.
+    if (!s.includes('@analogjs/vitest-angular/setup-zone')) head.push("import '@analogjs/vitest-angular/setup-zone';");
     if (!/^import '@angular\/compiler';/m.test(s)) head.push("import '@angular/compiler';");
     if (!s.includes('@analogjs/vitest-angular/setup-snapshots')) head.push("import '@analogjs/vitest-angular/setup-snapshots';");
     if (!s.includes("from '@analogjs/vitest-angular/setup-testbed'")) {

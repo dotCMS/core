@@ -37,7 +37,7 @@ export default defineConfig(() => ({
     plugins: [angular(), nxViteTsPaths()],
     resolve: {
         alias: [
-            { find: "^@primeuix/motion$", replacement: resolve(__dirname, "./src/__mocks__/primeuix-motion.ts") }
+            { find: /^@primeuix\/motion$/, replacement: resolve(__dirname, "./src/__mocks__/primeuix-motion.ts") }
         ]
     },
     test: {
@@ -49,7 +49,7 @@ export default defineConfig(() => ({
         setupFiles: ['src/test-setup.ts'],
         server: {
             deps: {
-                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/]
+                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /ng-mocks/, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/]
             }
         },
         reporters: [

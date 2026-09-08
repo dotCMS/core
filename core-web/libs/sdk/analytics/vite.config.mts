@@ -41,7 +41,7 @@ export default defineConfig(() => ({
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         server: {
             deps: {
-                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/]
+                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /ng-mocks/, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/]
             }
         },
         reporters: [

@@ -67,6 +67,13 @@ const ANGULAR_INSTANCE_GUARD = [
     '/[\\\\/](libs|apps)[\\\\/]/',
     '/@angular\\//',
     '/@analogjs\\//',
+    // ng-mocks compiles mock modules with Angular's JIT compiler at test time, so it
+    // must see the same @angular/core instance as the specs. Externalised, its
+    // generated factories call inject() against a different runtime and Angular
+    // reports NG0203 — 1,585 of those across the suite, and the stack traces show two
+    // Angular module paths interleaved. Measured on image-editor: 282 of 355 passing
+    // without this entry, 355 of 355 with it.
+    '/ng-mocks/',
     '/@openng\\/spectator/',
     '/zone\\.js/',
     '/primeng/',
@@ -74,20 +81,47 @@ const ANGULAR_INSTANCE_GUARD = [
     '/@ngrx/'
 ];
 
-/** Read from the working tree, falling back to git so this script stays re-runnable. */
+/**
+ * Read from the working tree, falling back to git history so this script stays
+ * re-runnable after the jest configs are deleted.
+ *
+ * Finds the commit that DELETED the file and reads its parent, rather than probing a
+ * fixed number of refs back. An earlier version tried HEAD, HEAD~1 and HEAD~2 — which
+ * worked until a third commit shifted the refs, after which the generator silently
+ * reported "0 config(s)" and regenerated nothing. It looked like success.
+ */
 function readMaybeFromGit(relPath) {
     const abs = join(CW, relPath);
     if (existsSync(abs)) return readFileSync(abs, 'utf8');
-    for (const ref of ['HEAD', 'HEAD~1', 'HEAD~2']) {
-        try {
-            return execFileSync('git', ['show', `${ref}:core-web/${relPath}`], {
-                cwd: CW,
-                encoding: 'utf8',
-                stdio: ['pipe', 'pipe', 'ignore']
-            });
-        } catch {
-            /* try the next ref */
+
+    // Git commands run from the REPO ROOT, not from core-web: a pathspec is resolved
+    // relative to cwd, so passing `core-web/...` while inside core-web matched nothing
+    // and rev-list came back empty — which the caller read as "no jest config" and
+    // silently generated zero files.
+    const repoRoot = resolve(CW, '..');
+    const gitPath = `core-web/${relPath}`;
+    try {
+        // The most recent commit that touched this path; for a deleted file that is
+        // the deleting commit, so its parent still holds the content.
+        const sha = execFileSync('git', ['log', '--diff-filter=D', '--format=%H', '-1', '--', gitPath], {
+            cwd: repoRoot,
+            encoding: 'utf8',
+            stdio: ['pipe', 'pipe', 'ignore']
+        }).trim();
+        if (!sha) return null;
+        for (const ref of [`${sha}^`, sha]) {
+            try {
+                return execFileSync('git', ['show', `${ref}:${gitPath}`], {
+                    cwd: repoRoot,
+                    encoding: 'utf8',
+                    stdio: ['pipe', 'pipe', 'ignore']
+                });
+            } catch {
+                /* the file was added or deleted at this ref; try the parent */
+            }
         }
+    } catch {
+        /* not in history at all */
     }
     return null;
 }
@@ -248,7 +282,12 @@ function generate(dir) {
 ${cfg.aliases
     .map(
         (a) =>
-            `            { find: ${JSON.stringify(a.find)}, replacement: resolve(__dirname, ${JSON.stringify(a.replacement.replace('<rootDir>/', './'))}) }`
+            // Jest's moduleNameMapper keys are REGEX; Vite's `find` is a literal string
+            // unless given a RegExp. Emitting the pattern as a string left `^` and `$`
+            // as characters to match, so `^virtual:sdk-version$` never matched and 8 of
+            // sdk-client's 15 test files failed to load — silently, with 0 reported
+            // failures, because a file that cannot load reports no tests at all.
+            `            { find: ${/[\^$\\[\]()|*+?]/.test(a.find) ? `/${a.find.replace(/\//g, '\\/')}/`  /* a bare / would close the literal: @primeuix/motion */ : JSON.stringify(a.find)}, replacement: resolve(__dirname, ${JSON.stringify(a.replacement.replace('<rootDir>/', './'))}) }`
     )
     .join(',\n')}
         ]
