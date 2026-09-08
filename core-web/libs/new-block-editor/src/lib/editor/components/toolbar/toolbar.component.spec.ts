@@ -87,11 +87,13 @@ describe('ToolbarComponent — emoji is never gated (#37340)', () => {
     });
 
     const emojiButton = () =>
-        spectator.queryAll('button').find((button) =>
-            button.querySelector('.material-symbols-outlined')?.textContent?.includes(
-                'emoji_emotions'
-            )
-        );
+        spectator
+            .queryAll('button')
+            .find((button) =>
+                button
+                    .querySelector('.material-symbols-outlined')
+                    ?.textContent?.includes('emoji_emotions')
+            );
 
     it('renders the emoji button on an UNRESTRICTED field', () => {
         buildWith(undefined);

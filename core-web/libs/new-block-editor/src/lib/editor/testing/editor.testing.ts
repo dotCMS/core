@@ -36,15 +36,17 @@ export function createTestEditor(
     const dotMessageService = { get: (key: string) => key } as unknown as DotMessageService;
 
     // The slash-command extension calls these during plugin construction; a bare `{}` throws.
-    const menuService = options.menuService ?? ({
-        attachEditor: () => undefined,
-        detachEditor: () => undefined,
-        filterItems: () => [],
-        open: () => undefined,
-        update: () => undefined,
-        close: () => undefined,
-        handleKeyDown: () => false
-    } as unknown as SlashMenuService);
+    const menuService =
+        options.menuService ??
+        ({
+            attachEditor: () => undefined,
+            detachEditor: () => undefined,
+            filterItems: () => [],
+            open: () => undefined,
+            update: () => undefined,
+            close: () => undefined,
+            handleKeyDown: () => false
+        } as unknown as SlashMenuService);
 
     const extensions = runInInjectionContext(injector, () =>
         createEditorExtensions(menuService, options.allowedBlocks, injector, dotMessageService)
