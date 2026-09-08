@@ -36,7 +36,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Gatherers;
 
 /**
  * Utility class to populate the contentlet_as_json column in the contentlet table.
@@ -276,7 +278,6 @@ public class PopulateContentletAsJSONUtil {
                                  final MutableInt totalRecords
     ) throws SQLException, DotDataException {
 
-        final Collection<Params> paramsInsert = new ArrayList<>();
         final MutableInt totalInsertAffected = new MutableInt(0);
 
         var foundData = false;
@@ -324,14 +325,12 @@ public class PopulateContentletAsJSONUtil {
                                 )// Transform the contentlets into a list of json strings
                                 .orElse(Collections.emptyList());
 
-                        for (var jsonData : jsonDataArray) {
-                            // Insert the json representation of the contentlet into the temp table
-                            this.processInsertRecord(jsonData._1(), jsonData._2(), paramsInsert, totalInsertAffected);
-                        }
+                        final List<Params> params = jsonDataArray.stream()
+                                .map(jsonData -> new Params(jsonData._1(), jsonData._2()))
+                                .collect(Collectors.toList());
 
-                        if (!paramsInsert.isEmpty()) {
-                            this.doInsertBatch(paramsInsert, totalInsertAffected);
-                        }
+                        inBatchesOf(params,
+                                batch -> this.doInsertBatch(batch, totalInsertAffected));
 
                     } else {
                         hasRows = false;
@@ -361,7 +360,6 @@ public class PopulateContentletAsJSONUtil {
     @WrapInTransaction
     private void processRecords() throws SQLException, DotDataException {
 
-        final Collection<Params> paramsUpdate = new ArrayList<>();
         final MutableInt totalUpdateAffected = new MutableInt(0);
 
         Logger.info(this, "Updating records with missing Contentlet as JSON of any sub-type");
@@ -392,17 +390,14 @@ public class PopulateContentletAsJSONUtil {
 
                         hasRows = true;
 
-                        loadedResults.forEach(
-                                record -> this.processUpdateRecord(
+                        final List<Params> params = loadedResults.stream()
+                                .map(record -> toUpdateParams(
                                         (String) record.get("inode"),
-                                        (String) record.get("json"),
-                                        paramsUpdate,
-                                        totalUpdateAffected)
-                        );
+                                        (String) record.get("json")))
+                                .collect(Collectors.toList());
 
-                        if (!paramsUpdate.isEmpty()) {
-                            this.doUpdateBatch(paramsUpdate, totalUpdateAffected);
-                        }
+                        inBatchesOf(params,
+                                batch -> this.doUpdateBatch(batch, totalUpdateAffected));
 
                     } else {
                         hasRows = false;
@@ -456,20 +451,6 @@ public class PopulateContentletAsJSONUtil {
      * @param totalInsertAffected A MutableInt object to keep track of the total number of affected
      *                            rows in batch inserts.
      */
-    private void processInsertRecord(
-            final String inode,
-            final String json,
-            final Collection<Params> paramsInsert,
-            final MutableInt totalInsertAffected
-    ) {
-
-        paramsInsert.add(new Params(inode, json));
-
-        // Execute the batch for the inserts if we have reached the max batch size
-        if (paramsInsert.size() >= MAX_BATCH_SIZE) {
-            this.doInsertBatch(paramsInsert, totalInsertAffected);
-        }
-    }
 
     /**
      * Processes a record by preparing the parameters for a batch update.
@@ -482,12 +463,12 @@ public class PopulateContentletAsJSONUtil {
      *                            rows in batch updates.
      * @throws JsonProcessingException If there is an error while processing the JSON.
      */
-    private void processUpdateRecord(
-            final String inode,
-            final String json,
-            final Collection<Params> paramsUpdate,
-            final MutableInt totalUpdateAffected
-    ) {
+    /**
+     * Builds the update parameters for one record. Formerly this appended to a shared accumulator
+     * and flushed it when full; it is now a pure mapping, and the batching lives in
+     * {@link #inBatchesOf(List, Consumer)}.
+     */
+    private static Params toUpdateParams(final String inode, final String json) {
 
         final Object contentletAsJSON;
         if (DbConnectionFactory.isPostgres()) {
@@ -498,12 +479,27 @@ public class PopulateContentletAsJSONUtil {
             contentletAsJSON = json;
         }
 
-        paramsUpdate.add(new Params(contentletAsJSON, inode));
+        return new Params(contentletAsJSON, inode);
+    }
 
-        // Execute the batch for the updates if we have reached the max batch size
-        if (paramsUpdate.size() >= MAX_BATCH_SIZE) {
-            this.doUpdateBatch(paramsUpdate, totalUpdateAffected);
-        }
+    /**
+     * Feeds {@code params} to {@code executor} in batches of {@link #MAX_BATCH_SIZE}, the final
+     * partial batch included.
+     *
+     * <p>This replaces a mutable accumulator that was passed down into the per-record method: that
+     * method appended to it and flushed when it filled, and the caller had to remember a second
+     * flush afterwards for whatever was left. The cut and the leftover were two pieces of code in
+     * two places, and keeping them in step was a convention. {@code windowFixed} emits the short
+     * final window on its own, so they become one expression.</p>
+     *
+     * <p>Each window is an unmodifiable list, which is why the batch executors no longer clear
+     * their argument — they never owned the buffer, they only appeared to.</p>
+     */
+    static void inBatchesOf(final List<Params> params, final Consumer<List<Params>> executor) {
+
+        params.stream()
+                .gather(Gatherers.windowFixed(MAX_BATCH_SIZE))
+                .forEach(executor);
     }
 
     /**
@@ -543,7 +539,7 @@ public class PopulateContentletAsJSONUtil {
     /**
      * Executes the batch of updates to fill the contentlet_as_json column.
      */
-    private void doUpdateBatch(final Collection<Params> paramsUpdate, final MutableInt totalUpdateAffected) {
+    private void doUpdateBatch(final List<Params> paramsUpdate, final MutableInt totalUpdateAffected) {
 
         try {
             final List<Integer> batchResult =
@@ -556,15 +552,13 @@ public class PopulateContentletAsJSONUtil {
         } catch (DotDataException e) {
             Logger.error(this, "Couldn't update these rows: " + paramsUpdate);
             Logger.error(this, e.getMessage(), e);
-        } finally {
-            paramsUpdate.clear();
         }
     }
 
     /**
      * Executes the batch of inserts to populate the temporal tmp_contentlet_json table.
      */
-    private void doInsertBatch(final Collection<Params> paramsInsert, final MutableInt totalInsertAffected) {
+    private void doInsertBatch(final List<Params> paramsInsert, final MutableInt totalInsertAffected) {
 
         try {
             final List<Integer> batchResult =
@@ -577,8 +571,6 @@ public class PopulateContentletAsJSONUtil {
         } catch (DotDataException e) {
             Logger.error(this, "Couldn't insert these rows: " + paramsInsert);
             Logger.error(this, e.getMessage(), e);
-        } finally {
-            paramsInsert.clear();
         }
     }
 
