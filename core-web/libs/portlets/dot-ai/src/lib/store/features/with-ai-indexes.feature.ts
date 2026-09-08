@@ -7,10 +7,10 @@ import {
     withMethods
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, interval, pipe, Subscription } from 'rxjs';
+import { EMPTY, interval, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, DestroyRef, effect, inject, untracked } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
@@ -123,40 +123,38 @@ export function withAiIndexes() {
                 }
             };
         }),
+        withMethods((store) => ({
+            /**
+             * Re-fetches while a build is outstanding, and stops when none is.
+             *
+             * Without a poll the derivation never runs again: statuses come from a
+             * fragment-count delta, so a BUILDING index only settles to READY if something
+             * re-fetches. An idle screen must not talk to the server (FR-027).
+             *
+             * `switchMap` over the flag is what makes both halves automatic — going false
+             * unsubscribes the interval, and `rxMethod` unsubscribes on the store's own
+             * teardown. The earlier `effect` + manual `Subscription` needed a `DestroyRef`
+             * alongside it, because destroying an effect does not re-run its body, so the
+             * stop branch never fired on teardown and an outstanding poll ticked on for the
+             * page's lifetime.
+             */
+            pollIndexes: rxMethod<boolean>(
+                pipe(
+                    switchMap((building) =>
+                        building
+                            ? interval(INDEX_POLL_MS).pipe(tap(() => store.loadIndexes()))
+                            : EMPTY
+                    )
+                )
+            )
+        })),
         withHooks({
             onInit(store) {
-                // Without this the derivation never runs again: statuses are computed from a
-                // fragment-count delta, so a BUILDING index only settles to READY if something
-                // re-fetches. Poll only while a build is outstanding, and stop as soon as it
-                // settles — an idle screen should not talk to the server (FR-027).
-                let poll: Subscription | null = null;
-
-                // The effect does NOT own this subscription: destroying an effect does not
-                // re-run its body, so the stop branch below never fires on teardown and a poll
-                // outstanding when you leave the screen would tick on for the page's lifetime.
-                inject(DestroyRef).onDestroy(() => {
-                    poll?.unsubscribe();
-                    poll = null;
-                });
-
-                effect(() => {
-                    const building = Object.values(store.indexStatuses()).includes(
-                        DOT_AI_INDEX_STATUS.BUILDING
-                    );
-
-                    untracked(() => {
-                        if (building && !poll) {
-                            poll = interval(INDEX_POLL_MS).subscribe(() => store.loadIndexes());
-
-                            return;
-                        }
-
-                        if (!building && poll) {
-                            poll.unsubscribe();
-                            poll = null;
-                        }
-                    });
-                });
+                store.pollIndexes(
+                    computed(() =>
+                        Object.values(store.indexStatuses()).includes(DOT_AI_INDEX_STATUS.BUILDING)
+                    )
+                );
             }
         })
     );

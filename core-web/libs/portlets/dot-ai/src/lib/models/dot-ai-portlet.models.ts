@@ -94,6 +94,14 @@ export interface DotAiPortletState {
      * is what made the not-configured banner flash on every load.
      */
     configLoaded: boolean;
+    /**
+     * Whether the load itself failed, as opposed to coming back saying "no provider".
+     *
+     * Without this the two are indistinguishable: a transient 500 leaves `isConfigured`
+     * false, which showed the permanent "dotAI is not configured" banner to someone whose
+     * instance is configured perfectly well.
+     */
+    configLoadFailed: boolean;
     configHost: string;
     settings: Record<string, string>;
     chatModels: string[];
@@ -173,6 +181,7 @@ export type DotAiRetrievalSettings = Pick<DotAiPortletState, (typeof DOT_AI_SETT
 export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     isConfigured: false,
     configLoaded: false,
+    configLoadFailed: false,
     configHost: '',
     settings: {},
     chatModels: [],

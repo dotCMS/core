@@ -153,7 +153,7 @@ describe('withAiConfig', () => {
         });
 
         it('should mark the config loaded even when the request fails', () => {
-            // Otherwise a failed load leaves the banner permanently suppressed.
+            // Otherwise a failed load leaves the screen waiting forever (FR-051).
             spectator.inject(DotAiConfigService).getResolvedConfig = jest
                 .fn()
                 .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
@@ -161,7 +161,35 @@ describe('withAiConfig', () => {
             store.loadConfig();
 
             expect(store.configLoaded()).toBe(true);
-            expect(store.showNotConfigured()).toBe(true);
+        });
+
+        it('should not claim the instance is unconfigured when the load simply failed', () => {
+            // A transient 500 leaves isConfigured false too, so the two were
+            // indistinguishable — and the user was told to configure something that already
+            // is configured.
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+            store.loadConfig();
+
+            expect(store.configUnavailable()).toBe(true);
+            expect(store.showNotConfigured()).toBe(false);
+        });
+
+        it('should clear a previous failure once a load succeeds', () => {
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+            store.loadConfig();
+
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(of(resolved()));
+            store.loadConfig();
+
+            expect(store.configUnavailable()).toBe(false);
+            expect(store.showNotConfigured()).toBe(false);
         });
     });
 });

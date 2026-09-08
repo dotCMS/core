@@ -40,8 +40,17 @@ export function withAiConfig() {
              * unconfigured because nothing has loaded yet, so binding the banner straight to
              * `isConfigured` renders it during every initial async window and then animates
              * it away — a flash on every load (FR-047).
+             *
+             * Also gated on the load having succeeded. A failed request leaves `isConfigured`
+             * false too, so a transient 500 told the user to go and configure something that
+             * is already configured; `configUnavailable` says what actually happened.
              */
-            showNotConfigured: computed(() => store.configLoaded() && !store.isConfigured()),
+            showNotConfigured: computed(
+                () => store.configLoaded() && !store.configLoadFailed() && !store.isConfigured()
+            ),
+
+            /** The config could not be read at all — retryable, unlike "no provider". */
+            configUnavailable: computed(() => store.configLoadFailed()),
 
             /** The resolved config reassembled from state, for the Config Values screen. */
             resolvedConfig: computed<DotAiResolvedConfig>(() => ({
@@ -75,6 +84,7 @@ export function withAiConfig() {
 
                                     patchState(store, {
                                         configLoaded: true,
+                                        configLoadFailed: false,
                                         isConfigured: config.isConfigured,
                                         configHost: config.configHost,
                                         settings: config.settings,
@@ -87,8 +97,12 @@ export function withAiConfig() {
                                 catchError((error: HttpErrorResponse) => {
                                     httpErrorManager.handle(error);
                                     // Loaded, just unsuccessfully — otherwise a failed request
-                                    // would suppress the banner forever.
-                                    patchState(store, { configLoaded: true });
+                                    // would suppress the banner forever (FR-051). The failure
+                                    // is recorded so it does not masquerade as "no provider".
+                                    patchState(store, {
+                                        configLoaded: true,
+                                        configLoadFailed: true
+                                    });
 
                                     return EMPTY;
                                 })

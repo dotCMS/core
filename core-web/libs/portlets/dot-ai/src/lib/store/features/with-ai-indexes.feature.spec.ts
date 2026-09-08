@@ -147,4 +147,46 @@ describe('withAiIndexes', () => {
             expect(store.settingsIndexName()).toBe('blogs');
         });
     });
+
+    describe('polling while a build is outstanding (FR-027)', () => {
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
+        it('should not talk to the server while nothing is building', () => {
+            stubIndexes([index({ name: 'blogs' })]);
+            store.loadIndexes();
+            spectator.flushEffects();
+
+            jest.advanceTimersByTime(20000);
+
+            // Only the explicit load — an idle screen must stay quiet.
+            expect(spectator.inject(DotAiEmbeddingsService).getIndexes).toHaveBeenCalledTimes(1);
+        });
+
+        it('should re-fetch until the build settles, then stop', () => {
+            stubIndexes([index({ name: 'blogs', fragments: 10 })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+            spectator.flushEffects();
+
+            // Count still moving, so still building.
+            stubIndexes([index({ name: 'blogs', fragments: 20 })]);
+            jest.advanceTimersByTime(5000);
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+
+            // Unchanged: the build has finished and the poll must unsubscribe itself.
+            stubIndexes([index({ name: 'blogs', fragments: 20 })]);
+            jest.advanceTimersByTime(5000);
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.READY);
+            spectator.flushEffects();
+
+            const calls = (spectator.inject(DotAiEmbeddingsService).getIndexes as jest.Mock).mock
+                .calls.length;
+            jest.advanceTimersByTime(20000);
+
+            expect(
+                (spectator.inject(DotAiEmbeddingsService).getIndexes as jest.Mock).mock.calls.length
+            ).toBe(calls);
+        });
+    });
 });
