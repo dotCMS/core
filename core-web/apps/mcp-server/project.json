@@ -17,7 +17,7 @@
             "options": {
                 "commands": [
                     "node scripts/check-tools-dir.mjs",
-                    "npx xmcp build",
+                    "xmcp build",
                     "cp package.json ../../dist/apps/mcp-server/",
                     "cp README.md ../../dist/apps/mcp-server/"
                 ],
@@ -35,7 +35,7 @@
                 }
             ],
             "options": {
-                "command": "npx xmcp dev",
+                "command": "xmcp dev",
                 "cwd": "apps/mcp-server"
             }
         },
