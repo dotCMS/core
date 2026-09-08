@@ -42,13 +42,26 @@ export default defineConfig(() => ({
         setupFiles: ['src/test-setup.ts'],
         server: {
             deps: {
-                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /ng-mocks/, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/]
+                inline: [
+                    /[\\/](libs|apps)[\\/]/,
+                    /@angular\//,
+                    /@analogjs\//,
+                    /ng-mocks/,
+                    /@openng\/spectator/,
+                    /zone\.js/,
+                    /primeng/,
+                    /@primeuix/,
+                    /@ngrx/
+                ]
             }
         },
         reporters: [
             'default',
             'github-actions',
-            ['junit', { outputFile: '../../../target/core-web-reports/portlets-dot-users-portlet.xml' }]
+            [
+                'junit',
+                { outputFile: '../../../target/core-web-reports/portlets-dot-users-portlet.xml' }
+            ]
         ],
         coverage: {
             reportsDirectory: '../../../coverage/libs/portlets/dot-users',

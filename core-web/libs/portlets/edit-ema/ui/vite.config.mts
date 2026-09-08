@@ -42,7 +42,24 @@ export default defineConfig(() => ({
         setupFiles: ['src/test-setup.ts'],
         server: {
             deps: {
-                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /ng-mocks/, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/, /y-protocols/, /lib0/, /y-prosemirror/, /@tiptap/, /marked/, /lowlight/, /devlop/]
+                inline: [
+                    /[\\/](libs|apps)[\\/]/,
+                    /@angular\//,
+                    /@analogjs\//,
+                    /ng-mocks/,
+                    /@openng\/spectator/,
+                    /zone\.js/,
+                    /primeng/,
+                    /@primeuix/,
+                    /@ngrx/,
+                    /y-protocols/,
+                    /lib0/,
+                    /y-prosemirror/,
+                    /@tiptap/,
+                    /marked/,
+                    /lowlight/,
+                    /devlop/
+                ]
             }
         },
         reporters: [

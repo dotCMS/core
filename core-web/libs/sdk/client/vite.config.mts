@@ -37,7 +37,10 @@ export default defineConfig(() => ({
     plugins: [angular(), nxViteTsPaths()],
     resolve: {
         alias: [
-            { find: /^virtual:sdk-version$/, replacement: resolve(__dirname, "./src/lib/utils/__mocks__/virtual-sdk-version.ts") }
+            {
+                find: /^virtual:sdk-version$/,
+                replacement: resolve(__dirname, './src/lib/utils/__mocks__/virtual-sdk-version.ts')
+            }
         ]
     },
     test: {
@@ -48,7 +51,17 @@ export default defineConfig(() => ({
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         server: {
             deps: {
-                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /ng-mocks/, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/]
+                inline: [
+                    /[\\/](libs|apps)[\\/]/,
+                    /@angular\//,
+                    /@analogjs\//,
+                    /ng-mocks/,
+                    /@openng\/spectator/,
+                    /zone\.js/,
+                    /primeng/,
+                    /@primeuix/,
+                    /@ngrx/
+                ]
             }
         },
         reporters: [

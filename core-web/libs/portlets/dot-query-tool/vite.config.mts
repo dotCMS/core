@@ -42,13 +42,36 @@ export default defineConfig(() => ({
         setupFiles: ['src/test-setup.ts'],
         server: {
             deps: {
-                inline: [/[\\/](libs|apps)[\\/]/, /@angular\//, /@analogjs\//, /ng-mocks/, /@openng\/spectator/, /zone\.js/, /primeng/, /@primeuix/, /@ngrx/, /y-protocols/, /lib0/, /y-prosemirror/, /@tiptap/, /marked/, /lowlight/, /devlop/]
+                inline: [
+                    /[\\/](libs|apps)[\\/]/,
+                    /@angular\//,
+                    /@analogjs\//,
+                    /ng-mocks/,
+                    /@openng\/spectator/,
+                    /zone\.js/,
+                    /primeng/,
+                    /@primeuix/,
+                    /@ngrx/,
+                    /y-protocols/,
+                    /lib0/,
+                    /y-prosemirror/,
+                    /@tiptap/,
+                    /marked/,
+                    /lowlight/,
+                    /devlop/
+                ]
             }
         },
         reporters: [
             'default',
             'github-actions',
-            ['junit', { outputFile: '../../../target/core-web-reports/portlets-dot-query-tool-portlet.xml' }]
+            [
+                'junit',
+                {
+                    outputFile:
+                        '../../../target/core-web-reports/portlets-dot-query-tool-portlet.xml'
+                }
+            ]
         ],
         coverage: {
             reportsDirectory: '../../../coverage/libs/portlets/dot-query-tool',

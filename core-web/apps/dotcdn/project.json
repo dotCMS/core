@@ -15,23 +15,16 @@
                 "main": "apps/dotcdn/src/main.ts",
                 "polyfills": "apps/dotcdn/src/polyfills.ts",
                 "tsConfig": "apps/dotcdn/tsconfig.app.json",
-                "assets": [
-                    "apps/dotcdn/src/favicon.ico",
-                    "apps/dotcdn/src/assets"
-                ],
+                "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "stylePreprocessorOptions": {
-                    "includePaths": [
-                        "libs/dotcms-scss/angular"
-                    ]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "scripts": [
-                    "node_modules/chart.js/dist/chart.js"
-                ],
+                "scripts": ["node_modules/chart.js/dist/chart.js"],
                 "vendorChunk": true,
                 "extractLicenses": false,
                 "buildOptimizer": false,
