@@ -9,14 +9,13 @@ import {
     describe,
     expect,
     it,
-    jest,
     vi
 } from 'vitest';
 
-vi.mock('../../../utils', () => {
-    // jest.requireActual is typed as unknown, cast so we can spread and reference exports
+vi.mock('../../../utils', async () => {
+    // vi.importActual is typed as unknown, cast so we can spread and reference exports
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const actual = jest.requireActual('../../../utils') as any;
+    const actual = (await vi.importActual('../../../utils')) as any;
     return {
         ...actual,
         buildPaletteFavorite: vi.fn(actual.buildPaletteFavorite)

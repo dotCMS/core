@@ -1,8 +1,8 @@
 // Mocked so the same-origin guard's rejection branch is reachable: the
 // component builds its URL from a hard-coded prefix, so no `userId` can
 // make the real predicate return false. Must precede the import.
-vi.mock('@dotcms/utils', () => ({
-    ...jest.requireActual('@dotcms/utils'),
+vi.mock('@dotcms/utils', async () => ({
+    ...(await vi.importActual('@dotcms/utils')),
     isSameOriginRelativeUrl: vi.fn()
 }));
 

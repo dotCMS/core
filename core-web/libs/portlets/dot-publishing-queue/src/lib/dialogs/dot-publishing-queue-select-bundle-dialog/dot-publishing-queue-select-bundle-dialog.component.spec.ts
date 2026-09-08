@@ -47,8 +47,8 @@ const MOCK_ASSETS = [
 
 // Mock the blob-download helper so the click side-effect is observable in tests.
 const mockAnchorClick = vi.fn();
-vi.mock('@dotcms/utils', () => {
-    const actual = jest.requireActual('@dotcms/utils');
+vi.mock('@dotcms/utils', async () => {
+    const actual = await vi.importActual('@dotcms/utils');
     return {
         ...actual,
         getDownloadLink: vi.fn(() => ({ click: mockAnchorClick }) as unknown as HTMLAnchorElement)

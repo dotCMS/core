@@ -22,8 +22,8 @@ vi.mock('./plugin/identity/dot-analytics.identity.plugin');
 vi.mock('./plugin/impression/dot-analytics.impression.plugin');
 
 // Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
-vi.mock('./shared/utils/dot-analytics.utils', () => {
-    const actual = jest.requireActual('./shared/utils/dot-analytics.utils') as Record<
+vi.mock('./shared/utils/dot-analytics.utils', async () => {
+    const actual = (await vi.importActual('./shared/utils/dot-analytics.utils')) as Record<
         string,
         unknown
     >;

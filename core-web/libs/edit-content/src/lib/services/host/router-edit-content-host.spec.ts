@@ -89,7 +89,7 @@ describe('RouterEditContentHost', () => {
             DotRelatedContentNavigationStore
         ) as unknown as typeof relatedNav;
 
-        // The provider jest.fns are shared across tests (providers are evaluated
+        // The provider vi.fns are shared across tests (providers are evaluated
         // once); clear call history so per-test assertions are isolated.
         router.navigate.mockClear();
         relatedNav.registerTitle.mockClear();

@@ -19,8 +19,8 @@ import { dotcmsContentletMock } from '../../utils/testing.utils';
 const { sendMessageToUVE } = dotCMSUVE;
 
 // Mock @dotcms/client module
-vi.mock('@dotcms/uve', () => ({
-    ...jest.requireActual('@dotcms/uve'),
+vi.mock('@dotcms/uve', async () => ({
+    ...(await vi.importActual('@dotcms/uve')),
     getUVEState: vi.fn().mockImplementation(() => {
         return {
             mode: UVE_MODE.EDIT,

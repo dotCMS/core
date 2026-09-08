@@ -9,11 +9,11 @@
             "e2eTestRunner": "playwright",
             "linter": "eslint",
             "style": "scss",
-            "unitTestRunner": "vitest"
+            "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:library": {
             "linter": "eslint",
-            "unitTestRunner": "vitest"
+            "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:component": {
             "style": "scss",

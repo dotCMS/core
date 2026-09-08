@@ -9,12 +9,12 @@ import * as dotcmsUVE from '@dotcms/uve';
 import { DotCMSLayoutBody } from '../../components/DotCMSLayoutBody/DotCMSLayoutBody';
 import { MOCK_PAGE_ASSET } from '../mock';
 
-vi.mock('../../components/Row/Row', () => ({
+vi.mock('../../components/Row/Row', async () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 
-vi.mock('@dotcms/uve/internal', () => ({
-    ...jest.requireActual('@dotcms/uve/internal'),
+vi.mock('@dotcms/uve/internal', async () => ({
+    ...(await vi.importActual('@dotcms/uve/internal')),
     DEVELOPMENT_MODE: 'development',
     PRODUCTION_MODE: 'production'
 }));

@@ -1,5 +1,5 @@
-vi.mock('@dotcms/utils', () => ({
-    ...jest.requireActual('@dotcms/utils'),
+vi.mock('@dotcms/utils', async () => ({
+    ...(await vi.importActual('@dotcms/utils')),
     getDownloadLink: vi.fn().mockReturnValue({ click: vi.fn() })
 }));
 

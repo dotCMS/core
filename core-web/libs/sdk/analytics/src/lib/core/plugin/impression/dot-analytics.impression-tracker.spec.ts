@@ -13,13 +13,13 @@ import { DotCMSAnalyticsConfig } from '../../shared/models';
 import { INITIAL_SCAN_DELAY_MS, isBrowser } from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
-vi.mock('../../shared/utils/dot-analytics.utils', () => ({
-    ...jest.requireActual('../../shared/utils/dot-analytics.utils'),
+vi.mock('../../shared/utils/dot-analytics.utils', async () => ({
+    ...(await vi.importActual('../../shared/utils/dot-analytics.utils')),
     isBrowser: vi.fn(() => true)
 }));
 
-vi.mock('./dot-analytics.impression.utils', () => ({
-    ...jest.requireActual('./dot-analytics.impression.utils'),
+vi.mock('./dot-analytics.impression.utils', async () => ({
+    ...(await vi.importActual('./dot-analytics.impression.utils')),
     createDebounce: vi.fn((callback) => callback) // Execute immediately for testing
 }));
 

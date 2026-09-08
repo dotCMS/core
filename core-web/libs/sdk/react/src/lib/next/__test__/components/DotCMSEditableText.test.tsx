@@ -33,7 +33,7 @@ const MOCK_UVE_STATE = {
     publishDate: null
 };
 
-vi.mock('@tinymce/tinymce-react', () => ({
+vi.mock('@tinymce/tinymce-react', async () => ({
     Editor: vi.fn(({ onInit, onMouseDown, onFocusOut }) => {
         onInit({}, TINYMCE_EDITOR_MOCK);
 
@@ -42,8 +42,8 @@ vi.mock('@tinymce/tinymce-react', () => ({
 }));
 
 // Mock @dotcms/uve module
-vi.mock('@dotcms/uve', () => ({
-    ...jest.requireActual('@dotcms/uve'),
+vi.mock('@dotcms/uve', async () => ({
+    ...(await vi.importActual('@dotcms/uve')),
     sendMessageToUVE: vi.fn(),
     getUVEState: vi.fn().mockImplementation(() => MOCK_UVE_STATE)
 }));

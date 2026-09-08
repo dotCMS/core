@@ -91,8 +91,8 @@ class StubDotLanguageSelectorComponent {
 }
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
-vi.mock('../../../utils', () => ({
-    ...jest.requireActual('../../../utils'),
+vi.mock('../../../utils', async () => ({
+    ...(await vi.importActual('../../../utils')),
     createFullURL: vi.fn((params, siteId) => {
         const { url = '/', clientHost = 'http://localhost:3000' } = params;
         return `${clientHost}${url}?siteId=${siteId}&version=true`;

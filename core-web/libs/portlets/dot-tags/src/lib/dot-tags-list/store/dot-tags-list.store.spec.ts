@@ -4,8 +4,8 @@ import { Mock, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
-vi.mock('@dotcms/utils', () => ({
-    ...jest.requireActual('@dotcms/utils'),
+vi.mock('@dotcms/utils', async () => ({
+    ...(await vi.importActual('@dotcms/utils')),
     getDownloadLink: vi.fn().mockReturnValue({ click: vi.fn() })
 }));
 

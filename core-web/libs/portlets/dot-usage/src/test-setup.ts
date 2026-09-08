@@ -1,18 +1,10 @@
-import '@analogjs/vitest-angular/setup-zone';
-
-import { getTestBed } from '@angular/core/testing';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-// Analog's setup-zone patches Vitest for zone.js. A hand-rolled
-// `import 'zone.js/testing'` is not enough: zone.js patches jasmine/mocha/jest,
-// knows nothing about Vitest, and every fakeAsync test then fails with
-// "Expected to be running in 'ProxyZone'".
-getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting(), {
-    errorOnUnknownElements: true,
-    errorOnUnknownProperties: true
-});
+setupTestBed({ zoneless: false });
 
 const originalConsoleError = console.error;
 

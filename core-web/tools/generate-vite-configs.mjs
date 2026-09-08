@@ -1,295 +1,350 @@
 #!/usr/bin/env node
 /**
- * Generate a per-project `vite.config.mts` by translating that project's
- * `jest.config.ts` — FR-007, FR-008, and the R-16 recipe.
+ * Generate a per-project Vitest config — FR-007, FR-008.
  *
- * Each project's Jest config already records what its tests need. The translation
- * is one-to-one:
+ * SHAPED AFTER NX'S OWN GENERATORS, NOT HAND-ROLLED.
  *
- *   testEnvironment          -> test.environment          (FR-007 parity)
- *   coverageDirectory        -> test.coverage.reportsDirectory
- *   setupFilesAfterEach      -> test.setupFiles
- *   moduleNameMapper         -> resolve.alias
- *   transformIgnorePatterns  -> test.server.deps.inline    <- the load-bearing one
+ * Nx 23 has first-class Angular+Vitest support that this migration did not consult
+ * early enough: `nx g @nx/angular:library --unitTestRunner=vitest-analog` (or
+ * `vitest-angular`) emits a working config, and `@nx/react` / `@nx/vue` do the same
+ * for their frameworks. The first version of this script invented a parallel
+ * convention instead — `root` at the workspace, `vite-tsconfig-paths`, and an
+ * explicit `nx:run-commands` target. It worked, but it left the repo with a
+ * migration-specific shape that nothing in the ecosystem would maintain, and that
+ * the next generated project would not match.
  *
- * That last mapping is the point of generating rather than hand-writing. A package
- * listed in transformIgnorePatterns is one Jest had to transform because it ships
- * ESM; under Vite the equivalent problem is externalisation, and the same package
- * list is the answer. Hand-copying it 41 times would go wrong 41 different ways.
+ * The base emitted here is what Nx generates, verbatim in structure:
+ *
+ *   root: __dirname                          // the PROJECT, not the workspace
+ *   plugins: [<framework>(), nxViteTsPaths()]
+ *   test: { name, watch: false, globals: true, environment, include, setupFiles,
+ *           reporters, coverage: { reportsDirectory, provider: 'v8' } }
+ *
+ * and the `test` target is left for `@nx/vitest` to infer, as in a generated project.
+ *
+ * DEVIATIONS are the exception and each carries the measured failure that justifies
+ * it. There are three: the DOM environment (FR-007 parity), the report artifacts
+ * (FR-008 parity), and the Angular-instance guard below. Anything else that differs
+ * from a generated project is a bug in this script.
  *
  * Usage:
  *   node tools/generate-vite-configs.mjs --list
- *   node tools/generate-vite-configs.mjs <project-dir> [...]
  *   node tools/generate-vite-configs.mjs --all [--dry-run]
+ *   node tools/generate-vite-configs.mjs <project-dir> [...]
  */
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 
 const CW = resolve(import.meta.dirname, '..');
+const OUT_OF_SCOPE = ['libs/dotcms-webcomponents', 'apps/dotcms-ui-e2e'];
 
-/** Packages that must be inlined for EVERY Angular project, regardless of config. */
-const ALWAYS_INLINE = [
+/**
+ * Packages that must resolve to ONE @angular/core instance.
+ *
+ * This is the one deviation from Nx's base that is not about parity, and it is not
+ * precautionary. Nx's generated shape produces
+ * `Cannot read properties of null (reading 'ngModule')` on this workspace, because
+ * sibling libraries ship Angular-compiled code (PrimeNG, @ngrx) that — externalised —
+ * registers its directives against a different Angular runtime than the specs use.
+ * Measured on portlets-dot-tags: 39 passing with this list, 39 failing without it.
+ *
+ * A freshly generated Nx project has no such siblings, which is why its generator
+ * does not need this, and why adopting its config alone was not sufficient here.
+ */
+const ANGULAR_INSTANCE_GUARD = [
+    // The workspace's OWN libraries, first. They are consumed from SOURCE through
+    // tsconfig paths, so with Nx's `root: __dirname` they sit outside root and Vite
+    // externalises them — their `inject()` calls then bind to a different Angular
+    // instance than the specs use, and Angular reports
+    // `NG0203: The Injector token injection failed`.
+    //
+    // This is what lets the migration keep Nx's shape instead of moving `root` to the
+    // workspace: same problem, solved in a supported Vitest field rather than by
+    // forking the config structure. Measured on image-editor: 355 of 355 tests
+    // running with this entry, 75 NG0203 errors without it.
+    '/[\\\\/](libs|apps)[\\\\/]/',
     '/@angular\\//',
+    '/@analogjs\\//',
     '/@openng\\/spectator/',
     '/zone\\.js/',
-    // Anything shipping Angular-compiled code registers directives against whichever
-    // @angular/core instance it loads. Externalised, that is not the one the specs
-    // use, and components die on `firstCreatePass` of null (research R-16).
     '/primeng/',
     '/@primeuix/',
     '/@ngrx/'
 ];
 
-function jestProjects() {
-    const nx = JSON.parse(readFileSync(join(CW, 'nx.json'), 'utf8'));
-    const plugin = nx.plugins.find((p) => typeof p === 'object' && p.plugin === '@nx/jest/plugin');
-    const fromPlugin = plugin ? plugin.include.map((g) => g.split('/**')[0]) : [];
+/** Read from the working tree, falling back to git so this script stays re-runnable. */
+function readMaybeFromGit(relPath) {
+    const abs = join(CW, relPath);
+    if (existsSync(abs)) return readFileSync(abs, 'utf8');
+    for (const ref of ['HEAD', 'HEAD~1', 'HEAD~2']) {
+        try {
+            return execFileSync('git', ['show', `${ref}:core-web/${relPath}`], {
+                cwd: CW,
+                encoding: 'utf8',
+                stdio: ['pipe', 'pipe', 'ignore']
+            });
+        } catch {
+            /* try the next ref */
+        }
+    }
+    return null;
+}
 
-    // The plugin's include list is NOT the whole story: five projects declare an
-    // explicit `@nx/jest:jest` executor in their own project.json instead
-    // (ai-ui, dot-users, dot-roles, dot-agents, dot-publishing-queue). Scoping the
-    // migration to the plugin list alone would have left them on Jest while every
-    // completeness assertion reported success.
-    const fromExecutor = [];
+/**
+ * Discovery from four sources, because no single one is complete: the plugin's
+ * include list, explicit `@nx/jest:jest` executors (five projects use those instead),
+ * and the presence of a jest config or an already-generated vitest config. The last
+ * two are what make this re-runnable — once the migration strips nx.json and the
+ * project targets, the first two return nothing.
+ */
+function projects() {
+    const found = new Set();
+
+    try {
+        const nx = JSON.parse(readFileSync(join(CW, 'nx.json'), 'utf8'));
+        const plugin = nx.plugins?.find((p) => typeof p === 'object' && p.plugin === '@nx/jest/plugin');
+        for (const g of plugin?.include ?? []) found.add(g.split('/**')[0]);
+    } catch {
+        /* nx.json already stripped */
+    }
+
     const walk = (rel) => {
-        for (const entry of readdirSync(join(CW, rel), { withFileTypes: true })) {
-            if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-            const child = `${rel}/${entry.name}`;
-            if (entry.isDirectory()) walk(child);
-            else if (entry.name === 'project.json') {
+        for (const e of readdirSync(join(CW, rel), { withFileTypes: true })) {
+            if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
+            const child = `${rel}/${e.name}`;
+            if (e.isDirectory()) {
+                walk(child);
+                continue;
+            }
+            if (e.name === 'jest.config.ts') found.add(rel);
+            else if (e.name === 'vite.config.mts' && readFileSync(join(CW, child), 'utf8').includes('GENERATED by tools/generate-vite-configs')) found.add(rel);
+            else if (e.name === 'project.json') {
                 try {
                     const d = JSON.parse(readFileSync(join(CW, child), 'utf8'));
-                    if (d.targets?.test?.executor === '@nx/jest:jest') fromExecutor.push(rel);
-                } catch { /* unparseable project.json is not ours to fix */ }
+                    if (d.targets?.test?.executor === '@nx/jest:jest') found.add(rel);
+                } catch {
+                    /* not ours to fix */
+                }
             }
         }
     };
     for (const top of ['libs', 'apps']) walk(top);
 
-    // A THIRD source: any directory that still has a jest.config.ts. Without this the
-    // pipeline is not re-runnable — once nx.json's plugin entry and the project.json
-    // test targets are stripped, discovery returns nothing and the generators print
-    // usage while leaving 48 jest configs on disk. Re-runnability matters: this ran
-    // several times over the course of the migration.
-    const fromJestConfig = [];
-    const walkJest = (rel) => {
-        for (const entry of readdirSync(join(CW, rel), { withFileTypes: true })) {
-            if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-            const child = `${rel}/${entry.name}`;
-            if (entry.isDirectory()) walkJest(child);
-            else if (entry.name === 'jest.config.ts') fromJestConfig.push(rel);
-        }
-    };
-    for (const top of ['libs', 'apps']) walkJest(top);
-
-    const OUT_OF_SCOPE = ['libs/dotcms-webcomponents'];
-    return [...new Set([...fromPlugin, ...fromExecutor, ...fromJestConfig])]
-        .filter((d) => !OUT_OF_SCOPE.some((o) => d === o || d.startsWith(o + '/')))
-        .sort();
+    return [...found].filter((d) => !OUT_OF_SCOPE.some((o) => d === o || d.startsWith(`${o}/`))).sort();
 }
 
-/**
- * Read the values we need out of a jest.config.ts by pattern rather than by
- * evaluating it. Evaluating would need the whole TS pipeline for a handful of
- * string literals, and these configs are uniformly simple object literals.
- */
-function readJestConfig(dir) {
-    const p = join(CW, dir, 'jest.config.ts');
-    if (!existsSync(p)) return null;
-    const src = readFileSync(p, 'utf8');
+/** The few values that must carry across, read by pattern — these configs are plain object literals. */
+function jestSettings(dir) {
+    const src = readMaybeFromGit(`${dir}/jest.config.ts`);
+    if (!src) return null;
+    const str = (key) => new RegExp(`${key}:\\s*'([^']*)'`).exec(src)?.[1] ?? null;
 
-    const str = (key) => {
-        const m = new RegExp(`${key}:\\s*'([^']*)'`).exec(src);
-        return m ? m[1] : null;
-    };
-
-    // transformIgnorePatterns carries a negative-lookahead list of package names.
-    // Extracted by finding pipe-separated alternation groups rather than parsing the
-    // whole lookahead: the outer group nests, so a naive [^)]* stops at the wrong
-    // paren and silently yields nothing — which is how an earlier version reported
-    // esm=0 for every project while eight of them had real lists.
+    // transformIgnorePatterns lists packages Jest had to transform because they ship
+    // ESM; under Vite the equivalent problem is externalisation, so the same list
+    // becomes deps.inline. Alternation groups are matched directly because the outer
+    // lookahead nests and a naive [^)]* stops at the wrong paren.
+    const esm = [];
     const tip = /transformIgnorePatterns:\s*\[([\s\S]*?)\]/.exec(src);
-    const esmPackages = [];
-    if (tip) {
-        for (const m of tip[1].matchAll(/\(([A-Za-z0-9@/_.-]+(?:\|[A-Za-z0-9@/_.-]+)+)\)/g)) {
-            for (const name of m[1].split('|')) {
-                const clean = name.trim();
-                // Skip the `(/|-)` style separator groups some configs use.
-                if (clean.length > 1 && !clean.includes('.mjs')) esmPackages.push(clean);
-            }
+    for (const m of tip?.[1].matchAll(/\(([A-Za-z0-9@/_.-]+(?:\|[A-Za-z0-9@/_.-]+)+)\)/g) ?? []) {
+        for (const name of m[1].split('|')) {
+            const clean = name.trim();
+            if (clean.length > 1 && !clean.includes('.mjs')) esm.push(clean);
         }
     }
 
-    const mnm = /moduleNameMapper:\s*\{([\s\S]*?)\n\s*\}/.exec(src);
     const aliases = [];
-    if (mnm) {
-        for (const m of mnm[1].matchAll(/'([^']+)':\s*'([^']+)'/g)) {
-            aliases.push({ find: m[1], replacement: m[2] });
-        }
+    const mnm = /moduleNameMapper:\s*\{([\s\S]*?)\n\s*\}/.exec(src);
+    for (const m of mnm?.[1].matchAll(/'([^']+)':\s*'([^']+)'/g) ?? []) {
+        aliases.push({ find: m[1], replacement: m[2] });
     }
 
     return {
-        displayName: str('displayName'),
         testEnvironment: str('testEnvironment'),
         coverageDirectory: str('coverageDirectory'),
-        setupFiles: [...src.matchAll(/setupFilesAfter(?:Env|Each):\s*\[([^\]]*)\]/g)]
-            .flatMap((m) => [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1])),
-        esmPackages,
+        setupFiles: [...src.matchAll(/setupFilesAfter(?:Env|Each):\s*\[([^\]]*)\]/g)].flatMap((m) =>
+            [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1])
+        ),
+        esm,
         aliases
     };
 }
 
-/** Jest environment names -> Vitest environment names. */
-function mapEnvironment(jestEnv) {
-    if (!jestEnv) return 'jsdom'; // the jest-preset-angular default the preset applied
+/** Jest environment -> Vitest. Absent means the project inherited the preset's jsdom. */
+function environmentFor(jestEnv) {
+    if (!jestEnv) return 'jsdom';
     if (jestEnv.includes('happy-dom')) return 'happy-dom';
     if (jestEnv === 'node') return 'node';
-    if (jestEnv === 'jsdom') return 'jsdom';
     return 'jsdom';
 }
 
-function projectName(dir) {
-    const pj = join(CW, dir, 'project.json');
-    return existsSync(pj) ? JSON.parse(readFileSync(pj, 'utf8')).name : null;
+/**
+ * Framework detection by test-file extension rather than by dependency list: `.tsx`
+ * is what the Angular compiler actually chokes on, with
+ * `Cannot parse … Expected ',', got ':'`, and that took all 18 of sdk-react's files
+ * down before any of them ran.
+ */
+function frameworkFor(dir) {
+    let tsx = false;
+    let vue = false;
+    const walk = (rel) => {
+        for (const e of readdirSync(join(CW, rel), { withFileTypes: true })) {
+            if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
+            if (e.isDirectory()) walk(`${rel}/${e.name}`);
+            else if (/\.(spec|test)\.tsx$/.test(e.name)) tsx = true;
+            else if (e.name.endsWith('.vue')) vue = true;
+        }
+    };
+    try {
+        walk(dir);
+    } catch {
+        /* nothing to walk */
+    }
+    if (vue) return 'vue';
+    return tsx ? 'react' : 'angular';
+}
+
+function nameOf(dir) {
+    const p = join(CW, dir, 'project.json');
+    return existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).name ?? dir) : dir;
 }
 
 function generate(dir) {
-    const cfg = readJestConfig(dir);
-    if (!cfg) return { dir, skipped: 'no jest.config.ts' };
+    const cfg = jestSettings(dir);
+    if (!cfg) return { dir, skipped: 'no jest.config.ts on disk or in git' };
 
-    const name = projectName(dir);
-    const depth = dir.split('/').length;
-    const up = '../'.repeat(depth);
-    const env = mapEnvironment(cfg.testEnvironment);
+    const name = nameOf(dir);
+    const up = '../'.repeat(dir.split('/').length);
+    const workspaceRel = up.slice(0, -1) || '.';
+    const env = environmentFor(cfg.testEnvironment);
+    const framework = frameworkFor(dir);
 
-    const setupFiles = cfg.setupFiles.map((f) => `${dir}/${f.replace('<rootDir>/', '')}`);
-    const coverageDir = cfg.coverageDirectory
+    const coverageDirWs = cfg.coverageDirectory
         ? cfg.coverageDirectory.replace(/^(\.\.\/)+/, '')
         : `coverage/${dir}`;
 
-    const inline = [...ALWAYS_INLINE, ...cfg.esmPackages.map((p) => `/${p.replace(/[/@]/g, (c) => '\\' + c)}/`)];
-    const aliasLines = cfg.aliases.map(
-        (a) => `            { find: ${JSON.stringify(a.find)}, replacement: resolve(WORKSPACE, ${JSON.stringify(
-            a.replacement.replace('<rootDir>', dir)
-        )}) }`
-    );
+    const setupFiles = cfg.setupFiles.map((f) => f.replace('<rootDir>/', ''));
+    // Only `/` is escaped in these package regexes. Escaping `@` as well produces
+    // `\@`, which eslint's no-useless-escape rejects and which broke the pre-commit
+    // hook on 8 generated configs.
+    const inline = [...ANGULAR_INSTANCE_GUARD, ...cfg.esm.map((p) => `/${p.replace(/\//g, '\\/')}/`)];
 
-    const body = `/// <reference types="vitest" />
-import angular from '@analogjs/vite-plugin-angular';
-import { defineConfig } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
+    const pluginImport = {
+        angular: "import angular from '@analogjs/vite-plugin-angular';",
+        react: "import react from '@vitejs/plugin-react';",
+        vue: "import vue from '@vitejs/plugin-vue';"
+    }[framework];
+    const pluginCall = { angular: 'angular()', react: 'react()', vue: 'vue()' }[framework];
+    const generatorHint =
+        framework === 'angular'
+            ? '@nx/angular:library --unitTestRunner=vitest-analog'
+            : `@nx/${framework}:library --unitTestRunner=vitest`;
 
-import { resolve } from 'path';
-
-/**
- * GENERATED by tools/generate-vite-configs.mjs from this project's jest.config.ts.
- * Regenerate rather than hand-editing where possible; see research.md R-16 for why
- * each block is here and which failure it prevents.
- */
-const WORKSPACE = resolve(import.meta.dirname, '${up.slice(0, -1)}');
-const PROJECT = '${dir}';
-
-export default defineConfig({
-    // The workspace, not the project: sibling libs resolve through tsconfig paths to
-    // their TypeScript source, and the Angular plugin only compiles under root.
-    root: WORKSPACE,
-    plugins: [
-        angular({
-            tsconfig: resolve(import.meta.dirname, 'tsconfig.spec.json'),
-            workspaceRoot: WORKSPACE
-        }),
-        // Pinned to the base tsconfig AND this project's spec tsconfig. Pinning only
-        // the base broke sibling-alias resolution: @dotcms/types resolved to a
-        // root-relative '/libs/sdk/types/src/index.ts' (no core-web prefix) and cost
-        // sdk-uve 94 of its 103 tests. Pinning nothing fixes that too, but then the
-        // plugin crawls every tsconfig in the monorepo, which segfaults the native
-        // resolver on CI — the failure the original pin existed to prevent. Two
-        // entries keep both properties.
-        tsconfigPaths({
-            root: WORKSPACE,
-            projects: ['tsconfig.base.json', \`\${PROJECT}/tsconfig.spec.json\`]
-        })
-    ],
-    // No mainFields here, deliberately. Setting it to ['module'] — copied from the
-    // SDK *build* configs, where it is correct — makes Vite ignore packages that
-    // declare only a main field, including @analogjs/vitest-angular. Resolution falls
-    // through to a bogus root-relative path and takes the whole project down with an
-    // error that names the package but not the cause (research R-20).
-    resolve: {${aliasLines.length ? `
-
+    const aliasBlock = cfg.aliases.length
+        ? `
+    resolve: {
         alias: [
-${aliasLines.join(',\n')}
-        ]` : ''}
-    },
+${cfg.aliases
+    .map(
+        (a) =>
+            `            { find: ${JSON.stringify(a.find)}, replacement: resolve(__dirname, ${JSON.stringify(a.replacement.replace('<rootDir>/', './'))}) }`
+    )
+    .join(',\n')}
+        ]
+    },`
+        : '';
+
+    const body = `/// <reference types='vitest' />
+${pluginImport}
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import { defineConfig } from 'vite';
+${cfg.aliases.length ? "\nimport { resolve } from 'path';\n" : ''}
+/**
+ * GENERATED by tools/generate-vite-configs.mjs. Regenerate rather than hand-editing.
+ *
+ * Shaped after what nx g ${generatorHint} produces, so migrated projects match the
+ * generators and the workspace keeps ONE convention instead of a migration-specific
+ * one. Deviations from that base, each with its reason:
+ *
+ *   environment: '${env}'  carried from this project's jest.config.ts so its DOM
+ *                          surface does not change (FR-007). Nx defaults to jsdom.
+ *   reporters / coverage   reproduce the CI artifacts the pipeline already consumes
+ *                          (FR-008). Nx emits 'default' only.
+ *   deps.inline            everything importing @angular/core must resolve to one
+ *                          instance; without it components fail on 'ngModule' of
+ *                          null. See the generator for the measurement.
+ */
+export default defineConfig(() => ({
+    root: __dirname,
+    cacheDir: '${up}node_modules/.vite/${dir}',
+    // nxViteTsPaths(), NOT tsconfigPaths(). Nx prints a deprecation notice for this
+    // plugin (removal in v24) and points at vite-tsconfig-paths — but the two are not
+    // interchangeable in this workspace. nxViteTsPaths knows the Nx project layout and
+    // resolves sibling libraries consumed FROM SOURCE, which a bare tsconfigPaths()
+    // cannot: with it, edit-content runs 1,658 tests; without it, 0, because
+    // "@dotcms/utils-testing" resolves and then fails to load from outside the project
+    // root. Passing tsconfigPaths the workspace base tsconfig and widening
+    // server.fs.allow were both tried and neither closed the gap.
+    //
+    // Follow-up, not a blocker: when Nx removes it in v24 this needs revisiting, and
+    // Nx will have to offer a path for exactly this case.
+    plugins: [${pluginCall}, nxViteTsPaths()],${aliasBlock}
     test: {
-        root: WORKSPACE,
+        name: '${name}',
+        watch: false,
         globals: true,
-        // Carried across from jest.config.ts (FR-007). Without pinning it the project
-        // would silently adopt Vitest's default instead.
-        environment: '${env}',${setupFiles.length ? `
-        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
-        include: [\`\${PROJECT}/src/**/*.spec.ts\`, \`\${PROJECT}/src/**/*.spec.tsx\`, \`\${PROJECT}/src/**/*.test.ts\`, \`\${PROJECT}/src/**/*.test.tsx\`],
-        // Jest gave each spec file a fresh module registry; state this rather than
-        // inherit it, so the semantics the specs were written under stay explicit.
-        isolate: true,
+        environment: '${env}',
+        include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {
-            // Deliberately true, not a package list. The list started as Angular + Spectator +
-            // zone.js, then needed PrimeNG, then @ngrx, then each project's own
-            // transformIgnorePatterns chain — and dotcms-ui still produced 420 NG0203
-            // errors from something not on it. Every package that touches
-            // @angular/core must resolve to the same instance, and enumerating them
-            // is a losing game: one missed package fails ~200 tests with an error
-            // that names Angular, not the package. Inlining everything is slower and
-            // correct; FR-017 sets no performance threshold.
-            //
-            // This project's jest.config.ts listed: ${cfg.esmPackages.length ? cfg.esmPackages.join(', ') : '(no transformIgnorePatterns)'}
-            deps: { inline: true }
+            deps: {
+                inline: [${inline.join(', ')}]
+            }
         },
-        reporters: ['default', 'github-actions', ['junit', { outputFile: 'target/core-web-reports/${name}.xml' }]],
+        reporters: [
+            'default',
+            'github-actions',
+            ['junit', { outputFile: '${up}target/core-web-reports/${name}.xml' }]
+        ],
         coverage: {
-            provider: 'v8',
+            reportsDirectory: '${up}${coverageDirWs}',
             reporter: ['html', 'lcov', 'text'],
-            reportsDirectory: '${coverageDir}'
+            provider: 'v8' as const
         }
     }
-});
+}));
 `;
-    return { dir, name, env, inline: inline.length, setupFiles: setupFiles.length, body };
+    return { dir, name, framework, env, inline: inline.length, body };
 }
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
-const all = args.includes('--all');
-const list = args.includes('--list');
-const targets = args.filter((a) => !a.startsWith('--'));
 
-if (list) {
-    for (const d of jestProjects()) {
-        const c = readJestConfig(d);
+if (args.includes('--list')) {
+    for (const d of projects()) {
+        const c = jestSettings(d);
         console.log(
-            `${d.padEnd(46)} env=${String(mapEnvironment(c?.testEnvironment)).padEnd(10)} esm=${c?.esmPackages.length ?? 0} alias=${c?.aliases.length ?? 0}`
+            `${d.padEnd(46)} ${frameworkFor(d).padEnd(8)} env=${environmentFor(c?.testEnvironment).padEnd(10)} esm=${c?.esm.length ?? 0} alias=${c?.aliases.length ?? 0}`
         );
     }
     process.exit(0);
 }
 
-const dirs = all ? jestProjects() : targets;
-if (dirs.length === 0) {
+const targets = args.includes('--all') ? projects() : args.filter((a) => !a.startsWith('--'));
+if (targets.length === 0) {
     console.error('usage: generate-vite-configs.mjs --all | --list | <project-dir> [...]');
     process.exit(2);
 }
 
 let written = 0;
-for (const d of dirs) {
+for (const d of targets) {
     const r = generate(d);
     if (r.skipped) {
         console.log(`  skip ${d} (${r.skipped})`);
         continue;
     }
-    const out = join(CW, d, 'vite.config.mts');
-    if (!dryRun) writeFileSync(out, r.body);
+    if (!dryRun) writeFileSync(join(CW, d, 'vite.config.mts'), r.body);
     written++;
-    console.log(`  ${dryRun ? 'would write' : 'wrote'} ${d}/vite.config.mts  env=${r.env} inline=${r.inline} setup=${r.setupFiles}`);
+    console.log(`  ${dryRun ? 'would write' : 'wrote'} ${d} [${r.framework}] env=${r.env} inline=${r.inline}`);
 }
 console.log(`\n${written} config(s)${dryRun ? ' (dry run)' : ''}`);

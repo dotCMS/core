@@ -29,8 +29,8 @@ class MockDotSiteComponent implements ControlValueAccessor {
     }
 }
 
-vi.mock('@dotcms/ui', () => ({
-    ...jest.requireActual('@dotcms/ui'),
+vi.mock('@dotcms/ui', async () => ({
+    ...(await vi.importActual('@dotcms/ui')),
     DotSiteComponent: MockDotSiteComponent
 }));
 

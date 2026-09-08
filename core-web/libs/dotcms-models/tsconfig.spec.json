@@ -3,9 +3,19 @@
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
         "module": "preserve",
-        "types": ["vitest/globals", "node"],
+        "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"],
         "moduleResolution": "bundler",
         "isolatedModules": true
     },
-    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "vite.config.mts"]
+    "include": [
+        "vite.config.ts",
+        "vite.config.mts",
+        "vitest.config.ts",
+        "vitest.config.mts",
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.test.tsx",
+        "src/**/*.spec.tsx",
+        "src/**/*.d.ts"
+    ]
 }

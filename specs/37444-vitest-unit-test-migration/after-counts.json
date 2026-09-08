@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-08T00:24:09.286Z",
+  "capturedAt": "2026-09-08T03:17:44.718Z",
   "nodeVersion": "v22.22.3",
   "projects": {
     "ai-ui": {
@@ -30,26 +30,12 @@
       "errors": 0,
       "suites": 1
     },
-    "image-editor": {
-      "tests": 355,
-      "skipped": 0,
-      "failures": 0,
-      "errors": 0,
-      "suites": 30
-    },
     "mcp-server": {
       "tests": 165,
       "skipped": 0,
       "failures": 0,
       "errors": 0,
       "suites": 10
-    },
-    "new-block-editor": {
-      "tests": 158,
-      "skipped": 0,
-      "failures": 0,
-      "errors": 0,
-      "suites": 16
     },
     "portlets-dot-analytics-data-access": {
       "tests": 217,
@@ -72,27 +58,6 @@
       "errors": 0,
       "suites": 2
     },
-    "portlets-dot-plugins-portlet": {
-      "tests": 81,
-      "skipped": 0,
-      "failures": 0,
-      "errors": 0,
-      "suites": 4
-    },
-    "portlets-dot-roles-portlet": {
-      "tests": 174,
-      "skipped": 0,
-      "failures": 0,
-      "errors": 0,
-      "suites": 10
-    },
-    "portlets-dot-usage": {
-      "tests": 21,
-      "skipped": 0,
-      "failures": 0,
-      "errors": 0,
-      "suites": 1
-    },
     "portlets-dot-velocity-playground-portlet": {
       "tests": 119,
       "skipped": 0,
@@ -106,6 +71,13 @@
       "failures": 0,
       "errors": 0,
       "suites": 5
+    },
+    "sdk-create-app": {
+      "tests": 166,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 12
     },
     "sdk-vue": {
       "tests": 0,

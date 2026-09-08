@@ -10,15 +10,18 @@ import { DotCMSAnalyticsConfig } from '../../shared/models';
 import * as sharedUtils from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
-vi.mock('./dot-analytics.click.utils', () => {
-    const actual = jest.requireActual('./dot-analytics.click.utils') as Record<string, unknown>;
+vi.mock('./dot-analytics.click.utils', async () => {
+    const actual = (await vi.importActual('./dot-analytics.click.utils')) as Record<
+        string,
+        unknown
+    >;
     return {
         ...actual,
         handleContentletClick: vi.fn()
     };
 });
-vi.mock('../../shared/utils/dot-analytics.utils', () => {
-    const actual = jest.requireActual('../../shared/utils/dot-analytics.utils') as Record<
+vi.mock('../../shared/utils/dot-analytics.utils', async () => {
+    const actual = (await vi.importActual('../../shared/utils/dot-analytics.utils')) as Record<
         string,
         unknown
     >;

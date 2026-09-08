@@ -5,6 +5,7 @@ import {
     SpectatorHttp,
     SpyObject
 } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/dotcms-models';
 
@@ -62,7 +63,7 @@ describe('AddToBundleService', () => {
 
     describe('getBundles', () => {
         beforeEach(() => {
-            const { of } = jest.requireActual('rxjs');
+            const { of } = await vi.importActual('rxjs');
             dotCurrentUserService.getCurrentUser.mockReturnValue(of(mockCurrentUser));
         });
 

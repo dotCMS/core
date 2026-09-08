@@ -4,8 +4,8 @@
 // component so `createComponent`/`setInput('data')`/`instance.closed` all work.
 vi.mock(
     '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component',
-    () => {
-        const { Component, Input, output } = jest.requireActual('@angular/core');
+    async () => {
+        const { Component, Input, output } = await vi.importActual('@angular/core');
 
         // `data` is a decorated property, not a signal input like the real panel's: these tests
         // run in JIT mode, where the compiler does not see a bare `data = input(...)` field, so

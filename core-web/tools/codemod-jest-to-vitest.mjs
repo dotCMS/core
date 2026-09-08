@@ -206,6 +206,61 @@ function findMatchingBrace(src, from) {
     return -1;
 }
 
+/**
+ * Convert `jest.requireActual` to `vi.importActual`.
+ *
+ * The two are not interchangeable — `vi.importActual` is async — which is why this
+ * was originally left as a hand-edit for ~19 files. It is still mechanical, though:
+ * the mock factory becomes `async` and the call gets awaited.
+ *
+ *   vi.mock('x', () => ({ ...jest.requireActual('x'), a: vi.fn() }))
+ *     ->
+ *   vi.mock('x', async () => ({ ...(await vi.importActual('x')), a: vi.fn() }))
+ *
+ * Only factories that actually contain a requireActual are made async, so a factory
+ * that does not need it is left synchronous.
+ */
+function convertRequireActual(src) {
+    if (!/\bjest\s*\.require(Actual|Mock)\b/.test(src)) return { src, count: 0 };
+    let count = 0;
+
+    // 1. Make the enclosing vi.mock factory async, but only where needed.
+    const MOCK = /vi\.mock\(\s*(['"`])(?:[^\\]|\\.)*?\1\s*,\s*(?!async)\(\s*\)\s*=>/g;
+    let out = '';
+    let last = 0;
+    let m;
+    while ((m = MOCK.exec(src)) !== null) {
+        const bodyStart = m.index + m[0].length;
+        // Look only as far as the factory plausibly extends, so an unrelated
+        // requireActual later in the file does not make this factory async.
+        const window = src.slice(bodyStart, bodyStart + 2000);
+        const needsAsync = /\bjest\s*\.require(Actual|Mock)\b/.test(window);
+        out += src.slice(last, m.index) + (needsAsync ? m[0].replace(/\(\s*\)\s*=>$/, 'async () =>') : m[0]);
+        last = bodyStart;
+    }
+    out += src.slice(last);
+    src = out;
+
+    // 2. Await the call itself, parenthesised so spreads keep working.
+    src = src.replace(/\.\.\.\s*jest\s*\.requireActual(<[^>]*>)?\(/g, () => {
+        count++;
+        return '...(await vi.importActual(';
+    });
+    // Close the extra paren the spread form opened.
+    src = src.replace(/\.\.\.\(await vi\.importActual\(([^)]*)\)/g, '...(await vi.importActual($1))');
+
+    src = src.replace(/\bjest\s*\.requireActual(<[^>]*>)?\(/g, () => {
+        count++;
+        return 'await vi.importActual(';
+    });
+    src = src.replace(/\bjest\s*\.requireMock(<[^>]*>)?\(/g, () => {
+        count++;
+        return 'await vi.importMock(';
+    });
+
+    return { src, count };
+}
+
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const reportOnly = args.includes('--report');
@@ -322,6 +377,13 @@ for (const target of targets) {
         }
 
         src = src.replace(/\uE000PATH(\d+)\uE000/g, (_m, i) => paths[Number(i)]);
+
+        const ra = convertRequireActual(src);
+        if (ra.count) {
+            src = ra.src;
+            counts.set('requireActual', (counts.get('requireActual') ?? 0) + ra.count);
+            needs.add('vi');
+        }
 
         const done = convertDoneCallbacks(src);
         if (done.count) {

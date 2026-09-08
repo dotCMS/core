@@ -7,8 +7,8 @@ import { DEFAULT_COLORS, DotUiColorsService } from './dot-ui-colors.service';
 
 // Spy on updatePrimaryPalette, but keep the real palette() generator so the service
 // produces actual shades (palette() is the single source of truth under test).
-vi.mock('@primeuix/themes', () => ({
-    ...jest.requireActual('@primeuix/themes'),
+vi.mock('@primeuix/themes', async () => ({
+    ...(await vi.importActual('@primeuix/themes')),
     updatePrimaryPalette: vi.fn()
 }));
 

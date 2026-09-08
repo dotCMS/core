@@ -89,8 +89,8 @@ import { HttpError, httpGet, httpPost } from '../utils/http';
 // these cases stay about configureUVE's CONTRACT — probe once, retry 5xx only, mode-dependent
 // guidance — while http.spec.ts covers the transport. HttpError stays real, because the
 // outcome's `status` is derived from it.
-vi.mock('../utils/http', () => {
-    const actual = jest.requireActual('../utils/http');
+vi.mock('../utils/http', async () => {
+    const actual = await vi.importActual('../utils/http');
 
     return { ...actual, httpGet: vi.fn(), httpPost: vi.fn() };
 });

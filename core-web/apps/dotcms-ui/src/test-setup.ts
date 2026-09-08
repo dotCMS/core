@@ -3,21 +3,15 @@
 /* eslint-disable no-console */
 
 // This file is required by jest and is used for setup for each test file.
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@testing-library/jest-dom';
-import '@analogjs/vitest-angular/setup-zone';
-
 import { vi } from 'vitest';
-
-import { getTestBed } from '@angular/core/testing';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-// Analog's setup-zone patches Vitest for zone.js. A hand-rolled
-// `import 'zone.js/testing'` is not enough: zone.js patches jasmine/mocha/jest,
-// knows nothing about Vitest, and every fakeAsync test then fails with
-// "Expected to be running in 'ProxyZone'".
-getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+setupTestBed({ zoneless: false });
 
 // Setup global mocks
 setupResizeObserverMock();
