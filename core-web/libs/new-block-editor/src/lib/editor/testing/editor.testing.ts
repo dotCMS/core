@@ -45,6 +45,9 @@ export function createTestEditor(
             open: () => undefined,
             update: () => undefined,
             close: () => undefined,
+            // `isOpen` matters even for specs that never look at the menu: the `:` suggestion
+            // asks it before choosing open-vs-update, so any spec typing a shortcode reaches it.
+            isOpen: () => false,
             handleKeyDown: () => false
         } as unknown as SlashMenuService);
 
@@ -141,17 +144,25 @@ export function recordingMenuService(): {
     items: () => unknown[];
     command: () => ((item: unknown) => void) | null;
     openCount: () => number;
+    isOpen: () => boolean;
 } {
     let lastItems: unknown[] = [];
     let lastCommand: ((item: unknown) => void) | null = null;
     let opens = 0;
+    let open = false;
 
     const service = {
         attachEditor: () => undefined,
         detachEditor: () => undefined,
         filterItems: () => [],
+        // `isOpen` is not decoration. The `:` suggestion asks whether the dropdown is already
+        // showing before choosing open-vs-update, and a double missing it made every menu spec
+        // fail with no visible error — Suggestion's plugin view is async, so the throw was
+        // swallowed and looked exactly like "the menu never opened".
+        isOpen: () => open,
         open: (items: unknown[], _rect: unknown, command: (item: unknown) => void) => {
             opens += 1;
+            open = true;
             lastItems = items;
             lastCommand = command;
         },
@@ -159,7 +170,9 @@ export function recordingMenuService(): {
             lastItems = items;
             lastCommand = command;
         },
-        close: () => undefined,
+        close: () => {
+            open = false;
+        },
         handleKeyDown: () => false
     } as unknown as SlashMenuService;
 
@@ -167,7 +180,8 @@ export function recordingMenuService(): {
         service,
         items: () => lastItems,
         command: () => lastCommand,
-        openCount: () => opens
+        openCount: () => opens,
+        isOpen: () => open
     };
 }
 
@@ -181,4 +195,22 @@ export function recordingMenuService(): {
  */
 export async function flushSuggestion(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Types one character at a time, flushing the suggestion renderer between each.
+ *
+ * {@link typeText} dispatches every character synchronously, which batches
+ * `@tiptap/suggestion`'s async plugin-view updates into a single callback whose `props.items` lag
+ * behind `props.query`. Real typing never does that — a person produces one keystroke per frame —
+ * so a suggestion spec built on `typeText` asserts against a state the product cannot reach.
+ *
+ * Use this for anything that observes the menu; `typeText` is still right for input rules, which
+ * are synchronous.
+ */
+export async function typeTextSlowly(editor: Editor, text: string): Promise<void> {
+    for (const char of Array.from(text)) {
+        typeText(editor, char);
+        await flushSuggestion();
+    }
 }

@@ -16,11 +16,11 @@ import {
     hasEmojiNode,
     inlineNodes,
     pasteHTML,
-    flushSuggestion,
     pasteText,
     placeCursor,
     recordingMenuService,
-    typeText
+    typeText,
+    typeTextSlowly
 } from '../testing/editor.testing';
 import {
     AFFECTED_CHARACTER_SAMPLE,
@@ -399,8 +399,7 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         const menu = recordingMenuService();
         editor = createTestEditor(injector, { menuService: menu.service });
 
-        typeText(editor, ':smi');
-        await flushSuggestion();
+        await typeTextSlowly(editor, ':smi');
 
         const state = EmojiSuggestionPluginKey.getState(editor.state);
         expect(state?.active).toBe(true);
@@ -432,8 +431,7 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         const menu = recordingMenuService();
         editor = createTestEditor(injector, { menuService: menu.service });
 
-        typeText(editor, 'hi :smi');
-        await flushSuggestion();
+        await typeTextSlowly(editor, 'hi :smi');
 
         const command = menu.command();
         const rows = menu.items() as { emoji: string; label: string }[];
@@ -457,8 +455,7 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         });
 
         placeCursor(editor, 1 + 'dotCMS '.length);
-        typeText(editor, ':smi');
-        await flushSuggestion();
+        await typeTextSlowly(editor, ':smi');
 
         const rows = menu.items() as { emoji: string }[];
         menu.command()?.(rows[0]);

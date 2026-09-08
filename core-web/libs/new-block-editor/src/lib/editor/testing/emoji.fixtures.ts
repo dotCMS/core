@@ -196,6 +196,65 @@ export const NODE_ALREADY_MARKED: JSONContent = doc(
     text('All rights reserved', [link()])
 );
 
+/** Two marks on both boundaries — the sandwich gate requires the FULL sets to match. */
+export const SANDWICH_TWO_MARKS_BOTH_SIDES: JSONContent = doc(
+    text('dotCMS Copyright ', [link(), { type: 'bold' }]),
+    emoji(),
+    text('All rights reserved', [link(), { type: 'bold' }])
+);
+
+/** Same, but only one side is bold — the sets differ, so nothing is inherited. */
+export const SANDWICH_TWO_MARKS_ONE_SIDE: JSONContent = doc(
+    text('dotCMS Copyright ', [link(), { type: 'bold' }]),
+    emoji(),
+    text('All rights reserved', [link()])
+);
+
+/** Boundary is an `emoji` carrying its OWN marks — not a `text` node, so the run stops. */
+export const SANDWICH_MARKED_EMOJI_BOUNDARY: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji('copyright'),
+    emoji('registered', [link()]),
+    text('All rights reserved', [link()])
+);
+
+/** Boundary is an `emoji` whose name never resolves, so it stays a node and stops the run. */
+export const SANDWICH_UNRESOLVABLE_BOUNDARY: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji('copyright'),
+    emoji('not_a_real_shortcode_37340'),
+    text('All rights reserved', [link()])
+);
+
+/** Links differing only in `rel`. Attribute equality means every attribute. */
+export const SANDWICH_DIFFERENT_REL: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji(),
+    text('All rights reserved', [link({ rel: 'nofollow' })])
+);
+
+/** Links differing only in `title`. */
+export const SANDWICH_DIFFERENT_TITLE: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji(),
+    text('All rights reserved', [link({ title: 'dotCMS legal' })])
+);
+
+/** Malformed stored marks — `null` attrs and a non-array `marks`. Must not throw. */
+export const MALFORMED_MARKS: JSONContent = {
+    type: 'doc',
+    content: [
+        {
+            type: 'paragraph',
+            content: [
+                { type: 'text', marks: [{ type: 'link', attrs: null }], text: 'dotCMS ' },
+                emoji(),
+                { type: 'text', marks: {}, text: ' 2026' } as unknown as JSONContent
+            ]
+        }
+    ]
+};
+
 /**
  * A `name` that resolves against nothing in the extension's `emojis` table.
  *

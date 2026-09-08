@@ -14,7 +14,14 @@ import {
     SANDWICH_DIFFERENT_ARIA_LABEL,
     SANDWICH_DIFFERENT_HREF,
     SANDWICH_DIFFERENT_TARGET,
+    MALFORMED_MARKS,
+    SANDWICH_DIFFERENT_REL,
+    SANDWICH_DIFFERENT_TITLE,
     SANDWICH_HARD_BREAK_SIBLING,
+    SANDWICH_MARKED_EMOJI_BOUNDARY,
+    SANDWICH_TWO_MARKS_BOTH_SIDES,
+    SANDWICH_TWO_MARKS_ONE_SIDE,
+    SANDWICH_UNRESOLVABLE_BOUNDARY,
     SANDWICH_IMAGE_SIBLING,
     SANDWICH_RUN_BROKEN_BY_HARD_BREAK,
     SANDWICH_TWO_EMOJI_DIFFERENT_LINK,
@@ -167,6 +174,31 @@ describe('healEmojiNodes — #37340', () => {
             staysBare(SANDWICH_DIFFERENT_ARIA_LABEL, 'aria-label');
         });
 
+        it('link marks differing in rel', () => {
+            staysBare(SANDWICH_DIFFERENT_REL, 'rel');
+        });
+
+        it('link marks differing in title', () => {
+            staysBare(SANDWICH_DIFFERENT_TITLE, 'title');
+        });
+
+        it('a boundary emoji carrying its OWN marks stops the run', () => {
+            staysBare(SANDWICH_MARKED_EMOJI_BOUNDARY, 'marked-boundary');
+        });
+
+        it('a boundary emoji whose name never resolves stops the run', () => {
+            const healed = healEmojiNodes(SANDWICH_UNRESOLVABLE_BOUNDARY, emojis);
+            const holder = inline(healed).find((n) => (n.text ?? '').includes('©'));
+
+            expect(markTypes(holder as JSONContent)).toEqual([]);
+            // The unresolvable node is left in place, which is what stops the run.
+            expect(types(healed)).toContain('emoji');
+        });
+
+        it('only ONE side carrying an extra mark blocks inheritance', () => {
+            staysBare(SANDWICH_TWO_MARKS_ONE_SIDE, 'one-sided-bold');
+        });
+
         it('an inline image sibling keeps the symbol out of the link', () => {
             staysBare(SANDWICH_IMAGE_SIBLING, 'image');
         });
@@ -232,6 +264,34 @@ describe('healEmojiNodes — #37340', () => {
             };
 
             expect(healEmojiNodes(untouched, emojis)).toEqual(untouched);
+        });
+    });
+
+    describe('AC-015 — the gate matches on the FULL mark set', () => {
+        /**
+         * The reviewer read `previous.marks` as "wider than AC-015, which says the link mark".
+         * It is the opposite: requiring both sides' whole sets to match fires strictly LESS often
+         * than comparing `href` alone, and inheritance then carries the set that matched. Narrower
+         * gate, wider payload, and the two are the same decision.
+         */
+        it('inherits every mark when both boundaries carry the identical set', () => {
+            const healed = healEmojiNodes(SANDWICH_TWO_MARKS_BOTH_SIDES, emojis);
+            const nodes = inline(healed);
+
+            expect(nodes).toHaveLength(1);
+            expect(markTypes(nodes[0]).sort()).toEqual(['bold', 'link']);
+        });
+    });
+
+    describe('malformed stored JSON must not blank the field', () => {
+        /**
+         * `loadContent` calls the heal BEFORE `setContent`, so a throw here means `setContent`
+         * never runs and the field renders empty over intact stored JSON — the #37145 mechanism
+         * this spec cites twice. Returning the input untouched degrades to pre-fix behaviour.
+         */
+        it('returns the input untouched for null attrs and non-array marks', () => {
+            expect(() => healEmojiNodes(MALFORMED_MARKS, emojis)).not.toThrow();
+            expect(healEmojiNodes(MALFORMED_MARKS, emojis)).toBeDefined();
         });
     });
 

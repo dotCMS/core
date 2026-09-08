@@ -7,7 +7,11 @@ import Emoji, {
     shortcodeToEmoji
 } from '@tiptap/extension-emoji';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import Suggestion, { type SuggestionKeyDownProps, type SuggestionProps } from '@tiptap/suggestion';
+import Suggestion, {
+    type SuggestionKeyDownProps,
+    SuggestionPluginKey,
+    type SuggestionProps
+} from '@tiptap/suggestion';
 
 import { type BlockItem, type SlashMenuService } from '../components/slash-menu/slash-menu.service';
 import { healEmojiHtml } from '../utils/emoji-heal.utils';
@@ -259,8 +263,12 @@ export function filterEmojis(query: string, emojis: readonly EmojiItem[]): Emoji
         Boolean(item.emoji)
     );
 
+    // A bare `:` returns NOTHING. `allowedPrefixes` defaults to `[" "]`, so a colon after a space
+    // — `hi :` — opens a session with an empty query, and returning the first five entries popped
+    // a menu of arbitrary emoji at a moment the author had expressed no intent at all. `Note:` and
+    // `10:30` are safe for a different reason: their colons follow a letter and a digit.
     if (!needle) {
-        return insertable.slice(0, SUGGESTION_LIMIT).map(toBlockItem);
+        return [];
     }
 
     const scored: { item: EmojiItem & { emoji: string }; tier: number; index: number }[] = [];
@@ -316,6 +324,32 @@ function toBlockItem(item: EmojiItem): EmojiBlockItem {
 }
 
 /**
+ * Whether the `:` menu should stay shut for this session update.
+ *
+ * Two reasons, both found in peer review:
+ *
+ *  1. **No query yet.** A colon after a space opens a session immediately, and showing arbitrary
+ *     emoji before the author has typed anything is noise. `filterEmojis` returns nothing for an
+ *     empty query; this stops the shell opening around an empty list.
+ *  2. **The slash menu owns the dropdown.** `SlashMenuService` holds ONE dropdown's state, and
+ *     `slash-command.extension.ts` drives it too. `/` uses `startOfLine: true` while this uses
+ *     the default `allowedPrefixes: [" "]`, so `/ :sm` satisfies both and two live sessions fight
+ *     over one slot — each `onExit` only checks its own plugin key, so whichever exits last wins
+ *     and the other is left orphaned. The slash session started first, so it keeps the slot.
+ */
+function shouldSuppress(props: SuggestionProps<EmojiBlockItem>): boolean {
+    if (!props.query) {
+        return true;
+    }
+
+    const slashState = SuggestionPluginKey.getState(props.editor.state) as
+        | { active?: boolean }
+        | undefined;
+
+    return Boolean(slashState?.active);
+}
+
+/**
  * Builds the emoji node extension.
  *
  * A factory rather than a const because the `:` autocomplete reuses {@link SlashMenuService} for
@@ -325,6 +359,22 @@ export function createDotEmoji(menuService: SlashMenuService) {
     return DotEmojiBase.extend({
         addProseMirrorPlugins() {
             const base = DotEmojiBase.config.addProseMirrorPlugins?.call(this) ?? [];
+
+            const present = (props: SuggestionProps<EmojiBlockItem>): void => {
+                if (shouldSuppress(props)) {
+                    // Close rather than leave a stale list up — the author may have backspaced
+                    // from `:sm` back to a bare `:`.
+                    menuService.close();
+
+                    return;
+                }
+
+                if (menuService.isOpen()) {
+                    menuService.update(props.items, props.clientRect ?? null, props.command);
+                } else {
+                    menuService.open(props.items, props.clientRect ?? null, props.command);
+                }
+            };
 
             return [
                 ...base,
@@ -364,16 +414,15 @@ export function createDotEmoji(menuService: SlashMenuService) {
                     },
 
                     render: () => ({
-                        onStart: (props: SuggestionProps<EmojiBlockItem>) => {
-                            menuService.open(props.items, props.clientRect ?? null, props.command);
-                        },
-                        onUpdate: (props: SuggestionProps<EmojiBlockItem>) => {
-                            menuService.update(
-                                props.items,
-                                props.clientRect ?? null,
-                                props.command
-                            );
-                        },
+                        // `onStart` and `onUpdate` share one path deliberately.
+                        //
+                        // The session activates on the bare `:`, so `onStart` always arrives with
+                        // an empty query and is always suppressed. If `onUpdate` then only called
+                        // `update()`, the menu would never appear at all: `update()` refreshes
+                        // items and the anchor but never touches `isOpen`. So whichever callback
+                        // first sees a real query has to be the one that opens.
+                        onStart: (props: SuggestionProps<EmojiBlockItem>) => present(props),
+                        onUpdate: (props: SuggestionProps<EmojiBlockItem>) => present(props),
                         onExit: (props: SuggestionProps<EmojiBlockItem>) => {
                             // Suggestion fires onExit for real exits AND for (moved && changed)
                             // while the match is still live. Only tear down once the plugin has

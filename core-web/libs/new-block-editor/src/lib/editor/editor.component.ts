@@ -500,10 +500,16 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
      * pushes from the `value` effect, and reactive-forms writes from {@link writeValue} — so
      * there is one place where the document is replaced rather than three near-copies.
      *
-     * Order matters, and it is the reverse of the unknown-node/mark pair's reason. The emoji heal
-     * runs FIRST because it only ever reads and rewrites `emoji` nodes, which are known to this
-     * schema; running it after `preserveUnknownNodesInDocument` would make no difference to the
-     * result but would have it walk placeholder payloads it has no business touching.
+     * **Order matters, and the heal must run LAST.** An earlier revision ran it first and claimed
+     * the order made no difference. It does: `preserveUnknownBlockNodes` swallows an unknown node
+     * whole into `attrs.originalNode`, which `unknown-block.util.ts` documents as inert data kept
+     * byte-for-byte as stored — the mark pass skips `dotUnsupportedBlock` precisely to honour that.
+     * Healing first meant rewriting `emoji` nodes nested inside a customer's custom block before
+     * that payload was stashed, so the "original" restored on save was not the original.
+     *
+     * Running the heal after makes the payload structurally unreachable — it lives in `attrs`, and
+     * `healNode` only recurses into `content` — rather than relying on a known-node-name list
+     * staying in sync.
      */
     private loadContent(editor: Editor, content: string | JSONContent): void {
         const parsed = normalizeEditorContent(content);
@@ -516,21 +522,28 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             // `transformPastedHTML` does NOT cover this: it only runs on paste. Without the call
             // below, the `fallbackImage` span's inner `<img src="cdn.jsdelivr.net/…">` is left
             // exposed and `DotImage` claims it as a dotCMS image node.
-            editor.commands.setContent(healEmojiHtml(parsed, emojis), { emitUpdate: false });
+            const healedHtml = healEmojiHtml(parsed, emojis);
+
+            editor.commands.setContent(healedHtml, { emitUpdate: false });
+
+            // Emit for the same reason the JSON path does: without it the host keeps the unhealed
+            // string and a plain Save throws the repair away. Gated on the heal having actually
+            // rewritten something, so an HTML value with no emoji span leaves the form pristine.
+            if (healedHtml !== parsed) {
+                this.emitHealedValue(editor);
+            }
 
             return;
         }
 
-        const healed = healEmojiNodes(parsed, emojis);
-
-        editor.commands.setContent(
-            preserveUnknownNodesInDocument(
-                healed,
-                getKnownNodeNames(editor),
-                getKnownMarkNames(editor)
-            ),
-            { emitUpdate: false }
+        const preserved = preserveUnknownNodesInDocument(
+            parsed,
+            getKnownNodeNames(editor),
+            getKnownMarkNames(editor)
         );
+        const healed = healEmojiNodes(preserved, emojis);
+
+        editor.commands.setContent(healed, { emitUpdate: false });
 
         // `emitUpdate: false` above is deliberate: a host push or a reactive-forms write must not
         // look like an author edit. But when the heal actually rewrote something, the document in
@@ -545,13 +558,33 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
         // Deferred to a microtask because `writeValue` is one of this method's callers, and
         // calling `onChange` synchronously inside it trips Angular's "value changed after it was
         // checked" check (NG0100).
-        if (healed !== parsed) {
-            queueMicrotask(() => {
-                if (!editor.isDestroyed) {
-                    this.emitValue(editor);
-                }
-            });
+        if (healed !== preserved) {
+            this.emitHealedValue(editor);
         }
+    }
+
+    /**
+     * Emits after a healing load.
+     *
+     * Deferred to a microtask because `writeValue` is one of `loadContent`'s callers, and calling
+     * `onChange` synchronously inside it trips Angular's "value changed after it was checked"
+     * check (NG0100).
+     *
+     * FINDING 5: the stats sync is not incidental. `withDocStats` bails when `charCount()` is `<= 0`
+     * and `syncCharacterStatsFromEditor` runs only from `onCreate` / `onUpdate` — and this path
+     * sets content with `emitUpdate: false`, so nothing had refreshed the count. Without the sync
+     * the healed emit silently drops `charCount`, `wordCount` and `readingTime` from the stored
+     * document.
+     */
+    private emitHealedValue(editor: Editor): void {
+        queueMicrotask(() => {
+            if (editor.isDestroyed) {
+                return;
+            }
+
+            syncCharacterStatsFromEditor(editor, this.stats);
+            this.emitValue(editor);
+        });
     }
 
     /**

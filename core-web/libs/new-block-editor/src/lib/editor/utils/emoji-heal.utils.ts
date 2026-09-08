@@ -64,20 +64,47 @@ import { type EmojiItem, shortcodeToEmoji } from '@tiptap/extension-emoji';
  */
 const LINK_SANDWICH = 'link';
 
-/** A mark's attrs, with absent and null treated alike — stored JSON is inconsistent about both. */
-function attrsEqual(a: Record<string, unknown> = {}, b: Record<string, unknown> = {}): boolean {
-    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+/**
+ * Coerces a stored `marks` value to an array.
+ *
+ * `?? []` is not enough. It only catches `null` and `undefined`, so a hand-crafted `"marks": {}`
+ * sails through and then dies on `.some` / spread. Stored Story Block JSON reaches this transform
+ * BEFORE TipTap validates anything, and there is no server-side schema check (data-model.md), so
+ * the Contentlet REST API can put any shape here.
+ */
+function asMarks(value: unknown): NonNullable<JSONContent['marks']> {
+    return Array.isArray(value) ? (value as NonNullable<JSONContent['marks']>) : [];
+}
+
+/** Coerces a stored `attrs` value to an object. Same reasoning as {@link asMarks}. */
+function asAttrs(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {};
+}
+
+/**
+ * A mark's attrs, with absent and null treated alike — stored JSON is inconsistent about both.
+ *
+ * Default parameters do NOT cover this: they fire only on `undefined`, so an explicit
+ * `"attrs": null` reached `Object.keys(null)` and threw. Hence {@link asAttrs} at every call site
+ * rather than a default value.
+ */
+function attrsEqual(a: unknown, b: unknown): boolean {
+    const left = asAttrs(a);
+    const right = asAttrs(b);
+    const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
 
     for (const key of keys) {
-        const left = a[key] ?? null;
-        const right = b[key] ?? null;
+        const a1 = left[key] ?? null;
+        const b1 = right[key] ?? null;
 
-        if (left === right) {
+        if (a1 === b1) {
             continue;
         }
 
-        if (typeof left === 'object' && typeof right === 'object' && left && right) {
-            if (JSON.stringify(left) !== JSON.stringify(right)) {
+        if (typeof a1 === 'object' && typeof b1 === 'object' && a1 && b1) {
+            if (JSON.stringify(a1) !== JSON.stringify(b1)) {
                 return false;
             }
 
@@ -96,24 +123,23 @@ function attrsEqual(a: Record<string, unknown> = {}, b: Record<string, unknown> 
  * Sorted by type first: ProseMirror keeps marks in schema order, but stored JSON can arrive from
  * the REST API in any order, and two runs that differ only in mark ORDER are the same formatting.
  */
-export function marksEqual(a: JSONContent['marks'] = [], b: JSONContent['marks'] = []): boolean {
-    if (a.length !== b.length) {
+export function marksEqual(a: unknown, b: unknown): boolean {
+    const first = asMarks(a);
+    const second = asMarks(b);
+
+    if (first.length !== second.length) {
         return false;
     }
 
     const sort = (marks: NonNullable<JSONContent['marks']>) =>
         [...marks].sort((x, y) => (x.type ?? '').localeCompare(y.type ?? ''));
 
-    const left = sort(a);
-    const right = sort(b);
+    const left = sort(first);
+    const right = sort(second);
 
     return left.every(
         (mark, index) =>
-            mark.type === right[index].type &&
-            attrsEqual(
-                mark.attrs as Record<string, unknown>,
-                right[index].attrs as Record<string, unknown>
-            )
+            mark.type === right[index].type && attrsEqual(mark.attrs, right[index].attrs)
     );
 }
 
@@ -137,7 +163,14 @@ export function marksEqual(a: JSONContent['marks'] = [], b: JSONContent['marks']
  * nothing.
  */
 export function healEmojiHtml(html: string, emojis: readonly EmojiItem[]): string {
-    if (!html.includes('data-type="emoji"')) {
+    // Quote- and case-tolerant, because the SELECTOR below is. `querySelectorAll` runs after
+    // parsing, so it matches `data-type='emoji'`, `DATA-TYPE="Emoji"` and whitespace-padded
+    // variants — a literal `includes('data-type="emoji"')` skipped exactly those before the
+    // selector ever saw them, quietly reopening the defect this function exists to close (R11).
+    //
+    // Kept as a fast path rather than deleted: without it every field load and every paste pays
+    // for a DOMParser.
+    if (!/data-type\s*=\s*['"]?emoji/i.test(html)) {
         return html;
     }
 
@@ -179,7 +212,7 @@ function isBareConvertibleEmoji(
     node: JSONContent | undefined,
     emojis: readonly EmojiItem[]
 ): boolean {
-    if (node?.type !== 'emoji' || (node.marks ?? []).length > 0) {
+    if (node?.type !== 'emoji' || asMarks(node.marks).length > 0) {
         return false;
     }
 
@@ -258,7 +291,7 @@ function healInline(nodes: JSONContent[], emojis: readonly EmojiItem[]): JSONCon
 
         changed = true;
 
-        const own = node.marks ?? [];
+        const own = asMarks(node.marks);
 
         if (own.length > 0) {
             return { type: 'text', marks: own, text: character };
@@ -275,7 +308,7 @@ function healInline(nodes: JSONContent[], emojis: readonly EmojiItem[]): JSONCon
         const sandwich =
             isText(previous) &&
             isText(next) &&
-            (previous.marks ?? []).some((mark) => mark.type === LINK_SANDWICH) &&
+            asMarks(previous.marks).some((mark) => mark.type === LINK_SANDWICH) &&
             marksEqual(previous.marks, next.marks);
 
         return sandwich
@@ -324,11 +357,25 @@ export function healEmojiNodes<T extends JSONContent | JSONContent[]>(
     content: T,
     emojis: readonly EmojiItem[]
 ): T {
-    if (Array.isArray(content)) {
-        const healed = healContent(content, emojis);
+    // Fails CLOSED, at this function's own boundary rather than in every caller.
+    //
+    // `loadContent` calls this before `setContent`, so a throw here propagates out of
+    // `writeValue` / the value effect, `setContent` never runs, and the field renders EMPTY over
+    // intact stored JSON. That is the #37145 mechanism this whole spec is written to avoid, and
+    // arriving at it through the repair would be a poor joke.
+    //
+    // Returning the input untouched degrades to exactly the pre-fix behaviour: the document still
+    // has its `emoji` nodes and TipTap handles it as it always did. `content-match.utils.ts` fails
+    // closed for the same reason.
+    try {
+        if (Array.isArray(content)) {
+            const healed = healContent(content, emojis);
 
-        return (healed === content ? content : healed) as T;
+            return (healed === content ? content : healed) as T;
+        }
+
+        return healNode(content, emojis) as T;
+    } catch {
+        return content;
     }
-
-    return healNode(content, emojis) as T;
 }
