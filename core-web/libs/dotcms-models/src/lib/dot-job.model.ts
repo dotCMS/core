@@ -1,3 +1,5 @@
+import { DotBulkUploadFailureReason } from './dot-content-drive.model';
+
 /**
  * The job queue's own vocabulary, as the client sees it over
  * `GET /api/v1/jobs/{jobId}/status`.
@@ -155,4 +157,23 @@ export interface DotBulkUploadSubmitResponse {
     jobId: string;
     /** Absolute enough to follow on its own, so the queue name is not the client's to hardcode. */
     statusUrl: string;
+}
+
+/**
+ * The payload of a `BULK_UPLOAD_COMPLETED` system event.
+ *
+ * Pushed over the websocket the admin UI already holds when a batch settles, scoped to whoever
+ * submitted it — so a client receives runs it never started, from another tab, another window or a
+ * Login-As session, and `jobId` is how it tells its own from somebody else's.
+ *
+ * The counters and `results` are optional for the same reason the bulk refresh event's are: a job
+ * that finished without recording an outcome carries only `state`, and a caller must treat that as
+ * a failure rather than as a clean run over nothing, which is what all-zero counters would look
+ * like.
+ */
+export interface DotBulkUploadCompletedEvent extends Partial<
+    DotBatchOutcome<DotBulkUploadFailureReason>
+> {
+    state: DotJobState;
+    jobId?: string;
 }

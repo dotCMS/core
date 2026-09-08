@@ -249,6 +249,7 @@ describe('DotContentDriveShellComponent', () => {
                     setItems: jest.fn(),
                     setStatus: jest.fn(),
                     startExternalRun: jest.fn().mockReturnValue('run-1'),
+                    trackUploadJob: jest.fn(),
                     activeRunCount: signal(0),
                     toolbarRun: signal(undefined),
                     toolbarRunCount: signal(0),
@@ -1691,6 +1692,25 @@ describe('DotContentDriveShellComponent', () => {
             window.dispatchEvent(event);
 
             expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should remember the accepted batch, with where it landed', () => {
+            // The completion event arrives minutes later and is scoped to the user, not the tab, so
+            // the handle is the only way to tell this batch's outcome from another window's. The
+            // folder travels with it because by then the author may be looking somewhere else.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({ jobId: 'job-9', statusUrl: '/api/v1/jobs/job-9/status' })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.trackUploadJob).toHaveBeenCalledWith('job-9', [
+                `//${TARGET_FOLDER_DATA.hostname}${TARGET_FOLDER_DATA.path}`.toLowerCase()
+            ]);
         });
 
         it('should not reload the listing when the batch is only accepted', () => {

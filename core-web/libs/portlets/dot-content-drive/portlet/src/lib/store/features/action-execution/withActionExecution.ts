@@ -29,6 +29,7 @@ import {
     DotActionBulkRequestOptions,
     DotAjaxActionResponseView,
     DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
     DotBundle,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
@@ -66,6 +67,15 @@ interface WithActionExecutionState {
      * somebody else's run.
      */
     refreshJobIds: string[];
+    /**
+     * Batches this store submitted, and where each one landed.
+     *
+     * Same reasoning as {@link refreshJobIds} — the completion event is scoped to the submitting
+     * user, so another tab's upload reaches this store too and only ids in here are acted on. The
+     * folders come along because the outcome decides whether the listing can show what changed, and
+     * by the time the event lands the author may be looking somewhere else entirely.
+     */
+    uploadJobs: Record<string, string[]>;
 }
 
 /**
@@ -90,7 +100,8 @@ export function withActionExecution() {
         withState<WithActionExecutionState>({
             runs: {},
             actionExecutionResult: undefined,
-            refreshJobIds: []
+            refreshJobIds: [],
+            uploadJobs: {}
         }),
         withComputed(({ runs }) => ({
             /** Runs in flight, in insertion order. */
@@ -712,6 +723,79 @@ export function withActionExecution() {
                      * shell's existing effect renders it — so the same operation reads the same way
                      * whichever surface started it, and the reload behaviour matches too.
                      */
+                    /**
+                     * Remembers a batch this store submitted, so its completion can be told from
+                     * another tab's.
+                     *
+                     * @param affectedFolders where the batch landed, as `//hostname/path` refs
+                     */
+                    trackUploadJob: (jobId: string, affectedFolders: string[] = []): void => {
+                        patchState(store, {
+                            uploadJobs: { ...store.uploadJobs(), [jobId]: affectedFolders }
+                        });
+                    },
+
+                    /**
+                     * Publishes a finished batch's outcome, or reports that it cannot be trusted.
+                     *
+                     * Mirrors {@link reportRefreshCompleted} deliberately: same correlation, same
+                     * refusal to invent numbers. What differs is that an upload's outcome carries
+                     * the folders it changed, so the shell can decide whether the listing it is
+                     * showing can display the result at all.
+                     */
+                    reportUploadCompleted: (
+                        actionName: string,
+                        event: DotBulkUploadCompletedEvent
+                    ): void => {
+                        const tracked = store.uploadJobs();
+
+                        if (!event.jobId || !(event.jobId in tracked)) {
+                            // Not ours: another tab's batch, or one already settled. Silent by
+                            // design — an error here would blame this author for someone else's.
+                            return;
+                        }
+
+                        const affectedFolders = tracked[event.jobId];
+                        const remaining = { ...tracked };
+                        delete remaining[event.jobId];
+                        patchState(store, { uploadJobs: remaining });
+
+                        const closes =
+                            undefined !== event.total &&
+                            (event.successCount ?? 0) +
+                                (event.failedCount ?? 0) +
+                                (event.skippedCount ?? 0) ===
+                                event.total;
+
+                        if (!closes) {
+                            // Either no counters at all, or counters that do not account for every
+                            // file. Both are unusable: trusting the zeros would report a run over
+                            // nothing, and the author would believe their files were never sent.
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText:
+                                        'The upload did not report an outcome for every file'
+                                })
+                            );
+
+                            return;
+                        }
+
+                        patchState(store, {
+                            actionExecutionResult: {
+                                actionName,
+                                successCount: event.successCount ?? 0,
+                                skippedCount: event.skippedCount ?? 0,
+                                failedCount: event.failedCount ?? 0,
+                                affectedFolders,
+                                // It arrives unprompted, long after the click, so it announces
+                                // itself and must not interrupt whatever is happening now.
+                                backgrounded: true
+                            }
+                        });
+                    },
+
                     reportExternalResult: (result: DotContentDriveActionExecutionResult): void => {
                         patchState(store, { actionExecutionResult: result });
                     },
@@ -739,6 +823,18 @@ export function withActionExecution() {
                         // composing user-facing copy, and this keeps the wording with the rest of the
                         // Action Center's i18n.
                         store.reportRefreshCompleted(dotMessageService.get('Refresh'), event);
+                    });
+
+                // Same seam for the upload: the run reports itself when it settles, which is what
+                // lets the author walk away. Nothing here polls.
+                eventsSocket
+                    .on<DotBulkUploadCompletedEvent>(DotSystemEventType.BULK_UPLOAD_COMPLETED)
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((event) => {
+                        store.reportUploadCompleted(
+                            dotMessageService.get('content-drive.upload'),
+                            event
+                        );
                     });
             }
         })

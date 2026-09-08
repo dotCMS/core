@@ -12,7 +12,7 @@ import {
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
-import { DotBulkRefreshCompletedEvent } from '@dotcms/dotcms-models';
+import { DotBulkRefreshCompletedEvent, DotBulkUploadCompletedEvent } from '@dotcms/dotcms-models';
 
 import { withActionExecution } from './withActionExecution';
 
@@ -387,6 +387,101 @@ describe('withActionExecution', () => {
             store.executeRefresh('Refresh', ['inode-1']);
 
             expect(handle).toHaveBeenCalled();
+        });
+    });
+
+    describe('reportUploadCompleted', () => {
+        const completed = (
+            overrides: Partial<DotBulkUploadCompletedEvent> = {}
+        ): DotBulkUploadCompletedEvent =>
+            ({
+                jobId: 'upload-1',
+                state: 'SUCCESS',
+                total: 3,
+                processed: 3,
+                successCount: 3,
+                failedCount: 0,
+                skippedCount: 0,
+                ...overrides
+            }) as DotBulkUploadCompletedEvent;
+
+        it('should publish a result for a batch this store submitted', () => {
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted('Upload', completed());
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Upload',
+                    successCount: 3,
+                    // Arrives unprompted, minutes after the author moved on, so it must announce
+                    // itself and must not disturb whatever they are doing.
+                    backgrounded: true
+                })
+            );
+        });
+
+        it('should ignore a batch it never submitted', () => {
+            // The event is scoped to the user, not the tab, so another window's upload reaches this
+            // store too. Reporting it would toast counts for files this grid never sent.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted('Upload', completed({ jobId: 'someone-elses' }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an unusable outcome as an error rather than a clean run', () => {
+            // A finished run carrying no counters is indistinguishable from a run over nothing if
+            // the zeros are trusted, so the absence is treated as the failure it is.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted('Upload', {
+                jobId: 'upload-1',
+                state: 'SUCCESS'
+            } as DotBulkUploadCompletedEvent);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(handle).toHaveBeenCalled();
+        });
+
+        it('should report counts that do not account for every file as an error', () => {
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted(
+                'Upload',
+                completed({ total: 5, successCount: 1, failedCount: 0, skippedCount: 0 })
+            );
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(handle).toHaveBeenCalled();
+        });
+
+        it('should carry the destination so the listing only reloads where it can show it', () => {
+            build();
+            store.trackUploadJob('upload-1', ['//demo.com/images']);
+
+            store.reportUploadCompleted('Upload', completed());
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ affectedFolders: ['//demo.com/images'] })
+            );
+        });
+
+        it('should settle a batch only once', () => {
+            // A resumed run must not report twice, and the same event can be delivered again.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted('Upload', completed());
+            store.clearActionExecutionResult();
+            store.reportUploadCompleted('Upload', completed());
+
+            expect(store.actionExecutionResult()).toBeUndefined();
         });
     });
 

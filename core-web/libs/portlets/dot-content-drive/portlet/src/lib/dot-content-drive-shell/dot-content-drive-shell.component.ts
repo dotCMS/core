@@ -1287,8 +1287,20 @@ export class DotContentDriveShellComponent {
                     : { siteId: this.#store.currentSite()?.identifier ?? '' })
             })
             .subscribe({
-                next: () => {
+                next: ({ jobId }) => {
                     settleUploadPhase();
+
+                    // The handle is the only way to tell this batch's completion from another
+                    // tab's: the event is scoped to the submitting user, not to a window. The
+                    // destination travels with it because by the time it lands the author may be
+                    // looking at a different folder, and the outcome decides whether the listing
+                    // they are on can show the result at all.
+                    this.#store.trackUploadJob(jobId, [
+                        toFolderRef(
+                            hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
+                            hostFolder?.path ?? '/'
+                        )
+                    ]);
 
                     // Nothing else to do, and deliberately nothing. A `202` means the batch is queued,
                     // not that any file exists, so reloading here refetches a folder whose files
