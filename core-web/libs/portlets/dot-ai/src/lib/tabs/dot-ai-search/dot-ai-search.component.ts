@@ -45,6 +45,22 @@ export default class DotAiSearchComponent {
     /** Closeness for the result bar. See `toClosenessPercent` for why it normalises. */
     protected readonly toCloseness = toClosenessPercent;
 
+    /**
+     * The threshold the server echoes is a float32 round trip, so `0.01` comes back as
+     * `0.009999999776482582`. Printed as given, that is noise rather than information.
+     */
+    protected formatThreshold(threshold: number): string {
+        return Number.isFinite(threshold) ? `${Number(threshold.toFixed(4))}` : '';
+    }
+
+    /**
+     * The operator that actually produced the results on screen, echoed by the response —
+     * not the panel's current selection, which the user may already have changed.
+     */
+    protected readonly $resultOperator = computed(
+        () => this.store.searchResponse()?.operator ?? ''
+    );
+
     protected readonly $canSearch = computed(
         () => this.store.isConfigured() && !!this.store.searchPrompt().trim()
     );

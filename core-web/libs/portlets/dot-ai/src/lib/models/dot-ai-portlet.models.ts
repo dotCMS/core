@@ -64,6 +64,15 @@ export interface DotAiIndexBuildNotice {
  */
 export const DOT_AI_DEFAULT_THRESHOLD = 0.75;
 
+/**
+ * Lowest threshold the panel offers.
+ *
+ * Not zero: `EmbeddingsFactory` skips the distance predicate altogether when the threshold is
+ * `0`, so instead of admitting only exact matches it returns every row in the index — the
+ * opposite of what the control means. Until that is fixed server-side, zero is not selectable.
+ */
+export const DOT_AI_MIN_THRESHOLD = 0.05;
+
 /** The backend declares @Min(128) but does not enforce it — the client is the only guard. */
 export const DOT_AI_MIN_RESPONSE_TOKENS = 128;
 export const DOT_AI_DEFAULT_RESPONSE_TOKENS = 1024;

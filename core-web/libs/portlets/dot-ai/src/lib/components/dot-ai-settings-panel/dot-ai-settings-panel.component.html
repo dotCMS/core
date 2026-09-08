@@ -23,10 +23,13 @@
 
     <div class="field">
         <label for="dotai-settings-threshold">{{ 'dotai.settings.threshold' | dm }}</label>
+        <!-- min is deliberately above zero. The server skips the distance predicate entirely
+             when threshold is 0, so it returns EVERYTHING — the exact opposite of what this
+             field's label promises. Until that is fixed server-side, the value is not offered. -->
         <p-inputNumber
             inputId="dotai-settings-threshold"
             size="small"
-            [min]="0"
+            [min]="minThreshold"
             [max]="2"
             [step]="0.05"
             [minFractionDigits]="2"

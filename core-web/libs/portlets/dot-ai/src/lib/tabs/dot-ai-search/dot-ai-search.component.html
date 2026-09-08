@@ -32,7 +32,7 @@
                                 : [
                                       response.count + '',
                                       response.timeToEmbeddings,
-                                      response.threshold + ''
+                                      formatThreshold(response.threshold)
                                   ]
                     }}
                 </p>
@@ -113,7 +113,7 @@
                                         <p-progressBar
                                             class="ml-auto w-12"
                                             style="--p-progressbar-height: 8px"
-                                            [value]="toCloseness(match.distance)"
+                                            [value]="toCloseness(match.distance, $resultOperator())"
                                             [showValue]="false" />
                                     </div>
                                 }

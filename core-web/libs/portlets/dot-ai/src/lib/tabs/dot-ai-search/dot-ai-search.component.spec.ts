@@ -2,7 +2,11 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { DotAiSearchResult } from '@dotcms/dotcms-models';
+import {
+    DOT_AI_VECTOR_OPERATOR,
+    DotAiSearchResponse,
+    DotAiSearchResult
+} from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
 
 import DotAiSearchComponent from './dot-ai-search.component';
@@ -16,6 +20,19 @@ const result = (overrides: Partial<DotAiSearchResult> = {}): DotAiSearchResult =
     contentType: 'Blog',
     modDate: '2026-01-01',
     matches: [{ distance: 0.2, extractedText: 'a matching passage' }],
+    ...overrides
+});
+
+const response = (overrides: Partial<DotAiSearchResponse> = {}): DotAiSearchResponse => ({
+    timeToEmbeddings: '10ms',
+    total: 1,
+    count: 1,
+    query: 'costa rica',
+    threshold: 0.75,
+    operator: DOT_AI_VECTOR_OPERATOR.COSINE,
+    offset: 0,
+    limit: 20,
+    results: [],
     ...overrides
 });
 
@@ -165,6 +182,39 @@ describe('DotAiSearchComponent', () => {
             // The normalisation itself is covered in dot-ai-distance.utils.spec.ts; here we
             // only care that the raw negative value still reaches the row unmangled.
             expect(spectator.query(byTestId('dotai-search-result-distance'))).toHaveText('-0.33');
+        });
+
+        it('should rank the closeness bars the way the results are ranked', () => {
+            // With inner product the best hit is the most negative, so its bar must be the
+            // fullest. Normalising every operator the same way inverted this.
+            storeMock.hasSearched.mockReturnValue(true);
+            storeMock.searchResponse.mockReturnValue(
+                response({ operator: DOT_AI_VECTOR_OPERATOR.INNER_PRODUCT })
+            );
+            storeMock.searchResults.mockReturnValue([
+                result({ inode: 'best', matches: [{ distance: -0.65, extractedText: 'x' }] }),
+                result({ inode: 'worst', matches: [{ distance: -0.09, extractedText: 'y' }] })
+            ]);
+            spectator = createComponent();
+
+            const bars = spectator
+                .queryAll('p-progressbar')
+                .map((bar) => Number(bar.getAttribute('aria-valuenow')));
+
+            expect(bars[0]).toBeGreaterThan(bars[1]);
+        });
+
+        it('should print the echoed threshold without float32 noise', () => {
+            // Asserted on the formatter rather than the rendered line: DotMessageService is
+            // mocked here, so the `dm` pipe renders the meta string empty.
+            spectator = createComponent();
+            const format = (
+                spectator.component as unknown as { formatThreshold(value: number): string }
+            ).formatThreshold;
+
+            expect(format(0.009999999776482582)).toBe('0.01');
+            expect(format(0.75)).toBe('0.75');
+            expect(format(Number.NaN)).toBe('');
         });
     });
 });

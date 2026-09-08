@@ -173,4 +173,6 @@
     </div>
 </section>
 
-<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
+<!-- closeAriaLabel: PrimeNG's own hook. Without it the header's X is announced with no
+     name at all, on both the delete and the rebuild confirmation. -->
+<p-confirmDialog [draggable]="false" [closeAriaLabel]="'close' | dm" [style]="{ width: '500px' }" />
