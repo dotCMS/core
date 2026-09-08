@@ -67,11 +67,21 @@ export function withAiConfig() {
             const httpErrorManager = inject(DotHttpErrorManagerService);
 
             return {
-                loadConfig: rxMethod<void>(
+                /**
+                 * Loads the config for a site.
+                 *
+                 * Takes the site rather than reading it, so this slice stays free of
+                 * `GlobalStore` and a test can drive a switch by calling it twice. `null` —
+                 * which `currentSiteId` reports until the site resolves — means "whatever the
+                 * session is on", the endpoint's own default.
+                 */
+                loadConfig: rxMethod<string | null>(
                     pipe(
-                        // switchMap: a re-load supersedes an in-flight one.
-                        switchMap(() =>
-                            configService.getResolvedConfig().pipe(
+                        // switchMap: a re-load supersedes an in-flight one, which is what
+                        // makes a rapid site switch land on the last site rather than
+                        // whichever response happens back last.
+                        switchMap((siteId) =>
+                            configService.getResolvedConfig(siteId ?? undefined).pipe(
                                 tap((config: DotAiResolvedConfig) => {
                                     // Keep the selected model when the provider still offers
                                     // it, and only fall back when it has gone away (FR-018).

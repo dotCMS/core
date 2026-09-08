@@ -1,6 +1,9 @@
 import { signalStore, withHooks, withState } from '@ngrx/signals';
 
+import { effect, inject, untracked } from '@angular/core';
+
 import { withPersistedQuery } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 
 import { withAiChat } from './features/with-ai-chat.feature';
 import { withAiConfig } from './features/with-ai-config.feature';
@@ -45,7 +48,27 @@ export const DotAiStore = signalStore(
     withDotAiPreferences(),
     withHooks({
         onInit(store) {
-            store.loadConfig();
+            const globalStore = inject(GlobalStore);
+
+            // The dotAI app is configured per site, so the header's site selector changes
+            // which provider, models and settings apply. Reading `currentSiteId` inside an
+            // effect covers both ways it can change: the toolbar calls
+            // `switchCurrentSite()`, which patches the state directly, and a switch made in
+            // another tab arrives as a SWITCH_SITE websocket event that syncs the same
+            // field. `switchSiteEvent$()`, used by the older non-signal portlets, sees only
+            // the second.
+            //
+            // This is also the initial load — an effect runs once on creation — so there is
+            // no separate `loadConfig()` call to keep in step with it. Same shape as
+            // dot-tags.
+            effect(() => {
+                const siteId = globalStore.currentSiteId();
+
+                untracked(() => store.loadConfig(siteId));
+            });
+
+            // Not site-scoped: `indexCount` takes no site and the embeddings live in one
+            // global table, so switching sites does not change this list.
             store.loadIndexes();
         }
     })
