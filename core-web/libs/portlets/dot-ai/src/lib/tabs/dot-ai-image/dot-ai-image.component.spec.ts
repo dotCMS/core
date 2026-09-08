@@ -124,4 +124,47 @@ describe('DotAiImageComponent', () => {
             expect(spectator.query(byTestId('dotai-image-replaces-hint'))).toBeFalsy();
         });
     });
+
+    describe('the image action bar', () => {
+        beforeEach(() => withImage());
+
+        it('should float over the top-right of the picture, not sit below it', () => {
+            const bar = spectator.query(byTestId('dotai-image-save'))?.parentElement as HTMLElement;
+
+            expect(bar.className).toContain('absolute');
+            expect(bar.className).toContain('right-2');
+            expect(bar.className).toContain('top-2');
+            // The bar has to clear p-image's hover preview mask, which is absolute with no
+            // z-index of its own; without this the mask swallows these clicks.
+            expect(bar.className).toContain('z-20');
+        });
+
+        it('should keep the bar inside the frame that hugs the picture', () => {
+            const frame = spectator.query(byTestId('dotai-image-result')) as HTMLElement;
+            const bar = spectator.query(byTestId('dotai-image-save'))?.parentElement as HTMLElement;
+
+            expect(frame.contains(bar)).toBe(true);
+            // `absolute` needs a positioned ancestor or it escapes to the viewport; that
+            // ancestor is the wrapper sized to the picture, so the bar lands on the picture's
+            // corner rather than the panel's.
+            expect(bar.parentElement?.className).toContain('relative');
+        });
+
+        it('should not underline the download link, which is shaped like a button', () => {
+            // The global `a` rule underlines every link (style.css), which reads wrong here.
+            const link = spectator.query(byTestId('dotai-image-download')) as HTMLElement;
+
+            expect(link.className).toContain('no-underline');
+            expect(link.className).toContain('p-button');
+        });
+    });
+
+    describe('the composer', () => {
+        it('should draw no box of its own, since dot-ai-prompt-input has one', () => {
+            const composer = spectator.query('dot-ai-prompt-input')?.parentElement as HTMLElement;
+
+            expect(composer.className).not.toContain('border-t');
+            expect(composer.className).not.toContain('border-surface-200');
+        });
+    });
 });

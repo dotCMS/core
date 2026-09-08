@@ -58,9 +58,9 @@
             </div>
         </div>
         <!-- Composer last in the DOM as well as visually, so focus order matches what you
-             read: answer, then the box you type in. border-t rather than border-b now that
-             it sits under the result. -->
-        <div class="shrink-0 border-t border-surface-200 p-4">
+             read: answer, then the box you type in. No border here — dot-ai-prompt-input
+             draws its own card, and a rule above it read as a second box around the first. -->
+        <div class="shrink-0 p-4">
             <dot-ai-prompt-input
                 class="container mx-auto"
                 [value]="$draft()"

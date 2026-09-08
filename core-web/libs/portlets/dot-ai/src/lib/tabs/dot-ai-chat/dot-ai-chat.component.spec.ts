@@ -276,4 +276,12 @@ describe('DotAiChatComponent', () => {
             expect(storeMock.sendChat).not.toHaveBeenCalled();
         });
     });
+
+    it('should draw no box around the composer, since dot-ai-prompt-input has one', () => {
+        spectator = createComponent();
+        const composer = spectator.query('dot-ai-prompt-input')?.parentElement as HTMLElement;
+
+        expect(composer.className).not.toContain('border-t');
+        expect(composer.className).not.toContain('border-surface-200');
+    });
 });

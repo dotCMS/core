@@ -28,12 +28,13 @@
                     data-testid="dotai-image-loading" />
             } @else if (store.image(); as image) {
                 <!-- items-center makes the inner column size to its content, so the frame hugs
-                     the picture instead of letterboxing it, and the action row below inherits
-                     exactly that width. -->
+                     the picture instead of letterboxing it. `relative` is what the action bar
+                     anchors to, and because that bar is out of flow the wrapper's width is now
+                     purely the picture's. -->
                 <div
                     class="flex min-h-0 flex-1 flex-col items-center"
                     data-testid="dotai-image-result">
-                    <div class="flex min-h-0 max-w-full flex-1 flex-col">
+                    <div class="relative flex min-h-0 max-w-full flex-1 flex-col">
                         <p-image
                             class="flex min-h-0 flex-1"
                             [pt]="imagePt"
@@ -42,16 +43,25 @@
                             [preview]="true"
                             alt="{{ image.originalPrompt }}" />
 
-                        <div class="mt-3 flex shrink-0 items-center gap-2">
+                        <!-- Over the picture's top-right corner. The panel behind it is not
+                             decoration: an outlined button on top of an arbitrary generated
+                             image is frequently unreadable. z-20 clears the preview mask
+                             p-image lays over the image on hover, which would otherwise
+                             swallow these clicks. -->
+                        <div
+                            class="absolute top-2 right-2 z-20 flex items-center gap-2 rounded-lg bg-surface-0/90 p-1 shadow-sm">
                             <p-button
+                                size="small"
                                 [label]="'dotai.image.save' | dm"
                                 [disabled]="image.published || store.imageSaving()"
                                 (onClick)="store.saveImage()"
                                 data-testid="dotai-image-save" />
 
-                            <!-- Same-origin anchor: no backend, and it works before any save. -->
+                            <!-- Same-origin anchor: no backend, and it works before any save.
+                                 no-underline because the global `a` rule underlines every
+                                 link, which reads wrong on something shaped like a button. -->
                             <a
-                                class="p-button p-button-outlined"
+                                class="p-button p-button-outlined p-button-sm no-underline"
                                 [href]="store.imageUrl()"
                                 [download]="image.tempFileName"
                                 data-testid="dotai-image-download">
@@ -60,7 +70,7 @@
 
                             @if (image.published) {
                                 <span
-                                    class="text-sm text-muted-color"
+                                    class="pr-1 text-sm text-muted-color"
                                     data-testid="dotai-image-published">
                                     {{ 'dotai.image.published' | dm }}
                                 </span>
@@ -84,9 +94,10 @@
             }
         </div>
     </div>
-    <!-- Composer under the result, the usual arrangement for this kind of screen. border-t
-         rather than border-b now that it sits below. -->
-    <div class="shrink-0 border-t border-surface-200 p-4">
+    <!-- Composer under the result, the usual arrangement for this kind of screen. No border
+         here — dot-ai-prompt-input draws its own card, and a rule above it read as a second
+         box around the first. -->
+    <div class="shrink-0 p-4">
         <dot-ai-prompt-input
             class="container mx-auto"
             [value]="$prompt()"
