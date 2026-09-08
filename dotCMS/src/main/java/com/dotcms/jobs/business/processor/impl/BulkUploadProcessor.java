@@ -1,6 +1,9 @@
 package com.dotcms.jobs.business.processor.impl;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
 import com.dotcms.jobs.business.batch.BatchItemResult;
@@ -26,9 +29,13 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.util.Optional;
+import com.dotmarketing.util.Config;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadReasonResolver;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +60,7 @@ import javax.enterprise.context.Dependent;
 public class BulkUploadProcessor implements JobProcessor, Cancellable {
 
     private final JobItemResultFactory itemResults = new JobItemResultFactory();
+    private final BulkUploadReasonResolver reasons = new BulkUploadReasonResolver();
     private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
 
     @Override
@@ -118,6 +126,24 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         final String tempFileId = String.valueOf(file.get("tempFileId"));
 
         try {
+            // Decided from what staging measured, before anything is created (research R4). The
+            // validation layer reports an over-size file and a disallowed type through the same
+            // exception class, differing only by a translated string, so a reason recovered from
+            // it would be a guess. Here both are facts.
+            final ContentType contentType = contentTypeFor(job.parameters(), user);
+            final Optional<BatchFailureReason> refused = reasons.preCheck(
+                    sizeOf(file),
+                    (String) file.get("mimeType"),
+                    effectiveCeiling(contentType),
+                    acceptedTypes(contentType));
+
+            if (refused.isPresent()) {
+                record(job, seq, fileName, BatchItemStatus.FAILED, refused.get(),
+                        "Refused before creation by the file's measured size or resolved type",
+                        null);
+                return;
+            }
+
             final File binary = resolveStagedContent(job, tempFileId, user)
                     .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
 
@@ -181,10 +207,8 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             record(job, seq, fileName, BatchItemStatus.FAILED,
                     BatchFailureReason.STAGED_CONTENT_UNAVAILABLE, e.getMessage(), null);
         } catch (final Exception e) {
-            // US2 (T037) replaces this with the classified reasons — size, type, collision,
-            // permission — derived from what staging measured rather than from exception text.
-            record(job, seq, fileName, BatchItemStatus.FAILED,
-                    BatchFailureReason.UNCLASSIFIED, e.getMessage(), null);
+            record(job, seq, fileName, BatchItemStatus.FAILED, reasons.classify(e),
+                    e.getMessage(), null);
         }
     }
 
@@ -220,15 +244,61 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     }
 
     /**
+     * The ceiling that applies to one file, in FR-011's order.
+     * <p>
+     * The content type's own {@code maxFileLength} wins wherever an operator declared one, so a
+     * file is accepted or rejected identically whether it arrives alone or in a batch. The
+     * configured fallback applies only where none is declared — which is the default, and without
+     * it the batch would have no per-file bound at all. That fallback is the one place a batch is
+     * deliberately stricter than a single upload (FR-011a), recorded rather than discovered.
+     */
+    private long effectiveCeiling(final ContentType contentType) {
+
+        final long declared = binaryField(contentType)
+                .flatMap(field -> field.fieldVariableValue(BinaryField.MAX_FILE_LENGTH))
+                .map(value -> ConversionUtils.toLongFromByteCountHumanDisplaySize(value, -1L))
+                .orElse(-1L);
+
+        return declared > 0 ? declared : Config.getLongProperty(
+                "CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES", 209715200L);
+    }
+
+    /** The content type's allow list, empty when it declares none — which means "everything". */
+    private List<String> acceptedTypes(final ContentType contentType) {
+        return binaryField(contentType)
+                .flatMap(field -> field.fieldVariableValue(BinaryField.ALLOWED_FILE_TYPES))
+                .filter(UtilMethods::isSet)
+                .map(value -> Arrays.asList(value.split(",")))
+                .orElse(List.of());
+    }
+
+    /** The binary field the batch writes into — 'asset' for a dotAsset, 'fileAsset' otherwise. */
+    private Optional<Field> binaryField(final ContentType contentType) {
+        return contentType.fields().stream()
+                .filter(field -> field instanceof BinaryField)
+                .findFirst();
+    }
+
+    private long sizeOf(final Map<String, Object> file) {
+        final Object size = file.get("sizeBytes");
+        return size instanceof Number ? ((Number) size).longValue() : 0L;
+    }
+
+    /**
      * Resolves the content type the batch creates into — one type for the whole batch, validated at
      * submission, so this never has to infer one per file.
      */
-    private String contentTypeIdFor(final Map<String, Object> parameters, final User user)
+    private ContentType contentTypeFor(final Map<String, Object> parameters, final User user)
             throws DotDataException, DotSecurityException {
         final String variable = "FILEASSET".equals(parameters.get("baseType"))
                 ? FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME
                 : "dotAsset";
-        return APILocator.getContentTypeAPI(user).find(variable).id();
+        return APILocator.getContentTypeAPI(user).find(variable);
+    }
+
+    private String contentTypeIdFor(final Map<String, Object> parameters, final User user)
+            throws DotDataException, DotSecurityException {
+        return contentTypeFor(parameters, user).id();
     }
 
     /** Places the asset in the folder, or at the site root when the batch targets a site. */
