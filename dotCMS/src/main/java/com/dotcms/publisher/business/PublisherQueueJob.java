@@ -16,6 +16,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
+import com.dotcms.publisher.pusher.PushPublishClientFactory;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -26,7 +27,6 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -155,7 +155,8 @@ public class PublisherQueueJob implements StatefulJob {
 
 					ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
 
-					Date bundleStart;
+					Date bundleStart = null;
+					PublishAuditHistory historyPojo = null;
 					try {
 						PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
 						final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
@@ -175,7 +176,7 @@ public class PublisherQueueJob implements StatefulJob {
 							assetsToPublish.add(c);
 						}
 						// Setting Audit objects History
-						final PublishAuditHistory historyPojo = new PublishAuditHistory();
+						historyPojo = new PublishAuditHistory();
 						historyPojo.setAssets(assets);
 						final Map<String, Object> jobDataMap = jobExecutionContext.getMergedJobDataMap();
 						final DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
@@ -221,6 +222,10 @@ public class PublisherQueueJob implements StatefulJob {
 							pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
 							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
 						}
+					} catch (final Throwable t) {
+						// Anything else that escapes while processing THIS bundle must not end the run for
+						// the bundles queued behind it. Finalize this one and move on (#37449).
+						finalizeBundleAfterUnexpectedError(tempBundleId, historyPojo, bundleStart, t);
 					} finally {
 						ThreadContext.remove(BUNDLE_ID);
 					}
@@ -304,6 +309,53 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 	}
 
+
+	/**
+	 * Finalizes a bundle whose processing threw something other than a {@link DotPublishingException}
+	 * (for example a {@code NullPointerException} on a corrupt queue row). Before this existed such an
+	 * error escaped to the outer catch of {@link #execute}, ended the whole run, and left the bundle
+	 * half-written so it aborted the next run too. The bundle is marked
+	 * {@link Status#FAILED_TO_PUBLISH} with the error in its endpoint detail and removed from the
+	 * publishing queue, in one local transaction, mirroring {@link #finalizeFailedBundle}. If the
+	 * failure happened before the audit row was inserted, the row is inserted here so the bundle can
+	 * never be picked up again. Any failure while finalizing is logged, never propagated.
+	 *
+	 * @param bundleId    The bundle being processed.
+	 * @param history     The audit history built so far for it, or {@code null} if the failure
+	 *                    happened before it existed.
+	 * @param bundleStart When bundling started, or {@code null} if it never did.
+	 * @param error       What went wrong.
+	 */
+	private void finalizeBundleAfterUnexpectedError(final String bundleId, final PublishAuditHistory history,
+													final Date bundleStart, final Throwable error) {
+		final String errorMsg = ExceptionUtil.getErrorMessage(error);
+		Logger.error(PublisherQueueJob.class, String.format("Unexpected error processing bundle '%s', " +
+				"finalizing it as failed and continuing with the next bundle: %s", bundleId, errorMsg), error);
+		PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish '" + bundleId + "': " + errorMsg);
+		try {
+			final PublishAuditHistory auditHistory = null != history ? history : new PublishAuditHistory();
+			updateAuditStatusErrorMsg(auditHistory, Status.FAILED_TO_PUBLISH, errorMsg);
+			if (null != bundleStart) {
+				auditHistory.setBundleStart(bundleStart);
+			}
+			auditHistory.setBundleEnd(new Date());
+			LocalTransaction.wrapReturn(() -> {
+				if (null == pubAuditAPI.getPublishAuditStatus(bundleId)) {
+					final PublishAuditStatus failed = new PublishAuditStatus(bundleId);
+					failed.setStatus(Status.FAILED_TO_PUBLISH);
+					failed.setStatusPojo(auditHistory);
+					pubAuditAPI.insertPublishAuditStatus(failed);
+				} else {
+					pubAuditAPI.updatePublishAuditStatus(bundleId, Status.FAILED_TO_PUBLISH, auditHistory);
+				}
+				pubAPI.deleteElementsFromPublishQueueTable(bundleId);
+				return null;
+			});
+		} catch (final Exception e) {
+			Logger.error(this, "Unable to finalize bundle '" + bundleId + "' after an unexpected error: "
+					+ ExceptionUtil.getErrorMessage(e), e);
+		}
+	}
 
 	/**
 	 * Obtains the list of Endpoints inside each Push Publishing Environment and verifies the publishing status of a
@@ -835,13 +887,14 @@ public class PublisherQueueJob implements StatefulJob {
 	}
 
 	/**
-	 * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
-	 * retrieve their information.
+	 * Returns an instance of the REST {@link Client} used to poll Push Publishing end-points for the
+	 * status of sent bundles. Built by {@link PushPublishClientFactory}, so a poll against an
+	 * unreachable end-point fails within the configured connect timeout instead of blocking the job.
 	 *
 	 * @return The REST {@link Client}.
 	 */
 	private Client getRestClient() {
-		return RestClientBuilder.newClient();
+		return PushPublishClientFactory.newClient();
 	}
 
 	/**
@@ -852,8 +905,21 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @param errorMsg     The error message that users will read when the bundle creation process fails.
 	 */
 	private void updateAuditStatusErrorMsg(final PublishAuditHistory auditHistory, final String errorMsg) {
+		updateAuditStatusErrorMsg(auditHistory, PublishAuditStatus.Status.FAILED_TO_BUNDLE, errorMsg);
+	}
+
+	/**
+	 * Same as {@link #updateAuditStatusErrorMsg(PublishAuditHistory, String)} but with an explicit
+	 * status for the synthetic endpoint detail.
+	 *
+	 * @param auditHistory The {@link PublishAuditHistory} object for the specific failing bundle.
+	 * @param status       The status to record in the endpoint detail.
+	 * @param errorMsg     The error message that users will read in the Bundle Status modal.
+	 */
+	private void updateAuditStatusErrorMsg(final PublishAuditHistory auditHistory, final Status status,
+										   final String errorMsg) {
 		final EndpointDetail endpointDetail = new EndpointDetail();
-		endpointDetail.setStatus(PublishAuditStatus.Status.FAILED_TO_BUNDLE.getCode());
+		endpointDetail.setStatus(status.getCode());
 		endpointDetail.setInfo(errorMsg);
 		// Environment and Endpoint IDs don't matter in this case
 		auditHistory.setEndpointsMap(
