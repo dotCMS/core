@@ -67,7 +67,7 @@ List every index with its counts, coverage, cost estimate and build status. Crea
 
 **Acceptance Scenarios**:
 
-1. **Given** existing indexes, **When** Embeddings opens, **Then** each shows name, covered content types, chunk and content counts, token total, tokens-per-chunk, estimated cost and status.
+1. **Given** existing indexes, **When** Embeddings opens, **Then** each shows name, covered content types, chunk and content counts, token total and status.
 2. **Given** a build is accepted, **When** it starts, **Then** that index reports as building and returns to ready once its counts stop moving.
 3. **Given** the index dialog is open, **When** the user toggles between add and delete mode, **Then** the submit action and label change, and delete mode submits the query as a deletion criterion.
 4. **Given** an index is deleted, **When** confirmed, **Then** it disappears from the list and from the retrieval index picker with no page reload.
@@ -199,10 +199,9 @@ The old screen stays available under a separate portlet identity, absent from ev
 
 **Embeddings**
 
-- **FR-025**: Users MUST see every index with name, covered content types, chunk count, content count, token total, tokens-per-chunk, estimated cost and status.
-- **FR-026**: Cost MUST be shown for every index and labelled as an estimate based on one provider's published pricing.
+- **FR-025**: Users MUST see every index with name, covered content types, chunk count, content count, token total and status.
 - **FR-027**: Build status MUST be per index — building from the moment a build is accepted, ready once its counts stop changing.
-- **FR-028**: Users MUST be able to filter by name and status with no server round trip, and sort by the numeric columns.
+- **FR-028**: Users MUST be able to filter by name with no server round trip, and sort by the numeric columns.
 - **FR-029**: Users MUST be able to create an index or add to one from a content query, optionally restricted to specific fields and shaped by a template.
 - **FR-030**: The same dialog MUST support deleting matching content from an index, with its action and label changing to match the mode.
 - **FR-031**: Users MUST be able to delete an entire index, behind a confirmation.
@@ -216,7 +215,6 @@ The old screen stays available under a separate portlet identity, absent from ev
 - **FR-036**: Users MUST be able to generate an image from a prompt and orientation, with a visible in-progress state.
 - **FR-037**: Generating MUST NOT publish. Saving to assets MUST be a separate explicit action.
 - **FR-038**: Users MUST be able to download a generated image without publishing it.
-- **FR-039**: The provider's rewritten prompt MUST be shown and copyable.
 - **FR-040**: A failed save MUST leave the image on screen.
 
 **Config Values**
@@ -256,11 +254,14 @@ The old screen stays available under a separate portlet identity, absent from ev
 - **Any change to indexing, retrieval, generation or storage behavior.**
 - **The legacy raw structured-response mode** — the provider's own response payload and total time become unreachable from the admin. Deliberate.
 - **The legacy recent-image-prompts list** — browser-local, never portable, and could not have carried over to a new storage key regardless. Deliberate.
+- **Estimated cost per index** (was FR-026, with `tokens-per-chunk` from FR-025) — removed at the requester's direction after implementation. The figure hardcoded one provider's published rate and was already wrong for the other providers the platform supports; labelling it an estimate was the mitigation this spec originally accepted, and the column was dropped instead.
+- **The provider's rewritten image prompt** (was FR-039) — removed at the requester's direction after implementation. `revisedPrompt` is still mapped from the API response, so restoring the display is a template change if it is wanted back.
+- **Filtering indexes by build status** (was the status half of FR-028) — removed at the requester's direction after implementation. Name filtering and the numeric sorts remain; the Status column still shows each index's state.
 - **Migrating the legacy screen's stored preferences** — its stored query served both search and chat, now separate prompts. The old entry is left untouched and continues to serve the fallback screen.
 
 ### Key Entities
 
-- **Embeddings Index**: A named collection of embedded content — chunk count, content count, token total, tokens-per-chunk, covered content types, derived cost estimate and derived build status. One index is the default. A reserved internal cache index appears in the list but is not selectable as a retrieval target.
+- **Embeddings Index**: A named collection of embedded content — chunk count, content count, token total, covered content types and derived build status. One index is the default. A reserved internal cache index appears in the list but is not selectable as a retrieval target.
 - **Search Result**: Content returned by a semantic search — identity, title, content type, modification date where available, and one or more matching passages.
 - **Matching Passage**: An excerpt that matched the query, with a closeness score.
 - **Retrieval Settings**: The shared criteria governing what a search or answer draws on — index, site, content types, threshold, distance measure, model, temperature, response length.
@@ -297,7 +298,6 @@ The old screen stays available under a separate portlet identity, absent from ev
 - The design's specific brand color is not adopted (FR-053) — that color is customer-configurable, so hardcoding it would desynchronize this screen from the rest of the admin.
 - Persisting the settings panel between visits (FR-018) is **new behavior** — the legacy screen never stored those controls. Included because a ten-control panel that resets on reload is a daily annoyance.
 - Build status is derived by observing whether an index's counts are still changing, seeded by the fact a build was just requested. The platform stores no status field.
-- Index cost is an estimate from one provider's published token pricing, already inaccurate for the other supported providers — hence FR-026's labelling.
 - The design's "Updated \<date\>" line for an index cannot be honored — no timestamp is stored anywhere. Covered content types occupy that slot instead: real data, previously buried in a tooltip.
 - The internal cache index continues to appear in the list but not in the retrieval picker, preserving legacy behavior.
 - Anyone reaching the portlet has layout access to it; role gaps are handled per FR-049 rather than by hiding the portlet.

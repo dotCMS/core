@@ -37,7 +37,6 @@ One embeddings index. **Spec**: US3, FR-025 – FR-028.
 
 **Derived, client-side** (`utils/dot-ai-index.utils.ts`, pure and unit-tested):
 
-- `estimatedCost: number` = `(tokenTotal / 1000) * 0.0001`. Applied to **every** row. The legacy screen computed this but applied it only to the index literally named `cache` — a bug. Labelled as an estimate (FR-026) because it hardcodes one provider's published pricing and is already wrong for the others the platform supports.
 - `status: DotAiIndexStatus` — see below.
 
 **Validation / invariants**:
