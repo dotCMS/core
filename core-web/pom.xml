@@ -165,10 +165,14 @@
                         </configuration>
                     </execution>
 
-                    <!-- Runs before lint: it covers 4 projects against lint's 47 and comes back
-                         in roughly half the time, so a type error surfaces sooner. Vite projects
-                         build with esbuild, which does not type check, so `build` never catches
-                         them and this target is their only gate.
+                    <!-- Runs before lint so a type error surfaces before the slower gate. Two
+                         kinds of project rely on it. Vite projects build with esbuild, which does
+                         not type check, so `build` never catches them and this is their only gate.
+                         Every project with a tsconfig.spec.json gets the target inferred by
+                         tools/plugins/typecheck-spec.plugin.mjs, because `nx test` runs ts-jest
+                         with isolatedModules: it transpiles without building a program, so a
+                         spec can carry type errors indefinitely while its suite stays green.
+                         That puts the target on 51 projects against lint's 56.
 
                          The root `core-web` project carries skip:typecheck: its target is
                          `tsc -p tsconfig.base.json` with no emit, which compiles the whole workspace
