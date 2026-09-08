@@ -425,6 +425,76 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(onContentSaved).not.toHaveBeenCalled();
         expect(onCancel).toHaveBeenCalledTimes(1);
     });
+
+    // Migrated from a document-level host binding to the shared shortcut registry (issue #32591), so
+    // the panel and the portlet behind it can arbitrate instead of both acting on the same key.
+    describe('ESC through the shortcut registry', () => {
+        const pressEscape = (): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                key: 'Escape',
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+
+            return event;
+        };
+
+        // An open panel always has data, and the drawer whose z-index the overlay guard compares
+        // against only renders once it does.
+        beforeEach(() => {
+            spectator.setInput('data', EDIT_DATA);
+            spectator.detectChanges();
+        });
+
+        // ESC closes through the editor's unsaved-changes guard, never around it. The stubbed layout
+        // is told to proceed so the whole path runs; that the guard is consulted at all is the point.
+        it('should close the panel through the unsaved-changes guard', () => {
+            const layout = spectator.query(DotEditContentLayoutComponent);
+            const confirmClose = jest
+                .spyOn(layout, 'confirmClose')
+                .mockImplementation((proceed: () => void) => proceed());
+            const closed = jest.fn();
+            spectator.output('closed').subscribe(closed);
+
+            pressEscape();
+
+            expect(confirmClose).toHaveBeenCalled();
+            expect(closed).toHaveBeenCalled();
+        });
+
+        it('should consume the key so it cannot reach the portlet behind', () => {
+            const event = pressEscape();
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should not close while another overlay is stacked above', () => {
+            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(Number.MAX_SAFE_INTEGER);
+            const closed = jest.fn();
+            spectator.output('closed').subscribe(closed);
+
+            pressEscape();
+
+            expect(closed).not.toHaveBeenCalled();
+        });
+
+        it('should still consume the key while an overlay is above, so the portlet stays untouched', () => {
+            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(Number.MAX_SAFE_INTEGER);
+
+            const event = pressEscape();
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should release the claim when the panel is destroyed', () => {
+            spectator.fixture.destroy();
+
+            const event = pressEscape();
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+    });
 });
 
 /**
