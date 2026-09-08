@@ -109,7 +109,8 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
     }
 
     /**
-     * The outcome as it travels to the author: counts <b>and</b> the per-file results.
+     * The outcome as it travels to the author: the §3 outcome entire — counts, the per-file
+     * results, and the duplicate-resubmission flag.
      * <p>
      * <b>The results are not optional.</b> A counts-only payload leaves an author with "27 of 30
      * created" and no way to learn which three — which FR-023 forbids, because those names are
@@ -135,6 +136,13 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
             payload.put("failedCount", found.get("failedCount"));
             payload.put("skippedCount", found.get("skippedCount"));
             payload.put("results", found.get("results"));
+
+            // Travels on this channel too, not only on the polled outcome. A client following the
+            // push — which is the case User Story 4 is built around, the author who left the page —
+            // would otherwise read a resubmission as "every file failed", which is exactly what
+            // FR-040a exists to prevent. §4 says the payload is the §3 outcome, and this is part
+            // of it.
+            payload.put("duplicateSubmission", found.get("duplicateSubmission"));
         });
 
         return payload;

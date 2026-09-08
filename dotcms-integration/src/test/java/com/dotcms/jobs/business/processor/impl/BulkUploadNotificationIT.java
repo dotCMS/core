@@ -131,6 +131,7 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
                 Map.of("key", "landed.txt", "status", "SUCCESS"),
                 Map.of("key", "too-big.mov", "status", "FAILED",
                         "reason", "OVER_SIZE_LIMIT")));
+        result.put("duplicateSubmission", false);
         return result;
     }
 
@@ -205,6 +206,58 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
                 new BulkUploadCompletionListener().eventType(),
                 "and it is pushed as its own event type, so a client can tell an upload from a "
                         + "reindex");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A resubmission of a batch that had already succeeded finishes, and the
+     * author is following it on the pushed channel rather than by polling the job.
+     * <p>
+     * Expected result: {@code duplicateSubmission} travels in the payload (FR-040a, contracts §4 —
+     * "the payload is the §3 outcome", and this is part of it). Without it the push carries "every
+     * file failed - name collision", which is indistinguishable from a batch whose files genuinely
+     * all collided, and is the exact report C-002a promises the client it will never have to
+     * render. It has to be on <b>this</b> channel and not only on the polled outcome: the author
+     * who left the page is the case User Story 4 exists for, and the frontend spec's Assumptions
+     * rule out compensating with a polling loop.
+     */
+    @Test
+    public void test_completion_carriesTheDuplicateFlagOnThePushedChannelToo() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        final Map<String, Object> result = outcome(0, 2);
+        result.put("duplicateSubmission", true);
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, result);
+
+        final Map<String, Object> payload =
+                new BulkUploadCompletionListener().payloadFor(job);
+
+        assertEquals(Boolean.TRUE, payload.get("duplicateSubmission"),
+                "a resubmission must be recognisable from the pushed payload alone; the counts "
+                        + "cannot tell it apart from a batch that genuinely all collided");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A batch that is not a resubmission finishes.
+     * <p>
+     * Expected result: {@code duplicateSubmission} is present and {@code false}, not absent. A
+     * client reading the flag has to be able to tell "not a duplicate" from "this server does not
+     * report duplicates", and an omitted key says the second.
+     */
+    @Test
+    public void test_completion_reportsAnOrdinaryBatchAsNotADuplicate() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, outcome(2, 0));
+
+        final Map<String, Object> payload =
+                new BulkUploadCompletionListener().payloadFor(job);
+
+        assertTrue(payload.containsKey("duplicateSubmission"),
+                "the flag must be present rather than omitted, so its absence never has to be "
+                        + "guessed at");
+        assertEquals(Boolean.FALSE, payload.get("duplicateSubmission"));
     }
 
     /**
