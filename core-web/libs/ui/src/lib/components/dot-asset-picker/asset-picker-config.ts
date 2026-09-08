@@ -103,6 +103,17 @@ export interface DotAssetPickerEntryOptions {
      * not be overridable — an Image field that could return a PDF is broken.
      */
     mimeTypes?: string[];
+
+    /**
+     * Content conditions to pre-select in the Status chip — `ARCHIVED`, `UNPUBLISHED`, `LOCKED`.
+     *
+     * `browse` mode only, like the other capabilities: it is `openBrowserModal`'s
+     * `status: 'archived'` that seeds it, and a File-field call site must not be able to hand its
+     * editor a library of archived assets.
+     *
+     * A seed the editor can clear, never a restriction (FR-014b).
+     */
+    status?: string[];
 }
 
 /**
@@ -123,7 +134,8 @@ export function buildAssetPickerConfig({
     initialAssetPath,
     allowedBaseTypes,
     browse,
-    mimeTypes: explicitMimeTypes
+    mimeTypes: explicitMimeTypes,
+    status
 }: DotAssetPickerEntryOptions): DotAssetPickerConfig {
     // Presence in the mimetype map is what makes a mode a media mode — no `mode === 'x'` chain to
     // extend the next time a media node shows up.
@@ -156,7 +168,14 @@ export function buildAssetPickerConfig({
             isBrowse && allowedBaseTypes?.length
                 ? [...allowedBaseTypes]
                 : [...ASSET_PICKER_ASSET_BASE_TYPES],
-        ...(isBrowse && browse ? { browse } : {}),
+        // Attached for browse mode even when the caller opted into no capabilities: its
+        // **presence** is what marks a browse open, and the Status bound keys off exactly that
+        // (see `allowedStatusesFor`). `browseOptionsFor` in the form bridge already returns an
+        // empty object for this reason; before this line, a `mode: 'browse'` caller that passed no
+        // options got a field picker's bound instead. Inert otherwise — every read of `browse` is
+        // an optional flag, and `{}` resolves the seeded sort to the same default.
+        ...(isBrowse ? { browse: browse ?? {} } : {}),
+        ...(isBrowse && status?.length ? { status: [...status] } : {}),
         ...(browseMimeTypes?.length ? { mimeTypes: [...browseMimeTypes] } : {}),
         ...(languageId ? { languageId } : {}),
         // What starts selected, plus the silent mimetype narrowing — media modes only.
