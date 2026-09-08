@@ -1,5 +1,9 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
+import { Tooltip } from 'primeng/tooltip';
+
 import { DotMessageService } from '@dotcms/data-access';
 
 import DotAiImageComponent from './dot-ai-image.component';
@@ -12,6 +16,7 @@ const image = (overrides = {}) => ({
     originalPrompt: 'a cat',
     revisedPrompt: 'a photorealistic cat',
     published: false,
+    size: '1792x1024',
     ...overrides
 });
 
@@ -35,7 +40,9 @@ describe('DotAiImageComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAiImageComponent,
         componentProviders: [{ provide: DotAiStore, useValue: storeMock }],
-        providers: [mockProvider(DotMessageService)],
+        // Echoes the key: the icon buttons carry their name in aria-label and pTooltip,
+        // and a mock returning undefined would leave both unset and untestable.
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })],
         shallow: true
     });
 
@@ -150,6 +157,102 @@ describe('DotAiImageComponent', () => {
             expect(bar.parentElement?.className).toContain('relative');
         });
 
+        // jsdom's CSS implementation has no `aspect-ratio`, so assigning it is a silent
+        // no-op and both `el.style.aspectRatio` and `DebugElement.styles` come back empty —
+        // there is nothing in this environment to assert the binding against. The ratio the
+        // frame actually renders at is covered in the browser instead; what is testable here
+        // is the value the template is handed.
+        const ratio = (size: string): string =>
+            (spectator.component as unknown as { aspectRatio: (s: string) => string }).aspectRatio(
+                size
+            );
+
+        it('should turn a stored size into the ratio the frame needs', () => {
+            expect(ratio('1792x1024')).toBe('1792 / 1024');
+            expect(ratio('1024x1792')).toBe('1024 / 1792');
+            expect(ratio('1024x1024')).toBe('1024 / 1024');
+        });
+
+        it('should fall back to auto rather than collapse the frame', () => {
+            // An unrecognised size degrades to the capped behaviour instead of a zero-height
+            // frame, which is what `aspect-ratio: 0` or an empty value would give.
+            for (const bad of ['whatever', '', 'x', '1792x', 'ax b']) {
+                expect(ratio(bad)).toBe('auto');
+            }
+        });
+
+        it('should keep the frame anchored to the picture, not the panel', () => {
+            // The bar's `right-2 top-2` is relative to this element, so it only lands on the
+            // corner you can see while the frame's box is the picture's box.
+            const frame = spectator.query(byTestId('dotai-image-frame')) as HTMLElement;
+            const bar = spectator.query(byTestId('dotai-image-save'))?.parentElement as HTMLElement;
+
+            expect(frame.className).toContain('relative');
+            expect(frame.className).toContain('max-h-full');
+            expect(frame.className).toContain('max-w-full');
+            // No explicit width or height: either one skews the box on one axis.
+            expect(frame.className.split(/\s+/)).not.toContain('h-full');
+            expect(frame.className.split(/\s+/)).not.toContain('w-full');
+            expect(frame.contains(bar)).toBe(true);
+        });
+
+        it('should be a labelled group, so the icons are not the only cue', () => {
+            const bar = spectator.query(byTestId('dotai-image-save'))?.parentElement as HTMLElement;
+
+            expect(bar.getAttribute('role')).toBe('group');
+            expect(bar.getAttribute('aria-label')).toBe('dotai.image.actions.aria');
+            // The pill shape from the image editor's address bar.
+            expect(bar.className).toContain('rounded-full');
+        });
+
+        /**
+         * Tooltip text per control, read off the directive instances.
+         *
+         * `pTooltip` is a directive *input*, so it never lands as a DOM attribute, and
+         * `ng-reflect-content` exists only in dev mode — asserting on either passes
+         * vacuously whether or not a tooltip is wired.
+         */
+        const tooltips = (): Record<string, string> =>
+            Object.fromEntries(
+                spectator.debugElement
+                    .queryAll(By.directive(Tooltip))
+                    .map((node) => [
+                        node.nativeElement.getAttribute('data-testid'),
+                        node.injector.get(Tooltip).content
+                    ])
+            );
+
+        it('should render both controls as icon buttons with a name and a tooltip', () => {
+            // Icon-only, so the accessible name has to come from aria-label and the visible
+            // affordance from the tooltip — an unlabelled glyph is neither (FR-056).
+            for (const id of ['dotai-image-save', 'dotai-image-download']) {
+                const el = spectator.query(byTestId(id)) as HTMLElement;
+                const glyph = el.querySelector('.material-symbols-outlined');
+
+                expect(glyph).toBeTruthy();
+                // No visible label: the glyph is the only text in the control.
+                expect(el.textContent?.trim()).toBe(glyph?.textContent?.trim());
+                expect(el.getAttribute('aria-label')).toBeTruthy();
+            }
+
+            expect(tooltips()['dotai-image-save']).toBe('dotai.image.save');
+            expect(tooltips()['dotai-image-download']).toBe('dotai.image.download');
+        });
+
+        it('should state the published state separately from the Save tooltip', () => {
+            // A disabled button fires no hover, so Save's tooltip cannot carry this once the
+            // image is published.
+            withImage({ published: true });
+            const badge = spectator.query(byTestId('dotai-image-published')) as HTMLElement;
+
+            expect(badge.getAttribute('role')).toBe('img');
+            expect(badge.getAttribute('aria-label')).toBe('dotai.image.published');
+            expect(badge.querySelector('.material-symbols-outlined')?.textContent?.trim()).toBe(
+                'check_circle'
+            );
+            expect(tooltips()['dotai-image-published']).toBe('dotai.image.published');
+        });
+
         it('should not underline the download link, which is shaped like a button', () => {
             const link = spectator.query(byTestId('dotai-image-download')) as HTMLElement;
 
@@ -165,18 +268,18 @@ describe('DotAiImageComponent', () => {
     describe('the picture frame', () => {
         beforeEach(() => withImage());
 
-        it('should cap the picture rather than stretching it to the panel height', () => {
-            // `h-full w-auto` here was the bug: a 16:9 picture in a near-square panel
-            // resolved to 1817px of image inside a 1344px frame, so the border wrapped a
-            // letterboxed box and the action bar anchored to the frame, not the picture.
+        it('should let the picture fill the frame rather than size itself', () => {
+            // `h-full w-auto` here was the original bug: the image took the panel's full
+            // height and let its ratio pick the width, coming out 1817px wide inside a
+            // 1344px frame. Sizing now belongs entirely to the frame, which carries the
+            // ratio, so the image simply fills it.
             const image = spectator.query('p-image') as HTMLElement;
             // Tokenised, not a substring match: 'h-full' is a substring of 'max-h-full', so
             // `not.toContain` on the raw string passes for the very class it should reject.
             const classes = (image.getAttribute('imageclass') ?? '').split(/\s+/);
 
-            expect(classes).toContain('max-h-full');
-            expect(classes).toContain('max-w-full');
-            expect(classes).not.toContain('h-full');
+            expect(classes).toContain('h-full');
+            expect(classes).toContain('w-full');
             expect(classes).not.toContain('w-auto');
         });
 

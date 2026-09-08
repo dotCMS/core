@@ -3,7 +3,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { of, Subject, throwError } from 'rxjs';
 
 import { DotAiContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotAIImageResponse } from '@dotcms/dotcms-models';
+import { DotAIImageOrientation, DotAIImageResponse } from '@dotcms/dotcms-models';
 
 import { withAiImage } from './with-ai-image.feature';
 
@@ -64,6 +64,17 @@ describe('withAiImage', () => {
             store.generateImage('a cat');
 
             expect(store.image()?.revisedPrompt).toBe('a photorealistic cat');
+        });
+
+        it('should record the size it generated at, for the frame to size itself from', () => {
+            // Not read from the selector at render time: the user can change it afterwards,
+            // and the frame must keep matching the picture already on screen.
+            store.setOrientation(DotAIImageOrientation.VERTICAL);
+            service.generateImage = jest.fn().mockReturnValue(of(generated()));
+
+            store.generateImage('a cat');
+
+            expect(store.image()?.size).toBe('1024x1792');
         });
 
         it('should ignore an empty prompt', () => {

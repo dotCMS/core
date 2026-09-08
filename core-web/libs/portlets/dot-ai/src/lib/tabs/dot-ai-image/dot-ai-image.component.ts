@@ -6,6 +6,7 @@ import { ImageModule } from 'primeng/image';
 import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DotAIImageOrientation } from '@dotcms/dotcms-models';
@@ -29,6 +30,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
         SkeletonModule,
         ImageModule,
         MessageModule,
+        TooltipModule,
         DotAiPromptInputComponent,
         DotMessagePipe
     ],
@@ -52,18 +54,28 @@ export default class DotAiImageComponent {
     ];
 
     /**
-     * Caps the root and lets it shrink; deliberately no `h-full`.
+     * Fills the frame, which is the element that carries the ratio and the caps.
      *
-     * `h-full w-fit` here forced the image to the full available height and then let its own
-     * ratio decide the width, which for a 16:9 picture in a near-square panel came out wider
-     * than the frame — the image overflowed while the border it carries wrapped a letterboxed
-     * box. Measured: 1817px of picture inside a 1344px frame. With `max-*` and the min-0 pair
-     * the image is only ever scaled down, so its box is exactly the rendered picture and the
-     * frame shrink-wraps it.
+     * Nothing here sizes itself: `h-full w-fit` on this root was the original bug — it took
+     * the full available height and let the ratio pick the width, so a 16:9 picture in a
+     * near-square panel came out 1817px wide inside a 1344px frame and the border it carries
+     * wrapped a letterboxed box.
      */
     protected readonly imagePt = {
-        root: { class: 'flex max-h-full max-w-full min-h-0 min-w-0' }
+        root: { class: 'flex h-full w-full' }
     };
+
+    /**
+     * `1792x1024` as the CSS `aspect-ratio` the frame needs.
+     *
+     * Falls back to `auto` for anything unexpected, so an unrecognised size degrades to the
+     * old capped behaviour rather than collapsing the frame to nothing.
+     */
+    protected aspectRatio(size: string): string {
+        const [width, height] = (size ?? '').split('x').map(Number);
+
+        return width && height ? `${width} / ${height}` : 'auto';
+    }
 
     /** One rule, read by both the button's disabled state and the generate path. */
     protected readonly $canGenerate = computed(

@@ -87,7 +87,8 @@ export function withAiImage() {
                                                 // The provider rewrites the prompt; always show
                                                 // it, so the difference is never hidden.
                                                 revisedPrompt: response.revised_prompt ?? trimmed,
-                                                published: false
+                                                published: false,
+                                                size: store.imageOrientation()
                                             }
                                         })
                                     ),

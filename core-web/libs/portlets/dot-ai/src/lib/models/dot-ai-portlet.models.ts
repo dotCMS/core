@@ -21,6 +21,15 @@ export interface DotAiGeneratedImage {
     originalPrompt: string;
     revisedPrompt: string;
     published: boolean;
+    /**
+     * The `WxH` the image was generated at.
+     *
+     * Held per image rather than read from the size selector, which the user is free to
+     * change afterwards. The frame sets its `aspect-ratio` from this so its box is exactly
+     * the picture's — the only arrangement that holds whether the picture ends up limited by
+     * the panel's width or its height.
+     */
+    size: string;
 }
 
 /**

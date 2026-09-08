@@ -27,57 +27,98 @@
                     height="100%"
                     data-testid="dotai-image-loading" />
             } @else if (store.image(); as image) {
-                <!-- The picture is capped, never stretched: `max-h-full`/`max-w-full` all the
-                     way down and no `h-full` anywhere. `h-full w-auto` on the image was the
-                     bug — a 16:9 picture in a near-square area came out 1817px wide inside a
-                     1344px frame, so the border it carries wrapped a letterboxed box instead
-                     of the picture, and the action bar anchored to the frame rather than the
-                     corner you can see. Capping instead makes the image's own box exactly the
-                     rendered picture, which the frame then shrink-wraps. -->
+                <!-- The frame carries the picture's own aspect ratio and both caps, and no
+                     explicit width or height; its children then fill it. That combination is
+                     the only one whose box equals the rendered picture whichever axis the
+                     panel limits — measured both ways. Capping the image alone leaves the
+                     frame at the panel's full width once the picture is height-limited, which
+                     put the action bar on the panel's corner instead of the picture's; fixing
+                     the frame's height instead skews the box the other way. -->
                 <div
                     class="flex min-h-0 flex-1 items-center justify-center"
                     data-testid="dotai-image-result">
-                    <div class="relative flex max-h-full max-w-full">
+                    <div
+                        class="relative flex max-h-full max-w-full"
+                        [style.aspect-ratio]="aspectRatio(image.size)"
+                        data-testid="dotai-image-frame">
                         <p-image
                             [pt]="imagePt"
-                            imageClass="max-h-full max-w-full rounded-lg border border-surface-200 object-contain"
+                            imageClass="h-full w-full rounded-lg border border-surface-200 object-contain"
                             [src]="store.imageUrl()"
                             [preview]="true"
                             alt="{{ image.originalPrompt }}" />
 
-                        <!-- Over the picture's top-right corner. The panel behind it is not
-                             decoration: an outlined button on top of an arbitrary generated
-                             image is frequently unreadable. z-20 clears the preview mask
-                             p-image lays over the image on hover, which would otherwise
-                             swallow these clicks. -->
-                        <div
-                            class="absolute top-2 right-2 z-20 flex items-center gap-2 rounded-lg bg-surface-0/90 p-1 shadow-sm">
-                            <p-button
-                                size="small"
-                                [label]="'dotai.image.save' | dm"
-                                [disabled]="image.published || store.imageSaving()"
-                                (onClick)="store.saveImage()"
-                                data-testid="dotai-image-save" />
+                        <!-- A rounded pill of small icon buttons over the picture's top-right
+                             corner, the same shape as the image editor's `address-bar__pill`:
+                             text + rounded + secondary p-buttons, a material glyph projected
+                             into #icon, and the label carried by both `pTooltip` and
+                             `aria-label` so the icon is never the only thing saying what the
+                             control does (FR-056).
 
-                            <!-- Same-origin anchor: no backend, and it works before any save.
+                             Built from Tailwind rather than a copy of that component's SCSS —
+                             this lib has no stylesheets of its own, and the pill is six
+                             utilities. The translucent fill is not decoration: icon buttons
+                             directly on an arbitrary generated image are unreadable.
+
+                             z-20 clears p-image's hover preview mask, which is absolute with
+                             no z-index of its own and would otherwise swallow these clicks. -->
+                        <div
+                            class="absolute top-2 right-2 z-20 flex items-center gap-1 rounded-full bg-surface-0/90 p-0.5 shadow-sm"
+                            role="group"
+                            [attr.aria-label]="'dotai.image.actions.aria' | dm">
+                            <p-button
+                                [text]="true"
+                                [rounded]="true"
+                                size="small"
+                                severity="secondary"
+                                [disabled]="image.published || store.imageSaving()"
+                                [attr.aria-label]="'dotai.image.save' | dm"
+                                [pTooltip]="'dotai.image.save' | dm"
+                                tooltipPosition="bottom"
+                                (onClick)="store.saveImage()"
+                                data-testid="dotai-image-save">
+                                <ng-template #icon>
+                                    <i class="material-symbols-outlined text-lg!">save</i>
+                                </ng-template>
+                            </p-button>
+
+                            <!-- Same-origin anchor, not a p-button: it needs `download` and an
+                                 `href`, so it borrows the button classes instead. `p-button-sm`
+                                 and the rest are what `size`/`text`/`rounded`/`severity`
+                                 generate on the real component.
+
                                  `no-underline!` needs the bang: style.css's `a { @apply
                                  underline }` is unlayered, and an unlayered declaration beats
-                                 anything in @layer utilities whatever the specificity. Every
-                                 other no-underline in this repo carries it for the same
-                                 reason. -->
+                                 anything in @layer utilities whatever the specificity. -->
                             <a
-                                class="p-button p-button-outlined p-button-sm no-underline!"
+                                class="p-button p-button-icon-only p-button-text p-button-rounded p-button-secondary p-button-sm no-underline!"
                                 [href]="store.imageUrl()"
                                 [download]="image.tempFileName"
+                                [attr.aria-label]="'dotai.image.download' | dm"
+                                [pTooltip]="'dotai.image.download' | dm"
+                                tooltipPosition="bottom"
                                 data-testid="dotai-image-download">
-                                {{ 'dotai.image.download' | dm }}
+                                <i class="material-symbols-outlined text-lg!" aria-hidden="true">
+                                    download
+                                </i>
                             </a>
 
                             @if (image.published) {
+                                <!-- A disabled button does not fire hover, so the Save tooltip
+                                     cannot carry this once it is published. `role="img"` plus
+                                     the label is what states it to a screen reader. -->
                                 <span
-                                    class="pr-1 text-sm text-muted-color"
+                                    class="flex items-center px-1 text-green-600"
+                                    role="img"
+                                    [attr.aria-label]="'dotai.image.published' | dm"
+                                    [pTooltip]="'dotai.image.published' | dm"
+                                    tooltipPosition="bottom"
                                     data-testid="dotai-image-published">
-                                    {{ 'dotai.image.published' | dm }}
+                                    <i
+                                        class="material-symbols-outlined text-lg!"
+                                        aria-hidden="true">
+                                        check_circle
+                                    </i>
                                 </span>
                             }
                         </div>
