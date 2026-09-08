@@ -3,7 +3,6 @@ import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
 import {
     CACHE_INDEX_NAME,
     deriveIndexStatuses,
-    estimateIndexCost,
     toIndexOptions,
     toRetrievalIndexes
 } from './dot-ai-index.utils';
@@ -19,19 +18,6 @@ const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
 });
 
 describe('dot-ai-index.utils', () => {
-    describe('estimateIndexCost', () => {
-        it('should apply the formula to any index', () => {
-            // The legacy portlet computed this but only ever showed it for the index literally
-            // named `cache`, which is why every other row read as free.
-            expect(estimateIndexCost(index({ tokenTotal: 1000 }))).toBeCloseTo(0.0001);
-            expect(estimateIndexCost(index({ tokenTotal: 2_000_000 }))).toBeCloseTo(0.2);
-        });
-
-        it('should be zero for an empty index', () => {
-            expect(estimateIndexCost(index({ tokenTotal: 0 }))).toBe(0);
-        });
-    });
-
     describe('toRetrievalIndexes', () => {
         it('should exclude the cache pseudo-index', () => {
             const result = toRetrievalIndexes([

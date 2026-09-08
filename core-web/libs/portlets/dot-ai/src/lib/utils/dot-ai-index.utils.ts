@@ -6,25 +6,6 @@ import { DOT_AI_INDEX_STATUS, DotAiIndex, DotAiIndexStatus } from '@dotcms/dotcm
  */
 export const CACHE_INDEX_NAME = 'cache';
 
-/**
- * Price per 1K tokens used for the cost estimate.
- *
- * Hardcoded OpenAI pricing, which is what the legacy portlet used. It is already wrong for
- * the Azure, Bedrock, Gemini and OpenRouter providers the platform supports, which is why
- * every surface that shows this labels it an estimate.
- */
-const USD_PER_1K_TOKENS = 0.0001;
-
-/**
- * Estimated spend for an index.
- *
- * Applied to **every** index. The legacy portlet computed the same formula but only rendered
- * it for the index literally named `cache`, so every other row read as free.
- */
-export function estimateIndexCost(index: DotAiIndex): number {
-    return (index.tokenTotal / 1000) * USD_PER_1K_TOKENS;
-}
-
 /** Indexes that can actually be searched — everything except the cache pseudo-index. */
 export function toRetrievalIndexes(indexes: DotAiIndex[]): DotAiIndex[] {
     return indexes.filter((index) => index.name !== CACHE_INDEX_NAME);

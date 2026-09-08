@@ -82,11 +82,6 @@ describe('DotAiEmbeddingsComponent', () => {
         expect(spectator.query(byTestId('dotai-embeddings-content-types'))).toContainText('Blog');
     });
 
-    it('should show a cost estimate on every row', () => {
-        // The legacy screen computed this but only rendered it for the index named `cache`.
-        expect(spectator.query(byTestId('dotai-embeddings-cost'))).toContainText('$');
-    });
-
     it('should explain the administrator requirement instead of an empty table (FR-049)', () => {
         storeMock.indexesForbidden.mockReturnValue(true);
         spectator = createComponent();

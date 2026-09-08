@@ -20,7 +20,6 @@ import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-cr
 import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiIndexBuildNotice } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
-import { estimateIndexCost } from '../../utils/dot-ai-index.utils';
 
 /**
  * Embeddings tab: the index inventory plus the operations on it.
@@ -57,7 +56,6 @@ export default class DotAiEmbeddingsComponent {
     readonly #messageService = inject(DotMessageService);
 
     protected readonly statuses = DOT_AI_INDEX_STATUS;
-    protected readonly cost = estimateIndexCost;
 
     /** `table-layout: fixed` + full height keeps the empty state from collapsing the table. */
     protected readonly tablePt = {

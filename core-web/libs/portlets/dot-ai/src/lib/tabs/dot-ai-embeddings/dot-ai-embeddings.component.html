@@ -87,19 +87,6 @@
                             {{ 'dotai.embeddings.column.tokens' | dm }}
                             <p-sortIcon field="tokenTotal" />
                         </th>
-                        <th class="w-32">
-                            {{ 'dotai.embeddings.column.cost' | dm }}
-                            <!-- Named, not implied: the figure hardcodes one provider's
-                                 published pricing and is already wrong for the others the
-                                 platform supports (FR-026). -->
-                            <span
-                                class="material-symbols-outlined align-middle text-base! text-muted-color"
-                                [title]="'dotai.embeddings.column.cost.hint' | dm"
-                                data-testid="dotai-embeddings-cost-hint"
-                                aria-hidden="true">
-                                info
-                            </span>
-                        </th>
                         <th class="w-32">{{ 'dotai.embeddings.column.status' | dm }}</th>
                         <th class="w-24"></th>
                     </tr>
@@ -124,11 +111,6 @@
                         <td class="text-sm">{{ index.fragments }}</td>
                         <td class="text-sm">{{ index.contents }}</td>
                         <td class="text-sm">{{ index.tokenTotal }}</td>
-                        <td class="text-sm" data-testid="dotai-embeddings-cost">
-                            <!-- Labelled an estimate: it hardcodes one provider's pricing and is
-                                 already wrong for the others the platform supports. -->
-                            ~${{ cost(index).toFixed(4) }}
-                        </td>
                         <td>
                             @if (store.indexStatuses()[index.name] === statuses.BUILDING) {
                                 <p-tag
@@ -160,7 +142,7 @@
 
                 <ng-template pTemplate="emptymessage">
                     <tr>
-                        <td colspan="7">
+                        <td colspan="6">
                             <dot-ai-empty-state
                                 [title]="'dotai.embeddings.empty.title' | dm"
                                 [subtitle]="'dotai.embeddings.empty.sub' | dm"
