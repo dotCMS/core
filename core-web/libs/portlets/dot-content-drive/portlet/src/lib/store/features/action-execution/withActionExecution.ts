@@ -782,6 +782,23 @@ export function withActionExecution() {
                         delete remaining[event.jobId];
                         patchState(store, { uploadJobs: remaining });
 
+                        // The state first, because the counters cannot answer this. A run that
+                        // gave up still records the counters it reached, and those can close over
+                        // `total` perfectly well — publishing them would tell the author their
+                        // batch finished when it was abandoned. Only SUCCESS and CANCELED are
+                        // outcomes worth reporting; a cancellation is something the author did, and
+                        // its counts say how far it got before they stopped it.
+                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText: `The upload did not report a usable outcome (state: ${event.state})`
+                                })
+                            );
+
+                            return;
+                        }
+
                         const closes =
                             undefined !== event.total &&
                             (event.successCount ?? 0) +

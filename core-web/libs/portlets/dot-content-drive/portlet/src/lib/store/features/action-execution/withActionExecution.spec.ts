@@ -433,6 +433,45 @@ describe('withActionExecution', () => {
             expect(store.actionExecutionResult()).toBeUndefined();
         });
 
+        it.each([['FAILED_PERMANENTLY'], ['ABANDONED_PERMANENTLY']])(
+            'should report a %s run as an error even when its counters add up',
+            (state) => {
+                // A run that gave up still records the counters it reached, and those can close
+                // over `total` perfectly well. Publishing them would tell the author their batch
+                // finished — the counts cannot distinguish "done" from "gave up", only the state
+                // can.
+                build();
+                store.trackUploadJob('upload-1');
+
+                store.reportUploadCompleted('Upload', completed({ state } as never));
+
+                expect(store.actionExecutionResult()).toBeUndefined();
+                expect(handle).toHaveBeenCalled();
+            }
+        );
+
+        it('should publish a cancelled run, which is an outcome rather than a failure', () => {
+            // Cancelling is a thing the author did, and the counts then say how far it got before
+            // they stopped it — including the files it never reached.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted(
+                'Upload',
+                completed({
+                    state: 'CANCELED',
+                    total: 3,
+                    successCount: 1,
+                    failedCount: 0,
+                    skippedCount: 2
+                })
+            );
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ successCount: 1, skippedCount: 2 })
+            );
+        });
+
         it('should report an unusable outcome as an error rather than a clean run', () => {
             // A finished run carrying no counters is indistinguishable from a run over nothing if
             // the zeros are trusted, so the absence is treated as the failure it is.
