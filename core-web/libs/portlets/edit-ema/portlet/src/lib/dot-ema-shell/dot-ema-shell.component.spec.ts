@@ -1571,7 +1571,10 @@ describe('DotEmaShellComponent', () => {
 
                 expect(experimentsItem()?.href).toBe('/experiments');
                 expect(experimentsItem()?.queryParams).toEqual({
-                    pageId: MOCK_RESPONSE_HEADLESS.page.identifier
+                    pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
+                    // The language the editor is on. Without it the list's back-link and the
+                    // Configure prefill have to guess which version of the page was meant.
+                    language_id: MOCK_RESPONSE_HEADLESS.viewAs.language.id
                 });
             });
 

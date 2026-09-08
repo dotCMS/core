@@ -721,7 +721,10 @@ export const DotExperimentsConfigureStore = signalStore(
                     );
 
             /** Resolves `?pageId=` / `?url=` to the page the Page card shows. */
-            const resolvePrefill = ({ pageId, url }: ConfigurePagePrefill) => {
+            const resolvePrefill = ({ pageId, url, languageId }: ConfigurePagePrefill) => {
+                // Narrows to the version the caller named. Without it the lookup returns one row
+                // per language and picks between them after the fact.
+                const language = languageId ? ` +languageId:${languageId}` : '';
                 if (pageId) {
                     // `?pageId=` is whatever the address bar carries, and it is concatenated into
                     // a Lucene query below: a value with spaces or operators would widen the
@@ -739,7 +742,7 @@ export const DotExperimentsConfigureStore = signalStore(
                     // missing on the next entry, on a page that was live the whole time (#37005).
                     // Narrowing by identifier is enough; whatever the contentlet is, it is the page
                     // the experiment stores.
-                    return lookupPage(`+working:true +identifier:${pageId}`, pageId);
+                    return lookupPage(`+working:true +identifier:${pageId}${language}`, pageId);
                 }
 
                 if (!url) {
@@ -765,7 +768,7 @@ export const DotExperimentsConfigureStore = signalStore(
                 const path = normalizePath(url.startsWith('/') ? url : `/${url}`);
                 const site = globalStore.currentSiteId();
 
-                return lookupPage(`+working:true +conHost:${site} +path:"${path}"`, url);
+                return lookupPage(`+working:true +conHost:${site} +path:"${path}"${language}`, url);
             };
 
             return {
@@ -1215,9 +1218,20 @@ export const DotExperimentsConfigureStore = signalStore(
 
                         const pageId = route.snapshot.queryParamMap.get('pageId');
                         const url = route.snapshot.queryParamMap.get('url');
+                        // Same key UVE writes, so the language survives the whole trip.
+                        const languageId = Number.parseInt(
+                            route.snapshot.queryParamMap.get('language_id') ?? '',
+                            10
+                        );
 
                         if (pageId || url) {
-                            dispatcher.dispatch(pageEvents.pagePrefillRequested({ pageId, url }));
+                            dispatcher.dispatch(
+                                pageEvents.pagePrefillRequested({
+                                    pageId,
+                                    url,
+                                    languageId: Number.isFinite(languageId) ? languageId : null
+                                })
+                            );
                         }
                     });
             },

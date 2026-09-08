@@ -227,7 +227,23 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 ...(experimentsPortletEnabled
                     ? {
                           href: '/experiments',
-                          queryParams: { pageId: page?.identifier }
+                          /**
+                           * The page, and the language the editor is standing in.
+                           *
+                           * `language_id` is not a filter — the list narrows on `pageId` alone.
+                           * It is the only place the language exists: a page identifier says
+                           * nothing about which version was open, so without it the list's
+                           * back-link and the Configure prefill have to guess, and a wrong
+                           * language is invisible until the wrong content loads. Spelled as UVE
+                           * spells it everywhere else, so the same key travels the whole way.
+                           *
+                           * `url` and the persona key are still left behind: they mean nothing to
+                           * the list, and `parseViewState` would leave them in its address.
+                           */
+                          queryParams: {
+                              pageId: page?.identifier,
+                              language_id: this.uveStore.pageLanguageId()
+                          }
                       }
                     : { href: `experiments/${page?.identifier}` }),
                 id: 'experiments',

@@ -20,15 +20,18 @@ tests assert against.
 | Switch | Destination | Query params | Requirement |
 |---|---|---|---|
 | **off** | `/edit-page/experiments/{pageId}` | current UVE params, **merged** (`url`, `language_id`, `{persona}`, …) | FR-016 |
-| **on** | `/experiments` | `pageId={pageId}` only — **not merged** | FR-021, FR-021a, FR-022 |
+| **on** | `/experiments` | `pageId={pageId}` + `language_id` — **not merged** | FR-021, FR-021a, FR-022 |
 
 **Off is byte-identical to today.** The item's `href` stays `experiments/{page.identifier}`, the
 `edit-page` prefix and `queryParamsHandling: 'merge'` stay, so the address an editor sees does not
 change (FR-016). Verified by a router-spy assertion, not by inspection.
 
-**On carries `pageId`, nothing else.** Merging UVE's params would put `url`, `language_id` and
-`{persona}` into the list's URL, where its `parseViewState` does not recognise them — stale keys
-that survive every later filter change. See [research.md R3](../research.md) for why the key is
+**On carries `pageId` and `language_id`, nothing else.** Merging every UVE param would put `url`
+and `{persona}` into the list's URL, where its `parseViewState` does not recognise them — stale keys
+that survive every later filter change. `language_id` is the exception, and it is not a filter: the
+list narrows on `pageId` alone, but a page identifier cannot say which language version the editor
+had open, and that is what the chip's back-link needs to return to. It was originally left out with
+the other two; assuming the default sent editors to a version they had not been on. See [research.md R3](../research.md) for why the key is
 `pageId` — the name the Configure screen already prefills from — and not `page` (which is
 pagination).
 

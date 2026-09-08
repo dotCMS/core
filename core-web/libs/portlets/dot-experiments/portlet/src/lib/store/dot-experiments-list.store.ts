@@ -77,6 +77,7 @@ const initialState: DotExperimentsListState = {
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     selectedPageId: null,
+    languageId: null,
     error: null
 };
 
@@ -607,6 +608,7 @@ export const DotExperimentsListStore = signalStore(
                         page: store.page(),
                         perPage: store.perPage(),
                         selectedPageId: store.selectedPageId(),
+                        languageId: store.languageId(),
                         orderBy: store.orderBy(),
                         direction: store.direction()
                     });

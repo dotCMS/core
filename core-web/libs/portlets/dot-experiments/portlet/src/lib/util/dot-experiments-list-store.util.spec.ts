@@ -199,6 +199,17 @@ describe('page filter view state', () => {
             expect(parseViewState(reader({})).selectedPageId).toBeNull();
         });
 
+        // The language the editor was on, carried so the chip's back-link can return to that
+        // version of the page instead of assuming the default one.
+        it('should read the language from ?language_id=', () => {
+            expect(parseViewState(reader({ language_id: '2' })).languageId).toBe(2);
+        });
+
+        it('should treat a missing or unusable ?language_id= as no language', () => {
+            expect(parseViewState(reader({})).languageId).toBeNull();
+            expect(parseViewState(reader({ language_id: 'abc' })).languageId).toBeNull();
+        });
+
         it('should treat an empty ?pageId= as no filter, not as a page named ""', () => {
             expect(parseViewState(reader({ pageId: '' })).selectedPageId).toBeNull();
         });

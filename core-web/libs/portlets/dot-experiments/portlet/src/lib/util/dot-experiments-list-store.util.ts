@@ -63,7 +63,18 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         // the one the Configure screen already prefills from (#37003 AC-3), so one datum has one
         // name across the portlet. An empty
         // value is no filter rather than a page named "" — same rule as `filter` above.
-        selectedPageId: reader.get('pageId') || null
+        selectedPageId: reader.get('pageId') || null,
+        /**
+         * The language the editor was standing in, when it sent us here.
+         *
+         * Not a filter: the list narrows on `pageId` alone, and an experiment belongs to a page
+         * rather than to one of its language versions. It is carried so the page chip's back-link
+         * can return to the version the editor came from — a page identifier cannot say which one
+         * that was, and assuming the default sent them somewhere they had not been.
+         *
+         * `null` when absent or unusable, which is what a directly typed list URL looks like.
+         */
+        languageId: parsePositiveInteger(reader.get('language_id'), null)
     };
 }
 
@@ -96,7 +107,10 @@ export function parseGoals(rawGoals: string[]): GOAL_TYPES[] {
         .filter((goal) => allGoals.includes(goal));
 }
 
-export function parsePositiveInteger(rawValue: string | null, fallback: number): number {
+export function parsePositiveInteger<T extends number | null>(
+    rawValue: string | null,
+    fallback: T
+): number | T {
     const parsed = Number.parseInt(rawValue ?? '', 10);
 
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -171,7 +185,10 @@ export function toQueryParams(
             view.selectedGoals.length === DEFAULT_EXPERIMENTS_LIST_GOALS.length
                 ? null
                 : view.selectedGoals,
-        pageId: view.selectedPageId || null
+        pageId: view.selectedPageId || null,
+        // Written back so it survives filtering, sorting and paging: `writeUrl` merges, and the
+        // back-link reads it from the address rather than from a value held only on entry.
+        language_id: view.languageId ? String(view.languageId) : null
     };
 }
 

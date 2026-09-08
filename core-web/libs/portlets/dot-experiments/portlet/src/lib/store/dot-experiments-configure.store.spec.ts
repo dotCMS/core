@@ -1616,6 +1616,30 @@ describe('DotExperimentsConfigureStore', () => {
         });
 
         /**
+         * The language the editor was on, carried by the same link that carries the page. With it
+         * the lookup asks for one version instead of narrowing several after the fact — which is
+         * the difference between resolving the page the editor had open and resolving a page that
+         * merely shares its path.
+         */
+        it('should narrow the lookup to ?language_id= when it is given', () => {
+            initNew({ url: '/index', language_id: '2' });
+
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +conHost:${SITE_ID} +path:"/index" +languageId:2`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
+        });
+
+        it('should narrow ?pageId= by language too', () => {
+            initNew({ pageId: PAGE.pageId, language_id: '2' });
+
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +identifier:${PAGE.pageId} +languageId:2`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
+        });
+
+        /**
          * One path answers once per language, and `limit: 1` left it to the search which row came
          * back. `language_id` is invisible until the wrong content loads, so an arbitrary pick is
          * the worst kind of bug — it is picked deterministically instead. The lowest id is a

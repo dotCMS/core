@@ -173,7 +173,7 @@ describe('EditEmaNavigationBarComponent', () => {
                             label: 'editema.editor.navbar.experiments',
                             href: '/experiments',
                             id: 'experiments',
-                            queryParams: { pageId: 'page-1' }
+                            queryParams: { pageId: 'page-1', language_id: 2 }
                         }
                     ]);
                     spectator.detectChanges();
@@ -183,7 +183,7 @@ describe('EditEmaNavigationBarComponent', () => {
                     const [commands, extras] = navigateSpy.mock.calls[0];
                     const url = router.serializeUrl(router.createUrlTree(commands, extras));
 
-                    expect(url).toBe('/experiments?pageId=page-1');
+                    expect(url).toBe('/experiments?pageId=page-1&language_id=2');
                 });
             });
 

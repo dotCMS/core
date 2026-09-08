@@ -100,7 +100,8 @@ const LIST_TITLE_KEY = 'experiment.container.list.title';
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
 
 /**
- * Language for the chip's back-link.
+ * Language for the chip's back-link when the address does not carry one.
+ *
  *
  * `pageInfoByPageId` carries only `url` and `host` — the two fields the list needs — so the page's
  * real language is not available here. The editor's own guard substitutes 1 for a missing
@@ -334,7 +335,7 @@ export class DotExperimentsListComponent {
             pageId,
             title: info.url,
             path: info.url,
-            languageId: DEFAULT_PAGE_FILTER_LANGUAGE_ID
+            languageId: this.store.languageId() ?? DEFAULT_PAGE_FILTER_LANGUAGE_ID
         });
     });
 
