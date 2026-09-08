@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
+import { DialogService } from 'primeng/dynamicdialog';
 import { ZIndexUtils } from 'primeng/utils';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -11,6 +12,10 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentSidePanelComponent } from './dot-edit-content-side-panel.component';
 
+import {
+    AngularImageEditorLauncher,
+    IMAGE_EDITOR_LAUNCHER
+} from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
@@ -524,5 +529,70 @@ describe('DotEditContentSidePanelComponent — persisted expanded preference', (
             ariaLabel: 'edit.content.side-panel.expand',
             width: '80%'
         });
+    });
+});
+
+/**
+ * Regression lock for #37398, as its own top-level suite on purpose.
+ *
+ * The suites above override this component with `set: { providers: [...] }`, which REPLACES the
+ * component's own `providers` — so `IMAGE_EDITOR_LAUNCHER` would be absent there for a reason that
+ * has nothing to do with the component. This factory overrides only `imports` (stubbing the heavy
+ * layout), leaving the real provider list intact, so the assertion is about the component rather
+ * than about the test setup.
+ *
+ * `DotFileFieldComponent` injects the token as `{ optional: true }`, so a host losing this provider
+ * does not fail loudly — Image/File fields quietly open the legacy Dojo editor instead of the new
+ * one. This turns that into a test failure rather than a user-visible downgrade.
+ */
+describe('DotEditContentSidePanelComponent — image editor host capability', () => {
+    let spectator: Spectator<DotEditContentSidePanelComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentSidePanelComponent,
+        overrideComponents: [
+            [
+                DotEditContentSidePanelComponent,
+                {
+                    remove: { imports: [DotEditContentLayoutComponent, DotMessagePipe] },
+                    add: {
+                        imports: [
+                            MockComponent(DotEditContentLayoutComponent),
+                            MockPipe(DotMessagePipe, (key: string) => key)
+                        ]
+                    }
+                }
+            ]
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            providers: [
+                { provide: OverlayEditContentHost, useValue: { saved$: new Subject() } },
+                // Same stub the suites above use: keep the real controller — and the GlobalStore
+                // and HTTP services behind it — out of a test that is only about providers.
+                {
+                    provide: DotSidePanelNavController,
+                    useValue: {
+                        acquire: jest.fn(),
+                        release: jest.fn(),
+                        isTop: jest.fn().mockReturnValue(true)
+                    }
+                }
+            ],
+            detectChanges: false
+        });
+    });
+
+    it('should provide IMAGE_EDITOR_LAUNCHER so fields use the new editor, not legacy Dojo', () => {
+        const launcher = spectator.inject(IMAGE_EDITOR_LAUNCHER, true);
+
+        expect(launcher).toBeDefined();
+        expect(launcher).toBeInstanceOf(AngularImageEditorLauncher);
+    });
+
+    it('should provide the DialogService the launcher opens the editor through', () => {
+        expect(spectator.inject(DialogService, true)).toBeTruthy();
     });
 });

@@ -1,244 +1,284 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
-
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
+import { SpectatorHost, byTestId, createHostFactory } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotKeyValueTableHeaderRowComponent } from './dot-key-value-table-header-row.component';
 
-import { DotKeyValue } from '../dot-key-value-ng.component';
-
-export const mockKeyValue: DotKeyValue[] = [
-    {
-        key: 'name',
-        hidden: false,
-        value: 'John'
-    }
-];
+const messageServiceMock = new MockDotMessageService({
+    'keyValue.key_input.placeholder': 'Enter Key',
+    'keyValue.value_input.placeholder': 'Enter Value',
+    'keyValue.key_input.required': 'This field is required',
+    'keyValue.value_input.required': 'This field is required',
+    'keyValue.key_input.duplicated': 'This key already exists',
+    'keyValue.hidden_header.label': 'Hidden',
+    add: 'Add'
+});
 
 describe('DotKeyValueTableHeaderRowComponent', () => {
-    let spectator: Spectator<DotKeyValueTableHeaderRowComponent>;
-    const createComponent = createComponentFactory({
+    let spectator: SpectatorHost<DotKeyValueTableHeaderRowComponent>;
+
+    const createHost = createHostFactory({
         component: DotKeyValueTableHeaderRowComponent,
-        imports: [
-            FormsModule,
-            ReactiveFormsModule,
-            ToggleSwitchModule,
-            InputTextModule,
-            ButtonModule
-        ],
-        providers: [
-            {
-                provide: DotMessageService,
-                useValue: new MockDotMessageService({
-                    'keyValue.key_input.placeholder': 'Enter Key',
-                    'keyValue.value_input.placeholder': 'Enter Value',
-                    'keyValue.key_input.required': 'Key is required',
-                    'keyValue.value_input.required': 'Value is required',
-                    'keyValue.key_input.duplicated': 'Key already exists',
-                    'keyValue.key_header.label': 'Key',
-                    'keyValue.value_header.label': 'Value',
-                    'keyValue.hidden_header.label': 'Hidden',
-                    Save: 'Save',
-                    Cancel: 'Cancel',
-                    'keyValue.error.duplicated.variable': 'test {0}'
-                })
-            }
-        ]
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
+    /**
+     * The component attaches to a `tr`, so it needs a table to live in — see the
+     * class doc for why an element wrapper is not an option.
+     */
+    const HOST = `
+        <table><thead>
+            <tr dotKeyValueTableHeaderRow
+                [forbiddenkeys]="forbiddenkeys"
+                [showHiddenField]="showHiddenField"></tr>
+        </thead></table>`;
+
+    /** TestBed can only be instantiated once per test, so props change in place. */
+    const setProps = (props: Partial<Record<string, unknown>>) => {
+        spectator.setHostInput(props);
+        spectator.detectChanges();
+    };
+
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                showHiddenField: false,
-                forbiddenkeys: {
-                    name: true
-                },
-                dragAndDrop: false
-            } as unknown
+        spectator = createHost(HOST, {
+            hostProps: {
+                forbiddenkeys: { name: true },
+                showHiddenField: false
+            }
         });
         spectator.detectChanges();
     });
 
-    it('should load the component', () => {
-        expect(spectator.component).toBeTruthy();
-    });
+    const fill = (key: string, value: string) => {
+        spectator.typeInElement(key, spectator.query(byTestId('key-input')));
+        spectator.typeInElement(value, spectator.query(byTestId('value-input')));
+        spectator.detectChanges();
+    };
 
-    describe('Form Validation', () => {
-        it('should invalidate form when key is empty', () => {
-            spectator.component.keyControl.setValue('');
+    describe('validation (FR-010, FR-011)', () => {
+        it('should reject an empty key and say why', () => {
             spectator.component.keyControl.markAsDirty();
             spectator.detectChanges();
 
-            expect(spectator.component.form.valid).toBeFalsy();
-            expect(spectator.component.keyControl.hasError('required')).toBeTruthy();
-            expect(spectator.query('small.text-red-500')).toHaveText('Key is required');
+            expect(spectator.component.form.valid).toBe(false);
+            expect(spectator.query('small.text-red-500').textContent).toContain(
+                'This field is required'
+            );
         });
 
-        it('should invalidate form when key is forbidden', () => {
+        it('should reject a duplicate key and say why', () => {
             spectator.component.keyControl.setValue('name');
             spectator.component.keyControl.markAsDirty();
             spectator.detectChanges();
 
-            expect(spectator.component.form.valid).toBeFalsy();
-            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeTruthy();
-            expect(spectator.query('small.text-red-500')).toHaveText('Key already exists');
+            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBe(true);
+            expect(spectator.query('small.text-red-500').textContent).toContain(
+                'This key already exists'
+            );
         });
 
-        it('should clear duplicate key error when the conflicting key is removed from forbiddenkeys', () => {
+        it('should clear the duplicate error once the conflicting key is gone', () => {
             spectator.component.keyControl.setValue('name');
             spectator.component.keyControl.markAsDirty();
             spectator.detectChanges();
+            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBe(true);
 
-            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeTruthy();
-
-            spectator.setInput('forbiddenkeys', {});
+            setProps({ forbiddenkeys: {} });
             spectator.flushEffects();
             spectator.detectChanges();
 
-            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeFalsy();
             expect(spectator.component.keyControl.errors).toBeNull();
         });
 
-        it('should invalidate form when value is empty', () => {
-            spectator.component.valueControl.setValue('');
+        it('should reject an empty value', () => {
+            spectator.component.keyControl.setValue('k');
             spectator.component.valueControl.markAsDirty();
             spectator.detectChanges();
 
-            expect(spectator.component.form.valid).toBeFalsy();
-            expect(spectator.component.valueControl.hasError('required')).toBeTruthy();
-            const valueErrorSmall = spectator.queryAll('small.text-red-500')[1];
-            expect(valueErrorSmall).toHaveText('Value is required');
+            expect(spectator.component.form.valid).toBe(false);
+        });
+
+        it('should not emit when the form is invalid', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.click(byTestId('save-button'));
+            spectator.detectChanges();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.component.keyControl.touched).toBe(true);
+            expect(spectator.component.valueControl.touched).toBe(true);
         });
     });
 
-    describe('Save Functionality', () => {
-        it('should emit save event with form values when form is valid', () => {
+    describe('adding a pair', () => {
+        it('should emit the completed pair', () => {
             const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-            const resetSpy = jest.spyOn(spectator.component, 'resetForm');
 
-            spectator.component.keyControl.setValue('newKey');
-            spectator.component.valueControl.setValue('newValue');
-            spectator.component.hiddenControl.setValue(true);
-
-            spectator.component.saveVariable();
+            fill('newKey', 'newValue');
+            spectator.click(byTestId('save-button'));
+            spectator.detectChanges();
 
             expect(saveSpy).toHaveBeenCalledWith({
                 key: 'newKey',
                 value: 'newValue',
-                hidden: true
+                hidden: false
             });
-            expect(resetSpy).toHaveBeenCalled();
         });
 
-        it('should not emit save event when form is invalid', () => {
+        it('should emit on Enter from the value input', () => {
             const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-            const resetSpy = jest.spyOn(spectator.component, 'resetForm');
 
-            // Leave form invalid
-            spectator.component.keyControl.setValue('');
+            fill('fromKeyboard', 'value');
+            spectator
+                .query(byTestId('value-input'))
+                .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            spectator.detectChanges();
 
-            spectator.component.saveVariable();
+            expect(saveSpy).toHaveBeenCalled();
+        });
 
-            expect(saveSpy).not.toHaveBeenCalled();
-            expect(resetSpy).not.toHaveBeenCalled();
-            expect(spectator.component.keyControl.touched).toBeTruthy();
-            expect(spectator.component.valueControl.touched).toBeTruthy();
+        // FR-012: consecutive pairs must be enterable without reaching for the pointer.
+        it('should clear the form and refocus the key input after a successful add', () => {
+            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
+
+            fill('newKey', 'newValue');
+            spectator.click(byTestId('save-button'));
+            spectator.detectChanges();
+
+            expect(spectator.component.keyControl.value).toBe('');
+            expect(spectator.component.valueControl.value).toBe('');
+            expect(document.activeElement).toBe(keyInput);
         });
     });
 
-    describe('Key Input Events', () => {
-        it('should focus on "Value" field, if entered a valid "Key"', () => {
+    describe('keyboard navigation', () => {
+        it('should advance from key to value on Enter when the key is usable', () => {
             const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
             spectator.typeInElement('valid-key', keyInput);
-            expect(spectator.component.keyControl.value).toBe('valid-key');
             keyInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
-            const valueInputElement = spectator.component.$valueCell().nativeElement;
-            expect(document.activeElement).toEqual(valueInputElement);
+            expect(document.activeElement).toBe(spectator.component.$valueCell().nativeElement);
         });
 
-        it('should stay on key input when key is invalid and Enter is pressed', () => {
+        it('should stay on the key input when the key is invalid', () => {
             const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
-            spectator.typeInElement('name', keyInput); // This is a forbidden key
+            spectator.typeInElement('name', keyInput); // duplicate
             keyInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
-            const keyInputElement = spectator.component.$keyCell().nativeElement;
-            expect(document.activeElement).toEqual(keyInputElement);
-        });
-    });
-
-    describe('Value Input Events', () => {
-        it('should call saveVariable when Enter is pressed in value input', () => {
-            const saveVariableSpy = jest.spyOn(spectator.component, 'saveVariable');
-            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'));
-            valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-
-            expect(saveVariableSpy).toHaveBeenCalled();
+            expect(document.activeElement).toBe(keyInput);
         });
 
-        it('should reset form when press "Escape"', () => {
-            const spyForm = jest.spyOn(spectator.component.form, 'reset');
-            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'));
-            valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-            expect(spyForm).toHaveBeenCalled();
-        });
-    });
-
-    describe('Cancel Functionality', () => {
-        it('should reset form when onCancel is called', () => {
-            const resetSpy = jest.spyOn(spectator.component, 'resetForm');
-            const mockEvent = new Event('click');
-            const stopPropagationSpy = jest.spyOn(mockEvent, 'stopPropagation');
-
-            spectator.component.onCancel(mockEvent);
-
-            expect(stopPropagationSpy).toHaveBeenCalled();
-            expect(resetSpy).toHaveBeenCalled();
-        });
-    });
-
-    describe('Drag and Drop', () => {
-        it('should not show drag handle column when dragAndDrop is false', () => {
-            spectator.setInput('dragAndDrop', false);
+        it('should reset the row on Escape', () => {
+            fill('abandoned', 'value');
+            spectator
+                .query(byTestId('key-input'))
+                .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('drag-column'))).toBeNull();
+            expect(spectator.component.keyControl.value).toBe('');
+        });
+    });
+
+    describe('hidden values (FR-021)', () => {
+        it('should render no visibility toggle when the consumer opts out', () => {
+            expect(spectator.query(byTestId('dot-key-value-new-visibility-toggle'))).toBeFalsy();
         });
 
-        it('should show drag handle column when dragAndDrop is true', () => {
-            spectator.setInput('dragAndDrop', true);
+        it('should offer the toggle inside the value field, not a column of its own', () => {
+            setProps({ showHiddenField: true });
+
+            expect(spectator.query(byTestId('dot-key-value-new-visibility-toggle'))).toBeTruthy();
+            expect(spectator.query(byTestId('hidden-switch'))).toBeFalsy();
+        });
+
+        it('should switch the value field to a password when the toggle is used', () => {
+            setProps({ showHiddenField: true });
+
+            spectator.click(byTestId('dot-key-value-new-visibility-toggle'));
             spectator.detectChanges();
 
+            expect(spectator.query<HTMLInputElement>(byTestId('value-input')).type).toBe(
+                'password'
+            );
+        });
+
+        it('should switch back, since hiding a value is no longer a one-way trip', () => {
+            // The whole point of moving this control into the field: before the redesign
+            // a value could be hidden and never revealed again while being entered.
+            setProps({ showHiddenField: true });
+            const toggle = () => {
+                spectator.click(byTestId('dot-key-value-new-visibility-toggle'));
+                spectator.detectChanges();
+            };
+
+            toggle();
+            toggle();
+
+            expect(spectator.query<HTMLInputElement>(byTestId('value-input')).type).toBe('text');
+            expect(
+                spectator
+                    .query(byTestId('dot-key-value-new-visibility-toggle'))
+                    .getAttribute('aria-pressed')
+            ).toBe('false');
+            expect(
+                spectator.query(byTestId('dot-key-value-new-visibility-toggle')).textContent.trim()
+            ).toBe('visibility');
+        });
+    });
+
+    describe('column alignment', () => {
+        it('should always render the leading cell, so it lines up with the drag column', () => {
             expect(spectator.query(byTestId('drag-column'))).toBeTruthy();
         });
     });
 
-    describe('With Hidden Fields', () => {
-        beforeEach(() => {
-            spectator.setInput('showHiddenField', true);
+    describe('pasting a .env block', () => {
+        /** Fires a real paste carrying `text` on the key input. */
+        const paste = (text: string) => {
+            const event = Object.assign(new Event('paste', { bubbles: true, cancelable: true }), {
+                clipboardData: { getData: () => text }
+            });
+            spectator.element.querySelector('[data-testId="key-input"]').dispatchEvent(event);
+            spectator.detectChanges();
+
+            return event;
+        };
+
+        it('should turn a pasted block into pairs, in the order pasted', () => {
+            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+
+            paste('SOME=TEST\nJEJE=JEJE\nFOO=BAR');
+
+            expect(spy).toHaveBeenCalledWith([
+                { key: 'SOME', value: 'TEST' },
+                { key: 'JEJE', value: 'JEJE' },
+                { key: 'FOO', value: 'BAR' }
+            ]);
         });
 
-        it('should load the component with switch button', () => {
-            spectator.detectChanges();
-            const switchInput = spectator.query(ToggleSwitch);
-            expect(switchInput).toBeTruthy();
+        it('should stop the browser from also pasting the text into the input', () => {
+            const event = paste('A=1\nB=2');
+
+            expect(event.defaultPrevented).toBe(true);
         });
 
-        it('should switch to hidden mode when clicked on the hidden switch button', async () => {
-            spectator.detectChanges();
-            const switchInput = spectator.query(byTestId('hidden-switch')).querySelector('input');
+        it('should leave an ordinary paste alone', () => {
+            // Text with no assignment in it is someone pasting a key name, not a block.
+            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+            const event = paste('JustAKeyName');
 
-            spectator.click(switchInput);
-            spectator.detectChanges();
+            expect(spy).not.toHaveBeenCalled();
+            expect(event.defaultPrevented).toBe(false);
+        });
 
-            const valueInput = spectator.query<HTMLInputElement>(byTestId('value-input'));
-            expect(valueInput.type).toBe('password');
+        it('should not offer a key the list already holds', () => {
+            spectator.setHostInput({ forbiddenkeys: { TAKEN: true } });
+            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+
+            paste('TAKEN=new\nFRESH=ok');
+
+            expect(spy).toHaveBeenCalledWith([{ key: 'FRESH', value: 'ok' }]);
         });
     });
 });
