@@ -20,10 +20,18 @@ describe('DotAiConfigDetailComponent', () => {
 
     const providers: DotAiProviderMetadata[] = [];
 
+    // Held here rather than inline in `mockProvider`, because a factory's stub object is
+    // built once: the failure suite's `getConfig` override would otherwise leak into every
+    // suite that ran after it.
+    const getProviders = jest.fn();
+    const getConfig = jest.fn();
+
     const createComponent = createComponentFactory({
         component: DotAiConfigDetailComponent,
         providers: [
-            mockProvider(DotAiConfigService),
+            // Happy-path stubs live on the factory; only the failure suite overrides
+            // getConfig, which is the reason the two suites exist.
+            mockProvider(DotAiConfigService, { getProviders, getConfig, saveConfig: jest.fn() }),
             mockProvider(DotRouterService),
             mockProvider(DotMessageDisplayService),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) },
@@ -39,10 +47,19 @@ describe('DotAiConfigDetailComponent', () => {
         detectChanges: false
     });
 
+    beforeEach(() => {
+        jest.clearAllMocks();
+        // Happy path by default; only the failure suite overrides getConfig, which is the
+        // reason the two suites exist.
+        getProviders.mockReturnValue(of(providers));
+        getConfig.mockReturnValue(
+            of({ providerConfig: JSON.stringify({ settings: { textPrompt: 'hi' } }) } as never)
+        );
+    });
+
     describe('when the initial load fails', () => {
         beforeEach(() => {
             spectator = createComponent();
-            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(of(providers));
             spectator
                 .inject(DotAiConfigService)
                 .getConfig.mockReturnValue(throwError(() => new Error('network error')));
@@ -69,13 +86,6 @@ describe('DotAiConfigDetailComponent', () => {
     describe('when the initial load succeeds', () => {
         beforeEach(() => {
             spectator = createComponent();
-            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(of(providers));
-            spectator.inject(DotAiConfigService).getConfig.mockReturnValue(
-                of({
-                    providerConfig: JSON.stringify({ settings: { textPrompt: 'hi' } })
-                } as never)
-            );
-
             spectator.component.ngOnInit();
         });
 

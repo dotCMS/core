@@ -162,6 +162,20 @@ describe('DotAiChatComponent', () => {
         expect(spectator.query(byTestId('dotai-chat-send'))).toBeFalsy();
     });
 
+    it('should stop generation when Stop is clicked (FR-012)', () => {
+        // The behaviour is covered in the store spec; this is the template wiring, which the
+        // presence assertion above does not touch.
+        storeMock.isStreaming.mockReturnValue(true);
+        withAnswer(answer());
+        spectator = createComponent();
+
+        spectator.click(
+            spectator.query(byTestId('dotai-chat-stop'))?.querySelector('button') as HTMLElement
+        );
+
+        expect(storeMock.stopChat).toHaveBeenCalled();
+    });
+
     it('should mark a stopped answer rather than implying it finished', async () => {
         withAnswer(answer({ content: 'partial', state: DOT_AI_ANSWER_STATE.STOPPED }));
         spectator = createComponent();

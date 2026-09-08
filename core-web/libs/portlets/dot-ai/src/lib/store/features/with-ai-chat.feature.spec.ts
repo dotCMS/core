@@ -1,6 +1,8 @@
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { Subject, throwError } from 'rxjs';
+import { Observable, Subject, throwError } from 'rxjs';
+
+import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
 
 import {
     DotAiCompletionsStreamService,
@@ -109,6 +111,35 @@ describe('withAiChat', () => {
 
         expect(store.chatAnswer()).toBeNull();
         expect(spectator.inject(DotAiCompletionsStreamService).stream).not.toHaveBeenCalled();
+    });
+
+    it('should abort an in-flight stream when the store itself is destroyed (FR-015)', () => {
+        // The backstop for the whole portlet unmounting. `{ providedIn: 'root' }` never fires
+        // onDestroy, so this needs a scoped store in a child injector that can be destroyed —
+        // the pattern a11y-run.store.spec.ts uses for the same reason.
+        const teardown = jest.fn();
+        const ScopedStore = signalStore(
+            withState<DotAiPortletState>(DOT_AI_INITIAL_STATE),
+            withRetrievalSettings(),
+            withAiChat()
+        );
+
+        const parent = spectator.inject(EnvironmentInjector);
+        const injector = createEnvironmentInjector([ScopedStore], parent);
+        const store = injector.get(ScopedStore);
+
+        // The child injector resolves the stream service from the parent, so this is the
+        // same mock instance the rest of the suite drives.
+        spectator.inject(DotAiCompletionsStreamService).stream = jest
+            .fn()
+            .mockReturnValue(new Observable(() => teardown));
+
+        store.sendChat('q');
+        expect(teardown).not.toHaveBeenCalled();
+
+        injector.destroy();
+
+        expect(teardown).toHaveBeenCalled();
     });
 
     describe('stop (FR-012)', () => {

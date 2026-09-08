@@ -90,6 +90,9 @@ describe('DotAiEmbeddingsComponent', () => {
         expect(spectator.query(byTestId('dotai-embeddings-table'))).toBeFalsy();
     });
 
+    /** Runs the `accept` the component handed the confirmation service. */
+    const acceptConfirmation = () => confirmSpy.mock.calls[0][0].accept();
+
     it('should confirm before deleting an index (FR-031)', () => {
         clickButton('dotai-embeddings-delete');
 
@@ -98,11 +101,29 @@ describe('DotAiEmbeddingsComponent', () => {
         expect(storeMock.deleteIndex).not.toHaveBeenCalled();
     });
 
+    it('should delete once the confirmation is accepted (FR-031)', () => {
+        // Asserting only the guard proves the dialog opens, not that accepting it does the
+        // thing — a broken `accept` wiring would pass that test alone.
+        clickButton('dotai-embeddings-delete');
+
+        acceptConfirmation();
+
+        expect(storeMock.deleteIndex).toHaveBeenCalledWith('blogs');
+    });
+
     it('should confirm before rebuilding the store (FR-032)', () => {
         clickButton('dotai-embeddings-rebuild');
 
         expect(confirmSpy).toHaveBeenCalled();
         expect(storeMock.rebuildEmbeddingsDb).not.toHaveBeenCalled();
+    });
+
+    it('should rebuild once the confirmation is accepted (FR-032)', () => {
+        clickButton('dotai-embeddings-rebuild');
+
+        acceptConfirmation();
+
+        expect(storeMock.rebuildEmbeddingsDb).toHaveBeenCalled();
     });
 
     describe('New Index dialog', () => {

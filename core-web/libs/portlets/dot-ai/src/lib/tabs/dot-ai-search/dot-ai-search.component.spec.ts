@@ -157,6 +157,41 @@ describe('DotAiSearchComponent', () => {
         expect(storeMock.runSearch).not.toHaveBeenCalled();
     });
 
+    describe('submitting (FR-007)', () => {
+        // Both paths are wired in the template and neither had a positive test — only the
+        // empty-prompt negative, which passes even if the wiring is broken.
+        beforeEach(() => {
+            storeMock.searchPrompt.mockReturnValue('costa rica');
+            spectator = createComponent();
+        });
+
+        it('should search when the action is clicked', () => {
+            spectator.click(
+                spectator
+                    .query(byTestId('dotai-search-submit'))
+                    ?.querySelector('button') as HTMLElement
+            );
+
+            expect(storeMock.runSearch).toHaveBeenCalled();
+        });
+
+        it('should search on Enter in the field', () => {
+            // A real KeyboardEvent: spectator's helper needs initKeyboardEvent, which this
+            // jsdom does not provide.
+            spectator
+                .query(byTestId('dotai-search-input'))
+                ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+            expect(storeMock.runSearch).toHaveBeenCalled();
+        });
+
+        it('should render a restored prompt in the field (FR-010)', () => {
+            expect(
+                (spectator.query(byTestId('dotai-search-input')) as HTMLInputElement).value
+            ).toBe('costa rica');
+        });
+    });
+
     it('should disable the input and submit while unconfigured (FR-047)', () => {
         storeMock.isConfigured.mockReturnValue(false);
         storeMock.searchPrompt.mockReturnValue('a question');

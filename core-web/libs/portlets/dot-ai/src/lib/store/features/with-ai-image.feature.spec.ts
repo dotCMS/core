@@ -130,6 +130,8 @@ describe('withAiImage', () => {
             expect(store.image()).not.toBeNull();
             expect(store.image()?.published).toBe(false);
             expect(store.imageError()).toBe('no');
+            // FR-051: a failure must not strand the button in its saving state.
+            expect(store.imageSaving()).toBe(false);
         });
 
         it('should do nothing when there is no image', () => {
