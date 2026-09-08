@@ -77,7 +77,7 @@
                                 (onClick)="store.saveImage()"
                                 data-testid="dotai-image-save">
                                 <ng-template #icon>
-                                    <i class="material-symbols-outlined text-lg!">save</i>
+                                    <i class="material-symbols-outlined">save</i>
                                 </ng-template>
                             </p-button>
 
@@ -97,9 +97,7 @@
                                 [pTooltip]="'dotai.image.download' | dm"
                                 tooltipPosition="bottom"
                                 data-testid="dotai-image-download">
-                                <i class="material-symbols-outlined text-lg!" aria-hidden="true">
-                                    download
-                                </i>
+                                <i class="material-symbols-outlined" aria-hidden="true">download</i>
                             </a>
 
                             @if (image.published) {
@@ -113,9 +111,7 @@
                                     [pTooltip]="'dotai.image.published' | dm"
                                     tooltipPosition="bottom"
                                     data-testid="dotai-image-published">
-                                    <i
-                                        class="material-symbols-outlined text-lg!"
-                                        aria-hidden="true">
+                                    <i class="material-symbols-outlined" aria-hidden="true">
                                         check_circle
                                     </i>
                                 </span>
