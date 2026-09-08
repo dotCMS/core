@@ -67,7 +67,6 @@ import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
-    WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
@@ -145,7 +144,10 @@ describe('DotContentDriveShellComponent', () => {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotUploadFileService, {
-                uploadFileByBaseType: jest.fn().mockReturnValue(of({}))
+                uploadFileByBaseType: jest.fn().mockReturnValue(of({})),
+                uploadFilesByBaseType: jest
+                    .fn()
+                    .mockReturnValue(of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }))
             }),
             provideHttpClient(),
             // The panel is behind `@defer`; once it resolves, it mounts the real editor chain,
@@ -1314,7 +1316,7 @@ describe('DotContentDriveShellComponent', () => {
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
-            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
         });
 
         it('should open the upload menu carrying the files when the dropzone emits uploadFiles', () => {
@@ -1331,7 +1333,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(selector).toBeTruthy();
             expect(selector.$files()).toBe(files);
             expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
-            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
         });
 
         it('should open the upload menu carrying the files when the sidebar emits uploadFiles', () => {
@@ -1347,7 +1349,7 @@ describe('DotContentDriveShellComponent', () => {
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$files()).toBe(files);
-            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
         });
 
         it('should render both option menu items when opened', () => {
@@ -1422,13 +1424,106 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('upload — a batch of files', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should submit every chosen file, not just the first', () => {
+            // The reported defect: ten files chosen, one uploaded, nine silently discarded.
+            const chosen = [createFile('a.png'), createFile('b.png'), createFile('c.png')];
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList(chosen),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                chosen,
+                expect.objectContaining({ baseType: 'DOTASSET', folderId: TARGET_FOLDER_DATA.id })
+            );
+        });
+
+        it('should submit the batch in one request rather than one per file', () => {
+            // One call, one handle, one run to follow. Per-file requests would leave the author
+            // nothing to follow and no single outcome to report.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledTimes(1);
+        });
+
+        it('should stop warning that only one file will be uploaded', () => {
+            // The copy was true and is now false. Left in, it tells the author their files were
+            // discarded while they are in fact being uploaded.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
+        });
+
+        it('should target the site when a batch lands on a site root', () => {
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ siteId: MOCK_SITES[0].identifier })
+            );
+        });
+
+        it('should submit a single file down the same path, as a batch of one', () => {
+            // Not a special case. One path, one set of gates, one method: a lone file is a batch
+            // whose length is one, so nothing forks on count.
+            const only = createFile('a.png');
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([only]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                [only],
+                expect.objectContaining({ baseType: 'DOTASSET', folderId: TARGET_FOLDER_DATA.id })
+            );
+        });
+
+        it('should not announce a single file any differently than today', () => {
+            // What "unchanged" protects is the author's experience, not a separate code path.
+            // Today one file uploads quietly and its row appears, so a batch of one must not
+            // suddenly start narrating itself.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).not.toHaveBeenCalled();
+        });
+    });
+
     describe('upload — drag-and-drop flow (files already chosen)', () => {
         beforeEach(() => {
             spectator.detectChanges();
         });
 
         it('should upload the file as dotAsset when Asset is selected', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
 
             selectUploadType({
@@ -1437,14 +1532,14 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'DOTASSET', {
-                hostFolder: TARGET_FOLDER_DATA.id,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'DOTASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
         });
 
         it('should upload the file as FileAsset when File is selected', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
 
             selectUploadType({
@@ -1453,14 +1548,14 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'FILEASSET'
             });
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
-                hostFolder: TARGET_FOLDER_DATA.id,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
         });
 
         it('should upload to the current site root when no folder is selected', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
             const file = createFile();
 
@@ -1470,14 +1565,14 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'DOTASSET', {
-                hostFolder: MOCK_SITES[0].identifier,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'DOTASSET',
+                siteId: MOCK_SITES[0].identifier
             });
         });
 
         it('should fall back to empty hostFolder when no folder and no current site', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             store.currentSite.mockReturnValue(undefined);
             const file = createFile();
 
@@ -1487,9 +1582,9 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'FILEASSET'
             });
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
-                hostFolder: '',
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                siteId: ''
             });
         });
 
@@ -1497,7 +1592,7 @@ describe('DotContentDriveShellComponent', () => {
             // FR-008: in-flight state belongs on the toolbar indicator, never as a transient
             // notification. A toast that says only "this has begun" competes with the outcome that
             // follows it and tells the author nothing they cannot already see.
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const addSpy = jest.spyOn(messageService, 'add');
 
             selectUploadType({
@@ -1510,7 +1605,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should not announce an upload the listing now shows', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(
+            uploadService.uploadFilesByBaseType.mockReturnValue(
                 of({ title: 'test.jpg', contentType: 'image/jpeg' } as DotCMSContentlet)
             );
             const addSpy = jest.spyOn(messageService, 'add');
@@ -1527,7 +1622,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should show an error message on upload failure', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(
+            uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(() => new Error('Upload failed'))
             );
             const addSpy = jest.spyOn(messageService, 'add');
@@ -1547,7 +1642,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should show the server error message on failure with an errors payload', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(
+            uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(() => ({ error: { errors: [{ message: 'Upload failed' }] } }))
             );
             const addSpy = jest.spyOn(messageService, 'add');
@@ -1566,39 +1661,8 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        it('should warn and upload only the first file when multiple files are selected', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
-            const file1 = createFile('test1.jpg');
-            const file2 = createFile('test2.jpg');
-
-            selectUploadType({
-                targetFolder: TARGET_FOLDER_DATA,
-                files: createFileList([file1, file2]),
-                baseType: 'DOTASSET'
-            });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'warn',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: WARNING_MESSAGE_LIFE
-            });
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file1, 'DOTASSET', {
-                hostFolder: TARGET_FOLDER_DATA.id,
-                indexPolicy: 'WAIT_FOR'
-            });
-        });
-    });
-
-    describe('upload — button flow (file picker opens after choosing)', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-        });
-
         it('should open the file picker after a type is chosen, then upload with that type', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
@@ -1608,7 +1672,7 @@ describe('DotContentDriveShellComponent', () => {
             selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
 
             expect(clickSpy).toHaveBeenCalled();
-            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
 
             Object.defineProperty(fileInput, 'files', {
                 value: [file],
@@ -1617,9 +1681,9 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
-                hostFolder: TARGET_FOLDER_DATA.id,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
         });
 
@@ -1629,7 +1693,7 @@ describe('DotContentDriveShellComponent', () => {
             // drops the selection and the upload silently no-ops (the real Chrome bug).
             // jsdom doesn't model this, so we mock it faithfully: `.files` is one stable object
             // that is emptied when `.value` is cleared.
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
 
@@ -1649,9 +1713,9 @@ describe('DotContentDriveShellComponent', () => {
             selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
-                hostFolder: TARGET_FOLDER_DATA.id,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
             expect(fileInput.value).toBe(''); // still reset afterwards
         });
@@ -1668,7 +1732,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
         });
     });
 
@@ -1699,7 +1763,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should upload with the folder base type after the picker returns (button flow)', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             store.selectedNode.mockReturnValue({
                 data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
             } as DotFolderTreeNodeItem);
@@ -1714,14 +1778,14 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'DOTASSET', {
-                hostFolder: TARGET_FOLDER_DATA.id,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'DOTASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
         });
 
         it('should upload dropped files directly when the folder pins a base type (drag-and-drop)', () => {
-            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
 
             spectator.triggerEventHandler(
@@ -1734,9 +1798,9 @@ describe('DotContentDriveShellComponent', () => {
             );
             spectator.detectChanges();
 
-            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
-                hostFolder: TARGET_FOLDER_DATA.id,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
             expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
@@ -1871,7 +1935,7 @@ describe('DotContentDriveShellComponent', () => {
             it('should refuse an upload onto it', () => {
                 dropFiles(deniedFolder);
 
-                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+                expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
             });
 
             it('should upload onto a folder that accepts content', () => {
@@ -1880,7 +1944,7 @@ describe('DotContentDriveShellComponent', () => {
                     defaultBaseType: 'FILEASSET'
                 } as unknown as DotFolderTreeNodeData);
 
-                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+                expect(uploadService.uploadFilesByBaseType).toHaveBeenCalled();
             });
 
             it('should still allow a move onto a folder that accepts content', () => {

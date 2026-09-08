@@ -83,4 +83,69 @@ export class ContentDrivePage {
             timeout: 20000
         });
     }
+
+    /** Navigates into a folder by clicking its row in the tree. */
+    async openFolder(name: string) {
+        await this.treeNodeLabels.filter({ hasText: name }).first().click();
+        await expect(this.page.getByTestId('dropzone')).toBeVisible({ timeout: 20000 });
+    }
+
+    /**
+     * Chooses several files through the real file chooser.
+     *
+     * The only honest proof that `multiple` is on the input: `setInputFiles` with more than one
+     * path throws on an input without it, so this fails as a browser error rather than as a
+     * missing row.
+     */
+    async chooseFilesForUpload(names: string[], baseType = 'DOTASSET') {
+        const chooser = this.page.waitForEvent('filechooser');
+
+        await this.toolbar.getByTestId('upload-button').click();
+
+        // A folder that pins a default base type skips the selector and opens the chooser straight
+        // away, so the option is clicked only when it actually appears.
+        const option = this.page.getByTestId(`upload-selector-option-${baseType}`);
+        if (await option.isVisible().catch(() => false)) {
+            await option.click();
+        }
+
+        await (await chooser).setFiles(names.map((name) => filePayload(name)));
+    }
+
+    /**
+     * Drops several files onto the listing.
+     *
+     * Synthesises the `DataTransfer` inside the page: this exercises the same handler a real drag
+     * reaches, but it is not a drag from the desktop, which no browser automation can perform.
+     */
+    async dropFilesOnList(names: string[]) {
+        const dropzone = this.page.getByTestId('dropzone');
+
+        await dropzone.dispatchEvent('dragenter');
+        await dropzone.dispatchEvent('drop', {
+            dataTransfer: await this.page.evaluateHandle((fileNames) => {
+                const transfer = new DataTransfer();
+                fileNames.forEach((name) =>
+                    transfer.items.add(new File([new Uint8Array(4)], name, { type: 'image/png' }))
+                );
+
+                return transfer;
+            }, names)
+        });
+    }
+
+    /**
+     * The warning that only one file will be uploaded must be gone.
+     *
+     * Asserted on the toast's severity rather than on its wording, so it keeps holding when the
+     * copy is reworded, and fails if the old message is merely reworded rather than removed.
+     */
+    async expectNoSingleFileWarning() {
+        await expect(this.page.locator('.p-toast-message-warn')).toHaveCount(0);
+    }
+}
+
+/** A tiny in-memory PNG, so the tests carry no fixture files. */
+function filePayload(name: string) {
+    return { name, mimeType: 'image/png', buffer: Buffer.from([0, 0, 0, 0]) };
 }

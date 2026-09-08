@@ -35,6 +35,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotBulkUploadForm,
     DotCMSBaseTypesContentTypes,
     DotCMSContentTypeField,
     DotCMSDataTypes,
@@ -1139,63 +1140,37 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        if (files.length > 1) {
-            this.uploadFiles({ files, targetFolder, baseType });
-
-            return;
-        }
-
-        this.uploadFile({ files, targetFolder, baseType });
+        this.uploadByBaseType(Array.from(files), baseType, targetFolder);
     }
 
     /**
-     * Shows a warning message when multiple files are uploaded
-     *
-     * @protected
-     * @param {DotContentDriveUploadSelection} selection
-     * @memberof DotContentDriveShellComponent
-     */
-    protected uploadFiles({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
-        this.#messageService.add({
-            severity: 'warn',
-            summary: this.#dotMessageService.get('content-drive.work-in-progress'),
-            detail: this.#dotMessageService.get('content-drive.multiple-files-warning'),
-            life: WARNING_MESSAGE_LIFE
-        });
-
-        this.uploadFile({ files, targetFolder, baseType });
-    }
-
-    /**
-     * Uploads a file to the content drive
-     * @param selection The chosen content type, target folder and files to upload
-     */
-    protected uploadFile({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
-        if (!files?.length) {
-            return;
-        }
-
-        this.uploadByBaseType(files[0], baseType, targetFolder);
-    }
-
-    /**
-     * Uploads a file to the content drive resolving the content type from the given base type
+     * Submits the chosen files as one batch, resolving the content type from the given base type
      * (`DOTASSET` for Assets, `FILEASSET` for Files).
      *
+     * One path for any number of files: a lone file is a batch of length one, so nothing forks on
+     * count and there is a single set of gates to keep right. The warning that only one file would
+     * be uploaded went with the fork that made it true.
+     *
      * @protected
-     * @param {File} file
+     * @param {File[]} files Every file the author chose, in the order they chose them
      * @param {string} baseType
      * @param {DotFolderTreeNodeData} [hostFolder]
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadByBaseType(file: File, baseType: string, hostFolder?: DotFolderTreeNodeData) {
+    protected uploadByBaseType(
+        files: File[],
+        baseType: string,
+        hostFolder?: DotFolderTreeNodeData
+    ) {
         this.#fileService
-            .uploadFileByBaseType(file, baseType, {
-                // A folder id carries its site; at the site root (no folder) fall back to the
-                // current site identifier so the upload lands on the site being browsed, not the
-                // backend default host.
-                hostFolder: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? '',
-                indexPolicy: 'WAIT_FOR'
+            .uploadFilesByBaseType(files, {
+                baseType: baseType as DotBulkUploadForm['baseType'],
+                // A folder id carries its site. At the site root there is no folder, so the batch
+                // targets the site being browsed rather than the backend's default host — two
+                // fields because the contract states the intent rather than overloading one.
+                ...(hostFolder?.id
+                    ? { folderId: hostFolder.id }
+                    : { siteId: this.#store.currentSite()?.identifier ?? '' })
             })
             .subscribe({
                 next: () => {

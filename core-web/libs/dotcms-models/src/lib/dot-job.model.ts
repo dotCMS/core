@@ -122,3 +122,37 @@ export interface DotJob<TOutcome = DotBatchOutcome> {
     parameters?: Record<string, unknown>;
     result?: DotJobResult<TOutcome>;
 }
+
+/**
+ * Where a batch of files should land.
+ *
+ * Exactly one of the two, never both: the workflow API this sits in front of already separates a
+ * site id from a folder id and carries disambiguation messaging because callers confuse them, so
+ * the contract states the intent with two fields rather than overloading one
+ * (`contracts/bulk-upload-api.md` §1).
+ */
+export interface DotBulkUploadTarget {
+    folderId?: string;
+    siteId?: string;
+}
+
+/** The JSON `form` part of a bulk upload submission. Field names are binding on both halves. */
+export interface DotBulkUploadForm extends DotBulkUploadTarget {
+    baseType: 'DOTASSET' | 'FILEASSET';
+    /**
+     * The batch's total size, declared so the server can refuse an over-ceiling batch *before*
+     * reading the body.
+     *
+     * Advisory, never the enforcement point: the authoritative total is accumulated while the
+     * content is read. Omitting it only forfeits the early refusal, so the author would upload
+     * gigabytes before being told no.
+     */
+    totalSizeBytes?: number;
+}
+
+/** The `202` answer to a bulk upload: a handle, not an outcome. */
+export interface DotBulkUploadSubmitResponse {
+    jobId: string;
+    /** Absolute enough to follow on its own, so the queue name is not the client's to hardcode. */
+    statusUrl: string;
+}

@@ -5,7 +5,12 @@ import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
-import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import {
+    DotBulkUploadForm,
+    DotBulkUploadSubmitResponse,
+    DotCMSContentlet,
+    DotCMSTempFile
+} from '@dotcms/dotcms-models';
 import { getFileMetadata, getFileVersion } from '@dotcms/utils';
 
 import { DotUploadService } from '../dot-upload/dot-upload.service';
@@ -36,6 +41,8 @@ interface PublishContentProps {
 @Injectable({ providedIn: 'root' })
 export class DotUploadFileService {
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
+    /** The batch endpoint. Job-backed, so it answers a handle rather than a contentlet. */
+    readonly #BULK_UPLOAD_URL = '/api/v1/assets/_bulkupload';
     readonly #http = inject(HttpClient);
     readonly #uploadService = inject(DotUploadService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -162,6 +169,64 @@ export class DotUploadFileService {
                 asset: file
             }
         );
+    }
+
+    /**
+     * Submits several files as **one batch**, to be created in the background.
+     *
+     * The plural sibling of {@link uploadFileByBaseType}, and deliberately a separate method rather
+     * than the same one taking an array: the two answer differently. The singular creates the
+     * contentlet and hands it back, so a caller can show the row it just made. This one is
+     * job-backed and answers `202` with a handle before any file exists, so following the run is
+     * the caller's next move (`DotJobService`) and the outcome arrives later.
+     *
+     * That is also why the singular is untouched. The Asset Picker calls it and cannot follow a
+     * job: it runs inside the legacy editor host, which has no `Router`.
+     *
+     * @param files Every file the author chose, in the order they chose them. That order is
+     *     preserved in the outcome, which is how a per-file result is matched back to a file.
+     * @param form Target and base type for the whole batch, plus the declared total size.
+     * @returns The accepted run's handle. Nothing has been created yet.
+     */
+    uploadFilesByBaseType(
+        files: File[],
+        form: DotBulkUploadForm
+    ): Observable<DotBulkUploadSubmitResponse> {
+        if (!files.length) {
+            // Nothing to create, so nothing worth a request — and an empty batch is one of the
+            // submissions the server refuses anyway.
+            return throwError(() => new Error('A batch needs at least one file'));
+        }
+
+        const body = new FormData();
+
+        files.forEach((file) => body.append('files', file));
+        // A Blob rather than a string, so the part carries `application/json` and the server reads
+        // it with Jackson instead of receiving text/plain.
+        body.append(
+            'form',
+            new Blob(
+                [
+                    JSON.stringify({
+                        ...form,
+                        // Summed here rather than left to the caller: the server's early refusal
+                        // exists only where a total is declared, and this is the layer that holds
+                        // the files. A caller-supplied total still wins, so a caller that knows
+                        // better can say so.
+                        totalSizeBytes:
+                            form.totalSizeBytes ??
+                            files.reduce((total, file) => total + file.size, 0)
+                    })
+                ],
+                { type: 'application/json' }
+            )
+        );
+
+        return this.#http
+            .post<{
+                entity: DotBulkUploadSubmitResponse;
+            }>(this.#BULK_UPLOAD_URL, body)
+            .pipe(map((response) => response.entity));
     }
 
     /**
