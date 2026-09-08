@@ -14,6 +14,10 @@ import {
     SANDWICH_DIFFERENT_HREF,
     SANDWICH_DIFFERENT_TARGET,
     SANDWICH_HARD_BREAK_SIBLING,
+    SANDWICH_IMAGE_SIBLING,
+    SANDWICH_RUN_BROKEN_BY_HARD_BREAK,
+    SANDWICH_TWO_EMOJI_DIFFERENT_LINK,
+    SANDWICH_TWO_EMOJI_SAME_LINK,
     SANDWICH_UNLINKED_NEIGHBOUR,
     UNRESOLVABLE_NAME
 } from '../testing/emoji.fixtures';
@@ -97,6 +101,18 @@ describe('healEmojiNodes — #37340', () => {
             expect(inline(healed).every((n) => markTypes(n).includes('link'))).toBe(true);
         });
 
+        it('a RUN of symbols between identical links joins that link', () => {
+            // `©®` typed together inside one link. Each node's inner neighbour is the other
+            // symbol, so an immediate-siblings-only rule left this shape behind.
+            const healed = healEmojiNodes(SANDWICH_TWO_EMOJI_SAME_LINK, emojis);
+            const nodes = inline(healed);
+
+            expect(types(healed)).not.toContain('emoji');
+            expect(nodes).toHaveLength(1);
+            expect(nodes[0].text).toBe('dotCMS Copyright ©®All rights reserved');
+            expect(markTypes(nodes[0])).toEqual(['link']);
+        });
+
         it('AC-021 — the reported payload becomes exactly ONE text node with the link mark', () => {
             const healed = healEmojiNodes(REPORTED_PAYLOAD, emojis);
             const nodes = inline(healed);
@@ -138,6 +154,24 @@ describe('healEmojiNodes — #37340', () => {
 
         it('link marks differing in aria-label', () => {
             staysBare(SANDWICH_DIFFERENT_ARIA_LABEL, 'aria-label');
+        });
+
+        it('an inline image sibling keeps the symbol out of the link', () => {
+            staysBare(SANDWICH_IMAGE_SIBLING, 'image');
+        });
+
+        it('a hardBreak INSIDE a run of symbols still breaks it', () => {
+            // The scan steps over adjacent symbols only. It must not tunnel through anything else
+            // hunting for a text node to match.
+            staysBare(SANDWICH_RUN_BROKEN_BY_HARD_BREAK, 'run-broken');
+        });
+
+        it('two symbols between links with DIFFERENT hrefs stay out of both', () => {
+            const healed = healEmojiNodes(SANDWICH_TWO_EMOJI_DIFFERENT_LINK, emojis);
+            const holder = inline(healed).find((n) => (n.text ?? '').includes('©'));
+
+            expect(markTypes(holder as JSONContent)).toEqual([]);
+            expect(types(healed)).not.toContain('emoji');
         });
 
         it('a hardBreak sibling breaks the run', () => {

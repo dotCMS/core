@@ -123,6 +123,51 @@ function isText(node: JSONContent | undefined): node is JSONContent {
 }
 
 /**
+ * True for an `emoji` node this heal will convert to BARE text — no marks of its own, and a
+ * `name` that resolves.
+ *
+ * These are the only nodes the run scan below steps over. Anything else — a `hardBreak`, an
+ * image, an `emoji` carrying its own marks, an `emoji` whose name does not resolve — is a
+ * boundary, and since none of them is a `text` node, reaching one means the rule does not fire.
+ */
+function isBareConvertibleEmoji(
+    node: JSONContent | undefined,
+    emojis: readonly EmojiItem[]
+): boolean {
+    if (node?.type !== 'emoji' || (node.marks ?? []).length > 0) {
+        return false;
+    }
+
+    const name = (node.attrs?.['name'] ?? '') as string;
+
+    return Boolean(shortcodeToEmoji(name, emojis as EmojiItem[])?.emoji);
+}
+
+/**
+ * Walks outward from `index` past any run of bare convertible `emoji` nodes and returns the first
+ * node that is not one, in the given direction.
+ *
+ * The rule started out looking at IMMEDIATE siblings only, which left a common payload out:
+ * an author who typed two legal marks together inside a link — `©®` — produced two adjacent bare
+ * nodes, and each one's neighbour on the inner side was the other symbol rather than text. The
+ * fingerprint is the same; the run length is incidental.
+ */
+function boundaryOf(
+    nodes: JSONContent[],
+    index: number,
+    step: -1 | 1,
+    emojis: readonly EmojiItem[]
+): JSONContent | undefined {
+    let cursor = index + step;
+
+    while (isBareConvertibleEmoji(nodes[cursor], emojis)) {
+        cursor += step;
+    }
+
+    return nodes[cursor];
+}
+
+/**
  * Merges adjacent `text` nodes whose marks are deep-equal.
  *
  * Only ever called on an inline array the heal actually modified. A document-wide pass would
@@ -174,8 +219,13 @@ function healInline(nodes: JSONContent[], emojis: readonly EmojiItem[]): JSONCon
             return { type: 'text', marks: own, text: character };
         }
 
-        const previous = nodes[index - 1];
-        const next = nodes[index + 1];
+        // Look past any adjacent symbols rather than only at immediate siblings, so a run like
+        // `©®` between two identical links is treated the same as a single symbol. Anything that
+        // is not a bare convertible emoji ends the walk, and since none of those are `text`
+        // nodes, hitting one means the rule does not fire — an image or a line break beside the
+        // symbol keeps it out of the link, which is the intended behaviour.
+        const previous = boundaryOf(nodes, index, -1, emojis);
+        const next = boundaryOf(nodes, index, 1, emojis);
 
         const sandwich =
             isText(previous) &&

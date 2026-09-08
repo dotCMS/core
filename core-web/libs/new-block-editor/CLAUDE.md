@@ -213,9 +213,19 @@ character)` on the parse path, so the character returns to VTL, the SDKs, Elasti
 an emoji-only Story Block field as *empty*, failing required-field validation. All fixed with no
 change outside this library.
 
-The heal preserves marks and never invents them, with one narrow exception: a **bare** node between
-two `text` nodes carrying identical mark sets that include a `link` inherits them, because that
-shape is a fingerprint of this defect rather than an editorial choice.
+The heal preserves marks and never invents them, with one narrow exception: a **run of one or more
+bare** `emoji` nodes bounded on both sides by `text` nodes carrying identical mark sets that include
+a `link` inherits them, because that shape is a fingerprint of this defect rather than an editorial
+choice.
+
+The run matters. An author who typed two legal marks together inside a link — `©®` — produced two
+adjacent bare nodes, and each one's inner neighbour was the other symbol rather than text. A rule
+that looked only at immediate siblings left that payload behind, and it is arguably more common
+than the single-symbol case.
+
+Anything that is not a bare convertible `emoji` ends the run and, not being a `text` node, stops
+the rule firing: a `hardBreak`, a `dotImage`, an `emoji` carrying its own marks, an `emoji` whose
+name does not resolve.
 
 **Two traps worth knowing before touching any of this:**
 
@@ -226,6 +236,20 @@ shape is a fingerprint of this defect rather than an editorial choice.
   single element however many text nodes span it, and `Fragment.fromJSON` does NOT join
   identical-mark runs. The document and the DOM disagree, and that disagreement hid a wrong design
   assumption through three drafts of this spec.
+
+### Slash-menu rows can render a glyph instead of a Material icon
+
+`BlockItem.iconKind` (`components/slash-menu/slash-menu.types.ts`) selects how `icon` is drawn:
+
+- **`'material'`** (the default, and every block row) — `icon` is a Material Symbols ligature NAME,
+  drawn in the bordered 40px icon box.
+- **`'glyph'`** — `icon` is the character itself, drawn bare: no box, no border, and **no**
+  `material-symbols-outlined`, which would apply a font-family and variation settings built for
+  Material's own names. Used by the `:` emoji autocomplete (#37340).
+
+The row label is `truncate`d. Emoji shortcodes such as `:face_with_open_eyes_and_hand_over_mouth:`
+are far wider than the menu's fixed `w-72`, and without it the whole list grew a horizontal
+scrollbar. Invisible for block rows, whose labels are two words.
 
 ### Unknown nodes and marks (load-path invariant)
 
@@ -306,4 +330,10 @@ Each declared `Action` becomes a slash entry that calls `editor.commands[action.
 13. Markdown copy / paste
 14. Fullscreen toggle
 
-The `showInsertGroup`/`showBlockFormatsGroup` computeds and the `@if (allow*)` guards collapse dividers when a group is empty. See `toolbar.component.ts`.
+The `showBlockFormatsGroup` computed and the `@if (allow*)` guards collapse dividers when a group
+is empty. See `toolbar.component.ts`.
+
+`showInsertGroup` is **gone** (#37340). Removing the emoji button's Allowed Blocks gate made the
+insert group unconditional — it always holds at least that button — so the computed and its two
+template guards were deleted rather than left as always-true conditions. Consequence: a heavily
+restricted field now shows an insert group it previously collapsed.

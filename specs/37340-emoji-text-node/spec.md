@@ -488,20 +488,30 @@ class in one change with no list to maintain across extension upgrades.
   none for a node created by the defect, and the `link` mark for a node a link was applied over.
   **No mark is inherited from a neighbouring node**, with the single narrow exception in AC-015.
   This is the criterion that keeps the transform from altering content unrelated to this defect.
-- **AC-015**: **The link sandwich.** Where a **bare** `emoji` node sits between two **`text`** nodes
-  whose `link` marks are equal on **every** attribute (`href`, `target`, `rel`, `title`,
-  `aria-label`), the healed text node carries that same `link` mark, **and the heal merges the
-  resulting identical-mark run into a single `text` node** (AC-013). The reported payload therefore
-  renders as a **single** `<a>` with the character inside it — **with no re-save and no author
-  action** — in the stored JSON, not merely in the editor's DOM.
+- **AC-015**: **The link sandwich.** Where a **run of one or more bare** `emoji` nodes is bounded on
+  both sides by **`text`** nodes whose `link` marks are equal on **every** attribute (`href`,
+  `target`, `rel`, `title`, `aria-label`), each healed text node carries that same `link` mark, **and
+  the heal merges the resulting identical-mark run into a single `text` node** (AC-013). The reported
+  payload therefore renders as a **single** `<a>` with the character inside it — **with no re-save
+  and no author action** — in the stored JSON, not merely in the editor's DOM.
+  - **The run, not just immediate siblings.** An author who typed two legal marks together inside a
+    link — `©®` — produced two adjacent bare nodes, and each one's inner neighbour was the other
+    symbol rather than text. An immediate-siblings-only rule left that payload behind, and it is
+    arguably more common than the `hardBreak` case. The fingerprint is identical; the run length is
+    incidental.
 - **AC-016**: **The sandwich rule does not fire otherwise.** No mark is inherited when any of these
   holds, each asserted separately:
   - the two `link` marks differ in **any** attribute;
-  - either immediate sibling is not a `text` node — `hardBreak`, another `emoji`, an image, or the
-    block boundary itself when the node is first or last;
-  - either sibling carries no `link` mark;
+  - a **boundary** of the run is not a `text` node — a `hardBreak`, a `dotImage`, an `emoji`
+    carrying its own marks, an `emoji` whose `name` does not resolve, or the block edge itself when
+    the run starts or ends the block. The scan steps over adjacent bare convertible `emoji` nodes
+    **only**; it must never tunnel through anything else hunting for a `text` node to match;
+  - either boundary carries no `link` mark;
   - the `emoji` node is **not** bare — a node carrying its own marks keeps them under AC-014 and is
     never re-marked from a neighbour.
+
+  **A symbol beside an inline image heals to bare text and stays outside the link.** A picture next
+  to a symbol says nothing about whether the symbol was part of the link, so the rule declines.
 
   The merge carries the same boundary, asserted alongside:
   - `text` nodes whose marks **differ in any attribute** are never merged, however adjacent;
@@ -645,6 +655,7 @@ failing (Red) before any implementation.
 | Version | Date | Change |
 | --- | --- | --- |
 | v1 | 2026-09-03 | Original spec. Editor fix **plus** renderer Gap A (`emoji` branch in VTL + four JS renderers), Gap B (link coalescing in five renderers + `StoryBlockRenderHelper`), a build-generated shortcode map crossing the JS → Java boundary, and a coordinated SDK release. Implemented on `…-37340-…-impl`: 33 files, ~2.4k lines, two ACs withdrawn mid-implementation (v1 AC‑012 map, v1 AC‑022 version bump vs ADR-0019). |
+| v2.3 | 2026-09-07 | **The sandwich rule widened from immediate siblings to a run**, after convergence found AC-016 tested only one of the three non-`text` neighbours it names. A run of adjacent bare `emoji` nodes between identical links now joins that link — the `©®` payload, which the narrower rule left behind and which is more common than the `hardBreak` case. A `dotImage` boundary is confirmed to keep the symbol out of the link. Adds the two missing negative cases plus a run broken mid-way by a `hardBreak`. |
 | v2.2 | 2026-09-07 | **The `:` autocomplete restored**, reversing a v2 non-goal after manual testing showed the shortcode rule had become undiscoverable. Records two ranking defects the strengthened specs caught — a tag prefix outranking a shortcode prefix, and rows labelled by `shortcodes[0]` rather than `name` — and one shared-component change: the slash menu's label is now truncated, and it can render a bare glyph instead of the bordered Material icon box. |
 | v2.1 | 2026-09-07 | **The link-sandwich exception**, added after review on PR #37434. The heal still preserves marks rather than inheriting them, with one narrow signature carved out: a bare `emoji` node between two `text` nodes carrying attribute-identical `link` marks inherits that mark, so the reported payload rejoins into a single `<a>` with no re-save. Bounded by AC-016's negative cases. Corrects a conflation in `research.md` R8, which had rejected this on the grounds that ProseMirror already handled it — it handles the *already-marked* node, not the bare one. |
 | v2 | 2026-09-07 | **Scope reduced to the editor.** Every renderer, SDK, Java and release criterion becomes a non-goal with its consequence stated. Clarify added the `parseHTML` paste path, removed the Allowed Blocks gates, and recorded the skipped test types. An options review then settled the treatment of stored nodes: they are **healed into text on load**, by a transform that preserves marks exactly and infers nothing — restoring the character everywhere without guessing at the link. |

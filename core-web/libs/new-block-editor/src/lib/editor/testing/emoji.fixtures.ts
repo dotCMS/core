@@ -118,6 +118,60 @@ export const SANDWICH_UNLINKED_NEIGHBOUR: JSONContent = doc(
 );
 
 /**
+ * TWO symbols side by side inside one link — `©®` typed together.
+ *
+ * Each node's inner neighbour is the OTHER symbol rather than text, so a rule that looked only at
+ * immediate siblings left this alone. It is the same fingerprint as the single-symbol case and
+ * arguably more common than the line-break one: anyone who typed two legal marks together inside
+ * a link before the fix has exactly this stored.
+ */
+export const SANDWICH_TWO_EMOJI_SAME_LINK: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji('copyright'),
+    emoji('registered'),
+    text('All rights reserved', [link()])
+);
+
+/** Same run, but the two links differ — the run scan must still refuse to fire. */
+export const SANDWICH_TWO_EMOJI_DIFFERENT_LINK: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji('copyright'),
+    emoji('registered'),
+    text('All rights reserved', [link({ href: 'https://dotcms.com/legal' })])
+);
+
+/**
+ * A symbol beside an inline image.
+ *
+ * The image is the run's boundary and is not a `text` node, so the symbol heals to bare text and
+ * stays outside the link — a picture next to a symbol says nothing about whether the symbol was
+ * part of the link.
+ */
+export const SANDWICH_IMAGE_SIBLING: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji(),
+    {
+        type: 'dotImage',
+        attrs: { data: { identifier: 'img-37340', title: 'inline image' } }
+    },
+    text('All rights reserved', [link()])
+);
+
+/**
+ * A line break INSIDE what would otherwise be a run of symbols.
+ *
+ * Proves the run scan steps over adjacent symbols only — it must not tunnel through anything
+ * else looking for a text node to match.
+ */
+export const SANDWICH_RUN_BROKEN_BY_HARD_BREAK: JSONContent = doc(
+    text('dotCMS Copyright ', [link()]),
+    emoji('copyright'),
+    { type: 'hardBreak' },
+    emoji('registered'),
+    text('All rights reserved', [link()])
+);
+
+/**
  * The node already carries its own `link` mark — a link applied OVER an existing node, which the
  * editor supports today.
  *
