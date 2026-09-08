@@ -49,8 +49,33 @@ inside the search box it focuses — otherwise pressing it twice would be a dead
 This is the answer to the "editable targets" gap noted in review. A combination that carries a
 modifier needs no such policy.
 
-Both Content Drive shell claims decline while an overlay is stacked above the listing, so a dialog
-gets the key instead — see [A surface with its own document listener cannot be arbitrated](#a-surface-with-its-own-document-listener-cannot-be-arbitrated).
+### Standing down while an overlay is above
+
+**Every Content Drive claim declines when something is stacked over the listing** — `Escape` and
+`Mod + B` in `dot-content-drive-shell`, and both search keys in
+`dot-content-drive-search-input`. Each asks `hasOverlayAbove()` and returns `false`.
+
+Two reasons, and the second is the one that is easy to miss:
+
+1. A dialog covers the listing, so acting on it changes something the user cannot see. They find the
+   selection gone, the tree rearranged, or focus sitting in a search box behind the modal when they
+   close it.
+2. PrimeNG's own `closeOnEscape` binds a **separate** document listener that never consults
+   `defaultPrevented`, so it cannot be arbitrated with. See
+   [A surface with its own document listener cannot be arbitrated](#a-surface-with-its-own-document-listener-cannot-be-arbitrated).
+
+The search keys were the last to get this and the gap was caught in review rather than by a test.
+`Mod + K` was the worse half: it carries a modifier, so the typing rule above never short-circuits
+it and it fired from anywhere inside an open dialog, not only from a non-editable target.
+
+**The AssetPicker's toolbar deliberately does not do this**, and that is not an oversight. It *is*
+the top overlay, so asking the base-layer question would be true for its whole lifetime and the
+picker would decline its own shortcut permanently. Its unconditional claim is correct, and
+per-combination last-in-wins is what makes it safe: the picker takes both search keys for exactly as
+long as it is open, then hands them back.
+
+So before copying the guard into a new surface, decide which kind you are — see
+[How to ask "is an overlay above me?"](#how-to-ask-is-an-overlay-above-me).
 
 The labels shown to authors come from each registration's `label`, which is required. A shortcut
 therefore cannot ship undocumented: `activeShortcuts()` is the live list.
