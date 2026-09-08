@@ -2,6 +2,9 @@ package com.dotcms.rest.api.v1.asset.bulkupload;
 
 import com.dotcms.jobs.business.batch.BatchFailureReason;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import java.util.Optional;
@@ -97,6 +100,10 @@ public class BulkUploadReasonResolver {
             return BatchFailureReason.PERMISSION_DENIED;
         }
 
+        if (isNameCollision(failure)) {
+            return BatchFailureReason.NAME_COLLISION;
+        }
+
         // Everything else is UNCLASSIFIED on purpose, including the validation exception the
         // product raises for size AND type with the same class. Both of those were already decided
         // by preCheck from measured facts, so reaching here means something nobody anticipated —
@@ -105,5 +112,54 @@ public class BulkUploadReasonResolver {
         // differ only by a translated string, so the guess breaks the first time a language key is
         // edited.
         return BatchFailureReason.UNCLASSIFIED;
+    }
+
+    /**
+     * Whether this failure is the target already holding a file of that name.
+     * <p>
+     * <b>Recognised by type and structure, never by message text.</b> The product raises
+     * {@link FileAssetValidationException} for a collision and marks the offending field as the
+     * <b>host/folder</b> — because what is invalid is where the file was asked to go, not the file
+     * itself. That pairing is what identifies it: the same exception class is also raised when a
+     * binary fails validation, and there the invalid field is the binary. Matching on the message
+     * would break the first time the language key is edited, which is the trap research R4
+     * documented.
+     * <p>
+     * The collision itself is not this feature's rule. The unique index on the lower-cased path
+     * already decided who wins — so this is <b>case-insensitive</b>, and {@code Report.pdf} and
+     * {@code report.pdf} are one contended name (FR-042a). All that is added here is telling the
+     * loser something they can act on: rename it. An unclassified failure sends them looking for a
+     * problem with their file instead.
+     */
+    private boolean isNameCollision(final Exception failure) {
+
+        // The whole cause chain, not one level: the workflow wraps the validation failure in a
+        // DotRuntimeException before it reaches here, and a single getCause() check misses it.
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof DotContentletValidationException
+                    && marksTheTargetInvalid((DotContentletValidationException) cause)) {
+                return true;
+            }
+            if (cause.getCause() == cause) {
+                break;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether the validation failure blamed the <b>target</b> rather than the file.
+     * <p>
+     * That is the structural signature of a collision: what is invalid is where the file was asked
+     * to go, not the file itself. The same exception class is raised when a binary fails
+     * validation, and there the invalid field is the binary — which is how the two stay apart
+     * without reading a translated message.
+     */
+    private boolean marksTheTargetInvalid(final DotContentletValidationException validation) {
+        return validation.getNotValidFields().values().stream()
+                .flatMap(List::stream)
+                .anyMatch(field -> field != null
+                        && FileAssetAPI.HOST_FOLDER_FIELD.equalsIgnoreCase(
+                                field.getVelocityVarName()));
     }
 }

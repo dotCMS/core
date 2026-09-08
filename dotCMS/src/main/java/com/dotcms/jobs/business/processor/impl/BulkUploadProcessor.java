@@ -214,8 +214,11 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             record(job, seq, fileName, BatchItemStatus.FAILED,
                     BatchFailureReason.STAGED_CONTENT_UNAVAILABLE, e.getMessage(), null);
         } catch (final Exception e) {
+            // The exception class travels with the diagnostic message. It is never shown to the
+            // author, and it is the first thing anyone needs when an UNCLASSIFIED turns up — which
+            // by design means something nobody anticipated.
             record(job, seq, fileName, BatchItemStatus.FAILED, reasons.classify(e),
-                    e.getMessage(), null);
+                    e.getClass().getName() + ": " + e.getMessage(), null);
         }
     }
 
