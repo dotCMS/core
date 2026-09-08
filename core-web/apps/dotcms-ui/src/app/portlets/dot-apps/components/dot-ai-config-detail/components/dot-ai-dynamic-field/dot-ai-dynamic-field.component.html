@@ -45,6 +45,7 @@
                 class="w-full" />
         }
     }
-
-    <small class="p-field-hint block min-h-5">{{ field().hint }}</small>
+    @if (field().hint) {
+        <small class="p-field-hint block min-h-5">{{ field().hint }}</small>
+    }
 </div>

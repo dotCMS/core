@@ -75,7 +75,7 @@
             [header]="'apps.ai.settings.advanced.header' | dm: [advancedFields.length.toString()]"
             transitionOptions="250ms cubic-bezier(0.4, 0, 0.2, 1)">
             <div class="flex flex-col gap-4">
-                <div class="form">
+                <div class="form mb-2">
                     <form [formGroup]="advancedForm" class="grid grid-cols-3 gap-x-4 gap-y-3.5">
                         @for (settingsField of advancedFields; track settingsField.key) {
                             @if (settingsField.type === 'checkbox') {
@@ -107,11 +107,11 @@
                                             [formControlName]="settingsField.key"
                                             class="w-full" />
                                     }
-                                    <small class="p-field-hint block min-h-5">
-                                        @if (settingsField.hint) {
+                                    @if (settingsField.hint) {
+                                        <small class="p-field-hint block min-h-5">
                                             {{ settingsField.hint | dm }}
-                                        }
-                                    </small>
+                                        </small>
+                                    }
                                 </div>
                             }
                         }
