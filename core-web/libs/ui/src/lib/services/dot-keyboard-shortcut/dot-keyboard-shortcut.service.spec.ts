@@ -534,6 +534,34 @@ describe('DotKeyboardShortcutService', () => {
             expect(handler).not.toHaveBeenCalled();
         });
 
+        /**
+         * The typing rule and the layout rule have to agree about Alt, or they cancel out.
+         *
+         * The layout rule treats Alt as something that can produce a character, so an Alt-typed `/`
+         * matches a bare `/` claim. If the typing rule did not treat it the same way, that character
+         * would be stolen out of a text field: not typing, therefore a shortcut. Both now ask the
+         * same question — did this produce a character, with no Command or Control held.
+         */
+        it('should not fire an alt-produced character from a text input', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            pressFrom(mount(document.createElement('input')), { key: '/', altKey: true });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should let an alt-produced character reach the field as text', () => {
+            register({ combination: '/', label: 'search', handler: handlerMock() });
+
+            const event = pressFrom(mount(document.createElement('input')), {
+                key: '/',
+                altKey: true
+            });
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
         it('should fire a bare printable key from a non-editable element', () => {
             const handler = handlerMock();
             register({ combination: '/', label: 'search', handler });

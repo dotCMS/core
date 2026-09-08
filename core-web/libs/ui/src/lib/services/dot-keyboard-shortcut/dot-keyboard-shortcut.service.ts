@@ -119,17 +119,18 @@ function isEditableTarget(target: EventTarget | null): boolean {
  * Whether this keypress is the user typing rather than reaching for a shortcut.
  *
  * A `key` of exactly one character is the set that produces text, so `Escape`, `ArrowDown`, `Tab`
- * and friends are never caught by this. Holding a modifier means the press was deliberate, so
+ * and friends are never caught by this. Command and Control mean the press was deliberate, so
  * `mod+k` still reaches the registry from inside the very box it focuses — otherwise pressing it a
  * second time would be a dead key.
+ *
+ * Shift and Alt are deliberately **not** exempted, because {@link lookupKeysFor} treats both as
+ * things a layout can require to produce a character. The two rules have to agree: if a character
+ * can reach a bare claim with Alt held, then the same press inside a text field has to count as
+ * typing, or it would be stolen out of the field as a shortcut instead of being typed.
  */
 function isTyping(event: KeyboardEvent): boolean {
     return (
-        event.key.length === 1 &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey &&
-        isEditableTarget(event.target)
+        event.key.length === 1 && !event.metaKey && !event.ctrlKey && isEditableTarget(event.target)
     );
 }
 
