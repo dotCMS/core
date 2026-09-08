@@ -53,14 +53,28 @@ export default defineConfig(() => ({
             deps: {
                 inline: [
                     /[\\/](libs|apps)[\\/]/,
-                    /@angular\//,
-                    /@analogjs\//,
-                    /ng-mocks/,
-                    /@openng\/spectator/,
                     /zone\.js/,
-                    /primeng/,
                     /@primeuix/,
-                    /@ngrx/
+                    /@analogjs\/vite-plugin-angular/,
+                    /@angular\/animations/,
+                    /@angular\/cdk/,
+                    /@angular\/common/,
+                    /@angular\/core/,
+                    /@angular\/elements/,
+                    /@angular\/forms/,
+                    /@angular\/platform-browser/,
+                    /@angular\/platform-browser-dynamic/,
+                    /@angular\/router/,
+                    /@materia-ui\/ngx-monaco-editor/,
+                    /@ngrx\/component-store/,
+                    /@ngrx\/signals/,
+                    /@openng\/spectator/,
+                    /@tinymce\/tinymce-angular/,
+                    /ng-mocks/,
+                    /ng2-dragula/,
+                    /ngx-markdown/,
+                    /ngx-tiptap/,
+                    /primeng/
                 ]
             }
         },

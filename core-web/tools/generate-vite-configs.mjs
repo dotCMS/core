@@ -53,33 +53,61 @@ const OUT_OF_SCOPE = ['libs/dotcms-webcomponents', 'apps/dotcms-ui-e2e'];
  * A freshly generated Nx project has no such siblings, which is why its generator
  * does not need this, and why adopting its config alone was not sufficient here.
  */
-const ANGULAR_INSTANCE_GUARD = [
-    // The workspace's OWN libraries, first. They are consumed from SOURCE through
-    // tsconfig paths, so with Nx's `root: __dirname` they sit outside root and Vite
-    // externalises them — their `inject()` calls then bind to a different Angular
-    // instance than the specs use, and Angular reports
-    // `NG0203: The Injector token injection failed`.
-    //
-    // This is what lets the migration keep Nx's shape instead of moving `root` to the
-    // workspace: same problem, solved in a supported Vitest field rather than by
-    // forking the config structure. Measured on image-editor: 355 of 355 tests
-    // running with this entry, 75 NG0203 errors without it.
-    '/[\\\\/](libs|apps)[\\\\/]/',
-    '/@angular\\//',
-    '/@analogjs\\//',
-    // ng-mocks compiles mock modules with Angular's JIT compiler at test time, so it
-    // must see the same @angular/core instance as the specs. Externalised, its
-    // generated factories call inject() against a different runtime and Angular
-    // reports NG0203 — 1,585 of those across the suite, and the stack traces show two
-    // Angular module paths interleaved. Measured on image-editor: 282 of 355 passing
-    // without this entry, 355 of 355 with it.
-    '/ng-mocks/',
-    '/@openng\\/spectator/',
-    '/zone\\.js/',
-    '/primeng/',
-    '/@primeuix/',
-    '/@ngrx/'
+/**
+ * Packages that must resolve to ONE @angular/core instance — DERIVED, not listed.
+ *
+ * This started as a hand-maintained list and grew by one entry per debugging session:
+ * Angular, then Spectator, then zone.js, then PrimeNG, then @ngrx, then ng-mocks,
+ * then ngx-markdown... Each addition came from reading a stack trace, and each miss
+ * cost a full suite run. The rule underneath all of them is simple: anything that
+ * ships Angular-compiled code, or compiles Angular at test time, registers against
+ * whichever @angular/core it loads. Externalised, that is not the one the specs use,
+ * and Angular reports NG0203 / NG0303 or a null injector.
+ *
+ * So it is computed from the manifest: every dependency that itself depends on
+ * @angular/*, minus build-time tooling that never runs inside a test. That way a new
+ * Angular-based dependency is covered the day it is added, instead of the day someone
+ * reads its stack trace.
+ */
+const BUILD_ONLY = [
+    '@angular-devkit/build-angular',
+    '@angular-eslint/schematics',
+    '@angular/build',
+    '@angular/compiler-cli',
+    '@nx/angular',
+    'ng-packagr',
+    'angular-eslint'
 ];
+
+function angularInstanceGuard() {
+    const pkg = JSON.parse(readFileSync(join(CW, 'package.json'), 'utf8'));
+    const names = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
+    const found = [];
+    for (const name of names) {
+        if (BUILD_ONLY.includes(name)) continue;
+        const manifest = join(CW, 'node_modules', name, 'package.json');
+        if (!existsSync(manifest)) continue;
+        let j;
+        try {
+            j = JSON.parse(readFileSync(manifest, 'utf8'));
+        } catch {
+            continue;
+        }
+        const related = { ...j.peerDependencies, ...j.dependencies };
+        if (Object.keys(related).some((k) => k.startsWith('@angular/'))) found.push(name);
+    }
+    // zone.js and the workspace's own sources are not dependencies of an Angular
+    // package but belong here for the same reason: one instance, one registry. The
+    // workspace entry matters because libraries here are consumed FROM SOURCE through
+    // tsconfig paths, so with Nx's project-level root they would be externalised.
+    return [
+        '/[\\\\/](libs|apps)[\\\\/]/',
+        '/zone\\.js/',
+        '/@primeuix/',
+        ...found.sort().map((n) => `/${n.replace(/\//g, '\\/')}/`)
+    ];
+}
+
 
 /**
  * Read from the working tree, falling back to git history so this script stays
@@ -262,7 +290,7 @@ function generate(dir) {
     // Only `/` is escaped in these package regexes. Escaping `@` as well produces
     // `\@`, which eslint's no-useless-escape rejects and which broke the pre-commit
     // hook on 8 generated configs.
-    const inline = [...ANGULAR_INSTANCE_GUARD, ...cfg.esm.map((p) => `/${p.replace(/\//g, '\\/')}/`)];
+    const inline = [...angularInstanceGuard(), ...cfg.esm.map((p) => `/${p.replace(/\//g, '\\/')}/`)];
 
     const pluginImport = {
         angular: "import angular from '@analogjs/vite-plugin-angular';",
