@@ -74,66 +74,79 @@
         </div>
 
         <div class="col-start-2 row-start-2 flex w-full flex-wrap items-center gap-2">
-            <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
-                 precondition for the filters that narrow within them. -->
-            <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
-            <dot-content-drive-content-type-filter data-testid="content-type-filter" />
-            <dot-content-drive-workflow-filter data-testid="workflow-filter" />
-            <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
-                 goes after rather than before, because the workflow filter derives its scheme list
-                 from the content-type selection and the two must stay adjacent. -->
-            <dot-content-drive-status-filter data-testid="status-filter" />
-            <dot-content-drive-language-field data-testid="language-field" />
+            <!-- The chip row and its "Clear all" are the shared bar now. Chips are projected rather
+                 than named by a registry, which is what lets the two portlet-local ones — Workflow
+                 and the field filters — sit in the same row as the shared ones. -->
+            <dot-filter-bar>
+                <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
+                     precondition for the filters that narrow within them. -->
+                <dot-shared-assets-filter data-testid="shared-assets-filter" />
+                <dot-content-type-filter-chip data-testid="content-type-filter" />
+                <dot-content-drive-workflow-filter data-testid="workflow-filter" />
+                <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
+                     goes after rather than before, because the workflow filter derives its scheme
+                     list from the content-type selection and the two must stay adjacent.
 
-            @for (field of $activeFieldFilters(); track field.variable) {
-                <dot-content-drive-field-filter
-                    animate.enter="field-filter-enter"
-                    animate.leave="field-filter-leave"
-                    [field]="field" />
-            }
+                     No `allowedOptions`: Content Drive pins no version state, so all three
+                     conditions apply here (FR-014d). -->
+                <dot-status-filter data-testid="status-filter" />
+                <!-- The seeded locale is passed so the chip can withhold its X while that is the
+                     only selection: clearing it would re-seed the same value through
+                     `withFilterDefaults` and only cost the editor their page. -->
+                <dot-language-filter-chip
+                    [defaultLanguageId]="$defaultLanguageId()"
+                    data-testid="language-field" />
 
-            <dot-content-drive-field-filter-menu data-testid="field-filter-menu" />
+                @for (field of $activeFieldFilters(); track field.variable) {
+                    <dot-field-filter
+                        animate.enter="field-filter-enter"
+                        animate.leave="field-filter-leave"
+                        [field]="field" />
+                }
 
-            @if ($hasFilters()) {
-                <p-button
-                    [label]="'content-drive.filters.clear-all' | dm"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    (click)="onClearAll()"
-                    data-testid="clear-all-filters" />
-            }
+                <!-- The menu reports a failed field fetch rather than handling it: it is shared with
+                     the picker now, and `DotHttpErrorManagerService` cannot be injected inside
+                     `@dotcms/ui`. This surface still announces it the way it always did. -->
+                <dot-field-filter-menu
+                    data-testid="field-filter-menu"
+                    (error)="onFieldFilterError($event)" />
 
-            <!-- Sits at the end of the filter row rather than beside the search box: during a run the
-                 selection still stands, so the row above is occupied by the workflow-action buttons.
-                 `ml-auto` keeps it right-aligned as filter chips come and go. -->
-            @if ($hasRunInFlight()) {
-                <div
-                    class="ml-auto flex items-center gap-2 text-sm text-gray-700"
-                    animate.enter="toolbar-enter"
-                    animate.leave="toolbar-leave"
-                    role="status"
-                    aria-live="polite"
-                    data-testid="action-execution-indicator">
-                    <i class="pi pi-spin pi-spinner text-[0.875rem]!" aria-hidden="true"></i>
-                    <span [innerHTML]="$actionExecutionLabel()"></span>
+                <!-- Sits at the end of the filter row rather than beside the search box: during a run
+                     the selection still stands, so the row above is occupied by the workflow-action
+                     buttons. `ml-auto` keeps it right-aligned as filter chips come and go.
 
-                    <!-- Rendered only when the run actually reports a position; a run that cannot
-                         say stays a bare spinner rather than showing a bar stuck at zero.
+                     Projected into the bar's trailing slot rather than placed beside the bar: the
+                     bar is a full-width flex item in the row above, so a sibling would be pushed
+                     onto its own line and `ml-auto` would have nothing to push against. -->
+                @if ($hasRunInFlight()) {
+                    <div
+                        dotFilterBarTrailing
+                        class="ml-auto flex items-center gap-2 text-sm text-gray-700"
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        role="status"
+                        aria-live="polite"
+                        data-testid="action-execution-indicator">
+                        <i class="pi pi-spin pi-spinner text-[0.875rem]!" aria-hidden="true"></i>
+                        <span [innerHTML]="$actionExecutionLabel()"></span>
 
-                         `aria-live="off"` inside a polite live region: the region announces that
-                         work started and that it finished, but a fifty-file batch must not speak
-                         fifty times on the way. The value stays readable on request. -->
-                    @if ($actionExecutionPercent() !== undefined) {
-                        <span
-                            class="text-xs text-gray-600"
-                            aria-live="off"
-                            data-testid="action-execution-progress">
-                            {{ $actionExecutionPercent() }}%
-                        </span>
-                    }
-                </div>
-            }
+                        <!-- Rendered only when the run actually reports a position; a run that
+                             cannot say stays a bare spinner rather than showing a bar stuck at zero.
+
+                             `aria-live="off"` inside a polite live region: the region announces that
+                             work started and that it finished, but a fifty-file batch must not speak
+                             fifty times on the way. The value stays readable on request. -->
+                        @if ($actionExecutionPercent() !== undefined) {
+                            <span
+                                class="text-xs text-gray-600"
+                                aria-live="off"
+                                data-testid="action-execution-progress">
+                                {{ $actionExecutionPercent() }}%
+                            </span>
+                        }
+                    </div>
+                }
+            </dot-filter-bar>
         </div>
     </div>
 </p-toolbar>

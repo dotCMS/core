@@ -246,7 +246,6 @@ export const SELECT_PAGE_BROWSER_PARAMS = {
     showFolders: false,
     showLinks: false,
     showWorking: true,
-    showArchived: false,
     sortByDesc: true
 } as const;
 
