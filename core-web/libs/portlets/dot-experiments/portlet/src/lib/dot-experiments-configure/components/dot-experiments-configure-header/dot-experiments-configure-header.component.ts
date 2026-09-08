@@ -18,6 +18,7 @@ import { EXPERIMENTS_URL, STATUS_LABEL_KEYS, STATUS_SEVERITIES } from '../../../
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import { resultsCommandsOf } from '../../../util/dot-experiments-list.util';
 
 /** Title shown while the draft has no name yet. */
 const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
@@ -171,6 +172,20 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
+
+    /**
+     * Opens the Results screen of the experiment being configured.
+     *
+     * Only reachable once the experiment exists — `$showResults()` already gates on the allowed
+     * actions, which never include results for a draft that has not been created yet.
+     */
+    onViewResults(): void {
+        const experimentId = this.store.experiment()?.id;
+
+        if (experimentId) {
+            this.#router.navigate(resultsCommandsOf(experimentId));
+        }
+    }
 
     /** Leaves the Configure screen for the list. */
     onBackToList(): void {
