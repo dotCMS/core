@@ -7,6 +7,8 @@ import {
 } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
+import { HttpEventType } from '@angular/common/http';
+
 import { DotBulkUploadForm, DotBulkUploadSubmitResponse } from '@dotcms/dotcms-models';
 
 import { DotUploadFileService } from './dot-upload-file.service';
@@ -224,18 +226,57 @@ describe('DotUploadFileService', () => {
             expect(parsed.folderId).toBeUndefined();
         });
 
-        it('should emit the accepted handle', (done) => {
+        it('should emit the accepted handle last', (done) => {
             const accepted: DotBulkUploadSubmitResponse = {
                 jobId: 'e6d9bae8-657b-4e2f-8524-c0222db66355',
                 statusUrl: '/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status'
             };
 
-            spectator.service.uploadFilesByBaseType([file('a.png')], form).subscribe((result) => {
-                expect(result).toEqual(accepted);
+            spectator.service.uploadFilesByBaseType([file('a.png')], form).subscribe((event) => {
+                // Only the acceptance is asserted here; the progress that precedes it has its own
+                // test. What matters is that the handle is what the stream resolves to.
+                expect(event).toEqual({ kind: 'accepted', handle: accepted });
                 done();
             });
 
             spectator.expectOne(SUBMIT_URL, HttpMethod.POST).flush({ entity: accepted });
+        });
+
+        it('should report how much of the body has gone out', (done) => {
+            // The only honest source for this: the browser's own upload progress. It measures bytes
+            // handed to the socket, so at 100% the server has the body and has created nothing —
+            // which is exactly why the upload and the run are reported as two phases.
+            spectator.service.uploadFilesByBaseType([file('a.png')], form).subscribe((event) => {
+                expect(event).toEqual({ kind: 'progress', loaded: 40, total: 100 });
+                done();
+            });
+
+            spectator
+                .expectOne(SUBMIT_URL, HttpMethod.POST)
+                .event({ type: HttpEventType.UploadProgress, loaded: 40, total: 100 });
+        });
+
+        it('should ask for progress rather than only the response', () => {
+            // Without `reportProgress` the backend never emits upload events at all, so this is the
+            // one flag the whole progress report hangs on.
+            spectator.service.uploadFilesByBaseType([file('a.png')], form).subscribe();
+
+            const request = spectator.expectOne(SUBMIT_URL, HttpMethod.POST).request;
+
+            expect(request.reportProgress).toBe(true);
+        });
+
+        it('should report activity without a position when the length is unknown', (done) => {
+            // `total` is absent when the browser cannot compute a length. Reporting zero here would
+            // render a bar stuck at nothing; the caller needs to know it has no denominator.
+            spectator.service.uploadFilesByBaseType([file('a.png')], form).subscribe((event) => {
+                expect(event).toEqual({ kind: 'progress', loaded: 40, total: undefined });
+                done();
+            });
+
+            spectator
+                .expectOne(SUBMIT_URL, HttpMethod.POST)
+                .event({ type: HttpEventType.UploadProgress, loaded: 40 });
         });
 
         it('should not submit an empty batch', () => {

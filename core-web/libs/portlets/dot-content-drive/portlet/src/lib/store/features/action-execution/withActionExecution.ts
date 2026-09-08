@@ -712,6 +712,28 @@ export function withActionExecution() {
                     endExternalRun: (runId: string): void => endRun(runId),
 
                     /**
+                     * Updates a run in flight, for the fields it reports as it goes.
+                     *
+                     * Ignores a run that is already gone rather than resurrecting it: progress can
+                     * arrive a tick after the run settled, and re-adding it would leave the
+                     * indicator reporting something finished.
+                     */
+                    updateExternalRun: (
+                        runId: string,
+                        patch: Partial<Pick<DotContentDriveRun, 'percent' | 'processed'>>
+                    ): void => {
+                        const run = store.runs()[runId];
+
+                        if (!run) {
+                            return;
+                        }
+
+                        patchState(store, {
+                            runs: { ...store.runs(), [runId]: { ...run, ...patch } }
+                        });
+                    },
+
+                    /**
                      * Publishes an outcome for a run this store did not fire itself.
                      *
                      * Add to Bundle and Push Publish from the row context menu hand off to shared

@@ -1,11 +1,12 @@
 import { from, Observable, of, throwError } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import {
+    DotBulkUploadEvent,
     DotBulkUploadForm,
     DotBulkUploadSubmitResponse,
     DotCMSContentlet,
@@ -188,10 +189,7 @@ export class DotUploadFileService {
      * @param form Target and base type for the whole batch, plus the declared total size.
      * @returns The accepted run's handle. Nothing has been created yet.
      */
-    uploadFilesByBaseType(
-        files: File[],
-        form: DotBulkUploadForm
-    ): Observable<DotBulkUploadSubmitResponse> {
+    uploadFilesByBaseType(files: File[], form: DotBulkUploadForm): Observable<DotBulkUploadEvent> {
         if (!files.length) {
             // Nothing to create, so nothing worth a request — and an empty batch is one of the
             // submissions the server refuses anyway.
@@ -225,8 +223,40 @@ export class DotUploadFileService {
         return this.#http
             .post<{
                 entity: DotBulkUploadSubmitResponse;
-            }>(this.#BULK_UPLOAD_URL, body)
-            .pipe(map((response) => response.entity));
+            }>(this.#BULK_UPLOAD_URL, body, { reportProgress: true, observe: 'events' })
+            .pipe(
+                // Only the two events a caller can act on. `Sent` and the response headers say
+                // nothing it can report, and passing them through would make every consumer
+                // re-implement this filter.
+                filter(
+                    (event) =>
+                        event.type === HttpEventType.UploadProgress ||
+                        event.type === HttpEventType.Response
+                ),
+                map(
+                    (event): DotBulkUploadEvent =>
+                        event.type === HttpEventType.UploadProgress
+                            ? {
+                                  kind: 'progress',
+                                  loaded: event.loaded,
+                                  // Left undefined rather than defaulted to zero: absent means the
+                                  // browser could not compute a length, and a caller needs to tell that
+                                  // apart from a body of nothing.
+                                  total: event.total
+                              }
+                            : {
+                                  kind: 'accepted',
+                                  // `body` is nullable on HttpResponse. A `202` with no body would mean
+                                  // no handle, and there is nothing honest to invent — the caller would
+                                  // have a run it cannot follow, so this fails rather than fabricating.
+                                  handle: nonNullHandle(
+                                      event as HttpResponse<{
+                                          entity: DotBulkUploadSubmitResponse;
+                                      }>
+                                  )
+                              }
+                )
+            );
     }
 
     /**
@@ -270,4 +300,17 @@ export class DotUploadFileService {
     #getContentFile(contentURL: string) {
         return this.#http.get(contentURL, { responseType: 'text' });
     }
+}
+
+/** Reads the accepted batch's handle, refusing a `202` that carried none. */
+function nonNullHandle(
+    response: HttpResponse<{ entity: DotBulkUploadSubmitResponse }>
+): DotBulkUploadSubmitResponse {
+    const handle = response.body?.entity;
+
+    if (!handle) {
+        throw new Error('The batch was accepted without a handle to follow it by');
+    }
+
+    return handle;
 }

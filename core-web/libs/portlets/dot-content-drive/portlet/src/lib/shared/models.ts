@@ -142,6 +142,15 @@ export interface DotContentDriveDialog {
 export interface DotContentDriveActionExecution {
     /** Already-resolved action label, not an i18n key — it goes straight into the indicator. */
     actionName: string;
+    /**
+     * A position the run measures itself, `0`–`100`, for runs whose progress is not a count of
+     * items.
+     *
+     * An upload's is bytes sent of bytes to send, and the indicator's usual `processed / total`
+     * cannot express that: both of those count items, so feeding bytes through them would make the
+     * label read "to 4823913 item(s)". Preferred over that ratio where present.
+     */
+    percent?: number;
     /** Number of contentlets the run was fired over. */
     total: number;
     /**

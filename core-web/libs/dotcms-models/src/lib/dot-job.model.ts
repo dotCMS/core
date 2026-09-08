@@ -177,3 +177,28 @@ export interface DotBulkUploadCompletedEvent extends Partial<
     state: DotJobState;
     jobId?: string;
 }
+
+/**
+ * What {@link DotBulkUploadSubmitResponse}'s request emits on the way to answering.
+ *
+ * A union rather than a progress callback, so the compiler makes a caller acknowledge that this
+ * request has a lifecycle: bytes go out for a while, and only then is the batch accepted. A callback
+ * would let a caller subscribe and quietly ignore half of what happens.
+ */
+export type DotBulkUploadEvent =
+    | {
+          kind: 'progress';
+          /** Bytes handed to the socket so far. */
+          loaded: number;
+          /**
+           * Bytes in the whole multipart body: every file part with its headers and boundaries,
+           * plus the JSON `form` part. So it is larger than the summed file sizes, and larger than
+           * the `totalSizeBytes` declared in the form — two different numbers for two different
+           * jobs, and not to be conflated.
+           *
+           * Absent when the browser cannot compute a length, which is why a caller must be able to
+           * fall back to reporting activity without a position.
+           */
+          total?: number;
+      }
+    | { kind: 'accepted'; handle: DotBulkUploadSubmitResponse };

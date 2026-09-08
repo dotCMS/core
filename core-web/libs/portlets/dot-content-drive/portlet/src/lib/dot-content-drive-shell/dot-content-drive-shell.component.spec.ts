@@ -149,9 +149,12 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(DotUploadFileService, {
                 uploadFileByBaseType: jest.fn().mockReturnValue(of({})),
-                uploadFilesByBaseType: jest
-                    .fn()
-                    .mockReturnValue(of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }))
+                uploadFilesByBaseType: jest.fn().mockReturnValue(
+                    of({
+                        kind: 'accepted',
+                        handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                    })
+                )
             }),
             provideHttpClient(),
             // The panel is behind `@defer`; once it resolves, it mounts the real editor chain,
@@ -250,6 +253,7 @@ describe('DotContentDriveShellComponent', () => {
                     setStatus: jest.fn(),
                     startExternalRun: jest.fn().mockReturnValue('run-1'),
                     trackUploadJob: jest.fn(),
+                    updateExternalRun: jest.fn(),
                     activeRunCount: signal(0),
                     toolbarRun: signal(undefined),
                     toolbarRunCount: signal(0),
@@ -1581,7 +1585,10 @@ describe('DotContentDriveShellComponent', () => {
             // Set explicitly: `clearAllMocks` clears calls but not return values, so a `NEVER` from
             // an earlier test would otherwise still be in place and the batch would never settle.
             uploadService.uploadFilesByBaseType.mockReturnValue(
-                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' })
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
             );
 
             selectUploadType({
@@ -1642,7 +1649,10 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should release the route once the batch has been accepted', () => {
             uploadService.uploadFilesByBaseType.mockReturnValue(
-                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' })
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
             );
 
             selectUploadType({
@@ -1679,7 +1689,10 @@ describe('DotContentDriveShellComponent', () => {
             // Set explicitly: `clearAllMocks` between tests clears calls but not return values, so
             // the `NEVER` above would otherwise still be in place and the batch would never settle.
             uploadService.uploadFilesByBaseType.mockReturnValue(
-                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' })
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
             );
 
             selectUploadType({
@@ -1694,12 +1707,47 @@ describe('DotContentDriveShellComponent', () => {
             expect(event.defaultPrevented).toBe(false);
         });
 
+        it('should report how far the upload has got', () => {
+            // Bytes, because that is what the browser can tell us. At 100% the server has the body
+            // and has created nothing, which is why this is the upload phase and not the run.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({ kind: 'progress', loaded: 40, total: 80 })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.updateExternalRun).toHaveBeenCalledWith('run-1', { percent: 50 });
+        });
+
+        it('should leave the position unclaimed when the body length is unknown', () => {
+            // Reporting 0% would render a bar stuck at nothing, which reads as stalled rather than
+            // as unmeasurable. A bare spinner is the honest answer.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({ kind: 'progress', loaded: 40 })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.updateExternalRun).not.toHaveBeenCalled();
+        });
+
         it('should remember the accepted batch, with where it landed', () => {
             // The completion event arrives minutes later and is scoped to the user, not the tab, so
             // the handle is the only way to tell this batch's outcome from another window's. The
             // folder travels with it because by then the author may be looking somewhere else.
             uploadService.uploadFilesByBaseType.mockReturnValue(
-                of({ jobId: 'job-9', statusUrl: '/api/v1/jobs/job-9/status' })
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-9', statusUrl: '/api/v1/jobs/job-9/status' }
+                })
             );
 
             selectUploadType({

@@ -359,7 +359,18 @@ export class DotContentDriveToolbarComponent {
     readonly $actionExecutionPercent = computed(() => {
         const execution = this.$actionExecution();
 
-        if (!execution || execution.processed === undefined || !execution.total) {
+        if (!execution) {
+            return undefined;
+        }
+
+        // A run that measures its own position wins. `processed / total` counts *items*, which an
+        // upload's progress is not: it reports bytes sent of bytes to send, and there is no honest
+        // item count in the middle of a single multipart request.
+        if (execution.percent !== undefined) {
+            return execution.percent;
+        }
+
+        if (execution.processed === undefined || !execution.total) {
             return undefined;
         }
 

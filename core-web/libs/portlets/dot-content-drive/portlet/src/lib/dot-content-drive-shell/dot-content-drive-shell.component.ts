@@ -1287,7 +1287,27 @@ export class DotContentDriveShellComponent {
                     : { siteId: this.#store.currentSite()?.identifier ?? '' })
             })
             .subscribe({
-                next: ({ jobId }) => {
+                next: (event) => {
+                    if (event.kind === 'progress') {
+                        // Only where the browser could compute a length. Without one, reporting 0%
+                        // would render a bar stuck at nothing, which reads as stalled rather than
+                        // as unmeasurable — the indicator falls back to a bare spinner instead.
+                        if (event.total) {
+                            this.#store.updateExternalRun(runId, {
+                                percent: Math.round((event.loaded / event.total) * 100)
+                            });
+                        }
+
+                        return;
+                    }
+
+                    // Discriminated explicitly rather than treating "not progress" as the handle:
+                    // the union can grow, and assuming an unknown event carries one would settle
+                    // the phase on nothing and then read a jobId off undefined.
+                    if (event.kind !== 'accepted') {
+                        return;
+                    }
+
                     settleUploadPhase();
 
                     // The handle is the only way to tell this batch's completion from another
@@ -1295,7 +1315,7 @@ export class DotContentDriveShellComponent {
                     // destination travels with it because by the time it lands the author may be
                     // looking at a different folder, and the outcome decides whether the listing
                     // they are on can show the result at all.
-                    this.#store.trackUploadJob(jobId, [
+                    this.#store.trackUploadJob(event.handle.jobId, [
                         toFolderRef(
                             hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
                             hostFolder?.path ?? '/'

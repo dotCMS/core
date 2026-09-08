@@ -1037,4 +1037,31 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.component.$addChildrenTooltip()).toBe('');
         });
     });
+
+    describe('progress the run measures itself', () => {
+        it('should prefer a run-reported percent over the item ratio', () => {
+            // An upload measures bytes, not items, so `processed / total` cannot express it. Where a
+            // run says its own position, that is the truth.
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                processed: 1,
+                percent: 72
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionExecutionPercent()).toBe(72);
+        });
+
+        it('should fall back to the item ratio when the run reports no percent', () => {
+            actionExecutionSignal.set({
+                actionName: 'Publish',
+                total: 4,
+                processed: 1
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionExecutionPercent()).toBe(25);
+        });
+    });
 });
