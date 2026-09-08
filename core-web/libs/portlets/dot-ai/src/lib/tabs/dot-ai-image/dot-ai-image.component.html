@@ -66,20 +66,39 @@
                             class="absolute top-2 right-2 z-20 flex items-center gap-1 rounded-full bg-surface-0/90 p-0.5 shadow-sm"
                             role="group"
                             [attr.aria-label]="'dotai.image.actions.aria' | dm">
-                            <p-button
-                                [text]="true"
-                                [rounded]="true"
-                                severity="secondary"
-                                [disabled]="image.published || store.imageSaving()"
-                                [attr.aria-label]="'dotai.image.save' | dm"
-                                [pTooltip]="'dotai.image.save' | dm"
-                                tooltipPosition="bottom"
-                                (onClick)="store.saveImage()"
-                                data-testid="dotai-image-save">
-                                <ng-template #icon>
-                                    <i class="material-symbols-outlined">save</i>
-                                </ng-template>
-                            </p-button>
+                            @if (image.published) {
+                                <!-- Takes Save's place rather than sitting beside it: once the
+                                     image is in the assets there is no second publish to
+                                     offer, and a disabled button fires no hover so it could
+                                     not explain itself anyway. `role="img"` plus the label is
+                                     what states it to a screen reader. -->
+                                <span
+                                    class="flex items-center px-1 text-green-600"
+                                    role="img"
+                                    [attr.aria-label]="'dotai.image.published' | dm"
+                                    [pTooltip]="'dotai.image.published' | dm"
+                                    tooltipPosition="bottom"
+                                    data-testid="dotai-image-published">
+                                    <i class="material-symbols-outlined" aria-hidden="true">
+                                        check_circle
+                                    </i>
+                                </span>
+                            } @else {
+                                <p-button
+                                    [text]="true"
+                                    [rounded]="true"
+                                    severity="secondary"
+                                    [disabled]="store.imageSaving()"
+                                    [attr.aria-label]="'dotai.image.save' | dm"
+                                    [pTooltip]="'dotai.image.save' | dm"
+                                    tooltipPosition="bottom"
+                                    (onClick)="store.saveImage()"
+                                    data-testid="dotai-image-save">
+                                    <ng-template #icon>
+                                        <i class="material-symbols-outlined">save</i>
+                                    </ng-template>
+                                </p-button>
+                            }
 
                             <!-- Same-origin anchor, not a p-button: it needs `download` and an
                                  `href`, so it borrows the button classes instead — the same
@@ -99,23 +118,6 @@
                                 data-testid="dotai-image-download">
                                 <i class="material-symbols-outlined" aria-hidden="true">download</i>
                             </a>
-
-                            @if (image.published) {
-                                <!-- A disabled button does not fire hover, so the Save tooltip
-                                     cannot carry this once it is published. `role="img"` plus
-                                     the label is what states it to a screen reader. -->
-                                <span
-                                    class="flex items-center px-1 text-green-600"
-                                    role="img"
-                                    [attr.aria-label]="'dotai.image.published' | dm"
-                                    [pTooltip]="'dotai.image.published' | dm"
-                                    tooltipPosition="bottom"
-                                    data-testid="dotai-image-published">
-                                    <i class="material-symbols-outlined" aria-hidden="true">
-                                        check_circle
-                                    </i>
-                                </span>
-                            }
                         </div>
                     </div>
                 </div>

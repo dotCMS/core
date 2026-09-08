@@ -97,13 +97,29 @@ describe('DotAiImageComponent', () => {
         expect(link.getAttribute('download')).toBe('cat.png');
     });
 
-    it('should disable Save once published rather than allowing a second publish', () => {
+    it('should replace Save with the published badge, not just disable it', () => {
+        // There is no second publish to offer once the image is in the assets, so the button
+        // gives up its slot rather than sitting there greyed out.
         withImage({ published: true });
 
-        expect(
-            spectator.query(byTestId('dotai-image-save'))?.querySelector('button')?.disabled
-        ).toBe(true);
+        expect(spectator.query(byTestId('dotai-image-save'))).toBeFalsy();
         expect(spectator.query(byTestId('dotai-image-published'))).toBeTruthy();
+    });
+
+    it('should offer Save while the image is unpublished', () => {
+        withImage({ published: false });
+
+        expect(spectator.query(byTestId('dotai-image-save'))).toBeTruthy();
+        expect(spectator.query(byTestId('dotai-image-published'))).toBeFalsy();
+    });
+
+    it('should keep Download available either way', () => {
+        // Download needs no publish, so it must survive the swap.
+        withImage({ published: true });
+        expect(spectator.query(byTestId('dotai-image-download'))).toBeTruthy();
+
+        withImage({ published: false });
+        expect(spectator.query(byTestId('dotai-image-download'))).toBeTruthy();
     });
 
     it('should not generate on an empty prompt', () => {
@@ -239,9 +255,9 @@ describe('DotAiImageComponent', () => {
             expect(tooltips()['dotai-image-download']).toBe('dotai.image.download');
         });
 
-        it('should state the published state separately from the Save tooltip', () => {
-            // A disabled button fires no hover, so Save's tooltip cannot carry this once the
-            // image is published.
+        it('should name the published badge for assistive tech, not just colour it', () => {
+            // It stands in for a button, so it has to carry the same kind of name — a bare
+            // green glyph says nothing to a screen reader.
             withImage({ published: true });
             const badge = spectator.query(byTestId('dotai-image-published')) as HTMLElement;
 
