@@ -80,6 +80,7 @@ import {
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    UPLOAD_BATCH_OPERATION,
     NEW_CONTENT_MARKER
 } from '../shared/constants';
 import {
@@ -155,7 +156,12 @@ import {
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
+        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]',
+        // Bound here rather than with addEventListener: Angular unbinds it when the shell is
+        // destroyed. A hand-rolled window listener outlives the portlet unless every teardown path
+        // remembers to remove it, and then a stale closure keeps guarding the page on a count that
+        // belongs to a component that is gone.
+        '(window:beforeunload)': 'onBeforeUnload($event)'
     }
 })
 export class DotContentDriveShellComponent {
@@ -563,6 +569,27 @@ export class DotContentDriveShellComponent {
      * reloaded and the selection is gone.
      */
     /**
+     * Asks before the page is unloaded while a batch still has bytes in flight.
+     *
+     * The one moment the interface can intervene. Until the handle comes back there is no run: if
+     * the page goes, the request dies with it, nothing is recorded and nobody is notified, so there
+     * is nothing to resume and no outcome to report. Past the handle the run is the server's and
+     * leaving is safe, which is why this stops asking then instead of guarding the whole
+     * upload-and-run — the feature explicitly promises the author can walk away.
+     *
+     * `returnValue` alongside `preventDefault()`: the modern call is enough in current browsers,
+     * the legacy assignment is what older ones read.
+     */
+    protected onBeforeUnload(event: BeforeUnloadEvent): void {
+        if (!this.#uploadsInFlight()) {
+            return;
+        }
+
+        event.preventDefault();
+        event.returnValue = '';
+    }
+
+    /**
      * Whether reloading the listing right now would take something away from the author.
      *
      * `loadItems` empties `selectedItems` unconditionally and replaces every row, so firing it
@@ -583,6 +610,14 @@ export class DotContentDriveShellComponent {
      * the author may have navigated in between.
      */
     readonly #reloadHeld = signal<{ affectedFolders?: string[] } | undefined>(undefined);
+
+    /**
+     * How many batches still have bytes in flight.
+     *
+     * A count, not a flag: uploads can overlap, and the page has to stay guarded until the last of
+     * them has a handle.
+     */
+    readonly #uploadsInFlight = signal(0);
 
     /**
      * Whether the listing on screen can show what a run changed (FR-044).
@@ -1178,6 +1213,28 @@ export class DotContentDriveShellComponent {
         baseType: string,
         hostFolder?: DotFolderTreeNodeData
     ) {
+        // Reported from here rather than from the 202, because this is the part that takes time.
+        // Until the handle comes back the author has no sign anything is happening, and a thirty-file
+        // batch can spend a long while in exactly that state.
+        const runId = this.#store.startExternalRun({
+            operation: UPLOAD_BATCH_OPERATION,
+            actionName: this.#dotMessageService.get('content-drive.upload'),
+            total: files.length,
+            targetLabel: hostFolder?.path ?? this.#store.currentSite()?.hostname,
+            // File names, not inodes: nothing exists to mark yet. They key the repeat-fire guard,
+            // so double-firing the same batch at the same folder is refused, which is right.
+            targets: files.map((file) => file.name)
+        });
+
+        this.#uploadsInFlight.update((count) => count + 1);
+
+        // The upload phase ends at the handle, whichever way it ends. Leaving its run registered
+        // would spin the indicator for a run that has become the server's to report.
+        const settleUploadPhase = () => {
+            this.#store.endExternalRun(runId);
+            this.#uploadsInFlight.update((count) => Math.max(count - 1, 0));
+        };
+
         this.#fileService
             .uploadFilesByBaseType(files, {
                 baseType: baseType as DotBulkUploadForm['baseType'],
@@ -1190,7 +1247,9 @@ export class DotContentDriveShellComponent {
             })
             .subscribe({
                 next: () => {
-                    // Nothing to do, and deliberately nothing. A `202` means the batch is queued,
+                    settleUploadPhase();
+
+                    // Nothing else to do, and deliberately nothing. A `202` means the batch is queued,
                     // not that any file exists, so reloading here refetches a folder whose files
                     // have not been created — the author watches the listing refresh to show
                     // nothing. The reload belongs to the completion event, which arrives with the
@@ -1200,6 +1259,8 @@ export class DotContentDriveShellComponent {
                     // toasts that used to say "started" are what the in-flight indicator replaced.
                 },
                 error: (error) => {
+                    settleUploadPhase();
+
                     // Only a refused *submission* lands here. Once a handle exists the run is the
                     // server's, and its failures arrive as per-file reasons in the outcome.
                     console.error('Content drive upload error => ', error);

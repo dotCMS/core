@@ -286,3 +286,12 @@ export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f
  * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
  */
 export const NEW_CONTENT_MARKER = 'new';
+
+/**
+ * Operation key for the upload's own phase, the window before the server answers a handle.
+ *
+ * Its own key because it is a different run from the one the server then performs: this one can be
+ * lost by closing the tab and reports nothing when it is, whereas the server's survives the author
+ * leaving. Keying them apart is what lets the indicator hand off from one to the other.
+ */
+export const UPLOAD_BATCH_OPERATION = 'CONTENT_DRIVE_UPLOAD_BATCH';

@@ -6,10 +6,10 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal, Signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -1519,6 +1519,86 @@ describe('DotContentDriveShellComponent', () => {
                 [only],
                 expect.objectContaining({ baseType: 'DOTASSET', folderId: TARGET_FOLDER_DATA.id })
             );
+        });
+
+        it('should report the upload on the indicator while the bytes are in flight', () => {
+            // The gap this closes: submitting was silent until the 202, so a thirty-file upload
+            // looked like nothing had happened for as long as it took to send.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ total: 2 })
+            );
+        });
+
+        it('should hand the run off to the server once the batch is accepted', () => {
+            // The upload phase ends at the handle. Leaving its run registered would leave the
+            // indicator spinning for a run that is now the server's to report.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.endExternalRun).toHaveBeenCalled();
+        });
+
+        it('should stop reporting the upload when the submission is refused', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 413 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.endExternalRun).toHaveBeenCalled();
+        });
+
+        it('should warn before the page unloads while an upload is in flight', () => {
+            // The only moment the interface can intervene: while the bytes are still going the
+            // request dies with the page and nothing is recorded, so there is no run to resume
+            // and nobody is notified.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should stop warning once the batch has been accepted', () => {
+            // Past the handle the run is the server's and leaving is safe, so prompting would be
+            // a lie — and the feature explicitly promises the author can walk away.
+            //
+            // Set explicitly: `clearAllMocks` between tests clears calls but not return values, so
+            // the `NEVER` above would otherwise still be in place and the batch would never settle.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(false);
         });
 
         it('should not reload the listing when the batch is only accepted', () => {
