@@ -213,14 +213,26 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
 
             // The action has to be resolved explicitly. fireContentWorkflow with no action logs
             // "should not have a null workflow action", creates nothing, and RETURNS NORMALLY —
-            // so a run that did no work reported every file as a success. PUBLISH is the system
-            // action because that is what the single-file path fires, and FR-006 requires a batch
-            // to behave observably like N single uploads.
+            // so a run that did no work reported every file as a success.
+            //
+            // NEW, not PUBLISH. An earlier version fired PUBLISH on the belief that it matched the
+            // single-file path; it does not. The single-file endpoint checks the asset in as
+            // WORKING unless the caller explicitly asks for live (WebAssetHelper#checkinOrPublish),
+            // so PUBLISH made a batch upload publish content that the same file uploaded alone
+            // would have left as a draft — the opposite of the equivalence FR-006 requires, and a
+            // surprise with real consequences: it puts an author's unreviewed files straight onto
+            // the live site.
+            //
+            // NEW maps to the Save action by default (Task05175AssignDefaultActionsToTheSystem-
+            // Workflow) and leaves the asset working. Firing it through the workflow rather than
+            // calling checkin directly is deliberate: it keeps the content type's own scheme,
+            // its actionlets and its permission checks in play, which is what the WebDAV file
+            // upload does for the same reason (DotWebdavHelper#runWorkflow).
             final WorkflowAction action = APILocator.getWorkflowAPI()
                     .findActionMappedBySystemActionContentlet(
-                            contentlet, WorkflowAPI.SystemAction.PUBLISH, user)
+                            contentlet, WorkflowAPI.SystemAction.NEW, user)
                     .orElseThrow(() -> new IllegalStateException(
-                            "No workflow action is mapped to PUBLISH for this content type"));
+                            "No workflow action is mapped to NEW for this content type"));
 
             final Contentlet created = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                     new ContentletDependencies.Builder()

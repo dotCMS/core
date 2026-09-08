@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.processor.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -198,10 +199,9 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
         assertEquals(10, inFolder.size(), "zero silently discarded");
 
-        // NOTE: working content, not live. The run fires the content type's DEFAULT workflow
-        // action, while the drag-and-drop path this feature replaces fires PUBLISH explicitly.
-        // Whether a bulk upload should publish is a product question FR-006's equivalence rule
-        // arguably already answers; it is raised rather than settled here.
+        // Settled: the run fires NEW, so these are drafts. See
+        // test_run_leavesEveryFileAsADraftRatherThanPublishingIt for the assertion that pins it —
+        // this one would pass either way, because publishing leaves a working version too.
     }
 
     /**
@@ -676,6 +676,51 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                         + "per-file search-index wait, which is what SC-003 guards against and "
                         + "what an IndexPolicy other than DEFER would reintroduce",
                 fileCount, elapsed, ceilingMillis));
+    }
+
+
+    /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: A batch of valid files is run.
+     * <p>
+     * Expected result: Every file is left as a <b>draft</b> — working, not live.
+     * <p>
+     * <b>This needs its own test because the obvious assertion does not catch it.</b> Publishing a
+     * contentlet leaves a working version behind as well, so
+     * {@code getWorkingContent(...).size() == n} passes whether the run published or not. Only
+     * asking each contentlet whether it is live tells the two apart, which is why an earlier
+     * version of this feature fired PUBLISH for weeks with a green suite.
+     * <p>
+     * <b>Why draft is the right answer</b> (FR-006): the single-file endpoint checks an asset in as
+     * working unless the caller explicitly asks for live. A batch that published would mean the
+     * same file put an author's unreviewed content on the live site when uploaded with others and
+     * not when uploaded alone — an equivalence failure whose consequence is publishing something
+     * nobody approved.
+     */
+    @Test
+    public void test_run_leavesEveryFileAsADraftRatherThanPublishingIt() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 3);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+        assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
+                "the run has to have created something for this to mean anything.\n"
+                        + "Recorded per-item results: " + describe(outcome));
+
+        final List<Contentlet> created =
+                APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
+        assertEquals(3, created.size());
+
+        for (final Contentlet contentlet : created) {
+            assertFalse(contentlet.isLive(), String.format(
+                    "a bulk upload must leave files as drafts, exactly as uploading the same file "
+                            + "on its own does; '%s' was published instead",
+                    contentlet.getTitle()));
+        }
     }
 
 }
