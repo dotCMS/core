@@ -35,36 +35,63 @@ Removing the gate on the trigger alone reopens a hole the spike discovered by ac
 
 > **Declaring `strict: true` does not mean anything compiles it.**
 
-Verified again while writing this file:
+**"But the build type-checks it" is the obvious objection, and it is half true.** `nx build` runs a
+real `ngc`/`tsc`, so what it compiles is genuinely checked. It just does not compile most of this
+workspace, and it never compiles the half where the spike found its violations:
 
 | Fact | Value |
 |---|---|
-| Nx projects in `core-web` | 56 |
-| Projects with a `typecheck` target | **5** — `edit-content-bridge`, `sdk-experiments`, `sdk-analytics`, `sdk-vue`, and the `core-web` root |
-| …declared in a `project.json` | **0** — all five are inferred by `@nx/vite/plugin` |
+| Nx projects in `core-web` | 57 |
+| …with a `build` target | **18** — the other 39 have nothing that compiles them |
+| …with a `typecheck` target | **5**, all inferred by `@nx/vite/plugin`, **0** declared in a `project.json` |
+| Does the build see `.spec.ts`? | **No** — `tsconfig.lib.json` carries `exclude: ["src/**/*.spec.ts", …]` |
+| Where the spike's findings lived | **8 of 11 in `.spec.ts`** (§3) — 73 %, in files the build excludes by design |
+| `tsconfig.spec.json` files that set `"strict": false` themselves | **5 of 51** — a strict baseline does not reach them |
 | Files #37198 changes | 77 `.ts`, 13 `.html`, 8 `.json`, 1 `.prettierignore`, 1 `.md` |
 | Does #37198 touch `nx.json`, any `project.json`, `pom.xml` or a workflow? | **No** |
+| …how many `tsconfig.spec.json` does it fix? | **1** (`apps/dotcms-block-editor`), leaving the other 4 opted out |
 
-> `findings.md` §4 reports "3 of 57" for this. The spike measured it earlier; re-running
-> `pnpm nx show projects --with-target typecheck` while writing this file returns five. The
-> discrepancy does not change the argument — verify the current number yourself with the command
-> in the next block rather than trusting either figure.
+So #37198 makes the configuration strict and fixes the existing violations, but adds no mechanism
+that *runs* a type-check over what the build skips. Lint does not type-check. The gap that outlives
+the merge is **the 39 projects with no build plus every `.spec.ts` in the workspace** — which is
+where 73 % of what this gate caught was living.
 
-So #37198 makes the configuration strict and fixes the existing violations — but it adds no
-mechanism that *runs* a type-check. Lint does not type-check. After the merge, **51 of 56 projects**
-are strict on paper with nothing in CI compiling them, and type errors can accumulate again from
-the next pull request onward.
+> Two figures here supersede earlier ones. `findings.md` §4 says "3 of 57" projects have a
+> `typecheck` target; re-running the command below returns 5. §4 also frames the gap as "nothing
+> type-checks 54 of 57 projects", which overstates it — the build does cover 18. Re-measure rather
+> than trusting any of these numbers; they move.
+
+**Not verified, and it changes the size of the gap:** whether `ts-jest` reports type errors during
+`nx test` or only transpiles. With `jest-preset-angular` 17 it should type-check, which would cover
+the specs of the 46 projects whose `tsconfig.spec.json` does not opt out — but this was never
+confirmed. Settle it by putting a deliberate type error in a spec and running that project's tests.
 
 **Before deleting, verify something else type-checks the workspace:**
 
 ```bash
-# Expect substantially more than the 5 above, or a CI step running tsc across the workspace.
-cd core-web && NX_NO_CLOUD=true pnpm nx show projects --with-target typecheck
+cd core-web
+# Coverage today. A replacement should close the gap between these two.
+NX_NO_CLOUD=true pnpm nx show projects --with-target typecheck
+NX_NO_CLOUD=true pnpm nx show projects --with-target build
+NX_NO_CLOUD=true pnpm nx show projects | tr ',' '\n' | wc -l
+
+# Does anything run tsc in the build pipeline?
 grep -rn "typecheck\|tsc --noEmit" pom.xml ../.github/workflows/ | grep -v node_modules
+
+# Do the spec configs still opt out of strict?
+grep -rl '"strict"[[:space:]]*:[[:space:]]*false' apps libs --include='tsconfig.spec.json'
 ```
+
+A replacement only closes the gap if it **includes the specs** and **overrides the spec configs
+that set `strict: false`**. A `typecheck` target that runs the build configuration reproduces the
+exact blind spot this gate was built to cover.
 
 If nothing covers it, the honest sequence is **replace, then delete** — not delete and hope.
 Deleting first is still a valid choice, but make it knowingly and say so in the removal PR.
+
+**Status at the time of writing (2026-09-08):** adding a `typecheck` to #37198 itself is the
+intended replacement, being handled on that pull request. If it landed, this precondition is
+already satisfied — confirm with the commands above rather than assuming, then delete freely.
 
 ## 3. What comes out
 
@@ -186,7 +213,7 @@ Tests` and `PR Build / Initial Artifact Build` is the whole verification story.
 Worth recording, because it is the obvious counter-argument and it was considered.
 
 `findings.md` §4 makes a real case that the gate's value outlives the migration: it is the only
-thing type-checking the 51 projects nothing else compiles, before and after #37198. But a
+thing checking the 39 projects with no build, and every `.spec.ts`, before and after #37198. But a
 *diff-scoped* gate is the wrong shape for that job. Its entire design — discarding 99.1 % of
 diagnostics, forgiving untouched lines, forcing flags the config does not declare — exists to be
 useful while the baseline is **non-strict**. Once the baseline is strict, the right tool is an
