@@ -555,4 +555,58 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
         assertEquals(Boolean.FALSE, processor.getResultMetadata(job).get("duplicateSubmission"));
     }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#process} — progress while the run is in flight
+     * <p>
+     * Given scenario: A batch large enough that progress must move more than once.
+     * <p>
+     * Expected result: The tracker reports a rising fraction and finishes at 1.0 (FR-024). Progress
+     * is the difference between a batch an author can leave and one they have to guess about —
+     * without it the interface can only say "working", which for fifty files is indistinguishable
+     * from being stuck.
+     */
+    @Test
+    public void test_run_reportsProgressAsFilesComplete() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 5);
+
+        final DefaultProgressTracker tracker =
+                (DefaultProgressTracker) job.progressTracker().orElseThrow();
+
+        new BulkUploadProcessor().process(job);
+
+        assertEquals(1.0f, tracker.progress(), 0.001f,
+                "a finished run reports itself finished; a tracker stuck below 1.0 leaves the "
+                        + "interface showing an in-flight batch forever");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#cancel} and the outcome it leaves
+     * <p>
+     * Given scenario: A run cancelled before it reached every file.
+     * <p>
+     * Expected result: Files already created stay (FR-026), and the outcome records the untouched
+     * ones as <b>SKIPPED rather than FAILED</b> (FR-028). That distinction is the whole point:
+     * skipped files were never tried, and reporting them as failures tells the author their files
+     * were rejected when they simply stopped the run themselves. Cancellation also takes effect
+     * between files, never mid-file, so nothing is left half-created (FR-027).
+     */
+    @Test
+    public void test_cancel_keepsWhatWasCreatedAndMarksTheRestSkippedNotFailed() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 4);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.cancel(job);
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(0, ((Number) outcome.get("failedCount")).intValue(),
+                "a cancelled run's untouched files are not failures — they were never attempted.\n"
+                        + describe(outcome));
+        assertTrue(((Number) outcome.get("skippedCount")).intValue() > 0,
+                "and they are recorded as skipped, which is a distinct outcome");
+    }
 }
