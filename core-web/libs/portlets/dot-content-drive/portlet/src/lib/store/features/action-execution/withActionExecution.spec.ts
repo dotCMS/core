@@ -500,6 +500,31 @@ describe('withActionExecution', () => {
             expect(handle).toHaveBeenCalled();
         });
 
+        it('should carry the per-file failures so the author learns which files and why', () => {
+            // Counts alone tell an author three files failed and nothing they can act on. The names
+            // and reasons are the whole point of a partial outcome.
+            build();
+            store.trackUploadJob('upload-1');
+
+            const results = [
+                { key: 'a.png', status: 'SUCCESS' as const },
+                {
+                    key: 'huge.mov',
+                    status: 'FAILED' as const,
+                    reason: 'OVER_SIZE_LIMIT' as const
+                }
+            ];
+
+            store.reportUploadCompleted(
+                'Upload',
+                completed({ total: 2, successCount: 1, failedCount: 1, skippedCount: 0, results })
+            );
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ failures: results })
+            );
+        });
+
         it('should carry the destination so the listing only reloads where it can show it', () => {
             build();
             store.trackUploadJob('upload-1', ['//demo.com/images']);

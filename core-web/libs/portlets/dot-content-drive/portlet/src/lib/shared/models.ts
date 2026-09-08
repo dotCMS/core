@@ -1,4 +1,6 @@
 import {
+    DotBatchItemResult,
+    DotBulkUploadFailureReason,
     DotCMSContentTypeField,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
@@ -200,6 +202,14 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
  */
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
+    /**
+     * Per-file results, for a run that reports them.
+     *
+     * Counts alone tell an author three files failed and nothing they can act on. The names and
+     * reasons are the point of a partial outcome, and the reason codes are what map to product copy
+     * rather than the server's diagnostic message, which is never shown.
+     */
+    failures?: DotBatchItemResult<DotBulkUploadFailureReason>[];
     /**
      * The folders whose contents this run changed, as `//hostname/path` references.
      *

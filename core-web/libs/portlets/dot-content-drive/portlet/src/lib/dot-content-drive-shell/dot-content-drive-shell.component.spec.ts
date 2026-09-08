@@ -113,6 +113,7 @@ describe('DotContentDriveShellComponent', () => {
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
     let pageLeaveRequestSubject: Subject<void>;
     let routerService: SpyObject<DotRouterService>;
+    let dotMessageService: SpyObject<DotMessageService>;
     let selectedItemsSignal: WritableSignal<DotContentDriveItem[]>;
     // Header override published by a dialog body that has drilled into a sub-screen.
     let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
@@ -377,6 +378,7 @@ describe('DotContentDriveShellComponent', () => {
         messageService = spectator.inject(MessageService);
         uploadService = spectator.inject(DotUploadFileService);
         routerService = spectator.inject(DotRouterService);
+        dotMessageService = spectator.inject(DotMessageService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
     });
 
@@ -612,6 +614,49 @@ describe('DotContentDriveShellComponent', () => {
 
                 expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
             });
+        });
+
+        it('should name the files that failed, and why, in the outcome', () => {
+            // A partial outcome that says only "1 failed" leaves the author to guess which file and
+            // what to do about it. The names and the reason are the actionable part.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 1,
+                backgrounded: true,
+                failures: [
+                    { key: 'a.png', status: 'SUCCESS' },
+                    { key: 'huge.mov', status: 'FAILED', reason: 'OVER_SIZE_LIMIT' }
+                ]
+            });
+
+            // Asserted where the name actually goes: this spec's message mock returns the key and
+            // drops the arguments, so the resolved string never contains it. What matters is that
+            // the reason's copy is asked for *with* the file name.
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.failure.over-size-limit',
+                'huge.mov'
+            );
+        });
+
+        it('should not print a failure list for a clean run', () => {
+            settle({
+                actionName: 'Upload',
+                successCount: 2,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true,
+                failures: [
+                    { key: 'a.png', status: 'SUCCESS' },
+                    { key: 'b.png', status: 'SUCCESS' }
+                ]
+            });
+
+            expect(dotMessageService.get).not.toHaveBeenCalledWith(
+                expect.stringContaining('content-drive.upload.failure.'),
+                expect.anything()
+            );
         });
 
         it('should stay silent while no result is published', () => {

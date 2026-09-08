@@ -828,6 +828,10 @@ export function withActionExecution() {
                                 skippedCount: event.skippedCount ?? 0,
                                 failedCount: event.failedCount ?? 0,
                                 affectedFolders,
+                                // Carried whole rather than summarised here: turning results into
+                                // copy is the shell's business, and the store has no message
+                                // service to do it with.
+                                failures: event.results,
                                 // It arrives unprompted, long after the click, so it announces
                                 // itself and must not interrupt whatever is happening now.
                                 backgrounded: true

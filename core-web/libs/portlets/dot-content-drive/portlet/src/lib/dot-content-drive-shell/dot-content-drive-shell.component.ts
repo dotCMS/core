@@ -106,6 +106,7 @@ import {
     normalizeFolderRef,
     toFolderRef
 } from '../utils/functions';
+import { describeUploadFailures } from '../utils/upload-failures';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -669,7 +670,8 @@ export class DotContentDriveShellComponent {
             partialDetailKey,
             backgrounded,
             confirmSuccess,
-            affectedFolders
+            affectedFolders,
+            failures
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -717,13 +719,20 @@ export class DotContentDriveShellComponent {
                   String(successCount)
               );
 
+        // Named files and their reasons, grouped one line per reason, appended to the counts.
+        // The counts say how many; only this says which and why, and that is the part the author
+        // can act on. Empty for a clean run, so a success never grows a list.
+        const failureLines = describeUploadFailures(failures, (key, ...args) =>
+            this.#dotMessageService.get(key, ...args)
+        );
+
         if (announce) {
             this.#messageService.add({
                 // A skip is a shortfall too — those items did not get the action — so it warns
                 // rather than reporting green, which is what it used to do.
                 severity: isPartial ? 'warn' : 'success',
                 summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
-                detail,
+                detail: [detail, ...failureLines].join('<br>'),
                 life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
             });
         }
