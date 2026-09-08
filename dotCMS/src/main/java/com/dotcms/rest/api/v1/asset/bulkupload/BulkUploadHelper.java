@@ -193,9 +193,18 @@ public class BulkUploadHelper {
 
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("baseType", form.getBaseType());
-        parameters.put("folderId", form.getFolderId());
-        parameters.put("siteId", form.getSiteId());
         parameters.put("targetId", targetId);
+
+        // Only the target that was actually given. Exactly one of the two is set by definition, so
+        // putting both would always carry one null — and the job framework stores parameters in an
+        // ImmutableMap, which rejects null values. That does not fail this submission alone: the
+        // insert succeeds and the failure surfaces later inside PostgresJobQueue.nextJob, which is
+        // the *shared* processing loop, so one such job stops every queue from advancing.
+        if (UtilMethods.isSet(form.getFolderId())) {
+            parameters.put("folderId", form.getFolderId());
+        } else {
+            parameters.put("siteId", form.getSiteId());
+        }
         parameters.put("userId", user.getUserId());
         parameters.put("stagedFiles", files);
 

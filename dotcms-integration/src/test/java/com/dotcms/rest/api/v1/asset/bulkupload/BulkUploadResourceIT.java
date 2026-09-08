@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.job.Job;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -56,6 +58,9 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      */
     @Inject
     BulkUploadHelper helper;
+
+    @Inject
+    JobQueueManagerAPI jobQueueManagerAPI;
 
     private static User admin;
     private static Host site;
@@ -289,6 +294,38 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
 
         assertEquals(0, staging.staged().size(),
                 "resolved before the body, so a deleted folder costs the author nothing");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadHelper#submit} — the job parameters it stores
+     * <p>
+     * Given scenario: A batch targeting a folder, so the {@code siteId} half of the target is
+     * absent.
+     * <p>
+     * Expected result: <b>No parameter value is null.</b> The job framework stores parameters in an
+     * ImmutableMap, which rejects nulls — and the rejection does not surface at submission. The
+     * insert succeeds, and the failure appears later inside {@code PostgresJobQueue.nextJob}, which
+     * is the <b>shared</b> processing loop: {@code "null value in entry: siteId=null"} stopped every
+     * queue in the product from advancing, not just this one. An earlier version put both
+     * {@code folderId} and {@code siteId} unconditionally, and since exactly one is set by
+     * definition, every single bulk upload poisoned the loop.
+     * <p>
+     * This is asserted as an invariant over the whole map rather than on the two target keys,
+     * because the next parameter someone adds is the one that will be null.
+     */
+    @Test
+    public void test_submit_storesNoNullParameterValues() throws Exception {
+        final Folder folder = targetFolder();
+
+        final BulkUploadSubmitResponse response = helper().submit(
+                form(folder.getIdentifier(), null), parts(2, 10), new FakeBatchStaging(),
+                admin, request());
+
+        final Job job = jobQueueManagerAPI.getJob(response.jobId());
+
+        job.parameters().forEach((key, value) -> assertNotNull(value, String.format(
+                "job parameter '%s' is null; the framework's ImmutableMap rejects that and the "
+                        + "shared job loop stops advancing for every queue", key)));
     }
 
     /**
