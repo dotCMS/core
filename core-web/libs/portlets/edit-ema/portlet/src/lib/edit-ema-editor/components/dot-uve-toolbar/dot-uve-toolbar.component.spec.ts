@@ -65,6 +65,7 @@ import {
 } from '../../../shared/mocks';
 import { DotPageAssetParams } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { Orientation, PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
@@ -336,6 +337,11 @@ const personaEventMock = {
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
     let store: InstanceType<typeof UVEStore>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => store as unknown as WithPageApiMethods;
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
@@ -564,7 +570,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should personalize without confirmation when page is already personalized', () => {
-                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
                     personalized: true
@@ -843,7 +849,7 @@ describe('DotUveToolbarComponent', () => {
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
                 const currentLanguage = baseUVEState.pageLanguage();
                 const languageSelector = spectator.query(StubDotLanguageSelectorComponent);
-                const valueSetSpy = vi.spyOn(languageSelector.value, 'set');
+                const valueSetSpy = vi.spyOn(languageSelector!.value, 'set');
 
                 spectator.triggerEventHandler(
                     StubDotLanguageSelectorComponent,

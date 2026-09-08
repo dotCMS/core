@@ -169,8 +169,8 @@ describe('DotTagsListComponent', () => {
 
     describe('Empty and loading state', () => {
         it('should show loading skeleton rows in body when status is loading and tags exist (e.g. pagination)', () => {
-            (store.status as Mock).mockReturnValue('loading');
-            (store.tags as Mock).mockReturnValue(MOCK_TAGS);
+            (store.status as unknown as Mock).mockReturnValue('loading');
+            (store.tags as unknown as Mock).mockReturnValue(MOCK_TAGS);
             spectator.detectChanges();
 
             const loadingRows = spectator.queryAll(byTestId('tags-loading-row'));
@@ -178,13 +178,13 @@ describe('DotTagsListComponent', () => {
             expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
 
             // Restore defaults for subsequent tests
-            (store.status as Mock).mockReturnValue('loaded');
+            (store.status as unknown as Mock).mockReturnValue('loaded');
         });
 
         it('should show empty state when no tags (emptymessage)', () => {
-            (store.tags as Mock).mockReturnValue([]);
-            (store.selectedTags as Mock).mockReturnValue([]);
-            (store.status as Mock).mockReturnValue('loaded');
+            (store.tags as unknown as Mock).mockReturnValue([]);
+            (store.selectedTags as unknown as Mock).mockReturnValue([]);
+            (store.status as unknown as Mock).mockReturnValue('loaded');
             spectator.detectChanges();
 
             const emptyState = spectator.query(byTestId('tags-empty-state'));
@@ -193,15 +193,15 @@ describe('DotTagsListComponent', () => {
             expect(emptyState?.textContent).toContain('Create a tag to get started.');
 
             // Restore defaults for subsequent tests
-            (store.tags as Mock).mockReturnValue(MOCK_TAGS);
-            (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
+            (store.tags as unknown as Mock).mockReturnValue(MOCK_TAGS);
+            (store.selectedTags as unknown as Mock).mockReturnValue(MOCK_TAGS);
         });
     });
 
     describe('Button Interactions', () => {
         describe('Split Button', () => {
             it('should render split button with Add Tag label', () => {
-                (store.selectedTags as Mock).mockReturnValue([]);
+                (store.selectedTags as unknown as Mock).mockReturnValue([]);
                 spectator.detectChanges();
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
                 expect(btnHost).toBeTruthy();
@@ -217,7 +217,7 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should call openCreateDialog when split button main action clicked', () => {
-                (store.selectedTags as Mock).mockReturnValue([]);
+                (store.selectedTags as unknown as Mock).mockReturnValue([]);
                 spectator.detectChanges();
                 const spy = vi.spyOn(spectator.component, 'openCreateDialog');
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
@@ -236,7 +236,7 @@ describe('DotTagsListComponent', () => {
 
         describe('Conditional Buttons Visibility', () => {
             it('should hide Delete and Export split-button when nothing is selected', () => {
-                (store.selectedTags as Mock).mockReturnValue([]);
+                (store.selectedTags as unknown as Mock).mockReturnValue([]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -245,7 +245,7 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should show Delete and Export split-button when tags are selected', () => {
-                (store.selectedTags as Mock).mockReturnValue([MOCK_TAGS[0]]);
+                (store.selectedTags as unknown as Mock).mockReturnValue([MOCK_TAGS[0]]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -254,13 +254,13 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should show the Add split button regardless of selection', () => {
-                (store.selectedTags as Mock).mockReturnValue([]);
+                (store.selectedTags as unknown as Mock).mockReturnValue([]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('tag-add-split-btn'))).toBeTruthy();
 
-                (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
+                (store.selectedTags as unknown as Mock).mockReturnValue(MOCK_TAGS);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -270,7 +270,7 @@ describe('DotTagsListComponent', () => {
 
         describe('Button Actions', () => {
             it('should call confirmDelete when Delete button clicked', () => {
-                (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
+                (store.selectedTags as unknown as Mock).mockReturnValue(MOCK_TAGS);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -284,7 +284,7 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should call store.exportSelected when Export split-button main action clicked', () => {
-                (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
+                (store.selectedTags as unknown as Mock).mockReturnValue(MOCK_TAGS);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -305,13 +305,13 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should disable Export All when showExportAll is false', () => {
-                (store.showExportAll as Mock).mockReturnValue(false);
+                (store.showExportAll as unknown as Mock).mockReturnValue(false);
                 spectator = createComponent();
                 expect(spectator.component.$exportMenuItems()[1].disabled).toBe(true);
             });
 
             it('should enable Export All when showExportAll is true', () => {
-                (store.showExportAll as Mock).mockReturnValue(true);
+                (store.showExportAll as unknown as Mock).mockReturnValue(true);
                 spectator = createComponent();
                 expect(spectator.component.$exportMenuItems()[1].disabled).toBe(false);
             });

@@ -225,7 +225,9 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                vi.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
+                vi.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                    of({ errors: 0 } as unknown as DotAjaxActionResponseView)
+                );
             });
 
             it.skip('should submit on accept and hide dialog', () => {

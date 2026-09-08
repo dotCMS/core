@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 
 import { HttpClientModule } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, convertToParamMap } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -38,16 +38,16 @@ describe('DotFeatureFlagResolver', () => {
                 queryParams: {},
                 fragment: '',
                 outlet: '',
-                component: undefined,
-                routeConfig: undefined,
+                component: null,
+                routeConfig: null,
                 title: '',
                 root: new ActivatedRouteSnapshot(),
                 parent: new ActivatedRouteSnapshot(),
                 firstChild: new ActivatedRouteSnapshot(),
                 children: [],
                 pathFromRoot: [],
-                paramMap: undefined,
-                queryParamMap: undefined
+                paramMap: convertToParamMap({}),
+                queryParamMap: convertToParamMap({})
             };
 
             const expectedFlagsResult: Record<string, boolean> = {

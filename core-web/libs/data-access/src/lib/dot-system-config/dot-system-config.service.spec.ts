@@ -15,7 +15,9 @@ describe('DotSystemConfigService', () => {
     describe('getSystemConfig', () => {
         it('should fetch and transform system configuration', () =>
             new Promise<void>((done) => {
-                const mockResponse: SystemConfigResponse = {
+                // Only the `entity` envelope field matters here; the rest of
+                // DotCMSResponse is irrelevant to the mapping under test.
+                const mockResponse = {
                     entity: {
                         config: {
                             logos: {
@@ -59,7 +61,7 @@ describe('DotSystemConfigService', () => {
                             }
                         }
                     }
-                };
+                } as SystemConfigResponse;
 
                 const expectedConfig: DotSystemConfig = {
                     logos: mockResponse.entity.config.logos,

@@ -37,7 +37,9 @@ describe('AiContentPromptStore', () => {
                 prompt: '',
                 generatedContent: [],
                 selectedContent: '',
-                activeIndex: null,
+                // The store's own initial state uses null here; AiContentPromptState
+                // types activeIndex as a bare number.
+                activeIndex: null as unknown as number,
                 status: ComponentStatus.INIT,
                 showDialog: false,
                 submitLabel: 'block-editor.extension.ai-image.generate'

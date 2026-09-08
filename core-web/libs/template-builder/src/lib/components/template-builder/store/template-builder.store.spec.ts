@@ -112,6 +112,22 @@ const RESULT_AFTER_MERGE_MOCK = [
     }
 ];
 
+/**
+ * `ComponentStore.updater()` falls back to a no-payload signature when the updater's return
+ * type does not line up with the state — a pre-existing strict-mode issue in
+ * template-builder.store.ts, not in these tests. This view restores the intended payloads.
+ */
+const updaters = (store: DotTemplateBuilderStore) =>
+    store as unknown as {
+        addSidebarContainer: (container: DotContainer) => void;
+        updateOldRows: (payload: {
+            newRows: DotGridStackWidget[];
+            templateIdentifier: string;
+            isAnonymousTemplate?: boolean;
+        }) => void;
+        updateDefaultContainer: (container: DotContainer | null) => void;
+    };
+
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
     let rows$: Observable<{ rows: DotGridStackWidget[]; shouldEmit: boolean }>;
@@ -189,8 +205,8 @@ describe('DotTemplateBuilderStore', () => {
 
             rows$.subscribe(({ rows, shouldEmit }) => {
                 expect(rows.length).toBeGreaterThan(initialState.rows.length);
-                expect(rows[3].subGridOpts.children[0].w).toBe(3);
-                expect(rows[3].subGridOpts.children[0].containers).toEqual([]);
+                expect(rows[3].subGridOpts!.children[0].w).toBe(3);
+                expect(rows[3].subGridOpts!.children[0].containers).toEqual([]);
                 expect(shouldEmit).toEqual(true);
                 done();
             });
@@ -263,7 +279,7 @@ describe('DotTemplateBuilderStore', () => {
             expect.assertions(2);
             const rowId = uuid();
             service.setResizingRowID(rowId);
-            service.setResizingRowID(null);
+            service.setResizingRowID(null as unknown as string);
             service.vm$.subscribe(({ resizingRowID, shouldEmit }) => {
                 expect(resizingRowID).toEqual(null);
                 expect(shouldEmit).toEqual(true);
@@ -408,7 +424,7 @@ describe('DotTemplateBuilderStore', () => {
 
             rows$.subscribe(({ rows, shouldEmit }) => {
                 const row = rows.find((item) => item.id === parentId);
-                expect(row.subGridOpts.children[0].w).toEqual(newWidth);
+                expect(row!.subGridOpts!.children[0].w).toEqual(newWidth);
                 expect(shouldEmit).toEqual(true);
                 done();
             });
@@ -528,9 +544,9 @@ describe('DotTemplateBuilderStore', () => {
     it('should add a container to the sidebar', () =>
         new Promise<void>((done) => {
             expect.assertions(1);
-            service.addSidebarContainer(mockContainer);
+            updaters(service).addSidebarContainer(mockContainer);
             service.vm$.subscribe(({ layoutProperties }) => {
-                expect(layoutProperties.sidebar.containers[0]).toEqual(minDataMockContainer);
+                expect(layoutProperties.sidebar.containers![0]).toEqual(minDataMockContainer);
                 done();
             });
         }));
@@ -538,9 +554,9 @@ describe('DotTemplateBuilderStore', () => {
     it('should add a container to container map when adding it to sidebar', () =>
         new Promise<void>((done) => {
             expect.assertions(1);
-            service.addSidebarContainer(mockContainer);
+            updaters(service).addSidebarContainer(mockContainer);
             service.vm$.subscribe(({ containerMap }) => {
-                expect(containerMap[mockContainer.identifier]).toEqual(mockContainer);
+                expect(containerMap[mockContainer.identifier!]).toEqual(mockContainer);
                 done();
             });
         }));
@@ -548,7 +564,7 @@ describe('DotTemplateBuilderStore', () => {
     it('should delete a container from the sidebar', () =>
         new Promise<void>((done) => {
             expect.assertions(2);
-            service.addSidebarContainer(mockContainer);
+            updaters(service).addSidebarContainer(mockContainer);
             service.vm$.pipe(take(1)).subscribe(({ layoutProperties }) => {
                 expect(layoutProperties.sidebar.containers).toContainEqual(minDataMockContainer);
                 service.deleteSidebarContainer(0);
@@ -577,7 +593,7 @@ describe('DotTemplateBuilderStore', () => {
             addContainer();
 
             containerMap$.subscribe((containerMap) => {
-                expect(containerMap).toHaveProperty(mockContainer.identifier);
+                expect(containerMap).toHaveProperty(mockContainer.identifier!);
                 done();
             });
         }));
@@ -629,7 +645,10 @@ describe('DotTemplateBuilderStore', () => {
                 }
             });
 
-            service.updateOldRows({ newRows: UPDATED_ROWS_MOCK, templateIdentifier: '111' });
+            updaters(service).updateOldRows({
+                newRows: UPDATED_ROWS_MOCK,
+                templateIdentifier: '111'
+            });
 
             rows$.subscribe(({ rows, shouldEmit }) => {
                 expect(rows).toEqual(RESULT_AFTER_MERGE_MOCK);
@@ -650,7 +669,7 @@ describe('DotTemplateBuilderStore', () => {
                 }
             });
 
-            service.updateOldRows({
+            updaters(service).updateOldRows({
                 newRows: UPDATED_ROWS_MOCK,
                 templateIdentifier: '11123',
                 isAnonymousTemplate: true
@@ -685,10 +704,10 @@ describe('DotTemplateBuilderStore', () => {
                     y: 0, // This sets the order of the rows
                     subGridOpts: {
                         ...ROWS_MINIMAL_MOCK[1].subGridOpts,
-                        children: ROWS_MINIMAL_MOCK[1].subGridOpts.children.map((col) => ({
+                        children: ROWS_MINIMAL_MOCK[1].subGridOpts!.children.map((col) => ({
                             ...col,
                             id: 'hello there 2',
-                            containers: col.containers.map((child, i) => ({
+                            containers: col.containers!.map((child, i) => ({
                                 ...child,
                                 uuid: `${i + 1}` // 1 for the 0 index
                             }))
@@ -701,10 +720,10 @@ describe('DotTemplateBuilderStore', () => {
                     y: 1, // This sets the order of the rows
                     subGridOpts: {
                         ...ROWS_MINIMAL_MOCK[0].subGridOpts,
-                        children: ROWS_MINIMAL_MOCK[0].subGridOpts.children.map((col) => ({
+                        children: ROWS_MINIMAL_MOCK[0].subGridOpts!.children.map((col) => ({
                             ...col,
                             id: 'hello there 1',
-                            containers: col.containers.map((child, i) => ({
+                            containers: col.containers!.map((child, i) => ({
                                 ...child,
                                 uuid: `${i + 3}` // 1 for the 0 index and 2 for the first 2 containers
                             }))
@@ -723,7 +742,7 @@ describe('DotTemplateBuilderStore', () => {
                 }
             });
 
-            service.updateOldRows({ newRows: updatedRows, templateIdentifier: '222' }); //Different template identifier
+            updaters(service).updateOldRows({ newRows: updatedRows, templateIdentifier: '222' }); //Different template identifier
 
             rows$.subscribe(({ rows, shouldEmit }) => {
                 expect(rows).toEqual(updatedRows);
@@ -767,7 +786,7 @@ describe('DotTemplateBuilderStore', () => {
 
                 rows$.subscribe(({ rows, shouldEmit }) => {
                     const newRow = rows[rows.length - 1];
-                    expect(newRow.subGridOpts.children[0].containers[0].identifier).toBe(
+                    expect(newRow.subGridOpts!.children[0].containers![0].identifier).toBe(
                         mockDefaultContainerWithPath.path
                     );
                     expect(shouldEmit).toEqual(true);
@@ -800,7 +819,7 @@ describe('DotTemplateBuilderStore', () => {
 
                 rows$.subscribe(({ rows }) => {
                     const newRow = rows[rows.length - 1];
-                    expect(newRow.subGridOpts.children[0].containers[0].identifier).toBe(
+                    expect(newRow.subGridOpts!.children[0].containers![0].identifier).toBe(
                         mockDefaultContainerWithoutPath.identifier
                     );
                     done();
@@ -832,7 +851,7 @@ describe('DotTemplateBuilderStore', () => {
 
                 rows$.subscribe(({ rows }) => {
                     const newRow = rows[rows.length - 1];
-                    expect(newRow.subGridOpts.children[0].containers).toEqual([]);
+                    expect(newRow.subGridOpts!.children[0].containers).toEqual([]);
                     done();
                 });
             }));
@@ -875,7 +894,7 @@ describe('DotTemplateBuilderStore', () => {
                     const addedColumn = row?.subGridOpts?.children.find(
                         (child) => child.id === newColumn.id
                     );
-                    expect(addedColumn?.containers[0].identifier).toBe(
+                    expect(addedColumn?.containers![0].identifier).toBe(
                         mockDefaultContainerWithPath.path
                     );
                     done();
@@ -901,7 +920,7 @@ describe('DotTemplateBuilderStore', () => {
                     hostName: 'new-host'
                 };
 
-                service.updateDefaultContainer(newDefaultContainer);
+                updaters(service).updateDefaultContainer(newDefaultContainer);
 
                 service.vm$.subscribe(({ defaultContainer, shouldEmit }) => {
                     expect(defaultContainer).toEqual(newDefaultContainer);
@@ -920,7 +939,7 @@ describe('DotTemplateBuilderStore', () => {
                 });
 
                 // Then set it to null
-                service.updateDefaultContainer(null);
+                updaters(service).updateDefaultContainer(null);
 
                 service.vm$.subscribe(({ defaultContainer, shouldEmit }) => {
                     expect(defaultContainer).toBeNull();

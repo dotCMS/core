@@ -142,7 +142,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 contentType: vi.fn().mockReturnValue(null),
                 currentLocale: vi.fn().mockReturnValue(null),
                 isCopyingLocale: vi.fn().mockReturnValue(false),
-                isDialogMode: vi.fn().mockReturnValue(false),
                 contentlet: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotEditContentService, {
@@ -647,7 +646,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             contentType: vi.fn().mockReturnValue(null),
             currentLocale: vi.fn().mockReturnValue(null),
             isCopyingLocale: vi.fn().mockReturnValue(false),
-            isDialogMode: vi.fn().mockReturnValue(false),
             contentlet: vi.fn().mockReturnValue(null)
         }),
         mockProvider(DotEditContentService, {

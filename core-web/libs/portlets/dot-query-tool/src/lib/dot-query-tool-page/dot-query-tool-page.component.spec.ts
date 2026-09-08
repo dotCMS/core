@@ -78,6 +78,13 @@ const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
     ...overrides
 });
 
+/**
+ * The injected store is a SpyObject, so its signal members type as spies rather than plain
+ * signals and will not accept a bare mock. Writing through a record view keeps the one-line
+ * stubs below readable.
+ */
+const stubbed = (store: unknown) => store as Record<string, unknown>;
+
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
     let locationReplaceStateSpy: Mock;
@@ -184,7 +191,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('resets offset and triggers runSearch when clicked', () => {
             const store = setup();
-            store.query = vi.fn().mockReturnValue('+live:true');
+            stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
             const btn = spectator.query(byTestId('query-tool-run-btn'))?.querySelector('button');
@@ -334,7 +341,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as cURL targets the _search endpoint with the store request body', () => {
             const store = setup();
-            store.apiRequestBody = vi.fn().mockReturnValue({
+            stubbed(store)['apiRequestBody'] = vi.fn().mockReturnValue({
                 query: '+live:true',
                 sort: 'modDate desc',
                 limit: 50,
@@ -356,7 +363,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as fetch emits a fetch() call against the _search endpoint', () => {
             const store = setup();
-            store.apiRequestBody = vi
+            stubbed(store)['apiRequestBody'] = vi
                 .fn()
                 .mockReturnValue({ query: '+live:true', sort: '', limit: 20, offset: 0 });
             const copySpy = setupClipboardSpy();

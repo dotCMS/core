@@ -6,6 +6,7 @@ import { vi } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotRouterService, DotSystemConfigService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
@@ -65,12 +66,12 @@ describe('DotContainerService', () => {
                 .resolve(
                     {
                         paramMap: {
-                            get(param) {
+                            get(param: string) {
                                 return param === 'inode' ? null : 'ID';
                             }
                         }
                     } as any,
-                    null
+                    null as unknown as RouterStateSnapshot
                 )
                 .subscribe(
                     (_res) => {

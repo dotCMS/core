@@ -47,6 +47,7 @@ import {
 import {
     CONTAINER_SOURCE,
     DotActionBulkResult,
+    DotCMSResponse,
     DotContainer,
     DotSite
 } from '@dotcms/dotcms-models';
@@ -434,7 +435,9 @@ describe('ContainerListComponent', () => {
         it('should click on file container and move on Browser Screen', () => {
             const fileContainer = containersMock.find((c) => c.identifier === 'FILE_CONTAINER');
             // Spy on the store's methods since it's now using component-level providers
-            vi.spyOn(store['dotSiteBrowserService'], 'setSelectedFolder').mockReturnValue(of(null));
+            vi.spyOn(store['dotSiteBrowserService'], 'setSelectedFolder').mockReturnValue(
+                of({} as DotCMSResponse<Record<string, unknown>>)
+            );
             vi.spyOn(store['dotRouterService'], 'goToSiteBrowser');
 
             // Call the method directly instead of triggering the event

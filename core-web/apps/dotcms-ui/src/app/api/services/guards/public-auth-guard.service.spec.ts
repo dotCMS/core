@@ -38,10 +38,8 @@ describe('ValidPublicAuthGuardService', () => {
         publicAuthGuardService = TestBed.inject(PublicAuthGuardService);
         dotRouterService = TestBed.inject(DotRouterService);
         loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = vi.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = vi.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-            'toString'
-        ]);
+        mockRouterStateSnapshot = { toString: vi.fn() } as unknown as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { toString: vi.fn() } as unknown as ActivatedRouteSnapshot;
     });
 
     it('should redirect to to Main Portlet if User is logged in', () => {

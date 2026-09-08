@@ -188,7 +188,7 @@ describe('DotCreateContentletComponent', () => {
             const dotContentletEditorService = spectator.inject(DotContentletEditorService);
             // Reset the service mock to return undefined so the resolver value is used
             vi.spyOn(dotContentletEditorService, 'createUrl$', 'get').mockReturnValue(
-                of(undefined)
+                of(undefined as unknown as string)
             );
             vi.spyOn(routeService, 'data', 'get').mockReturnValue(of({ url: 'url.from.resolver' }));
 

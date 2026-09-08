@@ -224,7 +224,7 @@ describe('TemplateBuilderComponent', () => {
             let rowId: string;
 
             store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-                widgetToAddContainer = items[0].subGridOpts.children[0];
+                widgetToAddContainer = items[0].subGridOpts!.children[0];
                 rowId = items[0].id as string;
 
                 spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
@@ -242,7 +242,7 @@ describe('TemplateBuilderComponent', () => {
             let rowId: string;
 
             store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-                widgetToDeleteContainer = items[0].subGridOpts.children[0];
+                widgetToDeleteContainer = items[0].subGridOpts!.children[0];
                 rowId = items[0].id as string;
 
                 spectator.component.deleteContainer(widgetToDeleteContainer, rowId, 0);
@@ -377,7 +377,7 @@ describe('TemplateBuilderComponent', () => {
 
                 store.vm$
                     .pipe(
-                        map((x) => x?.items),
+                        map((x) => x?.rows),
                         take(1)
                     )
                     .subscribe(() => {
@@ -461,6 +461,8 @@ describe('TemplateBuilderComponent', () => {
             let mockGrid: {
                 disable: Mock;
                 enable: Mock;
+                load: Mock;
+                save: Mock;
                 el: { querySelectorAll: Mock };
             };
 

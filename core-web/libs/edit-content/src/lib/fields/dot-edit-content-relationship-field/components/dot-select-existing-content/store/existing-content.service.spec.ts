@@ -259,7 +259,7 @@ describe('ExistingContentService', () => {
                 const contentletsWithoutTitle = [
                     createFakeContentlet({
                         identifier: '789',
-                        title: null,
+                        title: null as unknown as string,
                         languageId: 1
                     })
                 ];
@@ -516,7 +516,9 @@ describe('ExistingContentService', () => {
             new Promise<void>((done) => {
                 spectator.service
                     .getColumnsAndContent(mockContentTypeId)
-                    .subscribe(([columns, response]) => {
+                    // The service types the emission as nullable; this path always emits.
+                    .subscribe((emission) => {
+                        const [columns, response] = emission!;
                         // Verify columns
                         expect(columns.length).toBeGreaterThan(0);
                         expect(columns).toEqual(expectedColumns);
@@ -526,15 +528,15 @@ describe('ExistingContentService', () => {
                         const item0 = {
                             identifier: response.contentlets[0].identifier,
                             title: response.contentlets[0].title,
-                            field: response.contentlets[0].field,
-                            description: response.contentlets[0].description,
+                            field: response.contentlets[0]['field'],
+                            description: response.contentlets[0]['description'],
                             language: response.contentlets[0].language
                         };
                         const item1 = {
                             identifier: response.contentlets[1].identifier,
                             title: response.contentlets[1].title,
-                            field: response.contentlets[1].field,
-                            description: response.contentlets[1].description,
+                            field: response.contentlets[1]['field'],
+                            description: response.contentlets[1]['description'],
                             language: response.contentlets[1].language
                         };
                         expect(item0).toEqual({
@@ -569,7 +571,9 @@ describe('ExistingContentService', () => {
 
                 spectator.service
                     .getColumnsAndContent(mockContentTypeId)
-                    .subscribe(([columns, response]) => {
+                    // The service types the emission as nullable; this path always emits.
+                    .subscribe((emission) => {
+                        const [columns, response] = emission!;
                         expect(columns.length).toBeGreaterThan(0);
                         expect(response.contentlets).toEqual([]);
                         expect(response.totalResults).toBe(0);

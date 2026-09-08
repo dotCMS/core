@@ -1246,7 +1246,7 @@ describe('DotSiteComponent', () => {
 
         it('should unsubscribe from site events on destroy', () => {
             const sub = spectator.component['siteEventsSub'];
-            const unsubscribeSpy = vi.spyOn(sub, 'unsubscribe');
+            const unsubscribeSpy = vi.spyOn(sub!, 'unsubscribe');
             spectator.component.ngOnDestroy();
             expect(unsubscribeSpy).toHaveBeenCalled();
         });

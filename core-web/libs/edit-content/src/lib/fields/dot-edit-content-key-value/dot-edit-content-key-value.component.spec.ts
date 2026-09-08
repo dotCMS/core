@@ -130,20 +130,20 @@ describe('DotEditContentKeyValueComponent', () => {
                     KEY_VALUE_FIELD_MOCK.variable
                 );
 
-                control.valueChanges.subscribe((value) => {
+                control!.valueChanges.subscribe((value) => {
                     // JSON text, not an object, so key order survives.
                     expect(JSON.parse(value)).toEqual({ key14: 'value14' });
                     done();
                 });
 
                 const dotKeyValue = spectator.query(DotKeyValueComponent);
-                dotKeyValue.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
-                expect(control.touched).toBeTruthy();
+                dotKeyValue!.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
+                expect(control!.touched).toBeTruthy();
             }));
 
         it('should call updateField method when DotKeyValueComponent emits updatedList', () => {
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
-            const updateFieldSpy = vi.spyOn(keyValueField, 'updateField');
+            const updateFieldSpy = vi.spyOn(keyValueField!, 'updateField');
             spectator.triggerEventHandler(DotKeyValueComponent, 'updatedList', [
                 { key: 'testKey', hidden: false, value: 'testValue' }
             ]);

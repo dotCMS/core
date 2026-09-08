@@ -9,6 +9,7 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
+    DotCMSPageWorkflowState,
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
@@ -262,7 +263,7 @@ describe('DotPageStore', () => {
     });
 
     it('should load null Favorite Pages data when error on initial data fetch', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
         vi.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         // Mock sessionStorage.getItem
         (sessionStorage.getItem as Mock).mockReturnValue(null);
@@ -583,7 +584,7 @@ describe('DotPageStore', () => {
     });
 
     it('should handle error when get Pages value fails', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
         vi.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
 
@@ -726,7 +727,7 @@ describe('DotPageStore', () => {
 
                 expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
 
-                menuActions[7].command({ originalEvent: createFakeEvent('click') });
+                menuActions[7].command!({ originalEvent: createFakeEvent('click') });
 
                 expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                     assetIdentifier: item.identifier,
@@ -879,7 +880,9 @@ describe('DotPageStore', () => {
             };
 
             vi.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
-                of({ actions, page })
+                // mockPublishAction carries `owner: null`; DotCMSWorkflowAction types it
+                // as `string | undefined`.
+                of({ actions, page } as unknown as DotCMSPageWorkflowState)
             );
             vi.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
                 throwError(() => error)
@@ -888,11 +891,13 @@ describe('DotPageStore', () => {
             dotPageStore.showActionsMenu({ item, actionMenuDomId: 'test1' });
 
             dotPageStore.state$.subscribe(({ pages }) => {
-                const menuAction = pages.menuActions;
-                const publishAction = menuAction.find(
+                const publishAction = pages?.menuActions?.find(
                     (action) => action.label === mockPublishAction.name
                 );
-                publishAction.command({ originalEvent: createFakeEvent('click') });
+                // state$ replays intermediate states before the actions land.
+                if (!publishAction) return;
+
+                publishAction.command!({ originalEvent: createFakeEvent('click') });
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
                 done();

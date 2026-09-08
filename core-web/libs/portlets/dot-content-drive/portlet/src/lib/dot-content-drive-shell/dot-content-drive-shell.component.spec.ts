@@ -237,7 +237,7 @@ describe('DotContentDriveShellComponent', () => {
                     setTreeForceCollapsed: vi.fn(),
                     path: vi.fn().mockReturnValue('/test/path'),
                     filters: filtersSignal,
-                    clearFilters: jest.fn(),
+                    clearFilters: vi.fn(),
                     status: statusSignal,
                     sort: vi
                         .fn()
@@ -386,11 +386,11 @@ describe('DotContentDriveShellComponent', () => {
             // `ZIndexUtils` is a module-level singleton shared by the whole file, and a dialog torn
             // down by an earlier test leaves its entry behind: this suite reads 1102 with nothing
             // visible. Pinned to an empty stack so each test states its own overlay state.
-            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(0);
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(0);
             spectator.detectChanges();
         });
 
-        afterEach(() => jest.restoreAllMocks());
+        afterEach(() => vi.restoreAllMocks());
 
         describe('Escape', () => {
             it('should clear the selection and leave the filters alone', () => {
@@ -447,7 +447,7 @@ describe('DotContentDriveShellComponent', () => {
             // listener, which never consults `defaultPrevented`. Without declining here, Escape to
             // dismiss a dialog would also wipe the filters or the selection it was operating on.
             it('should do nothing while an overlay is above the listing', () => {
-                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
                 filtersSignal.set({ contentType: 'Blog' });
                 spectator.detectChanges();
@@ -464,7 +464,7 @@ describe('DotContentDriveShellComponent', () => {
             // matters is that the shell does not act, which the test above covers; that declining
             // falls through to the next claimant is covered in the registry's own spec.
             it('should resume clearing once the overlay closes', () => {
-                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
                 spectator.detectChanges();
 
@@ -523,7 +523,7 @@ describe('DotContentDriveShellComponent', () => {
             // closes. Declining also leaves the combination to whatever is on top, which may want
             // it — a rich text surface inside a dialog reads Cmd+B as bold.
             it('should do nothing while an overlay is above the listing', () => {
-                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 store.isTreeExpanded.mockReturnValue(true);
 
                 pressModB();
@@ -532,7 +532,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should resume toggling once the overlay closes', () => {
-                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 store.isTreeExpanded.mockReturnValue(true);
 
                 pressModB();
@@ -544,7 +544,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should leave the browser default alone when it declines', () => {
-                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
 
                 const event = pressModB();
 
@@ -1613,7 +1613,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should hide the button popover when a drag-and-drop opens the modal', () => {
             openViaButton(TARGET_FOLDER_DATA);
-            const hideSpy = vi.spyOn(spectator.component.$uploadSelectorPopover(), 'hide');
+            const hideSpy = vi.spyOn(spectator.component.$uploadSelectorPopover()!, 'hide');
 
             dropFiles();
             spectator.detectChanges();

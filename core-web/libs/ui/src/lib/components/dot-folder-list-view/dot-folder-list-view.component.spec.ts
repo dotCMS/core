@@ -3023,7 +3023,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
         };
 
-        const spyOnSelection = () => jest.spyOn(spectator.component.selectionChange, 'emit');
+        const spyOnSelection = () => vi.spyOn(spectator.component.selectionChange, 'emit');
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
@@ -3092,7 +3092,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should never paginate from a range', () => {
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             arrow(mockItems.length - 1, 'ArrowDown', true);
 
@@ -3162,7 +3162,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
         };
 
-        const spyOnSelection = () => jest.spyOn(spectator.component.selectionChange, 'emit');
+        const spyOnSelection = () => vi.spyOn(spectator.component.selectionChange, 'emit');
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
@@ -3261,7 +3261,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('selection', [mockItems[0]]);
             spectator.detectChanges();
 
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             extendRange(0, 2);
 
@@ -3402,7 +3402,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should not change the selection when moving focus', () => {
             renderRows();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             pressOnRow(0, 'ArrowDown');
 
@@ -3412,7 +3412,7 @@ describe('DotFolderListViewComponent', () => {
         // T009
         it('should keep focus on the last row rather than paginating', () => {
             renderRows();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             const lastIndex = mockItems.length - 1;
 
             pressOnRow(lastIndex, 'ArrowDown');
@@ -3453,7 +3453,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('items', mockItems);
             spectator.setInput('readOnly', true);
             spectator.detectChanges();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             pressOnRow(0, 'ArrowDown');
 

@@ -413,7 +413,7 @@ describe('DotUvePaletteListComponent', () => {
             expect(favoritesPanelComponent).toBeTruthy();
 
             // Create spy on the component's toggle method
-            const toggleSpy = vi.spyOn(favoritesPanelComponent, 'toggle');
+            const toggleSpy = vi.spyOn(favoritesPanelComponent!, 'toggle');
 
             // Trigger click on the add button
             const mockEvent = new MouseEvent('click');
@@ -559,7 +559,7 @@ describe('DotUvePaletteListComponent', () => {
             const menuComponent = spectator.query(Menu);
             expect(menuComponent).toBeTruthy();
 
-            const showSpy = vi.spyOn(menuComponent, 'show');
+            const showSpy = vi.spyOn(menuComponent!, 'show');
             const mockEvent = new MouseEvent('click');
             spectator.triggerEventHandler('[data-testid="sort-menu-button"]', 'onClick', mockEvent);
 
@@ -576,7 +576,7 @@ describe('DotUvePaletteListComponent', () => {
             const contextMenuComponent = spectator.query(ContextMenu);
             expect(contextMenuComponent).toBeTruthy();
 
-            const showSpy = vi.spyOn(contextMenuComponent, 'show');
+            const showSpy = vi.spyOn(contextMenuComponent!, 'show');
             const mockEvent = new MouseEvent('contextmenu');
             spectator.triggerEventHandler('dot-uve-palette-contenttype', 'contextMenu', mockEvent);
 
@@ -998,7 +998,7 @@ describe('DotUvePaletteListComponent', () => {
             const contextMenuComponent = spectator.query(ContextMenu);
             expect(contextMenuComponent).toBeTruthy();
 
-            const showSpy = vi.spyOn(contextMenuComponent, 'show');
+            const showSpy = vi.spyOn(contextMenuComponent!, 'show');
             spectator.triggerEventHandler(
                 'dot-uve-palette-contenttype',
                 'contextMenu',

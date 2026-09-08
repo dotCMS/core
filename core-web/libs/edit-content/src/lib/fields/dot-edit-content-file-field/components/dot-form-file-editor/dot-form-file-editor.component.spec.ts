@@ -123,16 +123,17 @@ describe('DotFormFileEditorComponent', () => {
     describe('Content validation (Monaco markers)', () => {
         // Builds a single Monaco marker of the given severity. Only `severity`/`message`
         // matter to the gate; the position fields just satisfy the marker shape.
-        const marker = (severity: number, message = 'diagnostic') => ({
-            severity,
-            message,
-            startLineNumber: 1,
-            startColumn: 1,
-            endLineNumber: 1,
-            endColumn: 1,
-            owner: 'javascript',
-            resource: null
-        });
+        const marker = (severity: number, message = 'diagnostic') =>
+            ({
+                severity,
+                message,
+                startLineNumber: 1,
+                startColumn: 1,
+                endLineNumber: 1,
+                endColumn: 1,
+                owner: 'javascript',
+                resource: null
+            }) as unknown as monaco.editor.IMarker;
 
         // Drives the editor to a given set of markers AND mirrors what ngx-monaco-editor's
         // own Validator would then set on the control (any marker -> a single `monaco` error).
@@ -146,7 +147,9 @@ describe('DotFormFileEditorComponent', () => {
         };
 
         const spyUpload = () =>
-            vi.spyOn(spectator.component.store, 'uploadFile').mockImplementation(() => undefined);
+            vi.spyOn(spectator.component.store, 'uploadFile').mockImplementation(() => ({
+                destroy: () => undefined
+            }));
 
         beforeEach(() => {
             spectator.component.ngOnInit();

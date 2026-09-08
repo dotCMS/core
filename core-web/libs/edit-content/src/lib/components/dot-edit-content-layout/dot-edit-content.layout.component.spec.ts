@@ -199,7 +199,8 @@ describe('EditContentLayoutComponent', () => {
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,
-            isBetaMessageVisible: true
+            isBetaMessageVisible: true,
+            localeSelectorTab: 'all'
         });
 
         dotContentTypeService.updateContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -1066,10 +1067,10 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
             const confirmSpy = vi.spyOn(dsConfirmService, 'confirm');
 
-            const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
-            mockDynamicDialog.dialog.close(mockEvent);
+            const preventDefault = vi.fn();
+            mockDynamicDialog.dialog.close({ preventDefault } as unknown as Event);
 
-            expect((mockEvent as { preventDefault: Mock }).preventDefault).toHaveBeenCalled();
+            expect(preventDefault).toHaveBeenCalled();
             expect(confirmSpy).toHaveBeenCalledTimes(1);
             expect(pDialogCloseMock).not.toHaveBeenCalled();
         });

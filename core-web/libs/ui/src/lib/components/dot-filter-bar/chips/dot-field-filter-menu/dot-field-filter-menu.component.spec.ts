@@ -97,7 +97,7 @@ describe('DotFieldFilterMenuComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         filters = spectator.inject(DOT_FILTER_FACADE) as FilterFacadeMock;
-        host = spectator.inject(DOT_FIELD_FILTER_HOST) as Mocked<FieldFilterHostMock>;
+        host = spectator.inject(DOT_FIELD_FILTER_HOST) as unknown as Mocked<FieldFilterHostMock>;
         contentTypeService = spectator.inject(DotContentTypeService, true);
     });
 

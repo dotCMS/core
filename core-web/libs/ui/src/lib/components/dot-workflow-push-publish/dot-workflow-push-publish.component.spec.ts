@@ -220,9 +220,9 @@ describe('DotWorkflowPushPublishComponent', () => {
         });
 
         it('should default the timezone to the browser zone when the server knows it', () => {
-            vi.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
-                resolvedOptions: () => ({ timeZone: 'Europe/Madrid' })
-            } as unknown as Intl.DateTimeFormat);
+            vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+                timeZone: 'Europe/Madrid'
+            } as Intl.ResolvedDateTimeFormatOptions);
 
             spectator = createComponent();
             const values = captureValues();
@@ -233,9 +233,9 @@ describe('DotWorkflowPushPublishComponent', () => {
 
         it('should leave the timezone unset when the server does not know the browser zone', () => {
             // Better unset than a zone the backend would reject.
-            vi.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
-                resolvedOptions: () => ({ timeZone: 'Mars/Olympus_Mons' })
-            } as unknown as Intl.DateTimeFormat);
+            vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+                timeZone: 'Mars/Olympus_Mons'
+            } as Intl.ResolvedDateTimeFormatOptions);
 
             spectator = createComponent();
             const values = captureValues();

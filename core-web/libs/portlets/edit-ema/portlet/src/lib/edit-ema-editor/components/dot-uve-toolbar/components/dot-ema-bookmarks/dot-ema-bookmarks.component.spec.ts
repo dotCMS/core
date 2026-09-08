@@ -115,9 +115,7 @@ describe('DotEmaBookmarksComponent', () => {
         // so Angular threw NG0201 from inside the click handler and reported it
         // asynchronously, which Jest dropped. The component ignores the returned ref,
         // and the assertion below is only about the arguments.
-        const dialogServiceOpenSpy = vi
-            .spyOn(dialogService, 'open')
-            .mockImplementation(() => undefined);
+        const dialogServiceOpenSpy = vi.spyOn(dialogService, 'open').mockImplementation(() => null);
 
         const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
 

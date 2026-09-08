@@ -937,7 +937,7 @@ describe('DotContentDriveSidebarComponent', () => {
         beforeEach(() => {
             scrollIntoView = vi.fn();
             const treeFolder = spectator.query(DotTreeFolderComponent);
-            vi.spyOn(treeFolder.elementRef.nativeElement, 'querySelector').mockReturnValue({
+            vi.spyOn(treeFolder!.elementRef.nativeElement, 'querySelector').mockReturnValue({
                 scrollIntoView
             } as unknown as Element);
         });

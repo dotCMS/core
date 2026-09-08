@@ -942,7 +942,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 beforeEach(() => {
                     alertConfirmService = spectator.inject(DotAlertConfirmService);
                     folderService = spectator.inject(DotFolderService);
-                    folderService.deleteFolder = vi.fn().mockReturnValue(of(true));
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(of(true));
                     // The delete path is built from the browsed site, so it has to be a real one
                     // rather than the store's SYSTEM_HOST default.
                     store.initContentDrive({
@@ -1011,7 +1011,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(store.loadFolders).toHaveBeenCalled();
                 });
@@ -1024,7 +1024,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(folderService.deleteFolder).not.toHaveBeenCalled();
                     expect(messageService.add).toHaveBeenCalledWith(
@@ -1033,14 +1033,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not refetch the folder tree when the delete fails', async () => {
-                    folderService.deleteFolder = vi
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
+                        throwError(() => new Error('nope'))
+                    );
                     vi.spyOn(store, 'loadFolders');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(store.loadFolders).not.toHaveBeenCalled();
                 });
@@ -1051,7 +1051,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
                     // Run whatever the confirm was armed with, as accepting the dialog would.
-                    const confirmArgs = (alertConfirmService.confirm as Mock).mock.lastCall[0];
+                    const confirmArgs = (alertConfirmService.confirm as Mock).mock.lastCall![0];
                     confirmArgs.accept();
 
                     expect(folderService.deleteFolder).toHaveBeenCalledWith(
@@ -1061,14 +1061,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not reload the drive when the delete fails', async () => {
-                    folderService.deleteFolder = vi
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
+                        throwError(() => new Error('nope'))
+                    );
                     vi.spyOn(store, 'reloadContentDrive');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(store.reloadContentDrive).not.toHaveBeenCalled();
                 });
@@ -1084,7 +1084,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                         expect(store.setPath).toHaveBeenCalledWith('/');
                     });
@@ -1095,7 +1095,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                         expect(store.setPath).toHaveBeenCalledWith('/');
                     });
@@ -1108,7 +1108,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                         expect(store.setPath).not.toHaveBeenCalled();
                     });
@@ -1118,13 +1118,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // `handle(error)` call entirely would keep them green while the delete failed in
                 // total silence. This is the AC clause that says a failure reaches the user.
                 it('should surface a failed delete through the HTTP error handler', async () => {
-                    folderService.deleteFolder = vi
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
+                        throwError(() => new Error('nope'))
+                    );
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(
                         spectator.inject(DotHttpErrorManagerService, true).handle

@@ -1,10 +1,17 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import {
+    ActivatedRouteSnapshot,
+    CanActivateFn,
+    GuardResult,
+    Router,
+    RouterStateSnapshot,
+    UrlTree
+} from '@angular/router';
 
 import { DotCurrentUserService, DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -21,6 +28,12 @@ const mockRoute = {} as ActivatedRouteSnapshot;
 function mockState(url: string): RouterStateSnapshot {
     return { url } as RouterStateSnapshot;
 }
+
+// Both guards return an Observable; CanActivateFn only promises the wider MaybeAsync union.
+const runGuard = (guard: CanActivateFn, url: string): Observable<GuardResult> =>
+    TestBed.runInInjectionContext(() =>
+        guard(mockRoute, mockState(url))
+    ) as Observable<GuardResult>;
 
 describe('styleEditorTabGuard', () => {
     let dotPropertiesService: DotPropertiesService;
@@ -52,9 +65,7 @@ describe('styleEditorTabGuard', () => {
         new Promise<void>((done) => {
             setup(true);
 
-            TestBed.runInInjectionContext(() =>
-                styleEditorTabGuard(mockRoute, mockState(STYLE_EDITOR_URL))
-            ).subscribe((result) => {
+            runGuard(styleEditorTabGuard, STYLE_EDITOR_URL).subscribe((result) => {
                 expect(result).toBe(true);
                 expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
                     FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
@@ -67,9 +78,7 @@ describe('styleEditorTabGuard', () => {
         new Promise<void>((done) => {
             setup(false);
 
-            TestBed.runInInjectionContext(() =>
-                styleEditorTabGuard(mockRoute, mockState(STYLE_EDITOR_URL))
-            ).subscribe((result) => {
+            runGuard(styleEditorTabGuard, STYLE_EDITOR_URL).subscribe((result) => {
                 expect(router.parseUrl).toHaveBeenCalledWith(FIELDS_URL);
                 expect(result).not.toBe(false);
                 done();
@@ -81,9 +90,7 @@ describe('styleEditorTabGuard', () => {
             setup(false);
             const urlWithQuery = `${STYLE_EDITOR_URL}?foo=bar`;
 
-            TestBed.runInInjectionContext(() =>
-                styleEditorTabGuard(mockRoute, mockState(urlWithQuery))
-            ).subscribe(() => {
+            runGuard(styleEditorTabGuard, urlWithQuery).subscribe(() => {
                 expect(router.parseUrl).toHaveBeenCalledWith(`${FIELDS_URL}?foo=bar`);
                 done();
             });
@@ -122,9 +129,7 @@ describe('permissionsTabGuard', () => {
         new Promise<void>((done) => {
             setup(true);
 
-            TestBed.runInInjectionContext(() =>
-                permissionsTabGuard(mockRoute, mockState(PERMISSIONS_URL))
-            ).subscribe((result) => {
+            runGuard(permissionsTabGuard, PERMISSIONS_URL).subscribe((result) => {
                 expect(result).toBe(true);
                 expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith(
                     'permissions'
@@ -137,9 +142,7 @@ describe('permissionsTabGuard', () => {
         new Promise<void>((done) => {
             setup(false);
 
-            TestBed.runInInjectionContext(() =>
-                permissionsTabGuard(mockRoute, mockState(PERMISSIONS_URL))
-            ).subscribe((result) => {
+            runGuard(permissionsTabGuard, PERMISSIONS_URL).subscribe((result) => {
                 expect(router.parseUrl).toHaveBeenCalledWith(FIELDS_URL);
                 expect(result).not.toBe(false);
                 done();
@@ -151,9 +154,7 @@ describe('permissionsTabGuard', () => {
             setup(false);
             const urlWithQuery = `${PERMISSIONS_URL}?foo=bar`;
 
-            TestBed.runInInjectionContext(() =>
-                permissionsTabGuard(mockRoute, mockState(urlWithQuery))
-            ).subscribe(() => {
+            runGuard(permissionsTabGuard, urlWithQuery).subscribe(() => {
                 expect(router.parseUrl).toHaveBeenCalledWith(`${FIELDS_URL}?foo=bar`);
                 done();
             });

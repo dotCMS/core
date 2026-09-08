@@ -301,7 +301,7 @@ describe('DotContentTypesPortletComponent', () => {
         comp.showTable = true;
         fixture.detectChanges();
 
-        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
         expect(crudService.delete).toHaveBeenCalledTimes(1);

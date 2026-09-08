@@ -210,7 +210,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const confirmClose = vi.spyOn(layout!, 'confirmClose');
         const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
@@ -235,7 +235,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const confirmClose = vi.spyOn(layout!, 'confirmClose');
         const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
@@ -292,7 +292,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        vi.spyOn(layout, 'confirmClose').mockImplementation(() => {
+        vi.spyOn(layout!, 'confirmClose').mockImplementation(() => {
             /* user chose "Keep editing" → never calls onProceed */
         });
 
@@ -310,7 +310,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const confirmClose = vi.spyOn(layout!, 'confirmClose');
         const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
@@ -326,7 +326,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const confirmClose = vi.spyOn(layout!, 'confirmClose');
         const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
@@ -347,7 +347,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const confirmClose = vi.spyOn(layout!, 'confirmClose');
         const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
@@ -365,7 +365,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        vi.spyOn(layout, 'confirmClose').mockImplementation(() => {
+        vi.spyOn(layout!, 'confirmClose').mockImplementation(() => {
             /* user chose "Keep editing" → never calls onProceed */
         });
 
@@ -403,7 +403,9 @@ describe('DotEditContentSidePanelComponent', () => {
         saved$.next(contentlet);
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        vi.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) => onProceed());
+        vi.spyOn(layout!, 'confirmClose').mockImplementation((onProceed: () => void) =>
+            onProceed()
+        );
 
         clickButton('side-panel-close');
 
@@ -418,7 +420,9 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        vi.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) => onProceed());
+        vi.spyOn(layout!, 'confirmClose').mockImplementation((onProceed: () => void) =>
+            onProceed()
+        );
 
         clickButton('side-panel-close');
 
@@ -451,10 +455,10 @@ describe('DotEditContentSidePanelComponent', () => {
         // is told to proceed so the whole path runs; that the guard is consulted at all is the point.
         it('should close the panel through the unsaved-changes guard', () => {
             const layout = spectator.query(DotEditContentLayoutComponent);
-            const confirmClose = jest
-                .spyOn(layout, 'confirmClose')
+            const confirmClose = vi
+                .spyOn(layout!, 'confirmClose')
                 .mockImplementation((proceed: () => void) => proceed());
-            const closed = jest.fn();
+            const closed = vi.fn();
             spectator.output('closed').subscribe(closed);
 
             pressEscape();
@@ -470,8 +474,8 @@ describe('DotEditContentSidePanelComponent', () => {
         });
 
         it('should not close while another overlay is stacked above', () => {
-            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(Number.MAX_SAFE_INTEGER);
-            const closed = jest.fn();
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(Number.MAX_SAFE_INTEGER);
+            const closed = vi.fn();
             spectator.output('closed').subscribe(closed);
 
             pressEscape();
@@ -480,7 +484,7 @@ describe('DotEditContentSidePanelComponent', () => {
         });
 
         it('should still consume the key while an overlay is above, so the portlet stays untouched', () => {
-            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(Number.MAX_SAFE_INTEGER);
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(Number.MAX_SAFE_INTEGER);
 
             const event = pressEscape();
 

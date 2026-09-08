@@ -674,8 +674,8 @@ describe('Utility Functions', () => {
                 };
                 mockDotFolderService.searchFolders.mockImplementation(({ path }) =>
                     searchResult(
-                        childOf[path]
-                            ? [createFakeFolderSearchView({ path, name: childOf[path] })]
+                        childOf[path!]
+                            ? [createFakeFolderSearchView({ path, name: childOf[path!] })]
                             : []
                     )
                 );
@@ -885,13 +885,13 @@ describe('Utility Functions', () => {
             }));
 
         it('should propagate service errors', () =>
-            new Promise<void>((done) => {
+            new Promise<void>((done, fail) => {
                 mockDotFolderService.searchFolders.mockReturnValue(
                     throwError(() => new Error('Service error'))
                 );
 
                 getFolderHierarchyByPath('/main', SITE, mockDotFolderService).subscribe({
-                    next: () => done(new Error('Should have thrown an error')),
+                    next: () => fail(new Error('Should have thrown an error')),
                     error: (error) => {
                         expect(error.message).toBe('Service error');
                         done();
@@ -915,7 +915,7 @@ describe('Utility Functions', () => {
                             ? name
                                 ? page(['zzz'], '/', 1)
                                 : page(['a-one', 'a-two'], '/', 253)
-                            : page([], path, 0)
+                            : page([], path!, 0)
                     );
 
                     getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
@@ -945,7 +945,7 @@ describe('Utility Functions', () => {
                                 : page(['a-one'], '/parent/', 253);
                         }
 
-                        return page([], path, 0);
+                        return page([], path!, 0);
                     });
 
                     getFolderHierarchyByPath('/parent/zzz/', SITE, mockDotFolderService).subscribe({
@@ -964,7 +964,7 @@ describe('Utility Functions', () => {
             it('should not look the ancestor up when it is already on the first page', () =>
                 new Promise<void>((done) => {
                     mockDotFolderService.searchFolders.mockImplementation(({ path }) =>
-                        path === '/' ? page(['zzz'], '/', 1) : page([], path, 0)
+                        path === '/' ? page(['zzz'], '/', 1) : page([], path!, 0)
                     );
 
                     getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
@@ -982,7 +982,7 @@ describe('Utility Functions', () => {
                     // What a folder the user cannot READ looks like: filtered out of every response,
                     // never a 403. It must not be pinned, and the readable siblings must still render.
                     mockDotFolderService.searchFolders.mockImplementation(({ path, name }) =>
-                        path === '/' && !name ? page(['a-one'], '/', 253) : page([], path, 0)
+                        path === '/' && !name ? page(['a-one'], '/', 253) : page([], path!, 0)
                     );
 
                     getFolderHierarchyByPath('/secret/', SITE, mockDotFolderService).subscribe({
@@ -995,7 +995,7 @@ describe('Utility Functions', () => {
                 }));
 
             it('should leave the tree standing when the pin request itself fails', () =>
-                new Promise<void>((done) => {
+                new Promise<void>((done, fail) => {
                     // The pin is a best-effort extra request inside a forkJoin. Letting a transient
                     // failure through would reject the whole hierarchy load, which loadFolders turns
                     // into an empty tree — costing every readable folder to save one pin.
@@ -1004,7 +1004,7 @@ describe('Utility Functions', () => {
                             return throwError(() => new Error('Service error'));
                         }
 
-                        return path === '/' ? page(['a-one'], '/', 253) : page([], path, 0);
+                        return path === '/' ? page(['a-one'], '/', 253) : page([], path!, 0);
                     });
 
                     getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
@@ -1012,7 +1012,7 @@ describe('Utility Functions', () => {
                             expect(levels[0].folders.map(({ path }) => path)).toEqual(['/a-one/']);
                             done();
                         },
-                        error: () => done(new Error('Should not have rejected the hierarchy load'))
+                        error: () => fail(new Error('Should not have rejected the hierarchy load'))
                     });
                 }));
 
@@ -1028,7 +1028,7 @@ describe('Utility Functions', () => {
                             ? name
                                 ? page(['zzz'], '/', 1)
                                 : page(fullPage, '/', FOLDER_TREE_HIERARCHY_PAGE_SIZE + 53)
-                            : page([], path, 0)
+                            : page([], path!, 0)
                     );
 
                     getFolderHierarchyByPath('/zzz/', SITE, mockDotFolderService).subscribe({
@@ -1173,7 +1173,7 @@ describe('Utility Functions', () => {
             }));
 
         it('should normalize a parent path that is missing its trailing slash', () =>
-            new Promise<void>((done) => {
+            new Promise<void>((done, fail) => {
                 mockDotFolderService.searchFolders.mockReturnValue(
                     searchResult([
                         createFakeFolderSearchView({ id: 'x', name: 'sub', path: '/main' })
@@ -1187,7 +1187,7 @@ describe('Utility Functions', () => {
 
                         // Guard before isTreeNodeContentData — `data` is optional on TreeNode.
                         if (!data || !isTreeNodeContentData(data)) {
-                            done(new Error('Expected a content folder node with path data'));
+                            fail(new Error('Expected a content folder node with path data'));
 
                             return;
                         }
@@ -1236,13 +1236,13 @@ describe('Utility Functions', () => {
             }));
 
         it('should propagate service errors', () =>
-            new Promise<void>((done) => {
+            new Promise<void>((done, fail) => {
                 mockDotFolderService.searchFolders.mockReturnValue(
                     throwError(() => new Error('Service error'))
                 );
 
                 getFolderNodesByPath('/main/', SITE, mockDotFolderService).subscribe({
-                    next: () => done(new Error('Should have thrown an error')),
+                    next: () => fail(new Error('Should have thrown an error')),
                     error: (error) => {
                         expect(error.message).toBe('Service error');
                         done();

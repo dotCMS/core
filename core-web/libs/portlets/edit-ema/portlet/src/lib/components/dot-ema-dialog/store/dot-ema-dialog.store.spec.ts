@@ -16,6 +16,7 @@ import { DotActionUrlService } from '../../../services/dot-action-url/dot-action
 import { LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import { PAYLOAD_MOCK } from '../../../shared/mocks';
+import { ActionPayload, EditContentletPayload } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
@@ -26,6 +27,18 @@ const mockUveStore = {
     pageVariantId: signal(TEST_VARIANT),
     pageAsset: signal({ site: { identifier: TEST_SITE_ID } })
 };
+
+/**
+ * `ComponentStore.updater()` falls back to a no-payload signature when the updater's return
+ * type does not line up with the state — a pre-existing strict-mode issue in
+ * dot-ema-dialog.store.ts, not in these tests. This view restores the intended payloads.
+ */
+const updaters = (store: DotEmaDialogStore) =>
+    store as unknown as {
+        editContentlet: (payload: EditContentletPayload) => void;
+        editUrlContentMapContentlet: (payload: EditContentletPayload) => void;
+        addFormContentlet: (payload: ActionPayload) => void;
+    };
 
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
@@ -121,7 +134,7 @@ describe('DotEmaDialogStoreService', () => {
 
     it('should initialize with edit iframe properties', () =>
         new Promise<void>((done) => {
-            spectator.service.editContentlet({
+            updaters(spectator.service).editContentlet({
                 inode: '123',
                 title: 'test'
             });
@@ -157,7 +170,7 @@ describe('DotEmaDialogStoreService', () => {
 
     it('should initialize with edit iframe properties and with clientAction', () =>
         new Promise<void>((done) => {
-            spectator.service.editContentlet({
+            updaters(spectator.service).editContentlet({
                 inode: '123',
                 title: 'test',
                 clientAction: DotCMSUVEAction.EDIT_CONTENTLET
@@ -194,7 +207,7 @@ describe('DotEmaDialogStoreService', () => {
 
     it('should initialize with edit iframe properties', () =>
         new Promise<void>((done) => {
-            spectator.service.editUrlContentMapContentlet({
+            updaters(spectator.service).editUrlContentMapContentlet({
                 inode: '123',
                 title: 'test'
             });
@@ -258,7 +271,7 @@ describe('DotEmaDialogStoreService', () => {
 
     it('should initialize with Form Iframe properties', () =>
         new Promise<void>((done) => {
-            spectator.service.addFormContentlet(PAYLOAD_MOCK);
+            updaters(spectator.service).addFormContentlet(PAYLOAD_MOCK);
 
             spectator.service.dialogState$.subscribe((state) => {
                 expect(state).toEqual({

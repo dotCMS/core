@@ -84,7 +84,7 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(asset),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -136,7 +136,7 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
             // Never emits: the dialog stays open for the duration of the test.
             onClose: new Subject(),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         const button = editor.ui.registry.getAll().buttons['dotAddImage'];
@@ -159,7 +159,7 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: new Subject(),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -184,7 +184,7 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(undefined),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
         button.onAction();
 
         expect(dialogService.open).toHaveBeenCalledTimes(2);

@@ -274,8 +274,8 @@ describe('DotCustomEventHandlerService', () => {
 
     it('should set colors in the ui', () => {
         vi.spyOn(dotUiColorsService, 'setColors');
-        const fakeHtmlEl = { hello: 'html' };
-        vi.spyOn<any>(document, 'querySelector').mockReturnValue(fakeHtmlEl);
+        const fakeHtmlEl = { hello: 'html' } as unknown as HTMLElement;
+        vi.spyOn(document, 'querySelector').mockReturnValue(fakeHtmlEl);
 
         service.handle(
             new CustomEvent('ng-event', {

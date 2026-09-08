@@ -15,6 +15,7 @@ import { DotPageAssetLayoutRow, DotPageAssetLayoutColumn, DotCMSLayout } from '@
 import { DotRowReorderComponent } from './dot-row-reorder.component';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../../../store/features/page-api/withPageApi';
 
 const MOCK_COLUMNS: DotPageAssetLayoutColumn[] = [
     {
@@ -80,6 +81,11 @@ describe('DotRowReorderComponent', () => {
     let spectator: Spectator<DotRowReorderComponent>;
     let component: DotRowReorderComponent;
     let mockUVEStore: InstanceType<typeof UVEStore>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => mockUVEStore as unknown as WithPageApiMethods;
     let mockLayoutSignal: ReturnType<typeof signal<DotCMSLayout | null>>;
 
     const createComponent = createComponentFactory({
@@ -429,7 +435,7 @@ describe('DotRowReorderComponent', () => {
                 currentIndex: 1,
                 container,
                 previousContainer: container
-            } as CdkDragDrop<DotPageAssetLayoutColumn[]>;
+            } as unknown as CdkDragDrop<DotPageAssetLayoutColumn[]>;
 
             spectator.triggerEventHandler(
                 '[data-testid="row-columns"]',
@@ -452,9 +458,9 @@ describe('DotRowReorderComponent', () => {
                 currentIndex: 1,
                 container: { data: [] },
                 previousContainer: { data: targetRow.columns }
-            } as CdkDragDrop<DotPageAssetLayoutColumn[]>;
+            } as unknown as CdkDragDrop<DotPageAssetLayoutColumn[]>;
 
-            const updateRowsSpy = vi.spyOn(mockUVEStore, 'updateRows');
+            const updateRowsSpy = vi.spyOn(pageApi(), 'updateRows');
             spectator.triggerEventHandler(
                 '[data-testid="row-columns"]',
                 'cdkDropListDropped',

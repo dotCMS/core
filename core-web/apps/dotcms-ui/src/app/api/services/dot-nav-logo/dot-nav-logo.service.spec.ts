@@ -15,7 +15,9 @@ describe('DotNavLogoService', () => {
 
     it('should not set a new logo', () =>
         new Promise<void>((done) => {
-            service.setLogo(null);
+            // The company-info payload can carry a null logo; setLogo's signature
+            // does not admit it yet, so the null path is exercised through a cast.
+            service.setLogo(null as unknown as string);
             service.navBarLogo$.subscribe((logo) => {
                 expect(logo).toBeNull();
                 done();

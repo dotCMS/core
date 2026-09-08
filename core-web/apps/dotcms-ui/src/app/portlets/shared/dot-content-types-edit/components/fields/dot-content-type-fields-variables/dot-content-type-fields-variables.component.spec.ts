@@ -7,7 +7,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotHttpErrorManagerService, DotMessageDisplayService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
@@ -209,7 +209,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         beforeEach(() => {
             httpErrorManager = de.injector.get(DotHttpErrorManagerService);
-            vi.spyOn(httpErrorManager, 'handle').mockReturnValue(of(null));
+            vi.spyOn(httpErrorManager, 'handle').mockReturnValue(
+                of({ redirected: false, status: HttpCode.SERVER_ERROR })
+            );
             vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
         });

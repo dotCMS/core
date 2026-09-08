@@ -9,6 +9,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -51,7 +52,7 @@ describe('ForgotPasswordComponent', () => {
             const loginPageState = spectator.inject(
                 DotLoginPageStateService
             ) as unknown as MockDotLoginPageStateService;
-            loginPageState.get().subscribe((loginInfo) => {
+            loginPageState.get().subscribe((loginInfo: DotLoginInformation) => {
                 expect(loginInfo.i18nMessagesMap['forgot-password']).toEqual('Forgot Password');
                 expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toContain('Email Address');
                 expect(loginInfo.i18nMessagesMap['cancel']).toContain('Cancel');
@@ -79,7 +80,7 @@ describe('ForgotPasswordComponent', () => {
         control.markAsDirty();
         spectator.detectChanges();
 
-        vi.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        vi.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null as unknown as string));
         vi.spyOn(window, 'confirm').mockReturnValue(true);
         spectator.detectChanges();
 
@@ -141,7 +142,7 @@ describe('ForgotPasswordComponent', () => {
         spectator.detectChanges();
 
         vi.spyOn(window, 'confirm').mockReturnValue(true);
-        vi.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        vi.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null as unknown as string));
         spectator.component.forgotPasswordForm.setValue({ login: 'test@test.com' });
         spectator.detectChanges();
         spectator.click('[data-testid="submitButton"]');

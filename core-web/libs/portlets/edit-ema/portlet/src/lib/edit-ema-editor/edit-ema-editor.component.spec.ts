@@ -106,8 +106,9 @@ import {
     dotPropertiesServiceMock,
     mockCurrentUser
 } from '../shared/mocks';
-import { ActionPayload, VTLFile } from '../shared/models';
+import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode } from '../store/models';
 
 global.URL.createObjectURL = vi.fn(
@@ -449,6 +450,11 @@ describe('EditEmaEditorComponent', () => {
     describe('with queryParams and permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
         let store: InstanceType<typeof UVEStore>;
+
+        // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+        // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+        // interface keeps the call typed and still installs the spy on the real store.
+        const pageApi = () => store as unknown as WithPageApiMethods;
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: MockInstance;
@@ -479,7 +485,7 @@ describe('EditEmaEditorComponent', () => {
             addMessageSpy = vi.spyOn(messageService, 'add');
             mockDotUveActionsHandlerService.handleAction.mockClear();
 
-            store.pageLoad({
+            pageApi().pageLoad({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -630,7 +636,7 @@ describe('EditEmaEditorComponent', () => {
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
-                store.pageLoad({
+                pageApi().pageLoad({
                     url: 'index',
                     language_id: '5',
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -652,7 +658,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.pageLoad({
+                pageApi().pageLoad({
                     url: 'index',
                     language_id: '5',
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier
@@ -669,7 +675,7 @@ describe('EditEmaEditorComponent', () => {
 
             it('should reload when Block editor is saved', () => {
                 const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
-                const spy = vi.spyOn(store, 'pageReload');
+                const spy = vi.spyOn(pageApi(), 'pageReload');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
             });
@@ -679,7 +685,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.pageLoad({
+                pageApi().pageLoad({
                     url: 'index',
                     language_id: '9'
                 });
@@ -1038,7 +1044,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     const confirmDialogOpen = vi.spyOn(confirmationService, 'confirm');
-                    const saveMock = vi.spyOn(store, 'editorSave');
+                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     spectator.triggerEventHandler(
                         DotUveContentletToolsComponent,
@@ -1412,7 +1418,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should edit urlContentMap page', () => {
                     spectator.detectChanges();
                     const dialog = spectator.query(DotEmaDialogComponent);
-                    vi.spyOn(dialog, 'editUrlContentMapContentlet');
+                    vi.spyOn(dialog!, 'editUrlContentMapContentlet');
 
                     const payload = {
                         identifier: '123',
@@ -1431,7 +1437,7 @@ describe('EditEmaEditorComponent', () => {
 
                 describe('reorder navigation', () => {
                     it('should reload the page after saving the new navigation order', () => {
-                        const reloadSpy = vi.spyOn(store, 'pageReload');
+                        const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
                         const messageSpy = vi.spyOn(messageService, 'add');
                         const dialog = spectator.debugElement.query(
                             By.css("[data-testId='ema-dialog']")
@@ -1494,7 +1500,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should add contentlet after backend emit SAVE_CONTENTLET', () => {
                     spectator.detectChanges();
 
-                    const editorSaveMock = vi.spyOn(store, 'editorSave');
+                    const editorSaveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
@@ -1615,7 +1621,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should add contentlet after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = vi.spyOn(store, 'editorSave');
+                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     spectator.detectChanges();
 
@@ -1770,7 +1776,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should add widget after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = vi.spyOn(store, 'editorSave');
+                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     spectator.detectChanges();
 
@@ -1970,7 +1976,7 @@ describe('EditEmaEditorComponent', () => {
                         vi.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        store.pageLoad({
+                        pageApi().pageLoad({
                             url: 'index',
                             language_id: '3',
                             [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -2006,11 +2012,11 @@ describe('EditEmaEditorComponent', () => {
                                 spectator.component.iframe.nativeElement.contentWindow,
                                 'scrollTo'
                             )
-                            .mockImplementation(() => vi.fn);
+                            .mockImplementation(() => undefined);
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
-                        store.pageLoad({
+                        pageApi().pageLoad({
                             url: 'index',
                             language_id: '4',
                             [PERSONA_KEY]: DEFAULT_PERSONA.identifier
@@ -2077,7 +2083,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         url: 'index',
                         language_id: '5',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -2095,14 +2101,14 @@ describe('EditEmaEditorComponent', () => {
 
             describe('language selected', () => {
                 it('should update the URL and language when the user create a new translation changing the URL', () => {
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '2',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
-                    const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
                     spectator.detectChanges();
                     const dialog = spectator.debugElement.query(
@@ -2138,14 +2144,14 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should update the language when the user create a new translation', () => {
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'test-url',
                         language_id: '1',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
-                    const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                     spectator.detectChanges();
 
                     const dialog = spectator.debugElement.query(
@@ -2169,7 +2175,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should call dialog.translatePage when toolbar emits translatePage', () => {
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '1',
@@ -2205,7 +2211,7 @@ describe('EditEmaEditorComponent', () => {
 
                     // Load with an untranslated language (language_id=2 returns viewAs.language.id=2,
                     // and mockLanguageArray has id:2 with translated:false)
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '2',
@@ -2232,7 +2238,7 @@ describe('EditEmaEditorComponent', () => {
                     const confirmSpy = vi.spyOn(confirmationService, 'confirm');
 
                     // language_id=2 → viewAs.language.id=2, pageLanguages has id:2 translated:false
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '2',
@@ -2254,7 +2260,7 @@ describe('EditEmaEditorComponent', () => {
                     const gotoPortletSpy = vi
                         .spyOn(dotRouterService, 'gotoPortlet')
                         .mockResolvedValue(true);
-                    const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
                     const reject = () => (confirmSpy.mock.calls[0][0] as Confirmation).reject?.();
 
@@ -2581,7 +2587,7 @@ describe('EditEmaEditorComponent', () => {
                     contentlet: {
                         ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
                         onNumberOfPages: 2
-                    }
+                    } as ContentletPayload
                 };
 
                 afterEach(() => {
@@ -2823,7 +2829,7 @@ describe('EditEmaEditorComponent', () => {
                         ).mockReturnValue(
                             of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
                         );
-                        const pageReloadSpy = vi.spyOn(store, 'pageReload');
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
                         const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogServiceOpenSpy = vi.spyOn(
                             spectator.inject(DialogService),
@@ -3475,7 +3481,7 @@ describe('EditEmaEditorComponent', () => {
                     };
                     (spectator.component as unknown as { window: typeof mockWindow }).window =
                         mockWindow;
-                    pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                    pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                     windowOpenSpy = mockWindow.open;
                 });
 

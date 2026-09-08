@@ -55,6 +55,13 @@ const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
     ...overrides
 });
 
+/**
+ * The injected store is a SpyObject, so its signal members type as spies rather than plain
+ * signals and will not accept a bare mock. Writing through a record view keeps the one-line
+ * stubs below readable.
+ */
+const stubbed = (store: unknown) => store as Record<string, unknown>;
+
 describe('DotEsSearchPageComponent', () => {
     let spectator: Spectator<DotEsSearchPageComponent>;
 
@@ -97,8 +104,8 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should render Share and Export buttons only when results are available', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.hasLoadedResults = vi.fn().mockReturnValue(true);
-        store.status = vi.fn().mockReturnValue(ComponentStatus.LOADED);
+        stubbed(store)['hasLoadedResults'] = vi.fn().mockReturnValue(true);
+        stubbed(store)['status'] = vi.fn().mockReturnValue(ComponentStatus.LOADED);
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         expect(spectator.query(byTestId('es-search-share-btn'))).toBeTruthy();
@@ -136,8 +143,8 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should make the Status column sortable by the live field', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.status = vi.fn().mockReturnValue(ComponentStatus.LOADED);
-        store.contentlets = vi.fn().mockReturnValue([
+        stubbed(store)['status'] = vi.fn().mockReturnValue(ComponentStatus.LOADED);
+        stubbed(store)['contentlets'] = vi.fn().mockReturnValue([
             { identifier: 'a', title: 'A', contentType: 'X', modDate: '', live: false },
             { identifier: 'b', title: 'B', contentType: 'X', modDate: '', live: true }
         ]);
@@ -156,7 +163,7 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should show the userid field for admin users', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.isAdmin = vi.fn().mockReturnValue(true);
+        stubbed(store)['isAdmin'] = vi.fn().mockReturnValue(true);
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         expect(spectator.query(byTestId('es-search-userid-input'))).toBeTruthy();
@@ -168,7 +175,7 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should call store.runSearch() when Run button is clicked', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.query = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
+        stubbed(store)['query'] = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         const btn = spectator.query(byTestId('es-search-run-btn'))?.querySelector('button');
@@ -183,7 +190,7 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should call store.runSearch() when onRun is invoked', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.query = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
+        stubbed(store)['query'] = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
         spectator.component.onRun();
         expect(store.runSearch).toHaveBeenCalled();
     });
@@ -234,7 +241,7 @@ describe('DotEsSearchPageComponent', () => {
             beforeEach(() => {
                 spectator = createComponent({ detectChanges: false });
                 const store = spectator.inject(DotEsSearchStore, true);
-                store.wrapCode = vi.fn().mockReturnValue(true);
+                stubbed(store)['wrapCode'] = vi.fn().mockReturnValue(true);
             });
 
             it('should set wordWrap on', () => {
@@ -252,11 +259,11 @@ describe('DotEsSearchPageComponent', () => {
     describe('when results are loaded with no hits', () => {
         beforeEach(() => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.status = vi.fn().mockReturnValue(ComponentStatus.LOADED);
-            store.hasLoadedResults = vi.fn().mockReturnValue(true);
-            store.hitCount = vi.fn().mockReturnValue(0);
-            store.queryTimeMs = vi.fn().mockReturnValue(5);
-            store.contentlets = vi.fn().mockReturnValue([]);
+            stubbed(store)['status'] = vi.fn().mockReturnValue(ComponentStatus.LOADED);
+            stubbed(store)['hasLoadedResults'] = vi.fn().mockReturnValue(true);
+            stubbed(store)['hitCount'] = vi.fn().mockReturnValue(0);
+            stubbed(store)['queryTimeMs'] = vi.fn().mockReturnValue(5);
+            stubbed(store)['contentlets'] = vi.fn().mockReturnValue([]);
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
         });
@@ -270,11 +277,11 @@ describe('DotEsSearchPageComponent', () => {
     describe('when results are loaded', () => {
         beforeEach(() => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.status = vi.fn().mockReturnValue(ComponentStatus.LOADED);
-            store.hasLoadedResults = vi.fn().mockReturnValue(true);
-            store.hitCount = vi.fn().mockReturnValue(5);
-            store.queryTimeMs = vi.fn().mockReturnValue(142);
-            store.contentlets = vi.fn().mockReturnValue([
+            stubbed(store)['status'] = vi.fn().mockReturnValue(ComponentStatus.LOADED);
+            stubbed(store)['hasLoadedResults'] = vi.fn().mockReturnValue(true);
+            stubbed(store)['hitCount'] = vi.fn().mockReturnValue(5);
+            stubbed(store)['queryTimeMs'] = vi.fn().mockReturnValue(142);
+            stubbed(store)['contentlets'] = vi.fn().mockReturnValue([
                 {
                     identifier: 'abc',
                     title: 'Test Post',
@@ -284,7 +291,7 @@ describe('DotEsSearchPageComponent', () => {
                     working: true
                 }
             ]);
-            store.setActiveTab = vi.fn();
+            stubbed(store)['setActiveTab'] = vi.fn();
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
         });
@@ -306,9 +313,9 @@ describe('DotEsSearchPageComponent', () => {
 
         it('should show partial results message in stats bar when hasPartialResults is true', () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.hasPartialResults = vi.fn().mockReturnValue(true);
-            store.returnedCount = vi.fn().mockReturnValue(20);
-            store.hitCount = vi.fn().mockReturnValue(10000);
+            stubbed(store)['hasPartialResults'] = vi.fn().mockReturnValue(true);
+            stubbed(store)['returnedCount'] = vi.fn().mockReturnValue(20);
+            stubbed(store)['hitCount'] = vi.fn().mockReturnValue(10000);
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
 
@@ -330,8 +337,10 @@ describe('DotEsSearchPageComponent', () => {
 
         it('Copy as cURL targets /api/es/search with depth=1 and the parsed query body', () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.query = vi.fn().mockReturnValue(`{"query":{"match":{"title":"it's"}}}`);
-            store.params = vi.fn().mockReturnValue({ live: true, userid: '' });
+            stubbed(store)['query'] = vi
+                .fn()
+                .mockReturnValue(`{"query":{"match":{"title":"it's"}}}`);
+            stubbed(store)['params'] = vi.fn().mockReturnValue({ live: true, userid: '' });
             const copy = getClipboardCopy();
 
             spectator.component.exportItems[0].command?.({} as never);
@@ -343,8 +352,8 @@ describe('DotEsSearchPageComponent', () => {
 
         it('Copy as fetch emits a fetch() call against /api/es/search', () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.query = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
-            store.params = vi.fn().mockReturnValue({ live: true, userid: '' });
+            stubbed(store)['query'] = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
+            stubbed(store)['params'] = vi.fn().mockReturnValue({ live: true, userid: '' });
             const copy = getClipboardCopy();
 
             spectator.component.exportItems[1].command?.({} as never);
@@ -356,8 +365,8 @@ describe('DotEsSearchPageComponent', () => {
 
         it('calls DotGlobalMessageService.error when clipboard.copy resolves false', async () => {
             const store = spectator.inject(DotEsSearchStore, true);
-            store.query = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
-            store.params = vi.fn().mockReturnValue({ live: true, userid: '' });
+            stubbed(store)['query'] = vi.fn().mockReturnValue('{"query":{"match_all":{}}}');
+            stubbed(store)['params'] = vi.fn().mockReturnValue({ live: true, userid: '' });
             const copy = getClipboardCopy(false);
             const globalMessage = spectator.inject(DotGlobalMessageService);
 

@@ -188,7 +188,7 @@ describe('DotExperimentsReportsStore', () => {
 
                 zip(store.state$, store.summaryWinnerLegend$).subscribe(
                     ([{ experiment }, summaryWinnerLegend]) => {
-                        expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                        expect(experiment!.status).toEqual(DotExperimentStatus.RUNNING);
                         expect(summaryWinnerLegend).toEqual(
                             ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS
                         );
@@ -221,8 +221,8 @@ describe('DotExperimentsReportsStore', () => {
 
                 zip(store.state$, store.summaryWinnerLegend$).subscribe(
                     ([{ experiment, results }, summaryWinnerLegend]) => {
-                        expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
-                        expect(results.bayesianResult.suggestedWinner).toEqual(
+                        expect(experiment!.status).toEqual(DotExperimentStatus.ENDED);
+                        expect(results!.bayesianResult.suggestedWinner).toEqual(
                             BayesianStatusResponse.TIE
                         );
 
@@ -257,8 +257,8 @@ describe('DotExperimentsReportsStore', () => {
 
                 zip(store.state$, store.summaryWinnerLegend$).subscribe(
                     ([{ experiment, results }, summaryWinnerLegend]) => {
-                        expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-                        expect(results.bayesianResult.suggestedWinner).toEqual(
+                        expect(experiment!.status).toEqual(DotExperimentStatus.RUNNING);
+                        expect(results!.bayesianResult.suggestedWinner).toEqual(
                             BayesianStatusResponse.TIE
                         );
 
@@ -293,8 +293,8 @@ describe('DotExperimentsReportsStore', () => {
 
                 zip(store.state$, store.summaryWinnerLegend$).subscribe(
                     ([{ experiment, results }, summaryWinnerLegend]) => {
-                        expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
-                        expect(results.bayesianResult.suggestedWinner).toEqual(
+                        expect(experiment!.status).toEqual(DotExperimentStatus.ENDED);
+                        expect(results!.bayesianResult.suggestedWinner).toEqual(
                             BayesianStatusResponse.NONE
                         );
 
@@ -329,8 +329,8 @@ describe('DotExperimentsReportsStore', () => {
 
                 zip(store.state$, store.summaryWinnerLegend$).subscribe(
                     ([{ experiment, results }, summaryWinnerLegend]) => {
-                        expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-                        expect(results.bayesianResult.suggestedWinner).toEqual(
+                        expect(experiment!.status).toEqual(DotExperimentStatus.RUNNING);
+                        expect(results!.bayesianResult.suggestedWinner).toEqual(
                             BayesianStatusResponse.NONE
                         );
 
@@ -367,8 +367,8 @@ describe('DotExperimentsReportsStore', () => {
 
                 zip(store.state$, store.summaryWinnerLegend$).subscribe(
                     ([{ experiment, results }, summaryWinnerLegend]) => {
-                        expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
-                        expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
+                        expect(experiment!.status).toEqual(DotExperimentStatus.ENDED);
+                        expect(results!.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
 
                         expect(summaryWinnerLegend).toEqual(
                             ReportSummaryLegendByBayesianStatus.WINNER
@@ -403,8 +403,8 @@ describe('DotExperimentsReportsStore', () => {
 
                 zip(store.state$, store.summaryWinnerLegend$).subscribe(
                     ([{ experiment, results }, summaryWinnerLegend]) => {
-                        expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-                        expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
+                        expect(experiment!.status).toEqual(DotExperimentStatus.RUNNING);
+                        expect(results!.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
 
                         expect(summaryWinnerLegend).toEqual(
                             ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER
@@ -490,7 +490,7 @@ describe('DotExperimentsReportsStore', () => {
                 ];
 
                 store.getDailyChartData$.subscribe(({ labels }) => {
-                    expect(labels.length).toEqual(expectedXLabels.length);
+                    expect(labels!.length).toEqual(expectedXLabels.length);
                     expect(labels).toEqual(expectedXLabels);
                     done();
                 });
@@ -514,7 +514,7 @@ describe('DotExperimentsReportsStore', () => {
                     [0, 15.25, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 90.56]
                 ];
                 const expectedLabel = [
-                    EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription,
+                    EXPERIMENT_MOCK_RESULTS.goals.primary.variants['DEFAULT'].variantDescription,
                     EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription
                 ];
 
@@ -535,10 +535,11 @@ describe('DotExperimentsReportsStore', () => {
                 const EXPECTED_BAYESIAN_DATA_QTY = 100;
                 const expectedLabel = [
                     EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription,
-                    EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription
+                    EXPERIMENT_MOCK_RESULTS.goals.primary.variants['DEFAULT'].variantDescription
                 ];
 
-                store.getBayesianChartData$.subscribe(({ datasets }) => {
+                store.getBayesianChartData$.subscribe((chartData) => {
+                    const datasets = chartData!.datasets;
                     datasets.forEach((dataset, index) => {
                         const { label, data } = dataset;
 
@@ -604,7 +605,7 @@ describe('DotExperimentsReportsStore', () => {
                 spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
                 store.vm$.subscribe((state) => {
-                    expect(state.bayesianChart.hasEnoughData).toEqual(false);
+                    expect(state.bayesianChart!.hasEnoughData).toEqual(false);
                     done();
                 });
             }));
@@ -620,7 +621,7 @@ describe('DotExperimentsReportsStore', () => {
                 spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
                 store.vm$.subscribe((state) => {
-                    expect(state.bayesianChart.hasEnoughData).toEqual(false);
+                    expect(state.bayesianChart!.hasEnoughData).toEqual(false);
                     done();
                 });
             }));
@@ -636,7 +637,7 @@ describe('DotExperimentsReportsStore', () => {
                 spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
                 store.vm$.subscribe((state) => {
-                    expect(state.bayesianChart.hasEnoughData).toEqual(true);
+                    expect(state.bayesianChart!.hasEnoughData).toEqual(true);
                     done();
                 });
             }));
@@ -655,7 +656,7 @@ describe('DotExperimentsReportsStore', () => {
                 spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
                 store.vm$.subscribe((state) => {
-                    expect(state.dailyChart.hasEnoughData).toEqual(false);
+                    expect(state.dailyChart!.hasEnoughData).toEqual(false);
                     done();
                 });
             }));
@@ -673,7 +674,7 @@ describe('DotExperimentsReportsStore', () => {
                 spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
                 store.vm$.subscribe((state) => {
-                    expect(state.dailyChart.hasEnoughData).toEqual(true);
+                    expect(state.dailyChart!.hasEnoughData).toEqual(true);
                     done();
                 });
             }));

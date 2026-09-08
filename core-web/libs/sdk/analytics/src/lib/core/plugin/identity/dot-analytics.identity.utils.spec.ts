@@ -24,7 +24,7 @@ describe('DotAnalytics Identity Utils', () => {
     let mockLocation: Location;
 
     beforeAll(() => {
-        vi.useFakeTimers({ doNotFake: [] });
+        vi.useFakeTimers();
         vi.setSystemTime(new Date('2024-01-01T12:00:00Z'));
     });
 

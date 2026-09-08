@@ -410,7 +410,7 @@ describe('DotAssetPickerToolbarComponent', () => {
         it('should hand the shortcut back to the surface underneath when it closes', () => {
             setup({ site: SITE });
 
-            const portletSearch = jest.fn();
+            const portletSearch = vi.fn();
             const shortcuts = spectator.inject(DotKeyboardShortcutService);
             shortcuts.register({
                 combination: 'mod+k',

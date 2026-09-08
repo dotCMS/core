@@ -212,7 +212,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     it('should call drawer close when cancel is clicked', () => {
         const drawer = spectator.query(Drawer);
-        const closeSpy = vi.spyOn(drawer, 'close');
+        const closeSpy = vi.spyOn(drawer!, 'close');
 
         const cancelBtn = spectator.query(byTestId('cancel-btn')) as HTMLButtonElement;
         cancelBtn.click();

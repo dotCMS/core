@@ -51,6 +51,7 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../../../store/features/page-api/withPageApi';
 
 const DOT_WORKFLOW_PAYLOAD_MOCK: DotWorkflowPayload = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
@@ -81,7 +82,7 @@ const workflowActionMock = {
     actionInputs: [
         {
             id: '1232',
-            body: []
+            body: {}
         }
     ]
 };
@@ -127,6 +128,11 @@ describe('DotUveWorkflowActionsComponent', () => {
     let messageService: MessageService;
 
     let store: InstanceType<typeof UVEStore>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => store as unknown as WithPageApiMethods;
 
     const createComponent = createComponentFactory({
         component: DotUveWorkflowActionsComponent,
@@ -197,14 +203,14 @@ describe('DotUveWorkflowActionsComponent', () => {
         it('should load workflow actions', () => {
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 
-            expect(dotWorkflowActionsComponent.actions()).toEqual(mockWorkflowsActions);
-            expect(dotWorkflowActionsComponent.loading()).toBeFalsy();
-            expect(dotWorkflowActionsComponent.disabled()).toBeFalsy();
+            expect(dotWorkflowActionsComponent!.actions()).toEqual(mockWorkflowsActions);
+            expect(dotWorkflowActionsComponent!.loading()).toBeFalsy();
+            expect(dotWorkflowActionsComponent!.disabled()).toBeFalsy();
         });
 
         it('should fire workflow actions and pageLoads', () => {
             const spySetWorkflowActionLoading = vi.spyOn(store, 'setWorkflowActionLoading');
-            const spyLoadPageAsset = vi.spyOn(store, 'pageLoad');
+            const spyLoadPageAsset = vi.spyOn(pageApi(), 'pageLoad');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
@@ -247,7 +253,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
         it('should fire workflow actions and reloadPage', () => {
             const spySetWorkflowActionLoading = vi.spyOn(store, 'setWorkflowActionLoading');
-            const spyReloadCurrentPage = vi.spyOn(store, 'pageReload');
+            const spyReloadCurrentPage = vi.spyOn(pageApi(), 'pageReload');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
@@ -317,7 +323,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 
-            dotWorkflowActionsComponent.actionFired.emit(workflowActionMock);
+            dotWorkflowActionsComponent!.actionFired.emit(workflowActionMock);
 
             expect(spyCheckPublishEnvironments).toHaveBeenCalled();
             expect(spyWizard).toHaveBeenCalled();

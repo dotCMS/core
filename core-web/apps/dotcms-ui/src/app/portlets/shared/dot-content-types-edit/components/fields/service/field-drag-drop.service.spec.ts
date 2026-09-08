@@ -49,8 +49,9 @@ class MockDragulaService {
     }
 }
 
-let fieldDragDropService;
-let dragulaService;
+let fieldDragDropService: FieldDragDropService;
+// The provider is MockDragulaService, whose `name`/`options` the assertions read.
+let dragulaService: MockDragulaService;
 
 describe('FieldDragDropService', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
@@ -82,7 +83,7 @@ describe('FieldDragDropService', () => {
         });
 
         fieldDragDropService = TestBed.inject(FieldDragDropService);
-        dragulaService = TestBed.inject(DragulaService);
+        dragulaService = TestBed.inject(DragulaService) as unknown as MockDragulaService;
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
     });
 

@@ -224,14 +224,14 @@ describe('DotCategoriesListComponent', () => {
             });
 
             it('should hide Delete button when no categories are selected', () => {
-                (store.selectedCategories as Mock).mockReturnValue([]);
+                (store.selectedCategories as unknown as Mock).mockReturnValue([]);
                 spectator.detectChanges();
 
                 const deleteBtn = spectator.query(byTestId('category-delete-btn'));
 
                 expect(deleteBtn).toBeFalsy();
 
-                (store.selectedCategories as Mock).mockReturnValue(MOCK_CATEGORIES);
+                (store.selectedCategories as unknown as Mock).mockReturnValue(MOCK_CATEGORIES);
             });
         });
 
@@ -368,7 +368,7 @@ describe('DotCategoriesListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
 
@@ -385,14 +385,14 @@ describe('DotCategoriesListComponent', () => {
         });
 
         it('should pass parentName to dialog when navigated into a parent', () => {
-            (store.breadcrumbs as Mock).mockReturnValue([
+            (store.breadcrumbs as unknown as Mock).mockReturnValue([
                 { label: 'Parent Category', id: 'parent-inode' }
             ]);
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
 
@@ -402,7 +402,7 @@ describe('DotCategoriesListComponent', () => {
                     data: { parentName: 'Parent Category' }
                 })
             );
-            (store.breadcrumbs as Mock).mockReturnValue([]);
+            (store.breadcrumbs as unknown as Mock).mockReturnValue([]);
         });
 
         it('should open dialog and call store.createCategory on close', () => {
@@ -410,7 +410,7 @@ describe('DotCategoriesListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next({ categoryName: 'New Category', key: 'new-cat' });
@@ -427,7 +427,7 @@ describe('DotCategoriesListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next(undefined);
@@ -443,7 +443,7 @@ describe('DotCategoriesListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const category = MOCK_CATEGORIES[0];
             spectator.component.openEditDialog(category);
@@ -465,7 +465,7 @@ describe('DotCategoriesListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const category = MOCK_CATEGORIES[0];
             spectator.component.openEditDialog(category);
@@ -485,7 +485,7 @@ describe('DotCategoriesListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openEditDialog(MOCK_CATEGORIES[0]);
             onClose.next(undefined);
@@ -523,7 +523,7 @@ describe('DotCategoriesListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
 
@@ -542,7 +542,9 @@ describe('DotCategoriesListComponent', () => {
         it('should call store.loadCategories and show success toast when import succeeds', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            vi.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
             const messageDisplayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
@@ -558,7 +560,9 @@ describe('DotCategoriesListComponent', () => {
         it('should call store.loadCategories and show warning toast when import has failures', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            vi.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
             const messageDisplayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
@@ -574,7 +578,9 @@ describe('DotCategoriesListComponent', () => {
         it('should not call store.loadCategories when dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            vi.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
             onClose.next(undefined);

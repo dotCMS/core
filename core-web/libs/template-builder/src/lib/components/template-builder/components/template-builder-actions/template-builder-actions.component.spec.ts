@@ -1,5 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { of, Subscription } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -95,7 +95,7 @@ describe('TemplateBuilderActionsComponent', () => {
         // error. The test only cares that the call happened.
         const changesMock = vi
             .spyOn(store, 'updateLayoutProperties')
-            .mockImplementation(() => undefined);
+            .mockImplementation(() => new Subscription());
         spectator.component.group.setValue({
             footer: true,
             header: false,

@@ -432,7 +432,9 @@ describe('SearchComponent', () => {
         });
 
         it('should fallback to language ID when no control value', () => {
-            vi.spyOn(component, '$languageField').mockReturnValue(null);
+            vi.spyOn(component, '$languageField').mockReturnValue(
+                null as unknown as LanguageFieldComponent
+            );
 
             const label = component['getLanguageDisplayLabel'](1);
             expect(label).toBe('Language Id: 1');
@@ -446,7 +448,9 @@ describe('SearchComponent', () => {
         });
 
         it('should fallback to ID when no control value', () => {
-            vi.spyOn(component, '$siteField').mockReturnValue(null);
+            vi.spyOn(component, '$siteField').mockReturnValue(
+                null as unknown as SiteFieldComponent
+            );
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe('site123');
@@ -671,7 +675,7 @@ describe('SearchComponent', () => {
             const queryInput = spectator.query('input[formControlName="query"]');
             spectator.typeInElement('test query', queryInput);
 
-            expect(component.form.get('query').value).toBe('test query');
+            expect(component.form.get('query')!.value).toBe('test query');
         });
 
         it('should trigger debounced search when typing in input', fakeAsync(() => {

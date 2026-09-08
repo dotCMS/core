@@ -209,11 +209,11 @@ describe('DotSearchInputComponent', () => {
         });
 
         it('should not emit when focused', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             spectator.component.focus();
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).not.toHaveBeenCalled();
         });

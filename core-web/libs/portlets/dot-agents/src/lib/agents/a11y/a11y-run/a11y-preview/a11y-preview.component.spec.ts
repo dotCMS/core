@@ -218,11 +218,19 @@ describe('DotA11yPreviewComponent', () => {
             };
         }
 
+        // `$liveFrame` / `$previewFrame` are private viewChild signals, so they are not on
+        // the component's public type; a narrow view keeps `mockReturnValue` typed.
+        const framesOf = (component: DotA11yPreviewComponent) =>
+            component as unknown as {
+                $liveFrame: () => ReturnType<typeof fakeFrame>;
+                $previewFrame: () => ReturnType<typeof fakeFrame>;
+            };
+
         it('mirrors the live frame scroll onto the preview frame', () => {
             const live = fakeFrame(0, 0);
             const preview = fakeFrame(0, 0);
-            vi.spyOn(spectator.component as never, '$liveFrame').mockReturnValue(live);
-            vi.spyOn(spectator.component as never, '$previewFrame').mockReturnValue(preview);
+            vi.spyOn(framesOf(spectator.component), '$liveFrame').mockReturnValue(live);
+            vi.spyOn(framesOf(spectator.component), '$previewFrame').mockReturnValue(preview);
 
             spectator.component.onLiveLoad();
             live.win.scrollX = 40;
@@ -235,8 +243,8 @@ describe('DotA11yPreviewComponent', () => {
         it('does not bounce back (re-entrancy guard)', () => {
             const live = fakeFrame(0, 0);
             const preview = fakeFrame(0, 0);
-            vi.spyOn(spectator.component as never, '$liveFrame').mockReturnValue(live);
-            vi.spyOn(spectator.component as never, '$previewFrame').mockReturnValue(preview);
+            vi.spyOn(framesOf(spectator.component), '$liveFrame').mockReturnValue(live);
+            vi.spyOn(framesOf(spectator.component), '$previewFrame').mockReturnValue(preview);
 
             // Wire BOTH directions, then scroll live once.
             spectator.component.onLiveLoad();

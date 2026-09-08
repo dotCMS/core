@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     SpyObject,
     createComponentFactory,
@@ -38,7 +38,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent
@@ -72,6 +72,8 @@ import {
     URL_CONTENT_MAP_MOCK
 } from '../shared/mocks';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
+import { UVEState } from '../store/models';
 
 // Mock structuredClone for Jest environment (not available in jsdom)
 if (typeof globalThis.structuredClone === 'undefined') {
@@ -179,6 +181,20 @@ const overrideRouteSnapshot = (activatedRoute: ActivatedRoute, mock: object) => 
 describe('DotEmaShellComponent', () => {
     let spectator: Spectator<DotEmaShellComponent>;
     let store: SpyObject<InstanceType<typeof UVEStore>>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => store as unknown as WithPageApiMethods;
+
+    // `$seoParams` is a protected computed, so it is not on the component's public type.
+    const seoParamsOf = (component: DotEmaShellComponent) =>
+        component as unknown as { $seoParams: () => DotPageToolUrlParams };
+
+    // Neither UVEStore's own type nor the SpyObject wrapper exposes its state as writable
+    // signals, so patchState cannot see the store as a WritableStateSource on its own.
+    const writableStore = () =>
+        spectator.inject(UVEStore, true) as unknown as WritableStateSource<UVEState>;
 
     let router: Router;
     let location: Location;
@@ -361,14 +377,14 @@ describe('DotEmaShellComponent', () => {
 
     describe('with queryParams', () => {
         it('should trigger an store load with default values', () => {
-            const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+            const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
             spectator.detectChanges();
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
         describe('Sanitize url when called pageLoad', () => {
             it('should sanitize when url is index', () => {
-                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                 const spyLocation = vi.spyOn(location, 'go');
 
                 const params = {
@@ -392,7 +408,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should sanitize when url is nested', () => {
-                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
                 const spyLocation = vi.spyOn(location, 'go');
 
@@ -420,7 +436,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should sanitize when url is nested and ends in index', () => {
-                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                 const spyLocation = vi.spyOn(location, 'go');
 
                 const params = {
@@ -447,7 +463,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should receive `personaId` query param', () => {
-                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                 const spyLocation = vi.spyOn(location, 'go');
 
                 const queryParams = {
@@ -569,7 +585,7 @@ describe('DotEmaShellComponent', () => {
         });
 
         it('should call store.pageLoad and update location when page loads', () => {
-            const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
             const locationSpy = vi.spyOn(location, 'go');
 
             spectator.detectChanges();
@@ -681,11 +697,11 @@ describe('DotEmaShellComponent', () => {
                 };
 
                 const expectURL = router.createUrlTree([], { queryParams: userParams });
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const spyUrlTree = vi.spyOn(router, 'createUrlTree');
                 const spyLocation = vi.spyOn(location, 'go');
 
-                store.pageLoad(pageParams);
+                pageApi().pageLoad(pageParams);
                 spectator.detectChanges();
 
                 expect(spyStoreLoadPage).toHaveBeenCalledWith(pageParams);
@@ -715,7 +731,7 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
 
-                store.pageLoad(params);
+                pageApi().pageLoad(params);
                 spectator.detectChanges();
 
                 expect(spyLocation).toHaveBeenCalledWith(
@@ -748,7 +764,7 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
 
-                store.pageLoad(params);
+                pageApi().pageLoad(params);
                 spectator.detectChanges();
 
                 expect(spyLocation).toHaveBeenCalledWith(
@@ -778,7 +794,7 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
 
-                store.pageLoad(params);
+                pageApi().pageLoad(params);
                 spectator.detectChanges();
 
                 // Should treat these as the same URL and not include clientHost
@@ -790,7 +806,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('ClientHost', () => {
             it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:4200'
@@ -811,7 +827,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const paramsWithAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -829,7 +845,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -847,7 +863,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when allowedDevURLs has wrong data type', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -866,7 +882,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when allowedDevURLs is not present', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -885,7 +901,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when uveConfig options are not present', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -906,7 +922,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when uveConfig is not present', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -927,7 +943,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('Editor Mode', () => {
             it('should set mode to EDIT when wrong mode is passed', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
                     mode: 'WRONG'
@@ -947,7 +963,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should set mode to EDIT when mode is undefined', () => {
-                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(pageApi(), 'pageLoad');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
                     mode: undefined
@@ -999,7 +1015,7 @@ describe('DotEmaShellComponent', () => {
             beforeEach(() => spectator.detectChanges());
 
             it('should update page params when saving and the url changed', () => {
-                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
                 spectator.detectChanges();
 
@@ -1037,7 +1053,7 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
                 spectator.detectChanges();
-                const spyReload = vi.spyOn(store, 'pageReload');
+                const spyReload = vi.spyOn(pageApi(), 'pageReload');
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,
@@ -1055,7 +1071,7 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload if the url is the same', () => {
                 spectator.detectChanges();
-                const spyReload = vi.spyOn(store, 'pageReload');
+                const spyReload = vi.spyOn(pageApi(), 'pageReload');
                 const spyLocation = vi.spyOn(location, 'go');
 
                 spectator.triggerEventHandler(
@@ -1076,7 +1092,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should reload content from dialog', () => {
-                const reloadSpy = vi.spyOn(store, 'pageReload');
+                const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
 
@@ -1084,7 +1100,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should reload page when LANGUAGE_IS_CHANGED fires from the properties dialog', () => {
-                const reloadSpy = vi.spyOn(store, 'pageReload');
+                const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,
@@ -1100,7 +1116,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', async () => {
-                const reloadSpy = vi.spyOn(store, 'pageReload');
+                const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
                 vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...PAGE_RESPONSE_URL_CONTENT_MAP,
@@ -1108,7 +1124,7 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
 
-                store.pageLoad({
+                pageApi().pageLoad({
                     url: '/test-url',
                     language_id: '1',
                     [PERSONA_KEY]: '1'
@@ -1174,7 +1190,7 @@ describe('DotEmaShellComponent', () => {
                 vi.spyOn(dotPageApiService, 'get').mockReturnValue(of(differentPageResponse));
                 mockGlobalStore.addNewBreadcrumb.mockClear();
 
-                store.pageLoad({
+                pageApi().pageLoad({
                     ...INITIAL_PAGE_PARAMS,
                     url: '/other-page'
                 });
@@ -1213,9 +1229,9 @@ describe('DotEmaShellComponent', () => {
                 // ngOnDestroy calls resetPageParams() (pageParams = null) but Angular tears
                 // down effects asynchronously, so the effect can re-run in that window.
                 // Cycling uveStatus on a tracked dep simulates that re-fire with null pageParams.
-                store.resetPageParams();
-                patchState(store, { uveStatus: UVE_STATUS.LOADING });
-                patchState(store, { uveStatus: UVE_STATUS.LOADED });
+                store['resetPageParams']();
+                patchState(writableStore(), { uveStatus: UVE_STATUS.LOADING });
+                patchState(writableStore(), { uveStatus: UVE_STATUS.LOADED });
 
                 expect(() => spectator.detectChanges()).not.toThrow();
             });
@@ -1231,7 +1247,7 @@ describe('DotEmaShellComponent', () => {
                 const pendingRequest$ = new Subject<typeof MOCK_RESPONSE_HEADLESS>();
                 vi.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
 
-                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
+                pageApi().pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
                 spectator.detectChanges();
 
                 // While LOADING, stale Page A data is present — breadcrumb must not fire
@@ -1277,7 +1293,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 mockGlobalStore.addNewBreadcrumb.mockClear();
-                store.pageLoad(INITIAL_PAGE_PARAMS);
+                pageApi().pageLoad(INITIAL_PAGE_PARAMS);
                 spectator.detectChanges();
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
@@ -1305,7 +1321,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 mockGlobalStore.addNewBreadcrumb.mockClear();
-                store.pageLoad(INITIAL_PAGE_PARAMS);
+                pageApi().pageLoad(INITIAL_PAGE_PARAMS);
                 spectator.detectChanges();
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
@@ -1643,7 +1659,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('$showPageScanner', () => {
             it('should be true when FEATURE_FLAG_PAGE_SCANNER flag is enabled', () => {
-                patchState(spectator.inject(UVEStore, true), {
+                patchState(writableStore(), {
                     flags: { [FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER]: true }
                 });
 
@@ -1651,7 +1667,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should be false when FEATURE_FLAG_PAGE_SCANNER flag is disabled', () => {
-                patchState(spectator.inject(UVEStore, true), {
+                patchState(writableStore(), {
                     flags: { [FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER]: false }
                 });
 
@@ -1701,12 +1717,12 @@ describe('DotEmaShellComponent', () => {
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
-                vi.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                vi.spyOn(seoParamsOf(spectator.component), '$seoParams').mockReturnValue({
                     currentUrl: '/my-page',
                     requestHostName: 'https://content-site.example.com',
                     siteId: 'site-b-identifier',
                     languageId: 1
-                } as never);
+                });
 
                 spectator.component.handleScannerToolClick('a11y');
 
@@ -1719,12 +1735,12 @@ describe('DotEmaShellComponent', () => {
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
-                vi.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                vi.spyOn(seoParamsOf(spectator.component), '$seoParams').mockReturnValue({
                     currentUrl: '/my-page',
                     requestHostName: 'https://content-site.example.com',
                     siteId: undefined,
                     languageId: 1
-                } as never);
+                } as unknown as DotPageToolUrlParams);
 
                 spectator.component.handleScannerToolClick('a11y');
 
@@ -1738,7 +1754,7 @@ describe('DotEmaShellComponent', () => {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
 
-                patchState(store, {
+                patchState(writableStore(), {
                     pageParams: {
                         url: 'my-page',
                         language_id: '2',
@@ -1777,7 +1793,7 @@ describe('DotEmaShellComponent', () => {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
 
-                patchState(store, {
+                patchState(writableStore(), {
                     pageParams: {
                         url: 'my-page',
                         language_id: '1',

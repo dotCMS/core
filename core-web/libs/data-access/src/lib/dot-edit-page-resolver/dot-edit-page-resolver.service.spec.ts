@@ -40,9 +40,12 @@ import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
-const route: any = vi.spyOn(ActivatedRouteSnapshot, 'toString');
-
-route.queryParams = {};
+// The tests mutate `queryParams` and `children` directly, so the snapshot is a
+// plain stand-in rather than a real ActivatedRouteSnapshot.
+const route: any = {
+    toString: vi.fn(),
+    queryParams: {}
+};
 
 describe('DotEditPageResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;

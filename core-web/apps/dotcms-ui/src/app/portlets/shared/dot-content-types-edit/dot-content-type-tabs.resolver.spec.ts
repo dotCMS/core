@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
@@ -15,6 +15,12 @@ import {
 
 const mockRoute = {} as ActivatedRouteSnapshot;
 const mockState = {} as RouterStateSnapshot;
+
+// The resolver returns an Observable; ResolveFn only promises the wider MaybeAsync union.
+const runResolver = (): Observable<DotContentTypeTabsResolvedData> =>
+    TestBed.runInInjectionContext(() =>
+        dotContentTypeTabsResolver(mockRoute, mockState)
+    ) as Observable<DotContentTypeTabsResolvedData>;
 
 describe('dotContentTypeTabsResolver', () => {
     let dotCurrentUserService: DotCurrentUserService;
@@ -38,9 +44,7 @@ describe('dotContentTypeTabsResolver', () => {
         new Promise<void>((done) => {
             setup(true);
 
-            TestBed.runInInjectionContext(() =>
-                dotContentTypeTabsResolver(mockRoute, mockState)
-            ).subscribe((result: DotContentTypeTabsResolvedData) => {
+            runResolver().subscribe((result) => {
                 expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith(
                     'permissions'
                 );
@@ -53,9 +57,7 @@ describe('dotContentTypeTabsResolver', () => {
         new Promise<void>((done) => {
             setup(false);
 
-            TestBed.runInInjectionContext(() =>
-                dotContentTypeTabsResolver(mockRoute, mockState)
-            ).subscribe((result: DotContentTypeTabsResolvedData) => {
+            runResolver().subscribe((result) => {
                 expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith(
                     'permissions'
                 );

@@ -45,6 +45,7 @@ import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service
 import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 
 const PAGE_RESPONSE = {
     containers: {},
@@ -85,6 +86,11 @@ describe('EditEmaLayoutComponent', () => {
     let component: EditEmaLayoutComponent;
     let dotRouter: SpyObject<DotRouterService>;
     let store: SpyObject<InstanceType<typeof UVEStore>>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => store as unknown as WithPageApiMethods;
     let templateBuilder: TemplateBuilderComponent;
     let dotPageLayoutService: DotPageLayoutService;
     let messageService: MessageService;
@@ -204,7 +210,7 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
-            const reloadSpy = vi.spyOn(store, 'pageReload');
+            const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
 
             templateBuilder.templateChange.emit();
             tick(5000);
@@ -333,7 +339,7 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should unlock canvas when pageReload fails (uveStatus = ERROR) to avoid a permanent lock', fakeAsync(() => {
-            const pageReloadSpy = vi.spyOn(store, 'pageReload').mockImplementation(vi.fn());
+            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload').mockImplementation(vi.fn());
 
             templateBuilder.templateChange.emit();
             tick(DEBOUNCE_TIME);
@@ -351,7 +357,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should keep canvas locked through the pageReload window and unlock only when reload completes', fakeAsync(() => {
             // Prevent the real pageReload from running so we can control when it "finishes"
-            const pageReloadSpy = vi.spyOn(store, 'pageReload').mockImplementation(vi.fn());
+            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload').mockImplementation(vi.fn());
 
             templateBuilder.templateChange.emit();
             tick(DEBOUNCE_TIME); // POST fires and succeeds synchronously (default mock)

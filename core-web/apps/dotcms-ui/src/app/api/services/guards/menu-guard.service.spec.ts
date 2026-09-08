@@ -59,10 +59,8 @@ describe('ValidMenuGuardService', () => {
         dotMenuService = TestBed.inject(DotMenuService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = vi.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = vi.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-            'toString'
-        ]);
+        mockRouterStateSnapshot = { toString: vi.fn() } as unknown as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { toString: vi.fn() } as unknown as ActivatedRouteSnapshot;
     });
 
     it('should allow access to Menu Portlets', () => {

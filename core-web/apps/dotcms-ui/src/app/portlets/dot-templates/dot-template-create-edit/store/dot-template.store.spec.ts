@@ -3,7 +3,6 @@
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
@@ -13,6 +12,7 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
+import { DotLayout } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
     MockDotRouterService,
@@ -191,6 +191,8 @@ describe('DotTemplateStore', () => {
                     title: '',
                     friendlyName: '',
                     type: 'design',
+                    // A template with no sidebar comes back with both fields null;
+                    // DotLayout does not model them as nullable yet.
                     layout: {
                         header: true,
                         footer: true,
@@ -198,7 +200,7 @@ describe('DotTemplateStore', () => {
                         sidebar: null,
                         title: '',
                         width: null
-                    },
+                    } as unknown as DotLayout,
                     theme: '',
                     drawed: true,
                     image: ''
@@ -619,6 +621,8 @@ describe('DotTemplateStore', () => {
                 vi.spyOn(service, 'saveTemplateDebounce');
                 service.saveWorkingTemplate({
                     type: 'design',
+                    // A template with no sidebar comes back with both fields null;
+                    // DotLayout does not model them as nullable yet.
                     layout: {
                         header: true,
                         footer: true,
@@ -626,7 +630,7 @@ describe('DotTemplateStore', () => {
                         sidebar: null,
                         title: '',
                         width: null
-                    },
+                    } as unknown as DotLayout,
                     theme: '123',
                     friendlyName: 'string',
                     identifier: 'string',
@@ -653,7 +657,7 @@ describe('DotTemplateStore', () => {
 
             it('should handle error on update template', () =>
                 new Promise<void>((done) => {
-                    const error = throwError(() => new HttpErrorResponse(mockResponseView(400)));
+                    const error = throwError(() => mockResponseView(400));
                     dotTemplatesService.update = vi.fn().mockReturnValue(error);
                     service.saveTemplate({
                         body: 'string',

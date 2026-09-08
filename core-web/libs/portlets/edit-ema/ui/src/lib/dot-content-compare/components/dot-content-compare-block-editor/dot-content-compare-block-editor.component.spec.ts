@@ -244,8 +244,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
 
 // Mock ClipboardEvent and DragEvent to avoid tiptap implementation errors.
 class ClipboardDataMock {
-    getData: Mock<string, [string]>;
-    setData: Mock<void, [string, string]>;
+    getData: Mock<(format: string) => string>;
+    setData: Mock<(format: string, data: string) => void>;
 
     constructor() {
         this.getData = vi.fn();

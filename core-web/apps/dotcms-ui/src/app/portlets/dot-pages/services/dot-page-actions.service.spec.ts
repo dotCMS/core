@@ -4,6 +4,7 @@ import { Mock, Mocked, vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
+import { MenuItemCommandEvent } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -438,7 +439,7 @@ describe('DotPageActionsService', () => {
                         item.label?.includes('favoritePage.contextMenu.action.add')
                     );
 
-                    favoriteAction?.command?.({} as unknown);
+                    favoriteAction?.command?.({} as MenuItemCommandEvent);
 
                     expect(mockDialogService.open).toHaveBeenCalled();
                     done();
@@ -451,7 +452,7 @@ describe('DotPageActionsService', () => {
                     item.label?.includes('favoritePage.dialog.delete.button')
                 );
 
-                deleteAction?.command?.({} as unknown);
+                deleteAction?.command?.({} as MenuItemCommandEvent);
                 tick();
 
                 expect(mockWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
@@ -472,7 +473,7 @@ describe('DotPageActionsService', () => {
                     item.label?.includes('favoritePage.dialog.delete.button')
                 );
 
-                deleteAction?.command?.({} as unknown);
+                deleteAction?.command?.({} as MenuItemCommandEvent);
                 tick();
 
                 // Check that error handler was called with an error and true flag
@@ -489,7 +490,7 @@ describe('DotPageActionsService', () => {
                 spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
                     const editAction = items.find((item) => item.label === 'Edit');
 
-                    editAction?.command?.({} as unknown);
+                    editAction?.command?.({} as MenuItemCommandEvent);
 
                     expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
                         MOCK_HTMLPAGE_CONTENTLET.inode
@@ -507,7 +508,7 @@ describe('DotPageActionsService', () => {
                         item.label?.includes('push_publish')
                     );
 
-                    pushPublishAction?.command?.({} as unknown);
+                    pushPublishAction?.command?.({} as MenuItemCommandEvent);
 
                     expect(mockPushPublishDialogService.open).toHaveBeenCalledWith({
                         assetIdentifier: MOCK_HTMLPAGE_CONTENTLET.identifier,
@@ -527,7 +528,7 @@ describe('DotPageActionsService', () => {
                     (item) => item.label === MOCK_WORKFLOW_ACTION_NO_INPUTS.name
                 );
 
-                workflowAction?.command?.({} as unknown);
+                workflowAction?.command?.({} as MenuItemCommandEvent);
                 tick();
 
                 expect(mockWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
@@ -552,7 +553,7 @@ describe('DotPageActionsService', () => {
                         (item) => item.label === MOCK_WORKFLOW_ACTION_WITH_INPUTS.name
                     );
 
-                    workflowAction?.command?.({} as unknown);
+                    workflowAction?.command?.({} as MenuItemCommandEvent);
 
                     expect(mockWorkflowEventHandlerService.open).toHaveBeenCalledWith({
                         workflow: MOCK_WORKFLOW_ACTION_WITH_INPUTS,
@@ -574,7 +575,7 @@ describe('DotPageActionsService', () => {
                     (item) => item.label === MOCK_WORKFLOW_ACTION_NO_INPUTS.name
                 );
 
-                workflowAction?.command?.({} as unknown);
+                workflowAction?.command?.({} as MenuItemCommandEvent);
                 tick();
 
                 // Check that error handler was called with an error and true flag
@@ -634,7 +635,7 @@ describe('DotPageActionsService', () => {
                 const contentletWithoutBaseType = {
                     ...MOCK_HTMLPAGE_CONTENTLET,
                     baseType: undefined
-                } as DotCMSContentlet;
+                } as unknown as DotCMSContentlet;
 
                 spectator.service.getItems(contentletWithoutBaseType).subscribe((items) => {
                     const editAction = items.find((item) => item.label === 'Edit');
@@ -692,7 +693,7 @@ describe('DotPageActionsService', () => {
                 expect(favoriteAction).toBeTruthy();
 
                 // Step 2: Dialog opens
-                favoriteAction?.command?.({} as unknown);
+                favoriteAction?.command?.({} as MenuItemCommandEvent);
                 tick();
 
                 expect(mockDialogService.open).toHaveBeenCalled();
@@ -730,7 +731,7 @@ describe('DotPageActionsService', () => {
                 expect(workflowAction).toBeTruthy();
 
                 // Step 2: Workflow executes
-                workflowAction?.command?.({} as unknown);
+                workflowAction?.command?.({} as MenuItemCommandEvent);
                 tick();
 
                 // Step 3: Service fires workflow
@@ -752,7 +753,7 @@ describe('DotPageActionsService', () => {
                     expect(editAction).toBeTruthy();
 
                     // Step 2: Router navigates to edit page
-                    editAction?.command?.({} as unknown);
+                    editAction?.command?.({} as MenuItemCommandEvent);
 
                     expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
                         MOCK_HTMLPAGE_CONTENTLET.inode
@@ -771,7 +772,7 @@ describe('DotPageActionsService', () => {
                     expect(pushPublishAction).toBeTruthy();
 
                     // Step 2: Push publish dialog opens
-                    pushPublishAction?.command?.({} as unknown);
+                    pushPublishAction?.command?.({} as MenuItemCommandEvent);
 
                     expect(mockPushPublishDialogService.open).toHaveBeenCalledWith({
                         assetIdentifier: MOCK_HTMLPAGE_CONTENTLET.identifier,

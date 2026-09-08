@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
@@ -102,7 +102,7 @@ describe('DotContentTypeComponentStore', () => {
 
         it('should handler error on update template', () =>
             new Promise<void>((done) => {
-                const error = new HttpErrorResponse(mockResponseView(400));
+                const error = mockResponseView(400);
                 vi.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
                     throwError(() => error)
                 );

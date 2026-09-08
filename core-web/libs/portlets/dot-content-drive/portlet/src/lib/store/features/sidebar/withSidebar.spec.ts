@@ -306,7 +306,7 @@ describe('withSidebar', () => {
                         expect(result.folders[0]).toHaveProperty('key');
                         expect(result.folders[0]).toHaveProperty('label');
                         expect(result.folders[0]).toHaveProperty('data');
-                        expect(result.folders[0].data.type).toBe('folder');
+                        expect(result.folders[0].data!.type).toBe('folder');
                         done();
                     });
                 }));

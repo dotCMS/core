@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
@@ -72,12 +73,12 @@ describe('DotTemplateDesignerService', () => {
                 .resolve(
                     {
                         paramMap: {
-                            get(param) {
+                            get(param: string) {
                                 return param === 'inode' ? null : 'ID';
                             }
                         }
                     } as any,
-                    null
+                    null as unknown as RouterStateSnapshot
                 )
                 .subscribe((res) => {
                     expect(templateService.getById).toHaveBeenCalledWith('ID');
@@ -96,12 +97,12 @@ describe('DotTemplateDesignerService', () => {
                 .resolve(
                     {
                         paramMap: {
-                            get(param) {
+                            get(param: string) {
                                 return param === 'inode' ? 'inode123' : 'ID';
                             }
                         }
                     } as any,
-                    null
+                    null as unknown as RouterStateSnapshot
                 )
                 .subscribe((res) => {
                     expect(templateService.getFiltered).toHaveBeenCalledWith({
@@ -122,12 +123,12 @@ describe('DotTemplateDesignerService', () => {
                 .resolve(
                     {
                         paramMap: {
-                            get(param) {
+                            get(param: string) {
                                 return param === 'inode' ? 'inode123' : 'ID';
                             }
                         }
                     } as any,
-                    null
+                    null as unknown as RouterStateSnapshot
                 )
                 .subscribe(() => {
                     expect(templateService.getFiltered).toHaveBeenCalledWith({

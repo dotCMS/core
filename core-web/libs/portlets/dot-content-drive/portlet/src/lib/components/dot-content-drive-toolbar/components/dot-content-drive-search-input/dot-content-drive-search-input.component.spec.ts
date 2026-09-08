@@ -162,7 +162,7 @@ describe('DotContentDriveSearchInputComponent', () => {
          * and an earlier test in the file can leave an entry behind.
          */
         it('should decline while an overlay is above the listing', () => {
-            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
             spectator.detectChanges();
 
             const event = pressSlash();
@@ -174,7 +174,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         // The modifier form carries no typing guard, so it reaches the handler from anywhere inside
         // an open dialog. It has to stand down too.
         it('should decline the alias while an overlay is above the listing', () => {
-            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
             spectator.detectChanges();
 
             const event = pressModK();
@@ -186,7 +186,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         });
 
         it('should resume once the overlay closes', () => {
-            const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
             spectator.detectChanges();
             pressSlash();
 
