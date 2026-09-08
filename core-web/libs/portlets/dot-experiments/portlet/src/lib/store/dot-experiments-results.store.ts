@@ -400,9 +400,11 @@ export const DotExperimentsResultsStore = signalStore(
                         .pipe(map(({ payload }) => payload.experiment)),
                     events.on(apiEvents.resultsUnavailable).pipe(map(({ payload }) => payload))
                 ).pipe(
-                    map(({ pageId }) => pageId),
-                    distinctUntilChanged(),
-                    switchMap((pageId) => lookupPage(pageId))
+                    // No `distinctUntilChanged` here, deliberately: only one of the two events fires
+                    // per load, so it could never dedupe within one — it would only ever drop the
+                    // second of two experiments that happen to share a page, and `enter` has already
+                    // reset `page` to null by then, leaving the subline without it.
+                    switchMap(({ pageId }) => lookupPage(pageId))
                 ),
 
                 stop$: events.on(pageEvents.stopRequested).pipe(

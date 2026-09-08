@@ -18,6 +18,7 @@ import {
     STATUS_LABEL_KEYS,
     STATUS_SEVERITIES
 } from '../../../shared/constants';
+import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsResultsPageEvents } from '../../../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
 import { configureCommandsOf, variantsCount } from '../../../util/dot-experiments-list.util';

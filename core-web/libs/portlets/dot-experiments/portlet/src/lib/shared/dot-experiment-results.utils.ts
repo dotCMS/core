@@ -122,8 +122,11 @@ export const getBayesianDatasets = (
         return [];
     }
 
-    // Iterate through all the variants
-    return Object.entries(variants).map(([variantId, variant], index) => {
+    // Control first, as the daily chart and the summary table both order it: the colour is taken by
+    // position, so a payload that happens to list the variants differently would otherwise give the
+    // same variant one colour on this tab and another on the other one.
+    return orderVariants(Object.keys(variants)).map((variantId, index) => {
+        const variant = variants[variantId];
         // Calculate the number of successes and failures
         const success = variant.uniqueBySession.count;
         const failure = sessions.variants[variantId] - variant.uniqueBySession.count;
