@@ -84,10 +84,16 @@ export function withDotAiPreferences() {
 
                 // A blob from an older version gives up the keys that version re-defaulted,
                 // so the new default is what the panel actually shows.
-                const reDefaulted =
-                    stored.version === PREFERENCES_VERSION
-                        ? new Set<string>()
-                        : RE_DEFAULTED_KEYS[PREFERENCES_VERSION];
+                // Union every version newer than the blob's own, so a v1 blob upgrading
+                // straight to v3 still gives up what v2 re-defaulted. Indexing a single
+                // version would also throw on the next bump, because a version with no entry
+                // yields undefined and `.has` blows up inside onInit.
+                const storedVersion = stored.version ?? 0;
+                const reDefaulted = new Set<string>(
+                    Object.entries(RE_DEFAULTED_KEYS)
+                        .filter(([version]) => Number(version) > storedVersion)
+                        .flatMap(([, keys]) => [...keys])
+                );
 
                 // Merge over the defaults rather than replacing them: only keys we recognise,
                 // and only where a value was actually stored. `settingsSite` is allowed to be

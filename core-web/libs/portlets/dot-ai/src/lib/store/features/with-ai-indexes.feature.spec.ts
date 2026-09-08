@@ -1,4 +1,4 @@
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -123,6 +123,28 @@ describe('withAiIndexes', () => {
             stubIndexes([index({ name: 'blogs', fragments: 20 })]);
             store.loadIndexes();
             expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.READY);
+        });
+    });
+
+    describe('index seeding (FR-018)', () => {
+        it('should keep a restored index that is still offered', () => {
+            // The old "seed once" flag was never persisted, so every visit arrived unseeded and
+            // replaced the restored choice with the alphabetically-first index.
+            patchState(store, { settingsIndexName: 'news' });
+
+            stubIndexes([index({ name: 'blogs' }), index({ name: 'news' })]);
+            store.loadIndexes();
+
+            expect(store.settingsIndexName()).toBe('news');
+        });
+
+        it('should fall back to the first offered index when the choice is gone', () => {
+            patchState(store, { settingsIndexName: 'retired' });
+
+            stubIndexes([index({ name: 'blogs' }), index({ name: 'news' })]);
+            store.loadIndexes();
+
+            expect(store.settingsIndexName()).toBe('blogs');
         });
     });
 });

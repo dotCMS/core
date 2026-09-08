@@ -65,13 +65,14 @@ export interface DotAiIndexBuildNotice {
 export const DOT_AI_DEFAULT_THRESHOLD = 0.75;
 
 /**
- * Lowest threshold the panel offers.
+ * Range the panel offers for the closeness threshold.
  *
- * Not zero: `EmbeddingsFactory` skips the distance predicate altogether when the threshold is
- * `0`, so instead of admitting only exact matches it returns every row in the index — the
- * opposite of what the control means. Until that is fixed server-side, zero is not selectable.
+ * `min` is deliberately above zero: `EmbeddingsFactory` skips the distance predicate
+ * altogether when the threshold is `0`, so instead of admitting only exact matches it returns
+ * every row in the index — the opposite of what the control means. Until that is fixed
+ * server-side, zero is not selectable.
  */
-export const DOT_AI_MIN_THRESHOLD = 0.05;
+export const DOT_AI_THRESHOLD_RANGE = { min: 0.05, max: 2 } as const;
 
 /** The backend declares @Min(128) but does not enforce it — the client is the only guard. */
 export const DOT_AI_MIN_RESPONSE_TOKENS = 128;
@@ -105,7 +106,6 @@ export interface DotAiPortletState {
     indexFragmentSnapshot: Record<string, number>;
     indexBuildSeeds: string[];
     indexesForbidden: boolean;
-    settingsIndexSeeded: boolean;
 
     // shared retrieval settings
     settingsIndexName: string;
@@ -138,6 +138,15 @@ export interface DotAiPortletState {
     imageGenerating: boolean;
     imageSaving: boolean;
     imageOrientation: string;
+    /**
+     * Why the last generate or save failed, rendered inline.
+     *
+     * `DotAiContentService` rejects with a **string** — an i18n key, or the provider's own
+     * words — because the block editor consumes it that way. `DotHttpErrorManagerService`
+     * dispatches on `HttpErrorResponse.status`, so handing it a string matched no handler and
+     * the failure was silent: the spinner stopped and nothing else changed.
+     */
+    imageError: string | null;
 }
 
 export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
@@ -154,7 +163,6 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     indexFragmentSnapshot: {},
     indexBuildSeeds: [],
     indexesForbidden: false,
-    settingsIndexSeeded: false,
 
     settingsIndexName: 'default',
     settingsSite: null,
@@ -180,6 +188,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     image: null,
     imageGenerating: false,
     imageSaving: false,
+    imageError: null,
     // 16:9 rather than the shared DEFAULT_IMAGE_SIZE (1024x1024): landscape is the useful
     // default for page and blog imagery. Set here rather than on the shared constant, which
     // the block editor's image prompt in libs/ui also reads.

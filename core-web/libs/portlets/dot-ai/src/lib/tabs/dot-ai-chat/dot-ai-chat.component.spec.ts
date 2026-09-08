@@ -47,7 +47,9 @@ describe('DotAiChatComponent', () => {
         // dot-ai-prompt-input, and the tests below drive both. MarkdownModule.forRoot()
         // supplies MarkdownService, which the app provides globally in app.config.ts.
         imports: [MarkdownModule.forRoot(), DotAiPromptInputComponent],
-        providers: [mockProvider(DotMessageService)],
+        // Echoes the key: the error line pipes through `dm`, and a server message is not a
+        // key, so an echoing mock is the only one that shows both paths honestly.
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })],
         shallow: true
     });
 
@@ -175,6 +177,20 @@ describe('DotAiChatComponent', () => {
         spectator = createComponent();
 
         expect(spectator.query(byTestId('dotai-chat-error'))).toHaveText('rate limited');
+    });
+
+    it('should cancel an in-flight answer when the tab is left (FR-015)', () => {
+        // The store is provided on the shell, above the tab routes, so its own onDestroy does
+        // not fire on a tab switch. Only the component's teardown can cover this.
+        storeMock.isStreaming.mockReturnValue(true);
+        withAnswer(answer());
+        spectator = createComponent();
+
+        expect(storeMock.stopChat).not.toHaveBeenCalled();
+
+        spectator.fixture.destroy();
+
+        expect(storeMock.stopChat).toHaveBeenCalled();
     });
 
     describe('composer', () => {

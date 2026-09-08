@@ -75,13 +75,26 @@ describe('withAiImage', () => {
         });
 
         it('should report a failure and leave nothing half-rendered', () => {
+            // The service rejects with a string, not an HttpErrorResponse, so the shared
+            // handler has no status to dispatch on — routing it there made the failure silent.
             service.generateImage = jest.fn().mockReturnValue(throwError(() => 'boom'));
 
             store.generateImage('a cat');
 
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(store.imageError()).toBe('boom');
             expect(store.imageGenerating()).toBe(false);
             expect(store.image()).toBeNull();
+            expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
+        });
+
+        it('should clear a previous failure when asked again', () => {
+            service.generateImage = jest.fn().mockReturnValue(throwError(() => 'boom'));
+            store.generateImage('a cat');
+
+            service.generateImage = jest.fn().mockReturnValue(of(generated()));
+            store.generateImage('a cat');
+
+            expect(store.imageError()).toBeNull();
         });
     });
 
@@ -116,7 +129,7 @@ describe('withAiImage', () => {
 
             expect(store.image()).not.toBeNull();
             expect(store.image()?.published).toBe(false);
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(store.imageError()).toBe('no');
         });
 
         it('should do nothing when there is no image', () => {

@@ -5,8 +5,10 @@ import { computed } from '@angular/core';
 import { DotAiRetrievalPayload } from '@dotcms/dotcms-models';
 
 import {
+    DOT_AI_DEFAULT_THRESHOLD,
     DOT_AI_MIN_RESPONSE_TOKENS,
     DOT_AI_TEMPERATURE_RANGE,
+    DOT_AI_THRESHOLD_RANGE,
     DotAiPortletState
 } from '../../models/dot-ai-portlet.models';
 
@@ -43,7 +45,15 @@ export function withRetrievalSettings() {
                 const payload: DotAiRetrievalPayload = {
                     indexName: store.settingsIndexName(),
                     site: store.settingsSite() ?? '',
-                    threshold: store.settingsThreshold(),
+                    // Clamped like temperature and responseLengthTokens below. PrimeNG's
+                    // InputNumber returns null for an emptied field *before* it applies
+                    // `min`, so the template's [min] does not cover clearing the control —
+                    // without this, emptying it puts `threshold: null` on the wire.
+                    threshold: clamp(
+                        store.settingsThreshold() ?? DOT_AI_DEFAULT_THRESHOLD,
+                        DOT_AI_THRESHOLD_RANGE.min,
+                        DOT_AI_THRESHOLD_RANGE.max
+                    ),
                     operator: store.settingsOperator(),
                     temperature: clamp(
                         store.settingsTemperature(),

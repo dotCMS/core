@@ -1,4 +1,6 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+
+import { LoginService } from '@dotcms/dotcms-js';
 
 import {
     DotAiCompletionsStreamService,
@@ -57,7 +59,10 @@ describe('DotAiCompletionsStreamService', () => {
     let fetchMock: jest.Mock;
     const originalFetch = global.fetch;
 
-    const createService = createServiceFactory(DotAiCompletionsStreamService);
+    const createService = createServiceFactory({
+        service: DotAiCompletionsStreamService,
+        providers: [mockProvider(LoginService, { auth: { user: { userId: 'dotcms.org.1' } } })]
+    });
 
     const form = { prompt: 'hi', indexName: 'default', stream: true };
 
@@ -231,7 +236,9 @@ describe('DotAiCompletionsStreamService', () => {
     });
 
     it('should ignore a bare JSON line that is not an error', async () => {
-        fetchMock.mockResolvedValue(streamResponse(['{"ok":true}\n', 'data: [DONE]\n']));
+        fetchMock.mockResolvedValue(
+            streamResponse(['{"ok":true}\n', delta('answered'), 'data: [DONE]\n'])
+        );
 
         const events: DotAiStreamEvent[] = [];
         await new Promise<void>((resolve) => {
@@ -241,6 +248,100 @@ describe('DotAiCompletionsStreamService', () => {
             });
         });
 
-        expect(events).toEqual([]);
+        expect(events).toEqual([{ type: 'delta', content: 'answered' }]);
+    });
+
+    describe('a stream that produces nothing', () => {
+        it('should report it rather than completing on an empty answer', async () => {
+            // The alternative is an answer card that renders blank, which is
+            // indistinguishable from a bug in the client.
+            fetchMock.mockResolvedValue(streamResponse(['data: [DONE]\n']));
+
+            const events: DotAiStreamEvent[] = [];
+            await new Promise<void>((resolve) => {
+                spectator.service.stream(form).subscribe({
+                    next: (e) => events.push(e),
+                    complete: () => resolve()
+                });
+            });
+
+            expect(events).toEqual([{ type: 'error', message: 'dotai.chat.error.empty' }]);
+        });
+
+        it('should also report it when the body ends without a [DONE]', async () => {
+            fetchMock.mockResolvedValue(streamResponse([': keep-alive\n']));
+
+            const events: DotAiStreamEvent[] = [];
+            await new Promise<void>((resolve) => {
+                spectator.service.stream(form).subscribe({
+                    next: (e) => events.push(e),
+                    complete: () => resolve()
+                });
+            });
+
+            expect(events).toEqual([{ type: 'error', message: 'dotai.chat.error.empty' }]);
+        });
+
+        it('should stay quiet when an unframed error already explained it', async () => {
+            fetchMock.mockResolvedValue(
+                streamResponse(['{"error":"no matching content found"}\n'])
+            );
+
+            const events: DotAiStreamEvent[] = [];
+            await new Promise<void>((resolve) => {
+                spectator.service.stream(form).subscribe({
+                    next: (e) => events.push(e),
+                    complete: () => resolve()
+                });
+            });
+
+            expect(events).toEqual([{ type: 'error', message: 'no matching content found' }]);
+        });
+    });
+
+    describe('401 mid-screen', () => {
+        // `fetch` is what makes incremental reads possible, and the price is that this request
+        // never reaches `serverErrorInterceptor` — so the logout it performs has to be done
+        // here, or the dotAI tab is the one screen that silently fails on a dead session.
+        const withLocation = (): { href: string } => {
+            const stub = { href: '' };
+            Object.defineProperty(window, 'location', {
+                value: stub,
+                writable: true,
+                configurable: true
+            });
+
+            return stub;
+        };
+
+        it('should redirect to logout when there is a session', async () => {
+            const location = withLocation();
+            fetchMock.mockResolvedValue(streamResponse([], false, 401));
+
+            await new Promise<void>((resolve) => {
+                spectator.service.stream(form).subscribe({
+                    error: () => resolve(),
+                    complete: () => resolve()
+                });
+                setTimeout(resolve, 0);
+            });
+
+            expect(location.href).toContain('/dotAdmin/logout');
+        });
+
+        it('should surface the failure instead when nobody is logged in', async () => {
+            const location = withLocation();
+            spectator.inject(LoginService).auth = { user: null } as never;
+            fetchMock.mockResolvedValue(streamResponse([], false, 401));
+
+            const error = await new Promise<Error>((resolve) => {
+                spectator.service.stream(form).subscribe({
+                    error: (e: Error) => resolve(e)
+                });
+            });
+
+            expect(location.href).toBe('');
+            expect(error.message).toContain('401');
+        });
     });
 });

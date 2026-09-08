@@ -20,8 +20,10 @@ import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
  * retrieval picker update together (FR-033).
  *
  * The `rxMethod` operator per action is load-bearing:
- * - `exhaustMap` for build / rebuild, so a double click cannot double-fire (FR-035)
- * - `mergeMap` for delete, because it is per row — deleting A must not cancel B (FR-034)
+ * - `exhaustMap` for build, rebuild and delete-from-index — each is one submit of one form, so
+ *   a double click must not double-fire (FR-035)
+ * - `mergeMap` for `deleteIndex`, because that one is per row — deleting A must not cancel the
+ *   delete of B (FR-034)
  */
 export function withAiEmbeddings() {
     return signalStoreFeature(
@@ -63,7 +65,19 @@ export function withAiEmbeddings() {
                 return body?.message ?? body?.error ?? error?.message;
             };
 
+            /**
+             * A 403 is the same normal non-admin state `loadIndexes` handles — index
+             * operations require CMS_ADMINISTRATOR_ROLE while portlet access does not — so it
+             * must put the tab into its forbidden state rather than throw a dialog over
+             * someone who has done nothing wrong (FR-050).
+             */
             const fail = (error: HttpErrorResponse) => {
+                if (error?.status === 403) {
+                    patchState(store, { indexesForbidden: true });
+
+                    return EMPTY;
+                }
+
                 httpErrorManager.handle(error);
 
                 return EMPTY;

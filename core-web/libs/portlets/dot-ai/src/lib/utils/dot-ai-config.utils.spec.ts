@@ -1,6 +1,11 @@
 import { DotAiResolvedConfig } from '@dotcms/dotcms-models';
 
-import { DOT_AI_CONFIG_SOURCE, SECRET_MASK, toConfigRows } from './dot-ai-config.utils';
+import {
+    DOT_AI_CONFIG_SOURCE,
+    maskCredentials,
+    SECRET_MASK,
+    toConfigRows
+} from './dot-ai-config.utils';
 
 const config = (overrides: Partial<DotAiResolvedConfig> = {}): DotAiResolvedConfig => ({
     configHost: 'demo.dotcms.com (falls back to system host)',
@@ -57,5 +62,35 @@ describe('toConfigRows', () => {
         const keys = toConfigRows(config()).map((r) => r.key);
 
         expect(keys).toEqual([...keys].sort((a, b) => a.localeCompare(b)));
+    });
+
+    describe('maskCredentials (FR-042)', () => {
+        it('should replace the server mask with the client one', () => {
+            const masked = maskCredentials({ chat: { apiKey: '*****', model: 'gpt-4' } });
+
+            expect(masked).toEqual({ chat: { apiKey: SECRET_MASK, model: 'gpt-4' } });
+        });
+
+        it('should reach a credential at any depth, unlike the table rows', () => {
+            const masked = maskCredentials({
+                image: { aws: { secretAccessKey: '*****', region: 'us-east-1' } }
+            });
+
+            expect(masked).toEqual({
+                image: { aws: { secretAccessKey: SECRET_MASK, region: 'us-east-1' } }
+            });
+        });
+
+        it('should walk arrays without flattening them', () => {
+            expect(maskCredentials([{ apiKey: 'x' }, 'plain'])).toEqual([
+                { apiKey: SECRET_MASK },
+                'plain'
+            ]);
+        });
+
+        it('should pass a primitive through untouched', () => {
+            expect(maskCredentials(null)).toBeNull();
+            expect(maskCredentials('gpt-4')).toBe('gpt-4');
+        });
     });
 });

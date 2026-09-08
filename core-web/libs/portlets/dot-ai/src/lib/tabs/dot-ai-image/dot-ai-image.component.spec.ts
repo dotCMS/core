@@ -24,10 +24,12 @@ describe('DotAiImageComponent', () => {
         imageGenerating: jest.fn().mockReturnValue(false),
         imageSaving: jest.fn().mockReturnValue(false),
         imageOrientation: jest.fn().mockReturnValue('1792x1024'),
+        imageError: jest.fn().mockReturnValue(null),
         isConfigured: jest.fn().mockReturnValue(true),
         generateImage: jest.fn(),
         saveImage: jest.fn(),
-        setOrientation: jest.fn()
+        setOrientation: jest.fn(),
+        dismissImageError: jest.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -42,6 +44,7 @@ describe('DotAiImageComponent', () => {
         storeMock.image.mockReturnValue(null);
         storeMock.imageUrl.mockReturnValue(null);
         storeMock.imageGenerating.mockReturnValue(false);
+        storeMock.imageError.mockReturnValue(null);
         storeMock.isConfigured.mockReturnValue(true);
         spectator = createComponent();
     });
@@ -56,6 +59,15 @@ describe('DotAiImageComponent', () => {
         expect(spectator.query(byTestId('dotai-image-empty'))).toBeTruthy();
     });
 
+    it('should render a generate failure inline rather than swallowing it', () => {
+        // The content service rejects with a string, which DotHttpErrorManagerService cannot
+        // dispatch on — so before this the spinner just stopped and nothing said why.
+        storeMock.imageError.mockReturnValue('content policy violation');
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-image-error'))).toBeTruthy();
+    });
+
     it('should show a placeholder while generating', () => {
         storeMock.imageGenerating.mockReturnValue(true);
         spectator = createComponent();
@@ -64,8 +76,7 @@ describe('DotAiImageComponent', () => {
     });
 
     it('should not render the provider rewritten prompt', () => {
-        // Removed on request. Note this diverges from FR-039, which requires the rewritten
-        // prompt to be shown and copyable; the spec needs updating and re-approving.
+        // Removed on request; FR-039 was struck from the spec to match.
         withImage();
 
         expect(spectator.query(byTestId('dotai-image-revised'))).toBeFalsy();

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ImageModule } from 'primeng/image';
+import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -27,6 +28,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
         SelectModule,
         SkeletonModule,
         ImageModule,
+        MessageModule,
         DotAiPromptInputComponent,
         DotMessagePipe
     ],

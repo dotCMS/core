@@ -6,7 +6,7 @@ import { computed, inject } from '@angular/core';
 
 import { catchError, exhaustMap, tap } from 'rxjs/operators';
 
-import { DotAiContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import { DotAIImageResponse } from '@dotcms/dotcms-models';
 
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
@@ -38,11 +38,25 @@ export function withAiImage() {
         })),
         withMethods((store) => {
             const contentService = inject(DotAiContentService);
-            const httpErrorManager = inject(DotHttpErrorManagerService);
+
+            /**
+             * `DotAiContentService` rejects with a **string**, not an `HttpErrorResponse`: an
+             * i18n key for the cases it recognises, otherwise the provider's own words. That
+             * shape is the block editor's, and it is not ours to change, so the message is
+             * rendered inline through `| dm` — which translates a key and passes prose
+             * through untouched (FR-014). Routing it to `DotHttpErrorManagerService` matched
+             * no handler at all, and the failure was silent.
+             */
+            const toMessage = (error: unknown): string =>
+                typeof error === 'string' ? error : ((error as Error)?.message ?? String(error));
 
             return {
                 setOrientation(imageOrientation: string): void {
                     patchState(store, { imageOrientation });
+                },
+
+                dismissImageError(): void {
+                    patchState(store, { imageError: null });
                 },
 
                 generateImage: rxMethod<string>(
@@ -54,7 +68,11 @@ export function withAiImage() {
                                 return EMPTY;
                             }
 
-                            patchState(store, { imageGenerating: true, image: null });
+                            patchState(store, {
+                                imageGenerating: true,
+                                image: null,
+                                imageError: null
+                            });
 
                             return contentService
                                 .generateImage(trimmed, store.imageOrientation())
@@ -73,9 +91,11 @@ export function withAiImage() {
                                             }
                                         })
                                     ),
-                                    catchError((error) => {
-                                        httpErrorManager.handle(error);
-                                        patchState(store, { imageGenerating: false });
+                                    catchError((error: unknown) => {
+                                        patchState(store, {
+                                            imageGenerating: false,
+                                            imageError: toMessage(error)
+                                        });
 
                                         return EMPTY;
                                     })
@@ -94,7 +114,7 @@ export function withAiImage() {
                                 return EMPTY;
                             }
 
-                            patchState(store, { imageSaving: true });
+                            patchState(store, { imageSaving: true, imageError: null });
 
                             return contentService
                                 .createAndPublishContentlet({
@@ -108,11 +128,13 @@ export function withAiImage() {
                                             image: { ...image, published: true }
                                         })
                                     ),
-                                    catchError((error) => {
-                                        httpErrorManager.handle(error);
+                                    catchError((error: unknown) => {
                                         // The image stays on screen so the user can retry or
                                         // just download it instead (FR-040).
-                                        patchState(store, { imageSaving: false });
+                                        patchState(store, {
+                                            imageSaving: false,
+                                            imageError: toMessage(error)
+                                        });
 
                                         return EMPTY;
                                     })

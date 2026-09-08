@@ -3,7 +3,21 @@
          short band above the composer. The inner container mirrors the composer's width, so the
          panel and the card share the same edges. -->
     <div class="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
-        <div class="container mx-auto flex min-h-0 flex-1 flex-col">
+        <div class="container mx-auto flex min-h-0 flex-1 flex-col gap-3">
+            @if (store.imageError(); as error) {
+                <!-- Inline rather than a dialog: the message is usually the provider's own
+                     explanation of the prompt it refused, which belongs next to the prompt.
+                     `dm` translates the keys the service returns and leaves prose alone. -->
+                <p-message
+                    class="block shrink-0"
+                    severity="error"
+                    [closable]="true"
+                    (onClose)="store.dismissImageError()"
+                    data-testid="dotai-image-error">
+                    {{ error | dm }}
+                </p-message>
+            }
+
             @if (store.imageGenerating()) {
                 <!-- Takes the same room the picture will, so the panel does not jump when the
                      placeholder is swapped for the result. -->

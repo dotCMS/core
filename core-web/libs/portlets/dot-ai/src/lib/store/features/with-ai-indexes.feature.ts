@@ -46,6 +46,8 @@ export function withAiIndexes() {
             const httpErrorManager = inject(DotHttpErrorManagerService);
 
             const applyIndexes = (indexes: DotAiIndex[]) => {
+                const offered = toIndexOptions(indexes).map((option) => option.value);
+
                 const seeds = new Set(store.indexBuildSeeds());
                 const statuses = deriveIndexStatuses(indexes, store.indexFragmentSnapshot(), seeds);
 
@@ -67,14 +69,14 @@ export function withAiIndexes() {
                         {}
                     ),
                     indexesForbidden: false,
-                    // Seed the picker once, so a later poll cannot yank the user's choice.
-                    ...(store.settingsIndexSeeded() || !indexes.length
-                        ? {}
-                        : {
-                              settingsIndexName:
-                                  toIndexOptions(indexes)[0]?.value ?? store.settingsIndexName(),
-                              settingsIndexSeeded: true
-                          })
+                    // Seed the picker only when the current choice is not on offer — FR-018
+                    // wants a fallback, not an overwrite. Keying this off a "seeded once" flag
+                    // was wrong: the flag is not persisted, so every visit arrived unseeded and
+                    // replaced the restored index with the alphabetically-first one, since
+                    // `indexCount` returns a TreeMap.
+                    ...(offered.length && !offered.includes(store.settingsIndexName())
+                        ? { settingsIndexName: offered[0] }
+                        : {})
                 });
             };
 

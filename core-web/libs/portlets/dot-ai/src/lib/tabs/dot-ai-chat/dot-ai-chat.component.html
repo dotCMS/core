@@ -39,9 +39,11 @@
                         }
 
                         @if (current.state === states.ERROR) {
-                            <!-- Inline, never a dialog over a live stream. -->
+                            <!-- Inline, never a dialog over a live stream. Through `dm` so the
+                                 client's own keys resolve; a server message is not a key, and
+                                 `dm` returns anything it does not recognise unchanged. -->
                             <p class="mt-1 text-sm text-red-500" data-testid="dotai-chat-error">
-                                {{ current.error }}
+                                {{ current.error | dm }}
                             </p>
                         }
                     </div>

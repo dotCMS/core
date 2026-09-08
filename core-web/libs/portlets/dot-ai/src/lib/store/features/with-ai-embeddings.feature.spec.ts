@@ -186,6 +186,32 @@ describe('withAiEmbeddings', () => {
         });
     });
 
+    describe('a 403 on a mutation (FR-050)', () => {
+        // Index operations require CMS_ADMINISTRATOR_ROLE while portlet access does not, so a
+        // 403 is a normal non-admin state — the same one `loadIndexes` already handles. Before
+        // this it reached DotHttpErrorManagerService and became a dialog.
+        const forbidden = () => throwError(() => new HttpErrorResponse({ status: 403 }));
+
+        it('should put the tab in its forbidden state rather than raising a dialog', () => {
+            service.deleteIndex = jest.fn().mockReturnValue(forbidden());
+
+            store.deleteIndex('blogs');
+
+            expect(store.indexesForbidden()).toBe(true);
+            expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
+        });
+
+        it('should still route other failures through the error manager', () => {
+            const error = new HttpErrorResponse({ status: 500 });
+            service.rebuildEmbeddingsDb = jest.fn().mockReturnValue(throwError(() => error));
+
+            store.rebuildEmbeddingsDb();
+
+            expect(store.indexesForbidden()).toBe(false);
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+        });
+    });
+
     describe('client-side filtering (FR-028)', () => {
         beforeEach(() => {
             service.getIndexes = jest

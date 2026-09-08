@@ -9,10 +9,13 @@
             {{ store.resolvedConfig()?.configHost }}
         </span>
 
+        <!-- redactionFailed leaves providerConfig null while isConfigured stays true, so
+             without that second clause the button opens a dialog containing `{}` — which reads
+             as "the provider has no configuration" rather than "we would not show it". -->
         <p-button
             variant="text"
             [label]="'dotai.config.view-provider' | dm"
-            [disabled]="!store.isConfigured()"
+            [disabled]="!store.isConfigured() || store.redactionFailed()"
             (onClick)="$providerDialogOpen.set(true)"
             data-testid="dotai-config-view-provider" />
     </div>

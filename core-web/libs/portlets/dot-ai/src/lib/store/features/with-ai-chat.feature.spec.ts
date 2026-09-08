@@ -81,6 +81,18 @@ describe('withAiChat', () => {
         expect(store.isStreaming()).toBe(false);
     });
 
+    it('should leave no armed flush timer behind after the turn ends', () => {
+        // `flushDeltas` used to null the handle without clearing it, so a flush landed
+        // directly from `finish` left a timer nothing could reach. Harmless only because the
+        // late tick found an empty buffer — one line's change away from resurrecting an
+        // answer after a stop.
+        store.sendChat('q');
+        stream$.next({ type: 'delta', content: 'done' });
+        stream$.complete();
+
+        expect(jest.getTimerCount()).toBe(0);
+    });
+
     it('should send the shared retrieval payload with stream enabled', () => {
         const service = spectator.inject(DotAiCompletionsStreamService);
         store.setSettings({ settingsIndexName: 'blogs' });

@@ -1,6 +1,6 @@
 import { MarkdownModule } from 'ngx-markdown';
 
-import { Component, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -41,6 +41,15 @@ import { DotAiStore } from '../../store/dot-ai.store';
 })
 export default class DotAiChatComponent {
     protected readonly store = inject(DotAiStore);
+
+    constructor() {
+        // FR-015: leaving Chat mid-answer must cancel it. The store's own onDestroy cannot do
+        // this — DotAiStore is provided on the shell, above the five tab routes, so switching
+        // tabs destroys only this component and the store's hook does not run until the whole
+        // portlet unmounts. Without this the fetch keeps streaming into state nobody is
+        // looking at.
+        inject(DestroyRef).onDestroy(() => this.store.stopChat());
+    }
 
     protected readonly states = DOT_AI_ANSWER_STATE;
 

@@ -12,7 +12,7 @@ import { DotMessagePipe, DotSiteComponent } from '@dotcms/ui';
 
 import {
     DOT_AI_MIN_RESPONSE_TOKENS,
-    DOT_AI_MIN_THRESHOLD,
+    DOT_AI_THRESHOLD_RANGE,
     DOT_AI_TEMPERATURE_RANGE
 } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
@@ -55,8 +55,8 @@ export class DotAiSettingsPanelComponent {
         }
     ];
 
-    /** See the template: a zero threshold makes the server return everything. */
-    protected readonly minThreshold = DOT_AI_MIN_THRESHOLD;
+    /** See the constant: a zero threshold makes the server return everything. */
+    protected readonly thresholdRange = DOT_AI_THRESHOLD_RANGE;
 
     protected readonly temperatureRange = DOT_AI_TEMPERATURE_RANGE;
     protected readonly minResponseTokens = DOT_AI_MIN_RESPONSE_TOKENS;

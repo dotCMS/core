@@ -147,6 +147,31 @@ describe('withDotAiPreferences', () => {
     });
 
     describe('re-defaulting on an older blob', () => {
+        it('should apply every re-default newer than the stored version', () => {
+            // A v1 blob upgrading straight past v2 must still give up what v2 re-defaulted.
+            localStorage.setItem(
+                KEY,
+                JSON.stringify({
+                    version: 1,
+                    settingsThreshold: 0.25,
+                    settingsContentTypes: 'Blog'
+                })
+            );
+
+            spectator = createService();
+
+            expect(spectator.service.settingsThreshold()).toBe(0.75);
+            expect(spectator.service.settingsContentTypes()).toBe('Blog');
+        });
+
+        it('should not throw when the current version has no re-defaults of its own', () => {
+            // Indexing RE_DEFAULTED_KEYS by the current version alone yields undefined on the
+            // next bump, and `.has` on it would kill the portlet during hydrate.
+            localStorage.setItem(KEY, JSON.stringify({ version: 99, settingsThreshold: 0.3 }));
+
+            expect(() => createService()).not.toThrow();
+        });
+
         it('should take the new threshold default instead of the stored one', () => {
             // Without this, raising the default would only reach people who had never opened
             // the portlet — everyone else stays pinned to the value they have persisted.

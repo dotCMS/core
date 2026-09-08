@@ -64,4 +64,27 @@ describe('DotAiConfigValuesComponent', () => {
         expect(spectator.query(byTestId('dotai-config-redaction-failed'))).toBeTruthy();
         expect(spectator.query(byTestId('dotai-config-table'))).toBeFalsy();
     });
+
+    describe('the provider JSON view', () => {
+        const viewProviderButton = (): HTMLButtonElement | null =>
+            spectator.query(byTestId('dotai-config-view-provider'))?.querySelector('button') ??
+            null;
+
+        it('should mask credentials rather than printing the server mask (FR-042)', () => {
+            spectator.click(viewProviderButton() as HTMLButtonElement);
+            const json = spectator.query(byTestId('dotai-config-provider-json'))?.textContent ?? '';
+
+            expect(json).toContain('••••••••');
+            expect(json).not.toContain('*****');
+        });
+
+        it('should not be offered when redaction failed', () => {
+            // providerConfig is null there while isConfigured stays true, so the dialog would
+            // open on `{}` — which reads as "no provider configuration" rather than "withheld".
+            storeMock.redactionFailed.mockReturnValue(true);
+            spectator = createComponent();
+
+            expect(viewProviderButton()?.hasAttribute('disabled')).toBe(true);
+        });
+    });
 });

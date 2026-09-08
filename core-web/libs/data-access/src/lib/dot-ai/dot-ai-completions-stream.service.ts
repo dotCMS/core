@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { inject, Injectable, Injector } from '@angular/core';
 
+import { HttpCode, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAiCompletionsForm } from '@dotcms/dotcms-models';
 
 import { AI_API_ENDPOINT } from './dot-ai.constants';
@@ -21,6 +22,14 @@ const DONE = '[DONE]';
 const DATA_PREFIX = 'data:';
 
 /**
+ * Shown when the stream closes having produced neither a delta nor an error.
+ *
+ * Without it the answer settles into COMPLETE with empty content, which renders as a blank
+ * card — indistinguishable from a bug in the client (FR-014).
+ */
+const EMPTY_STREAM_KEY = 'dotai.chat.error.empty';
+
+/**
  * Streams a chat completion token by token.
  *
  * **Not `providedIn: 'root'`** — it is provided by the dotAI route so it lives and dies with
@@ -38,6 +47,10 @@ const DATA_PREFIX = 'data:';
  */
 @Injectable()
 export class DotAiCompletionsStreamService {
+    // Resolved lazily, exactly as `serverErrorInterceptor` does it: this service is provided
+    // by the dotAI route, and `LoginService` pulls in the whole auth graph.
+    readonly #injector = inject(Injector);
+
     stream(form: DotAiCompletionsForm): Observable<DotAiStreamEvent> {
         return new Observable<DotAiStreamEvent>((subscriber) => {
             const controller = new AbortController();
@@ -57,6 +70,25 @@ export class DotAiCompletionsStreamService {
             complete: () => void;
         }
     ): Promise<void> {
+        let sawOutput = false;
+        // Wraps `subscriber` so every emit path — framed, bare, or error — is counted in one
+        // place, rather than each call site having to remember to set a flag.
+        const tracked = {
+            next: (event: DotAiStreamEvent) => {
+                sawOutput = true;
+                subscriber.next(event);
+            }
+        };
+
+        /** Nothing came back at all: say so rather than completing on an empty answer. */
+        const complete = () => {
+            if (!sawOutput) {
+                subscriber.next({ type: 'error', message: EMPTY_STREAM_KEY });
+            }
+
+            subscriber.complete();
+        };
+
         try {
             const response = await fetch(`${AI_API_ENDPOINT}/completions`, {
                 method: 'POST',
@@ -71,6 +103,16 @@ export class DotAiCompletionsStreamService {
             });
 
             if (!response.ok || !response.body) {
+                // `fetch` is what makes incremental reads possible, and the cost is that this
+                // request never sees `serverErrorInterceptor`. A 401 here means the session
+                // died mid-screen; without this the user is left staring at a failed answer on
+                // a portlet whose every other call is redirecting them to the login page.
+                if (response.status === HttpCode.UNAUTHORIZED && this.#hasSession()) {
+                    window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
+
+                    return;
+                }
+
                 subscriber.error(new Error(`Completions stream failed: ${response.status}`));
 
                 return;
@@ -98,8 +140,8 @@ export class DotAiCompletionsStreamService {
                 buffer = lines.pop() ?? '';
 
                 for (const line of lines) {
-                    if (this.#emit(line, subscriber)) {
-                        subscriber.complete();
+                    if (this.#emit(line, tracked)) {
+                        complete();
 
                         return;
                     }
@@ -108,15 +150,25 @@ export class DotAiCompletionsStreamService {
 
             // Flush a trailing frame that arrived without a closing newline.
             if (buffer.trim()) {
-                this.#emit(buffer, subscriber);
+                this.#emit(buffer, tracked);
             }
 
-            subscriber.complete();
+            complete();
         } catch (error) {
             if (!controller.signal.aborted) {
                 subscriber.error(error);
             }
         }
+    }
+
+    /**
+     * Whether there is a session to log out of.
+     *
+     * Same guard as the interceptor: a 401 on a screen nobody is logged into is just a 401,
+     * and redirecting to logout from there is a loop.
+     */
+    #hasSession(): boolean {
+        return !!this.#injector.get(LoginService).auth?.user;
     }
 
     /** Returns true when the stream is finished. */

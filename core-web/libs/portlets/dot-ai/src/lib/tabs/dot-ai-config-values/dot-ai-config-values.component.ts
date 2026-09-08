@@ -9,7 +9,11 @@ import { DotCopyButtonComponent, DotMessagePipe, DotSearchInputComponent } from 
 
 import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiStore } from '../../store/dot-ai.store';
-import { DOT_AI_CONFIG_SOURCE, toConfigRows } from '../../utils/dot-ai-config.utils';
+import {
+    DOT_AI_CONFIG_SOURCE,
+    maskCredentials,
+    toConfigRows
+} from '../../utils/dot-ai-config.utils';
 
 /**
  * Config Values: every resolved dotAI setting, where it came from, and the raw provider
@@ -56,9 +60,14 @@ export default class DotAiConfigValuesComponent {
         );
     });
 
-    /** A flat two-column table cannot represent nested JSON, so it gets its own view. */
+    /**
+     * A flat two-column table cannot represent nested JSON, so it gets its own view.
+     *
+     * Masked on the way out: the server sends credential fields as `*****`, and printing that
+     * verbatim shows a mask that reads like a real value (FR-042).
+     */
     protected readonly $providerJson = computed(() =>
-        JSON.stringify(this.store.resolvedConfig()?.providerConfig ?? {}, null, 2)
+        JSON.stringify(maskCredentials(this.store.resolvedConfig()?.providerConfig ?? {}), null, 2)
     );
 
     protected severityFor(source: string): 'info' | 'secondary' {

@@ -77,8 +77,24 @@ export function withAiChat() {
                 patchState(store, { chatAnswer: { ...current, ...change } });
             };
 
+            const clearFlushTimer = () => {
+                if (flushHandle) {
+                    clearTimeout(flushHandle);
+                    flushHandle = null;
+                }
+            };
+
+            /**
+             * Lands buffered deltas now.
+             *
+             * The timer is cleared *here* rather than by the caller, because this runs both as
+             * the timer callback and directly from `finish`. Nulling the handle without
+             * clearing it left the direct case with an armed timer no later `clearTimeout`
+             * could reach — harmless only by accident, since the late tick found an empty
+             * buffer.
+             */
             const flushDeltas = () => {
-                flushHandle = null;
+                clearFlushTimer();
 
                 if (!pending) {
                     return;
@@ -90,19 +106,15 @@ export function withAiChat() {
                 patchAnswer({ content: (store.chatAnswer()?.content ?? '') + text });
             };
 
-            const cancelFlush = () => {
-                if (flushHandle) {
-                    clearTimeout(flushHandle);
-                    flushHandle = null;
-                }
-
+            /** Drops buffered deltas without writing them. */
+            const discardDeltas = () => {
+                clearFlushTimer();
                 pending = '';
             };
 
             const finish = (state: DotAiAnswerState, error?: string) => {
                 // Land whatever is buffered before the state change closes patchAnswer's guard.
                 flushDeltas();
-                cancelFlush();
 
                 patchAnswer({ state, ...(error ? { error } : {}) });
                 patchState(store, { chatStreaming: false });
@@ -116,7 +128,7 @@ export function withAiChat() {
                         return;
                     }
 
-                    cancelFlush();
+                    discardDeltas();
 
                     // Replaces whatever was on screen. Each submit is its own request.
                     patchState(store, {
@@ -164,8 +176,9 @@ export function withAiChat() {
         }),
         withHooks({
             onDestroy(store) {
-                // Leaving the screen cancels an in-flight answer rather than leaving an open
-                // stream running unseen (FR-015).
+                // Backstop for the whole portlet unmounting. This is NOT what satisfies FR-015
+                // on a tab switch: the store is provided on the shell, so this hook only fires
+                // when /dotai itself is left. DotAiChatComponent cancels on its own teardown.
                 store.stopChat();
             }
         })

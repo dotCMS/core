@@ -21,6 +21,35 @@ export interface DotAiConfigValueRow {
 }
 
 /**
+ * A copy of the provider config with every credential field replaced by the client's own mask.
+ *
+ * The server has already rewritten these to `*****`, so nothing secret reaches the browser —
+ * but FR-042 rules out rendering the server's mask as much as the value itself, since `*****`
+ * reads like a real five-character setting. The raw JSON view is the only place the config is
+ * shown unflattened, so it is the only place that needs this; the table gets the same
+ * treatment structurally, through `toSecretRows`.
+ *
+ * Recurses, unlike `toSecretRows`, which only walks the one section level the table has rows
+ * for. The JSON view shows whatever depth the provider sent.
+ */
+export function maskCredentials(value: unknown): unknown {
+    if (Array.isArray(value)) {
+        return value.map(maskCredentials);
+    }
+
+    if (!value || typeof value !== 'object') {
+        return value;
+    }
+
+    return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, nested]) => [
+            key,
+            AI_CREDENTIAL_FIELDS.includes(key) ? SECRET_MASK : maskCredentials(nested)
+        ])
+    );
+}
+
+/**
  * Flattens the resolved config into table rows, deriving each value's origin the same way the
  * backend resolves it: an explicitly-set value wins, otherwise the built-in default.
  *

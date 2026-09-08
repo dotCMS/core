@@ -29,8 +29,8 @@
         <p-inputNumber
             inputId="dotai-settings-threshold"
             size="small"
-            [min]="minThreshold"
-            [max]="2"
+            [min]="thresholdRange.min"
+            [max]="thresholdRange.max"
             [step]="0.05"
             [minFractionDigits]="2"
             [ngModel]="store.settingsThreshold()"
