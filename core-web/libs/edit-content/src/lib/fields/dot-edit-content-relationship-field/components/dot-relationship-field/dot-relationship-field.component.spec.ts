@@ -130,6 +130,19 @@ let hostStub: {
 describe('DotRelationshipFieldComponent', () => {
     let spectator: Spectator<DotRelationshipFieldComponent>;
 
+    // `showCreateNewContentDialog()` reaches the centered dialog through a dynamic
+    // `import()`, and under Vitest that import is where the dialog component and its whole
+    // Angular graph get transformed — inside the 5s budget of whichever test calls it first.
+    // ts-jest resolved it at compile time, so it cost nothing there. On an idle machine the
+    // transform fits; with `nx run-many` running three projects at once it does not, and the
+    // suite failed with "Test timed out in 5000ms" plus a second, collateral failure in the
+    // next test (the timed-out call's `dialogService.open` landed during it, so the mock had
+    // been called twice). Warming the module here moves the transform outside every test's
+    // clock rather than widening the clock to hide it.
+    beforeAll(async () => {
+        await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
+    });
+
     beforeEach(() => {
         ngControlStub = { control: null };
         hostStub = {
