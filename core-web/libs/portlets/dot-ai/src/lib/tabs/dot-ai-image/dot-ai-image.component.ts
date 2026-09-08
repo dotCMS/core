@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -62,8 +62,13 @@ export default class DotAiImageComponent {
         root: { class: 'flex h-full w-fit' }
     };
 
+    /** One rule, read by both the button's disabled state and the generate path. */
+    protected readonly $canGenerate = computed(
+        () => this.store.isConfigured() && !!this.$prompt().trim() && !this.store.imageGenerating()
+    );
+
     protected onGenerate(): void {
-        if (this.$prompt().trim() && this.store.isConfigured()) {
+        if (this.$canGenerate()) {
             this.store.generateImage(this.$prompt());
         }
     }

@@ -17,6 +17,7 @@ import { DotMessagePipe, DotSearchInputComponent } from '@dotcms/ui';
 
 import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-create.component';
 
+import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiIndexBuildNotice } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { estimateIndexCost } from '../../utils/dot-ai-index.utils';
@@ -34,6 +35,7 @@ import { estimateIndexCost } from '../../utils/dot-ai-index.utils';
 @Component({
     selector: 'dot-ai-embeddings',
     imports: [
+        DotAiEmptyStateComponent,
         ToolbarModule,
         MessageModule,
         TableModule,

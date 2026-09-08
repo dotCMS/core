@@ -9,6 +9,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
+import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
@@ -24,6 +25,7 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 @Component({
     selector: 'dot-ai-search',
     imports: [
+        DotAiEmptyStateComponent,
         ButtonModule,
         InputGroupModule,
         InputGroupAddonModule,
@@ -39,7 +41,6 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 })
 export default class DotAiSearchComponent {
     protected readonly store = inject(DotAiStore);
-
 
     /** Closeness for the result bar. See `toClosenessPercent` for why it normalises. */
     protected readonly toCloseness = toClosenessPercent;

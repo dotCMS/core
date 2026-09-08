@@ -47,28 +47,20 @@
                     }
                 </div>
             } @else if (store.searchMissingIndex(); as missing) {
-                <div class="p-8 text-center" data-testid="dotai-search-missing-index">
-                    <h2 class="text-2xl font-medium">
-                        {{ 'dotai.search.index-missing' | dm }}
-                    </h2>
-                    <p class="mt-1 text-muted-color">{{ missing }}</p>
-                </div>
+                <dot-ai-empty-state
+                    [title]="'dotai.search.index-missing' | dm"
+                    [subtitle]="missing"
+                    data-testid="dotai-search-missing-index" />
             } @else if (!store.hasSearched()) {
-                <div class="p-8 text-center" data-testid="dotai-search-empty-first-run">
-                    <h2 class="text-2xl font-medium">
-                        {{ 'dotai.search.first-run.title' | dm }}
-                    </h2>
-                    <p class="mt-1 text-muted-color">{{ 'dotai.search.first-run.sub' | dm }}</p>
-                </div>
+                <dot-ai-empty-state
+                    [title]="'dotai.search.first-run.title' | dm"
+                    [subtitle]="'dotai.search.first-run.sub' | dm"
+                    data-testid="dotai-search-empty-first-run" />
             } @else if (!store.searchResults().length) {
-                <div class="p-8 text-center" data-testid="dotai-search-no-results">
-                    <h2 class="text-2xl font-medium">
-                        {{ 'dotai.search.no-results.title' | dm }}
-                    </h2>
-                    <p class="mt-1 text-muted-color">
-                        {{ 'dotai.search.no-results.sub' | dm }}
-                    </p>
-                </div>
+                <dot-ai-empty-state
+                    [title]="'dotai.search.no-results.title' | dm"
+                    [subtitle]="'dotai.search.no-results.sub' | dm"
+                    data-testid="dotai-search-no-results" />
             } @else {
                 <ul class="flex flex-col gap-3" data-testid="dotai-search-results">
                     @for (result of store.searchResults(); track result.inode) {

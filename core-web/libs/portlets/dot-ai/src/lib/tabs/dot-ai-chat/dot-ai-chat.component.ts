@@ -1,6 +1,6 @@
 import { MarkdownModule } from 'ngx-markdown';
 
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -8,6 +8,7 @@ import { DotAgentThinkingComponent, DotAiPromptInputComponent } from '@dotcms/ai
 import { DOT_AI_ANSWER_STATE } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 
@@ -27,6 +28,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
 @Component({
     selector: 'dot-ai-chat',
     imports: [
+        DotAiEmptyStateComponent,
         ButtonModule,
         MarkdownModule,
         DotAgentThinkingComponent,
@@ -46,14 +48,17 @@ export default class DotAiChatComponent {
 
     protected readonly answer = viewChild<{ nativeElement: HTMLElement }>('answer');
 
-    protected onSend(): void {
-        const prompt = this.$draft().trim();
+    /** One rule, read by both the button's disabled state and the send path. */
+    protected readonly $canSend = computed(
+        () => this.store.isConfigured() && !!this.$draft().trim()
+    );
 
-        if (!prompt || !this.store.isConfigured()) {
+    protected onSend(): void {
+        if (!this.$canSend()) {
             return;
         }
 
-        this.store.sendChat(prompt);
+        this.store.sendChat(this.$draft());
 
         // The draft is deliberately kept: the question is only visible here, and asking a
         // variation of it is the common next step.

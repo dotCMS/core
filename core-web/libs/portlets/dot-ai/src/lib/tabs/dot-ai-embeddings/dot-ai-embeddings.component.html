@@ -4,7 +4,7 @@
             <dot-search-input
                 [placeholder]="'dotai.embeddings.filter.placeholder'"
                 (search)="store.setIndexFilter($event)"
-                testId="dotai-embeddings-filter" />
+                data-testid="dotai-embeddings-filter" />
         </ng-template>
 
         <ng-template pTemplate="end">
@@ -36,9 +36,7 @@
             data-testid="dotai-embeddings-build-notice">
             @switch (notice.kind) {
                 @case ('built') {
-                    {{
-                        'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName]
-                    }}
+                    {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
                 }
                 @case ('empty') {
                     {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
@@ -57,12 +55,10 @@
         @if (store.indexesForbidden()) {
             <!-- indexCount requires CMS_ADMINISTRATOR_ROLE while portlet access does not, so
                  this is a normal state for a non-admin, not an error (FR-049, FR-050). -->
-            <div class="p-8 text-center" data-testid="dotai-embeddings-forbidden">
-                <h2 class="text-2xl font-medium">{{ 'dotai.index.admin-required' | dm }}</h2>
-                <p class="mt-1 text-muted-color">
-                    {{ 'dotai.index.admin-required.sub' | dm }}
-                </p>
-            </div>
+            <dot-ai-empty-state
+                [title]="'dotai.index.admin-required' | dm"
+                [subtitle]="'dotai.index.admin-required.sub' | dm"
+                data-testid="dotai-embeddings-forbidden" />
         } @else {
             <p-table
                 [value]="store.filteredIndexes()"
@@ -165,14 +161,10 @@
                 <ng-template pTemplate="emptymessage">
                     <tr>
                         <td colspan="7">
-                            <div class="p-8 text-center" data-testid="dotai-embeddings-empty">
-                                <h2 class="text-2xl font-medium">
-                                    {{ 'dotai.embeddings.empty.title' | dm }}
-                                </h2>
-                                <p class="mt-1 text-muted-color">
-                                    {{ 'dotai.embeddings.empty.sub' | dm }}
-                                </p>
-                            </div>
+                            <dot-ai-empty-state
+                                [title]="'dotai.embeddings.empty.title' | dm"
+                                [subtitle]="'dotai.embeddings.empty.sub' | dm"
+                                data-testid="dotai-embeddings-empty" />
                         </td>
                     </tr>
                 </ng-template>

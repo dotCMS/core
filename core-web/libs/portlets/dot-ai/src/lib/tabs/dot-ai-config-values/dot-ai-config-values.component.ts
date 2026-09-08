@@ -7,6 +7,7 @@ import { TagModule } from 'primeng/tag';
 
 import { DotCopyButtonComponent, DotMessagePipe, DotSearchInputComponent } from '@dotcms/ui';
 
+import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { DOT_AI_CONFIG_SOURCE, toConfigRows } from '../../utils/dot-ai-config.utils';
 
@@ -20,6 +21,7 @@ import { DOT_AI_CONFIG_SOURCE, toConfigRows } from '../../utils/dot-ai-config.ut
 @Component({
     selector: 'dot-ai-config-values',
     imports: [
+        DotAiEmptyStateComponent,
         TableModule,
         TagModule,
         ButtonModule,

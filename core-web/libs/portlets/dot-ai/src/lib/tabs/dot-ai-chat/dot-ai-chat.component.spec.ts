@@ -20,7 +20,6 @@ describe('DotAiChatComponent', () => {
 
     const storeMock = {
         chatAnswer: jest.fn().mockReturnValue(null),
-        hasAnswer: jest.fn().mockReturnValue(false),
         isStreaming: jest.fn().mockReturnValue(false),
         isConfigured: jest.fn().mockReturnValue(true),
         showNotConfigured: jest.fn().mockReturnValue(false),
@@ -55,7 +54,6 @@ describe('DotAiChatComponent', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         storeMock.chatAnswer.mockReturnValue(null);
-        storeMock.hasAnswer.mockReturnValue(false);
         storeMock.isStreaming.mockReturnValue(false);
         storeMock.isConfigured.mockReturnValue(true);
     });
@@ -68,7 +66,6 @@ describe('DotAiChatComponent', () => {
 
     const withAnswer = (current: DotAiChatAnswer | null) => {
         storeMock.chatAnswer.mockReturnValue(current);
-        storeMock.hasAnswer.mockReturnValue(current !== null);
     };
 
     it('should show the empty state before any answer', () => {

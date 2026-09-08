@@ -51,8 +51,7 @@ export function withAiChat() {
             props: { retrievalPayload: Signal<DotAiRetrievalPayload> };
         }>(),
         withComputed((store) => ({
-            isStreaming: computed(() => store.chatStreaming()),
-            hasAnswer: computed(() => store.chatAnswer() !== null)
+            isStreaming: computed(() => store.chatStreaming())
         })),
         withMethods((store) => {
             const streamService = inject(DotAiCompletionsStreamService);

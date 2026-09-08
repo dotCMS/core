@@ -3,7 +3,7 @@
         <dot-search-input
             [placeholder]="'dotai.config.filter.placeholder'"
             (search)="$filter.set($event)"
-            testId="dotai-config-filter" />
+            data-testid="dotai-config-filter" />
 
         <span class="flex-1 truncate text-sm text-muted-color" data-testid="dotai-config-host">
             {{ store.resolvedConfig()?.configHost }}
@@ -21,12 +21,10 @@
         @if (store.redactionFailed()) {
             <!-- The server could not safely redact the config, so it sent a sentinel rather
                  than JSON. Say so instead of rendering the sentinel as a value (FR-046). -->
-            <div class="p-8 text-center" data-testid="dotai-config-redaction-failed">
-                <h2 class="text-2xl font-medium">
-                    {{ 'dotai.config.redaction-failed.title' | dm }}
-                </h2>
-                <p class="mt-1 text-muted-color">{{ 'dotai.config.redaction-failed.sub' | dm }}</p>
-            </div>
+            <dot-ai-empty-state
+                [title]="'dotai.config.redaction-failed.title' | dm"
+                [subtitle]="'dotai.config.redaction-failed.sub' | dm"
+                data-testid="dotai-config-redaction-failed" />
         } @else {
             <p-table
                 [value]="$filteredRows()"

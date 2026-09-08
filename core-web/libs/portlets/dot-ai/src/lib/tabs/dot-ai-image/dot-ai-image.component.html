@@ -114,10 +114,9 @@
             <p-button
                 promptEnd
                 [label]="'dotai.image.generate' | dm"
-                [disabled]="!store.isConfigured() || !$prompt().trim() || store.imageGenerating()"
+                [disabled]="!$canGenerate()"
                 (onClick)="onGenerate()"
                 data-testid="dotai-image-generate" />
         </dot-ai-prompt-input>
     </div>
-
 </section>

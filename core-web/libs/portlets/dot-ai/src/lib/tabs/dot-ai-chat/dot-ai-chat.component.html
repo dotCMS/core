@@ -2,30 +2,18 @@
     <section class="flex h-full min-w-0 flex-col overflow-hidden">
         <div #answer class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-chat-answer">
             <div class="container mx-auto">
-                @if (!store.hasAnswer()) {
-                    <div class="p-8 text-center" data-testid="dotai-chat-empty">
-                        <h2 class="text-2xl font-medium">
-                            {{ 'dotai.chat.empty.title' | dm }}
-                        </h2>
-                        <!-- Deliberately does not promise sources: only the non-streaming mode
-                             returns them, and this tab streams. -->
-                        <p class="mt-1 text-muted-color">{{ 'dotai.chat.empty.sub' | dm }}</p>
-                    </div>
-                } @else {
-                    @let current = store.chatAnswer();
-
-                    @if (current) {
-                        <!-- One 70ch column for the whole answer, so the thinking indicator
-                             starts exactly where the text will appear and nothing shifts
-                             sideways when one replaces the other. The stopped note and the
-                             error line share it for the same reason. -->
-                        <div class="mx-auto max-w-[70ch]" data-testid="dotai-chat-column">
-                            @if (current.state === states.STREAMING && !current.content) {
-                                <dot-agent-thinking
-                                    [text]="'dotai.chat.thinking' | dm"
-                                    data-testid="dotai-chat-thinking" />
-                            } @else {
-                                <!-- Answers come back as markdown, so they are rendered as
+                @if (store.chatAnswer(); as current) {
+                    <!-- One 70ch column for the whole answer, so the thinking indicator
+                         starts exactly where the text will appear and nothing shifts
+                         sideways when one replaces the other. The stopped note and the
+                         error line share it for the same reason. -->
+                    <div class="mx-auto max-w-[70ch]" data-testid="dotai-chat-column">
+                        @if (current.state === states.STREAMING && !current.content) {
+                            <dot-agent-thinking
+                                [text]="'dotai.chat.thinking' | dm"
+                                data-testid="dotai-chat-thinking" />
+                        } @else {
+                            <!-- Answers come back as markdown, so they are rendered as
                                      markdown rather than shown as literal `##` and `*`.
                                      ngx-markdown is the house renderer and is already provided
                                      app-wide by MarkdownModule.forRoot(); it sanitizes by
@@ -37,27 +25,33 @@
                                      headings and list markers stripped. max-w-none because
                                      prose would otherwise re-cap itself at 65ch inside the
                                      70ch column above. -->
-                                <div class="prose max-w-none" data-testid="dotai-chat-answer-text">
-                                    <markdown [data]="current.content" />
-                                </div>
-                            }
+                            <div class="prose max-w-none" data-testid="dotai-chat-answer-text">
+                                <markdown [data]="current.content" />
+                            </div>
+                        }
 
-                            @if (current.state === states.STOPPED) {
-                                <p
-                                    class="mt-1 text-xs text-muted-color"
-                                    data-testid="dotai-chat-stopped">
-                                    {{ 'dotai.chat.stopped' | dm }}
-                                </p>
-                            }
+                        @if (current.state === states.STOPPED) {
+                            <p
+                                class="mt-1 text-xs text-muted-color"
+                                data-testid="dotai-chat-stopped">
+                                {{ 'dotai.chat.stopped' | dm }}
+                            </p>
+                        }
 
-                            @if (current.state === states.ERROR) {
-                                <!-- Inline, never a dialog over a live stream. -->
-                                <p class="mt-1 text-sm text-red-500" data-testid="dotai-chat-error">
-                                    {{ current.error }}
-                                </p>
-                            }
-                        </div>
-                    }
+                        @if (current.state === states.ERROR) {
+                            <!-- Inline, never a dialog over a live stream. -->
+                            <p class="mt-1 text-sm text-red-500" data-testid="dotai-chat-error">
+                                {{ current.error }}
+                            </p>
+                        }
+                    </div>
+                } @else {
+                    <!-- The subtitle deliberately does not promise sources: only the
+                         non-streaming mode returns them, and this tab streams. -->
+                    <dot-ai-empty-state
+                        [title]="'dotai.chat.empty.title' | dm"
+                        [subtitle]="'dotai.chat.empty.sub' | dm"
+                        data-testid="dotai-chat-empty" />
                 }
             </div>
         </div>
@@ -87,7 +81,7 @@
                     <p-button
                         promptEnd
                         [label]="'dotai.chat.send' | dm"
-                        [disabled]="!store.isConfigured() || !$draft().trim()"
+                        [disabled]="!$canSend()"
                         (onClick)="onSend()"
                         data-testid="dotai-chat-send" />
                 }
