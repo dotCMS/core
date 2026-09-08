@@ -24,6 +24,12 @@ const TestStore = signalStore(
 );
 
 describe('withAiImage', () => {
+    it('should default the size to 16:9', () => {
+        // Deliberately not the shared DEFAULT_IMAGE_SIZE (1024x1024), which the block editor's
+        // image prompt also reads.
+        expect(store.imageOrientation()).toBe('1792x1024');
+    });
+
     let spectator: SpectatorService<InstanceType<typeof TestStore>>;
     let store: InstanceType<typeof TestStore>;
     let service: jest.Mocked<DotAiContentService>;

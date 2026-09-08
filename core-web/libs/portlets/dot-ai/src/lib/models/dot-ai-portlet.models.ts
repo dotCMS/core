@@ -1,7 +1,7 @@
 import {
     ComponentStatus,
-    DEFAULT_IMAGE_SIZE,
     DotAiChatAnswer,
+    DotAIImageOrientation,
     DOT_AI_VECTOR_OPERATOR,
     DotAiIndex,
     DotAiIndexStatus,
@@ -173,5 +173,8 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     image: null,
     imageGenerating: false,
     imageSaving: false,
-    imageOrientation: DEFAULT_IMAGE_SIZE
+    // 16:9 rather than the shared DEFAULT_IMAGE_SIZE (1024x1024): landscape is the useful
+    // default for page and blog imagery. Set here rather than on the shared constant, which
+    // the block editor's image prompt in libs/ui also reads.
+    imageOrientation: DotAIImageOrientation.HORIZONTAL
 };

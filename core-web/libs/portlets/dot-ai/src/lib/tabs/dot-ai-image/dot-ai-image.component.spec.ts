@@ -23,7 +23,7 @@ describe('DotAiImageComponent', () => {
         imageUrl: jest.fn().mockReturnValue(null),
         imageGenerating: jest.fn().mockReturnValue(false),
         imageSaving: jest.fn().mockReturnValue(false),
-        imageOrientation: jest.fn().mockReturnValue('1024x1024'),
+        imageOrientation: jest.fn().mockReturnValue('1792x1024'),
         isConfigured: jest.fn().mockReturnValue(true),
         generateImage: jest.fn(),
         saveImage: jest.fn(),
