@@ -163,6 +163,42 @@ test.describe('Content Drive Keyboard', () => {
         await expect(drive.searchField).toBeFocused();
     });
 
+    /**
+     * The other half of the layout rule, and the half that bites in the opposite direction.
+     *
+     * Because a layout can need Alt to produce a character, an Alt-typed `/` reaches the bare `/`
+     * claim. That must not mean it gets stolen out of a field the user is typing in: the typing rule
+     * and the layout rule have to agree about Alt, or a character on those layouts becomes
+     * untypeable in the search box itself.
+     */
+    test('types an alt-produced slash into the search box rather than re-firing @critical', async ({
+        adminPage
+    }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await adminPage.keyboard.press('/');
+        await expect(drive.searchField).toBeFocused();
+        await adminPage.keyboard.type('a');
+
+        const cdp = await adminPage.context().newCDPSession(adminPage);
+        await cdp.send('Input.dispatchKeyEvent', {
+            type: 'keyDown',
+            key: '/',
+            code: 'Slash',
+            text: '/',
+            modifiers: 1 // Alt
+        });
+        await cdp.send('Input.dispatchKeyEvent', {
+            type: 'keyUp',
+            key: '/',
+            code: 'Slash',
+            modifiers: 1
+        });
+
+        await expect(drive.searchField).toHaveValue('a/');
+    });
+
     test('focuses the search box with the alias too', async ({ adminPage }) => {
         const drive = new ContentDrivePage(adminPage);
         const keyboard = new ContentDriveKeyboard(adminPage);
