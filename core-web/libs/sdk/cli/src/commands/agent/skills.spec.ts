@@ -73,3 +73,31 @@ describe('Windows needs a shell to run npx (FR-024a, FR-025)', () => {
         expect((spawnSync.mock.calls.at(-1) as unknown[])[2]).toMatchObject({ shell: false });
     });
 });
+
+describe('the child does not get our secrets (FR-022)', () => {
+    /**
+     * The doc comment on `installSkills` said "No secret is passed" — but `spawnSync` defaults
+     * to `env: process.env`, so `npx skills add …` and every `postinstall` npm runs underneath
+     * it received DOTCMS_AUTH_TOKEN and DOTCMS_PASSWORD whenever the developer supplied them by
+     * environment, which our own `--password` help text recommends.
+     */
+    const OLD = process.env;
+    beforeEach(() => {
+        process.env = { ...OLD, DOTCMS_AUTH_TOKEN: 'dot_secret', DOTCMS_PASSWORD: 'hunter2' };
+    });
+    afterAll(() => {
+        process.env = OLD;
+    });
+
+    it('strips DOTCMS_AUTH_TOKEN and DOTCMS_PASSWORD from the environment it passes', () => {
+        spawnSync.mockReturnValue({ status: 0 });
+        installSkills({ agentIds: ['cursor'], global: false });
+        const env = (
+            spawnSync.mock.calls.at(-1) as [string, string[], { env: NodeJS.ProcessEnv }]
+        )[2].env;
+        expect(env['DOTCMS_AUTH_TOKEN']).toBeUndefined();
+        expect(env['DOTCMS_PASSWORD']).toBeUndefined();
+        // Still a usable environment — PATH has to survive or npx cannot run.
+        expect(env['PATH']).toBe(process.env['PATH']);
+    });
+});

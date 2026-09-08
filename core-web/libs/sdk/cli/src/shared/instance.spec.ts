@@ -1,5 +1,6 @@
 import { appConfiguration, appConfigurationResponse } from './__fixtures__/appconfiguration';
-import { checkReachable, compatibilityWarning } from './instance';
+import { NotADotCmsInstanceError } from './errors';
+import { checkReachable, compatibilityWarning, insecureTransportWarning } from './instance';
 
 describe('instance', () => {
     describe('checkReachable (FR-005)', () => {
@@ -136,5 +137,43 @@ describe('instance', () => {
             expect(() => compatibilityWarning('not-a-version', '2026.9.4')).not.toThrow();
             expect(compatibilityWarning('not-a-version', '2026.9.4')).toBeNull();
         });
+    });
+});
+
+describe('plain http to a remote host is a warning, not a block (FR-022a-adjacent)', () => {
+    it.each(['http://localhost:8082', 'http://127.0.0.1:8080', 'http://[::1]:8082'])(
+        'stays silent for the loopback default %s',
+        (url) => {
+            expect(insecureTransportWarning(url)).toBeNull();
+        }
+    );
+
+    it.each(['https://demo.dotcms.com', 'https://internal.example.com'])(
+        'stays silent for https %s',
+        (url) => {
+            expect(insecureTransportWarning(url)).toBeNull();
+        }
+    );
+
+    it('warns for a remote http host, where the password crosses the network in the clear', () => {
+        const warning = insecureTransportWarning('http://cms.example.com');
+        expect(warning).toContain('cms.example.com');
+        expect(warning).toMatch(/clear|https/i);
+    });
+});
+
+describe('the admin URL is the most likely paste (FR-032a)', () => {
+    it('names the path as the cause instead of sending them to check the host', () => {
+        const message = new NotADotCmsInstanceError('https://demo.dotcms.com/dotAdmin/#/home')
+            .message;
+        expect(message).toContain('https://demo.dotcms.com');
+        expect(message).toMatch(/path/i);
+        expect(message).not.toMatch(/Check the address\./);
+    });
+
+    it('keeps the generic hint when there is no path to blame', () => {
+        expect(new NotADotCmsInstanceError('https://demo.dotcms.com').message).toMatch(
+            /Check the address\./
+        );
     });
 });

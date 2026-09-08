@@ -2,6 +2,8 @@ import * as childProcess from 'node:child_process';
 
 import { SKILLS_SOURCE } from './constants';
 
+import { envWithoutSecrets } from '../../shared/env';
+
 export interface SkillsResult {
     ok: boolean;
     /** The exact command to re-run, printed when installation fails (FR-026). */
@@ -37,6 +39,9 @@ export async function installSkills(args: {
     try {
         const result = childProcess.spawnSync('npx', argv, {
             stdio: 'inherit',
+            // The doc comment above says no secret is passed; `spawnSync` defaults to the whole
+            // environment, so it was not true until this line.
+            env: envWithoutSecrets(),
             // On Windows `npx` is `npx.cmd`, and since the CVE-2024-27980 fix Node refuses to
             // execute `.cmd`/`.bat` without a shell — so this spawn failed on every Windows run
             // and FR-025 never installed anything there.

@@ -225,3 +225,69 @@ describe('a document whose root is not an object (FR-018)', () => {
         expect(await fs.readFile(file, 'utf8')).toBe(content);
     });
 });
+
+describe('"could not read" is not "not there" (FR-016)', () => {
+    /**
+     * Every read site used a bare `catch { null }`, so EACCES, EISDIR or a transient I/O error
+     * all became "the file does not exist yet" — and the fresh-file branch then REPLACED a file
+     * that was merely locked, discarding every other MCP server in it. That is the outcome the
+     * whole byte-preservation effort exists to prevent, reached through a different door.
+     */
+    it('refuses to treat an unreadable path as a blank slate', async () => {
+        // A directory reads as EISDIR — portable, unlike chmod, which root ignores.
+        const asDir = path.join(dir, 'mcp.json');
+        await fs.mkdir(asDir);
+        // Must be OUR named error, naming the file and saying nothing was changed — not a raw
+        // EISDIR that happens to escape from the write a moment later.
+        await expect(
+            writeMerged({ file: asDir, containerKey: 'mcpServers', entryKey: 'dotcms', entry: {} })
+        ).rejects.toThrow(/could not be read/i);
+    });
+
+    it('still treats a genuinely absent file as a fresh write', async () => {
+        const file = path.join(dir, 'nested', 'mcp.json');
+        await expect(
+            writeMerged({ file, containerKey: 'mcpServers', entryKey: 'dotcms', entry: { a: 1 } })
+        ).resolves.toBeDefined();
+    });
+});
+
+describe('the write is atomic, and owner-only for its whole life (FR-021)', () => {
+    it('never truncates the original: a failed write leaves it byte-for-byte', async () => {
+        // The property temp-file+rename buys. Simulated by making the entry unserialisable, so
+        // the write fails AFTER the point where a truncating writeFile would already have
+        // emptied the developer's file.
+        const file = path.join(dir, 'mcp.json');
+        const before = '{\n  "mcpServers": {\n    "github": { "command": "npx" }\n  }\n}\n';
+        await fs.writeFile(file, before, 'utf8');
+        const circular: Record<string, unknown> = {};
+        circular['self'] = circular;
+        await expect(
+            writeMerged({ file, containerKey: 'mcpServers', entryKey: 'dotcms', entry: circular })
+        ).rejects.toThrow();
+        expect(await fs.readFile(file, 'utf8')).toBe(before);
+    });
+
+    it('ends owner-only even when the file already existed at 0644', async () => {
+        const file = path.join(dir, 'mcp.json');
+        await fs.writeFile(file, '{"mcpServers":{}}\n', { encoding: 'utf8', mode: 0o644 });
+        await writeMerged({
+            file,
+            containerKey: 'mcpServers',
+            entryKey: 'dotcms',
+            entry: { a: 1 }
+        });
+        expect((await fs.stat(file)).mode & 0o777).toBe(0o600);
+    });
+
+    it('leaves no temp file behind', async () => {
+        const file = path.join(dir, 'mcp.json');
+        await writeMerged({
+            file,
+            containerKey: 'mcpServers',
+            entryKey: 'dotcms',
+            entry: { a: 1 }
+        });
+        expect((await fs.readdir(dir)).filter((f) => f.includes('tmp'))).toEqual([]);
+    });
+});

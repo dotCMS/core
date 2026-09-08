@@ -1,11 +1,16 @@
 import { parse, stringify } from 'smol-toml';
 
-import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { buildEntry } from './entry';
 
-import { ensureDir, FILE_MODE, restrictFile, type WriteResult } from '../../../shared/config-file';
+import {
+    ensureDir,
+    readFileIfPresent,
+    restrictFile,
+    writeFileAtomic,
+    type WriteResult
+} from '../../../shared/config-file';
 import { MalformedConfigError, NoConfigPathError } from '../../../shared/errors';
 import { ENTRY_KEY } from '../constants';
 
@@ -26,13 +31,8 @@ import type { AgentTarget, WriteArgs } from './types';
  * write located the entry by line span gave two notions of "present" that agreed only by luck.
  */
 export async function hasTomlEntry(file: string, target: AgentTarget): Promise<boolean> {
-    let raw: string;
-    try {
-        raw = await fs.readFile(file, 'utf8');
-    } catch {
-        return false;
-    }
-    return findEntrySpan(raw.split('\n'), target.containerKey) !== null;
+    const raw = await readFileIfPresent(file);
+    return raw === null ? false : findEntrySpan(raw.split('\n'), target.containerKey) !== null;
 }
 
 /**
@@ -102,12 +102,10 @@ export async function writeTomlTarget(args: WriteArgs): Promise<WriteResult> {
         throw new NoConfigPathError(args.target.displayName, args.scope);
     }
 
-    let original = '';
-    try {
-        original = await fs.readFile(file, 'utf8');
-    } catch {
-        /* absent file is the fresh-write case, not a failure */
-    }
+    // Absent is a fresh write; UNREADABLE is a failure. Treating the two alike meant a locked
+    // config.toml was replaced by our table alone, losing the developer's other servers and the
+    // hand-written comments this writer's splice approach exists to preserve.
+    const original = (await readFileIfPresent(file)) ?? '';
 
     // Parse to VALIDATE, not to rewrite. smol-toml discards comments on round-trip, and this
     // file is one a developer maintains by hand — regenerating it silently deleted their
@@ -141,11 +139,7 @@ export async function writeTomlTarget(args: WriteArgs): Promise<WriteResult> {
     }
 
     await ensureDir(path.dirname(file));
-    // Owner-only at creation — see the note in `config-file.ts` (FR-021).
-    await fs.writeFile(file, next.endsWith('\n') ? next : `${next}\n`, {
-        encoding: 'utf8',
-        mode: FILE_MODE
-    });
+    await writeFileAtomic(file, next.endsWith('\n') ? next : `${next}\n`);
     // Report what chmod actually did. The flow used to assert `CAN_RESTRICT` here, which is a
     // platform constant rather than an observation — the summary claimed a protection nobody
     // had checked.

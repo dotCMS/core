@@ -9,7 +9,7 @@ import {
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { MalformedConfigError } from './errors';
+import { MalformedConfigError, UnreadableConfigError } from './errors';
 
 /** POSIX only. On Windows `chmod` toggles the read-only bit and never touches ACLs, so calling
  *  it there would return success while granting no protection — a false assurance is worse than
@@ -23,6 +23,51 @@ export interface WriteResult {
     path: string;
     permissionsApplied: boolean;
     replacedExisting: boolean;
+}
+
+/**
+ * Read a file, distinguishing "not there" from "could not read it".
+ *
+ * Every read site used a bare `catch { null }`, so EACCES, EISDIR and a transient I/O error all
+ * became "does not exist yet" — and the fresh-file branch downstream then REPLACED a file that
+ * was merely locked, discarding every other MCP server in it. Same outcome the byte-preservation
+ * work exists to prevent, reached through a different door.
+ */
+export async function readFileIfPresent(file: string): Promise<string | null> {
+    try {
+        return await fs.readFile(file, 'utf8');
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+        throw new UnreadableConfigError(file, (error as Error).message);
+    }
+}
+
+/**
+ * Write by creating a sibling temp file and renaming over the target.
+ *
+ * `fs.writeFile` truncates first: a crash, a full disk or a SIGINT between truncate and write
+ * leaves the developer's config empty, taking every other server with it — undoing everything
+ * parse-to-validate and splice-to-write are for. `rename` within a filesystem is atomic, so a
+ * reader sees the old file or the new one, never a half of either. It also means the token bytes
+ * are owner-only for their whole life on disk: `mode` is ignored for a file that already exists,
+ * so a pre-existing 0644 config used to hold the token at 0644 until the chmod a line later.
+ */
+export async function writeFileAtomic(file: string, contents: string): Promise<void> {
+    const temp = `${file}.dotcms-${process.pid}.tmp`;
+    try {
+        await fs.writeFile(temp, contents, { encoding: 'utf8', mode: FILE_MODE });
+    } catch {
+        // Renaming needs write permission on the DIRECTORY, which a plain overwrite does not.
+        // Rather than fail a case that used to work, fall back to writing in place.
+        await fs.writeFile(file, contents, { encoding: 'utf8', mode: FILE_MODE });
+        return;
+    }
+    try {
+        await fs.rename(temp, file);
+    } catch (error) {
+        await fs.rm(temp, { force: true });
+        throw error;
+    }
 }
 
 /**
@@ -54,13 +99,8 @@ function parseOrThrow(raw: string, file: string): Record<string, unknown> {
 /** Read and parse, or return null when the file does not exist. Malformed input is a named
  *  error — never a silent overwrite (FR-018). */
 export async function readJsonDocument(file: string): Promise<Record<string, unknown> | null> {
-    let raw: string;
-    try {
-        raw = await fs.readFile(file, 'utf8');
-    } catch {
-        return null;
-    }
-    return parseOrThrow(raw, file);
+    const raw = await readFileIfPresent(file);
+    return raw === null ? null : parseOrThrow(raw, file);
 }
 
 /**
@@ -190,12 +230,7 @@ export async function writeMerged(args: {
      *  restrict — otherwise the assertion is `true === true` and a hard-coded claim passes. */
     canRestrict?: boolean;
 }): Promise<WriteResult> {
-    let raw: string | null;
-    try {
-        raw = await fs.readFile(args.file, 'utf8');
-    } catch {
-        raw = null;
-    }
+    const raw = await readFileIfPresent(args.file);
 
     const existing = raw === null ? {} : parseOrThrow(raw, args.file);
     const container = (existing[args.containerKey] as Record<string, unknown> | undefined) ?? {};
@@ -225,11 +260,7 @@ export async function writeMerged(args: {
     }
 
     await ensureDir(path.dirname(args.file));
-    // `mode` applies at CREATION. Writing at the umask and restricting afterwards left a
-    // token-bearing file world-readable for the width of that gap, and permanently so if the
-    // process died in between (FR-021). chmod below still matters for a pre-existing file,
-    // whose mode `mode` does not change.
-    await fs.writeFile(args.file, next, { encoding: 'utf8', mode: FILE_MODE });
+    await writeFileAtomic(args.file, next);
     const permissionsApplied = await restrictFile(args.file, args.canRestrict ?? CAN_RESTRICT);
     return { path: args.file, permissionsApplied, replacedExisting };
 }

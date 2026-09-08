@@ -19,6 +19,30 @@ export function normalizeUrl(url: string): string {
     return url.trim().replace(/\/+$/, '');
 }
 
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+
+/**
+ * Plain `http://` to anything but this machine (FR-022a-adjacent).
+ *
+ * The password goes out in cleartext on `POST /api/v1/authentication/api-token`, the 365-day
+ * token comes back the same way, and is then written into up to seven config files. Blocking it
+ * would be wrong — the default instance address is `http://localhost:8082` — so this is a
+ * warning, which is what the non-fatal channel is for.
+ */
+export function insecureTransportWarning(url: string): string | null {
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return null;
+    }
+    if (parsed.protocol !== 'http:' || LOOPBACK.has(parsed.hostname)) return null;
+    return (
+        `${parsed.host} is plain http, so your password and the access token cross the network ` +
+        `in the clear. Use https:// if the instance supports it.`
+    );
+}
+
 export function validateUrl(url: string): void {
     if (!/^https?:\/\//i.test(url)) throw new InvalidUrlError(url);
     let parsed: URL;

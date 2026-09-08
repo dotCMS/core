@@ -1107,3 +1107,40 @@ describe('a .gitignore failure must not swallow the summary', () => {
         expect(result.outcomes[0].result).toBe('written');
     });
 });
+
+describe('configuring nothing is not a success exit (spec Edge Cases)', () => {
+    /**
+     * The warning was added but the exit code was not: `anyFailed` reads only `outcomes` and
+     * `connection`, and an empty plan produces no outcomes — so a run that configured nothing
+     * still exited 0. Saying so and then reporting success is not saying so.
+     */
+    it('exits non-zero when no editor was configured', async () => {
+        mockAcceptedToken();
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([]);
+        const result = await runSetup({
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
+        });
+        expect(result.outcomes).toEqual([]);
+        expect(result.exitCode).toBe(1);
+    });
+
+    it('but --skip-mcp is a REQUESTED no-op and still exits 0', async () => {
+        mockAcceptedToken();
+        const result = await runSetup({
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipMcp: true,
+            skipSkills: true,
+            skipVerify: true
+        });
+        expect(result.exitCode).toBe(0);
+    });
+});

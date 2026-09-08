@@ -63,9 +63,50 @@ import { isSuccessStatus } from './fetch-retry';
 
 const DEFAULT_TIMEOUT_MS = 10000;
 
-/** Best-effort JSON. A health endpoint may answer 204, or plain text; neither is an error. */
-async function readBody<T>(response: Response): Promise<T> {
-    const text = await response.text().catch(() => '');
+/**
+ * A ceiling on what we will buffer from an arbitrary address.
+ *
+ * The first request a run makes goes to a host the developer typed, so "whatever it sends" is
+ * not a safe amount of memory to accept.
+ */
+const MAX_BODY_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Best-effort JSON. A health endpoint may answer 204, or plain text; neither is an error.
+ *
+ * Read through the stream rather than `response.text()` so the cap is enforced as bytes arrive
+ * instead of after they are all in memory.
+ */
+async function readBody<T>(response: Response, url: string): Promise<T> {
+    const tooLarge = () =>
+        new HttpError(`Response from ${url} is too large (over ${MAX_BODY_BYTES} bytes)`, {
+            status: response.status,
+            code: 'EBODYTOOLARGE'
+        });
+
+    const declared = Number(response.headers.get('content-length'));
+    if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) throw tooLarge();
+
+    let text = '';
+    if (!response.body) {
+        text = await response.text().catch(() => '');
+    } else {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let size = 0;
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (!value) continue;
+            size += value.byteLength;
+            if (size > MAX_BODY_BYTES) {
+                await reader.cancel().catch(() => undefined);
+                throw tooLarge();
+            }
+            text += decoder.decode(value, { stream: true });
+        }
+        text += decoder.decode();
+    }
 
     if (!text) {
         return undefined as T;
@@ -95,32 +136,49 @@ async function request<T>(
 
     let response: Response;
 
+    // The timer stays armed until the BODY has been read. Clearing it when the headers arrived
+    // left `readBody` awaiting with no abort in place, so a host that answers 200 and then
+    // trickles hung the process forever — the failure the timeout exists to prevent.
     try {
-        response = await fetch(url, { ...init, headers, signal: controller.signal });
-    } catch (error) {
-        const aborted = (error as Error)?.name === 'AbortError';
-        const cause = (error as { cause?: { code?: string } })?.cause;
+        try {
+            response = await fetch(url, { ...init, headers, signal: controller.signal });
+        } catch (error) {
+            const aborted = (error as Error)?.name === 'AbortError';
+            const cause = (error as { cause?: { code?: string } })?.cause;
 
-        throw new HttpError(
-            aborted
-                ? `Request to ${url} timed out after ${timeoutMs}ms`
-                : `Request to ${url} failed: ${(error as Error)?.message ?? String(error)}`,
-            { status: null, code: aborted ? 'ETIMEDOUT' : cause?.code }
-        );
+            throw new HttpError(
+                aborted
+                    ? `Request to ${url} timed out after ${timeoutMs}ms`
+                    : `Request to ${url} failed: ${(error as Error)?.message ?? String(error)}`,
+                { status: null, code: aborted ? 'ETIMEDOUT' : cause?.code }
+            );
+        }
+
+        let data: T;
+        try {
+            data = await readBody<T>(response, url);
+        } catch (error) {
+            if (isHttpError(error)) throw error;
+            const aborted = (error as Error)?.name === 'AbortError';
+            throw new HttpError(
+                aborted
+                    ? `Request to ${url} timed out after ${timeoutMs}ms while reading the response`
+                    : `Reading the response from ${url} failed: ${(error as Error)?.message ?? String(error)}`,
+                { status: response.status, code: aborted ? 'ETIMEDOUT' : undefined }
+            );
+        }
+
+        if (!isSuccessStatus(response.status) && !acceptAnyStatus) {
+            throw new HttpError(`Request failed with status code ${response.status}`, {
+                status: response.status,
+                statusText: response.statusText
+            });
+        }
+
+        return { status: response.status, data };
     } finally {
         clearTimeout(timer);
     }
-
-    const data = await readBody<T>(response);
-
-    if (!isSuccessStatus(response.status) && !acceptAnyStatus) {
-        throw new HttpError(`Request failed with status code ${response.status}`, {
-            status: response.status,
-            statusText: response.statusText
-        });
-    }
-
-    return { status: response.status, data };
 }
 
 export function httpGet<T = unknown>(url: string, options: HttpOptions = {}) {

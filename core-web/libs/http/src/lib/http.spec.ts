@@ -174,3 +174,38 @@ describe('http', () => {
         });
     });
 });
+
+describe('the timeout covers the BODY, not just the headers', () => {
+    /**
+     * `clearTimeout` used to run in the `finally` around `fetch`, i.e. the moment the headers
+     * arrived — and `readBody` then awaited `response.text()` with no abort armed. A host that
+     * answers 200 and trickles forever hung the CLI indefinitely, which is the exact failure the
+     * timeout exists to prevent. Reachable from a typo: `checkReachable` is the first request
+     * made against a user-supplied address.
+     */
+    it('aborts a response whose body never finishes', async () => {
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async (_input, init) =>
+                new Response(
+                    new ReadableStream({
+                        start(controller) {
+                            controller.enqueue(new TextEncoder().encode('{'));
+                            (init as RequestInit)?.signal?.addEventListener('abort', () =>
+                                controller.error(new Error('aborted'))
+                            );
+                            // and never closes
+                        }
+                    }),
+                    { status: 200 }
+                )
+        );
+        await expect(httpGet('https://slow.example.com', { timeoutMs: 60 })).rejects.toThrow();
+    });
+
+    it('rejects a body larger than the cap rather than buffering it', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response('x'.repeat(11 * 1024 * 1024), { status: 200 })
+        );
+        await expect(httpGet('https://huge.example.com', {})).rejects.toThrow(/too large|size/i);
+    });
+});

@@ -213,3 +213,22 @@ describe('an address may not smuggle a credential (FR-022a)', () => {
         );
     });
 });
+
+describe('a password containing @ must not leak either (FR-022a)', () => {
+    /**
+     * The first fix stripped with `[^/@]*@`, which stops at the FIRST `@` — but the URL spec
+     * makes the LAST one the userinfo delimiter. So `admin:p@ssw0rd` left `ssw0rd` in the
+     * message, and the generic error went on to SUGGEST `https://ssw0rd@demo.dotcms.com` as
+     * the corrected address. A redaction bug inside the redaction.
+     */
+    it.each([
+        ['@ in the password', 'https://admin:p@ssw0rd@demo.dotcms.com', 'ssw0rd'],
+        ['several @', 'https://a:b@c@d@demo.dotcms.com', 'd@demo'],
+        ['@ and a path', 'https://admin:p@ss@demo.dotcms.com/x', 'p@ss']
+    ])('%s', async (_name, url, leaked) => {
+        const error = (await resolveInstanceUrl({ url }).catch((e: Error) => e)) as Error;
+        expect(error.message).not.toContain(leaked);
+        expect(error.message).not.toContain('ssw0rd');
+        expect(error.message).toContain('demo.dotcms.com');
+    });
+});

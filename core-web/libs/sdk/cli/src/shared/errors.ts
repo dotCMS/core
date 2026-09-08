@@ -16,16 +16,35 @@ export class CliError extends Error {
 
 export class UsageError extends CliError {}
 
+/**
+ * The address with any `user:password@` removed.
+ *
+ * Built from the PARSED url, not a text substitution. The first attempt used `[^/@]*@`, which
+ * stops at the first `@` — but the URL spec makes the LAST one the userinfo delimiter, so a
+ * password containing `@` survived into the very message that exists because the address
+ * carried a credential (FR-022a).
+ */
+function withoutCredentials(value: string): string {
+    try {
+        const u = new URL(value);
+        u.username = '';
+        u.password = '';
+        const path = u.pathname === '/' && !/\/$/.test(value) ? '' : u.pathname;
+        return `${u.protocol}//${u.host}${path}${u.search}`;
+    } catch {
+        // Unparseable, so there is no host to trust: strip GREEDILY to the last `@` that
+        // precedes any path separator.
+        return value.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/]*@/i, '$1');
+    }
+}
+
 export class InvalidUrlError extends CliError {
     constructor(value: string) {
         // Describing the problem is not enough: with no verbose mode, the message has to
         // carry the fix too (FR-032a).
         // Strip ANY scheme, not just http(s): stripping only http(s) turned
         // "ftp://demo.dotcms.com" into the suggestion "https://ftp://demo.dotcms.com".
-        // Drop any `user:password@` before the value is used at all. A rejected address may
-        // be rejected BECAUSE it carries a credential, and echoing it — even partially — would
-        // put that password on screen (FR-022a).
-        const safe = value.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@]*@/i, '$1');
+        const safe = withoutCredentials(value);
         const host = safe.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^\/+/, '');
         super(
             `"${safe}" is not a valid instance address. Pass it with an http:// or https:// ` +
@@ -45,7 +64,7 @@ export class InvalidUrlError extends CliError {
 export class CredentialInUrlError extends CliError {
     constructor(url: string) {
         // Built from the STRIPPED address; the password must not reach the screen (FR-022a).
-        const safe = url.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@]*@/i, '$1');
+        const safe = withoutCredentials(url);
         super(
             `The instance address must not carry a username or password. Use ${safe} on its own — ` +
                 `setup will ask you to sign in, or pass --authToken.`
@@ -65,7 +84,22 @@ export class NotADotCmsInstanceError extends CliError {
     constructor(url: string) {
         // Says what is wrong, not how it was determined. The endpoint we probe and the shape we
         // look for are our business; the developer needs the verdict and the fix.
-        super(`${url} is not a valid dotCMS instance. Check the address.`);
+        //
+        // The most likely paste is the admin URL — `https://host/dotAdmin/#/home` — where the
+        // HOST is right and the path is the problem. Sending someone to "check the address" is
+        // then the wrong instruction, so name the real cause. The address is not rewritten
+        // silently: a path may be a legitimate reverse-proxy prefix, and quietly retargeting
+        // could point setup at a different instance than the one asked for.
+        let hint = ' Check the address.';
+        try {
+            const parsed = new URL(url);
+            if (parsed.pathname !== '/' && parsed.pathname !== '') {
+                hint = ` That address includes a path; the instance itself is probably ${parsed.origin}.`;
+            }
+        } catch {
+            /* keep the generic hint */
+        }
+        super(`${url} is not a valid dotCMS instance.${hint}`);
     }
 }
 
@@ -119,6 +153,20 @@ export class NoConfigPathError extends CliError {
                 // remedy named something the developer could not type. With no verbose mode the
                 // message IS the diagnostic surface (FR-032a).
                 `Re-run ${scope === 'folder' ? 'with -g/--global' : 'without -g/--global'}, or drop it from --agent.`
+        );
+    }
+}
+
+/**
+ * The file exists but could not be READ. Distinct from malformed (we read it and it was wrong)
+ * and from absent (nothing there) — because treating this as absent replaces a file that was
+ * merely locked, taking every other server in it.
+ */
+export class UnreadableConfigError extends CliError {
+    constructor(file: string, reason: string) {
+        super(
+            `${file} could not be read — ${reason}. Nothing was changed. ` +
+                `Check the file's permissions, or re-run with --skip-mcp.`
         );
     }
 }

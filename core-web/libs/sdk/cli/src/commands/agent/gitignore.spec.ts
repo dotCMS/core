@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -12,7 +13,16 @@ afterEach(async () => {
     await fs.rm(dir, { recursive: true, force: true });
 });
 
-const asRepo = async () => fs.mkdir(path.join(dir, '.git'), { recursive: true });
+/**
+ * A REAL repository, not just a `.git` directory. The exclusion claim is now confirmed with
+ * `git check-ignore`, which cannot answer for a directory that only looks like a repo — and a
+ * fixture that cannot be checked would quietly stop testing the thing it is named for.
+ */
+const asRepo = async () => {
+    spawnSync('git', ['init', '-q'], { cwd: dir });
+    spawnSync('git', ['config', 'user.email', 't@t.t'], { cwd: dir });
+    spawnSync('git', ['config', 'user.name', 't'], { cwd: dir });
+};
 const gitignore = () => fs.readFile(path.join(dir, '.gitignore'), 'utf8');
 
 describe('names the files a token went into (FR-023)', () => {
@@ -113,5 +123,40 @@ describe('a repo-root .mcp.json is conventionally committed (FR-024)', () => {
             confirmExclude: async () => true
         });
         expect(out.warnings.join(' ')).not.toMatch(/normally committed/i);
+    });
+});
+
+describe('a pattern that cannot match is worse than no pattern (FR-023)', () => {
+    /**
+     * `.gitignore` entries are globs. A raw `path.relative` under a directory named
+     * `my [wip] app` reads `[wip]` as a character class and matches nothing — while the summary
+     * still printed "✓ added to .gitignore" and the file holding a 365-day token stayed tracked.
+     */
+    it('escapes glob metacharacters so the entry actually matches', async () => {
+        const odd = path.join(dir, 'my [wip] app');
+        await fs.mkdir(odd, { recursive: true });
+        spawnSync('git', ['init', '-q'], { cwd: dir });
+        const file = path.join(odd, '.mcp.json');
+        await fs.writeFile(file, '{}', 'utf8');
+
+        const out = await protectFromVersionControl({
+            files: [file],
+            cwd: dir,
+            confirmExclude: async () => true
+        });
+
+        expect(out.excluded).toBe(true);
+        // The claim is only worth what git says about it.
+        expect(spawnSync('git', ['check-ignore', '-q', file], { cwd: dir }).status).toBe(0);
+    });
+
+    it('does not claim exclusion it could not confirm', async () => {
+        // No repository at all: nothing to confirm against.
+        const out = await protectFromVersionControl({
+            files: [path.join(dir, '.mcp.json')],
+            cwd: dir,
+            confirmExclude: async () => true
+        });
+        expect(out.excluded).toBe(false);
     });
 });

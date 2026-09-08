@@ -12,7 +12,11 @@ import {
     TokenRejectedError,
     UnknownTargetError
 } from '../../shared/errors';
-import { checkReachable, compatibilityWarning } from '../../shared/instance';
+import {
+    checkReachable,
+    compatibilityWarning,
+    insecureTransportWarning
+} from '../../shared/instance';
 import { promptForAuth, resolveInstanceUrl, resolveRequiredInputs } from '../../shared/prompts';
 import { TOOL_VERSION } from '../../shared/version';
 
@@ -124,6 +128,12 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         opts.onWarning?.(warning);
     }
 
+    const insecure = insecureTransportWarning(url);
+    if (insecure) {
+        warnings.push(insecure);
+        opts.onWarning?.(insecure);
+    }
+
     // 3. Now the credential — prompting only for what is missing, and only where there is a
     //    terminal to ask on (FR-003i, FR-003k).
     let inputs = await resolveRequiredInputs(
@@ -218,8 +228,10 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     }
 
     // Configuring nothing is not success. Silently exiting 0 here is exactly what the spec's
-    // Edge Cases forbid: say so, and name what the developer can pick.
-    if (!plan.length && !opts.skipMcp) {
+    // Edge Cases forbid: say so, name what the developer can pick — AND fail. Warning while
+    // still reporting success is not saying so.
+    const configuredNothing = !plan.length && !opts.skipMcp;
+    if (configuredNothing) {
         const noEditors =
             `No editor was configured. None of the supported editors was detected, and none was ` +
             `named. Re-run with --agent <id>, choosing from: ${TARGET_IDS.join(', ')}.`;
@@ -376,6 +388,6 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         connection,
         connectionReason,
         skillsSkipped: Boolean(opts.skipSkills),
-        exitCode: anyFailed ? 1 : 0
+        exitCode: anyFailed || configuredNothing ? 1 : 0
     };
 }

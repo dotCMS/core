@@ -2,6 +2,8 @@ import * as childProcess from 'node:child_process';
 
 import { MCP_SERVER_PACKAGE, SERVER_ENV } from './constants';
 
+import { envWithoutSecrets } from '../../shared/env';
+
 export type ConnectFailure = 'fetch-failed' | 'runtime-unsupported' | 'exited' | 'timeout';
 
 export type ConnectResult =
@@ -44,11 +46,13 @@ export async function confirmConnection(args: {
         // CVE-2024-27980 fix — so FR-024a failed on every Windows run, reporting a broken
         // server for a configuration that was written correctly.
         shell: process.platform === 'win32',
-        env: {
-            ...process.env,
+        // This child needs the URL and the token; it has no use for the developer's
+        // DOTCMS_PASSWORD, and it is an unpinned `@latest` package by design — so the smaller
+        // the environment it sees, the better.
+        env: envWithoutSecrets({
             [SERVER_ENV.url]: args.url,
             [SERVER_ENV.token]: args.token
-        }
+        })
     });
 
     let stderr = '';
@@ -62,8 +66,22 @@ export async function confirmConnection(args: {
             if (settled) return;
             settled = true;
             clearTimeout(timer);
+            // Close the pipe first: a well-behaved stdio server exits on EOF, which is the
+            // clean shutdown. It was never ended at all.
             try {
-                child.kill();
+                child.stdin?.end();
+            } catch {
+                /* already gone */
+            }
+            try {
+                // `shell: true` on Windows makes the child cmd.exe, with npx -> node beneath it.
+                // `child.kill()` reaps the shell only, leaving the MCP server running,
+                // unsupervised, holding AUTH_TOKEN. Kill the tree instead.
+                if (process.platform === 'win32' && child.pid) {
+                    childProcess.spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
+                } else {
+                    child.kill();
+                }
             } catch {
                 /* already gone */
             }

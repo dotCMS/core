@@ -10,7 +10,8 @@ import type { Mock } from 'vitest';
  *  an ES module, so `vi.spyOn` on it throws. Replace the one function via a module factory. */
 vi.mock('node:child_process', async (importOriginal) => ({
     ...(await importOriginal<typeof childProcess>()),
-    spawn: vi.fn()
+    spawn: vi.fn(),
+    spawnSync: vi.fn(() => ({ status: 0 }))
 }));
 
 function fakeChild() {
@@ -186,5 +187,61 @@ describe('Windows needs a shell to run npx (FR-024a, FR-025)', () => {
             { shell?: boolean }
         ];
         expect(opts.shell).toBe(false);
+    });
+});
+
+describe('the server child gets what it needs and nothing more', () => {
+    it('passes the URL and token but not DOTCMS_PASSWORD', () => {
+        const OLD = process.env;
+        process.env = { ...OLD, DOTCMS_PASSWORD: 'hunter2', DOTCMS_AUTH_TOKEN: 'dot_env' };
+        try {
+            void confirmConnection({ url: 'https://demo.dotcms.com', token: 't', timeoutMs: 20 });
+            const [, , opts] = (childProcess.spawn as unknown as Mock).mock.calls.at(-1) as [
+                string,
+                string[],
+                { env: NodeJS.ProcessEnv }
+            ];
+            expect(opts.env['AUTH_TOKEN']).toBe('t');
+            expect(opts.env['DOTCMS_URL']).toBe('https://demo.dotcms.com');
+            expect(opts.env['DOTCMS_PASSWORD']).toBeUndefined();
+        } finally {
+            process.env = OLD;
+        }
+    });
+});
+
+describe('killing the server on Windows kills the tree, not just the shell', () => {
+    /**
+     * `shell: true` makes the child cmd.exe with npx -> node beneath it, so `child.kill()`
+     * reaps the shell and leaves the MCP server running — unsupervised, holding AUTH_TOKEN.
+     */
+    const real = process.platform;
+    const asPlatform = (value: string) =>
+        Object.defineProperty(process, 'platform', { value, configurable: true });
+    afterEach(() => asPlatform(real));
+
+    it('uses taskkill /T on win32', async () => {
+        asPlatform('win32');
+        const child = fakeChild();
+        (childProcess.spawn as unknown as Mock).mockReturnValue(child as never);
+        child['pid'] = 4321;
+        const sync = childProcess.spawnSync as unknown as Mock;
+        sync.mockReturnValue({ status: 0 });
+
+        const run = confirmConnection({ url: 'https://x', token: 't', timeoutMs: 20 });
+        await run;
+
+        const call = sync.mock.calls.find((c) => c[0] === 'taskkill');
+        expect(call).toBeDefined();
+        expect(call?.[1]).toEqual(expect.arrayContaining(['/T', '/F', '4321']));
+    });
+
+    it('closes stdin so a well-behaved server can exit on its own', async () => {
+        asPlatform('darwin');
+        const child = fakeChild();
+        (childProcess.spawn as unknown as Mock).mockReturnValue(child as never);
+        const ended = vi.spyOn(child['stdin'] as NodeJS.WritableStream, 'end');
+        await confirmConnection({ url: 'https://x', token: 't', timeoutMs: 20 });
+        expect(ended).toHaveBeenCalled();
     });
 });
