@@ -1503,6 +1503,19 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should not reload the listing when the batch is only accepted', () => {
+            // The `202` means queued, not created. Reloading here refetches a folder whose files
+            // do not exist yet, so the author watches the listing refresh to show nothing — the
+            // reload belongs to the completion event, which carries the outcome with it.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.loadItems).not.toHaveBeenCalled();
+        });
+
         it('should not announce a single file any differently than today', () => {
             // What "unchanged" protects is the author's experience, not a separate code path.
             // Today one file uploads quietly and its row appears, so a batch of one must not

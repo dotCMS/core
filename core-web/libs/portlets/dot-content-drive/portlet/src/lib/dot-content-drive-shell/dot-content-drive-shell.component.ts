@@ -1174,12 +1174,18 @@ export class DotContentDriveShellComponent {
             })
             .subscribe({
                 next: () => {
-                    // Silent on success: the row appears in the listing, so a notification
-                    // would repeat what the author is already looking at.
-
-                    this.#store.loadItems();
+                    // Nothing to do, and deliberately nothing. A `202` means the batch is queued,
+                    // not that any file exists, so reloading here refetches a folder whose files
+                    // have not been created — the author watches the listing refresh to show
+                    // nothing. The reload belongs to the completion event, which arrives with the
+                    // outcome and knows which folders the run actually changed.
+                    //
+                    // Nor is anything announced: an accepted submission is not an outcome, and the
+                    // toasts that used to say "started" are what the in-flight indicator replaced.
                 },
                 error: (error) => {
+                    // Only a refused *submission* lands here. Once a handle exists the run is the
+                    // server's, and its failures arrive as per-file reasons in the outcome.
                     console.error('Content drive upload error => ', error);
                     this.#messageService.add({
                         severity: 'error',
