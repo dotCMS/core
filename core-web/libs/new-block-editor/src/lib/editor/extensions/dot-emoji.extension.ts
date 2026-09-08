@@ -1,11 +1,15 @@
 import { escapeForRegEx, InputRule, PasteRule } from '@tiptap/core';
 import Emoji, {
     type EmojiItem,
+    EmojiSuggestionPluginKey,
     inputRegex,
     pasteRegex,
     shortcodeToEmoji
 } from '@tiptap/extension-emoji';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
+import Suggestion, { type SuggestionKeyDownProps, type SuggestionProps } from '@tiptap/suggestion';
+
+import { type BlockItem, type SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
 /**
  * dotCMS emoji node — registered for BACKWARD COMPATIBILITY and shortcode resolution ONLY (#37340).
@@ -57,7 +61,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
  * @see specs/37340-emoji-text-node/research.md — R1 (the five paths), R3 (two paste defenses),
  *      R4 (why the double-click plugin is kept)
  */
-export const DotEmoji = Emoji.extend({
+const DotEmojiBase = Emoji.extend({
     /**
      * Path 5. Parse rules govern HTML entry points only — `Node.fromJSON` never consults them — so
      * neutralizing this closes copy-paste between fields WITHOUT weakening the registration above.
@@ -233,3 +237,182 @@ export const DotEmoji = Emoji.extend({
         ];
     }
 });
+
+/**
+ * How many rows the `:` menu shows.
+ *
+ * Five, not more: the dropdown is a fixed `w-72` and the tiered ranking below puts the row the
+ * author meant in the first one or two. A longer list is more to read, not more to choose from.
+ */
+const SUGGESTION_LIMIT = 5;
+
+/**
+ * A slash-menu row that also carries the character to insert.
+ *
+ * `BlockItem` describes a BLOCK to apply, so it has no field for "the text this inserts". Rather
+ * than widen that shared type for one consumer, the emoji rows carry the glyph alongside it.
+ */
+type EmojiBlockItem = BlockItem & { emoji: string };
+
+/**
+ * Filters the emoji table for the `:` autocomplete.
+ *
+ * Upstream ships **no** `items` default — it never has. The inert `items: () => []` this
+ * extension used to be configured with was not disabling a working menu; it was filling in a
+ * blank upstream deliberately leaves to the host, with nothing.
+ *
+ * Ranked in tiers, because a flat "does it match" search buries the row the author meant:
+ *
+ *   1. name or shortcode equals the query      — `rocket` -> `:rocket:`
+ *   2. name or shortcode starts with the query — `smi`    -> `:smile:`, `:smiley:`
+ *   3. a TAG starts with the query             — `rocket` also tags `:astronaut:`
+ *   4. anything merely contains it
+ *
+ * Tiers 1 and 2 have to outrank tier 3 explicitly. An earlier draft treated a tag prefix as
+ * equal to a shortcode prefix, and `:rocket:` came back with `:astronaut:` in first place —
+ * because astronaut carries "rocket" as a tag and sits earlier in the table.
+ */
+export function filterEmojis(query: string, emojis: readonly EmojiItem[]): EmojiBlockItem[] {
+    const needle = query.toLowerCase();
+
+    // Entries with no character are the image-only ones (the `regional_indicator_*` set).
+    // Offering them would insert nothing.
+    const insertable = emojis.filter((item): item is EmojiItem & { emoji: string } =>
+        Boolean(item.emoji)
+    );
+
+    if (!needle) {
+        return insertable.slice(0, SUGGESTION_LIMIT).map(toBlockItem);
+    }
+
+    const scored: { item: EmojiItem & { emoji: string }; tier: number; index: number }[] = [];
+
+    insertable.forEach((item, index) => {
+        const names = [item.name, ...(item.shortcodes ?? [])].map((value) => value.toLowerCase());
+        const tags = (item.tags ?? []).map((value) => value.toLowerCase());
+
+        let tier: number | null = null;
+
+        if (names.includes(needle)) {
+            tier = 1;
+        } else if (names.some((value) => value.startsWith(needle))) {
+            tier = 2;
+        } else if (tags.some((value) => value.startsWith(needle))) {
+            tier = 3;
+        } else if ([...names, ...tags].some((value) => value.includes(needle))) {
+            tier = 4;
+        }
+
+        if (tier !== null) {
+            scored.push({ item, tier, index });
+        }
+    });
+
+    // Table order breaks ties, so results are stable rather than dependent on sort internals.
+    scored.sort((a, b) => a.tier - b.tier || a.index - b.index);
+
+    return scored.slice(0, SUGGESTION_LIMIT).map((entry) => toBlockItem(entry.item));
+}
+
+/**
+ * Maps an emoji onto the slash menu's row shape, so the `:` menu reuses that component whole.
+ *
+ * `icon` renders inside a `material-symbols-outlined` span. That is a ligature font, so a glyph
+ * it does not know falls through to the emoji font and draws correctly.
+ */
+function toBlockItem(item: EmojiItem): EmojiBlockItem {
+    return {
+        // `name`, not `shortcodes[0]`. They are often different and the first shortcode is
+        // frequently the verbose one — `smile` ships as
+        // `["grinning_face_with_closed_eyes", "smile"]`, so labelling by shortcode showed
+        // `:grinning_face_with_closed_eyes:` for a query of `smi`. `name` is also the value
+        // `attrs.name` would carry, so the row reads as the thing it is.
+        label: `:${item.name}:`,
+        description: '',
+        icon: item.emoji,
+        // Renders the glyph bare — no bordered box, no ligature font. See BlockItem.iconKind.
+        iconKind: 'glyph',
+        keywords: [item.name, ...(item.shortcodes ?? [])],
+        emoji: item.emoji as string
+    };
+}
+
+/**
+ * Builds the emoji node extension.
+ *
+ * A factory rather than a const because the `:` autocomplete reuses {@link SlashMenuService} for
+ * its dropdown, mirroring `createSlashCommandExtension`.
+ */
+export function createDotEmoji(menuService: SlashMenuService) {
+    return DotEmojiBase.extend({
+        addProseMirrorPlugins() {
+            const base = DotEmojiBase.config.addProseMirrorPlugins?.call(this) ?? [];
+
+            return [
+                ...base,
+                Suggestion<EmojiBlockItem>({
+                    editor: this.editor,
+                    // Reused from upstream verbatim: the trigger char, its own plugin key so the
+                    // session cannot collide with the slash menu's, and the `allow` guard that
+                    // keeps the menu from opening where the node could not go.
+                    char: ':',
+                    pluginKey: EmojiSuggestionPluginKey,
+                    allow: this.options.suggestion.allow,
+
+                    items: ({ query }) => filterEmojis(query, this.options.emojis),
+
+                    /**
+                     * Replaces upstream's `command`, which inserted an emoji NODE — the sixth
+                     * creation path, and the one thing about the `:` menu that had to change.
+                     * The `overrideSpace` handling is upstream's and is kept: it avoids doubling
+                     * the space when the caret already sits before one.
+                     */
+                    command: ({ editor, range, props }) => {
+                        const character = props.emoji;
+
+                        if (!character) {
+                            return;
+                        }
+
+                        const nodeAfter = editor.view.state.selection.$to.nodeAfter;
+                        const overrideSpace = nodeAfter?.text?.startsWith(' ');
+                        const to = overrideSpace ? range.to + 1 : range.to;
+
+                        editor
+                            .chain()
+                            .focus()
+                            .insertContentAt({ from: range.from, to }, `${character} `)
+                            .run();
+                    },
+
+                    render: () => ({
+                        onStart: (props: SuggestionProps<EmojiBlockItem>) => {
+                            menuService.open(props.items, props.clientRect ?? null, props.command);
+                        },
+                        onUpdate: (props: SuggestionProps<EmojiBlockItem>) => {
+                            menuService.update(
+                                props.items,
+                                props.clientRect ?? null,
+                                props.command
+                            );
+                        },
+                        onExit: (props: SuggestionProps<EmojiBlockItem>) => {
+                            // Suggestion fires onExit for real exits AND for (moved && changed)
+                            // while the match is still live. Only tear down once the plugin has
+                            // actually deactivated — same reasoning as the slash menu.
+                            const state = EmojiSuggestionPluginKey.getState(props.editor.state);
+
+                            if (state?.active) {
+                                return;
+                            }
+
+                            menuService.close();
+                        },
+                        onKeyDown: ({ event }: SuggestionKeyDownProps) =>
+                            menuService.handleKeyDown(event)
+                    })
+                })
+            ];
+        }
+    });
+}

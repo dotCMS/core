@@ -2,9 +2,12 @@ import { Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { Editor, getSchema } from '@tiptap/core';
+import { emojis, EmojiSuggestionPluginKey } from '@tiptap/extension-emoji';
 import Link from '@tiptap/extension-link';
 import { Node as PMNode } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
+
+import { filterEmojis } from './dot-emoji.extension';
 
 import { EditorPopoverService } from '../services/editor-popover.service';
 import {
@@ -13,8 +16,10 @@ import {
     hasEmojiNode,
     inlineNodes,
     pasteHTML,
+    flushSuggestion,
     pasteText,
     placeCursor,
+    recordingMenuService,
     typeText
 } from '../testing/editor.testing';
 import {
@@ -259,9 +264,7 @@ describe('DotEmoji — nothing creates an emoji node (#37340)', () => {
     describe('AC-012 — HTML paste cannot mint a node', () => {
         it('pasting an emoji span carrying the character lands as text', () => {
             editor = createTestEditor(injector);
-            pasteHTML(editor, 
-                '<p><span data-type="emoji" data-name="copyright">©</span></p>'
-            );
+            pasteHTML(editor, '<p><span data-type="emoji" data-name="copyright">©</span></p>');
 
             expect(hasEmojiNode(editor)).toBe(false);
             expect(docText(editor)).toContain('©');
@@ -275,7 +278,8 @@ describe('DotEmoji — nothing creates an emoji node (#37340)', () => {
          */
         it('pasting the fallbackImage span lands as text, NOT as a dotCMS image', () => {
             editor = createTestEditor(injector);
-            pasteHTML(editor, 
+            pasteHTML(
+                editor,
                 '<p><span data-type="emoji" data-name="copyright">' +
                     '<img src="https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/00a9-fe0f.png" ' +
                     'alt="copyright emoji"></span></p>'
@@ -300,9 +304,7 @@ describe('DotEmoji — nothing creates an emoji node (#37340)', () => {
             // payload carries. Everything the fixture needs except the one thing under test.
             const schemaWithout = getSchema([StarterKit, Link]);
 
-            expect(() => PMNode.fromJSON(schemaWithout, REPORTED_PAYLOAD)).toThrow(
-                /emoji/i
-            );
+            expect(() => PMNode.fromJSON(schemaWithout, REPORTED_PAYLOAD)).toThrow(/emoji/i);
         });
 
         it('the editor DOES resolve a stored emoji node, because the extension stays registered', () => {
@@ -312,5 +314,160 @@ describe('DotEmoji — nothing creates an emoji node (#37340)', () => {
             expect(editor.state.doc.content.size).toBeGreaterThan(0);
             expect(docText(editor)).toContain('dotCMS Copyright');
         });
+    });
+});
+
+/**
+ * #37340 follow-on — the `:` autocomplete, DRAFT (not in the approved spec's scope).
+ *
+ * The spec lists shortcode autocomplete as a non-goal, so these specs cover a deliberate scope
+ * addition rather than an acceptance criterion. They exist because the one thing that must not
+ * regress is the fix itself: the menu resolves to a CHARACTER, never back to an `emoji` node.
+ */
+describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () => {
+    let injector: Injector;
+    let editor: Editor;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            providers: [{ provide: EditorPopoverService, useValue: {} }]
+        });
+        injector = TestBed.inject(Injector);
+    });
+
+    afterEach(() => {
+        editor?.destroy();
+        TestBed.resetTestingModule();
+    });
+
+    /** A linked paragraph, so the insert can be checked for mark inheritance. */
+    const linkedParagraph = (text: string) => ({
+        type: 'doc',
+        content: [
+            {
+                type: 'paragraph',
+                content: [{ type: 'text', marks: [{ type: 'link', attrs: { href: HREF } }], text }]
+            }
+        ]
+    });
+
+    /** Reaches into the registered extension's own suggestion config, as TipTap would. */
+    const suggestionOf = (ed: Editor) => {
+        const extension = ed.extensionManager.extensions.find((ext) => ext.name === 'emoji');
+
+        return extension?.options?.suggestion;
+    };
+
+    it('registers the : trigger with upstream’s plugin key and allow guard', () => {
+        editor = createTestEditor(injector);
+        const suggestion = suggestionOf(editor);
+
+        expect(suggestion?.char).toBe(':');
+        expect(typeof suggestion?.allow).toBe('function');
+    });
+
+    it('ranks a prefix match above a mere tag match', () => {
+        const rows = filterEmojis('smi', emojis);
+
+        expect(rows.length).toBeGreaterThan(0);
+        // `:smile:`-family shortcodes start with the query; anything matching only via a tag must
+        // come after them, or exact shortcodes get buried under incidental hits.
+        expect(rows[0].label.startsWith(':smi')).toBe(true);
+    });
+
+    it('every row carries a character to insert', () => {
+        // Entries with no `emoji` are the image-only ones; offering them would insert nothing.
+        expect(filterEmojis('flag', emojis).every((row) => Boolean(row.emoji))).toBe(true);
+    });
+
+    it('labels rows as :shortcode: and uses the glyph as the icon', () => {
+        const [row] = filterEmojis('rocket', emojis);
+
+        expect(row.label).toBe(':rocket:');
+        expect(row.icon).toBe('🚀');
+        expect(row.emoji).toBe('🚀');
+        // Without this the shared menu wraps the glyph in the bordered Material icon box.
+        expect(row.iconKind).toBe('glyph');
+    });
+
+    it('returns at most five rows, so the fixed-width dropdown stays scannable', () => {
+        expect(filterEmojis('a', emojis).length).toBeLessThanOrEqual(5);
+        expect(filterEmojis('', emojis).length).toBeLessThanOrEqual(5);
+    });
+
+    it('opens a session on : and passes the filtered rows to the menu', async () => {
+        const menu = recordingMenuService();
+        editor = createTestEditor(injector, { menuService: menu.service });
+
+        typeText(editor, ':smi');
+        await flushSuggestion();
+
+        const state = EmojiSuggestionPluginKey.getState(editor.state);
+        expect(state?.active).toBe(true);
+        expect(state?.query).toBe('smi');
+
+        expect(menu.openCount()).toBeGreaterThan(0);
+        expect(menu.items().length).toBeGreaterThan(0);
+        expect(menu.items().length).toBeLessThanOrEqual(5);
+    });
+
+    it('does not open a session for a bare : with no query yet closes cleanly on exit', () => {
+        const menu = recordingMenuService();
+        editor = createTestEditor(injector, { menuService: menu.service });
+
+        typeText(editor, ':smi');
+        expect(EmojiSuggestionPluginKey.getState(editor.state)?.active).toBe(true);
+
+        // A space ends the shortcode, so the session must deactivate rather than linger.
+        typeText(editor, ' ');
+        expect(EmojiSuggestionPluginKey.getState(editor.state)?.active).toBe(false);
+    });
+
+    /**
+     * THE assertion for this feature. Upstream's `command` inserted an emoji NODE — creation path
+     * six. Ours replaces it, and this drives the REAL callback the plugin handed the menu rather
+     * than simulating an insert, because simulating one would test the assertion and not the code.
+     */
+    it('the real menu command inserts a character and creates NO emoji node', async () => {
+        const menu = recordingMenuService();
+        editor = createTestEditor(injector, { menuService: menu.service });
+
+        typeText(editor, 'hi :smi');
+        await flushSuggestion();
+
+        const command = menu.command();
+        const rows = menu.items() as { emoji: string; label: string }[];
+        expect(command).toBeTruthy();
+        expect(rows.length).toBeGreaterThan(0);
+
+        command?.(rows[0]);
+
+        expect(hasEmojiNode(editor)).toBe(false);
+        expect(docText(editor)).toContain(rows[0].emoji);
+        // The trigger text is consumed, not left behind alongside the glyph.
+        expect(docText(editor)).not.toContain(':smi');
+        expect(docText(editor)).toContain('hi ');
+    });
+
+    it('the inserted character inherits the marks of the run it lands in', async () => {
+        const menu = recordingMenuService();
+        editor = createTestEditor(injector, {
+            menuService: menu.service,
+            content: linkedParagraph('dotCMS ')
+        });
+
+        placeCursor(editor, 1 + 'dotCMS '.length);
+        typeText(editor, ':smi');
+        await flushSuggestion();
+
+        const rows = menu.items() as { emoji: string }[];
+        menu.command()?.(rows[0]);
+
+        expect(hasEmojiNode(editor)).toBe(false);
+
+        const nodes = inlineNodes(editor);
+        expect(nodes).toHaveLength(1);
+        expect(nodes[0].marks?.map((mark) => mark.type)).toEqual(['link']);
+        expect(nodes[0].text).toContain(rows[0].emoji);
     });
 });

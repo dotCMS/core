@@ -20,12 +20,23 @@ import { createEditorExtensions } from '../extensions/editor-extensions';
  */
 export function createTestEditor(
     injector: Injector,
-    options: { allowedBlocks?: string[]; content?: JSONContent | string } = {}
+    options: {
+        allowedBlocks?: string[];
+        content?: JSONContent | string;
+        /**
+         * Overrides the stub menu service.
+         *
+         * The `:` emoji suggestion hands its `command` callback to the menu service, so a test
+         * that wants to exercise the REAL command — rather than simulate it — needs to capture
+         * that callback. See {@link recordingMenuService}.
+         */
+        menuService?: SlashMenuService;
+    } = {}
 ): Editor {
     const dotMessageService = { get: (key: string) => key } as unknown as DotMessageService;
 
     // The slash-command extension calls these during plugin construction; a bare `{}` throws.
-    const menuService = {
+    const menuService = options.menuService ?? ({
         attachEditor: () => undefined,
         detachEditor: () => undefined,
         filterItems: () => [],
@@ -33,7 +44,7 @@ export function createTestEditor(
         update: () => undefined,
         close: () => undefined,
         handleKeyDown: () => false
-    } as unknown as SlashMenuService;
+    } as unknown as SlashMenuService);
 
     const extensions = runInInjectionContext(injector, () =>
         createEditorExtensions(menuService, options.allowedBlocks, injector, dotMessageService)
@@ -113,4 +124,59 @@ export function pasteText(editor: Editor, text: string): void {
 /** Pastes HTML through the real paste pipeline. See {@link pasteText} on the event. */
 export function pasteHTML(editor: Editor, html: string): void {
     editor.view.pasteHTML(html, new Event('paste') as ClipboardEvent);
+}
+
+/**
+ * A menu-service stub that records what a suggestion session handed it.
+ *
+ * The `:` emoji autocomplete passes its `command` callback into `menuService.open(...)`, which is
+ * the only way to reach the real one. Simulating the insert instead would test the assertion, not
+ * the code — and the command is the piece that replaced upstream's node-creating one, so it is
+ * exactly the piece that must not regress.
+ */
+export function recordingMenuService(): {
+    service: SlashMenuService;
+    items: () => unknown[];
+    command: () => ((item: unknown) => void) | null;
+    openCount: () => number;
+} {
+    let lastItems: unknown[] = [];
+    let lastCommand: ((item: unknown) => void) | null = null;
+    let opens = 0;
+
+    const service = {
+        attachEditor: () => undefined,
+        detachEditor: () => undefined,
+        filterItems: () => [],
+        open: (items: unknown[], _rect: unknown, command: (item: unknown) => void) => {
+            opens += 1;
+            lastItems = items;
+            lastCommand = command;
+        },
+        update: (items: unknown[], _rect: unknown, command: (item: unknown) => void) => {
+            lastItems = items;
+            lastCommand = command;
+        },
+        close: () => undefined,
+        handleKeyDown: () => false
+    } as unknown as SlashMenuService;
+
+    return {
+        service,
+        items: () => lastItems,
+        command: () => lastCommand,
+        openCount: () => opens
+    };
+}
+
+/**
+ * Waits for a suggestion session's render callbacks.
+ *
+ * `@tiptap/suggestion`'s plugin view declares `update` as **async**, so `onStart` / `onUpdate` /
+ * `onExit` land in a microtask AFTER the dispatch returns. A test that asserts straight after
+ * typing sees the plugin state already updated but the renderer not yet called, which reads as
+ * "the menu never opened".
+ */
+export async function flushSuggestion(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
 }

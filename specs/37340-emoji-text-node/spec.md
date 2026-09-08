@@ -121,6 +121,15 @@ symptom of a defect spanning a large class of characters.
   renders as a single `<a>` — is pre-existing behavior in every renderer, unchanged by this work.
   Accessibility (AC-022, AC-023) is not automatable and is routed to the post-merge QA plan.
   Everything else, AC-013 through AC-021 included, is a Jest assertion.
+- Q: The `:` autocomplete was declared a non-goal. Should it come back? → A: **Yes, reversed
+  after manual testing.** With the node gone, `:copyright:` still works but nothing tells an
+  author it exists — the shortcode rule became an undiscoverable feature. The menu is its
+  discovery affordance, and reusing what already exists makes it small: upstream supplies the
+  trigger char, its own plugin key and the `allow` guard; `SlashMenuService` supplies the
+  dropdown, positioning and keyboard navigation. Only two things are new, because upstream ships
+  **no** `items` default and never has — the filter, and a `command` that inserts the character
+  instead of upstream's node. **The inert `items: () => []` this extension carried was never
+  disabling a working menu; it was filling that blank with nothing.**
 - Q: Do we still need renderer link-run coalescing (v1 "Gap B")? → A: **No.** Content authored
   after the fix is a single `text` node carrying the `link` mark, so nothing needs coalescing.
   Healed content deliberately keeps its two anchors until an author reapplies the link — coalescing
@@ -323,6 +332,10 @@ class in one change with no list to maintain across extension upgrades.
     *Amended after manual testing: the original wording said "reaches storage on the author's next
     save", which was true only if they also made an edit — an author who opened the field, saw the
     © render correctly and hit Publish saved the unhealed value.*
+- **Restore the `:` shortcode autocomplete, inserting a character.** Upstream's trigger,
+  `EmojiSuggestionPluginKey` and `allow` guard are reused verbatim; the dropdown reuses
+  `SlashMenuService`, so no new component ships. Upstream's `command` is replaced — it inserted an
+  `emoji` node, and leaving it would have reopened the defect through the menu itself.
 - **Remove the `has('emoji')` / `isAllowed('emoji')` gates** from `enableEmoticons` and from the
   toolbar picker button. `emoji` cannot be selected in Allowed Blocks, so the gates never express
   an admin's choice — they only disable emoji authoring on every field that restricts anything
@@ -353,8 +366,10 @@ class in one change with no list to maintain across extension upgrades.
 - **Removing the `emoji` node registration.** Explicitly preserved for backward compatibility.
 - **The legacy Block Editor** (`core-web/libs/block-editor`). It never registered the extension,
   so it cannot create this split.
-- **Shortcode authoring as a feature.** The `:` *suggestion* trigger stays inert by design; this
-  change neither adds nor restores a `:rocket:` autocomplete menu. Only the input rule fires.
+- ~~**Shortcode authoring as a feature.**~~ **Reversed** — see Clarifications and AC-024…AC-028.
+  Suppressing the node made `:copyright:` undiscoverable, so the menu ships as its affordance. What
+  stays out of scope is any *new* authoring surface beyond it: no emoji category browser, no
+  skin-tone variants, no recently-used list.
 - **Reworking the image-fallback path.** The `cdn.jsdelivr.net` dependency and the
   `<img alt="… emoji">` accessible name are recorded as findings; new content stops hitting them.
 - **The `isEmojiSupported()` startup cost.** Measured, not fixed here.
@@ -514,6 +529,22 @@ class in one change with no list to maintain across extension upgrades.
 - **AC-023**: The NVDA Elements List / VoiceOver rotor shows **one** entry carrying the complete
   accessible name, including the symbol.
 
+**The `:` autocomplete**
+
+- **AC-024**: Typing `:` followed by at least one character opens a suggestion session whose query
+  is the typed text, and hands the menu the filtered rows.
+- **AC-025**: **Selecting a row inserts the CHARACTER and creates no `emoji` node.** Asserted by
+  driving the real `command` the plugin handed the menu — not by simulating an insert, since the
+  command is precisely the piece that replaced upstream's node-creating one.
+- **AC-026**: The inserted character inherits the marks of the run it lands in, so choosing an
+  emoji inside linked text leaves one `text` node carrying the `link` mark.
+- **AC-027**: Rows are ranked in tiers — exact name or shortcode, then name/shortcode prefix, then
+  tag prefix, then substring — and capped at **five**. A tag prefix must never outrank a shortcode
+  prefix: `rocket` returns `:rocket:` first, not `:astronaut:`, which merely tags it.
+- **AC-028**: A row is labelled by the emoji's `name`, not its first shortcode. They differ often
+  and the first shortcode is frequently the verbose one, so labelling by shortcode showed
+  `:grinning_face_with_closed_eyes:` for a query of `smi`.
+
 **Verification method**:
 
 - **Unit (Jest/Spectator)** in `core-web/libs/new-block-editor`, driving a real TipTap editor and
@@ -531,6 +562,11 @@ class in one change with no list to maintain across extension upgrades.
   only.
 - **Regression fixture** — the exact three-node payload from Actual Behavior, shared across the
   editor suites so every assertion runs against identical input.
+- **Unit (Jest)** for the autocomplete — AC-024 through AC-028. The session and command specs
+  drive the real plugin through a recording menu-service stub. Note that `@tiptap/suggestion`'s
+  plugin view declares `update` as **async**, so its render callbacks land in a microtask after the
+  dispatch; a spec that asserts synchronously sees the plugin state updated but the menu not yet
+  opened, which reads as a false failure.
 - **Manual accessibility pass** — AC-022 and AC-023, with NVDA and with VoiceOver, on content
   authored after the fix. Not automatable; record in the post-merge QA plan. Run it on new content
   and on a field healed from the reported payload, which AC-015 rejoins into one anchor.
@@ -594,6 +630,7 @@ failing (Red) before any implementation.
 | 8 | HTML paste re-creating `emoji` nodes | **Neutralize `parseHTML`** | Closing paths 1–4 alone still lets copy-paste between fields mint new nodes, defeating the fix's one guarantee. Stored JSON parsing is unaffected (`Node.fromJSON` ignores `parseHTML`). AC-012, AC-013. |
 | 9 | `emoji` in Allowed Blocks | **Gates removed** | `emoji` is not selectable in Allowed Blocks (`getEditorBlockOptions()` offers block nodes only, #37175), so `has('emoji')` only ever fires on fields that restrict something else — silently removing the picker and `:)` from them. AC-008, AC-009. |
 | 10 | Finding content that needs re-entry | **No longer needed** | Superseded by Decision 2 — content repairs itself as fields are opened, so a locating query stopped being the remedy's backbone. A report feature stays out of scope. |
+| 12 | The `:` autocomplete | **Restored, inserting a character** | Suppressing the node left `:copyright:` working but undiscoverable. Reusing upstream's trigger/plugin key/`allow` and `SlashMenuService`'s dropdown keeps it to a filter plus a `command`. A reversal of a v2 non-goal, recorded rather than quietly done. AC-024…AC-028. |
 | 11 | Test types skipped | **Jest only, justified in writing** | No Java, DB, REST, renderer or build artifact is touched, so integration/Postman/Karate/e2e have nothing to assert. Accessibility is manual. Recorded rather than left silent, per Principle V. |
 | 12 | Keep the node and let it carry marks instead? | **Rejected** | Fixing mark inheritance makes rendering *worse* — `text(link) + emoji(link) + text(link)` is three anchors, not one; today it is two. The node still stores a shortcode, so a ~1949-entry table is needed in Java plus four JS renderers. It is also the only option where the affected set **grows**. |
 
@@ -608,5 +645,6 @@ failing (Red) before any implementation.
 | Version | Date | Change |
 | --- | --- | --- |
 | v1 | 2026-09-03 | Original spec. Editor fix **plus** renderer Gap A (`emoji` branch in VTL + four JS renderers), Gap B (link coalescing in five renderers + `StoryBlockRenderHelper`), a build-generated shortcode map crossing the JS → Java boundary, and a coordinated SDK release. Implemented on `…-37340-…-impl`: 33 files, ~2.4k lines, two ACs withdrawn mid-implementation (v1 AC‑012 map, v1 AC‑022 version bump vs ADR-0019). |
+| v2.2 | 2026-09-07 | **The `:` autocomplete restored**, reversing a v2 non-goal after manual testing showed the shortcode rule had become undiscoverable. Records two ranking defects the strengthened specs caught — a tag prefix outranking a shortcode prefix, and rows labelled by `shortcodes[0]` rather than `name` — and one shared-component change: the slash menu's label is now truncated, and it can render a bare glyph instead of the bordered Material icon box. |
 | v2.1 | 2026-09-07 | **The link-sandwich exception**, added after review on PR #37434. The heal still preserves marks rather than inheriting them, with one narrow signature carved out: a bare `emoji` node between two `text` nodes carrying attribute-identical `link` marks inherits that mark, so the reported payload rejoins into a single `<a>` with no re-save. Bounded by AC-016's negative cases. Corrects a conflation in `research.md` R8, which had rejected this on the grounds that ProseMirror already handled it — it handles the *already-marked* node, not the bare one. |
 | v2 | 2026-09-07 | **Scope reduced to the editor.** Every renderer, SDK, Java and release criterion becomes a non-goal with its consequence stated. Clarify added the `parseHTML` paste path, removed the Allowed Blocks gates, and recorded the skipped test types. An options review then settled the treatment of stored nodes: they are **healed into text on load**, by a transform that preserves marks exactly and infers nothing — restoring the character everywhere without guessing at the link. |

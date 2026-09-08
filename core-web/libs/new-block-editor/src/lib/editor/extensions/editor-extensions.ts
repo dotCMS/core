@@ -16,7 +16,7 @@ import StarterKit from '@tiptap/starter-kit';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
-import { DotEmoji } from './dot-emoji.extension';
+import { createDotEmoji } from './dot-emoji.extension';
 import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
@@ -177,7 +177,7 @@ export function createEditorExtensions(
         // every field that restricted anything else. Nobody configured that.
         //
         // The inert `suggestion` block is gone with the Suggestion plugin it configured.
-        DotEmoji.configure({
+        createDotEmoji(menuService).configure({
             emojis,
             enableEmoticons: true
         }),
