@@ -2123,7 +2123,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes);
         }
         if (null != browserQuery.sortBy) {
-            appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
+            appendOrderByQuery(selectQuery, browserQuery.sortByDesc, useFolderCte);
         }
 
         Logger.debug(this, "Select Query: " + selectQuery);
@@ -2739,18 +2739,24 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param sqlQuery
      * @param orderByDesc
      */
-    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc) {
+    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc, boolean useFolderCte) {
         // issue #37229 (FR-001): `mod_date` alone has no tiebreaker, so rows sharing the same
         // mod_date get an unspecified, planner-dependent order today (~1.2% of rows per #37148).
         // `id.id` (the identifier row's own primary key, already joined/in scope -- no new join)
         // makes tied-row order -- and the pagination cursor derived from it -- a deterministic,
         // reproducible-run-to-run guarantee. This is a NEW guarantee, not a reproduction of
         // whatever arbitrary order those tied rows happened to return before this fix.
+        //
+        // FR-001 scopes this to folder-scoped requests only ("every folder-scoped listing
+        // request"), matching useFolderCte exactly -- every other caller's ORDER BY stays
+        // byte-identical to before (found in review: this was previously unconditional for any
+        // caller with sortBy set, silently changing tie order and pagination cursors for
+        // non-folder-scoped callers too).
         sqlQuery.append(" order by ");
         if (orderByDesc) {
-            sqlQuery.append(" c.mod_date desc, id.id desc");
+            sqlQuery.append(" c.mod_date desc").append(useFolderCte ? ", id.id desc" : "");
         } else  {
-            sqlQuery.append(" c.mod_date asc, id.id asc");
+            sqlQuery.append(" c.mod_date asc").append(useFolderCte ? ", id.id asc" : "");
         }
     }
 
