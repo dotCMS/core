@@ -318,4 +318,25 @@ describe('DotAiImageComponent', () => {
             expect(composer.className).not.toContain('border-surface-200');
         });
     });
+
+    describe('the generate button while generating', () => {
+        it('should show the spinner and keep the label', () => {
+            storeMock.imageGenerating.mockReturnValue(true);
+            spectator = createComponent();
+            const button = spectator.query(byTestId('dotai-image-generate')) as HTMLElement;
+
+            // PrimeNG puts its spinner in the icon slot and leaves the label alone, so the
+            // button does not change width while the request is out.
+            expect(button.querySelector('.p-button-loading-icon')).toBeTruthy();
+            expect(button.querySelector('button')?.disabled).toBe(true);
+        });
+
+        it('should show no spinner at rest', () => {
+            expect(
+                spectator
+                    .query(byTestId('dotai-image-generate'))
+                    ?.querySelector('.p-button-loading-icon')
+            ).toBeFalsy();
+        });
+    });
 });

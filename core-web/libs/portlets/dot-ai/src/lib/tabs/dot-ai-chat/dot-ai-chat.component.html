@@ -70,13 +70,32 @@
                 [ariaLabel]="'dotai.chat.input.aria' | dm"
                 [placeholder]="'dotai.chat.placeholder' | dm">
                 @if (store.isStreaming()) {
+                    <!-- The spinner rides on Stop rather than on Submit, because Submit is
+                         not on screen while streaming — this button takes its slot. It is
+                         hand-rolled rather than PrimeNG's `[loading]`: that input renders
+                         `[disabled]="disabled || loading"`, so it would grey out the one
+                         control that cancels the request (FR-012).
+
+                         `progress_activity` + `animate-spin` is the house spinner (five
+                         other uses, incl. dot-agent-thinking next door). text-base! because
+                         material-symbols-outlined sets its own 24px on the class and a plain
+                         size utility loses to it at equal specificity. -->
                     <p-button
                         promptEnd
                         severity="secondary"
                         [outlined]="true"
                         [label]="'dotai.chat.stop' | dm"
                         (onClick)="store.stopChat()"
-                        data-testid="dotai-chat-stop" />
+                        data-testid="dotai-chat-stop">
+                        <ng-template #icon>
+                            <i
+                                class="material-symbols-outlined animate-spin text-base!"
+                                aria-hidden="true"
+                                data-testid="dotai-chat-stop-spinner">
+                                progress_activity
+                            </i>
+                        </ng-template>
+                    </p-button>
                 } @else {
                     <!-- A labelled button, matching Image's Generate. No ariaLabel needed
                          now: the visible label is the button's accessible name (FR-056). -->

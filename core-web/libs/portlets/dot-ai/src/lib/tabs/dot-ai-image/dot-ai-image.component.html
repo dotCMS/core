@@ -175,9 +175,14 @@
                 </ng-template>
             </p-select>
 
+            <!-- `loading` rather than a hand-rolled spinner: PrimeNG swaps the icon slot for
+                 its spinner and keeps the label, so the button says what it is doing without
+                 changing width. It disables the button too, which `$canGenerate` already
+                 covers — the two agree rather than one masking the other. -->
             <p-button
                 promptEnd
                 [label]="'dotai.image.generate' | dm"
+                [loading]="store.imageGenerating()"
                 [disabled]="!$canGenerate()"
                 (onClick)="onGenerate()"
                 data-testid="dotai-image-generate" />

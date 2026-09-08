@@ -284,4 +284,42 @@ describe('DotAiChatComponent', () => {
         expect(composer.className).not.toContain('border-t');
         expect(composer.className).not.toContain('border-surface-200');
     });
+
+    describe('the streaming indicator on Stop', () => {
+        beforeEach(() => {
+            storeMock.isStreaming.mockReturnValue(true);
+            withAnswer(answer());
+            spectator = createComponent();
+        });
+
+        it('should spin while an answer is streaming', () => {
+            const spinner = spectator.query(byTestId('dotai-chat-stop-spinner')) as HTMLElement;
+
+            expect(spinner).toBeTruthy();
+            expect(spinner.className).toContain('animate-spin');
+            expect(spinner.textContent?.trim()).toBe('progress_activity');
+        });
+
+        it('should leave Stop clickable, which PrimeNG loading would not', () => {
+            // `[loading]` renders `[disabled]="disabled || loading"`, so using it here would
+            // grey out the only control that cancels the request (FR-012). This is the
+            // assertion that catches someone swapping the hand-rolled spinner for it.
+            const button = spectator
+                .query(byTestId('dotai-chat-stop'))
+                ?.querySelector('button') as HTMLButtonElement;
+
+            expect(button.disabled).toBe(false);
+
+            spectator.click(button);
+
+            expect(storeMock.stopChat).toHaveBeenCalled();
+        });
+
+        it('should show no spinner once streaming ends', () => {
+            storeMock.isStreaming.mockReturnValue(false);
+            spectator = createComponent();
+
+            expect(spectator.query(byTestId('dotai-chat-stop-spinner'))).toBeFalsy();
+        });
+    });
 });
