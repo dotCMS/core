@@ -49,8 +49,11 @@ describe('dotAnalyticsImpressionPlugin', () => {
             onImpression: vi.fn().mockReturnValue(mockSubscription)
         } as any;
 
-        // Mock tracker constructor
-        (DotCMSImpressionTracker as Mock).mockImplementation(() => mockTracker);
+        // Mock tracker constructor. A function expression, not an arrow: the plugin
+        // calls `new DotCMSImpressionTracker(...)` and an arrow is not constructible.
+        (DotCMSImpressionTracker as Mock).mockImplementation(function () {
+            return mockTracker;
+        });
     });
 
     describe('Plugin Configuration', () => {
@@ -157,7 +160,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
         });
 
         it('should log debug message when impressions enabled in debug mode', async () => {
-            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation();
+            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
             mockConfig.debug = true;
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);
@@ -173,7 +176,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
         });
 
         it('should log debug message when impressions disabled in debug mode', async () => {
-            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation();
+            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
             mockConfig.debug = true;
             mockConfig.impressions = false;
 
@@ -312,7 +315,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
                     }
                 });
 
-            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation();
+            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
             mockConfig.debug = true;
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);

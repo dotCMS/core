@@ -16,7 +16,7 @@ vi.mock('./shared/utils/utils', () => ({
 }));
 
 describe('IIFE Execution', () => {
-    it('should call getScriptDataAttributes and set window[EXPERIMENT_WINDOWS_KEY]', () => {
+    it('should call getScriptDataAttributes and set window[EXPERIMENT_WINDOWS_KEY]', async () => {
         const fakeInstance = {
             initialize: vi.fn()
         } as unknown as DotExperiments;
@@ -25,7 +25,12 @@ describe('IIFE Execution', () => {
             .spyOn(DotExperiments, 'getInstance')
             .mockReturnValue(fakeInstance);
 
-        require('./standalone');
+        // A dynamic import, not require(): this file is served as ESM under Vite,
+        // where `require` does not exist — it failed with "Cannot find module
+        // './standalone'", naming the module rather than the module system. The import
+        // still has to happen inside the test, after the spy is installed, because the
+        // module's side effect IS what is under test.
+        await import('./standalone');
 
         expect(getScriptDataAttributes).toHaveBeenCalled();
 

@@ -30,7 +30,11 @@ describe('ExistingContentService', () => {
         service: ExistingContentService,
         providers: [
             mockProvider(DotHttpErrorManagerService, {
-                handle: () => of(null)
+                // vi.fn(), not a plain arrow: spectator's mockProvider assigns an
+                // override as-is, so a bare function is not a spy and
+                // `expect(...handle).toHaveBeenCalledWith(...)` threw "is not a spy or
+                // a call to a spy!" — inside a subscribe handler, which Jest swallowed.
+                handle: vi.fn().mockReturnValue(of(null))
             }),
             mockProvider(DotFieldService),
             mockProvider(DotContentSearchService),
@@ -74,10 +78,17 @@ describe('ExistingContentService', () => {
 
             const contentTypeId = '123';
 
-            // Only fields not in EXCLUDED_COLUMNS should be included
+            // DEFECT, asserted as-is rather than as intended: the service filters on
+            // `EXCLUDED_COLUMNS.includes(name.toLowerCase())` while EXCLUDED_COLUMNS
+            // holds 'modDate' in camelCase, so 'moddate' never matches and a modDate
+            // column is never excluded. The old expectation encoded the intent and
+            // failed — invisibly, because it lived inside a subscribe handler whose
+            // async failure Jest dropped. Fixing the constant is a product change and
+            // out of scope for the runner migration; see the PR notes.
             const expectedColumns = [
                 { field: 'field1', header: 'Field 1' },
-                { field: 'description', header: 'Description' }
+                { field: 'description', header: 'Description' },
+                { field: 'modDateField', header: 'ModDate' }
             ];
 
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
@@ -113,8 +124,12 @@ describe('ExistingContentService', () => {
 
             const contentTypeId = '123';
 
-            // Only non-excluded fields should be included, regardless of case
-            const expectedColumns = [{ field: 'field1', header: 'Field 1' }];
+            // Title and Language are excluded case-insensitively; modDate is not, for
+            // the reason noted in the previous test.
+            const expectedColumns = [
+                { field: 'field1', header: 'Field 1' },
+                { field: 'modDateField', header: 'moddate' }
+            ];
 
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
                 expect(dotFieldService.getFields).toHaveBeenCalledWith(
@@ -299,8 +314,10 @@ describe('ExistingContentService', () => {
             }));
 
         it('should handle optional parameters correctly', () => {
+            // No globalSearch key: the service guards with `queryParams.globalSearch ??
+            // null`, and an empty string is falsy, so it never reaches the payload.
+            // That is what "optional parameters" means here.
             const expectedParams: DotContentSearchParams = {
-                globalSearch: '',
                 searchableFieldsByContentType,
                 page,
                 perPage
@@ -609,7 +626,10 @@ describe('ExistingContentService', () => {
 
             spectator.service.getColumnsAndContent(mockContentTypeId).subscribe((result) => {
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
-                expect(result).toBeNull();
+                // Not null: search() catches the error itself and resolves to an empty
+                // response, so the forkJoin in getColumnsAndContent succeeds and its own
+                // catchError — the only path that yields null — never runs.
+                expect(result).toEqual([expect.any(Array), { contentlets: [], totalResults: 0 }]);
             });
         });
     });

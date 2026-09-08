@@ -1450,7 +1450,7 @@ describe('Utility Functions', () => {
                 expect(item.type).toBe('folder');
                 expect(item.extension).toBe('folder');
             } else {
-                fail('Type guard should have narrowed to DotContentDriveFolder');
+                expect.fail('Type guard should have narrowed to DotContentDriveFolder');
             }
         });
 

@@ -34,7 +34,7 @@ describe('CanDeactivateGuardService', () => {
     it('canBeDesactivated should be false', () => {
         dotRouterService.forbidRouteDeactivation();
         service.canDeactivate().subscribe(() => {
-            fail('Should not be called if canBeDesactivated is false');
+            expect.fail('Should not be called if canBeDesactivated is false');
         });
     });
 
@@ -45,7 +45,7 @@ describe('CanDeactivateGuardService', () => {
             });
             dotRouterService.forbidRouteDeactivation();
             service.canDeactivate().subscribe(() => {
-                fail('Should not be called if canBeDesactivated is false');
+                expect.fail('Should not be called if canBeDesactivated is false');
             });
         }));
 });

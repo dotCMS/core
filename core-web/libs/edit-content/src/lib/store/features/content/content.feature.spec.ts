@@ -30,7 +30,10 @@ import {
     DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
+import {
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    MOCK_SINGLE_WORKFLOW_ACTIONS
+} from '@dotcms/utils-testing';
 
 import { withContent } from './content.feature';
 
@@ -82,7 +85,7 @@ describe('ContentFeature', () => {
                 events: of()
             }),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             { provide: EDIT_CONTENT_HOST, useValue: mockHost },
             provideHttpClient(),
             provideHttpClientTesting()

@@ -88,7 +88,14 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit changes everytime the layout properties changes', () => {
-        const changesMock = vi.spyOn(store, 'updateLayoutProperties');
+        // mockImplementation, not a bare spy: the store is provided but never given an
+        // initial state here, so the real updater throws "DotTemplateBuilderStore has
+        // not been initialized yet" from inside the form subscription. rxjs reported
+        // that asynchronously, which Jest dropped and Vitest counts as an unhandled
+        // error. The test only cares that the call happened.
+        const changesMock = vi
+            .spyOn(store, 'updateLayoutProperties')
+            .mockImplementation(() => undefined);
         spectator.component.group.setValue({
             footer: true,
             header: false,

@@ -14,9 +14,15 @@ vi.mock('../../core/dot-analytics.content', () => ({
     initializeContentAnalytics: mockInitialize
 }));
 
-// Helpers to load a fresh copy of the utils module (resets singletons)
-const loadUtils = () => {
-    const utils = require('./utils') as typeof import('./utils');
+// Helpers to load a fresh copy of the utils module (resets singletons).
+//
+// A dynamic `import()`, not `require()`: this file is served as ESM under Vite, where
+// `require` does not exist — it failed with "Cannot find module './utils'", naming the
+// module rather than the module system. `vi.resetModules()` in beforeEach is what makes
+// each import a fresh copy, so the singleton reset this helper exists for still holds.
+const loadUtils = async () => {
+    const utils = (await import('./utils')) as typeof import('./utils');
+
     return utils;
 };
 
@@ -33,8 +39,8 @@ describe('react/internal/utils', () => {
     });
 
     describe('initializeAnalytics', () => {
-        it('initializes and returns singleton instance', () => {
-            const { initializeAnalytics } = loadUtils();
+        it('initializes and returns singleton instance', async () => {
+            const { initializeAnalytics } = await loadUtils();
 
             const instance1 = initializeAnalytics(mockConfig);
             const instance2 = initializeAnalytics(mockConfig);
@@ -45,8 +51,8 @@ describe('react/internal/utils', () => {
             expect(mockInitialize).toHaveBeenCalledWith(mockConfig);
         });
 
-        it('resets singleton when server changes', () => {
-            const { initializeAnalytics } = loadUtils();
+        it('resets singleton when server changes', async () => {
+            const { initializeAnalytics } = await loadUtils();
 
             const instance1 = initializeAnalytics(mockConfig);
             const instance2 = initializeAnalytics({
@@ -59,8 +65,8 @@ describe('react/internal/utils', () => {
             expect(mockInitialize).toHaveBeenCalledTimes(2);
         });
 
-        it('resets singleton when siteAuth changes', () => {
-            const { initializeAnalytics } = loadUtils();
+        it('resets singleton when siteAuth changes', async () => {
+            const { initializeAnalytics } = await loadUtils();
 
             const instance1 = initializeAnalytics(mockConfig);
             const instance2 = initializeAnalytics({
@@ -73,8 +79,8 @@ describe('react/internal/utils', () => {
             expect(mockInitialize).toHaveBeenCalledTimes(2);
         });
 
-        it('does not reset singleton when debug changes', () => {
-            const { initializeAnalytics } = loadUtils();
+        it('does not reset singleton when debug changes', async () => {
+            const { initializeAnalytics } = await loadUtils();
 
             const instance1 = initializeAnalytics(mockConfig);
             const instance2 = initializeAnalytics({

@@ -233,6 +233,62 @@ function jestSettings(dir) {
     };
 }
 
+/** tsconfigs in this workspace carry `//` comments, which JSON.parse rejects. */
+function stripJsonComments(src) {
+    return src.replace(/^\s*\/\/[^\n]*$/gm, '');
+}
+
+/**
+ * Aliases that undo a project's BUILD-ONLY tsconfig paths for the test run.
+ *
+ * `nxViteTsPaths()` picks the project tsconfig by a fixed preference —
+ * tsconfig.app.json, else tsconfig.lib.json, else tsconfig.json — and never looks at
+ * tsconfig.spec.json (see @nx/vite's getProjectTsConfigPath). sdk-experiments'
+ * tsconfig.lib.json deliberately points the sibling SDK packages at their built
+ * `dist/` output so the rollup build treats them as external declarations, and the
+ * test run inherited that: the specs loaded dist/libs/sdk/uve/public.cjs.js, a CJS
+ * bundle whose `require('@dotcms/types')` cannot resolve, and two spec files died on
+ * "Cannot find module '@dotcms/types'". Jest never saw this because jest.preset mapped
+ * paths straight from tsconfig.base.json.
+ *
+ * So: for every package a project tsconfig redirects into `dist/`, alias EVERY
+ * tsconfig.base.json entry for that package — the bare specifier and its subpath
+ * entries alike — back to source. Subpaths matter: aliasing only `@dotcms/types`
+ * leaves `@dotcms/types/internal` resolving to dist, which is how a first attempt
+ * failed. Vite's own alias resolver runs ahead of every plugin, including
+ * nxViteTsPaths' 'pre', so these win.
+ *
+ * Emitted longest-specifier-first: Vite matches a string `find` as a prefix, so
+ * `@dotcms/types` would otherwise swallow `@dotcms/types/internal`.
+ */
+function distPathOverrides(dir) {
+    const base = JSON.parse(readFileSync(join(CW, 'tsconfig.base.json'), 'utf8'));
+    const sourcePaths = base.compilerOptions?.paths ?? {};
+    const redirected = new Set();
+
+    for (const name of ['tsconfig.app.json', 'tsconfig.lib.json']) {
+        const p = join(CW, dir, name);
+        if (!existsSync(p)) continue;
+        let paths;
+        try {
+            paths = JSON.parse(stripJsonComments(readFileSync(p, 'utf8'))).compilerOptions?.paths;
+        } catch {
+            break;
+        }
+        for (const [spec, targets] of Object.entries(paths ?? {})) {
+            if (targets?.[0]?.startsWith('dist/')) redirected.add(spec.replace(/\/\*$/, ''));
+        }
+        break;
+    }
+
+    if (redirected.size === 0) return [];
+
+    return Object.entries(sourcePaths)
+        .filter(([spec]) => [...redirected].some((pkg) => spec === pkg || spec.startsWith(`${pkg}/`)))
+        .map(([spec, targets]) => ({ find: spec, replacement: targets[0] }))
+        .sort((a, b) => b.find.length - a.find.length);
+}
+
 /** Jest environment -> Vitest. Absent means the project inherited the preset's jsdom. */
 function environmentFor(jestEnv) {
     if (!jestEnv) return 'jsdom';
@@ -304,6 +360,12 @@ function generate(dir) {
         : `coverage/${dir}`;
 
     const setupFiles = cfg.setupFiles.map((f) => f.replace('<rootDir>/', ''));
+
+    // Build-only tsconfig paths, undone for the test run. Emitted project-relative
+    // because the existing alias block resolves against __dirname.
+    for (const a of distPathOverrides(dir)) {
+        cfg.aliases.push({ find: a.find, replacement: `${up}${a.replacement}` });
+    }
     // Only `/` is escaped in these package regexes. Escaping `@` as well produces
     // `\@`, which eslint's no-useless-escape rejects and which broke the pre-commit
     // hook on 8 generated configs.
@@ -378,6 +440,13 @@ export default defineConfig(() => ({
         name: '${name}',
         watch: false,
         globals: true,
+        // Jest routed every .css/.scss/.sass/.less import through identity-obj-proxy
+        // (@nx/jest/plugins/resolver), so a CSS-module class came back as its own name.
+        // Vitest's default 'stable' strategy returns _name_hash instead, and
+        // sdk-react's Column test — which asserts toHaveClass('col-start-2') on a class
+        // read out of a *.module.css — failed on the hash. 'non-scoped' restores the
+        // Jest reading. CSS is still not processed; only the class name mapping changes.
+        css: { modules: { classNameStrategy: 'non-scoped' } },
         environment: '${env}',${environmentOptionsFor(env)}
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {

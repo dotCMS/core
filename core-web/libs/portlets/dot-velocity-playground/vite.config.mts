@@ -37,19 +37,56 @@ export default defineConfig(() => ({
         name: 'portlets-dot-velocity-playground-portlet',
         watch: false,
         globals: true,
+        // Jest routed every .css/.scss/.sass/.less import through identity-obj-proxy
+        // (@nx/jest/plugins/resolver), so a CSS-module class came back as its own name.
+        // Vitest's default 'stable' strategy returns _name_hash instead, and
+        // sdk-react's Column test — which asserts toHaveClass('col-start-2') on a class
+        // read out of a *.module.css — failed on the hash. 'non-scoped' restores the
+        // Jest reading. CSS is still not processed; only the class name mapping changes.
+        css: { modules: { classNameStrategy: 'non-scoped' } },
         environment: 'jsdom',
         environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         setupFiles: ['src/test-setup.ts'],
         server: {
             deps: {
-                inline: [/[\\/](libs|apps)[\\/]/, /zone\.js/, /@primeuix/, /@analogjs\/vite-plugin-angular/, /@angular\/animations/, /@angular\/cdk/, /@angular\/common/, /@angular\/core/, /@angular\/elements/, /@angular\/forms/, /@angular\/platform-browser/, /@angular\/platform-browser-dynamic/, /@angular\/router/, /@materia-ui\/ngx-monaco-editor/, /@ngrx\/component-store/, /@ngrx\/signals/, /@openng\/spectator/, /@tinymce\/tinymce-angular/, /ng-mocks/, /ng2-dragula/, /ngx-markdown/, /ngx-tiptap/, /primeng/]
+                inline: [
+                    /[\\/](libs|apps)[\\/]/,
+                    /zone\.js/,
+                    /@primeuix/,
+                    /@analogjs\/vite-plugin-angular/,
+                    /@angular\/animations/,
+                    /@angular\/cdk/,
+                    /@angular\/common/,
+                    /@angular\/core/,
+                    /@angular\/elements/,
+                    /@angular\/forms/,
+                    /@angular\/platform-browser/,
+                    /@angular\/platform-browser-dynamic/,
+                    /@angular\/router/,
+                    /@materia-ui\/ngx-monaco-editor/,
+                    /@ngrx\/component-store/,
+                    /@ngrx\/signals/,
+                    /@openng\/spectator/,
+                    /@tinymce\/tinymce-angular/,
+                    /ng-mocks/,
+                    /ng2-dragula/,
+                    /ngx-markdown/,
+                    /ngx-tiptap/,
+                    /primeng/
+                ]
             }
         },
         reporters: [
             'default',
             'github-actions',
-            ['junit', { outputFile: '../../../target/core-web-reports/portlets-dot-velocity-playground-portlet.xml' }]
+            [
+                'junit',
+                {
+                    outputFile:
+                        '../../../target/core-web-reports/portlets-dot-velocity-playground-portlet.xml'
+                }
+            ]
         ],
         coverage: {
             reportsDirectory: '../../../coverage/libs/portlets/dot-velocity-playground',

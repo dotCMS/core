@@ -211,7 +211,7 @@ describe('DotFileFieldComponent', () => {
 
             const applySpy = vi
                 .spyOn(spectator.component.store, 'applyEditedImage')
-                .mockImplementation();
+                .mockImplementation(() => undefined);
 
             spectator.component.onEditImage();
 
@@ -238,7 +238,7 @@ describe('DotFileFieldComponent', () => {
                 .mockReturnValue(of(EDITED_TEMP_FILE) as never);
             const applySpy = vi
                 .spyOn(spectator.component.store, 'applyEditedImage')
-                .mockImplementation();
+                .mockImplementation(() => undefined);
 
             spectator.component.onEditImage();
 

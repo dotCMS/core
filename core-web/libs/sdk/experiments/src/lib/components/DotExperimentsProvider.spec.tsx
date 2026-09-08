@@ -27,7 +27,7 @@ describe('DotExperimentsProvider', () => {
 
         vi.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.EDIT } as UVEState);
 
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         render(
             <DotExperimentsProvider config={config}>
@@ -49,7 +49,7 @@ describe('DotExperimentsProvider', () => {
 
         vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         render(
             <DotExperimentsProvider config={config}>

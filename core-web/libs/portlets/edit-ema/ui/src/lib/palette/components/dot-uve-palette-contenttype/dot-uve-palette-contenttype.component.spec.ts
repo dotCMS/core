@@ -159,9 +159,8 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
     });
 
-    describe('View Input and CSS Classes', () => {
-        // NOTE: host styling is handled by $hostClass(); we don't assert on CSS classes.
-    });
+    // NOTE: host styling is handled by $hostClass(); we don't assert on CSS classes,
+    // so there is no suite for them. An empty `describe` fails the file under Vitest.
 
     describe('Template Rendering', () => {
         it('should render drag handle with correct icons', () => {

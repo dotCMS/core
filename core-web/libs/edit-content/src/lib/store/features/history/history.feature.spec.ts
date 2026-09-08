@@ -279,6 +279,22 @@ describe('HistoryFeature', () => {
             };
             return messages[key] || key;
         });
+
+        // The withHooks onInit effect calls loadVersions() and
+        // loadPushPublishHistory() the moment it flushes, and spectator's auto-mocks
+        // return undefined — the rxMethod then pipes undefined and throws. rxjs
+        // reports that asynchronously, so Jest dropped it while Vitest counts it as an
+        // unhandled error, two per test. Empty responses keep the effect harmless;
+        // tests that care about the payload set their own return value.
+        dotEditContentService.getVersions.mockReturnValue(
+            of({ ...mockVersionsResponse, entity: [] })
+        );
+        dotEditContentService.getPushPublishHistory.mockReturnValue(
+            of({ ...mockPushPublishHistoryResponse, entity: [] })
+        );
+        // Same reason: viewing a version pipes getContentletByInode(), and the effect
+        // can fire from a state change rather than from an explicit call.
+        dotContentletService.getContentletByInode.mockReturnValue(of(mockContentlet));
     });
 
     describe('Store Initialization', () => {

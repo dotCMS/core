@@ -190,8 +190,8 @@ describe('createUVESubscription', () => {
     let consoleErrorSpy: MockInstance;
 
     beforeEach(() => {
-        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
-        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     });
 
     afterEach(() => {

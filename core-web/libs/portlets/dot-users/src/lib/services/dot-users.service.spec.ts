@@ -193,7 +193,7 @@ describe('DotUsersService', () => {
         it('should throw when the JWT envelope is malformed instead of returning ""', () =>
             new Promise<void>((done) => {
                 spectator.service.getApiTokenJwt('tok-1').subscribe({
-                    next: () => done.fail('expected an error, got a value'),
+                    next: () => expect.fail('expected an error, got a value'),
                     error: (error: Error) => {
                         expect(error.message).toBe('Malformed JWT response');
                         done();

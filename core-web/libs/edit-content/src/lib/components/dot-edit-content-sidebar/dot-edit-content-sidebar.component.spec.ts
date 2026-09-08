@@ -42,6 +42,7 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     createFakeContentlet,
     createFakeLanguage,
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
@@ -100,7 +101,7 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotLanguagesService),
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             {
                 provide: DialogService,
                 useValue: {
@@ -370,7 +371,7 @@ describe('DotEditContentSidebarComponent', () => {
             });
 
             it('should call store.lockContent when clicking the button on unlocked content', () => {
-                const lockSpy = vi.spyOn(store, 'lockContent').mockImplementation();
+                const lockSpy = vi.spyOn(store, 'lockContent').mockImplementation(() => undefined);
                 vi.spyOn(store, 'isContentLocked').mockReturnValue(false);
                 spectator.detectChanges();
 
@@ -380,7 +381,9 @@ describe('DotEditContentSidebarComponent', () => {
             });
 
             it('should call store.unlockContent when clicking the button on locked content', () => {
-                const unlockSpy = vi.spyOn(store, 'unlockContent').mockImplementation();
+                const unlockSpy = vi
+                    .spyOn(store, 'unlockContent')
+                    .mockImplementation(() => undefined);
                 vi.spyOn(store, 'isContentLocked').mockReturnValue(true);
                 spectator.detectChanges();
 
@@ -406,7 +409,9 @@ describe('DotEditContentSidebarComponent', () => {
             it('should confirm before releasing a lock held by another user', () => {
                 const confirmationService = spectator.inject(ConfirmationService, true);
                 const confirmSpy = vi.spyOn(confirmationService, 'confirm');
-                const unlockSpy = vi.spyOn(store, 'unlockContent').mockImplementation();
+                const unlockSpy = vi
+                    .spyOn(store, 'unlockContent')
+                    .mockImplementation(() => undefined);
                 vi.spyOn(store, 'isLockedByAnotherUser').mockReturnValue(true);
                 vi.spyOn(store, 'lockedByName').mockReturnValue('Anna García');
                 spectator.detectChanges();
@@ -672,7 +677,9 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should call store.fireWorkflowAction when fireResetWorkflowAction (reset path) is invoked', fakeAsync(() => {
-                const storeSpy = vi.spyOn(store, 'fireWorkflowAction').mockImplementation();
+                const storeSpy = vi
+                    .spyOn(store, 'fireWorkflowAction')
+                    .mockImplementation(() => undefined);
 
                 spectator.component.fireResetWorkflowAction('reset-action-id');
 

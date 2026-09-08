@@ -62,7 +62,7 @@ describe('AppComponent', () => {
         vi.spyOn(dotMessageService, 'init');
         vi.spyOn(dotLicenseService, 'setLicense');
         vi.spyOn(dotNavLogoService, 'setLogo');
-        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         fixture = TestBed.createComponent(AppComponent);
         de = fixture.debugElement;

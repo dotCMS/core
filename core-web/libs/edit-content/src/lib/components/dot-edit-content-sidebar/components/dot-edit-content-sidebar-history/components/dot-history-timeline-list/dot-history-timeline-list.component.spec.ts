@@ -73,7 +73,9 @@ describe('DotHistoryTimelineListComponent', () => {
         originalIntersectionObserver = global.IntersectionObserver;
         global.IntersectionObserver = vi
             .fn()
-            .mockImplementation((callback: IntersectionObserverCallback) => {
+            // A function expression, not an arrow: the component calls
+            // `new IntersectionObserver(...)`, and an arrow is not constructible.
+            .mockImplementation(function (callback: IntersectionObserverCallback) {
                 intersectionCallback = callback;
                 return {
                     observe: vi.fn(),

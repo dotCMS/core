@@ -11,28 +11,34 @@ import { DotTag } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-@Component({
-    selector: 'dot-site',
-    standalone: true,
-    template: '',
-    providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: MockDotSiteComponent, multi: true }]
-})
-class MockDotSiteComponent implements ControlValueAccessor {
-    writeValue(): void {
-        /* noop */
-    }
-    registerOnChange(): void {
-        /* noop */
-    }
-    registerOnTouched(): void {
-        /* noop */
-    }
-}
+// The stub is declared INSIDE the factory. `vi.mock` is hoisted above every import,
+// and the component under test pulls `DotSiteComponent` into its `imports: []` while
+// its module is evaluating — which is before any top-level statement of this spec has
+// run. A stub declared at file scope was therefore still in its temporal dead zone,
+// and the file died with "Cannot access 'MockDotSiteComponent' before initialization".
+vi.mock('@dotcms/ui', async () => {
+    const actual = await vi.importActual<typeof import('@dotcms/ui')>('@dotcms/ui');
 
-vi.mock('@dotcms/ui', async () => ({
-    ...(await vi.importActual('@dotcms/ui')),
-    DotSiteComponent: MockDotSiteComponent
-}));
+    @Component({
+        selector: 'dot-site',
+        standalone: true,
+        template: '',
+        providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: MockDotSiteComponent, multi: true }]
+    })
+    class MockDotSiteComponent implements ControlValueAccessor {
+        writeValue(): void {
+            /* noop */
+        }
+        registerOnChange(): void {
+            /* noop */
+        }
+        registerOnTouched(): void {
+            /* noop */
+        }
+    }
+
+    return { ...actual, DotSiteComponent: MockDotSiteComponent };
+});
 
 import { DotTagsCreateComponent } from './dot-tags-create.component';
 

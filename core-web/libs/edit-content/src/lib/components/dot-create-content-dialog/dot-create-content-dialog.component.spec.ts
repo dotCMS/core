@@ -27,6 +27,7 @@ import {
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
 
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
 
@@ -84,7 +85,7 @@ describe('DotEditContentDialogComponent', () => {
             mockProvider(DialogService),
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             GlobalStore,
             provideHttpClient(),
             provideHttpClientTesting()

@@ -43,6 +43,27 @@ const DENY = [
       why: 'Out of scope; its Stencil config would match test-config' }
 ];
 
+/**
+ * Named product-source exceptions — each one enumerated, never a widened pattern.
+ *
+ * The whole point of this check is that no product file changes, so an exception has
+ * to name the exact path and say why the migration could not proceed without it. They
+ * are counted and printed SEPARATELY from the allowed categories: a reviewer must see
+ * "1 product exception" rather than have it disappear into a bucket.
+ */
+const PRODUCT_EXCEPTIONS = [
+    {
+        path: 'core-web/libs/portlets/dot-content-drive/portlet/src/lib/components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component.ts',
+        why:
+            'escaped backticks inside a CSS comment in the inline `styles` array break ' +
+            "@analogjs/vite-plugin-angular's JIT virtual style module — the CSS is re-emitted " +
+            'into a template literal, the backtick closes it early and Rollup then parses the ' +
+            'CSS as JavaScript ("Expected \';\', got \':\'" on `:host`). It took two spec ' +
+            'files down entirely, 214 tests. The edit replaces the backticks with quotes ' +
+            'INSIDE a /* */ comment: no selector, declaration or TypeScript changes.'
+    }
+];
+
 const ALLOW = [
     { category: 'spec', patterns: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx'] },
     { category: 'test-support', patterns: ['**/test-setup.ts', '**/src/test.ts', 'core-web/tools/__tests__/**'] },
@@ -115,6 +136,10 @@ function matches(path, pattern) {
 }
 
 function classify(path) {
+    const exception = PRODUCT_EXCEPTIONS.find((e) => e.path === path);
+    if (exception) {
+        return { path, verdict: 'allowed', category: 'product-exception', why: exception.why };
+    }
     for (const rule of DENY) {
         if (rule.patterns.some((p) => matches(path, p))) {
             return { path, verdict: 'denied', category: rule.category, why: rule.why };
@@ -192,6 +217,13 @@ function main() {
             console.log('Allowed:');
             for (const [cat, n] of [...byCategory].sort()) {
                 console.log(`  ${String(n).padStart(5)}  ${cat}`);
+            }
+        }
+        const exceptions = results.filter((r) => r.category === 'product-exception');
+        if (exceptions.length) {
+            console.log(`\nPRODUCT EXCEPTIONS (${exceptions.length}) — read these:`);
+            for (const e of exceptions) {
+                console.log(`  ${e.path}\n      ${e.why}`);
             }
         }
         if (rejected.length) {

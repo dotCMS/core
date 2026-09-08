@@ -774,7 +774,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should warn once when show is called without callback', () => {
-                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
                 const fieldAPI = bridge.getField('testField');
 
                 fieldAPI.show();
@@ -792,7 +792,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should warn once when hide is called without callback', () => {
-                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
                 const fieldAPI = bridge.getField('testField');
 
                 fieldAPI.hide();
@@ -810,7 +810,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should not warn when callback is provided', () => {
-                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
                 const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
@@ -977,7 +977,7 @@ describe('AngularFormBridge', () => {
             it('should warn about an unsupported kind rather than ignore it silently', () => {
                 // AC-008: a template author must not be able to ask for a kind the picker refuses
                 // and get no signal. Same treatment the `link` + `mimeTypes` conflict already gets.
-                const warn = vi.spyOn(console, 'warn').mockImplementation();
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 bridge.openBrowserModal({
                     kinds: ['file', 'page', 'folder']
@@ -994,7 +994,7 @@ describe('AngularFormBridge', () => {
                 // Degenerate case: no requested kind maps to a base type, so `baseTypesFor` returns
                 // undefined and the picker uses its own default. Must not throw — an exception
                 // inside a VTL <script> takes the whole custom field down with it.
-                const warn = vi.spyOn(console, 'warn').mockImplementation();
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 expect(() =>
                     bridge.openBrowserModal({
@@ -1009,7 +1009,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should not warn for a caller whose kinds are all supported', () => {
-                const warn = vi.spyOn(console, 'warn').mockImplementation();
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 bridge.openBrowserModal({ kinds: ['file', 'dotasset', 'page', 'link'] });
 

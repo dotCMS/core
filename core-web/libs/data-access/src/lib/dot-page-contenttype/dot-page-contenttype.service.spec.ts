@@ -448,7 +448,7 @@ describe('DotPageContentTypeService', () => {
                     };
 
                     spectator.service.get(params).subscribe({
-                        next: () => fail('should have failed with 404 error'),
+                        next: () => expect.fail('should have failed with 404 error'),
                         error: (error) => {
                             expect(error.status).toBe(404);
                             expect(error.statusText).toBe('Not Found');
@@ -469,7 +469,7 @@ describe('DotPageContentTypeService', () => {
                     };
 
                     spectator.service.get(params).subscribe({
-                        next: () => fail('should have failed with 500 error'),
+                        next: () => expect.fail('should have failed with 500 error'),
                         error: (error) => {
                             expect(error.status).toBe(500);
                             done();
@@ -885,7 +885,7 @@ describe('DotPageContentTypeService', () => {
                     const params: DotContentTypeQueryParams = {};
 
                     spectator.service.getAllContentTypes(params).subscribe({
-                        next: () => fail('should have failed with 403 error'),
+                        next: () => expect.fail('should have failed with 403 error'),
                         error: (error) => {
                             expect(error.status).toBe(403);
                             expect(error.statusText).toBe('Forbidden');
@@ -904,7 +904,7 @@ describe('DotPageContentTypeService', () => {
                     const params: DotContentTypeQueryParams = {};
 
                     spectator.service.getAllContentTypes(params).subscribe({
-                        next: () => fail('should have failed with 500 error'),
+                        next: () => expect.fail('should have failed with 500 error'),
                         error: (error) => {
                             expect(error.status).toBe(500);
                             done();

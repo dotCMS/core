@@ -77,10 +77,10 @@ describe('DotUsageService', () => {
 
     it('should handle HTTP errors', () =>
         new Promise<void>((done) => {
-            const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+            const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
             service.getSummary().subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(401);
                     errorSpy.mockRestore();
@@ -94,10 +94,10 @@ describe('DotUsageService', () => {
 
     it('should handle server errors', () =>
         new Promise<void>((done) => {
-            const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+            const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
             service.getSummary().subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(500);
                     errorSpy.mockRestore();
@@ -179,7 +179,7 @@ describe('DotUsageService', () => {
         }));
 
     it('should handle concurrent requests properly', () => {
-        const spy = vi.spyOn(console, 'error').mockImplementation();
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
         // Start two requests simultaneously
         service.getSummary().subscribe();

@@ -349,7 +349,7 @@ describe('DotKeyValueComponent', () => {
         };
 
         it('should ask before removing anything', () => {
-            vi.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => undefined);
             const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.click(byTestId('dot-key-value-clear-all'));
@@ -361,7 +361,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should empty the list once confirmed', () => {
-            vi.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => undefined);
             spectator.click(byTestId('dot-key-value-clear-all'));
 
             accept();
@@ -373,7 +373,7 @@ describe('DotKeyValueComponent', () => {
         it('should report every removed pair and the empty list once', () => {
             // Field Variables deletes row by row through `delete`; the other consumers
             // take the whole array from `updatedList`.
-            vi.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => undefined);
             const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
             const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
@@ -390,7 +390,7 @@ describe('DotKeyValueComponent', () => {
             // itself — a consumer calling it directly must not get an empty dialog.
             create({ variables: [] });
             confirmation = spectator.inject(ConfirmationService);
-            vi.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => undefined);
 
             spectator.component.confirmClearAll();
 

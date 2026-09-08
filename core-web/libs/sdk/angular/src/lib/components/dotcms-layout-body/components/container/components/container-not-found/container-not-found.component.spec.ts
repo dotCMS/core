@@ -29,7 +29,7 @@ describe('ContainerNotFoundComponent', () => {
     });
 
     it('should display error message in dev mode', () => {
-        vi.spyOn(console, 'error').mockImplementation();
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
         spectator.setInput('identifier', 'test-123');
         spectator.detectChanges();
         const element = spectator.query(byTestId('container-not-found'));
@@ -39,7 +39,7 @@ describe('ContainerNotFoundComponent', () => {
 
     it('should log error to console in dev mode', () => {
         spectator.setInput('identifier', 'test-123');
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         spectator.component.ngOnInit();
         expect(consoleSpy).toHaveBeenCalledWith('Container with identifier test-123 not found');
     });
@@ -53,7 +53,7 @@ describe('ContainerNotFoundComponent', () => {
 
     it('should not log error in production mode', () => {
         dotcmsContextService.$isDevMode.mockReturnValue(false);
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         spectator.component.ngOnInit();
         expect(consoleSpy).not.toHaveBeenCalled();
     });

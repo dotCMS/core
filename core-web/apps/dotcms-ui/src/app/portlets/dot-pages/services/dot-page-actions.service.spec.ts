@@ -381,11 +381,10 @@ describe('DotPageActionsService', () => {
             }));
     });
 
-    describe('Menu Items Without Edit Permission', () => {
-        // Note: Testing without edit permissions requires a separate test suite
-        // with different service initialization. Permission checks are tested
-        // through the canEdit logic which is covered in the HTML pages tests above.
-    });
+    // Note: Testing without edit permissions requires a separate test suite with
+    // different service initialization, so there is no suite for it here. Permission
+    // checks are covered through the canEdit logic in the HTML pages tests above.
+    // An empty `describe` fails the file under Vitest.
 
     describe('Favorite Page Actions', () => {
         it('should show "add" label for non-favorite pages', () =>

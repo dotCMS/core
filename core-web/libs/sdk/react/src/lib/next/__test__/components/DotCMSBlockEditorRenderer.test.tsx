@@ -68,7 +68,9 @@ describe('DotCMSBlockEditorRenderer', () => {
         );
 
         expect(container.firstChild).toHaveClass('test-class');
-        expect(container.firstChild).toHaveStyle('color: red');
+        // rgb(), not the keyword: the DOM normalises a colour keyword on assignment,
+        // so the inline style serialises back as rgb(255, 0, 0).
+        expect(container.firstChild).toHaveStyle({ color: 'rgb(255, 0, 0)' });
     });
 
     describe('Error Handling', () => {

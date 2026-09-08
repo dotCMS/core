@@ -111,7 +111,30 @@ const RULES = [
     { id: 'jest-as-argument', re: /\bMockDotRouterJestService\(\s*jest\s*\)/g, to: 'MockDotRouterJestService(vi)' },
 
     // Import source.
-    { id: 'globals-import', re: /(['"])@jest\/globals\1/g, to: '$1vitest$1' }
+    { id: 'globals-import', re: /(['"])@jest\/globals\1/g, to: '$1vitest$1' },
+
+    // `mockImplementation()` with NO argument. Jest installs a no-op returning
+    // undefined; Vitest leaves the ORIGINAL implementation in place and calls through
+    // (measured: a spy on a method returning 'ORIGINAL' still returned 'ORIGINAL').
+    // 55 sites relied on the Jest reading — most of them silencing console, but also
+    // `confirmation.confirm`, `store.fireWorkflowAction` and `router.navigateByUrl`,
+    // where calling through ran real code against half-built mocks. `() => undefined`
+    // restores Jest's behaviour and stays assignable for void-returning methods;
+    // `navigateByUrl` returns a Promise and is handled separately below.
+    {
+        id: 'empty-mockImplementation',
+        re: /\.mockImplementation\(\)/g,
+        to: '.mockImplementation(() => undefined)'
+    },
+
+    // Router.navigateByUrl returns Promise<boolean>, so `() => undefined` would not
+    // typecheck. Resolving true is also closer to the truth than Jest's undefined,
+    // which would have rejected anything that awaited it.
+    {
+        id: 'navigateByUrl-mockImplementation',
+        re: /\.spyOn\((\w+), 'navigateByUrl'\)\.mockImplementation\(\(\) => undefined\)/g,
+        to: ".spyOn($1, 'navigateByUrl').mockResolvedValue(true)"
+    }
 ];
 
 /** Constructs that need a human. Reported, never rewritten. */
@@ -352,6 +375,21 @@ for (const target of targets) {
             paths.push(m);
             return `\uE000PATH${paths.length - 1}\uE000`;
         });
+
+        // Jasmine's bare `fail()` and jest's `done.fail()` do not exist in Vitest;
+        // `expect.fail()` is the equivalent. 54 sites use them, all on "this should not
+        // happen" branches, so they are dormant until something regresses — at which
+        // point the test reports `ReferenceError: fail is not defined` instead of the
+        // message its author wrote. Skipped where the file defines its own `fail`
+        // (sdk/create-app's packaging spec does).
+        if (!/\b(?:function|const|let)\s+fail\b/.test(src)) {
+            const before = src;
+            src = src.replace(/\bdone\.fail\(/g, 'expect.fail(').replace(/(^|[^.\w])fail\(/g, '$1expect.fail(');
+            if (src !== before) {
+                const n = (before.match(/\bdone\.fail\(|(?:^|[^.\w])fail\(/g) ?? []).length;
+                counts.set('jasmine-fail', (counts.get('jasmine-fail') ?? 0) + n);
+            }
+        }
 
         for (const rule of RULES) {
             if (rule.id === 'spectator-entry' || rule.id === 'globals-import') continue;

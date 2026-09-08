@@ -108,7 +108,12 @@ describe('DotToolbarUserComponent', () => {
             getTime: () => 1466424490000
         };
         const originalDate = global.Date;
-        global.Date = vi.fn(() => mockDate) as any;
+        // A function expression, not an arrow: the component calls `new Date()`, and
+        // an arrow is not constructible. Vitest even warns about it — "The vi.fn() mock
+        // did not use 'function' or 'class' in its implementation".
+        global.Date = vi.fn(function () {
+            return mockDate;
+        }) as any;
         global.Date.now = vi.fn(() => 1466424490000);
 
         // Recreate the component with the mocked Date

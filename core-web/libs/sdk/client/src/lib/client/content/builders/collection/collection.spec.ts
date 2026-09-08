@@ -863,7 +863,7 @@ describe('CollectionBuilder', () => {
 
             try {
                 await collectionBuilder;
-                fail('Expected DotCMSContentError to be thrown');
+                expect.fail('Expected DotCMSContentError to be thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorContent);
                 if (error instanceof DotErrorContent) {
@@ -895,7 +895,7 @@ describe('CollectionBuilder', () => {
 
                 collectionBuilder.then(
                     (response) => {
-                        fail('Expected onrejected callback to be called');
+                        expect.fail('Expected onrejected callback to be called');
                         return response;
                     },
                     (error) => {

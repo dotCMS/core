@@ -28,6 +28,7 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
+import { EMPTY } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -194,7 +195,11 @@ describe('DotRelationshipFieldComponent', () => {
                 locales: vi.fn().mockReturnValue([ENGLISH_LANGUAGE, SPANISH_LANGUAGE])
             }),
             mockProvider(DialogService, {
-                open: vi.fn()
+                // The component pipes `dialogRef.onClose` straight after open(), so a
+                // bare vi.fn() returning undefined made it dereference nothing. An
+                // EMPTY onClose keeps the dialog open forever from the component's point
+                // of view, which is what "opened and not yet closed" means here.
+                open: vi.fn().mockReturnValue({ onClose: EMPTY })
             }),
             { provide: EDIT_CONTENT_HOST, useFactory: () => hostStub }
         ]

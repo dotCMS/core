@@ -34,11 +34,11 @@ describe('UVE Public Functions', () => {
         vi.spyOn(utils, 'scrollHandler').mockImplementation(() => ({
             destroyScrollHandler: vi.fn()
         }));
-        vi.spyOn(utils, 'addClassToEmptyContentlets').mockImplementation();
+        vi.spyOn(utils, 'addClassToEmptyContentlets').mockImplementation(() => undefined);
         vi.spyOn(utils, 'listenBlockEditorInlineEvent').mockImplementation(() => ({
             destroyListenBlockEditorInlineEvent: vi.fn()
         }));
-        vi.spyOn(utils, 'setClientIsReady').mockImplementation();
+        vi.spyOn(utils, 'setClientIsReady').mockImplementation(() => undefined);
         vi.spyOn(utils, 'registerUVEEvents').mockReturnValue({
             subscriptions: [
                 { unsubscribe: vi.fn(), event: 'test1' },
@@ -226,7 +226,7 @@ describe('UVE Public Functions', () => {
         let consoleErrorSpy: MockInstance;
 
         beforeEach(() => {
-            consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
+            consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         });
 
         afterEach(() => {

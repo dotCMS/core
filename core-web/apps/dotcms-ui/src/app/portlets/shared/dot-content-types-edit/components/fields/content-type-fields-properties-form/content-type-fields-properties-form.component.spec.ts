@@ -288,7 +288,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                     comp.form.controls[property].disabled &&
                     !mockFieldPropertyService.isDisabledInEditMode(property)
                 ) {
-                    fail();
+                    expect.fail();
                 }
             });
         });

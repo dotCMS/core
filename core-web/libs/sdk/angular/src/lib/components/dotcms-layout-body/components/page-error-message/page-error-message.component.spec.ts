@@ -31,7 +31,7 @@ describe('PageErrorMessageComponent', () => {
         });
 
         component = spectator.component;
-        vi.spyOn(console, 'warn').mockImplementation();
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     });
 
     it('should create', () => {

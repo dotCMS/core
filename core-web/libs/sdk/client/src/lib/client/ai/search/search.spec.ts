@@ -454,7 +454,7 @@ describe('AISearch', () => {
 
                 aiSearch.then(
                     () => {
-                        fail('Expected onrejected callback to be called');
+                        expect.fail('Expected onrejected callback to be called');
                     },
                     (error) => {
                         expect(error).toBeInstanceOf(DotErrorAISearch);
@@ -521,7 +521,7 @@ describe('AISearch', () => {
 
             try {
                 await aiSearch;
-                fail('Expected DotErrorAISearch to be thrown');
+                expect.fail('Expected DotErrorAISearch to be thrown');
             } catch (e) {
                 expect(e).toBeInstanceOf(DotErrorAISearch);
                 if (e instanceof DotErrorAISearch) {
@@ -557,7 +557,7 @@ describe('AISearch', () => {
 
             try {
                 await aiSearch;
-                fail('Expected DotErrorAISearch to be thrown');
+                expect.fail('Expected DotErrorAISearch to be thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorAISearch);
                 if (error instanceof DotErrorAISearch) {
@@ -599,7 +599,7 @@ describe('AISearch', () => {
 
             try {
                 await aiSearch;
-                fail('Expected DotErrorAISearch to be thrown');
+                expect.fail('Expected DotErrorAISearch to be thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorAISearch);
                 if (error instanceof DotErrorAISearch) {
@@ -640,7 +640,7 @@ describe('AISearch', () => {
 
                 aiSearch.then(
                     (response) => {
-                        fail('Expected onrejected callback to be called');
+                        expect.fail('Expected onrejected callback to be called');
                         return response;
                     },
                     (error) => {
@@ -701,7 +701,7 @@ describe('AISearch', () => {
 
             try {
                 await aiSearch;
-                fail('Expected DotErrorAISearch to be thrown');
+                expect.fail('Expected DotErrorAISearch to be thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorAISearch);
                 if (error instanceof DotErrorAISearch) {

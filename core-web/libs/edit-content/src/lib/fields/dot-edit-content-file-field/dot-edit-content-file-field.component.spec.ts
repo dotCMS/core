@@ -1,5 +1,5 @@
 import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
-import { of, Subject, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -99,7 +99,12 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DotWorkflowActionsFireService),
             provideHttpClient(),
             provideHttpClientTesting(),
-            mockProvider(DotUploadFileService),
+            // DotFileFieldUploadService (provided for real above) pipes this straight
+            // through; a bare mockProvider returns undefined and it dereferences
+            // nothing. Tests that exercise an upload set their own value.
+            mockProvider(DotUploadFileService, {
+                uploadDotAssetWithContent: vi.fn(() => EMPTY)
+            }),
             mockProvider(DotUploadService),
             mockProvider(DotContentletService),
             mockProvider(DotMessageService, {
@@ -592,7 +597,9 @@ describe('DotFileFieldComponent', () => {
 
             setImagePreview(true);
 
-            const spyApply = vi.spyOn(store, 'applyEditedImage').mockImplementation();
+            const spyApply = vi
+                .spyOn(store, 'applyEditedImage')
+                .mockImplementation(() => undefined);
 
             spectator.component.onEditImage();
 

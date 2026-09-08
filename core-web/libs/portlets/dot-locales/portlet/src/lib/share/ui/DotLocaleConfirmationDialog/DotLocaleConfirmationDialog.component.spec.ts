@@ -2,7 +2,12 @@ import { Spectator, createComponentFactory } from '@openng/spectator';
 import { byTestId } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
-vi.mock('primeng/dynamicdialog', () => ({
+// Partial mock (spread the real module), not a bare factory: an ESM mock exposes ONLY
+// what the factory returns, so `DynamicDialogModule` — which the component imports —
+// came back missing and Vitest failed the file with "No 'DynamicDialogModule' export is
+// defined on the mock". Jest's CJS mock simply yielded undefined for it.
+vi.mock('primeng/dynamicdialog', async () => ({
+    ...(await vi.importActual('primeng/dynamicdialog')),
     DynamicDialogRef: class DynamicDialogRef {},
     DynamicDialogConfig: class DynamicDialogConfig {}
 }));

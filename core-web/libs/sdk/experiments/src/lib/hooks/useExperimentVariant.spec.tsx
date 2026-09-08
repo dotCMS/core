@@ -14,18 +14,21 @@ interface WrapperProps {
     children: React.ReactNode;
 }
 
-const createMockDotExperimentsContext = (variantResponse: unknown) => {
-    const mockGetVariantFromHref = vi.fn().mockImplementation(() => variantResponse);
+// The context is built INSIDE the factory. `vi.mock` is hoisted above every import,
+// and the hook under test pulls this module in while its own module is evaluating —
+// before any top-level statement of this spec has run. A factory calling a top-level
+// helper therefore hit its temporal dead zone and the file died with "Cannot access
+// 'createMockDotExperimentsContext' before initialization".
+vi.mock('../contexts/DotExperimentsContext', async () => {
+    const react = await vi.importActual<typeof import('react')>('react');
 
-    return React.createContext({
-        getVariantFromHref: mockGetVariantFromHref
-    });
-};
+    const mockGetVariantFromHref = vi.fn().mockImplementation(() => ({ name: 'variant-1' }));
 
-vi.mock('../contexts/DotExperimentsContext', () => ({
-    __esModule: true,
-    default: createMockDotExperimentsContext({ name: 'variant-1' })
-}));
+    return {
+        __esModule: true,
+        default: react.createContext({ getVariantFromHref: mockGetVariantFromHref })
+    };
+});
 
 const wrapper = ({ children }: WrapperProps) => (
     // eslint-disable-next-line react-hooks/rules-of-hooks

@@ -227,7 +227,7 @@ describe('DotUiColorsService', () => {
                 throw new Error('PrimeNG not initialized');
             });
 
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
             expect(() => {
                 service.setColors(mockElement, {

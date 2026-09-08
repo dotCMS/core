@@ -37,8 +37,8 @@ describe('checkSdkCompatibility', () => {
 
     beforeEach(() => {
         resetSdkCompatibilityWarnings();
-        errorSpy = vi.spyOn(console, 'error').mockImplementation();
-        warnSpy = vi.spyOn(console, 'warn').mockImplementation();
+        errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     });
 
     afterEach(() => {

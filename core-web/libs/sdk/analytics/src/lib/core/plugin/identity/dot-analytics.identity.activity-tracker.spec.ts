@@ -82,7 +82,7 @@ describe('DotCMS Activity Tracker', () => {
         });
 
         it('should log debug message when debug is enabled', () => {
-            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             mockConfig.debug = true;
 
             initializeActivityTracking(mockConfig);
@@ -110,7 +110,7 @@ describe('DotCMS Activity Tracker', () => {
 
     describe('Visibility Change Handling', () => {
         it('should log debug message when user returns to tab', () => {
-            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             mockConfig.debug = true;
 
             initializeActivityTracking(mockConfig);

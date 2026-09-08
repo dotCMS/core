@@ -71,7 +71,7 @@ describe('DefaultGuardService', () => {
         dynamicRouteService = TestBed.inject(DynamicRouteService);
         dotMenuService = TestBed.inject(DotMenuService);
 
-        vi.spyOn(router, 'navigateByUrl').mockImplementation();
+        vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     });
 
     it('should redirect to dynamic route when URL matches a registered dynamic route', () =>

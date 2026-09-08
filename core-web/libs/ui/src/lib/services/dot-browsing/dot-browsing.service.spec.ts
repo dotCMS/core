@@ -159,7 +159,7 @@ describe('DotBrowsingService', () => {
                 dotSiteService.getSites.mockReturnValue(throwError(() => error));
 
                 spectator.service.getSitesTreePath({ filter: 'test' }).subscribe({
-                    next: () => fail('should have thrown an error'),
+                    next: () => expect.fail('should have thrown an error'),
                     error: (err) => {
                         expect(err).toBe(error);
                         done();
@@ -281,7 +281,7 @@ describe('DotBrowsingService', () => {
                 dotFolderService.getFolders.mockReturnValue(throwError(() => error));
 
                 spectator.service.getFolders('/example.com').subscribe({
-                    next: () => fail('should have thrown an error'),
+                    next: () => expect.fail('should have thrown an error'),
                     error: (err) => {
                         expect(err).toBe(error);
                         done();
@@ -351,8 +351,8 @@ describe('DotBrowsingService', () => {
                 dotFolderService.getFolders.mockReturnValue(of([]));
 
                 spectator.service.getFoldersTreeNode('example.com').subscribe({
-                    next: () => fail('should not emit when folders array is empty'),
-                    error: () => fail('should not throw error'),
+                    next: () => expect.fail('should not emit when folders array is empty'),
+                    error: () => expect.fail('should not throw error'),
                     complete: () => {
                         // Observable completes without emitting due to filter
                         done();
@@ -389,7 +389,7 @@ describe('DotBrowsingService', () => {
                 dotFolderService.getFolders.mockReturnValue(throwError(() => error));
 
                 spectator.service.getFoldersTreeNode('example.com').subscribe({
-                    next: () => fail('should have thrown an error'),
+                    next: () => expect.fail('should have thrown an error'),
                     error: (err) => {
                         expect(err).toBe(error);
                         done();
@@ -583,7 +583,7 @@ describe('DotBrowsingService', () => {
                 dotFolderService.searchFolders.mockReturnValue(throwError(() => error));
 
                 spectator.service.searchFolders({ siteId: 'site-1' }, 'example.com').subscribe({
-                    next: () => fail('should have thrown an error'),
+                    next: () => expect.fail('should have thrown an error'),
                     error: (err) => {
                         expect(err).toBe(error);
                         done();
@@ -862,7 +862,7 @@ describe('DotBrowsingService', () => {
                 dotFolderService.searchFolders.mockReturnValue(throwError(() => error));
 
                 spectator.service.buildTreeByPaths(siteId, hostname, '/level1/').subscribe({
-                    next: () => fail('should have thrown an error'),
+                    next: () => expect.fail('should have thrown an error'),
                     error: (err) => {
                         expect(err).toBe(error);
                         done();
@@ -1032,7 +1032,7 @@ describe('DotBrowsingService', () => {
                 dotSiteService.getCurrentSite.mockReturnValue(throwError(() => error));
 
                 spectator.service.getCurrentSiteAsTreeNodeItem().subscribe({
-                    next: () => fail('should have thrown an error'),
+                    next: () => expect.fail('should have thrown an error'),
                     error: (err) => {
                         expect(err).toBe(error);
                         done();
@@ -1120,7 +1120,7 @@ describe('DotBrowsingService', () => {
 
                 spectator.service.getContentByFolder(params).subscribe({
                     next: () => {
-                        fail('should have thrown an error');
+                        expect.fail('should have thrown an error');
                     },
                     error: (err) => {
                         expect(err).toBe(error);

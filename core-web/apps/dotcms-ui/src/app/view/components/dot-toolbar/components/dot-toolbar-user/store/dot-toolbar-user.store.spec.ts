@@ -18,7 +18,12 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import { DotCurrentUserServiceMock, LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
+import {
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    DotCurrentUserServiceMock,
+    LoginServiceMock,
+    mockAuth
+} from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
@@ -58,7 +63,7 @@ describe('DotToolbarUserStore', () => {
             { provide: LoginService, useClass: LoginServiceMock },
             {
                 provide: DotSystemConfigService,
-                useValue: { getSystemConfig: () => ({}) }
+                useValue: DOT_SYSTEM_CONFIG_SERVICE_MOCK
             },
             GlobalStore,
             provideHttpClient(),

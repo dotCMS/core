@@ -208,7 +208,9 @@ describe('InlineEditService', () => {
         let postMessageSpy: MockInstance;
 
         beforeEach(() => {
-            postMessageSpy = vi.spyOn(window.parent, 'postMessage').mockImplementation();
+            postMessageSpy = vi
+                .spyOn(window.parent, 'postMessage')
+                .mockImplementation(() => undefined);
         });
 
         afterEach(() => {

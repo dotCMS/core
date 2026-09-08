@@ -103,7 +103,7 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should return null when siteAuth is missing', () => {
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         const configWithoutSiteKey = { ...mockConfig, siteAuth: '' };
 
         const analytics = initializeContentAnalytics(configWithoutSiteKey);
@@ -117,7 +117,7 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should return null when server is missing', () => {
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         const configWithoutServer = { ...mockConfig, server: '' };
 
         const analytics = initializeContentAnalytics(configWithoutServer);
@@ -131,7 +131,7 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should return null and not initialize plugins when inside UVE editor', () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         (getUVEState as Mock).mockReturnValue({ mode: 'edit' });
 
         const analytics = initializeContentAnalytics(mockConfig);
@@ -174,7 +174,7 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
-            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 
@@ -212,7 +212,7 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
-            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 
@@ -304,7 +304,7 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
-            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 

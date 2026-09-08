@@ -64,7 +64,7 @@ describe('DotRemoteModuleWrapperComponent', () => {
 
     it('should handle mount error gracefully', fakeAsync(() => {
         const errorMount = vi.fn().mockRejectedValue(new Error('mount failed'));
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
         createComponent(errorMount);
         fixture.detectChanges();
@@ -85,7 +85,7 @@ describe('DotRemoteModuleWrapperComponent', () => {
             throw new Error('cleanup failed');
         });
         const errorMount = vi.fn().mockResolvedValue(throwingCleanup);
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
         createComponent(errorMount);
         fixture.detectChanges();

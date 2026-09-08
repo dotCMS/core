@@ -362,7 +362,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -409,7 +409,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/restricted-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -447,7 +447,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/missing');
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -476,7 +476,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/page');
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -504,7 +504,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/missing-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -537,7 +537,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/error-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -561,7 +561,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/unknown-error-page');
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -598,7 +598,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/test-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {

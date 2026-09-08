@@ -42,7 +42,11 @@ import {
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { DotJspIframeDialogComponent } from '@dotcms/ui';
-import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
+import {
+    createFakeContentlet,
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    mockWorkflowsActionsWithMove
+} from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
@@ -170,7 +174,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 }
             }),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-123', admin: true }))
             }),

@@ -377,7 +377,7 @@ describe('DotContentletService', () => {
 
                 dotContentTypeService.getContentTypeWithRender(nonExistentId).subscribe({
                     next: () => {
-                        fail('Expected error, but got success');
+                        expect.fail('Expected error, but got success');
                         done();
                     },
                     error: (error) => {
@@ -399,7 +399,7 @@ describe('DotContentletService', () => {
 
                 dotContentTypeService.getContentTypeWithRender(id).subscribe({
                     next: () => {
-                        fail('Expected error, but got success');
+                        expect.fail('Expected error, but got success');
                         done();
                     },
                     error: (error) => {
@@ -423,7 +423,7 @@ describe('DotContentletService', () => {
 
                 dotContentTypeService.getContentTypeWithRender(id).subscribe({
                     next: () => {
-                        fail('Expected error, but got success');
+                        expect.fail('Expected error, but got success');
                         done();
                     },
                     error: (error) => {
@@ -563,7 +563,7 @@ describe('DotContentletService', () => {
 
                 dotContentTypeService.getContentTypeWithRender(id).subscribe({
                     next: () => {
-                        fail('Expected error, but got success');
+                        expect.fail('Expected error, but got success');
                         done();
                     },
                     error: (error) => {
@@ -585,7 +585,7 @@ describe('DotContentletService', () => {
 
                 dotContentTypeService.getContentTypeWithRender(invalidId).subscribe({
                     next: () => {
-                        fail('Expected error, but got success');
+                        expect.fail('Expected error, but got success');
                         done();
                     },
                     error: (error) => {

@@ -57,7 +57,7 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotFolderListViewComponent, DotUploadTypeSelectorComponent } from '@dotcms/ui';
-import { mockLocales } from '@dotcms/utils-testing';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
@@ -134,7 +134,7 @@ describe('DotContentDriveShellComponent', () => {
                 get: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             // The folder context menu confirms folder deletes through this.
             mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
             mockProvider(DotContentTypeService, {
@@ -3137,7 +3137,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             mockProvider(ActivatedRoute, {
                 snapshot: { queryParams: deepLinkQueryParams }
             }),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             // The folder context menu confirms folder deletes through this.
             mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
             mockProvider(DotContentTypeService, {

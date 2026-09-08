@@ -221,7 +221,7 @@ describe('DotContentSearchService', () => {
                 });
 
                 spectator.service.search({ globalSearch: 'test' }).subscribe({
-                    next: () => fail('should have failed with the error'),
+                    next: () => expect.fail('should have failed with the error'),
                     error: (error) => {
                         expect(error.status).toBe(500);
                         done();

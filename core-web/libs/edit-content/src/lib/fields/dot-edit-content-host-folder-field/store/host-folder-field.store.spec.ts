@@ -1,7 +1,7 @@
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
 import { SpyObject, mockProvider } from '@openng/spectator/vitest';
-import { Subject, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -99,7 +99,9 @@ describe('HostFolderFiledStore', () => {
                 mockProvider(DotBrowsingService, {
                     getSitesPage: vi.fn(() => of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))),
                     resolveSiteByHostname: vi.fn(),
-                    getCurrentSiteAsTreeNodeItem: vi.fn(),
+                    // The store pipes this when the field is required; a bare vi.fn()
+                    // returns undefined and it dereferences nothing.
+                    getCurrentSiteAsTreeNodeItem: vi.fn(() => EMPTY),
                     buildTreeByPaths: vi.fn(),
                     searchFolders: vi.fn(() => of({ folders: [], pagination: mockPagination }))
                 })

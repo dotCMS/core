@@ -125,7 +125,7 @@ describe('flattenRoleHierarchy', () => {
             const fetch = vi.fn().mockReturnValue(throwError(() => new Error('boom')));
 
             flattenRoleHierarchy(roots, fetch).subscribe({
-                next: () => done.fail('should not emit a partial hierarchy'),
+                next: () => expect.fail('should not emit a partial hierarchy'),
                 error: (error) => {
                     expect(error.message).toBe('boom');
                     done();

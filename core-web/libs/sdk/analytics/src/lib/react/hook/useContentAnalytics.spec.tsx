@@ -58,7 +58,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('returns no-op functions and warns when inside UVE editor', () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         mockInitializeAnalytics.mockReturnValue(null);
         mockGetUVEState.mockReturnValue({
             mode: UVE_MODE.EDIT,
@@ -89,7 +89,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('logs error when analytics fails to initialize outside UVE', () => {
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         mockInitializeAnalytics.mockReturnValue(null);
         mockGetUVEState.mockReturnValue(undefined);
 

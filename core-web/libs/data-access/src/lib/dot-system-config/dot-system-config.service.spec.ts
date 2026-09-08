@@ -83,7 +83,7 @@ describe('DotSystemConfigService', () => {
 
         it('should handle errors when fetching system configuration', () => {
             spectator.service.getSystemConfig().subscribe(
-                () => fail('Expected an error, but received a response'),
+                () => expect.fail('Expected an error, but received a response'),
                 (error) => {
                     expect(error).toBeDefined();
                 }

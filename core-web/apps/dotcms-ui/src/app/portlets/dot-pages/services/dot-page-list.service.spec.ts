@@ -512,7 +512,7 @@ describe('DotPageListService', () => {
         it('should propagate HTTP errors from getPages', () =>
             new Promise<void>((done) => {
                 spectator.service.getPages(DEFAULT_LIST_PARAMS).subscribe({
-                    next: () => fail('Should have failed'),
+                    next: () => expect.fail('Should have failed'),
                     error: (error) => {
                         expect(error.status).toBe(500);
                         expect(error.statusText).toBe('Server Error');
@@ -527,7 +527,7 @@ describe('DotPageListService', () => {
         it('should propagate HTTP errors from getFavoritePages', () =>
             new Promise<void>((done) => {
                 spectator.service.getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123').subscribe({
-                    next: () => fail('Should have failed'),
+                    next: () => expect.fail('Should have failed'),
                     error: (error) => {
                         expect(error.status).toBe(404);
                         expect(error.statusText).toBe('Not Found');
@@ -542,7 +542,7 @@ describe('DotPageListService', () => {
         it('should propagate HTTP errors from getSinglePage', () =>
             new Promise<void>((done) => {
                 spectator.service.getSinglePage('invalid-id').subscribe({
-                    next: () => fail('Should have failed'),
+                    next: () => expect.fail('Should have failed'),
                     error: (error) => {
                         expect(error.status).toBe(403);
                         expect(error.statusText).toBe('Forbidden');

@@ -245,7 +245,7 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should warn when the lookup does not cover every page asked for', () => {
-            const warn = vi.spyOn(console, 'warn').mockImplementation();
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             // page-2, page-3 and page-orphan are requested but absent from the response.
             contentSearchGet.mockReturnValue(
                 of({

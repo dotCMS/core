@@ -21,7 +21,12 @@ import { DotTagsImportComponent } from './dot-tags-import.component';
 
 const downloadClickMock = vi.fn();
 
-vi.mock('@dotcms/utils', () => ({
+// Partial mock (spread the real module), not a bare factory: an ESM mock exposes ONLY
+// what the factory returns, so everything else @dotcms/utils publishes came back
+// missing — the file died on "No 'EMPTY_SYSTEM_FIELD' export is defined on the mock".
+// Jest's CJS mock just yielded undefined for the untouched exports.
+vi.mock('@dotcms/utils', async () => ({
+    ...(await vi.importActual('@dotcms/utils')),
     getDownloadLink: vi.fn(() => ({
         click: downloadClickMock
     }))

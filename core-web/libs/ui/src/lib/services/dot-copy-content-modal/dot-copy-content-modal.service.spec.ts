@@ -66,8 +66,8 @@ describe('DotCopyContentModalService', () => {
             } as DynamicDialogRef);
 
             service.open().subscribe(
-                (res) => fail('This should not be called. Response: ' + res),
-                (err) => fail('This should not be called. Error: ' + err),
+                (res) => expect.fail('This should not be called. Response: ' + res),
+                (err) => expect.fail('This should not be called. Error: ' + err),
                 () => {
                     expect(true).toBe(true);
                     done();

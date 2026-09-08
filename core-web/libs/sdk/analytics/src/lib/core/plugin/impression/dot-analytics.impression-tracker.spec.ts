@@ -88,8 +88,11 @@ describe('DotCMSImpressionTracker', () => {
             disconnect: vi.fn()
         };
 
-        (global as any).IntersectionObserver = vi.fn((callback) => {
+        // A function expression, not an arrow: the tracker calls
+        // `new IntersectionObserver(...)`, and an arrow is not constructible.
+        (global as any).IntersectionObserver = vi.fn(function (callback) {
             intersectionCallback = callback;
+
             return mockIntersectionObserver;
         });
 
@@ -99,8 +102,9 @@ describe('DotCMSImpressionTracker', () => {
             disconnect: vi.fn()
         };
 
-        (global as any).MutationObserver = vi.fn((callback) => {
+        (global as any).MutationObserver = vi.fn(function (callback) {
             mutationCallback = callback;
+
             return mockMutationObserver;
         });
 
@@ -755,7 +759,7 @@ describe('DotCMSImpressionTracker', () => {
             tracker.onImpression(errorCallback);
             tracker.onImpression(validCallback);
 
-            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
             // Fire impression
             intersectionCallback(
@@ -926,7 +930,7 @@ describe('DotCMSImpressionTracker', () => {
 
     describe('Debug Mode', () => {
         it('should log debug information when enabled', () => {
-            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation();
+            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
             tracker = new DotCMSImpressionTracker({ ...mockConfig, debug: true });
             tracker.initialize();

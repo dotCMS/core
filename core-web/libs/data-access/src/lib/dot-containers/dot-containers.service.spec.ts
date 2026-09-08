@@ -240,7 +240,7 @@ describe('DotContainersService', () => {
             const errorResponse = { status: 500, statusText: 'Internal Server Error' };
 
             spectator.service.getFiltered(filter, perPage).subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(500);
                 }
@@ -258,7 +258,7 @@ describe('DotContainersService', () => {
             const errorResponse = { status: 404, statusText: 'Not Found' };
 
             spectator.service.getContainerByTitle(title).subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(404);
                 }

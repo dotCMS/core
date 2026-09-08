@@ -30,6 +30,7 @@ import {
     DotCMSContentlet,
     DotCMSWorkflowStatus
 } from '@dotcms/dotcms-models';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
 
 import { DotEditContentStore } from './edit-content.store';
 
@@ -64,9 +65,16 @@ describe('DotEditContentStore', () => {
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(MessageService),
             mockProvider(DotMessageService),
-            mockProvider(DotContentletService),
-            mockProvider(DotLanguagesService),
-            mockProvider(DotCurrentUserService),
+            // These three are piped from the store's own onInit effects — canLock() by
+            // withLock, get() by withLocales, getCurrentUser() by withUser. A bare
+            // mockProvider returns undefined and the feature dereferences it; rxjs
+            // reports that asynchronously, so Jest dropped it while Vitest counts one
+            // unhandled error per test. Tests that assert on these set their own value.
+            mockProvider(DotContentletService, {
+                canLock: () => of({ canLock: false, locked: false, inode: 'inode' })
+            }),
+            mockProvider(DotLanguagesService, { get: () => of([]) }),
+            mockProvider(DotCurrentUserService, { getCurrentUser: () => of(null) }),
             mockProvider(DialogService),
             mockProvider(DotVersionableService),
             mockProvider(ConfirmationService),
@@ -76,7 +84,7 @@ describe('DotEditContentStore', () => {
                 events: of()
             }),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             { provide: EDIT_CONTENT_HOST, useValue: mockHost },
             provideHttpClient(),
             provideHttpClientTesting()
