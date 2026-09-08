@@ -54,7 +54,7 @@ import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
 import { contentMatchesEditorDocument } from './utils/content-match.utils';
-import { healEmojiNodes } from './utils/emoji-heal.utils';
+import { healEmojiHtml, healEmojiNodes } from './utils/emoji-heal.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 import {
     preserveUnknownNodesInDocument,
@@ -510,9 +510,13 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
 
         if (typeof parsed === 'string') {
             // A non-JSON string value is treated as HTML by `normalizeEditorContent`. dotCMS does
-            // not store Story Block fields that way, but hosts embedding the editor can pass HTML;
-            // there is no `emoji` node to heal in that shape, only markup to parse.
-            editor.commands.setContent(parsed, { emitUpdate: false });
+            // not store Story Block fields that way, but hosts embedding the editor can pass HTML —
+            // and that markup can carry rendered emoji spans, so it needs healing too.
+            //
+            // `transformPastedHTML` does NOT cover this: it only runs on paste. Without the call
+            // below, the `fallbackImage` span's inner `<img src="cdn.jsdelivr.net/…">` is left
+            // exposed and `DotImage` claims it as a dotCMS image node.
+            editor.commands.setContent(healEmojiHtml(parsed, emojis), { emitUpdate: false });
 
             return;
         }

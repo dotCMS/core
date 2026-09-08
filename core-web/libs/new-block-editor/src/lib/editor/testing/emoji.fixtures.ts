@@ -46,9 +46,19 @@ export const REPORTED_PAYLOAD: JSONContent = doc(
     text('All rights reserved', [link()])
 );
 
-/** What the reported payload must become — one `text` node carrying one `link` mark. */
+/**
+ * What the reported payload must become — one `text` node carrying one `link` mark.
+ *
+ * Note there is **no space** around the `©`. The source is `"dotCMS Copyright "` + the node +
+ * `"All rights reserved"`, so concatenating gives `"…Copyright ©All rights…"`. The heal does not
+ * invent whitespace, and it should not: the author's spacing is whatever they typed around the
+ * symbol, and the node itself carried none.
+ *
+ * This fixture was written with a space and asserted nowhere, so the mismatch went unnoticed —
+ * which is precisely why an exported fixture nothing checks is worth deleting or wiring up.
+ */
 export const REPORTED_PAYLOAD_HEALED: JSONContent = doc(
-    text('dotCMS Copyright © All rights reserved', [link()])
+    text('dotCMS Copyright ©All rights reserved', [link()])
 );
 
 /**

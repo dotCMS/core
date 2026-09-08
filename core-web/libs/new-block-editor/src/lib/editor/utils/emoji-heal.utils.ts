@@ -117,6 +117,51 @@ export function marksEqual(a: JSONContent['marks'] = [], b: JSONContent['marks']
     );
 }
 
+/**
+ * The HTML sibling of {@link healEmojiNodes}: rewrites rendered emoji spans to their character.
+ *
+ * Needed on **two** paths, which is why it lives here rather than inside the extension:
+ *
+ *  - `transformPastedHTML`, for content pasted between Block Editor fields;
+ *  - the editor's HTML-string load branch (`normalizeEditorContent` falls through to HTML for any
+ *    non-JSON string value). dotCMS does not store Story Block fields that way, but a host
+ *    embedding the editor can pass HTML.
+ *
+ * That second path was a real defect, caught by T051 rather than reasoning: the extension renders
+ * two shapes, and with `parseHTML` neutralized the `fallbackImage` one leaves a bare
+ * `<img src="cdn.jsdelivr.net/…">` for `DotImage` to claim as a **dotCMS image node**. A legal
+ * symbol silently became a third-party image embed — worse than the bug being fixed. Paste was
+ * already covered; the load branch was not.
+ *
+ * Returns the input string unchanged when it holds no emoji span, so the common case allocates
+ * nothing.
+ */
+export function healEmojiHtml(html: string, emojis: readonly EmojiItem[]): string {
+    if (!html.includes('data-type="emoji"')) {
+        return html;
+    }
+
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const spans = doc.querySelectorAll('span[data-type="emoji"]');
+
+    if (!spans.length) {
+        return html;
+    }
+
+    spans.forEach((span) => {
+        const name = span.getAttribute('data-name') ?? '';
+        const item = shortcodeToEmoji(name, emojis as EmojiItem[]);
+        // Fall back to the span's own text before giving up — it usually already holds the
+        // character — so an unresolvable name never blanks content. An empty string is still
+        // better than leaving the `<img>` exposed.
+        const character = item?.emoji || span.textContent || '';
+
+        span.replaceWith(doc.createTextNode(character));
+    });
+
+    return doc.body.innerHTML;
+}
+
 /** True when this is a `text` node — the only thing the sandwich rule and the merge look at. */
 function isText(node: JSONContent | undefined): node is JSONContent {
     return node?.type === 'text';

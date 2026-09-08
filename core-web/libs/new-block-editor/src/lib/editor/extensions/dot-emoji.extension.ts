@@ -10,6 +10,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import Suggestion, { type SuggestionKeyDownProps, type SuggestionProps } from '@tiptap/suggestion';
 
 import { type BlockItem, type SlashMenuService } from '../components/slash-menu/slash-menu.service';
+import { healEmojiHtml } from '../utils/emoji-heal.utils';
 
 /**
  * dotCMS emoji node — registered for BACKWARD COMPATIBILITY and shortcode resolution ONLY (#37340).
@@ -98,31 +99,8 @@ const DotEmojiBase = Emoji.extend({
                      * Not an edge case: `isEmojiSupported()` is false under jsdom and anywhere the
                      * probe fails, so the image shape is the DEFAULT there.
                      */
-                    transformPastedHTML: (html: string): string => {
-                        if (!html.includes('data-type="emoji"')) {
-                            return html;
-                        }
-
-                        const doc = new DOMParser().parseFromString(html, 'text/html');
-                        const spans = doc.querySelectorAll('span[data-type="emoji"]');
-
-                        if (!spans.length) {
-                            return html;
-                        }
-
-                        spans.forEach((span) => {
-                            const name = span.getAttribute('data-name') ?? '';
-                            const item = shortcodeToEmoji(name, this.options.emojis);
-                            // Fall back to the span's own text before giving up: it usually holds
-                            // the character already, and an unresolvable name must never blank
-                            // content.
-                            const character = item?.emoji || span.textContent || '';
-
-                            span.replaceWith(doc.createTextNode(character));
-                        });
-
-                        return doc.body.innerHTML;
-                    },
+                    transformPastedHTML: (html: string): string =>
+                        healEmojiHtml(html, this.options.emojis),
 
                     // Double-clicking an atom does not select it by default; upstream simulates it.
                     handleDoubleClickOn: (_view, pos, node) => {

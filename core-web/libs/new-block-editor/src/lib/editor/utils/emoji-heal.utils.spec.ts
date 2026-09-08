@@ -8,6 +8,7 @@ import {
     NO_EMOJI_CONTROL,
     NODE_ALREADY_MARKED,
     REPORTED_PAYLOAD,
+    REPORTED_PAYLOAD_HEALED,
     SANDWICH_AT_BLOCK_END,
     SANDWICH_AT_BLOCK_START,
     SANDWICH_DIFFERENT_ARIA_LABEL,
@@ -121,6 +122,16 @@ describe('healEmojiNodes — #37340', () => {
             expect(nodes[0].type).toBe('text');
             expect(nodes[0].text).toBe('dotCMS Copyright ©All rights reserved');
             expect(markTypes(nodes[0])).toEqual(['link']);
+        });
+
+        /**
+         * Whole-document equality, not field-by-field.
+         *
+         * The assertions above pass even if some other part of the document changed — a different
+         * paragraph, a stray attr, a mark on a node nobody looked at. This one cannot.
+         */
+        it('AC-021 — the healed document equals the expected document exactly', () => {
+            expect(healEmojiNodes(REPORTED_PAYLOAD, emojis)).toEqual(REPORTED_PAYLOAD_HEALED);
         });
     });
 
