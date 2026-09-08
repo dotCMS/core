@@ -54,7 +54,8 @@ person checks by hand:
   unreachable actions
 - **i18n** — copy resolves for the default language and one non-default language; long translations
   don't break the layout
-- **Theme / contrast** — light and dark both render correctly; text stays legible
+- **Contrast** — text stays legible against its background, including disabled, error and selected
+  states. **Not** light/dark mode — see below.
 - **Copy** — labels, buttons, errors, and tooltips match the spec or the acceptance criteria
 
 
@@ -80,6 +81,21 @@ the *data* survives:
   pending. Confirm the guard fires, and that discarding actually discards.
 - **Locked / read-only states** — a status that disables the form must disable *all* of it, not the
   obvious controls only.
+
+
+### Does not exist in dotCMS — never write a case for it
+
+A generic web-app checklist suggests these; dotCMS has none of them, and a case for one is a
+hallucination the reviewer then has to catch.
+
+- **Light/dark mode.** There is no theme switcher and no user theme preference. The shared theme
+  provider pins PrimeNG's `darkModeSelector` to `false` (`core-web/libs/ui/src/lib/theme/providers.ts`),
+  nothing in the product reads `prefers-color-scheme`, and no element carries a `data-theme`
+  attribute. The single `.dark` selector in the repo belongs to the standalone block-editor app
+  config and has nothing to switch it on. Test contrast; never "toggle dark mode and confirm…".
+
+If a change genuinely introduces one of these, the diff will show it — and then it is in scope like
+any other new behaviour. Absent that, it is not.
 
 ---
 
