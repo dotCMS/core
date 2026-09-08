@@ -1,6 +1,6 @@
 <div class="field" [formGroup]="formGroup()">
-    <label [for]="field().name" class="text-xs font-medium text-gray-600">
-        {{ label() }}
+    <label [for]="field().name" class="flex items-center gap-1">
+        <span>{{ label() }}</span>
         @if (field().required) {
             <span class="text-red-500">*</span>
         }
@@ -14,7 +14,7 @@
                 [useGrouping]="false"
                 [invalid]="isInvalid()"
                 styleClass="w-full"
-                inputStyleClass="w-full text-sm" />
+                inputStyleClass="w-full" />
         }
         @case (DotAiProviderFieldType.SECRET) {
             @if (isMaskedSecret()) {
@@ -24,7 +24,7 @@
                     [id]="field().name"
                     [formControlName]="field().name"
                     [invalid]="isInvalid()"
-                    class="w-full text-sm" />
+                    class="w-full" />
             } @else {
                 <p-password
                     [inputId]="field().name"
@@ -33,7 +33,7 @@
                     [toggleMask]="true"
                     [invalid]="isInvalid()"
                     styleClass="w-full"
-                    inputStyleClass="w-full text-sm" />
+                    inputStyleClass="w-full" />
             }
         }
         @default {
@@ -42,11 +42,9 @@
                 [id]="field().name"
                 [formControlName]="field().name"
                 [invalid]="isInvalid()"
-                class="w-full text-sm" />
+                class="w-full" />
         }
     }
 
-    @if (field().hint) {
-        <small class="text-gray-500">{{ field().hint }}</small>
-    }
+    <small class="p-field-hint block min-h-5">{{ field().hint }}</small>
 </div>

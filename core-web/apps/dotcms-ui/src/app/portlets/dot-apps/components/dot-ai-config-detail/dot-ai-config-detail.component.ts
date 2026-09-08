@@ -16,6 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { map } from 'rxjs/operators';
 
@@ -31,7 +32,7 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
 
 import {
@@ -44,13 +45,15 @@ import { CAPABILITY_META } from './dot-ai-config.constants';
 @Component({
     selector: 'dot-ai-config-detail',
     templateUrl: './dot-ai-config-detail.component.html',
-    host: { class: 'flex h-full w-full flex-col overflow-hidden bg-white' },
+    host: { class: 'flex h-full w-full flex-col overflow-hidden' },
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ButtonModule,
         DotAiCapabilityCardComponent,
         DotAiSettingsCardComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotSpinnerComponent,
+        MessageModule
     ]
 })
 export class DotAiConfigDetailComponent implements OnInit {
