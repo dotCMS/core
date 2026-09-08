@@ -1,7 +1,6 @@
-<div class="flex flex-col gap-2">
-    <label class="text-sm font-semibold text-surface-900" for="experiments-configure-page">
+<div class="field">
+    <label dotFieldRequired for="experiments-configure-page">
         {{ 'experiments.configure.page.field.label' | dm }}
-        <span class="text-red-600" aria-hidden="true">*</span>
     </label>
 
     <div class="flex items-center gap-3">
@@ -59,7 +58,7 @@
                  rides the same row rather than occupying a block of its own while empty. -->
         @if ($selectedPage()) {
             <div class="flex flex-none items-center gap-3">
-                <label class="text-sm text-surface-600" for="experiments-traffic-allocation">
+                <label for="experiments-traffic-allocation">
                     {{ 'experiments.configure.traffic.allocation' | dm }}
                 </label>
                 <!-- PrimeNG sets `width: 100%` on the group itself after Tailwind, so the
@@ -82,7 +81,7 @@
     </div>
 
     @if ($hasPageError()) {
-        <small class="p-error" data-error data-testid="experiments-configure-page-error">
+        <small class="p-field-error" data-error data-testid="experiments-configure-page-error">
             {{ 'experiments.configure.page.error.required' | dm }}
         </small>
     }
@@ -93,12 +92,12 @@
 @if ($selectedPage()) {
     @if ($trafficErrors().length) {
         @for (error of $trafficErrors(); track error.kind) {
-            <small class="p-error" data-testid="experiments-configure-traffic-error">
+            <small class="p-field-error" data-testid="experiments-configure-traffic-error">
                 {{ error.message }}
             </small>
         }
     } @else {
-        <small class="text-surface-500" data-testid="experiments-configure-traffic-help">
+        <small class="p-field-hint" data-testid="experiments-configure-traffic-help">
             {{ $trafficHelpKey() | dm: $trafficHelpArgs() }}
         </small>
     }
