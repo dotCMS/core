@@ -41,6 +41,51 @@ const CW = resolve(import.meta.dirname, '..');
 const OUT_OF_SCOPE = ['libs/dotcms-webcomponents', 'apps/dotcms-ui-e2e'];
 
 /**
+ * Projects that opt OUT of per-file isolation — dir -> the measurement that earned it.
+ *
+ * research.md R-9 chose `isolate: true` for the workspace so the runner matches the
+ * module-registry-per-file model the specs were written under (Jest's), rather than the
+ * Angular builder's Karma-style shared context. It allows exactly this: "treat any
+ * project where that is too slow as a measured exception rather than flipping the
+ * default." This map is that list of exceptions, and `isolate: true` is emitted
+ * explicitly everywhere else — R-9 asked for it to be explicit and it had been left
+ * implicit in the Vitest default.
+ *
+ * The bar for an entry, all four:
+ *   1. the project passes with `--no-isolate` and the SAME test count,
+ *   2. three consecutive passing runs, plus one with `--sequence.shuffle`, because the
+ *      risk R-9 names is turning a healthy suite into an order-dependent one,
+ *   3. a real saving in `pnpm test:profile`, not noise,
+ *   4. the numbers written here, so the next person can re-check rather than re-derive.
+ *
+ * Nothing goes in unmeasured, and a project whose suite is red cannot qualify: without
+ * a green run there is nothing to compare against.
+ *
+ * EMPTY ON PURPOSE — this was measured and `isolate: false` earns nothing here.
+ * Best-of-two runs, warm Vite cache on both sides, nothing else on the machine:
+ *
+ *   project                    isolate: true   --no-isolate
+ *   dotcms-ui                     34.16s          33.95s
+ *   edit-content                  27.32s          27.89s
+ *   portlets-edit-ema-portlet     28.05s          28.36s
+ *   data-access                    9.54s           9.48s
+ *   portlets-content-drive        28s             35s
+ *   total of the first four       99.07s          99.68s   (+0.6%)
+ *
+ * The `setup` phase is the tell: it does not drop. dotcms-ui reads 122.27s isolated and
+ * 125.65s non-isolated. If isolation were the thing making setup run per FILE rather
+ * than per worker, that number would fall, and it does not — so the per-file cost lives
+ * somewhere isolation does not reach.
+ *
+ * Read this before re-running the experiment: an earlier attempt appeared to show
+ * −42% on data-access and it was an artefact. The two variants ran back-to-back in one
+ * batch, so the `isolate: true` arm paid the COLD Vite cache and the `--no-isolate` arm
+ * inherited it warm. Measure each arm best-of-two, or you will rediscover the same
+ * phantom. `pnpm test:profile <project> --runs=2 -- --no-isolate` does this correctly.
+ */
+const NO_ISOLATE = {};
+
+/**
  * Packages that must resolve to ONE @angular/core instance.
  *
  * This is the one deviation from Nx's base that is not about parity, and it is not
@@ -394,6 +439,28 @@ function includeRootsFor(dir) {
     return [...roots].sort();
 }
 
+/**
+ * The `isolate` line, explicit either way.
+ *
+ * R-9 asked for `isolate: true` to be set "explicitly on every migrated project" and
+ * that was the one part of it that never shipped — it was left to Vitest's default,
+ * which reads as nobody having decided. An unstated default is exactly how the Angular
+ * builder's Karma-style `isolate: false` would have slipped in unnoticed if a project
+ * ever moved to that builder.
+ */
+function isolateBlock(dir) {
+    const reason = NO_ISOLATE[dir];
+    if (!reason) {
+        return `        // Explicit per research.md R-9: Jest gave every spec file a fresh module registry
+        // and these specs were written under that. Measured exceptions live in NO_ISOLATE
+        // in tools/generate-vite-configs.mjs.
+        isolate: true,`;
+    }
+    return `        // MEASURED exception to R-9's isolate: true — ${reason}
+        // Re-check: pnpm test:profile ${nameOf(dir)} (and once with -- --sequence.shuffle).
+        isolate: false,`;
+}
+
 function nameOf(dir) {
     const p = join(CW, dir, 'project.json');
     return existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).name ?? dir) : dir;
@@ -526,6 +593,7 @@ ${pluginCall ? `        ${pluginCall},\n` : ''}        tsconfigPaths({ root: res
         // hung indefinitely without printing a summary. An empty include leaves every
         // file unprocessed while the module-name strategy still applies.
         css: { include: [], modules: { classNameStrategy: 'non-scoped' } },
+${isolateBlock(dir)}
         environment: '${env}',${environmentOptionsFor(env)}
         include: ['{${includeRootsFor(dir).join(',')}}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {

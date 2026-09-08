@@ -77,18 +77,51 @@ compile, and so does a `pnpm install`. A run taken through either is not a basel
 
 All on `libs/data-access` (85 files / 853 tests), 16-core macOS, warm Vite cache unless noted.
 
+### First, the trap that produced a wrong answer here
+
+Do **not** measure two variants back-to-back in one batch. The first run pays the cold Vite cache
+and the second inherits it warm, so the second variant looks better whatever it is. That artefact
+produced a confident "`isolate: false` is −42%" in this repo, which then failed to reproduce.
+Measure each arm best-of-two: `pnpm test:profile <p> --runs=2 -- <flags>`.
+
+### The results
+
+`isolate` — best-of-two per arm, warm cache both sides, idle machine:
+
+| project | `isolate: true` | `--no-isolate` |
+| --- | --- | --- |
+| `dotcms-ui` | 34.16s | 33.95s |
+| `edit-content` | 27.32s | 27.89s |
+| `portlets-edit-ema-portlet` | 28.05s | 28.36s |
+| `data-access` | 9.54s | 9.48s |
+| `portlets-content-drive` | 28s | 35s |
+| total of the first four | **99.07s** | **99.68s** (+0.6%) |
+
+**`isolate: false` earns nothing.** The `setup` phase is the tell — it does not drop: `dotcms-ui`
+reads 122.27s isolated and 125.65s non-isolated. If isolation were what makes setup run per *file*
+instead of per worker, that number would fall. It doesn't, so the per-file cost lives somewhere
+isolation does not reach. `isolate: true` stays, and is now written explicitly in every config
+(research.md R-9 asked for that and it had been left to Vitest's default).
+
+Everything else, on `libs/data-access` (85 files / 853 tests):
+
 | Change | Effect | Verdict |
 | --- | --- | --- |
-| `isolate: false` | Duration 9.52s → 5.55s (−42%), wall −25%; `setup` 29.6→18.6s, `environment` 12.9→6.4s. 853/853 pass | **Works.** Per-project measured exception — see below |
-| `pool: 'threads'` | Duration 9.52s → 11.25s; `environment` 12.9s → **33.1s** | **Regression.** The DOM is more expensive in worker threads. Stay on `forks` |
-| `pool: 'threads'` + `isolate: false` | wall 10s vs 12s for forks, but `environment` 35.1s | Not worth it; and `--cpu-prof` does not work with `threads` |
+| `pool: 'threads'` | `environment` 12.9s → **33.1s** | **Regression.** The DOM is more expensive in worker threads. Stay on `forks` |
 | `environment: 'happy-dom'` (from `jsdom`) | `environment` 6.4s → 3.1s **but** `tests` 2.7s → **22.7s** and **4 files fail** | **Regression here.** Only per project, only where the baseline shows `environment` dominant |
-| `NODE_COMPILE_CACHE=…` | 11s vs 12s — inside the noise | **No measurable gain** on Node 24, and the docs note it is disabled by the `v8` coverage provider, which is what this suite uses |
+| `NODE_COMPILE_CACHE=…` | inside the noise | **No measurable gain** on Node 24, and the docs note it is disabled by the `v8` coverage provider, which this suite uses |
+| Drop the Angular plugin where nothing imports `@angular/*` | 5 projects, `deps.inline` 23 → 1, ~25% off each project's wall, identical test counts | **Works.** Now detected rather than assumed |
 
-Two of those contradict the generic advice in Vitest's own
+Three of those contradict the generic advice in Vitest's own
 [improving-performance](https://vitest.dev/guide/improving-performance.html) guide, which leads with
-"switch to `threads`" and offers `happy-dom` as a cheaper `jsdom`. Both are measured regressions in
-this workspace. Measure before adopting.
+"switch to `threads`", offers `happy-dom` as a cheaper `jsdom`, and recommends `isolate: false`.
+All three are neutral-to-worse in this workspace. Measure before adopting.
+
+### Beware of your own machine
+
+A `nx run <project>:test` measured 336s against a 27.72s baseline — same 30 files, same 1370 tests.
+The cause was another profiling run holding all 16 cores (`load average` 21). Check `uptime` and
+`pgrep -f vitest` before believing any number, and never benchmark two things at once.
 
 ## Where per-file startup comes from
 
@@ -118,14 +151,18 @@ Angular builder defaults to Karma's shared context instead). That decision expli
 exceptions: *"treat any project where that is too slow as a measured exception rather than flipping
 the default."*
 
-So `isolate: false` is allowed **per project**, and only with:
+Exceptions go in `NO_ISOLATE` in `tools/generate-vite-configs.mjs`, and **that map is empty because
+the experiment was run and lost** — see the table above. The bar for adding an entry, should anyone
+find a project where it does pay:
 
-1. A run of that project with `--no-isolate` that passes, with the same test count.
-2. Three consecutive passing runs, plus one with `--sequence.shuffle`, to rule out the order
-   dependence R-9 warns about.
-3. The project listed in the generator's exception list, with its measurement in the comment.
+1. The project passes with `--no-isolate`, with the **same test count**.
+2. Three consecutive passing runs plus one with `--sequence.shuffle`, to rule out the order
+   dependence R-9 warns about — `isolate: false` turns a healthy suite into an order-dependent one.
+3. A saving that survives best-of-two measurement on both arms, not a cold-cache artefact.
+4. The numbers written into the map, so the next person re-checks instead of re-deriving.
 
-Never flip it workspace-wide, and never flip it for a project you have not run.
+Never flip it workspace-wide, and never for a project you have not run. A project whose suite is red
+cannot qualify at all: with no green run there is nothing to compare against.
 
 ## Diagnostic recipes
 
@@ -182,9 +219,24 @@ overwritten and reviewers will not see the reasoning:
 
 ```bash
 cd core-web
-node tools/generate-vite-configs.mjs --all
-git diff --exit-code            # must be clean after a no-op regeneration
+# The dirs that already have a generated config — NOT --all, which would also create
+# apps/dotcdn/src/vite.config.mts, a project with zero specs and no tag:skip:test,
+# i.e. a brand-new `test` target that fails with "No test files found".
+grep -rl "GENERATED by tools/generate-vite-configs" --include=vite.config.mts apps libs \
+  | sed 's|/vite.config.mts||' > /tmp/dirs.txt
+cat /tmp/dirs.txt | xargs node tools/generate-vite-configs.mjs
+
+# Prettier is part of the contract, not an afterthought: the generator emits raw text
+# (double quotes, collapsed arrays) and the committed files are prettier-formatted, so
+# regeneration alone shows ~1700 lines of pure formatting churn.
+sed 's|$|/vite.config.mts|' /tmp/dirs.txt | xargs pnpm exec prettier --write
+
+git diff --exit-code -- '**/vite.config.mts'   # clean = generator output unchanged
 ```
+
+In zsh, `node tools/generate-vite-configs.mjs $DIRS` does **not** work: zsh does not
+word-split unquoted variables, so all 45 paths arrive as one argument and the generator
+reports `0 config(s)` — a no-op that reads like success. Pipe through `xargs`.
 
 The generator's house style is that every deviation from what `nx g` would emit carries the measured
 failure that justifies it. Follow it: a performance option with no measurement in its comment is the

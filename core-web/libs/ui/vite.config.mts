@@ -67,6 +67,10 @@ export default defineConfig(() => ({
         // hung indefinitely without printing a summary. An empty include leaves every
         // file unprocessed while the module-name strategy still applies.
         css: { include: [], modules: { classNameStrategy: 'non-scoped' } },
+        // Explicit per research.md R-9: Jest gave every spec file a fresh module registry
+        // and these specs were written under that. Measured exceptions live in NO_ISOLATE
+        // in tools/generate-vite-configs.mjs.
+        isolate: true,
         environment: 'happy-dom',
         environmentOptions: { happyDOM: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

@@ -66,7 +66,8 @@ function discover() {
                     // The config's own test.name is the nx project name; the directory
                     // is not (libs/portlets/dot-analytics/portlet -> dot-analytics).
                     name: /name:\s*'([^']+)'/.exec(src)?.[1] ?? rel,
-                    specs: countSpecs(rel)
+                    specs: countSpecs(rel),
+                    skipped: hasSkipTestTag(rel)
                 });
             }
         }
@@ -102,6 +103,31 @@ function countSpecs(dir, owners = null) {
 
 /** Populated before countSpecs is first used; see the two-pass note in main(). */
 let discoveredDirs = null;
+
+/**
+ * Does CI actually run this project's tests?
+ *
+ * It does not if the project carries `tag:skip:test`, because the pipeline runs
+ * `nx affected -t test --exclude=tag:skip:test` (core-web/pom.xml, execution
+ * `unit-test`). Five projects with a Vitest config are in that bucket — block-editor
+ * (29 specs), dot-rules, utils, dot-usage, dotcms-models — 36 spec files that this
+ * tool would otherwise fold into a single total and present as the suite's cost.
+ *
+ * That is not a rounding error, it is the wrong number: FR-017 asks for the wall time
+ * of the suite CI runs, and block-editor is red on main today, so including it also
+ * makes the profile look broken for reasons no pipeline would ever see. Hence a flag
+ * per project and two totals, rather than silently dropping them — profiling a skipped
+ * project on purpose is legitimate, confusing it with CI's bill is not.
+ */
+function hasSkipTestTag(dir) {
+    try {
+        return (JSON.parse(readFileSync(join(CW, dir, 'project.json'), 'utf8')).tags ?? []).includes('skip:test');
+    } catch {
+        // No project.json, or unparseable: assume CI runs it. Guessing "skipped" would
+        // quietly shrink the reported suite, which is the failure this guards against.
+        return false;
+    }
+}
 
 /** `9.52s` / `812ms` / `1.20m` -> seconds. Vitest switches units on us. */
 function seconds(text) {
@@ -178,7 +204,8 @@ function table(rows) {
         ['import', (r) => fmt(r.phases.import)],
         ['tests', (r) => fmt(r.phases.tests)],
         ['env', (r) => fmt(r.phases.environment)],
-        ['result', (r) => (r.exitCode === 0 ? `${r.testsTotal || 0} ok` : `FAIL (${r.files ?? 'no summary'})`)]
+        ['result', (r) => (r.exitCode === 0 ? `${r.testsTotal || 0} ok` : `FAIL (${r.files ?? 'no summary'})`)],
+        ['ci', (r) => (r.skipped ? 'skip:test' : '')]
     ];
     const head = cols.map(([h]) => h);
     const body = rows.map((r) => cols.map(([, get]) => get(r) ?? '-'));
@@ -222,8 +249,14 @@ function main() {
     const all = discover();
 
     if (flag('list')) {
-        for (const p of all) console.log(`${String(p.specs).padStart(4)} specs  ${p.name.padEnd(34)} ${p.dir}`);
+        for (const p of all) {
+            console.log(`${String(p.specs).padStart(4)} specs  ${p.name.padEnd(34)} ${p.dir}${p.skipped ? '  [tag:skip:test — CI does not run it]' : ''}`);
+        }
+        const run = all.filter((p) => !p.skipped);
+        const off = all.filter((p) => p.skipped);
         console.log(`\n${all.length} projects, ${all.reduce((n, p) => n + p.specs, 0)} spec files`);
+        console.log(`  CI runs:  ${run.length} projects, ${run.reduce((n, p) => n + p.specs, 0)} spec files`);
+        console.log(`  excluded: ${off.length} projects, ${off.reduce((n, p) => n + p.specs, 0)} spec files (tag:skip:test)`);
         return;
     }
 
@@ -267,20 +300,32 @@ function main() {
 
     console.log(`\n${table(rows)}`);
 
-    const totals = rows.reduce(
-        (a, r) => ({
-            wall: a.wall + (r.wall ?? 0),
-            tests: a.tests + (r.phases.tests ?? 0),
-            files: a.files + (r.filesTotal || 0),
-            cases: a.cases + (r.testsTotal || 0)
-        }),
-        { wall: 0, tests: 0, files: 0, cases: 0 }
-    );
-    console.log(
-        `\n${rows.length} project(s): ${totals.files} files, ${totals.cases} tests, ${fmt(totals.wall)} wall, ` +
-            `of which ${fmt(totals.tests)} is test execution` +
-            (totals.wall > 0 ? ` (${((totals.tests / totals.wall) * 100).toFixed(1)}%)` : '')
-    );
+    const sum = (rs) =>
+        rs.reduce(
+            (a, r) => ({
+                wall: a.wall + (r.wall ?? 0),
+                files: a.files + (r.filesTotal || 0),
+                cases: a.cases + (r.testsTotal || 0),
+                failed: a.failed + (r.exitCode === 0 ? 0 : 1)
+            }),
+            { wall: 0, files: 0, cases: 0, failed: 0 }
+        );
+
+    // Reported separately, never merged: only the first line is the suite CI pays for.
+    const ci = sum(rows.filter((r) => !r.skipped));
+    const skipped = sum(rows.filter((r) => r.skipped));
+    const line = (label, n, t) =>
+        `${label}: ${n} project(s), ${t.files} files, ${t.cases} tests, ${fmt(t.wall)} wall` +
+        (t.failed ? `, ${t.failed} project(s) FAILING` : '');
+
+    console.log(`\n${line('CI-relevant', rows.length - rows.filter((r) => r.skipped).length, ci)}`);
+    if (skipped.files || rows.some((r) => r.skipped)) {
+        console.log(`${line('Excluded by tag:skip:test', rows.filter((r) => r.skipped).length, skipped)}`);
+        console.log('  (CI runs `nx affected -t test --exclude=tag:skip:test`, so the second line is not its bill)');
+    }
+    // Deliberately no "% of wall spent in tests": the phase numbers are cumulative
+    // across workers and wall is not, so that ratio was meaningless — it read 75% on a
+    // suite where startup dominates. Compare phases to each other, per project.
     if (extra.length) console.log(`vitest flags: ${extra.join(' ')}`);
 
     const jsonPath = value('json', flag('json') ? 'profile.json' : null);
