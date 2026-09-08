@@ -49,6 +49,25 @@ export function getDotCMSPageBounds(containers: HTMLDivElement[]): DotCMSContain
 }
 
 /**
+ * Whether the current user may edit the contentlet described by `dataset`.
+ *
+ * Reads `data-dot-can-edit`, which the Velocity container renderer stamps on
+ * every contentlet in EDIT mode from a WRITE-level permission check against the
+ * contentlet instance.
+ *
+ * **Fails open** — only the literal `"false"` denies. Headless and SDK-rendered
+ * pages build their own wrappers and never emit the attribute, so treating a
+ * missing value as denied would disable every edit affordance on all of them.
+ *
+ * Shared by the hover/click payload and the bounds payload so both carry the
+ * same answer; the bounds payload re-anchors the current selection on every
+ * layout change, and omitting the permission there silently reopens the gates.
+ */
+function readCanEditFromDataset(dataset: DOMStringMap | undefined): boolean {
+    return dataset?.['dotCanEdit'] !== 'false';
+}
+
+/**
  * Calculates the bounding information for each contentlet inside a container.
  *
  * @export
@@ -83,7 +102,8 @@ export function getDotCMSContentletsBound(
                     identifier: contentlet.dataset?.['dotIdentifier'],
                     title: contentlet.dataset?.['dotTitle'],
                     inode: contentlet.dataset?.['dotInode'],
-                    contentType: contentlet.dataset?.['dotType']
+                    contentType: contentlet.dataset?.['dotType'],
+                    canEdit: readCanEditFromDataset(contentlet.dataset)
                 }
             })
         };
@@ -281,6 +301,11 @@ export function getDotContentletAttributes(
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
         'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1',
+        // Mirrors `data-dot-can-edit` from the Velocity renderer so the editor
+        // reads one attribute on both surfaces. Fails open: an older dotCMS
+        // release does not return `canEdit`, and the editor must behave as it
+        // does today rather than lock the user out.
+        'data-dot-can-edit': String(contentlet?.canEdit !== false),
         ...(contentlet?.dotStyleProperties && {
             'data-dot-style-properties': JSON.stringify(contentlet.dotStyleProperties)
         })
@@ -439,6 +464,13 @@ export function getDotContainerAttributes({
  * normalized contentlet object. Mirrors the shape consumed by the editor's
  * SET_BOUNDS and CONTENTLET_CLICKED events. Optionally parses the
  * `dotStyleProperties` JSON when present.
+ *
+ * `canEdit` reflects `data-dot-can-edit`, which the Velocity container renderer
+ * stamps on every contentlet in EDIT mode from a WRITE-level permission check
+ * against the contentlet instance. It **fails open**: only the literal `"false"`
+ * denies. Headless and SDK-rendered pages build their own wrappers and never
+ * emit the attribute, so treating a missing value as denied would disable every
+ * edit affordance on all of them.
  */
 export function readContentletDataset(element: HTMLElement) {
     const dataset = element.dataset ?? {};
@@ -450,6 +482,7 @@ export function readContentletDataset(element: HTMLElement) {
         baseType: dataset['dotBasetype'],
         widgetTitle: dataset['dotWidgetTitle'],
         onNumberOfPages: dataset['dotOnNumberOfPages'],
+        canEdit: readCanEditFromDataset(dataset),
         ...(dataset['dotStyleProperties'] && {
             dotStyleProperties: JSON.parse(dataset['dotStyleProperties'])
         })
