@@ -7,8 +7,13 @@ import { computed } from '@angular/core';
 import { debounceTime, skip, tap } from 'rxjs/operators';
 
 import { readJson, writeJson } from '@dotcms/data-access';
+import { DOT_AI_VECTOR_OPERATOR } from '@dotcms/dotcms-models';
 
-import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
+import {
+    DOT_AI_SETTINGS_KEYS,
+    DotAiPortletState,
+    DotAiRetrievalSettings
+} from '../../models/dot-ai-portlet.models';
 
 /** One key, one JSON blob — unlike `withPersistedQuery` this can hold numbers and nulls. */
 const PREFERENCES_KEY = 'dotcms.devtools.dotai.settings';
@@ -34,20 +39,42 @@ const RE_DEFAULTED_KEYS: Record<number, ReadonlySet<string>> = {
     2: new Set(['settingsThreshold'])
 };
 
-/** Exactly the retrieval-panel controls. Nothing else is persisted. */
-const PREFERENCE_KEYS = [
-    'settingsIndexName',
-    'settingsSite',
-    'settingsContentTypes',
-    'settingsThreshold',
-    'settingsOperator',
-    'settingsModel',
-    'settingsResponseLength',
-    'settingsTemperature'
-] as const;
+/**
+ * Exactly the retrieval-panel controls. Nothing else is persisted.
+ *
+ * Shared with `setSettings` rather than restated, so the set that can be written and the set
+ * that is remembered cannot drift apart.
+ */
+const PREFERENCE_KEYS = DOT_AI_SETTINGS_KEYS;
 
-/** Derived from the list above, so the two cannot drift apart. */
-type DotAiPreferences = Pick<DotAiPortletState, (typeof PREFERENCE_KEYS)[number]>;
+type DotAiPreferences = DotAiRetrievalSettings;
+
+const OPERATORS: ReadonlySet<string> = new Set(Object.values(DOT_AI_VECTOR_OPERATOR));
+
+/**
+ * Whether a stored value is usable for the key it was stored under.
+ *
+ * localStorage is a trust boundary: the blob can be stale, hand-edited, or written by an
+ * older build, and whatever survives here is patched straight into typed state and then
+ * assembled into a request body. The numerics are additionally clamped downstream in
+ * `withRetrievalSettings`, but the operator has no such guard — an unrecognised one would
+ * reach the wire and the server would reject the whole search.
+ */
+const isUsable = (key: keyof DotAiPreferences, value: unknown): boolean => {
+    switch (key) {
+        case 'settingsThreshold':
+        case 'settingsTemperature':
+        case 'settingsResponseLength':
+            return typeof value === 'number' && Number.isFinite(value);
+        case 'settingsOperator':
+            return typeof value === 'string' && OPERATORS.has(value);
+        case 'settingsSite':
+            // null is meaningful here: it means "all sites".
+            return value === null || typeof value === 'string';
+        default:
+            return typeof value === 'string';
+    }
+};
 
 /**
  * Persists the retrieval-settings panel between visits.
@@ -96,8 +123,9 @@ export function withDotAiPreferences() {
                 );
 
                 // Merge over the defaults rather than replacing them: only keys we recognise,
-                // and only where a value was actually stored. `settingsSite` is allowed to be
-                // null, because null is a meaningful value there — it means "all sites".
+                // and only where the stored value is usable for that key. Anything else is
+                // dropped, so the default shows through rather than a bad value reaching the
+                // request body.
                 const merged = PREFERENCE_KEYS.reduce<Partial<DotAiPreferences>>((acc, key) => {
                     if (reDefaulted.has(key)) {
                         return acc;
@@ -106,7 +134,7 @@ export function withDotAiPreferences() {
                     const value = stored[key];
                     const isSet = key === 'settingsSite' ? value !== undefined : value != null;
 
-                    return isSet ? { ...acc, [key]: value } : acc;
+                    return isSet && isUsable(key, value) ? { ...acc, [key]: value } : acc;
                 }, {});
 
                 patchState(store, merged as Partial<DotAiPortletState>);

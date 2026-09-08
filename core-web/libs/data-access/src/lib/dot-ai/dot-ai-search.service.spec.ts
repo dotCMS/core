@@ -118,4 +118,36 @@ describe('DotAiSearchService', () => {
 
         expect(caught.indexNotFound).toBeFalsy();
     });
+
+    describe('a wire value of the wrong type', () => {
+        const flush = (body: Record<string, unknown>): DotAiSearchResponse => {
+            let response!: DotAiSearchResponse;
+            spectator.service.semanticSearch(form).subscribe((r) => (response = r));
+            spectator.expectOne(SEARCH_URL, HttpMethod.POST).flush(body);
+
+            return response;
+        };
+
+        it('should coerce a quoted number rather than passing the string through', () => {
+            // The sibling config response really does send `.25` as a string, so this is not
+            // hypothetical — and `as number` on it would have travelled to the template.
+            const response = flush({ threshold: '0.25', total: '3', dotCMSResults: [] });
+
+            expect(response.threshold).toBe(0.25);
+            expect(response.total).toBe(3);
+        });
+
+        it('should fall back rather than render an unparseable number', () => {
+            const response = flush({ threshold: {}, operator: 7, dotCMSResults: [] });
+
+            expect(response.threshold).toBe(0);
+            expect(response.operator).toBe('');
+        });
+
+        it('should drop a results entry that is not an object', () => {
+            const response = flush({ dotCMSResults: [null, 'nope', { identifier: 'abc' }] });
+
+            expect(response.results.map((r) => r.identifier)).toEqual(['abc']);
+        });
+    });
 });

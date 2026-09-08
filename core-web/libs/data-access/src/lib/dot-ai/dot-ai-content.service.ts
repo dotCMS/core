@@ -15,6 +15,9 @@ import {
 
 import { AI_API_ENDPOINT, API_ENDPOINT_FOR_PUBLISH } from './dot-ai.constants';
 
+/** Everything `createAndPublishContentlet` actually reads off a generation response. */
+export type DotAiPublishableImage = Pick<DotAIImageResponse, 'response' | 'tempFileName'>;
+
 const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
@@ -129,7 +132,19 @@ export class DotAiContentService {
             );
     }
 
-    createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {
+    /**
+     * Publishes a generated image as a dotAsset.
+     *
+     * Generic over the response rather than taking the whole `DotAIImageResponse`: only
+     * `response` and `tempFileName` are read, and the dotAI portlet — which generates and
+     * saves as two deliberate steps — holds nothing else by the time the user clicks Save.
+     * Typing the parameter as the full response forced a cast at that call site that hid the
+     * coupling instead of expressing it. The return spreads whatever came in, so
+     * `generateAndPublishImage` still resolves to `DotAIImageContent`.
+     */
+    createAndPublishContentlet<T extends DotAiPublishableImage>(
+        aiResponse: T
+    ): Observable<T & { contentlet: DotCMSContentlet }> {
         const { response, tempFileName } = aiResponse;
         const contentlets: Partial<DotCMSContentlet>[] = [
             {

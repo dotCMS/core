@@ -2,6 +2,7 @@ import { patchState, signalStoreFeature, type, withComputed, withMethods } from 
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, pipe } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Signal } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
@@ -82,7 +83,17 @@ export function withAiSearch() {
                                             return EMPTY;
                                         }
 
-                                        httpErrorManager.handle(error as never);
+                                        // Narrowed rather than cast: `as never` is
+                                        // assignable to anything, so it switched off checking
+                                        // on this argument entirely. Anything that is not
+                                        // already an HttpErrorResponse — the index-not-found
+                                        // sentinel has been handled above — is wrapped, so
+                                        // the handler still has a shape to dispatch on.
+                                        httpErrorManager.handle(
+                                            error instanceof HttpErrorResponse
+                                                ? error
+                                                : new HttpErrorResponse({ error })
+                                        );
                                         // LOADED, not ERROR: the screen stays usable (FR-051).
                                         patchState(store, {
                                             searchStatus: ComponentStatus.LOADED,

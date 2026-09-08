@@ -15,7 +15,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSearchInputComponent } from '@dotcms/ui';
 
-import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-create.component';
+import {
+    DotAiIndexCreateComponent,
+    DotAiIndexCreateResult
+} from './dot-ai-index-create/dot-ai-index-create.component';
 
 import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiIndexBuildNotice } from '../../models/dot-ai-portlet.models';
@@ -82,8 +85,11 @@ export default class DotAiEmbeddingsComponent {
                 draggable: false,
                 data: { indexes: this.store.indexes().map((index) => index.name) }
             })
+            // `DialogService.onClose` is `Observable<any>`, so the annotation here is what
+            // makes the "mode must not travel any further" invariant below a compiler rule
+            // rather than a convention.
             .onClose.pipe(take(1))
-            .subscribe((result) => {
+            .subscribe((result: DotAiIndexCreateResult | undefined) => {
                 if (!result) {
                     return;
                 }

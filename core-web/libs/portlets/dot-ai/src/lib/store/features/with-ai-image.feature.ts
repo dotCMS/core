@@ -7,7 +7,7 @@ import { computed, inject } from '@angular/core';
 import { catchError, exhaustMap, tap } from 'rxjs/operators';
 
 import { DotAiContentService } from '@dotcms/data-access';
-import { DotAIImageResponse } from '@dotcms/dotcms-models';
+import { DotAIImageOrientation, DotAIImageResponse } from '@dotcms/dotcms-models';
 
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 
@@ -51,7 +51,7 @@ export function withAiImage() {
                 typeof error === 'string' ? error : ((error as Error)?.message ?? String(error));
 
             return {
-                setOrientation(imageOrientation: string): void {
+                setOrientation(imageOrientation: DotAIImageOrientation): void {
                     patchState(store, { imageOrientation });
                 },
 
@@ -120,7 +120,7 @@ export function withAiImage() {
                                 .createAndPublishContentlet({
                                     response: image.response,
                                     tempFileName: image.tempFileName
-                                } as DotAIImageResponse)
+                                })
                                 .pipe(
                                     tap(() =>
                                         patchState(store, {

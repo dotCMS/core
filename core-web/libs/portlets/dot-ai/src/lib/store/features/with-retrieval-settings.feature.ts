@@ -9,7 +9,8 @@ import {
     DOT_AI_MIN_RESPONSE_TOKENS,
     DOT_AI_TEMPERATURE_RANGE,
     DOT_AI_THRESHOLD_RANGE,
-    DotAiPortletState
+    DotAiPortletState,
+    DotAiRetrievalSettings
 } from '../../models/dot-ai-portlet.models';
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -80,7 +81,12 @@ export function withRetrievalSettings() {
             })
         })),
         withMethods((store) => ({
-            setSettings(settings: Partial<DotAiPortletState>): void {
+            /**
+             * Narrowed to this feature's own slice. `Partial<DotAiPortletState>` let any
+             * caller reach `chatAnswer`, `indexes` or `searchResponse` through the panel's
+             * setter — wider than the prefix-per-slice design the state model documents.
+             */
+            setSettings(settings: Partial<DotAiRetrievalSettings>): void {
                 patchState(store, settings);
             },
             setSearchPrompt(searchPrompt: string): void {

@@ -137,7 +137,7 @@ export interface DotAiPortletState {
     image: DotAiGeneratedImage | null;
     imageGenerating: boolean;
     imageSaving: boolean;
-    imageOrientation: string;
+    imageOrientation: DotAIImageOrientation;
     /**
      * Why the last generate or save failed, rendered inline.
      *
@@ -148,6 +148,27 @@ export interface DotAiPortletState {
      */
     imageError: string | null;
 }
+
+/**
+ * The retrieval-settings panel's own fields.
+ *
+ * One list, two readers: `setSettings` accepts exactly these — a `Partial<DotAiPortletState>`
+ * let any caller write `chatAnswer` or `searchResponse` through a method that owns neither —
+ * and `withDotAiPreferences` persists exactly these. Keeping it here is what stops the two
+ * drifting apart.
+ */
+export const DOT_AI_SETTINGS_KEYS = [
+    'settingsIndexName',
+    'settingsSite',
+    'settingsContentTypes',
+    'settingsThreshold',
+    'settingsOperator',
+    'settingsModel',
+    'settingsResponseLength',
+    'settingsTemperature'
+] as const;
+
+export type DotAiRetrievalSettings = Pick<DotAiPortletState, (typeof DOT_AI_SETTINGS_KEYS)[number]>;
 
 export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     isConfigured: false,

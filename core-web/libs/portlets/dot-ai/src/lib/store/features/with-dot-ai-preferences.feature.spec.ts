@@ -203,4 +203,67 @@ describe('withDotAiPreferences', () => {
             expect(spectator.service.settingsOperator()).toBe(DOT_AI_VECTOR_OPERATOR.INNER_PRODUCT);
         });
     });
+
+    describe('a stored value of the wrong shape', () => {
+        // localStorage is a trust boundary: the blob can be stale, hand-edited, or written by
+        // an older build, and whatever survives hydrate is patched straight into typed state
+        // and then assembled into a request body.
+        it('should reject a non-numeric threshold and keep the default', () => {
+            localStorage.setItem(
+                KEY,
+                JSON.stringify({ version: VERSION, settingsThreshold: 'a lot' })
+            );
+
+            spectator = createService();
+
+            expect(spectator.service.settingsThreshold()).toBe(0.75);
+        });
+
+        it('should reject a NaN temperature', () => {
+            // JSON cannot carry NaN, but `null` round-trips to it through a coercing writer.
+            localStorage.setItem(
+                KEY,
+                JSON.stringify({ version: VERSION, settingsTemperature: 'hot' })
+            );
+
+            spectator = createService();
+
+            expect(spectator.service.settingsTemperature()).toBe(0);
+        });
+
+        it('should reject an operator the API does not accept', () => {
+            // The numerics are clamped downstream; the operator has no such guard, so an
+            // unrecognised one would reach the wire and the server would reject the search.
+            localStorage.setItem(
+                KEY,
+                JSON.stringify({ version: VERSION, settingsOperator: 'product' })
+            );
+
+            spectator = createService();
+
+            expect(spectator.service.settingsOperator()).toBe(DOT_AI_VECTOR_OPERATOR.COSINE);
+        });
+
+        it('should keep the good keys in a blob that has one bad one', () => {
+            localStorage.setItem(
+                KEY,
+                JSON.stringify({
+                    version: VERSION,
+                    settingsOperator: 'product',
+                    settingsIndexName: 'blogs'
+                })
+            );
+
+            spectator = createService();
+
+            expect(spectator.service.settingsOperator()).toBe(DOT_AI_VECTOR_OPERATOR.COSINE);
+            expect(spectator.service.settingsIndexName()).toBe('blogs');
+        });
+
+        it('should survive an array, which passes the typeof object guard', () => {
+            localStorage.setItem(KEY, JSON.stringify([1, 2, 3]));
+
+            expect(() => createService()).not.toThrow();
+        });
+    });
 });

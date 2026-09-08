@@ -15,7 +15,12 @@
     </div>
 
     <div class="field">
-        <label for="dotai-index-name">{{ 'dotai.index.create.name' | dm }}</label>
+        <!-- `p-label-input-required` is the asterisk `dotFieldRequired` applies. The
+             directive itself is unusable here: it injects `FormGroupDirective`, and this
+             dialog is signal-based with no FormGroup, so it would throw on construction. -->
+        <label class="p-label-input-required" for="dotai-index-name">
+            {{ 'dotai.index.create.name' | dm }}
+        </label>
         <input
             pInputText
             id="dotai-index-name"
@@ -26,14 +31,16 @@
             data-testid="dotai-index-create-name" />
 
         @if ($nameError(); as error) {
-            <small class="text-sm text-red-500" data-testid="dotai-index-create-name-error">
+            <small class="p-field-error" data-testid="dotai-index-create-name-error">
                 {{ error | dm }}
             </small>
         }
     </div>
 
     <div class="field">
-        <label for="dotai-index-query">{{ 'dotai.index.create.query' | dm }}</label>
+        <label class="p-label-input-required" for="dotai-index-query">
+            {{ 'dotai.index.create.query' | dm }}
+        </label>
         <textarea
             pTextarea
             id="dotai-index-query"
