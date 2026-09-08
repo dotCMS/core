@@ -6,7 +6,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/jest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
@@ -111,6 +111,8 @@ describe('DotContentDriveShellComponent', () => {
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
     // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
+    let pageLeaveRequestSubject: Subject<void>;
+    let routerService: SpyObject<DotRouterService>;
     let selectedItemsSignal: WritableSignal<DotContentDriveItem[]>;
     // Header override published by a dialog body that has drilled into a sub-screen.
     let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
@@ -209,6 +211,7 @@ describe('DotContentDriveShellComponent', () => {
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
         selectedItemsSignal = signal<DotContentDriveItem[]>([]);
+        pageLeaveRequestSubject = new Subject<void>();
         dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
         actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
             undefined
@@ -355,7 +358,12 @@ describe('DotContentDriveShellComponent', () => {
                     messageObserver: of({}),
                     clearObserver: of({})
                 }),
-                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
+                mockProvider(DotRouterService, {
+                    goToEditPage: jest.fn(),
+                    forbidRouteDeactivation: jest.fn(),
+                    allowRouteDeactivation: jest.fn(),
+                    pageLeaveRequest$: pageLeaveRequestSubject
+                })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
@@ -363,6 +371,7 @@ describe('DotContentDriveShellComponent', () => {
         location = spectator.inject(Location);
         messageService = spectator.inject(MessageService);
         uploadService = spectator.inject(DotUploadFileService);
+        routerService = spectator.inject(DotRouterService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
     });
 
@@ -1577,6 +1586,53 @@ describe('DotContentDriveShellComponent', () => {
             window.dispatchEvent(event);
 
             expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should hold the route while the bytes are in flight', () => {
+            // In-app navigation does not kill the request, but it destroys this shell — and with it
+            // the store the settle path writes to and the indicator that was reporting the run. So
+            // the route is held for the same window the page is.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(routerService.forbidRouteDeactivation).toHaveBeenCalled();
+        });
+
+        it('should release the route once the batch has been accepted', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(routerService.allowRouteDeactivation).toHaveBeenCalled();
+        });
+
+        it('should say why when the author tries to leave mid-upload', () => {
+            // The guard refuses silently on its own, which reads as a broken link. UVE answers the
+            // same request by force-saving; there is nothing to save here, so it explains instead.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            pageLeaveRequestSubject.next();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
         });
 
         it('should stop warning once the batch has been accepted', () => {
@@ -3493,7 +3549,12 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     messageObserver: of({}),
                     clearObserver: of({})
                 }),
-                mockProvider(DotRouterService, { goToEditPage: jest.fn() })
+                mockProvider(DotRouterService, {
+                    goToEditPage: jest.fn(),
+                    forbidRouteDeactivation: jest.fn(),
+                    allowRouteDeactivation: jest.fn(),
+                    pageLeaveRequest$: NEVER
+                })
             ]
         });
 

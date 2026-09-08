@@ -14,6 +14,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
@@ -32,6 +33,7 @@ import {
     DotUploadFileService,
     DotWorkflowsActionsService,
     DotMessageService,
+    DotRouterService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -419,6 +421,21 @@ export class DotContentDriveShellComponent {
     constructor() {
         this.#syncDialog(this.#store.dialog);
 
+        // The guard refuses on its own, silently, which reads as a broken link. UVE answers this
+        // same request by force-saving; there is nothing to save here, so it explains instead.
+        this.#routerService.pageLeaveRequest$
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                this.#messageService.add({
+                    severity: 'warn',
+                    summary: this.#dotMessageService.get('content-drive.upload'),
+                    detail: this.#dotMessageService.get(
+                        'content-drive.file-upload-in-progress-detail'
+                    ),
+                    life: WARNING_MESSAGE_LIFE
+                });
+            });
+
         // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
         // The `new`-mode marker is ignored — creating is not shareable, so only real identifiers
@@ -618,6 +635,8 @@ export class DotContentDriveShellComponent {
      * them has a handle.
      */
     readonly #uploadsInFlight = signal(0);
+
+    readonly #routerService = inject(DotRouterService);
 
     /**
      * Whether the listing on screen can show what a run changed (FR-044).
@@ -1227,12 +1246,24 @@ export class DotContentDriveShellComponent {
         });
 
         this.#uploadsInFlight.update((count) => count + 1);
+        // Held through the same window the page is. In-app navigation does not kill the request,
+        // but it destroys this shell — and with it the store `settleUploadPhase` writes to and the
+        // indicator that was reporting the run, so the upload would finish invisibly.
+        this.#routerService.forbidRouteDeactivation();
 
         // The upload phase ends at the handle, whichever way it ends. Leaving its run registered
         // would spin the indicator for a run that has become the server's to report.
         const settleUploadPhase = () => {
             this.#store.endExternalRun(runId);
-            this.#uploadsInFlight.update((count) => Math.max(count - 1, 0));
+
+            const remaining = Math.max(this.#uploadsInFlight() - 1, 0);
+            this.#uploadsInFlight.set(remaining);
+
+            // Only once the last of them is done: uploads overlap, and releasing on the first to
+            // finish would let the author leave while another is still sending.
+            if (!remaining) {
+                this.#routerService.allowRouteDeactivation();
+            }
         };
 
         this.#fileService
