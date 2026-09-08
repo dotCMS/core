@@ -27,6 +27,9 @@ export interface SummaryInput {
     outcomes: TargetOutcome[];
     /** Non-fatal notices, e.g. the instance being older than this tool (FR-005a). */
     warnings?: string[];
+    /** True when `--skip-skills` was passed. A step the developer asked to skip must be
+     *  reported as skipped, not rendered as nothing at all (FR-032a). */
+    skillsSkipped?: boolean;
     versionControl?: VersionControlSummary;
     connection: 'ok' | 'failed' | 'skipped';
     connectionReason?: string;
@@ -89,6 +92,10 @@ export function renderSummary(input: SummaryInput): string {
         for (const w of vc.warnings) lines.push(chalk.yellow(`  ! ${w}`));
     }
 
+    if (input.skillsSkipped) {
+        lines.push('  · skills installation skipped (--skip-skills)');
+    }
+
     lines.push('');
     if (input.connection === 'ok') {
         lines.push(chalk.green('  ✓ server responded'));
@@ -100,15 +107,24 @@ export function renderSummary(input: SummaryInput): string {
         lines.push('    Configuration was written and left in place; the server did not come up.');
     }
 
-    // `[].every()` is true, so a run that configured NOTHING used to print "Ready" and exit 0.
-    // Requiring at least one outcome is what makes the claim mean something (spec Edge Cases).
+    // "Ready" claims that everything asked for actually happened — so it excludes SKIPPED, not
+    // just failed. A declined replacement leaves the previous configuration in place, which may
+    // name a different instance and which nothing here verified. `[].every()` is also true, so
+    // requiring at least one outcome is what stops a run that configured nothing from claiming
+    // success (spec Edge Cases).
+    const done = (o: TargetOutcome) => o.result === 'written' || o.result === 'replaced';
+    const left = input.outcomes.filter((o) => !done(o) && o.result !== 'failed');
     const allGood =
-        input.connection === 'ok' &&
-        input.outcomes.length > 0 &&
-        input.outcomes.every((o) => o.result !== 'failed');
+        input.connection === 'ok' && input.outcomes.length > 0 && input.outcomes.every(done);
+    lines.push('');
     if (allGood) {
-        lines.push('');
         lines.push(`  Ready — ${input.nextStep ?? 'open your editor and start using dotCMS.'}`);
+    } else if (left.length && input.connection === 'ok') {
+        // Not an error, so do not colour it as one — but do not let it pass as success either.
+        lines.push(
+            `  ${left.length} editor${left.length === 1 ? ' was' : 's were'} left unchanged; ` +
+                `what they already point at was not verified.`
+        );
     }
 
     return lines.join('\n');

@@ -28,7 +28,7 @@ npx dotcms agent setup [options]
 | `-y, --yes` | flag | off | **Confirmations only.** Never suppresses a prompt for a missing required input, never changes which inputs are required (FR-003l). On the `.gitignore` offer it takes the *safe* answer — exclude (FR-023). |
 | `--force` | flag | off | Replace an existing `dotcms` entry without asking. Cannot disable token verification (FR-008c). |
 
-**Required inputs:** `--url` plus exactly one auth mode. Supply both and the run completes with no prompts, whether or not a terminal is attached (FR-003i).
+**Required inputs:** `--url` plus exactly one auth mode — without them setup cannot proceed. For a run with **no prompts at all**, also pass `--agent`: with a terminal attached and no targets supplied, setup asks which editors to configure rather than defaulting on the developer's behalf (FR-003i, FR-010). With no terminal there is nothing to ask on, so targets fall back to every detected editor and the run completes unprompted either way.
 
 ## Environment variables
 

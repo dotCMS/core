@@ -189,7 +189,8 @@ export function registerAgentCommand(program: Command): void {
                         versionControl: result.versionControl,
                         warnings: result.warnings,
                         connection: result.connection,
-                        connectionReason: result.connectionReason
+                        connectionReason: result.connectionReason,
+                        skillsSkipped: result.skillsSkipped
                     })
                 );
                 process.exitCode = result.exitCode;

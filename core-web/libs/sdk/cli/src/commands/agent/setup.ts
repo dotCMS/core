@@ -30,6 +30,8 @@ export interface SetupResult {
     versionControl?: GitignoreOutcome;
     connection: 'ok' | 'failed' | 'skipped';
     connectionReason?: string;
+    /** `--skip-skills` was honoured — the summary has to say so. */
+    skillsSkipped: boolean;
     exitCode: 0 | 1 | 2;
 }
 
@@ -373,6 +375,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         warnings,
         connection,
         connectionReason,
+        skillsSkipped: Boolean(opts.skipSkills),
         exitCode: anyFailed ? 1 : 0
     };
 }

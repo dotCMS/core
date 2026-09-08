@@ -114,3 +114,51 @@ describe('Ready means something was configured', () => {
         expect(renderSummary({ outcomes: [ok('cursor')], connection: 'ok' })).toMatch(/Ready/);
     });
 });
+
+describe('"Ready" means everything we were asked to do actually happened', () => {
+    const skipped = (id: string): TargetOutcome => ({
+        ...ok(id),
+        result: 'skipped',
+        reason: 'left the existing entry in place'
+    });
+
+    /**
+     * `allGood` used to exclude only `failed`. A declined replacement leaves the PREVIOUS
+     * configuration in place — which may point at an entirely different instance — and nothing
+     * verified it, yet the run still announced Ready.
+     */
+    it('does not claim Ready when a target was left unchanged', () => {
+        const out = renderSummary({ outcomes: [ok('cursor'), skipped('codex')], connection: 'ok' });
+        expect(out).not.toMatch(/Ready/);
+        // Silence would be worse than the wrong claim — say why it stopped short.
+        expect(out).toMatch(/left unchanged|not configured/i);
+    });
+
+    it('still claims Ready when every target was written', () => {
+        expect(renderSummary({ outcomes: [ok('cursor'), ok('codex')], connection: 'ok' })).toMatch(
+            /Ready/
+        );
+    });
+
+    it('counts a replacement as done', () => {
+        const replaced = { ...ok('cursor'), result: 'replaced' as const };
+        expect(renderSummary({ outcomes: [replaced], connection: 'ok' })).toMatch(/Ready/);
+    });
+});
+
+describe('a skipped step says so (FR-032a)', () => {
+    it('reports that --skip-skills was honoured', () => {
+        const out = renderSummary({
+            outcomes: [ok('cursor')],
+            connection: 'ok',
+            skillsSkipped: true
+        });
+        expect(out).toMatch(/skills.*skipped/i);
+        expect(out).toContain('--skip-skills');
+    });
+
+    it('says nothing about skills when they were not skipped', () => {
+        const out = renderSummary({ outcomes: [ok('cursor')], connection: 'ok' });
+        expect(out).not.toMatch(/--skip-skills/);
+    });
+});
