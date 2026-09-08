@@ -207,6 +207,14 @@ describe('DotAiEmbeddingsComponent', () => {
             expect(deleteButton()?.className).not.toContain('p-button-danger');
         });
 
+        it('should render as an icon-only button, so `small` actually shows', () => {
+            // Projecting the glyph as default content left PrimeNG unaware the button had no
+            // label, so it kept label padding and rendered label-wide despite size="small".
+            // `p-button-icon-only` is what swaps that for the token width (2rem at sm).
+            expect(deleteButton()?.className).toContain('p-button-icon-only');
+            expect(deleteButton()?.className).toContain('p-button-sm');
+        });
+
         it('should leave the glyph unsized', () => {
             const glyph = deleteButton()?.querySelector('.material-symbols-outlined');
 

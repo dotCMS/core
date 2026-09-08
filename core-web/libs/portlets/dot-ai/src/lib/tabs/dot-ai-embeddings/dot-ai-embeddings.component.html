@@ -133,9 +133,17 @@
                                 [ariaLabel]="'dotai.embeddings.delete' | dm"
                                 (onClick)="confirmDeleteIndex(index)"
                                 data-testid="dotai-embeddings-delete">
-                                <span class="material-symbols-outlined" aria-hidden="true">
-                                    delete
-                                </span>
+                                <!-- Through #icon, not projected as default content: that is
+                                     what tells PrimeNG the button is icon-only, so it drops
+                                     the label padding and takes the token width for its size
+                                     (2rem at sm) instead of rendering label-wide. `size` was
+                                     already `small`; the padding was the reason it did not
+                                     look it. -->
+                                <ng-template #icon>
+                                    <span class="material-symbols-outlined" aria-hidden="true">
+                                        delete
+                                    </span>
+                                </ng-template>
                             </p-button>
                         </td>
                     </tr>
