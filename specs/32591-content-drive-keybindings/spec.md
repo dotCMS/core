@@ -152,44 +152,39 @@ through 5 are selected. Fully testable on its own.
 
 ---
 
-### User Story 5 - Back out of a selection, then out of every filter (Priority: P3)
+### User Story 5 - Back out of a selection (Priority: P3)
 
-A content author who has narrowed the listing down and selected some rows presses Escape to back
-out. The first press drops the selection. With nothing selected, the next press clears every active
-filter at once, returning the listing to its default view.
+A content author who has selected some rows presses Escape to drop the selection and carry on
+working. Nothing else changes: the filters they assembled and the term they typed are still there.
 
-Escape is deliberately the keyboard equivalent of the toolbar's existing **Clear all** control, not
-a separate behaviour. Same effect, same conditions, so there is one rule to learn and a visible
-button that advertises it.
+An earlier revision of this story had Escape go on to clear every active filter once nothing was
+selected, mirroring the toolbar's **Clear all** control. That was withdrawn in product review. Escape
+is the most-reached-for key on the keyboard, and an assembled filter set is expensive to rebuild by
+hand, so a single stray press must not be able to destroy one. Clearing filters stays where it is
+visible, labelled, and offered only when there is something to clear.
 
 **Why this priority**: A cheap and conventional escape hatch, but no author is blocked without it,
 and it must not interfere with the surfaces that already claim Escape.
 
-**Independent Test**: Apply two filters and select rows; press Escape and confirm the selection
-clears with the filters intact; press Escape again and confirm every filter clears and the listing
-returns to its default view. Testable on its own.
+**Independent Test**: Apply two filters, select rows, press Escape; the selection clears and both
+filters remain. Press Escape again; still nothing else changes. Testable on its own.
 
 **Acceptance Scenarios**:
 
 1. **Given** one or more rows selected, **When** the author presses Escape, **Then** the selection
    clears and every active filter is left untouched.
 2. **Given** no selection and at least one active filter, **When** the author presses Escape,
-   **Then** every active filter clears at once, exactly as activating **Clear all** would, and the
-   listing returns to the first page of its default view.
-3. **Given** filters are cleared this way, **When** the listing reloads, **Then** the filters that
-   have defaults are re-seeded to those defaults rather than emptied, so the listing is never left
-   in a state the author could not reach through the interface.
-4. **Given** focus is inside the search field with no rows selected, **When** the author presses
-   Escape, **Then** every active filter clears, not only the search term. The rule does not change
-   with where focus sits.
-5. **Given** no selection and no active filter, **When** the author presses Escape, **Then** nothing
-   happens and no error is surfaced. This is the same condition under which **Clear all** is not
-   offered.
-6. **Given** a dialog or the content editing panel is open over the portlet, **When** the author
+   **Then** nothing happens: no filter is cleared, and the browser's own handling of the key is left
+   alone so anything else that wants it can still have it.
+3. **Given** focus is inside the search field, **When** the author presses Escape, **Then** the term
+   is not cleared. The rule does not change with where focus sits.
+4. **Given** no selection and no active filter, **When** the author presses Escape, **Then** nothing
+   happens and no error is surfaced.
+5. **Given** a dialog or the content editing panel is open over the portlet, **When** the author
    presses Escape, **Then** that surface closes and neither the selection nor the filters are
    affected.
-7. **Given** the author has navigated into a folder, **When** they clear the filters with Escape,
-   **Then** the browsed folder is unchanged. Escape clears filters, it does not navigate.
+6. **Given** the author has navigated into a folder, **When** they press Escape, **Then** the browsed
+   folder is unchanged. Escape clears a selection, it does not navigate.
 
 ---
 
@@ -289,12 +284,11 @@ without leaving the keyboard.
 
 **Escape and the tree toggle**
 
-- **FR-020**: Escape MUST clear the selection when one exists, leaving filters untouched.
-- **FR-020a**: With no selection, Escape MUST clear every active filter at once and produce exactly
-  the same result as the toolbar's existing **Clear all** control, including re-seeding the filters
-  that have defaults rather than emptying them, and returning to the first page.
-- **FR-020b**: With neither a selection nor an active filter, Escape MUST do nothing. This is the
-  same condition under which **Clear all** is not offered.
+- **FR-020**: Escape MUST clear the selection when one exists, leaving every filter untouched.
+- **FR-020a**: Escape MUST NOT clear filters under any condition, including the search term, and
+  regardless of where focus sits. Clearing filters is the toolbar's **Clear all** control alone.
+- **FR-020b**: With no selection, Escape MUST do nothing and MUST leave the browser default alone, so
+  the key stays available to anything else that claims it.
 - **FR-020c**: Escape MUST NOT change the browsed folder.
 - **FR-021**: Escape MUST be handled by an open dialog or the content editing panel before it reaches
   the listing.
@@ -345,8 +339,9 @@ without leaving the keyboard.
 - **SC-008**: No shortcut can destroy, publish, archive or otherwise mutate content. This feature
   moves focus, changes selection, toggles a panel and clears filters, and nothing else. Clearing
   filters is reversible by re-applying them; nothing it does is destructive.
-- **SC-009**: Pressing Escape with nothing selected leaves the listing in exactly the state that
-  activating the **Clear all** control leaves it in, verified against the same set of active filters.
+- **SC-009**: No shortcut can discard an assembled filter set. Pressing Escape repeatedly, with and
+  without a selection and with focus both inside and outside the search field, leaves every active
+  filter exactly as it was.
 
 ## Out of Scope
 
@@ -390,9 +385,16 @@ relitigated, and so a reviewer can see it was a choice.
 ## Assumptions
 
 - The shortcut combinations follow the conventions authors already know from desktop file managers
-  and web applications: a modifier plus K for search, Shift plus arrows to extend a selection, Escape
-  to back out. Platform-appropriate modifiers are used, so the primary modifier differs between
-  macOS and other platforms.
+  and web applications: a forward slash to focus search, Shift plus arrows to extend a selection,
+  Escape to back out. Platform-appropriate modifiers are used, so the primary modifier differs
+  between macOS and other platforms.
+- The issue names a modifier plus K for search. That is kept as an alias, but the slash is the
+  primary: a modifier plus K conventionally opens a *command palette*, and reserving it leaves that
+  door open. The one key authors most expect for search, a modifier plus F, is deliberately not
+  claimed at all, because taking it would remove the browser's find-in-page.
+- A single-character shortcut is ignored while focus is in something that takes text, or typing that
+  character into the field it focuses would re-trigger it. Shortcuts carrying a modifier are
+  unaffected and keep working while typing.
 - Authors operate Content Drive in a current desktop browser. Touch-only and screen-reader-primary
   operation are not the target of this feature, though nothing here may make them worse.
 - The listing's existing pointer behaviour is correct and stays as it is. This feature adds keyboard
