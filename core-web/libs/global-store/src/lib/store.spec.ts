@@ -40,7 +40,12 @@ describe('GlobalStore', () => {
                 getCurrentSite: vi.fn().mockReturnValue(of(null)),
                 switchSite: vi.fn().mockReturnValue(of({} as DotSite))
             }),
-            mockProvider(DotSystemConfigService),
+            // withSystem's onInit pipes getSystemConfig(); a bare mockProvider returns
+            // undefined and the feature dereferences it. null is the feature's own
+            // initial systemConfig, so the state is unchanged.
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: vi.fn().mockReturnValue(of(null))
+            }),
             // No session at init (`auth` null); the deferred `auth$` resolves to the current
             // per-test subject so tests control exactly when an authenticated user is signalled.
             mockProvider(LoginService, {
@@ -54,7 +59,10 @@ describe('GlobalStore', () => {
                     if (event === 'SWITCH_SITE') return switchSiteSubject.asObservable();
 
                     return new Subject();
-                })
+                }),
+                // feedLegacyEventBus() pipes messages() on init; without it the
+                // feature dereferences undefined.
+                messages: vi.fn().mockReturnValue(new Subject())
             })
         ]
     });

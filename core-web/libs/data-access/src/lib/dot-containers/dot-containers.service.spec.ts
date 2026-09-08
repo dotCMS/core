@@ -204,11 +204,11 @@ describe('DotContainersService', () => {
             req.flush({ entity: multipleContainers });
         });
 
-        it('should return undefined when no containers are found', () => {
+        it('should return null when no containers are found', () => {
             const title = 'Non-existent Container';
 
             spectator.service.getContainerByTitle(title).subscribe((container) => {
-                expect(container).toBeUndefined();
+                expect(container).toBeNull();
             });
 
             const req = spectator.expectOne(
@@ -222,7 +222,7 @@ describe('DotContainersService', () => {
             const title = '';
 
             spectator.service.getContainerByTitle(title).subscribe((container) => {
-                expect(container).toBeUndefined();
+                expect(container).toBeNull();
             });
 
             const req = spectator.expectOne(

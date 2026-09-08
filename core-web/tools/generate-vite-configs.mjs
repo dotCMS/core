@@ -242,6 +242,23 @@ function environmentFor(jestEnv) {
 }
 
 /**
+ * Pin the DOM environment's base URL to Jest's default.
+ *
+ * jest-jsdom served every spec from `http://localhost/`; Vitest's jsdom and
+ * happy-dom both default to `http://localhost:3000/`. Specs that read
+ * `window.location.host` or build a URL against it therefore changed answer on
+ * migration — dot-events-socket asserted `ws://localhost/...` and got
+ * `ws://localhost:3000/...`. Restoring the origin is FR-007 environment parity,
+ * not a workaround, and it is one option rather than an edit per spec.
+ */
+function environmentOptionsFor(env) {
+    if (env === 'jsdom') return "\n        environmentOptions: { jsdom: { url: 'http://localhost/' } },";
+    if (env === 'happy-dom') return "\n        environmentOptions: { happyDOM: { url: 'http://localhost/' } },";
+
+    return '';
+}
+
+/**
  * Framework detection by test-file extension rather than by dependency list: `.tsx`
  * is what the Angular compiler actually chokes on, with
  * `Cannot parse … Expected ',', got ':'`, and that took all 18 of sdk-react's files
@@ -361,7 +378,7 @@ export default defineConfig(() => ({
         name: '${name}',
         watch: false,
         globals: true,
-        environment: '${env}',
+        environment: '${env}',${environmentOptionsFor(env)}
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {
             deps: {

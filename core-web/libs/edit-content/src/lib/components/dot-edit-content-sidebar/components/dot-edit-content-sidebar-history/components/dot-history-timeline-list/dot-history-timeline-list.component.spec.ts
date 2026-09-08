@@ -264,11 +264,13 @@ describe('DotHistoryTimelineListComponent with version items', () => {
     });
 
     beforeEach(() => {
-        global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-            observe: vi.fn(),
-            unobserve: vi.fn(),
-            disconnect: vi.fn()
-        })) as unknown as typeof IntersectionObserver;
+        global.IntersectionObserver = vi.fn().mockImplementation(function () {
+            return {
+                observe: vi.fn(),
+                unobserve: vi.fn(),
+                disconnect: vi.fn()
+            };
+        }) as unknown as typeof IntersectionObserver;
 
         spectator = createHost();
         spectator.detectChanges();
@@ -357,11 +359,13 @@ describe('DotHistoryTimelineListComponent with push publish items', () => {
     });
 
     beforeEach(() => {
-        global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-            observe: vi.fn(),
-            unobserve: vi.fn(),
-            disconnect: vi.fn()
-        })) as unknown as typeof IntersectionObserver;
+        global.IntersectionObserver = vi.fn().mockImplementation(function () {
+            return {
+                observe: vi.fn(),
+                unobserve: vi.fn(),
+                disconnect: vi.fn()
+            };
+        }) as unknown as typeof IntersectionObserver;
 
         spectator = createHost();
         spectator.detectChanges();

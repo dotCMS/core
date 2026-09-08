@@ -9,7 +9,9 @@ import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
-setupTestBed({ zoneless: false });
+import { provideZoneChangeDetection } from '@angular/core';
+
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // Mock PointerEvent
 class MockPointerEvent implements Partial<PointerEvent> {

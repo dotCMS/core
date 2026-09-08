@@ -1007,9 +1007,12 @@ describe('DotAssetPickerStore', () => {
                 // identity: a node mutated in place keeps its identity, so the row is never
                 // re-rendered and the spinner only clears when something else triggers change
                 // detection. Publishing a fresh object is what makes the update visible.
-                const before = store.folders()[1];
+                // folders()[1] here: the tree has a single `All` root now, so the index
+                // was undefined and expandNode() dereferenced it — the assertion then
+                // compared undefined with undefined and passed regardless.
+                const before = renderedFolder();
 
-                store.expandNode(before);
+                expandFolder();
 
                 expect(renderedFolder()).not.toBe(before);
             });

@@ -119,7 +119,20 @@ function migrateTsconfigSpec(dir, dry) {
  * `setupTestBed` installs the Vitest zone patch `fakeAsync` depends on — zone.js
  * patches only jasmine/mocha/jest, so a hand-rolled `import 'zone.js/testing'` leaves
  * every fakeAsync test failing with "Expected to be running in 'ProxyZone'".
+ *
+ * `providers: [provideZoneChangeDetection()]` is NOT redundant with
+ * `zoneless: false`. Analog's flag only omits `provideZonelessChangeDetection()`, and
+ * Angular 22's ZONELESS_ENABLED token defaults to **true** — so omitting it leaves the
+ * TestBed zoneless, and `ComponentFixture.detectChanges()` takes the `appRef.tick()`
+ * branch, which refreshes only dirty views. A plain host-property assignment
+ * (`spectator.setHostInput`) does not dirty the view, so tick() skips it and the
+ * following checkNoChanges reports NG0100
+ * ExpressionChangedAfterItHasBeenCheckedError. jest-preset-angular's
+ * `setupZoneTestEnv` provides it explicitly for exactly this reason
+ * (`setup-env/zone/index.js`), which is why the same specs passed under Jest.
  */
+const BOOTSTRAP = "setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });";
+
 function migrateTestSetup(dir, dry) {
     const p = join(CW, dir, 'src', 'test-setup.ts');
     if (!existsSync(p)) return 'absent';
@@ -136,10 +149,13 @@ function migrateTestSetup(dir, dry) {
     // 2. Replace the bootstrap CALL, wherever it sits, keeping its options.
     const call = /(?:\/\/[^\n]*\r?\n)*(?:setupZoneTestEnv|getTestBed\(\)\.initTestEnvironment)\([\s\S]*?\);[ \t]*\r?\n?/;
     if (call.test(s)) {
-        s = s.replace(call, "setupTestBed({ zoneless: false });\n");
+        s = s.replace(call, `${BOOTSTRAP}\n`);
     } else if (!s.includes('setupTestBed(')) {
         return 'no-bootstrap';
     }
+
+    // Upgrade a bootstrap an earlier pass of this script already wrote.
+    s = s.replace(/^setupTestBed\(\{ zoneless: false \}\);[ \t]*$/m, BOOTSTRAP);
 
     // 3. Prepend the imports Nx's generator puts first, without duplicating them.
     const head = [];
@@ -172,6 +188,25 @@ function migrateTestSetup(dir, dry) {
         } else {
             s = `${head.join('\n')}\n${s}`;
         }
+    }
+
+    // provideZoneChangeDetection is placed by hand rather than through the head block
+    // above, which lands at the FIRST import and would put @angular/core (and the
+    // zone.js it pulls in) ahead of '@analogjs/vitest-angular/setup-zone'.
+    //
+    // Slot: after the `vitest` import when the setup has one, otherwise after
+    // setup-testbed. The repo's import/order rule groups '@angular/*' behind bare
+    // externals, so anchoring on setup-testbed alone put it before `vitest` and failed
+    // lint in four setups. Existing lines are removed first so a setup written by an
+    // earlier pass is relocated instead of left where it was.
+    const ZONE_IMPORT = "import { provideZoneChangeDetection } from '@angular/core';";
+    s = s.replace(/^import \{ provideZoneChangeDetection \} from '@angular\/core';[ \t]*\r?\n/m, '');
+    const slot =
+        /^import \{[^}]*\} from 'vitest';[ \t]*\r?\n/m.exec(s) ??
+        /^import \{ setupTestBed \} from '@analogjs\/vitest-angular\/setup-testbed';[ \t]*\r?\n/m.exec(s);
+    if (slot) {
+        const at = slot.index + slot[0].length;
+        s = `${s.slice(0, at)}${ZONE_IMPORT}\n${s.slice(at)}`;
     }
 
     // Collapse any duplicate compiler import a previous pass may have left.

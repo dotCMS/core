@@ -126,11 +126,7 @@ describe('DotContentSearchService', () => {
             });
 
             req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: mockData
-                    }
-                }
+                entity: mockData
             });
         });
 

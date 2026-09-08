@@ -48,9 +48,12 @@ import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
+// `runningExperiment` defaults to null, not undefined: with no running
+// experiment the service resolves `getRunningExperiment()` to null, and
+// `toEqual` does not treat the two as equal.
 const getDotPageRenderStateMock = (
     favoritePage?: DotCMSContentlet,
-    runningExperiment?: DotExperiment
+    runningExperiment: DotExperiment | null = null
 ) => {
     return new DotPageRenderState(
         mockUser(),
@@ -433,7 +436,13 @@ describe('DotPageStateService', () => {
         });
 
         it('should show error 500 and reload', () => {
-            vi.spyOn(service, 'reload');
+            // mockImplementation, not a bare spy: the real reload() reads
+            // `currentState.state.mode`, and no successful get has populated
+            // currentState in this test. Calling through raised an unhandled
+            // rxjs error, which Jest swallowed and Vitest reports.
+            vi.spyOn(service, 'reload').mockImplementation(() => {
+                /* asserted on, not exercised */
+            });
             const error500 = mockResponseView(500);
             dotPageRenderServiceGetSpy.mockReturnValue(throwError(() => error500));
             dotHttpErrorManagerServiceHandle.mockReturnValue(

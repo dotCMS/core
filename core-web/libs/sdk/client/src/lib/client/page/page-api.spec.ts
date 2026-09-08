@@ -77,12 +77,14 @@ describe('PageClient', () => {
         mockRequest.mockReset();
         global.console.error = vi.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
 
-        MockedFetchHttpClient.mockImplementation(
-            () =>
-                ({
-                    request: mockRequest
-                }) as Partial<FetchHttpClient> as FetchHttpClient
-        );
+        // A regular function, not an arrow: Vitest calls a mocked class's
+        // implementation with `new`, and arrow functions are not constructible.
+        // Jest's automock wrapped the arrow, so this worked there.
+        MockedFetchHttpClient.mockImplementation(function () {
+            return {
+                request: mockRequest
+            } as Partial<FetchHttpClient> as FetchHttpClient;
+        });
 
         mockRequest.mockResolvedValue(mockGraphQLResponse);
     });

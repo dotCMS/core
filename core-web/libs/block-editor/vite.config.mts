@@ -38,42 +38,12 @@ export default defineConfig(() => ({
         watch: false,
         globals: true,
         environment: 'jsdom',
+        environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         setupFiles: ['src/test-setup.ts'],
         server: {
             deps: {
-                inline: [
-                    /[\\/](libs|apps)[\\/]/,
-                    /zone\.js/,
-                    /@primeuix/,
-                    /@analogjs\/vite-plugin-angular/,
-                    /@angular\/animations/,
-                    /@angular\/cdk/,
-                    /@angular\/common/,
-                    /@angular\/core/,
-                    /@angular\/elements/,
-                    /@angular\/forms/,
-                    /@angular\/platform-browser/,
-                    /@angular\/platform-browser-dynamic/,
-                    /@angular\/router/,
-                    /@materia-ui\/ngx-monaco-editor/,
-                    /@ngrx\/component-store/,
-                    /@ngrx\/signals/,
-                    /@openng\/spectator/,
-                    /@tinymce\/tinymce-angular/,
-                    /ng-mocks/,
-                    /ng2-dragula/,
-                    /ngx-markdown/,
-                    /ngx-tiptap/,
-                    /primeng/,
-                    /y-protocols/,
-                    /lib0/,
-                    /y-prosemirror/,
-                    /@tiptap/,
-                    /marked/,
-                    /lowlight/,
-                    /devlop/
-                ]
+                inline: [/[\\/](libs|apps)[\\/]/, /zone\.js/, /@primeuix/, /@analogjs\/vite-plugin-angular/, /@angular\/animations/, /@angular\/cdk/, /@angular\/common/, /@angular\/core/, /@angular\/elements/, /@angular\/forms/, /@angular\/platform-browser/, /@angular\/platform-browser-dynamic/, /@angular\/router/, /@materia-ui\/ngx-monaco-editor/, /@ngrx\/component-store/, /@ngrx\/signals/, /@openng\/spectator/, /@tinymce\/tinymce-angular/, /ng-mocks/, /ng2-dragula/, /ngx-markdown/, /ngx-tiptap/, /primeng/, /y-protocols/, /lib0/, /y-prosemirror/, /@tiptap/, /marked/, /lowlight/, /devlop/]
             }
         },
         reporters: [

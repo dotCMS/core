@@ -4,9 +4,11 @@ import '@analogjs/vitest-angular/setup-snapshots';
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import { vi } from 'vitest';
 
+import { provideZoneChangeDetection } from '@angular/core';
+
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-setupTestBed({ zoneless: false });
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // Setup global mocks
 setupResizeObserverMock();

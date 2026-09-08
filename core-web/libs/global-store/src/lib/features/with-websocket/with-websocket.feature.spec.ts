@@ -22,6 +22,9 @@ describe('withWebSocket Feature', () => {
             connect: vi.fn().mockReturnValue(of({})),
             status$: vi.fn().mockReturnValue(statusSubject.asObservable()),
             on: vi.fn().mockReturnValue(new Subject()),
+            // feedLegacyEventBus() pipes messages() on init; without it the
+            // feature dereferences undefined.
+            messages: vi.fn().mockReturnValue(new Subject()),
             destroy: vi.fn()
         };
 

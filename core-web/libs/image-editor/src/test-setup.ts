@@ -4,7 +4,9 @@ import '@analogjs/vitest-angular/setup-snapshots';
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import { vi } from 'vitest';
 
-setupTestBed({ zoneless: false });
+import { provideZoneChangeDetection } from '@angular/core';
+
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // PrimeNG overlay components (e.g. p-splitButton's TieredMenu) call matchMedia on init.
 Object.defineProperty(window, 'matchMedia', {

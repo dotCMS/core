@@ -3,7 +3,9 @@ import '@angular/compiler';
 import '@analogjs/vitest-angular/setup-snapshots';
 import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 
-setupTestBed({ zoneless: false });
+import { provideZoneChangeDetection } from '@angular/core';
+
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // `@dotcms/dotcms-models` resolves the chart theme colors at MODULE IMPORT TIME: the
 // `dotCMSThemeColors` const in `dot-experiments.model.ts` calls

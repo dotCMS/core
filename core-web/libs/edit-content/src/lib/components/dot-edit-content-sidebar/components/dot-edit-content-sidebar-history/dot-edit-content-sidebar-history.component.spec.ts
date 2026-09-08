@@ -122,11 +122,13 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
     beforeEach(() => {
         // jsdom lacks IntersectionObserver — the timeline list observes a sentinel.
-        global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-            observe: vi.fn(),
-            unobserve: vi.fn(),
-            disconnect: vi.fn()
-        })) as unknown as typeof IntersectionObserver;
+        global.IntersectionObserver = vi.fn().mockImplementation(function () {
+            return {
+                observe: vi.fn(),
+                unobserve: vi.fn(),
+                disconnect: vi.fn()
+            };
+        }) as unknown as typeof IntersectionObserver;
 
         spectator = createComponent({
             detectChanges: false // Don't auto-detect changes

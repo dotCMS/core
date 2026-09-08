@@ -37,10 +37,7 @@ export default defineConfig(() => ({
     plugins: [angular(), nxViteTsPaths()],
     resolve: {
         alias: [
-            {
-                find: /^virtual:sdk-version$/,
-                replacement: resolve(__dirname, './src/lib/utils/__mocks__/virtual-sdk-version.ts')
-            }
+            { find: /^virtual:sdk-version$/, replacement: resolve(__dirname, "./src/lib/utils/__mocks__/virtual-sdk-version.ts") }
         ]
     },
     test: {
@@ -48,34 +45,11 @@ export default defineConfig(() => ({
         watch: false,
         globals: true,
         environment: 'jsdom',
+        environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         server: {
             deps: {
-                inline: [
-                    /[\\/](libs|apps)[\\/]/,
-                    /zone\.js/,
-                    /@primeuix/,
-                    /@analogjs\/vite-plugin-angular/,
-                    /@angular\/animations/,
-                    /@angular\/cdk/,
-                    /@angular\/common/,
-                    /@angular\/core/,
-                    /@angular\/elements/,
-                    /@angular\/forms/,
-                    /@angular\/platform-browser/,
-                    /@angular\/platform-browser-dynamic/,
-                    /@angular\/router/,
-                    /@materia-ui\/ngx-monaco-editor/,
-                    /@ngrx\/component-store/,
-                    /@ngrx\/signals/,
-                    /@openng\/spectator/,
-                    /@tinymce\/tinymce-angular/,
-                    /ng-mocks/,
-                    /ng2-dragula/,
-                    /ngx-markdown/,
-                    /ngx-tiptap/,
-                    /primeng/
-                ]
+                inline: [/[\\/](libs|apps)[\\/]/, /zone\.js/, /@primeuix/, /@analogjs\/vite-plugin-angular/, /@angular\/animations/, /@angular\/cdk/, /@angular\/common/, /@angular\/core/, /@angular\/elements/, /@angular\/forms/, /@angular\/platform-browser/, /@angular\/platform-browser-dynamic/, /@angular\/router/, /@materia-ui\/ngx-monaco-editor/, /@ngrx\/component-store/, /@ngrx\/signals/, /@openng\/spectator/, /@tinymce\/tinymce-angular/, /ng-mocks/, /ng2-dragula/, /ngx-markdown/, /ngx-tiptap/, /primeng/]
             }
         },
         reporters: [

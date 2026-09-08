@@ -60,12 +60,14 @@ describe('RawQueryBuilder', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        MockedFetchHttpClient.mockImplementation(
-            () =>
-                ({
-                    request: mockRequest
-                }) as Partial<FetchHttpClient> as FetchHttpClient
-        );
+        // A function expression, not an arrow: Vitest invokes a mocked class's
+        // implementation with `new`, and arrows are not constructible. Jest's automock
+        // wrapped the factory, so the arrow worked there.
+        MockedFetchHttpClient.mockImplementation(function () {
+            return {
+                request: mockRequest
+            } as Partial<FetchHttpClient> as FetchHttpClient;
+        });
         mockRequest.mockResolvedValue(mockResponseData);
     });
 
