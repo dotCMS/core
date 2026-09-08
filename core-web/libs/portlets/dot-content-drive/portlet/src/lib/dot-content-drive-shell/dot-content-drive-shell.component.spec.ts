@@ -404,15 +404,17 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.clearFilters).not.toHaveBeenCalled();
             });
 
-            // Asserted as equivalence with the store action the "Clear all" control already calls,
-            // rather than by re-listing the expected filters, so the two cannot drift apart (SC-009).
-            it('should clear every filter through the Clear all path when nothing is selected', () => {
+            // Escape clears the selection and nothing else. It is a high-frequency "back out" key,
+            // and an active filter set is expensive to rebuild by hand, so a stray press must not be
+            // able to destroy one. Clearing filters stays on the toolbar's "Clear all" control, which
+            // is visible, labelled, and only offered when there is something to clear.
+            it('should never clear filters, even with an active filter and no selection', () => {
                 filtersSignal.set({ contentType: 'Blog' });
                 spectator.detectChanges();
 
                 pressEscape();
 
-                expect(store.clearFilters).toHaveBeenCalledTimes(1);
+                expect(store.clearFilters).not.toHaveBeenCalled();
                 expect(store.setSelectedItems).not.toHaveBeenCalled();
             });
 
@@ -429,13 +431,16 @@ describe('DotContentDriveShellComponent', () => {
                 expect(event.defaultPrevented).toBe(false);
             });
 
-            it('should not treat a defaulted language filter as an active filter', () => {
-                filtersSignal.set({ languageId: '1' });
+            // Declining rather than swallowing matters here: with a filter set but no selection there
+            // is nothing for the shell to do, so the key has to stay available to whatever else may
+            // claim it.
+            it('should leave the browser default alone when only a filter is active', () => {
+                filtersSignal.set({ contentType: 'Blog' });
                 spectator.detectChanges();
 
-                pressEscape();
+                const event = pressEscape();
 
-                expect(store.clearFilters).not.toHaveBeenCalled();
+                expect(event.defaultPrevented).toBe(false);
             });
 
             // Review finding: the shell's own p-dialogs close through PrimeNG's separate document

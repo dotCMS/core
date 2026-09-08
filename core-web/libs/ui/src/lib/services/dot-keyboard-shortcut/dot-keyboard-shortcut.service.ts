@@ -43,6 +43,45 @@ function combinationOf(event: KeyboardEvent): string {
 }
 
 /**
+ * Whether the event landed somewhere that consumes text.
+ *
+ * `closest` rather than a tag check alone: a rich text surface puts the caret in a child node, so
+ * the target is usually an element *inside* the editable host rather than the host itself.
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+    const element = target as HTMLElement | null;
+
+    if (!element?.tagName) {
+        return false;
+    }
+
+    return (
+        element.tagName === 'INPUT' ||
+        element.tagName === 'TEXTAREA' ||
+        element.tagName === 'SELECT' ||
+        Boolean(element.closest?.('[contenteditable=""],[contenteditable="true"]'))
+    );
+}
+
+/**
+ * Whether this keypress is the user typing rather than reaching for a shortcut.
+ *
+ * A `key` of exactly one character is the set that produces text, so `Escape`, `ArrowDown`, `Tab`
+ * and friends are never caught by this. Holding a modifier means the press was deliberate, so
+ * `mod+k` still reaches the registry from inside the very box it focuses — otherwise pressing it a
+ * second time would be a dead key.
+ */
+function isTyping(event: KeyboardEvent): boolean {
+    return (
+        event.key.length === 1 &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        isEditableTarget(event.target)
+    );
+}
+
+/**
  * Arbitrates keyboard shortcuts between surfaces that can be on screen at the same time.
  *
  * Root-provided rather than a store feature: this holds callbacks whose correct lifetime is that of
@@ -217,6 +256,14 @@ export class DotKeyboardShortcutService {
     #dispatch(event: KeyboardEvent): void {
         // Already handled by something closer to the event target.
         if (event.defaultPrevented) {
+            return;
+        }
+
+        // The user is typing. Nothing is claimed and no default is suppressed, so the character
+        // reaches the field as it should. This is what lets a single-character combination be a
+        // shortcut at all: without it, typing `/` into the search box the shortcut focuses would
+        // re-fire the shortcut instead of entering a character.
+        if (isTyping(event)) {
             return;
         }
 

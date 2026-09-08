@@ -65,6 +65,51 @@ test.describe('Content Drive Keyboard', () => {
 
     test('focuses the search box with the search shortcut @critical', async ({ adminPage }) => {
         const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await expect(drive.searchField).not.toBeFocused();
+
+        await adminPage.keyboard.press('/');
+
+        await expect(drive.searchField).toBeFocused();
+    });
+
+    /**
+     * The browser default has to be suppressed or a quick-find bar opens on this key and steals both
+     * the keystroke and the focus the shortcut just placed. Asserted by typing after the shortcut:
+     * if a find bar had taken the key, the characters would land there instead of in the search box.
+     */
+    test('does not let the browser act on the search shortcut @critical', async ({ adminPage }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await adminPage.keyboard.press('/');
+        await adminPage.keyboard.type('blog');
+
+        await expect(drive.searchField).toBeFocused();
+        await expect(drive.searchField).toHaveValue('blog');
+    });
+
+    /**
+     * The reason a bare printable key needs the registry's typing rule. A synthesised event cannot
+     * show this at all: only a real browser turns the keypress into a character in the field.
+     */
+    test('types a slash into the search box instead of re-firing @critical', async ({
+        adminPage
+    }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await adminPage.keyboard.press('/');
+        await expect(drive.searchField).toBeFocused();
+
+        await adminPage.keyboard.type('a/b');
+
+        await expect(drive.searchField).toHaveValue('a/b');
+    });
+
+    test('focuses the search box with the alias too', async ({ adminPage }) => {
+        const drive = new ContentDrivePage(adminPage);
         const keyboard = new ContentDriveKeyboard(adminPage);
 
         await drive.goTo();
@@ -186,5 +231,32 @@ test.describe('Content Drive Keyboard', () => {
         await adminPage.keyboard.press('Escape');
 
         await keyboard.expectSelectedCount(0);
+    });
+
+    /**
+     * Escape clears the selection and stops there. It used to clear every active filter once the
+     * selection was gone, which put a destructive, hard-to-undo action behind a stray press of the
+     * most-reached-for key on the keyboard. Clearing filters is the "Clear all" control's job.
+     */
+    test('leaves the search term alone when escape clears the selection @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { drive, keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await drive.searchField.fill('keep-me');
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await adminPage.keyboard.press('Escape');
+        await keyboard.expectSelectedCount(0);
+
+        await expect(drive.searchField).toHaveValue('keep-me');
+
+        // And a second press, with nothing selected, still must not touch it.
+        await adminPage.keyboard.press('Escape');
+
+        await expect(drive.searchField).toHaveValue('keep-me');
     });
 });

@@ -83,22 +83,36 @@ describe('DotContentDriveSearchInputComponent', () => {
     // The claim lives here rather than in the shell because this component is the one holding the
     // search box; the shell would have to reach three levels down to find it.
     describe('search shortcut', () => {
-        const press = () =>
-            document.dispatchEvent(
-                new KeyboardEvent('keydown', {
-                    key: 'k',
-                    metaKey: true,
-                    bubbles: true,
-                    cancelable: true
-                })
-            );
+        /** Dispatches from `target` (the document unless a field is given), the way a browser would. */
+        const press = (init: KeyboardEventInit, target: EventTarget = document): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ...init
+            });
+            target.dispatchEvent(event);
+
+            return event;
+        };
+
+        const pressSlash = (target?: EventTarget) => press({ key: '/' }, target);
+        const pressModK = (target?: EventTarget) => press({ key: 'k', metaKey: true }, target);
 
         const input = () => spectator.query('[data-testid="search-input-field"]');
 
         it('should focus the search field', () => {
             spectator.detectChanges();
 
-            press();
+            pressSlash();
+
+            expect(document.activeElement).toBe(input());
+        });
+
+        // Kept as an alias for the habit, so both keys have to work.
+        it('should focus the search field from the alias too', () => {
+            spectator.detectChanges();
+
+            pressModK();
 
             expect(document.activeElement).toBe(input());
         });
@@ -107,23 +121,38 @@ describe('DotContentDriveSearchInputComponent', () => {
             store.getFilterValue.mockReturnValue('blog');
             spectator.detectChanges();
 
-            press();
+            pressSlash();
 
             expect((input() as HTMLInputElement).value).toBe('blog');
         });
 
-        it('should suppress the browser default so its own search affordance never opens', () => {
+        // The slash is the one that has to hold: some browsers open a quick-find bar on it, which
+        // would steal the keystroke and the focus the shortcut just placed.
+        it('should suppress the browser default so no quick-find bar opens', () => {
             spectator.detectChanges();
 
-            const event = new KeyboardEvent('keydown', {
-                key: 'k',
-                metaKey: true,
-                bubbles: true,
-                cancelable: true
-            });
-            document.dispatchEvent(event);
+            const event = pressSlash();
 
             expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should suppress the browser default for the alias too', () => {
+            spectator.detectChanges();
+
+            const event = pressModK();
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        // The reason a bare printable key needs the registry's typing rule: without it, typing a
+        // slash into the very box the shortcut focuses would re-fire the shortcut instead of
+        // entering a character.
+        it('should let a slash typed into the search field through as text', () => {
+            spectator.detectChanges();
+
+            const event = pressSlash(input() as HTMLElement);
+
+            expect(event.defaultPrevented).toBe(false);
         });
 
         it('should release the claim when the component is destroyed', () => {

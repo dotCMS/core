@@ -92,21 +92,26 @@ export class DotAssetPickerToolbarComponent {
      * on screen the shortcut has to pick one, and the asset list is what the dialog is for.
      */
     constructor() {
-        const unregister = this.#shortcuts.register({
-            combination: 'mod+k',
-            label: 'dot.asset.picker.shortcut.search',
-            // `viewChild.required`: the search box is rendered unconditionally in this template, so
-            // it always resolves by the time a keypress can reach here. The earlier defensive branch
-            // described a fall-through this component can never be in, which would have had a reader
-            // preserving a fallback that protects nothing.
-            handler: () => {
-                this.$searchInput().focus();
+        // `viewChild.required`: the search box is rendered unconditionally in this template, so it
+        // always resolves by the time a keypress can reach here.
+        const focusSearch = () => {
+            this.$searchInput().focus();
 
-                return true;
-            }
-        });
+            return true;
+        };
 
-        inject(DestroyRef).onDestroy(unregister);
+        // Both keys the portlet claims, so the dialog shadows the whole search shortcut rather than
+        // half of it — otherwise `/` would still reach the listing behind this dialog. Two calls
+        // because labels must be unique within a single `register()` call.
+        const withdrawals = ['/', 'mod+k'].map((combination) =>
+            this.#shortcuts.register({
+                combination,
+                label: 'dot.asset.picker.shortcut.search',
+                handler: focusSearch
+            })
+        );
+
+        inject(DestroyRef).onDestroy(() => withdrawals.forEach((withdraw) => withdraw()));
     }
 
     protected readonly $searchTerm = computed(() => this.store.filters().title ?? '');

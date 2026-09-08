@@ -10,9 +10,10 @@ which cannot arbitrate between two surfaces that want the same key.
 
 | Combination | Does | Where it is claimed |
 |---|---|---|
-| `Mod + K` | Focus the search field | `dot-content-drive-search-input` |
+| `/` | Focus the search field | `dot-content-drive-search-input`, `dot-asset-picker-toolbar` |
+| `Mod + K` | Focus the search field (alias for `/`) | as above |
 | `Mod + B` | Show or hide the folder tree | `dot-content-drive-shell` |
-| `Escape` | Clear the selection, then clear all filters | `dot-content-drive-shell` |
+| `Escape` | Clear the selection | `dot-content-drive-shell` |
 | `Escape` | Close the content side panel (wins while open) | `dot-edit-content-side-panel` |
 | `↑` `↓` | Move focus between rows | the shared listing |
 | `Shift + ↑` `Shift + ↓` | Extend the selection | the shared listing |
@@ -20,6 +21,33 @@ which cannot arbitrate between two surfaces that want the same key.
 
 `Mod` is the platform's primary modifier: Command on macOS, Control on Windows and Linux. One
 registration covers both.
+
+### Why these keys
+
+`Mod + F` is the obvious "search" key and is deliberately **not** claimed: it would take away the
+browser's find-in-page, which people rely on and which is an accessibility affordance in its own
+right. `/` is the web convention for focusing a search box and collides with nothing.
+
+`Mod + K` is kept as an alias rather than the primary because it conventionally opens a *command
+palette*. If this application ever wants one, that key is still free.
+
+`Escape` clears the selection and stops there. An earlier revision also cleared every active filter
+once nothing was selected; that put a destructive, hard-to-undo action behind the most-reached-for
+key on the keyboard. Clearing filters stays on the visible **Clear all** control.
+
+### Bare printable keys and typing
+
+`/` is a single character, so the registry ignores it while focus is in something that takes text —
+an `input`, `textarea`, `select`, or anything inside a `contenteditable`. Without that rule, typing a
+slash into the very search box the shortcut focuses would re-fire the shortcut instead of entering a
+character.
+
+The rule is narrow on purpose: it applies only to a one-character `key` pressed with no modifier. So
+`Escape` and the arrows still reach their claimants while typing, and `Mod + K` still works from
+inside the search box it focuses — otherwise pressing it twice would be a dead key.
+
+This is the answer to the "editable targets" gap noted in review. A combination that carries a
+modifier needs no such policy.
 
 Both Content Drive shell claims decline while an overlay is stacked above the listing, so a dialog
 gets the key instead — see [A surface with its own document listener cannot be arbitrated](#a-surface-with-its-own-document-listener-cannot-be-arbitrated).

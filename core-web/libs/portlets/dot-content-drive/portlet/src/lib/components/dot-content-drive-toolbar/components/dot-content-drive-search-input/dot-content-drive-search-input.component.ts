@@ -40,29 +40,40 @@ export class DotContentDriveSearchInputComponent {
     );
 
     /**
-     * Claims the search shortcut for as long as this box is on screen.
+     * Claims the search shortcuts for as long as this box is on screen.
      *
      * Registered here rather than in the shell because this is the component that holds the search
      * field; the shell would have to reach three levels down to find it. It also means the claim is
      * withdrawn automatically when the toolbar goes away, which is what lets a dialog opening over
      * the portlet take the shortcut and hand it back on close.
+     *
+     * `/` is the primary. It is the established convention for "focus the search box" specifically,
+     * and unlike a modifier combination it stays clear of the one key users actually reach for —
+     * the browser's own find-in-page, which must not be taken away from them. `mod+k` remains as an
+     * alias for the habit, though it is worth knowing it conventionally opens a command palette, so
+     * it is the one to give up if this application ever wants one.
+     *
+     * Two calls, not one array: labels must be unique within a single `register()` call, and these
+     * two are deliberately the same action under two keys.
      */
     constructor() {
-        const unregister = this.#shortcuts.register({
-            combination: 'mod+k',
-            label: 'content-drive.shortcut.search',
-            // `viewChild.required`: the search box is rendered unconditionally in this template, so
-            // it always resolves by the time a keypress can reach here. The earlier defensive branch
-            // described a fall-through this component can never be in, which would have had a reader
-            // preserving a fallback that protects nothing.
-            handler: () => {
-                this.$searchInput().focus();
+        // `viewChild.required`: the search box is rendered unconditionally in this template, so it
+        // always resolves by the time a keypress can reach here.
+        const focusSearch = () => {
+            this.$searchInput().focus();
 
-                return true;
-            }
-        });
+            return true;
+        };
 
-        inject(DestroyRef).onDestroy(unregister);
+        const withdrawals = ['/', 'mod+k'].map((combination) =>
+            this.#shortcuts.register({
+                combination,
+                label: 'content-drive.shortcut.search',
+                handler: focusSearch
+            })
+        );
+
+        inject(DestroyRef).onDestroy(() => withdrawals.forEach((withdraw) => withdraw()));
     }
 
     /**

@@ -403,6 +403,116 @@ describe('DotKeyboardShortcutService', () => {
         });
     });
 
+    /**
+     * A bare printable key is the user typing whenever focus sits in something that takes text.
+     *
+     * This is what makes a single-character combination usable as a shortcut at all: without the
+     * rule, typing `/` into the very search box the shortcut focuses would re-trigger the shortcut
+     * instead of entering a character. The rule is deliberately narrow — a single-character `key`
+     * with no modifier — so control keys and modifier combinations keep working while typing.
+     */
+    describe('typing in an editable target', () => {
+        const mounted: HTMLElement[] = [];
+
+        const mount = <T extends HTMLElement>(element: T): T => {
+            document.body.appendChild(element);
+            mounted.push(element);
+
+            return element;
+        };
+
+        const pressFrom = (element: HTMLElement, init: KeyboardEventInit): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ...init
+            });
+            element.dispatchEvent(event);
+
+            return event;
+        };
+
+        const contentEditable = (): HTMLElement => {
+            const surface = document.createElement('div');
+            surface.setAttribute('contenteditable', 'true');
+            surface.appendChild(document.createElement('p'));
+
+            return surface;
+        };
+
+        afterEach(() => {
+            mounted.splice(0).forEach((element) => element.remove());
+        });
+
+        it('should not fire a bare printable key from a text input', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            pressFrom(mount(document.createElement('input')), { key: '/' });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should not fire a bare printable key from a textarea', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            pressFrom(mount(document.createElement('textarea')), { key: '/' });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        // Nested, because a rich text surface puts the caret inside a child node rather than on the
+        // editable host itself.
+        it('should not fire a bare printable key from inside a rich text surface', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            const surface = mount(contentEditable());
+            pressFrom(surface.querySelector('p') as HTMLElement, { key: '/' });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should leave the browser default alone for a key it suppressed', () => {
+            register({ combination: '/', label: 'search', handler: handlerMock() });
+
+            const event = pressFrom(mount(document.createElement('input')), { key: '/' });
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should fire a bare printable key from a non-editable element', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            pressFrom(mount(document.createElement('div')), { key: '/' });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        // The modifier form has to keep working from inside the box it focuses, or pressing it a
+        // second time would be a dead key.
+        it('should fire a modifier combination while typing', () => {
+            const handler = handlerMock();
+            register({ combination: 'mod+k', label: 'search', handler });
+
+            pressFrom(mount(document.createElement('input')), { key: 'k', metaKey: true });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        // Escape produces no text, so it is not typing and must still reach its claimant.
+        it('should fire a control key while typing', () => {
+            const handler = handlerMock();
+            register({ combination: 'escape', label: 'close', handler });
+
+            pressFrom(mount(document.createElement('input')), { key: 'Escape' });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('documentation surface', () => {
         it('should expose the active shortcuts with their labels', () => {
             register({ combination: 'mod+k', label: 'search', handler: handlerMock() });

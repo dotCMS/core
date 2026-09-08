@@ -97,12 +97,7 @@ import { provideContentDriveFieldFilterHost } from '../store/content-drive-field
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import {
-    canAddChildrenTo,
-    encodeFilters,
-    hasNonDefaultFilters,
-    isFolder
-} from '../utils/functions';
+import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -769,15 +764,16 @@ export class DotContentDriveShellComponent {
     }
 
     /**
-     * Backs out one layer at a time: the selection first, then every active filter.
+     * Clears the selection, and nothing else.
      *
-     * The filter step deliberately calls the *same* store action the toolbar's "Clear all" control
-     * calls, rather than clearing anything itself. One rule, one code path, and a visible button that
-     * advertises the shortcut. It also inherits that action's semantics for free: filters with
-     * defaults are re-seeded rather than emptied, and the browsed folder is untouched.
+     * Deliberately does *not* clear filters, though an earlier revision did. Escape is a
+     * high-frequency "back out" key and an assembled filter set is expensive to rebuild by hand, so
+     * putting a destructive, hard-to-undo action behind a single stray keypress is the wrong trade.
+     * Clearing filters stays on the toolbar's "Clear all" control, which is visible, labelled, and
+     * only offered when there is something to clear.
      *
-     * Declines when there is nothing to back out of, so Escape keeps whatever meaning it has
-     * elsewhere instead of being silently swallowed here.
+     * Declines when there is no selection, so Escape keeps whatever meaning it has elsewhere instead
+     * of being silently swallowed here.
      */
     #onEscape(): boolean {
         // Stand down while any overlay is above this listing. PrimeNG keeps its own `closeOnEscape`
@@ -795,12 +791,6 @@ export class DotContentDriveShellComponent {
 
         if (this.#store.selectedItems().length) {
             this.#store.setSelectedItems([]);
-
-            return true;
-        }
-
-        if (hasNonDefaultFilters(this.#store.filters(), this.#store.defaultLanguageId())) {
-            this.#store.clearFilters();
 
             return true;
         }
