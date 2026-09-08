@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -41,7 +41,12 @@ describe('DotContentDriveActionMoveTargetComponent', () => {
                 getSitesPage: vi.fn(() =>
                     of({ sites: [], pagination: { currentPage: 1, perPage: 15, totalEntries: 0 } })
                 ),
-                getCurrentSiteAsTreeNodeItem: vi.fn(() => of(null))
+                // EMPTY, not `of(null)`: these tests need the current-site lookup to
+                // produce nothing, and the store dereferences `currentSite.key` without
+                // guarding the null its own return type allows — a product defect, so
+                // the fixture completes without emitting instead. Same meaning for the
+                // picker, no NPE inside the effect.
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => EMPTY)
             })
         ],
         detectChanges: false
