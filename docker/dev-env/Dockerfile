@@ -39,7 +39,7 @@ RUN apt-get update && \
 
 
 RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-RUN apt install -y postgresql-$PG_VERSION-pgvector
+RUN apt install -y --no-install-recommends postgresql-$PG_VERSION-pgvector
 
 
 

@@ -1,0 +1,67 @@
+<!-- Tailwind is used below only for layout/whitespace glue; visual theming comes from PrimeNG Lara. -->
+<p-inplace [disabled]="$disabled()" class="w-full" [pt]="{ display: 'p-0!' }">
+    <div pInplaceDisplay class="flex flex-wrap items-center gap-2">
+        @if ($text()) {
+            <span class="whitespace-pre-wrap" data-testId="text-input">{{ $text() }}</span>
+        } @else {
+            <span class="text-color-secondary" data-testId="empty-text-message">
+                {{ $emptyTextMessage() | dm }}
+            </span>
+        }
+
+        @if (!$disabled()) {
+            <p-button
+                (onClick)="inplace()?.activate($event)"
+                [rounded]="true"
+                [size]="$inputSize()"
+                [text]="true"
+                ariaLabel="Edit"
+                data-testId="text-input-button"
+                icon="pi pi-pencil"
+                type="button" />
+        }
+    </div>
+
+    <div pInplaceContent class="flex flex-col gap-1">
+        <form [formGroup]="form" class="flex grow gap-2" novalidate>
+            <span class="p-input-icon-right flex grow items-center gap-2">
+                <input
+                    (keydown.enter)="saveAction()"
+                    (keydown.escape)="deactivateInplace()"
+                    [pSize]="$inputSize()"
+                    class="w-full"
+                    data-testId="inplace-input"
+                    dotAutofocus
+                    dotTrimInput
+                    formControlName="text"
+                    pInputText />
+
+                <p-button
+                    (onClick)="deactivateInplace()"
+                    [rounded]="true"
+                    [size]="$inputSize()"
+                    [text]="true"
+                    ariaLabel="Cancel"
+                    data-testId="variant-inplace-button"
+                    icon="pi pi-times"
+                    type="button" />
+            </span>
+
+            <p-button
+                (onClick)="saveAction()"
+                [disabled]="form.invalid || textControl.pristine"
+                [loading]="$isLoading()"
+                [rounded]="true"
+                [size]="$inputSize()"
+                [text]="true"
+                ariaLabel="Save"
+                data-testId="text-save-btn"
+                icon="pi pi-save"
+                type="button" />
+        </form>
+
+        @if (form.invalid && $showErrorMsg()) {
+            <dot-field-validation-message [field]="textControl" />
+        }
+    </div>
+</p-inplace>

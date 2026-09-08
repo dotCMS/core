@@ -5,6 +5,8 @@ import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
+import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher } from '@dotcms/ui';
+
 import {
     AngularImageEditorLauncher,
     IMAGE_EDITOR_LAUNCHER
@@ -22,6 +24,10 @@ import { RouterEditContentHost } from './services/host/router-edit-content-host'
         // is required by AngularImageEditorLauncher to open the modal.
         DialogService,
         { provide: IMAGE_EDITOR_LAUNCHER, useClass: AngularImageEditorLauncher },
+        // Scope the new AssetPicker the same way: the three asset-selection entry points open it
+        // only where this token resolves, so the legacy Dojo editor keeps its own picker.
+        // Needs no `DialogService` of its own — the launcher borrows the caller's.
+        { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher },
         // Full-screen presentation: the editor navigates via the router and owns
         // the document title / shell breadcrumb. Inherited by the layout and its
         // store. The dialog path provides OverlayEditContentHost instead.

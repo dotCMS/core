@@ -39,9 +39,9 @@ import {
 import { DotCategory, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import {
     DotAddToBundleComponent,
-    DotMessagePipe,
-    DotPermissionsIframeDialogComponent,
-    DotPermissionsIframeDialogData
+    DotJspIframeDialogComponent,
+    DotJspIframeDialogData,
+    DotMessagePipe
 } from '@dotcms/ui';
 
 import {
@@ -206,13 +206,16 @@ export class DotCategoriesListComponent {
     }
 
     openPermissionsDialog(category: DotCategory): void {
-        this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+        this.#dialogService.open(DotJspIframeDialogComponent, {
             header: this.#dotMessageService.get('categories.permissions'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
             data: {
-                url: this.#buildPermissionsUrl(category.inode)
-            } satisfies DotPermissionsIframeDialogData,
+                url: this.#buildPermissionsUrl(category.inode),
+                titleKey: 'Permissions',
+                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
+                testIdPrefix: 'permissions'
+            } satisfies DotJspIframeDialogData,
             closable: true,
             closeOnEscape: true,
             modal: true,

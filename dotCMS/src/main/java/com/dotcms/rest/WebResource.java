@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessor;
+import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.enterprise.LicenseUtil;
@@ -69,6 +71,8 @@ public  class WebResource {
     private final UserAPI           userAPI;
     private final LayoutAPI         layoutAPI;
     private final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor;
+    private final DotAuthSessionCredentialProcessor dotAuthSessionCredentialProcessor =
+            DotAuthSessionCredentialProcessorImpl.getInstance();
 
     public WebResource() {
 
@@ -605,6 +609,12 @@ public  class WebResource {
                         + "absorbed; proceeding as anonymous.");
                 user = null;
             }
+        }
+
+        if(null == user) {
+            // dotAuth session-ref bearer — short-circuits when the credential carries the
+            // `dsr_` prefix; returns null for any other bearer so the JWT processor runs next.
+            user = this.dotAuthSessionCredentialProcessor.processAuthHeaderFromSessionRef(request);
         }
 
         if(null == user) {

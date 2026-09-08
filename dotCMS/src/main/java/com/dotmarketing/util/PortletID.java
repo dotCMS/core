@@ -56,7 +56,8 @@ public enum PortletID {
     ANALYTICS_DASHBOARD,
     USAGE,
     VELOCITY_PLAYGROUND("velocity_playground"),
-    VELOCITY_PLAYGROUND_LEGACY("velocity_playground-legacy");
+    VELOCITY_PLAYGROUND_LEGACY("velocity_playground-legacy"),
+    DOT_AUTH("dotAuth");
 
     private final String url;
 

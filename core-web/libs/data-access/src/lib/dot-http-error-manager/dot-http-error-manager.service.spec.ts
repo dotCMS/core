@@ -37,7 +37,9 @@ describe('DotHttpErrorManagerService', () => {
         'dot.common.http.error.400.header': '400 Header',
         'dot.common.http.error.400.message': '400 Message',
         'dot.common.http.error.204.header': '204 Header',
-        'dot.common.http.error.204.message': '204 Message'
+        'dot.common.http.error.204.message': '204 Message',
+        'dot.common.http.error.409.header': '409 Header',
+        'dot.common.http.error.409.message': '409 Message'
     });
 
     beforeEach(() => {
@@ -308,6 +310,49 @@ describe('DotHttpErrorManagerService', () => {
             footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '204 Message',
             header: '204 Header'
+        });
+    });
+
+    it('should handle 409 error and surface the BE message', () => {
+        jest.spyOn(dotDialogService, 'alert');
+
+        const conflict = new HttpErrorResponse({
+            status: 409,
+            error: {
+                message: "Role 'test' has 2 child role(s) and cannot be deleted"
+            }
+        });
+
+        service.handle(conflict).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 409
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
+            message: "Role 'test' has 2 child role(s) and cannot be deleted",
+            header: '409 Header'
+        });
+    });
+
+    it('should handle 409 error and fall back to the generic message when the body has none', () => {
+        jest.spyOn(dotDialogService, 'alert');
+
+        service.handle(new HttpErrorResponse({ status: 409, error: null })).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 409
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
+            message: '409 Message',
+            header: '409 Header'
         });
     });
 });

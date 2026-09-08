@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { DotCMSContentlet, DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewColumnField,
     DotFolderListViewComponent
@@ -29,10 +29,10 @@ import {
     host: { class: 'flex min-h-0 flex-1 flex-col' }
 })
 export class DotContentDriveActionPreviewComponent {
-    /** Every contentlet in the selection — including the ones the user has unchecked. */
-    readonly items = input.required<DotCMSContentlet[]>();
+    /** Every row in the selection — including the ones the user has unchecked. */
+    readonly items = input.required<DotContentDriveItem[]>();
     /** The currently included subset; the checked rows. */
-    readonly selection = input<DotCMSContentlet[]>([]);
+    readonly selection = input<DotContentDriveItem[]>([]);
     /** Freezes every checkbox, used while an action is in flight. */
     readonly disabled = input<boolean>(false);
     /**
@@ -41,7 +41,7 @@ export class DotContentDriveActionPreviewComponent {
      */
     readonly lockedByOthers = input<string[]>([]);
 
-    readonly selectionChange = output<DotCMSContentlet[]>();
+    readonly selectionChange = output<DotContentDriveItem[]>();
 
     /**
      * Columns the preview keeps, out of the grid's full set: the title (with its thumbnail), the
@@ -56,10 +56,11 @@ export class DotContentDriveActionPreviewComponent {
     ];
 
     /**
-     * The grid speaks `DotContentDriveItem` (contentlets *or* folders); a preview only ever lists
-     * contentlets, so the emitted rows are narrowed back on the way out.
+     * Passed straight through: the preview lists folders as well as contentlets now that Add to
+     * Bundle and Push Publish accept them, so narrowing back to `DotCMSContentlet` here would be a
+     * lie the cast used to hide.
      */
     protected onSelectionChange(selection: DotContentDriveItem[]): void {
-        this.selectionChange.emit(selection as DotCMSContentlet[]);
+        this.selectionChange.emit(selection);
     }
 }

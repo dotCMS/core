@@ -184,10 +184,10 @@ public class CompletionsResource {
                 .getUser();
         final Host host;
         try {
-            host = resolveHost(siteId, request, user);
+            host = AiHostResolver.resolveHost(siteId, request, user);
         } catch (final DotSecurityException e) {
             return Response.status(Response.Status.FORBIDDEN)
-                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + AiHostResolver.sanitize(siteId)))
                     .build();
         }
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
@@ -255,10 +255,10 @@ public class CompletionsResource {
         }
 
         try {
-            final Host host = resolveHostStrict(siteId, request, user);
+            final Host host = AiHostResolver.resolveHostStrict(siteId, request, user);
             if (host == null) {
                 final String msg = StringUtils.isNotBlank(siteId)
-                        ? "Site not found: " + sanitize(siteId)
+                        ? "Site not found: " + AiHostResolver.sanitize(siteId)
                         : "Could not resolve current site from request";
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of(AiKeys.ERROR, msg))
@@ -309,7 +309,7 @@ public class CompletionsResource {
 
         } catch (final DotSecurityException e) {
             return Response.status(Response.Status.FORBIDDEN)
-                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + AiHostResolver.sanitize(siteId)))
                     .build();
         } catch (final Exception e) {
             Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
@@ -345,65 +345,6 @@ public class CompletionsResource {
         } else if (node.isArray()) {
             node.forEach(CompletionsResource::redactNode);
         }
-    }
-
-    /**
-     * Resolves a host from {@code siteId} and falls back to the HTTP host on failure.
-     * Throws {@link DotSecurityException} when the user lacks permission for the requested site.
-     * Falls back to the HTTP-derived host when {@code siteId} is blank or not found.
-     */
-    private static Host resolveHost(final String siteId,
-                                    final HttpServletRequest request,
-                                    final User user) throws DotSecurityException {
-        if (StringUtils.isNotBlank(siteId)) {
-            try {
-                final Host found = findHost(siteId, user);
-                if (found != null) {
-                    return found;
-                }
-            } catch (final DotSecurityException e) {
-                throw e;
-            } catch (final Exception e) {
-                Logger.warn(CompletionsResource.class,
-                        "Could not resolve siteId '" + sanitize(siteId) + "', falling back to current host: " + e.getMessage());
-            }
-        }
-        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-    }
-
-    /**
-     * Resolves a host from {@code siteId} strictly — no fallback.
-     * Falls back to the HTTP-derived host when siteId is blank.
-     * Returns {@code null} when the site is not found.
-     * Throws {@link DotSecurityException} when the user lacks permission.
-     * Use for write operations where silently targeting the wrong site is unacceptable.
-     */
-    private static Host resolveHostStrict(final String siteId,
-                                          final HttpServletRequest request,
-                                          final User user) throws DotSecurityException {
-        if (StringUtils.isBlank(siteId)) {
-            return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        }
-        try {
-            return findHost(siteId, user);
-        } catch (final DotSecurityException e) {
-            throw e;
-        } catch (final Exception e) {
-            Logger.warn(CompletionsResource.class, "Could not resolve siteId '" + sanitize(siteId) + "': " + e.getMessage());
-            return null;
-        }
-    }
-
-    private static String sanitize(final String value) {
-        return value == null ? "null" : value.replaceAll("[\r\n\t]", "_");
-    }
-
-    private static Host findHost(final String siteId, final User user) throws Exception {
-        if ("SYSTEM_HOST".equalsIgnoreCase(siteId)) {
-            return APILocator.systemHost();
-        }
-        final Host found = APILocator.getHostAPI().find(siteId, user, false);
-        return (found != null && StringUtils.isNotBlank(found.getIdentifier()) && !found.isArchived()) ? found : null;
     }
 
     private static Response badRequestResponse() {

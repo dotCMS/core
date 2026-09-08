@@ -17,11 +17,12 @@ export class DotContentDriveTreeTogglerComponent {
     #store = inject(DotContentDriveStore);
 
     /**
-     * Drives which of the two panel glyphs is showing, the way UVE swaps its palette icons.
+     * Names the action in the button's accessible name. The glyph itself is static — it says where the
+     * panel docks, not what the click does — so this is the only place the state is exposed.
      *
      * Reads the VISUAL state, not the stored preference: the Edit Content side panel can force the
-     * tree collapsed on a narrow viewport without touching what the user chose, and the glyph has to
-     * follow what is actually on screen.
+     * tree collapsed on a narrow viewport without touching what the user chose, and the name has to
+     * describe what the click will actually do from what is on screen.
      */
     readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
 

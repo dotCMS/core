@@ -1,0 +1,49 @@
+<form [formGroup]="form" class="flex flex-col gap-4">
+    <div class="field flex flex-col gap-2">
+        <label for="users-request-token-label" dotFieldRequired>
+            {{ 'users.dialog.tokens.request.label' | dm }}
+        </label>
+        <input
+            pInputText
+            id="users-request-token-label"
+            formControlName="label"
+            data-testid="users-request-token-label" />
+    </div>
+
+    <div class="field flex flex-col gap-2">
+        <label for="users-request-token-expires" dotFieldRequired>
+            {{ 'users.dialog.tokens.request.expires' | dm }}
+        </label>
+        <input
+            pInputText
+            id="users-request-token-expires"
+            type="date"
+            formControlName="expires"
+            data-testid="users-request-token-expires" />
+    </div>
+
+    <div class="field flex flex-col gap-2">
+        <label for="users-request-token-network">
+            {{ 'users.dialog.tokens.request.network' | dm }}
+        </label>
+        <input
+            pInputText
+            id="users-request-token-network"
+            formControlName="network"
+            data-testid="users-request-token-network" />
+    </div>
+
+    <div class="mt-4 flex justify-end gap-2 border-t border-surface-200 pt-4">
+        <p-button
+            [label]="'users.cancel' | dm"
+            severity="secondary"
+            [text]="true"
+            (onClick)="close()"
+            data-testid="users-request-token-cancel-btn" />
+        <p-button
+            [label]="'users.dialog.tokens.request.submit' | dm"
+            [disabled]="!$canSubmit()"
+            (onClick)="submit()"
+            data-testid="users-request-token-submit-btn" />
+    </div>
+</form>

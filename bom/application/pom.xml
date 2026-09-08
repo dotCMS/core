@@ -21,7 +21,7 @@
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
-        <bouncy-castle.version>1.84</bouncy-castle.version>
+        <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <jackson.version>2.17.2</jackson.version>
@@ -1241,6 +1241,14 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt</artifactId>
                 <version>0.9.1</version>
+            </dependency>
+
+            <!-- Nimbus JOSE+JWT: id_token JWKS signature verification for the OIDC flow. -->
+            <!-- jjwt 0.9.x only handles HMAC; nimbus adds RS256/ES256 + RemoteJWKSet. -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>9.37.4</version>
             </dependency>
 
             <dependency>

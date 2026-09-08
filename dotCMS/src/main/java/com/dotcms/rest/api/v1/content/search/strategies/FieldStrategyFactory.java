@@ -37,6 +37,7 @@ public class FieldStrategyFactory {
         // group of actual Content Type fields that share the same query formatting, escaping and
         // processing for their specific values
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.TEXT, new TextFieldStrategy());
+        SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.BOOLEAN, new BooleanFieldStrategy());
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.BINARY, new BinaryFieldStrategy());
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.DATE_TIME, new DateTimeFieldStrategy());
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.KEY_VALUE, new KeyValueFieldStrategy());

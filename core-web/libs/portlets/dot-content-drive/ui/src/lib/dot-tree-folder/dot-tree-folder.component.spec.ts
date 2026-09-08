@@ -11,7 +11,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTreeFolderComponent } from './dot-tree-folder.component';
 
-import { ALL_FOLDER, SYSTEM_HOST_ID } from '../shared/constants';
 import { DotFolderTreeNodeItem } from '../shared/models';
 
 // Mock DragEvent since it's not available in Jest environment
@@ -105,8 +104,7 @@ describe('DotTreeFolderComponent', () => {
                 useValue: new MockDotMessageService({
                     'content.drive.loading.folders.title': 'Loading folders...',
                     'content-drive.tree.load-more': 'Load more',
-                    'dot.file.field.host.folder.action.load.more': 'Load more',
-                    'content-drive.all-folder.label': 'All folders'
+                    'dot.file.field.host.folder.action.load.more': 'Load more'
                 })
             }
         ],
@@ -166,6 +164,17 @@ describe('DotTreeFolderComponent', () => {
 
         it('should set scrollHeight to auto', () => {
             expect(treeComponent.scrollHeight).toBe('auto');
+        });
+
+        it('should enable folder icons on the shared tree', () => {
+            // The #36848 regression: Content Drive's folder rows lost their folder icon when the
+            // four trees were unified. The icon is owned by the shared component and opted into
+            // here, not reimplemented in this portlet.
+            expect(spectator.query(DotFolderTreeComponent)?.$showFolderIcons()).toBe(true);
+        });
+
+        it('should render a folder icon on each folder row', () => {
+            expect(spectator.queryAll(byTestId('tree-node-folder-icon')).length).toBeGreaterThan(0);
         });
     });
 
@@ -339,11 +348,30 @@ describe('DotTreeFolderComponent', () => {
             const treeElement = spectator.query('p-tree');
             expect(treeElement).toBeTruthy();
         });
-    });
 
-    describe('Constants', () => {
-        it('should export SYSTEM_HOST_ID constant', () => {
-            expect(SYSTEM_HOST_ID).toBe('SYSTEM_HOST');
+        it('should render its projected label inside the shared clipping element', () => {
+            // #37363: long names used to wrap onto several lines here. The shared tree owns the
+            // single-line clipping now, so this consumer's label sits inside its wrapper and the
+            // consumer keeps only what a row *says*.
+            const clips = spectator.queryAll(byTestId('tree-node-label-clip'));
+
+            expect(clips).toHaveLength(2);
+            expect(clips[0]?.querySelector('[data-testid="tree-node-label"]')).toBeTruthy();
+        });
+
+        it('should keep exactly one tree-node-label per row', () => {
+            // e2e guard: `contentDrive.page.ts` counts this test id.
+            expect(spectator.queryAll(byTestId('tree-node-label'))).toHaveLength(2);
+        });
+
+        it('should keep matching the drop-highlight selector with the label wrapper in place', () => {
+            // The highlight is `.p-tree-node-content:has(span.active)` in this consumer's SCSS.
+            // `:has()` matches descendants, so the wrapper should not break it — verified rather
+            // than assumed (research.md R7).
+            component.$activeDropNode.set(mockFolders[0].data);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-tree-node-content:has(span.active)')).toBeTruthy();
         });
     });
 
@@ -825,7 +853,7 @@ describe('DotTreeFolderComponent', () => {
     });
 
     describe('right-click', () => {
-        const ALL_FOLDER_ID = 'site-1';
+        const SITE_ID = 'site-1';
 
         const folderNode: DotFolderTreeNodeItem = {
             key: 'folder-1',
@@ -859,11 +887,12 @@ describe('DotTreeFolderComponent', () => {
             hostname: 'demo.dotcms.com'
         }) as DotFolderTreeNodeItem;
 
-        const allFolderNode: DotFolderTreeNodeItem = {
-            key: ALL_FOLDER.key,
-            label: 'All folders',
+        // A site row rather than a folder: it carries no path, which is how it is told apart.
+        const siteNode: DotFolderTreeNodeItem = {
+            key: SITE_ID,
+            label: 'demo.dotcms.com',
             data: {
-                id: ALL_FOLDER_ID,
+                id: SITE_ID,
                 hostname: 'demo.dotcms.com',
                 path: '',
                 type: 'folder'
@@ -891,7 +920,7 @@ describe('DotTreeFolderComponent', () => {
             component.rightClick.subscribe(emitted);
 
             spectator.fixture.componentRef.setInput('folders', [
-                allFolderNode,
+                siteNode,
                 {
                     ...folderNode,
                     expanded: true,
@@ -936,8 +965,8 @@ describe('DotTreeFolderComponent', () => {
             });
         });
 
-        it('should ignore the "All folders" root, which is not a real folder', () => {
-            const event = rightClickOn(rowFor(ALL_FOLDER_ID));
+        it('should ignore a site row, which has no folder permissions to build a menu from', () => {
+            const event = rightClickOn(rowFor(SITE_ID));
 
             expect(emitted).not.toHaveBeenCalled();
             // No menu to show, so the native one is left alone rather than swallowed.

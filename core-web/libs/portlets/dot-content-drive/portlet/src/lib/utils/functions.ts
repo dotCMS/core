@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -6,31 +5,26 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { DotFolderService } from '@dotcms/data-access';
 import {
     createLoadMoreTreeNode,
-    DotCMSContentTypeField,
-    DotContentDriveDateRange,
+    PERMISSIONS_TYPE,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
-    DotContentDriveUserSearchableValue,
     DotFolder,
     DotSite,
     FolderSearchView,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/dotcms-models';
-import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 import {
-    FIELD_FILTER_CHECKBOX_TYPE,
-    FIELD_FILTER_DATE_TYPES,
-    FIELD_FILTER_KEY_VALUE_TYPE,
-    FIELD_FILTER_MULTI_VALUE_TYPES,
+    CONTENT_STATUS,
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
-    USER_SEARCHABLE_PREFIX,
-    USER_SEARCHABLE_VALUE_SEPARATOR
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
+    USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
     DotContentDriveDecodeFunction,
@@ -44,7 +38,10 @@ import {
  * @param {string} value
  * @return {*}  {string[]}
  */
-const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
+// Deliberately NOT annotated as DotContentDriveDecodeFunction: that type returns
+// `string | string[]`, which would hide the array from callers that compose on top of this one
+// (the `status` decoder filters the result). Still assignable where a decode function is expected.
+const multiSelector = (value = ''): string[] =>
     value
         .split(',')
         .map((v) => v.trim())
@@ -105,6 +102,13 @@ export function parseWorkflowFilter(tokens: string[] = []): WorkflowFilterEntry[
 }
 
 /**
+ * Whether a raw string names a real {@link CONTENT_STATUS}. Used to sanitize the URL on the way in.
+ */
+function isContentStatus(value: string): boolean {
+    return (Object.values(CONTENT_STATUS) as string[]).includes(value);
+}
+
+/**
  * Decodes the value by the key. This is a dictionary of functions that will be used to decode the value by the key.
  *
  * @example
@@ -127,7 +131,20 @@ export const decodeByFilterKey: Record<
     title: singleSelector,
     languageId: multiSelector,
     // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
-    workflow: multiSelector
+    workflow: multiSelector,
+    // MUST be listed explicitly. Unknown keys fall through to the comma sniff in
+    // `decodeFilterValue`, so a single selected status (`status:ARCHIVED`) would decode to the
+    // STRING 'ARCHIVED' while two would decode to an array. Every consumer checks
+    // `filters()?.status?.length`, which is 8 for that string — the filter would appear to work
+    // right up until someone selected exactly one status.
+    //
+    // Unrecognized values are dropped here rather than sent on. The endpoint rejects an unknown
+    // status with a 400 (it will not silently widen the result set), and that 400 would surface as
+    // a stopped spinner over a stale grid. A stale or hand-edited URL should degrade to "no status
+    // filter", which is how the other filters already behave — an unknown contentType id is
+    // dropped server-side rather than failing the request.
+    status: (value) => multiSelector(value).filter(isContentStatus),
+    sharedAssets: singleSelector
 };
 
 /**
@@ -167,7 +184,15 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
 
         // key stays `string` for assignment so the open index signature applies;
         // narrowing happens only inside decodeFilterValue for the known-key lookup.
-        acc[key] = decodeFilterValue(key, value);
+        const decoded = decodeFilterValue(key, value);
+
+        // A multi-value key that decoded to nothing is not a filter. Dropping it keeps a sanitized
+        // `status:BOGUS` from round-tripping back into the URL as a bare `status:`.
+        if (Array.isArray(decoded) && decoded.length === 0) {
+            return acc;
+        }
+
+        acc[key] = decoded;
 
         return acc;
     }, {} as DotContentDriveFilters);
@@ -239,6 +264,133 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
             return acc;
         }, [] as string[])
         .join(';');
+}
+
+/**
+ * Guarantees the language filter always carries a value, seeding the environment's default
+ * language whenever nothing is selected.
+ *
+ * "No language selected" is not the neutral state it looks like: the backend omits the language
+ * term from the query entirely (`LuceneQueryBuilder.getSystemSearchableQueryTerms`), so every
+ * language version of a contentlet comes back as its own row. Selecting the default explicitly is
+ * both what users expect to see and an honest reflection of what is applied — so the seeded value
+ * lands in `filters` (and therefore in the URL) like any other selection.
+ *
+ * Returns the filters untouched when the default is unknown — the languages request has not
+ * answered yet, or failed — so the portlet degrades to exactly its pre-seeding behaviour instead
+ * of inventing a language. Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with `languageId` guaranteed when possible.
+ */
+export function withDefaultLanguage(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    if (!defaultLanguageId || filters?.languageId?.length) {
+        return filters;
+    }
+
+    return { ...filters, languageId: [String(defaultLanguageId)] };
+}
+
+/**
+ * Seeds the shared-assets toggle with its default when the filters do not carry it.
+ *
+ * The toggle is on by default, which could have been left implicit — no key meaning on. It is
+ * seeded instead so the state that is applied is always visible in the URL rather than inferred from
+ * something missing, and so "Clear all" lands on the same explicit value a fresh load does.
+ *
+ * Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @return {*} {DotContentDriveFilters} The filters, with the shared-assets key guaranteed.
+ */
+export function withDefaultSharedAssets(filters: DotContentDriveFilters): DotContentDriveFilters {
+    if (filters?.[SHARED_ASSETS_FILTER_KEY]) {
+        return filters;
+    }
+
+    return { ...filters, [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE };
+}
+
+/**
+ * Whether any filter is set to something other than its default.
+ *
+ * Not the same question as "are there filters at all": the seeded defaults — the environment language
+ * and the shared-assets toggle — are always present, so counting keys would answer yes on a drive
+ * nobody has filtered. Consumers use this to decide whether there is anything worth offering to
+ * clear.
+ *
+ * A filter explicitly set to its default value counts as default, which is deliberate: selecting the
+ * default language by hand is indistinguishable from the seeded state, and clearing it would just
+ * re-select the same thing.
+ *
+ * @param {DotContentDriveFilters} filters The filters to inspect.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {boolean} True when at least one filter differs from its default.
+ */
+export function hasNonDefaultFilters(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): boolean {
+    return Object.entries(filters ?? {}).some(([key, value]) => {
+        if (key === SHARED_ASSETS_FILTER_KEY) {
+            return value !== SHARED_ASSETS_ENABLED_VALUE;
+        }
+
+        if (key === 'languageId') {
+            const languages = Array.isArray(value) ? value : [value];
+
+            return !(
+                defaultLanguageId &&
+                languages.length === 1 &&
+                languages[0] === String(defaultLanguageId)
+            );
+        }
+
+        return true;
+    });
+}
+
+/**
+ * Applies every filter default in one pass, for the paths that build a filter set from scratch or
+ * from the URL: init, "Clear all", removing a single filter, and history restore. Keeping them
+ * together is what stops one of those paths from quietly missing a default.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with defaults applied.
+ */
+export function withFilterDefaults(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    return withDefaultSharedAssets(withDefaultLanguage(filters, defaultLanguageId));
+}
+
+/**
+ * Encodes the filters with their keys in a stable (alphabetical) order, for **comparison only**.
+ *
+ * {@link encodeFilters} follows insertion order, which makes two equivalent filter sets encode
+ * differently — `title:x;languageId:1` vs `languageId:1;title:x`. That is harmless in the URL but
+ * not when the encoded string is used to decide whether state changed. Never use this to write the
+ * URL; it would reorder the params users see.
+ *
+ * @param {DotContentDriveFilters} filters The filters to encode.
+ * @return {*} {string} A key-order-independent encoding of the filters.
+ */
+export function sortedEncodedFilters(filters: DotContentDriveFilters): string {
+    if (!filters) {
+        return '';
+    }
+
+    return encodeFilters(
+        Object.fromEntries(
+            Object.entries(filters).sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        )
+    );
 }
 
 /**
@@ -683,279 +835,58 @@ export function isFolder(
     return item != null && 'type' in item && item.type === 'folder';
 }
 
-/** True when the field type stores a `{ from, to }` date range (Date / Date-and-Time / Time). */
-export function isDateFieldFilterType(fieldType: string): boolean {
-    return (FIELD_FILTER_DATE_TYPES as readonly string[]).includes(fieldType);
-}
-
-/** True when the field type stores a list of values (Multi-Select / Checkbox / Tag / …). */
-export function isMultiValueFieldFilterType(fieldType: string): boolean {
-    return FIELD_FILTER_MULTI_VALUE_TYPES.includes(fieldType);
-}
-
-/**
- * The field variables that have a `us.*` field-filter entry in the bag, in insertion order.
- * Parsed at the same layer as {@link decodeFilters} so the store just stores the result.
- *
- * @param {DotContentDriveFilters} filters
- * @return {*}  {string[]}
- */
-export function getUserSearchableActive(filters: DotContentDriveFilters): string[] {
-    return Object.keys(filters ?? {})
-        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
-        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length));
-}
+// The `us.*` value layer moved to `@dotcms/ui` with the field-filter chips: both surfaces build
+// the same request from the same bag, so the reshaping has to be one implementation rather than two
+// that can drift. Re-exported here so this portlet's own importers — the store's request builder,
+// the URL decode layer and their specs — keep their imports.
+export {
+    buildUserSearchablePayload,
+    getUserSearchableActive,
+    isBinaryCheckboxField,
+    isDateFieldFilterType,
+    isMultiValueFieldFilterType,
+    parseMultiValue,
+    parseUserSearchableValue,
+    serializeMultiValue,
+    serializeUserSearchableValue,
+    toLocalIsoString
+} from '@dotcms/ui';
 
 /**
- * True for a binary (boolean) checkbox — a Checkbox field with a single option (e.g. `|true`).
- * Unlike a multi-option checkbox, this is a single boolean *value* (true/false), not a selection.
+ * Whether the user may add children to a drop target.
+ *
+ * The one rule behind every creation affordance in the drive — the New menu, Upload, the grid drop
+ * zone, and a drag onto a tree folder — so the four cannot disagree about the same folder.
+ *
+ * A node with no permissions is the site root: its parent is the host rather than a folder, and no
+ * folder endpoint reports on it, so `siteCanAddChildren` answers that case. Both unknowns resolve to
+ * **allowed** — a lookup still in flight, and an instance too old to report the field — because
+ * denying on an unknown takes the action away from users who hold the permission, and the server
+ * still refuses what it enforces.
+ *
+ * Note what the server actually enforces, since the gate is not uniformly a preview of it: creating
+ * a folder checks this (`FolderAPIImpl:673`) and so does moving a contentlet
+ * (`ESContentletAPIImpl:607`), but the contentlet checkin path does **not**, so an upload is not
+ * refused server-side. The gate is still applied there, so that one route into a folder does not
+ * quietly allow what the other two forbid.
+ *
+ * @param {DotFolderTreeNodeData} [target] - The folder being dropped on or browsed
+ * @param {boolean} [siteCanAddChildren] - The site-level answer, for the root
+ * @returns {boolean} Whether creation should be offered
  */
-export function isBinaryCheckboxField(field: DotCMSContentTypeField): boolean {
-    return (
-        field.fieldType === FIELD_FILTER_CHECKBOX_TYPE &&
-        getSingleSelectableFieldOptions(field.values ?? '', field.dataType).length <= 1
-    );
-}
-
-/**
- * Reshapes a raw stored field-filter string into the payload value for its field type:
- * date → `{ from, to }`, multi-select → `string[]`, everything else → the raw string.
- * Returns `undefined` when the value is effectively empty (so callers can skip it).
- *
- * @param {string} raw - The raw value stored in the filter bag.
- * @param {string} fieldType - The content-type field type (e.g. `Text`, `Date`, `Multi-Select`).
- * @return {*}  {(DotContentDriveUserSearchableValue | undefined)}
- */
-export function parseUserSearchableValue(
-    raw: string,
-    fieldType: string
-): DotContentDriveUserSearchableValue | undefined {
-    if (!raw) {
-        return undefined;
+export function canAddChildrenTo(
+    target: DotFolderTreeNodeData | undefined | null,
+    siteCanAddChildren: boolean | undefined
+): boolean {
+    if (!target) {
+        return true;
     }
 
-    if (isDateFieldFilterType(fieldType)) {
-        const [from = '', to = ''] = raw.split(USER_SEARCHABLE_VALUE_SEPARATOR);
+    const permissions = (target as { permissions?: string[] }).permissions;
 
-        return from || to ? { from, to } : undefined;
+    if (!permissions?.length) {
+        return siteCanAddChildren !== false;
     }
 
-    if (isMultiValueFieldFilterType(fieldType)) {
-        const values = parseMultiValue(raw);
-
-        return values.length ? values : undefined;
-    }
-
-    if (fieldType === FIELD_FILTER_KEY_VALUE_TYPE) {
-        return toKeyValueTerm(raw);
-    }
-
-    return raw;
-}
-
-/**
- * Translates a Key/Value filter input into the term the backend contains-matches against the
- * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`).
- *
- * The term is lowercased to match the indexed `.key_value` sub-field, which dotCMS stores as
- * `(key + "_" + value).toLowerCase()` — so `Color:Red` matches the same content as `color:red`.
- *
- * Shorthand rules (the **first** colon is the key/value separator — everything after it is the
- * value, so a value may itself contain colons):
- * - `key:value`         → `key_value`           (exact-pair match; e.g. `Deploy:HTTPS://x` → `deploy_https://x`)
- * - `key:` / `:value`   → `key` / `value`       (only the filled side)
- * - bare term (no `:`)  → the term              (loose match on a key OR a value)
- *
- * ⚠️ Greedy shorthand: because *any* colon is treated as the separator, a **bare** value that
- * happens to contain a colon (a URL like `https://x`, a time like `12:30`, a ratio like `16:9`) is
- * read as `key:value` (`https_//x`, `12_30`, `16_9`) and will likely match nothing. To search a
- * colon-bearing value, prefix it with its key (`myKey:12:30`) so the intended value is preserved.
- * A raw colon is never sent to the backend — that path is metadata-only and wouldn't match a
- * regular Key/Value field anyway.
- *
- * @param {string} raw - The literal value the user typed (also what's kept in the URL/chip).
- * @return {*}  {(string | undefined)} Returns `undefined` when the input is empty.
- */
-function toKeyValueTerm(raw: string): string | undefined {
-    const trimmed = raw.trim();
-    if (!trimmed) {
-        return undefined;
-    }
-
-    // Split on the FIRST colon only, so a value may contain further colons (e.g. `key:12:30`).
-    const separator = trimmed.indexOf(':');
-    // The index stores `.key_value` as `(key + "_" + value).toLowerCase()`, so the term is
-    // lowercased to match regardless of the case the user typed (e.g. `Color:Red` → `color_red`).
-    if (separator === -1) {
-        return trimmed.toLowerCase();
-    }
-
-    const key = trimmed.slice(0, separator).trim();
-    const value = trimmed.slice(separator + 1).trim();
-
-    if (key && value) {
-        return `${key}_${value}`.toLowerCase();
-    }
-
-    // Only one side of the `key:value` was filled — match on whichever is present.
-    return (key || value).toLowerCase() || undefined;
-}
-
-/** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
-const safeDecode = (value: string): string => {
-    try {
-        return decodeURIComponent(value);
-    } catch {
-        return value;
-    }
-};
-
-/**
- * Splits a stored multi-value string back into its values. Each value is percent-encoded on
- * serialize (see {@link serializeMultiValue}) so a value containing the separator — e.g. a tag
- * label like `"News, Press"` — round-trips intact.
- *
- * @param {string} raw
- * @return {*}  {string[]}
- */
-export function parseMultiValue(raw: string): string[] {
-    if (!raw) {
-        return [];
-    }
-
-    return raw
-        .split(USER_SEARCHABLE_VALUE_SEPARATOR)
-        .map((value) => safeDecode(value.trim()))
-        .filter(Boolean);
-}
-
-/**
- * Joins multi-value entries into the stored string, percent-encoding each value so it can safely
- * contain the separator. Inverse of {@link parseMultiValue}.
- *
- * @param {string[]} values
- * @return {*}  {string}
- */
-export function serializeMultiValue(values: string[]): string {
-    return values.map(encodeURIComponent).join(USER_SEARCHABLE_VALUE_SEPARATOR);
-}
-
-/**
- * Serializes a shaped field-filter value back into the raw string stored in the filter bag,
- * inverse of {@link parseUserSearchableValue}. Empty values serialize to `''` so the URL encoder
- * (which drops empty entries) leaves no dangling criterion.
- *
- * @param {(DotContentDriveUserSearchableValue | null | undefined)} value
- * @param {string} fieldType
- * @return {*}  {string}
- */
-/** Narrows a user-searchable value to a `{ from, to }` date range (object, not array). */
-function isDateRange(value: DotContentDriveUserSearchableValue): value is DotContentDriveDateRange {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * Formats a Date as a timezone-naive local wall-clock ISO string (`yyyy-MM-ddTHH:mm:ss`, no `Z` or
- * offset) — i.e. the exact date/time the user sees in the picker.
- *
- * Date/Date-and-Time/Time filters must send the wall-clock, not a UTC instant: `toISOString()`
- * shifts by the browser's offset (a UTC-3 user's 10:00 becomes `13:00Z`), and the backend then
- * parses that `Z` value as an instant and reformats it in the SERVER zone — so the bound no longer
- * matches what the user picked. A no-offset value instead round-trips as identity: the backend
- * parses it in the server zone and formats it back in the server zone (see
- * `BrowserAPIImpl#parseFlexibleDate` → `LocalDateTime.parse(...)` and `normalizeDateBound`). On the
- * FE, `new Date('…T10:00:00')` (no offset) also parses as local, so the picker round-trips too.
- *
- * Returns `''` for an invalid/absent Date: the typeable Time picker (`[keepInvalid]="true"`) can
- * emit an `Invalid Date` mid-typing, and `date-fns` `format` throws `RangeError` on one — so a
- * partial time simply clears that bound instead of blowing up `#applyRange`.
- */
-export function toLocalIsoString(date: Date): string {
-    if (!date || Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    // `date-fns` formats by the Date's LOCAL components, so this is the wall-clock with no offset/Z.
-    return format(date, "yyyy-MM-dd'T'HH:mm:ss");
-}
-
-export function serializeUserSearchableValue(
-    value: DotContentDriveUserSearchableValue | null | undefined,
-    fieldType: string
-): string {
-    if (value == null) {
-        return '';
-    }
-
-    if (isDateFieldFilterType(fieldType)) {
-        // Guard the shape rather than blindly casting: a mismatched fieldType/value pair yields ''
-        // (not filtering) instead of a misleading partial range.
-        if (!isDateRange(value)) {
-            return '';
-        }
-
-        if (!value.from && !value.to) {
-            return '';
-        }
-
-        return `${value.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${value.to ?? ''}`;
-    }
-
-    if (isMultiValueFieldFilterType(fieldType)) {
-        return serializeMultiValue(Array.isArray(value) ? value : []);
-    }
-
-    return String(value);
-}
-
-/**
- * Builds the `userSearchable` payload object from the flat filter bag, keyed by field variable.
- * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. A binary
- * checkbox emits its boolean value when set (`true`/`false`); every field type is included only
- * when its value is non-empty. Returns `undefined` when there are no active field filters.
- *
- * @param {DotContentDriveFilters} filters - The full filter bag.
- * @param {DotCMSContentTypeField[]} fields - The active content type's searchable fields.
- * @return {*}  {(Record<string, DotContentDriveUserSearchableValue> | undefined)}
- */
-export function buildUserSearchablePayload(
-    filters: DotContentDriveFilters,
-    fields: DotCMSContentTypeField[]
-): Record<string, DotContentDriveUserSearchableValue> | undefined {
-    const fieldByVariable = new Map(fields.map((field) => [field.variable, field]));
-    const payload: Record<string, DotContentDriveUserSearchableValue> = {};
-
-    for (const [key, raw] of Object.entries(filters ?? {})) {
-        if (!key.startsWith(USER_SEARCHABLE_PREFIX)) {
-            continue;
-        }
-
-        const variable = key.slice(USER_SEARCHABLE_PREFIX.length);
-        const field = fieldByVariable.get(variable);
-        if (!field) {
-            continue;
-        }
-
-        const rawValue = Array.isArray(raw)
-            ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR)
-            : (raw ?? '');
-
-        // A binary checkbox filters for the chosen boolean; empty means not filtering.
-        if (isBinaryCheckboxField(field)) {
-            if (rawValue === 'true' || rawValue === 'false') {
-                payload[variable] = rawValue === 'true';
-            }
-
-            continue;
-        }
-
-        const value = parseUserSearchableValue(rawValue, field.fieldType);
-        if (value === undefined) {
-            continue;
-        }
-
-        payload[variable] = value;
-    }
-
-    return Object.keys(payload).length ? payload : undefined;
+    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
 }

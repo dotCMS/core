@@ -11,7 +11,7 @@ import { MenuItem } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotPermissionsIframeDialogComponent } from '@dotcms/ui';
+import { DotJspIframeDialogComponent } from '@dotcms/ui';
 
 import {
     CONTENTLET_PERMISSIONS_IFRAME_PATH,
@@ -128,7 +128,7 @@ describe('DotEditContentCommandBarActionsComponent', () => {
     });
 
     describe('openPermissionsDialog', () => {
-        it('should open the permissions dialog with DotPermissionsIframeDialogComponent', () => {
+        it('should open the permissions dialog with DotJspIframeDialogComponent', () => {
             spectator.setInput('identifier', 'content-789');
             spectator.setInput('languageId', 2);
             spectator.detectChanges();
@@ -138,7 +138,7 @@ describe('DotEditContentCommandBarActionsComponent', () => {
             );
 
             expect(dialogOpenSpy).toHaveBeenCalledWith(
-                DotPermissionsIframeDialogComponent,
+                DotJspIframeDialogComponent,
                 expect.objectContaining({
                     header: 'edit.content.sidebar.permissions.title',
                     width: 'min(92vw, 75rem)',

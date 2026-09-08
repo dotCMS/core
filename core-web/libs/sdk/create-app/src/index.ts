@@ -16,7 +16,8 @@ import {
     askPasswordForDotcmsCloud,
     askProjectName,
     askUserNameForDotcmsCloud,
-    prepareDirectory
+    prepareDirectory,
+    askPortConflictAction
 } from './asks';
 import {
     CLOUD_HEALTH_CHECK_RETRIES,
@@ -26,15 +27,14 @@ import {
 } from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
 import {
-    cloneFrontEndSample,
-    downloadDockerCompose,
-    moveDockerComposeBack,
-    moveDockerComposeOneLevelUp
-} from './git';
+    flushRecoverableState,
+    installExitStateHandler,
+    recordRecoverableState
+} from './exit-state';
+import { cloneFrontEndSample, downloadDockerCompose } from './git';
 import { type Result, Ok, Err } from './result';
 import {
     checkDockerAvailability,
-    checkPortsAvailability,
     displayDependencies,
     fetchWithRetry,
     finalStepsForAngularAndAngularSSR,
@@ -44,9 +44,16 @@ import {
     getDockerDiagnostics,
     getDotcmsApisByBaseUrl,
     getPortByFramework,
-    getUVEConfigValue,
-    installDependenciesForProject
+    installDependenciesForProject,
+    findBusyPorts
 } from './utils';
+import { withComposeFileMovedAside } from './utils/compose-move';
+import { formatRetryReport, isSuccessStatus, type RetryReporter } from './utils/fetch-retry';
+import { httpGet } from './utils/http';
+import { reportInstallResult } from './utils/install';
+import { describePortOwner, resolvePortConflict } from './utils/ports';
+import { waitForReadiness } from './utils/readiness';
+import { applyStarterUrl } from './utils/starter-url';
 import {
     normalizeUrl,
     validateAndNormalizeFramework,
@@ -54,10 +61,27 @@ import {
     validateProjectName,
     validateUrl
 } from './utils/validation';
+import { configureUVE } from './uve/configure-uve';
 
 import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 
+/** Budget for `docker compose up --wait`: a cold run pulls ~2GB and imports the demo starter. */
+const COMPOSE_WAIT_TIMEOUT_SECONDS = 600;
+
+/** How often the wait ticker repaints. Frequent enough to look alive, rare enough not to churn. */
+const PROGRESS_TICK_MS = 2000;
+
 // Supported values
+
+/** Host the bundled compose stack publishes dotCMS on. */
+const LOCAL_DOTCMS_HOST = 'http://localhost:8082';
+
+/** Management port, published on loopback only by the bundled compose file. */
+const LOCAL_MANAGEMENT_HOST = 'http://127.0.0.1:8090';
+
+// Registered before anything can fail: once a token exists, every terminal path — including
+// the 17 process.exit() sites that `finally` cannot reach — prints it and writes .env (X1).
+installExitStateHandler();
 
 const program = new Command();
 
@@ -118,8 +142,6 @@ program
                 const urlDotcmsInstance = normalizeUrl(urlInput);
 
                 const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
-                const emaConfigApiURL =
-                    getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
                 const siteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_SITE_API;
                 const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
 
@@ -127,7 +149,10 @@ program
 
                 const healthCheckResult = await isDotcmsRunning(
                     healthApiURL,
-                    CLOUD_HEALTH_CHECK_RETRIES
+                    CLOUD_HEALTH_CHECK_RETRIES,
+                    (report) => {
+                        spinner.text = formatRetryReport(report);
+                    }
                 );
 
                 if (!healthCheckResult.ok) {
@@ -209,25 +234,29 @@ program
 
                 const selectedFramework = validatedFramework ?? (await askFramework());
 
-                const setUpUVE = await DotCMSApi.setupUVEConfig({
-                    payload: {
-                        configuration: {
-                            hidden: false,
-                            value: getUVEConfigValue(
-                                `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
-                            )
-                        }
-                    },
+                recordRecoverableState({
+                    host: urlDotcmsInstance,
+                    token: dotcmsToken.val,
                     siteId: defaultSite.val.entity.identifier,
-                    authenticationToken: dotcmsToken.val,
-                    url: emaConfigApiURL
+                    projectDirectory: finalDirectory,
+                    framework: selectedFramework
                 });
 
-                if (!setUpUVE.ok) {
-                    spinner.fail('Failed to setup UVE configuration in Dotcms.');
-                    process.exit(1);
-                } else {
+                // Optional step: a failure here must not cost the user the run (contract X2).
+                const uveOutcome = await configureUVE({
+                    host: urlDotcmsInstance,
+                    siteId: defaultSite.val.entity.identifier,
+                    token: dotcmsToken.val,
+                    mode: 'remote',
+                    frontendUrl: `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`,
+                    report: (message) => spinner.info(message)
+                });
+
+                if (uveOutcome.kind === 'configured') {
                     spinner.succeed(`Configured the Universal Visual Editor`);
+                } else {
+                    spinner.warn('Skipped Universal Visual Editor configuration.');
+                    console.log(chalk.yellow(uveOutcome.message));
                 }
                 await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
                 console.log(chalk.white(`✅ Project setup complete!`));
@@ -253,59 +282,145 @@ program
             }
             spinner.succeed('Docker is available');
 
-            // STEP 2 — Check if required ports are available
+            // STEP 2 — Check if required ports are available.
+            //
+            // A busy 8082 is not automatically a conflict: after a successful run it is this
+            // CLI's own dotCMS. Refusing to start there is what made reproduction step 6
+            // unrecoverable, so probe before failing (AC-006, decision D3).
             spinner.start('Checking port availability...');
-            const portsAvailable = await checkPortsAvailability();
-            if (!portsAvailable.ok) {
+            const busyPorts = await findBusyPorts();
+            const portOutcome = await resolvePortConflict({
+                busyPorts,
+                isInteractive: Boolean(process.stdout.isTTY) && !process.env.CI,
+                host: LOCAL_DOTCMS_HOST,
+                probeInstance: async () => {
+                    // Reusable means usable for what happens next: it must answer readiness AND
+                    // be able to issue a token. A half-dead instance is still a hard failure.
+                    const running = await isDotcmsRunning(undefined, 1);
+                    if (!running.ok) {
+                        return false;
+                    }
+
+                    const probeToken = await DotCMSApi.getAuthToken({
+                        payload: {
+                            user: DOTCMS_USER.username,
+                            password: DOTCMS_USER.password,
+                            expirationDays: '1',
+                            label: 'create-app reuse probe'
+                        }
+                    });
+
+                    return probeToken.ok;
+                },
+                owner: await describePortOwner(8082, (cmd, args) => execa(cmd, args)),
+                askAction: (context) => {
+                    spinner.stop();
+
+                    return askPortConflictAction(context);
+                },
+                notify: (message) => spinner.info(message)
+            });
+
+            if (portOutcome.kind === 'abort') {
                 spinner.fail('Required ports are busy');
-                console.error(portsAvailable.val);
-                process.exit(1);
-            }
-            spinner.succeed('All required ports are available');
-
-            // STEP 3 — Download docker-compose
-            spinner.start('Downloading Docker Compose configuration...');
-            const downloaded = await downloadTheDockerCompose({
-                directory: finalDirectory
-            });
-            if (!downloaded.ok) {
-                spinner.fail('Failed to download Docker Compose file.');
-                process.exit(1);
-            }
-            spinner.succeed('Docker Compose configuration downloaded');
-
-            // STEP 4 — Run docker-compose
-            spinner.start('Starting dotCMS containers...');
-            const ran = await runDockerCompose({
-                directory: finalDirectory,
-                starterUrl: options.starter
-            });
-            if (!ran.ok) {
-                spinner.fail('Failed to start Docker containers');
-                const errorMessage = ran.val instanceof Error ? ran.val.message : String(ran.val);
-                console.error(
-                    chalk.red('\n❌ Docker Compose failed to start\n\n') +
-                        chalk.white('Error details:\n') +
-                        chalk.gray(errorMessage) +
-                        '\n\n' +
-                        chalk.yellow('Common solutions:\n') +
-                        chalk.white('  • Ensure Docker Desktop is running\n') +
-                        chalk.white('  • Try: ') +
-                        chalk.cyan('docker compose down') +
-                        chalk.white(' then run this command again\n') +
-                        chalk.white('  • Check Docker logs for more details\n')
-                );
+                console.error(chalk.red(portOutcome.message));
                 process.exit(1);
             }
 
-            spinner.succeed('dotCMS containers started successfully.');
+            if (portOutcome.kind === 'replace') {
+                // The documented recovery for a bricked instance, done here so the user does not
+                // have to leave the CLI for it. `-v` is the point: keeping the volumes keeps the
+                // corruption, and the instance comes back just as broken (#37268).
+                spinner.start(`Removing the existing "${portOutcome.project}" stack...`);
+                await execa('docker', ['compose', '-p', portOutcome.project, 'down', '-v'], {
+                    reject: false
+                });
+                spinner.succeed(`Removed the existing "${portOutcome.project}" stack`);
+            }
+
+            const reusingExistingInstance = portOutcome.kind === 'reuse';
+
+            spinner.succeed(
+                reusingExistingInstance
+                    ? 'Reusing the dotCMS already running on 8082'
+                    : 'All required ports are available'
+            );
+
+            // STEPS 3 & 4 — provision the stack, UNLESS we are reusing one that is already up.
+            //
+            // Skipping these is the entire point of the reuse decision. Writing a second compose
+            // file and running `up` against ports the existing stack already holds fails with
+            // "port is already allocated" — turning a recoverable situation back into the dead
+            // end AC-006 exists to remove.
+            if (!reusingExistingInstance) {
+                // STEP 3 — Download docker-compose
+                spinner.start('Downloading Docker Compose configuration...');
+                const downloaded = await downloadTheDockerCompose({
+                    directory: finalDirectory
+                });
+                if (!downloaded.ok) {
+                    spinner.fail('Failed to download Docker Compose file.');
+                    process.exit(1);
+                }
+                spinner.succeed('Docker Compose configuration downloaded');
+
+                // STEP 4 — Run docker-compose
+                spinner.start('Starting dotCMS containers...');
+                const ran = await runDockerCompose({
+                    directory: finalDirectory,
+                    starterUrl: options.starter,
+                    onProgress: (message) => {
+                        spinner.text = message;
+                    }
+                });
+                if (!ran.ok) {
+                    spinner.fail('Failed to start Docker containers');
+                    const errorMessage =
+                        ran.val instanceof Error ? ran.val.message : String(ran.val);
+                    console.error(
+                        chalk.red('\n❌ Docker Compose failed to start\n\n') +
+                            chalk.white('Error details:\n') +
+                            chalk.gray(errorMessage) +
+                            '\n\n' +
+                            chalk.yellow('Common solutions:\n') +
+                            chalk.white('  • Ensure Docker Desktop is running\n') +
+                            chalk.white('  • Try: ') +
+                            chalk.cyan('docker compose down') +
+                            chalk.white(' then run this command again\n') +
+                            chalk.white('  • Check Docker logs for more details\n')
+                    );
+                    process.exit(1);
+                }
+
+                spinner.succeed('dotCMS containers started successfully.');
+            }
 
             spinner.start('Verifying if dotCMS is running...');
 
-            const healthCheckResult = await isDotcmsRunning(
-                DOTCMS_HEALTH_API,
-                LOCAL_HEALTH_CHECK_RETRIES
-            );
+            // Prefer /dotmgt/readyz on the management port now that the bundled compose file
+            // publishes it. `--wait` returning healthy only proves the instance is LIVE — the
+            // container healthcheck probes livez — and readyz was measured lagging it by a few
+            // seconds. Probing the app endpoint alone would let the CLI start making API calls
+            // in that window. The app endpoint stays as the fallback for images that do not
+            // serve the management endpoints (AC-009, P1 readiness switch).
+            const readiness = await waitForReadiness({
+                readyzUrl: `${LOCAL_MANAGEMENT_HOST}/dotmgt/readyz`,
+                fallbackUrl: DOTCMS_HEALTH_API,
+                get: (url) => httpGet(url, { timeoutMs: 10000, acceptAnyStatus: true }),
+                attempts: LOCAL_HEALTH_CHECK_RETRIES,
+                delayMs: 5000,
+                onAttempt: (attempt, attempts, detail) => {
+                    spinner.text = formatRetryReport({
+                        attempt,
+                        totalAttempts: attempts,
+                        reason: detail,
+                        nextDelayMs: 5000
+                    });
+                }
+            });
+
+            const healthCheckResult: Result<boolean, string> =
+                readiness.kind === 'ready' ? Ok(true) : Err(readiness.detail);
 
             if (!healthCheckResult.ok) {
                 spinner.fail('dotCMS failed to start properly');
@@ -353,29 +468,36 @@ program
                 spinner.succeed(`Retrieved default site (${defaultSite.val.entity.identifier})`);
             }
 
-            const setUpUVE = await DotCMSApi.setupUVEConfig({
-                payload: {
-                    configuration: {
-                        hidden: false,
-                        value: getUVEConfigValue(
-                            `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
-                        )
-                    }
-                },
+            recordRecoverableState({
+                host: LOCAL_DOTCMS_HOST,
+                token: dotcmsToken.val,
                 siteId: defaultSite.val.entity.identifier,
-                authenticationToken: dotcmsToken.val
+                projectDirectory: finalDirectory,
+                framework: selectedFramework
             });
 
-            if (!setUpUVE.ok) {
-                spinner.fail('Failed to setup UVE configuration in Dotcms.');
-                process.exit(1);
-            } else {
+            // Optional step: a failure here must not cost the user the run (contract X2).
+            const uveOutcome = await configureUVE({
+                host: LOCAL_DOTCMS_HOST,
+                siteId: defaultSite.val.entity.identifier,
+                token: dotcmsToken.val,
+                mode: 'local',
+                frontendUrl: `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`,
+                report: (message) => spinner.info(message)
+            });
+
+            if (uveOutcome.kind === 'configured') {
                 spinner.succeed(`Configured the Universal Visual Editor`);
+            } else {
+                spinner.warn('Skipped Universal Visual Editor configuration.');
+                console.log(chalk.yellow(uveOutcome.message));
             }
-            // required since git requires empty directory
-            moveDockerComposeOneLevelUp(finalDirectory);
-            await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
-            moveDockerComposeBack(finalDirectory);
+            // git needs an empty directory, so the compose file steps aside — inside a
+            // try/finally, because a scaffolding failure used to strand it in the parent and
+            // leave the user unable to `docker compose down` the stack still running (AC-008).
+            await withComposeFileMovedAside(finalDirectory, () =>
+                startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory })
+            );
             console.log(chalk.white(`✅ Project setup complete!`));
             const relativePath = getDisplayPath(finalDirectory, process.cwd());
             displayFinalSteps({
@@ -452,10 +574,12 @@ async function downloadTheDockerCompose({
 
 async function runDockerCompose({
     directory,
-    starterUrl
+    starterUrl,
+    onProgress
 }: {
     directory: string;
     starterUrl?: string;
+    onProgress?: (message: string) => void;
 }): Promise<Result<void, Error>> {
     try {
         // console.log(chalk.cyan("🐳 Starting Docker containers... (This might take some time)"));
@@ -466,14 +590,88 @@ async function runDockerCompose({
 
         const env = starterUrl ? { ...process.env, CUSTOM_STARTER_URL: starterUrl } : process.env;
 
-        await execa('docker', ['compose', 'up', '-d'], { cwd: directory, env });
-        await execa('docker', ['ps'], { cwd: directory });
+        // `--wait` blocks until every service with a healthcheck reports healthy, so the
+        // success message below is only reached when the stack is genuinely usable. Without
+        // it, `up -d` returns as soon as the containers are *created* — which is how the CLI
+        // came to report "containers started successfully" about a dotcms that had already
+        // exited (issue #37262, AC-002).
+        //
+        // The timeout is generous because a cold run pulls ~2GB and then imports the demo
+        // starter. The bundled compose file sets `start_period: 180s` on dotcms; a boot
+        // measured at ~46s leaves plenty of head-room inside this budget.
+        const subprocess = execa(
+            'docker',
+            [
+                'compose',
+                'up',
+                '-d',
+                '--wait',
+                '--wait-timeout',
+                String(COMPOSE_WAIT_TIMEOUT_SECONDS)
+            ],
+            { cwd: directory, env }
+        );
 
-        // console.log(chalk.green("✔ Docker containers started successfully!\n"));
+        // Feedback has to be continuous for the WHOLE wait, which can be ten minutes on a cold
+        // machine: a ~2GB pull followed by the demo-starter import. Ten minutes of motionless
+        // spinner is the symptom this issue was actually reported for, so two things run here.
+        //
+        // 1. Compose's own progress. It writes `Waiting`/`Healthy` transitions and pull progress
+        //    to STDERR, not stdout, and execa swallows both by default.
+        // 2. A ticker, because compose can itself go quiet for minutes at a time while a single
+        //    layer downloads or the starter imports. Elapsed time moving is what distinguishes
+        //    "still working" from "hung", and only the ticker can show that during the silence.
+        let lastLine = 'starting containers';
+        const startedAt = Date.now();
+
+        const absorb = (chunk: Buffer | string) => {
+            const line = String(chunk)
+                .split('\n')
+                .map((part) => part.trim())
+                .filter(Boolean)
+                .pop();
+
+            if (line) {
+                lastLine = line;
+            }
+        };
+
+        subprocess.stdout?.on('data', absorb);
+        subprocess.stderr?.on('data', absorb);
+
+        const ticker = setInterval(() => {
+            const elapsed = Math.round((Date.now() - startedAt) / 1000);
+            onProgress?.(`${lastLine} (${elapsed}s elapsed)`);
+        }, PROGRESS_TICK_MS);
+
+        try {
+            await subprocess;
+        } finally {
+            clearInterval(ticker);
+        }
 
         return Ok(undefined);
     } catch (err) {
-        return Err(err as Error);
+        // A --wait timeout is otherwise indistinguishable from a hang. Say what state the stack
+        // reached, so the failure names itself instead of leaving the user to go digging.
+        const detail = await describeComposeState(directory);
+
+        return Err(new Error(`${(err as Error).message}${detail}`));
+    }
+}
+
+/** Per-service state, appended to a compose failure so the error is self-describing. */
+async function describeComposeState(directory: string): Promise<string> {
+    try {
+        const { stdout } = await execa(
+            'docker',
+            ['compose', 'ps', '--format', '{{.Service}}: {{.State}} {{.Status}}'],
+            { cwd: directory }
+        );
+
+        return stdout.trim() ? `\n\nContainer state:\n${stdout.trim()}` : '';
+    } catch {
+        return '';
     }
 }
 
@@ -486,29 +684,27 @@ async function updateDockerComposeStarterUrl({
 }): Promise<void> {
     const composePath = path.join(directory, 'docker-compose.yml');
     const composeContents = await fs.readFile(composePath, 'utf-8');
-    const updatedContents = composeContents.replace(
-        /^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m,
-        `$1"${starterUrl}"`
-    );
-
-    if (updatedContents === composeContents) {
-        throw new Error(
-            'CUSTOM_STARTER_URL entry not found in docker-compose.yml. Unable to apply --starter value.'
-        );
-    }
+    // The string rewrite lives in ./utils/starter-url so a Jest spec can pin it against the
+    // real bundled asset — it throws when the CUSTOM_STARTER_URL entry is missing.
+    const updatedContents = applyStarterUrl(composeContents, starterUrl);
 
     await fs.writeFile(composePath, updatedContents);
 }
 
-async function isDotcmsRunning(url?: string, retries = 60): Promise<Result<boolean, string>> {
+async function isDotcmsRunning(
+    url?: string,
+    retries = 60,
+    onRetry?: RetryReporter
+): Promise<Result<boolean, string>> {
     try {
         // console.log(chalk.cyan("Waiting for DotCMS to be up ...."));
-        const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, retries, 5000);
-        if (res && res.status === 200) {
-            // console.log(chalk.green("✔ DotCMS container started sucessfully!\n"));
+        const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, retries, 5000, 10000, onRetry);
+        // `isSuccessStatus`, not `=== 200`: fetchWithRetry resolves on any 2xx, so demanding
+        // exactly 200 here rejected responses it had already accepted.
+        if (res && isSuccessStatus(res.status)) {
             return Ok(true);
         }
-        return Err('dotCMS health check returned non-200 status');
+        return Err('dotCMS health check returned a non-success status');
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return Err(errorMessage);
@@ -528,13 +724,16 @@ function displayFinalSteps({
     siteId: string;
     host: string;
 }) {
+    // Claim the reporting before the summary prints, so the connection details land INSIDE it
+    // rather than being appended by the exit handler afterwards.
+    const connection = flushRecoverableState();
+
     switch (selectedFramework) {
         case 'nextjs': {
             finalStepsForNextjs({
                 projectPath: relativePath,
-                token: token,
-                siteId: siteId,
-                urlDotCMSInstance: host
+                urlDotCMSInstance: host,
+                connection
             });
             break;
         }
@@ -559,9 +758,8 @@ function displayFinalSteps({
         case 'astro': {
             finalStepsForAstro({
                 projectPath: relativePath,
-                token: token,
-                siteId: siteId,
-                urlDotCMSInstance: host
+                urlDotCMSInstance: host,
+                connection
             });
             break;
         }
@@ -585,7 +783,15 @@ async function startScaffoldingFrontEnd({
 
     if (!created.ok) {
         spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
-        process.exit(1);
+        // `throw`, NOT process.exit: this runs inside withComposeFileMovedAside, and
+        // process.exit skips `finally` — which would strand docker-compose.yml in the parent
+        // directory on the exact failure that `finally` exists to survive (AC-008). The outer
+        // catch prints the message and still exits 1, so the exit contract is unchanged.
+        //
+        // The underlying error, not a copy of the spinner text: the outer catch prints
+        // whatever it gets, and repeating the line above would just say it twice. This one
+        // names the likely causes (git missing, no network).
+        throw created.val;
     }
 
     // TODO need to insert here the dependices step
@@ -594,11 +800,14 @@ async function startScaffoldingFrontEnd({
         `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
     );
     const result = await installDependenciesForProject(finalDirectory);
-    if (!result) {
+    // `result.ok`, never `!result`: Err() is `{ok:false, val}` — a truthy object — so the old
+    // `if (!result)` guard was unreachable and a failed install reported success (contract X7).
+    const installReport = reportInstallResult(result);
+
+    if (installReport.kind === 'failed') {
         spinner.fail(
-            `Failed to install dependencies. Please check if npm is installed in your system`
+            `Failed to install dependencies (${installReport.reason}). Check that npm is installed and on your PATH.`
         );
-        process.exit(1);
     } else {
         spinner.succeed(`Dependencies installed`);
     }

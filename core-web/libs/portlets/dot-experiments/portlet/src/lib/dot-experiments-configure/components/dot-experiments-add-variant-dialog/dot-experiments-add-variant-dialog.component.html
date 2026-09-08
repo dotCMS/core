@@ -1,0 +1,42 @@
+<form class="form" (submit)="submitVariant($event)" data-testid="add-variant-form">
+    <div class="field">
+        <label for="add-variant-name">
+            {{ 'experiments.configure.variants.add-dialog.name.label' | dm }}
+        </label>
+        <input
+            pInputText
+            dotAutofocus
+            id="add-variant-name"
+            type="text"
+            class="w-full"
+            [formField]="formTree.name"
+            [placeholder]="'experiments.configure.variants.add-dialog.name.placeholder' | dm"
+            [attr.aria-label]="'experiments.configure.variants.add-dialog.name.label' | dm"
+            data-testid="add-variant-name-input" />
+        @if (formTree.name().invalid()) {
+            <small class="p-error" data-testid="add-variant-name-error">
+                {{
+                    'experiments.configure.variants.add-dialog.name.max-length'
+                        | dm: [maxNameLength.toString()]
+                }}
+            </small>
+        } @else {
+            <small class="text-gray-500" data-testid="add-variant-name-hint">
+                {{ 'experiments.configure.variants.add-dialog.name.hint' | dm }}
+            </small>
+        }
+    </div>
+    <div class="mt-4 flex justify-end gap-2">
+        <p-button
+            type="button"
+            severity="secondary"
+            [outlined]="true"
+            [label]="'experiments.configure.variants.add-dialog.cancel' | dm"
+            (onClick)="cancel()"
+            data-testid="add-variant-cancel-btn" />
+        <p-button
+            type="submit"
+            [label]="'experiments.configure.variants.add-dialog.submit' | dm"
+            data-testid="add-variant-submit-btn" />
+    </div>
+</form>

@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -16,19 +17,26 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotFolderTreeNodeContentData,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentTypeFilterChipComponent,
+    DotFieldFilterComponent,
+    DotFieldFilterMenuComponent,
+    DotFilterBarComponent,
+    DotFilterChipError,
+    DotLanguageFilterChipComponent,
+    DotMessagePipe,
+    DotSharedAssetsFilterComponent,
+    DotStatusFilterComponent,
+    DotUploadButtonComponent
+} from '@dotcms/ui';
 
-import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
-import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
-import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
-import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
@@ -36,7 +44,6 @@ import { DotContentDriveWorkflowFilterComponent } from './components/dot-content
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { excludeFolders } from '../../utils/action-center';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -129,14 +136,18 @@ interface ToolbarAnimationState {
         ButtonModule,
         MenuModule,
         DotMessagePipe,
+        DotUploadButtonComponent,
         DotContentDriveTreeTogglerComponent,
-        DotContentDriveContentTypeFilterComponent,
+        DotContentTypeFilterChipComponent,
         DotContentDriveSearchInputComponent,
-        DotContentDriveLanguageFieldComponent,
+        DotLanguageFilterChipComponent,
         DotContentDriveWorkflowActionsComponent,
         DotContentDriveWorkflowFilterComponent,
-        DotContentDriveFieldFilterComponent,
-        DotContentDriveFieldFilterMenuComponent,
+        DotFieldFilterComponent,
+        DotFieldFilterMenuComponent,
+        DotSharedAssetsFilterComponent,
+        DotFilterBarComponent,
+        DotStatusFilterComponent,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
@@ -200,28 +211,32 @@ interface ToolbarAnimationState {
 export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     // Emits the click event so the shell can anchor the upload-type popover to the button.
     $upload = output<MouseEvent>({ alias: 'upload' });
 
     /**
-     * Upload button label, folder-aware: when the current folder pins uploads to a base type
-     * (`defaultBaseType`), the button reads "Upload Asset" / "Upload File"; otherwise "Upload".
+     * Base type the current folder pins uploads to, if any. `dot-upload-button` turns it into the
+     * folder-aware label ("Upload Asset" / "Upload File" / "Upload").
      */
-    protected readonly $uploadLabelKey = computed(() => {
+    /**
+     * Whether the browsed folder accepts new children — the store's answer, shared with the drop
+     * zone so the three creation affordances can never disagree about the same folder.
+     */
+    protected readonly $canAddChildren = this.#store.$canAddChildren;
+
+    /** Empty when creation is allowed, so the buttons carry no tooltip in the normal case. */
+    protected readonly $addChildrenTooltip = computed(() =>
+        this.$canAddChildren() ? '' : 'content-drive.add-new.no-add-children'
+    );
+
+    protected readonly $uploadBaseType = computed(() => {
         const data = this.#store.selectedNode()?.data;
-        const defaultBaseType =
-            data && data.type !== LOAD_MORE_NODE_TYPE
-                ? (data as DotFolderTreeNodeContentData).defaultBaseType
-                : undefined;
-        switch (defaultBaseType?.toUpperCase()) {
-            case DotCMSBaseTypesContentTypes.DOTASSET:
-                return 'content-drive.upload-asset';
-            case DotCMSBaseTypesContentTypes.FILEASSET:
-                return 'content-drive.upload-file';
-            default:
-                return 'content-drive.upload';
-        }
+
+        return data && data.type !== LOAD_MORE_NODE_TYPE
+            ? ((data as DotFolderTreeNodeContentData).defaultBaseType ?? null)
+            : null;
     });
 
     readonly $items = signal<MenuItem[]>([
@@ -263,7 +278,17 @@ export class DotContentDriveToolbarComponent {
     }
 
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
-    readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+
+    /**
+     * The environment's default locale, which this drive re-seeds on every path that builds filters
+     * from scratch. Handed to the Locale chip so it can tell a clearable selection from one whose X
+     * would simply put the same value back.
+     *
+     * `?? null` because the store leaves it `undefined` until `/api/v2/languages` answers, and the
+     * chip's input is `number | null` — an absent default means "nothing is re-seeded", which is the
+     * right reading while the lookup is still in flight.
+     */
+    readonly $defaultLanguageId = computed(() => this.#store.defaultLanguageId() ?? null);
 
     /**
      * The action currently being applied, surfaced here because the run outlives the Action Center
@@ -311,8 +336,27 @@ export class DotContentDriveToolbarComponent {
             .filter((field): field is DotCMSContentTypeField => field !== undefined);
     });
 
-    onClearAll(): void {
-        this.#store.clearFilters();
+    /**
+     * The shared "More" menu could not load a content type's fields.
+     *
+     * The chip reports *that* it failed and stays interactive; how that is announced is the
+     * surface's call, and on this one it is the platform's usual error handling — the same channel
+     * the menu reached itself before it moved to `@dotcms/ui`, where `DotHttpErrorManagerService`
+     * cannot be injected at all (it transitively needs `Router`, which the legacy Dojo host that
+     * bundle boots in has none of).
+     *
+     * The chip hands over a translation key rather than the response, so the payload is
+     * synthesized: a 400 whose `header` is that key, which is the one branch of the manager that
+     * renders a caller-supplied message instead of a status-generic one. The status is the only
+     * fidelity lost — a failed field fetch showed a generic dialog before too.
+     */
+    onFieldFilterError(error: DotFilterChipError): void {
+        this.#httpErrorManager.handle(
+            new HttpErrorResponse({
+                status: 400,
+                error: { header: error.messageKey, message: error.messageKey }
+            })
+        );
     }
 
     /**
@@ -340,11 +384,12 @@ export class DotContentDriveToolbarComponent {
      * actions; the dialog adds what they cannot express — per-action eligibility counts and the
      * workflow actions grouped by scheme — and that is just as useful for one item as for many.
      *
-     * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
-     * folders, so a folder-only selection offers no Action Center.
+     * Folders count: Add to Bundle and Push Publish both take a folder identifier, so a folder-only
+     * selection still has something to act on. The actions that do not apply drop themselves out of
+     * the list rather than the dialog refusing to open.
      */
     readonly $displayActionCenter = computed(
-        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 0
+        () => this.$displayActions() && this.#store.selectedItems().length > 0
     );
 
     /**

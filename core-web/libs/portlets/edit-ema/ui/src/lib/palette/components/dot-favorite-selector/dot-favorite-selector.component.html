@@ -1,4 +1,6 @@
-<p-popover [unstyled]="true" (onHide)="onHide()">
+<p-popover (onHide)="onHide()">
+    <!-- The popover supplies the panel chrome (border, radius, shadow), so the listbox inside
+         it does not restate it — same shape as every other filter panel. -->
     <p-listbox
         optionLabel="name"
         dataKey="id"

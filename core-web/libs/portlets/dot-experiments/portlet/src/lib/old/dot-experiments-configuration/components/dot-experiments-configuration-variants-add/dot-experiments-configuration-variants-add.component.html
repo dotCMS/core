@@ -1,0 +1,57 @@
+@if (vm$ | async; as vm) {
+    <p-drawer
+        dotSidebar
+        position="right"
+        closable="false"
+        (onHide)="closeSidebar()"
+        [(visible)]="vm.status.isOpen"
+        dotSize="{{ sidebarSizes.MD }}">
+        <ng-template #header>
+            <dot-sidebar-header
+                [actionButtonTpl]="actionHeaderBtnTpl"
+                dotTitle="{{ 'experiments.configure.variants.add' | dm }}" />
+        </ng-template>
+        <div class="flex flex-col py-4">
+            <form
+                [formGroup]="form"
+                class="p-fluid"
+                id="new-variant-form"
+                data-testId="new-variant-form"
+                novalidate>
+                <div class="field">
+                    <label
+                        class="mb-4 block after:ml-1 after:text-red-500 after:content-['*']"
+                        for="name">
+                        {{ 'experiments.configure.variant.add.form.name.label' | dm }}
+                    </label>
+                    <input
+                        [maxlength]="maxNameLength + 1"
+                        [tabindex]="1"
+                        id="name"
+                        class="w-full"
+                        data-testId="add-experiment-description-input"
+                        dotAutofocus
+                        dotTrimInput
+                        formControlName="name"
+                        name="name"
+                        pInputText
+                        placeholder="{{
+                            'experiments.configure.variant.add.form.name.placeholder' | dm
+                        }}"
+                        required
+                        type="text" />
+                    <dot-field-validation-message [field]="form.controls['name']" />
+                </div>
+            </form>
+        </div>
+    </p-drawer>
+    <ng-template #actionHeaderBtnTpl>
+        <p-button
+            (onClick)="saveVariant(vm.experimentId)"
+            [disabled]="!form.valid"
+            [loading]="vm.status.status === stepStatus.SAVING"
+            data-testId="add-variant-button"
+            [label]="'experiments.action.add' | dm"
+            type="button" />
+    </ng-template>
+}

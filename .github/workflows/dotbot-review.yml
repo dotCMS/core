@@ -1,0 +1,93 @@
+name: dotbot code review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+jobs:
+  review:
+    # Only run when the PR carries the "PR : dotbot review" label.
+    #
+    # Fork PRs are skipped: GitHub forces GITHUB_TOKEN to read-only for
+    # `pull_request` events from forks, so the action's write calls to post
+    # the review would fail. Supporting forks would require pull_request_target,
+    # which reintroduces untrusted-checkout risk.
+    #
+    # Label events (`labeled`/`unlabeled`) only proceed when the changed label
+    # IS "PR : dotbot review" — unrelated label churn must not re-run or
+    # restart the review. Note `github.event.pull_request.labels` reflects the
+    # post-event state, so removing the dotbot label fails the contains check
+    # and simply skips (an in-flight review is allowed to finish rather than
+    # being canceled — see concurrency note below).
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'PR : dotbot review') &&
+      github.event.pull_request.head.repo.fork == false &&
+      (
+        (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+        github.event.label.name == 'PR : dotbot review'
+      )
+    # Concurrency lives at the JOB level (not workflow level) deliberately:
+    # skipped jobs never join the concurrency group, so a run triggered by
+    # unrelated label activity cannot cancel an in-flight review. Only runs
+    # whose `if` passes (real review work) claim the group and supersede
+    # the previous review via cancel-in-progress.
+    concurrency:
+      group: dotbot-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      # Pinned to a full commit SHA: a mutable tag could be repointed to run
+      # attacker-controlled code with this job's write-scoped GITHUB_TOKEN.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # DOTBOT_REVIEW_MODELS (repo VARIABLE), when set, OVERRIDES the review
+      # roster: we render .openrouter-review.yml from it and the action reads
+      # that as its primary + extras. This is a REPLACEMENT, not an addition —
+      # the action's `review_models` INPUT is additive (it would run the
+      # variable's models alongside the action's default primary). First
+      # entry = primary reviewer; the rest are the "fight" secondaries. When
+      # the variable is unset, nothing is rendered and the action's own
+      # defaults stand.
+      - name: Override review roster from DOTBOT_REVIEW_MODELS (when set)
+        if: ${{ vars.DOTBOT_REVIEW_MODELS != '' }}
+        env:
+          REVIEW_MODELS: ${{ vars.DOTBOT_REVIEW_MODELS }}
+        run: |
+          # Newlines to commas: `read` stops at the first newline, so models
+          # on later lines of a multi-line VARIABLE would otherwise be
+          # silently dropped without warning.
+          REVIEW_MODELS="${REVIEW_MODELS//$'\n'/,}"
+          MODELS=()
+          IFS=',' read -ra PARTS <<< "$REVIEW_MODELS"
+          for p in "${PARTS[@]}"; do
+            p="${p//[[:space:]]/}"
+            [[ -n "${p}" ]] && MODELS+=("${p}")
+          done
+          if (( ${#MODELS[@]} == 0 )); then
+            echo "::warning::DOTBOT_REVIEW_MODELS set but parsed empty — using action defaults"
+            exit 0
+          fi
+          {
+            echo "review:"
+            echo "  model: ${MODELS[0]}"
+            if (( ${#MODELS[@]} > 1 )); then
+              echo "  models:"
+              for m in "${MODELS[@]:1}"; do echo "    - ${m}"; done
+            fi
+          } > .openrouter-review.yml
+          echo "Rendered .openrouter-review.yml from DOTBOT_REVIEW_MODELS:"
+          cat .openrouter-review.yml
+      - name: dotbot autonomous review
+        uses: dotcms/openrouter-code-review-action@latest
+        with:
+          mode: review
+          openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          github_approval_token: ${{ secrets.DOTBOT_GITHUB_USER_PAT }}
+          reasoning_effort: medium
+          web_search_mode: cached
+          debug_level: 1

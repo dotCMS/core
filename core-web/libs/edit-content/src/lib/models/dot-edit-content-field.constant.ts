@@ -84,7 +84,9 @@ export const DEFAULT_MONACO_CONFIG: MonacoEditorConstructionOptions = {
  * Represent the able messages to use in the component DotEmptyContainerComponent
  */
 export const CATEGORY_FIELD_EMPTY_MESSAGES: Record<
-    ComponentStatus.ERROR | 'empty' | 'noResults',
+    // `typeof` because ComponentStatus is an `as const` object, not an enum: its members are
+    // values, so the member's type is reached through `typeof` rather than directly.
+    typeof ComponentStatus.ERROR | 'empty' | 'noResults',
     PrincipalConfiguration
 > = {
     empty: {

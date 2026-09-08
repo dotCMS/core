@@ -5,7 +5,10 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Factory for creating LangChain4J model instances from a {@link ProviderConfig}.
@@ -74,6 +77,26 @@ public class LangChain4jModelFactory {
      */
     public static ImageModel buildImageModel(final ProviderConfig config) {
         return resolve(config, "image").buildImageModel(config, "image");
+    }
+
+    /**
+     * Aggregates capability and field metadata for every registered provider, so a caller (e.g.
+     * the dotAI provider configuration REST endpoint) can render a fully dynamic provider form
+     * without hardcoding per-provider knowledge. Adding a provider to {@link #STRATEGIES}
+     * automatically makes it appear here — no other change is required.
+     */
+    public static List<ProviderMetadata> listProviderMetadata() {
+        return STRATEGIES.stream()
+                .map(LangChain4jModelFactory::toMetadata)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static ProviderMetadata toMetadata(final ModelProviderStrategy strategy) {
+        final Map<Capability, List<ProviderField>> fields = new EnumMap<>(Capability.class);
+        for (final Capability capability : strategy.supportedCapabilities()) {
+            fields.put(capability, strategy.configFields(capability));
+        }
+        return new ProviderMetadata(strategy.providerName(), strategy.supportedCapabilities(), fields);
     }
 
     private static ModelProviderStrategy resolve(final ProviderConfig config, final String modelType) {

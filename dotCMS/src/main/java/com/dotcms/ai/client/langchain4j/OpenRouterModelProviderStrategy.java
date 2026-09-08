@@ -10,6 +10,8 @@ import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 
 /**
  * {@link ModelProviderStrategy} implementation for OpenRouter.
@@ -32,6 +34,38 @@ class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "openrouter";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT, Capability.EMBEDDINGS);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        return switch (capability) {
+            case CHAT -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING, "Namespaced model ID, e.g. openai/gpt-4o"),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING,
+                            "Defaults to " + DEFAULT_BASE_URL),
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER, "Not applied to streaming requests"),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case EMBEDDINGS -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING,
+                            "Namespaced model ID, e.g. openai/text-embedding-3-small"),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING,
+                            "Defaults to " + DEFAULT_BASE_URL),
+                    ProviderField.optional("dimensions", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case IMAGE -> throw new UnsupportedOperationException(
+                    "OpenRouter image generation is not supported: the /api/v1/images endpoint "
+                    + "is not OpenAI-shaped and cannot be driven by OpenAiImageModel.");
+        };
     }
 
     @Override

@@ -539,6 +539,23 @@ import java.util.function.Predicate;
 	List<Link> getLiveLinks(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Gets the 'live' Links directly under the given host, filtered by the user's READ permission.
+	 * <p>
+	 * The Host counterpart of {@link #getLiveLinks(Folder, User, boolean)}. Prefer either of them
+	 * over {@code getLinks(parent, false, deleted, ...)} to ask for published links: the
+	 * {@code working=false} form does not express "live", and the version-table predicate it emits
+	 * does not correlate on the link, so it returns duplicates.
+	 *
+	 * @param host the host whose direct child links are wanted
+	 * @param user the user the READ filter is applied for
+	 * @param respectFrontEndPermissions whether front-end roles count towards READ
+	 * @return the live links under the host, never null
+	 * @throws DotDataException if the links cannot be read
+	 * @throws DotSecurityException if the user cannot read the host
+	 */
+	List<Link> getLiveLinks(Host host, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
+
+	/**
 	 *
 	 * @param parent
 	 * @param user

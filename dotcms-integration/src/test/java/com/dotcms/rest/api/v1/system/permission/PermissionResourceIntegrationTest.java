@@ -1412,4 +1412,153 @@ public class PermissionResourceIntegrationTest {
         }
         assertTrue("Should find the test folder in assets", foundFolder);
     }
+
+    // ==================== GET Asset Permissions: canAddChildren ====================
+
+    /*
+     * These four deliberately do NOT remove the users, roles or hosts they persist, which is worth
+     * stating because the omission looks like an oversight and was once "fixed".
+     *
+     * Wrapping them in try/finally with `UserDataGen.remove` / `RoleDataGen.remove` was tried on
+     * this PR and broke the suite: MainSuite2b went from green on this class to 1 failure and 13
+     * errors, every one of them a later test in this same file failing with
+     *
+     *     SecurityException: User Admin User:admin@dotcms.com
+     *         lacks one of the required role [DOTCMS_BACK_END_USER]
+     *
+     * Deleting a user assigned `TestUserUtils.getBackendRole()`, or a role the suite shares,
+     * disturbs role state the rest of the suite depends on. The class already leaves its
+     * `@BeforeClass` users and hosts behind for the same reason, and `SiteDataGen` exposes no
+     * `remove()` at all. `UserDataGen` timestamp-suffixes emails, so the leftovers do not collide.
+     */
+
+    /**
+     * Grants {@code permission} on {@code host} to {@code role}, as the individual (non-inheritable)
+     * permission on the asset itself.
+     */
+    private static void grantOnHost(final Host host, final Role role, final int permission)
+            throws DotDataException, DotSecurityException {
+        APILocator.getPermissionAPI().save(
+                new Permission(host.getPermissionId(), role.getId(), permission, true),
+                host, adminUser, false);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> An admin requests the permissions of a host.</li>
+     *     <li><b>Expected Result:</b> {@code canAddChildren} is true — an admin passes every
+     *     permission check by role, without needing an explicit grant.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getAssetPermissions_admin_canAddChildrenIsTrue() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                mockRequest(), response, host.getIdentifier(), 1, 40).getEntity();
+
+        assertNotNull("Response entity should not be null", view);
+        assertTrue("An admin can always add children", view.canAddChildren());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> A back-end user holding only READ on a host requests that
+     *     host's permissions.</li>
+     *     <li><b>Expected Result:</b> {@code canAddChildren} is false. This is the case the
+     *     Content Drive root gate exists for: the user can browse the site but must not be
+     *     offered New, Upload or the drop zone on it.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getAssetPermissions_readOnlyUser_canAddChildrenIsFalse() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final String password = "canAddChildrenReadOnly";
+        final User user = new UserDataGen()
+                .password(password)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        grantOnHost(host, APILocator.getRoleAPI().getUserRole(user), PermissionAPI.PERMISSION_READ);
+
+        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                getHttpRequest(user.getEmailAddress(), password),
+                response, host.getIdentifier(), 1, 40).getEntity();
+
+        assertNotNull("Response entity should not be null", view);
+        assertFalse("READ alone must not allow adding children", view.canAddChildren());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> The same user is granted CAN_ADD_CHILDREN on the host.</li>
+     *     <li><b>Expected Result:</b> {@code canAddChildren} is true. Paired with the READ-only
+     *     case above, this pins the field to the CAN_ADD_CHILDREN bit specifically rather than to
+     *     "has any permission at all".</li>
+     * </ul>
+     */
+    @Test
+    public void test_getAssetPermissions_userGrantedCanAddChildren_isTrue() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final String password = "canAddChildrenGranted";
+        final User user = new UserDataGen()
+                .password(password)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        grantOnHost(host, APILocator.getRoleAPI().getUserRole(user),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                getHttpRequest(user.getEmailAddress(), password),
+                response, host.getIdentifier(), 1, 40).getEntity();
+
+        assertNotNull("Response entity should not be null", view);
+        assertTrue("An explicit CAN_ADD_CHILDREN grant must be honoured", view.canAddChildren());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> A user holds CAN_ADD_CHILDREN only through a shared role they
+     *     are a member of — nothing is granted to their individual role.</li>
+     *     <li><b>Expected Result:</b> {@code canAddChildren} is true.</li>
+     * </ul>
+     *
+     * <p>This is the regression that matters. {@code GET /v1/permissions/user/&#123;userId&#125;}
+     * reports only the user's individual role, so it answers "false" for exactly this user, and a
+     * UI gate built on it would hide creation actions from someone entitled to them. This endpoint
+     * resolves through {@code permissionAPI.doesUserHavePermission}, which considers every role the
+     * user holds. If this test ever fails, the field has been rewired to a role-scoped lookup and
+     * the gate has become wrong in the silent direction.
+     */
+    @Test
+    public void test_getAssetPermissions_canAddChildrenGrantedViaGroupRole_isTrue() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Role groupRole = new RoleDataGen().nextPersisted();
+        final String password = "canAddChildrenGroupRole";
+        final User user = new UserDataGen()
+                .password(password)
+                .roles(TestUserUtils.getBackendRole(), groupRole)
+                .nextPersisted();
+
+        // Granted to the shared role, never to the user's own role.
+        grantOnHost(host, groupRole,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                getHttpRequest(user.getEmailAddress(), password),
+                response, host.getIdentifier(), 1, 40).getEntity();
+
+        assertNotNull("Response entity should not be null", view);
+        assertTrue("A grant held through a group role must count",
+                view.canAddChildren());
+    }
 }

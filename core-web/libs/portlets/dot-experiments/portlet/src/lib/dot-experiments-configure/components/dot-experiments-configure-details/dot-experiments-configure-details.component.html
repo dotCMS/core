@@ -1,0 +1,88 @@
+<p-panel
+    [styleClass]="$gated() ? '' : DOT_PANEL_NO_FOOTER"
+    data-testid="experiments-configure-details-card">
+    <ng-template #header>
+        <div class="flex flex-col gap-1">
+            <h2 class="text-lg font-bold text-surface-900" data-section="details">
+                {{ 'experiments.configure.details.title' | dm }}
+            </h2>
+            <span class="text-sm text-surface-500">
+                {{ 'experiments.configure.details.subtitle' | dm }}
+            </span>
+        </div>
+    </ng-template>
+
+    <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-surface-900" for="experiment-name">
+                {{ 'experiments.configure.details.name.label' | dm }}
+                <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <input
+                pInputText
+                id="experiment-name"
+                type="text"
+                class="w-full"
+                [formField]="$nameField()"
+                [placeholder]="'experiments.create.form.name.placeholder' | dm"
+                data-testid="details-name-input" />
+            @if ($showNameRequiredError()) {
+                <small class="p-error" data-error="1" data-testid="details-name-required-error">
+                    {{ 'experiments.configure.details.name.required' | dm }}
+                </small>
+            } @else {
+                @for (error of $nameField()().errors(); track error.kind) {
+                    <small class="p-error" data-testid="details-name-error">
+                        {{ error.message }}
+                    </small>
+                }
+            }
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-semibold text-surface-900" for="experiment-description">
+                {{ 'experiments.create.form.description.label' | dm }}
+            </label>
+            <textarea
+                pInputText
+                id="experiment-description"
+                rows="2"
+                class="w-full resize-y"
+                [formField]="$descriptionField()"
+                [placeholder]="'experiments.create.form.description.placeholder' | dm"
+                data-testid="details-description-textarea"></textarea>
+            @for (error of $descriptionField()().errors(); track error.kind) {
+                <small class="p-error" data-testid="details-description-error">
+                    {{ error.message }}
+                </small>
+            }
+        </div>
+
+        <!-- Page and traffic allocation, projected so they join this panel's own fields as
+             siblings rather than arriving as a nested block with its own spacing. -->
+        <ng-content />
+    </div>
+
+    <!-- While the gate is closed this card carries the only action on the screen: the press that
+         creates the draft and opens the other three. The footer bar takes the job back afterwards,
+         so the two are never offered at once.
+
+         The `@if` is inside the template rather than around it, and the band is hidden by class.
+         Panel finds its footer through a plain `@ContentChild` and is OnPush: destroying the
+         template updates the query but marks nothing for check, so the band stayed behind holding
+         a button the card no longer offers. -->
+    <ng-template #footer>
+        @if ($gated()) {
+            <div class="flex items-center justify-between gap-3">
+                <small class="text-surface-500" data-testid="details-save-hint">
+                    {{ 'experiments.configure.details.gate.hint' | dm }}
+                </small>
+                <p-button
+                    [label]="'experiments.configure.action.save-draft' | dm"
+                    [disabled]="$isSaveDisabled()"
+                    (onClick)="onSaveDraft()"
+                    data-testid="details-save-btn" />
+            </div>
+        }
+    </ng-template>
+</p-panel>

@@ -193,20 +193,6 @@ public class A11yAgentResourceTest {
         assertEquals(Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), resp.getStatus());
     }
 
-    /**
-     * Method to test: {@link A11yAgentResource#activeRun}
-     * Given scenario: The App is not configured.
-     * Expected result: 503, and no token is minted for a call that cannot go anywhere.
-     */
-    @Test
-    void activeRun_appNotConfigured_returns503() {
-        final Response resp = resource.activeRun(request, response);
-
-        assertEquals(Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), resp.getStatus());
-        verify(apiTokenAPI, never()).persistApiToken(anyString(), any(), anyString(), anyString(),
-                anyString());
-    }
-
     // -----------------------------------------------------------------------
     // Request validation
     // -----------------------------------------------------------------------

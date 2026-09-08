@@ -16,6 +16,8 @@ import com.liferay.portal.model.User;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 
 /**
@@ -571,6 +574,46 @@ public class RoleFactoryImpl extends RoleFactory {
 
         return result;
     }
+
+	@Override
+	protected Map<String, Integer> countUsersByRoleIds(final Collection<String> roleIds) throws DotDataException {
+
+		final Map<String, Integer> counts = new HashMap<>();
+		if (roleIds == null || roleIds.isEmpty()) {
+			return counts;
+		}
+
+		// Chunked like findUserIdsForRole above, to keep IN lists bounded
+		final List<String> ids = new ArrayList<>(roleIds);
+		final int chunkSize = 100;
+		for (int from = 0; from < ids.size(); from += chunkSize) {
+
+			final List<String> chunk = ids.subList(from, Math.min(from + chunkSize, ids.size()));
+			final String placeholders = chunk.stream().map(id -> "?")
+					.collect(Collectors.joining(","));
+
+			final DotConnect dc = new DotConnect();
+			// Mirrors the visibility rules of UserFactoryImpl.getUsersByName (system, anonymous,
+			// default and delete-in-progress users excluded) so the count always matches the
+			// totals returned by the users listing
+			dc.setSQL("select ur.role_id, count(distinct ur.user_id) as user_count"
+					+ " from users_cms_roles ur join user_ u on u.userid = ur.user_id"
+					+ " where ur.role_id in (" + placeholders + ")"
+					+ " and u.userid <> 'system' and u.userid <> 'anonymous'"
+					+ " and u.companyid <> ? and u.delete_in_progress = "
+					+ DbConnectionFactory.getDBFalse()
+					+ " group by ur.role_id");
+			chunk.forEach(dc::addParam);
+			dc.addParam(User.DEFAULT);
+
+			for (final Map<String, Object> row : dc.loadObjectResults()) {
+				counts.put(row.get("role_id").toString(),
+						Integer.valueOf(row.get("user_count").toString()));
+			}
+		}
+
+		return counts;
+	}
 
     @Override
 	protected List<String> findUserIdsForRole(Role role) throws DotDataException {

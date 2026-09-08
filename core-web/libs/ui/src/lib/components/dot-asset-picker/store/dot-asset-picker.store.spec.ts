@@ -1,0 +1,1736 @@
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@openng/spectator/jest';
+import { NEVER, of, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { DotContentDriveService, DotFolderService, DotSiteService } from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    DotCMSBaseTypesContentTypes,
+    DotContentDriveItem,
+    DotContentDriveSearchResponse,
+    DotPagination,
+    DotSite,
+    FolderSearchView,
+    TreeNodeItem
+} from '@dotcms/dotcms-models';
+import { createFakeFolderSearchView } from '@dotcms/utils-testing';
+
+import { ASSET_PICKER_ERROR_KEYS, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
+import { DotAssetPickerStore } from './dot-asset-picker.store';
+import { DotAssetPickerConfig } from './models';
+
+const SITE: DotSite = {
+    identifier: 'site-1',
+    hostname: 'dotcms.com',
+    aliases: null,
+    archived: false
+};
+
+const EMPTY_RESPONSE: DotContentDriveSearchResponse = {
+    folderCount: 0,
+    contentCount: 0,
+    list: [],
+    hasMoreContent: false,
+    hasMoreFolders: false,
+    nextContentCursor: 0,
+    nextFolderCursor: 0
+};
+
+/** A second site, to prove the picker is not pinned to the one that opened it. */
+const OTHER_SITE: DotSite = {
+    identifier: 'site-2',
+    hostname: 'blog.dotcms.com',
+    aliases: null,
+    archived: false
+};
+
+/** One page of sites as `/api/v1/site` returns them (`name`, not `hostname`). */
+const SITES_RESPONSE = {
+    sites: [
+        { identifier: SITE.identifier, hostname: SITE.hostname, aliases: null, archived: false },
+        {
+            identifier: OTHER_SITE.identifier,
+            hostname: OTHER_SITE.hostname,
+            aliases: null,
+            archived: false
+        }
+    ],
+    pagination: { currentPage: 1, perPage: 40, totalEntries: 2 }
+};
+
+const EMPTY_FOLDERS = {
+    folders: [] as FolderSearchView[],
+    pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } as DotPagination
+};
+
+/** The only two base types that carry an asset — the boundary both entry points impose. */
+const ASSET_BASE_TYPES = [
+    DotCMSBaseTypesContentTypes.DOTASSET,
+    DotCMSBaseTypesContentTypes.FILEASSET
+];
+
+/** What the File field hands the store: a type boundary and a locale, nothing pre-selected. */
+const FILE_FIELD_CONFIG: DotAssetPickerConfig = {
+    site: SITE,
+    languageId: '1',
+    allowedBaseTypes: ASSET_BASE_TYPES
+};
+
+/** What the Image field hands the store: the same boundary, pre-selected, plus a silent mime. */
+const IMAGE_FIELD_CONFIG: DotAssetPickerConfig = {
+    site: SITE,
+    languageId: '1',
+    allowedBaseTypes: ASSET_BASE_TYPES,
+    baseTypes: ASSET_BASE_TYPES,
+    mimeTypes: ['image/*']
+};
+
+/**
+ * What `openBrowserModal` hands the store: pages alongside assets, plus menu links — which no other
+ * entry point may ask for.
+ *
+ * No `showFolders`: the option no longer exists (#37366). The picker's list carries content only,
+ * and folders are reached through the sidebar tree, so there is no browse option a caller could set
+ * to put a folder in the list.
+ */
+const BROWSE_CONFIG: DotAssetPickerConfig = {
+    site: SITE,
+    allowedBaseTypes: [DotCMSBaseTypesContentTypes.FILEASSET, DotCMSBaseTypesContentTypes.HTMLPAGE],
+    browse: { showLinks: true }
+};
+
+describe('DotAssetPickerStore', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotAssetPickerStore>>;
+    let store: InstanceType<typeof DotAssetPickerStore>;
+    let contentDriveService: SpyObject<DotContentDriveService>;
+    let folderService: SpyObject<DotFolderService>;
+    let siteService: SpyObject<DotSiteService>;
+
+    // Deliberately NO provideRouter / RouterTestingModule here — see the "no router" describe below.
+    const createService = createServiceFactory({
+        service: DotAssetPickerStore,
+        providers: [
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(EMPTY_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                searchFolders: jest.fn().mockReturnValue(of(EMPTY_FOLDERS))
+            }),
+            mockProvider(DotSiteService, {
+                getSites: jest.fn().mockReturnValue(of(SITES_RESPONSE))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        contentDriveService = spectator.inject(DotContentDriveService);
+        folderService = spectator.inject(DotFolderService);
+        siteService = spectator.inject(DotSiteService);
+
+        // `mockProvider` builds one mock per file and `clearAllMocks` only clears calls, not
+        // implementations — so re-seed the defaults here or a test that overrides a return value
+        // leaks into every test after it.
+        contentDriveService.search.mockReturnValue(of(EMPTY_RESPONSE));
+        folderService.searchFolders.mockReturnValue(of(EMPTY_FOLDERS));
+        siteService.getSites.mockReturnValue(of(SITES_RESPONSE));
+    });
+
+    afterEach(() => jest.clearAllMocks());
+
+    describe('File field entry point', () => {
+        beforeEach(() => {
+            store.initPicker(FILE_FIELD_CONFIG);
+        });
+
+        it('should send the pre-selected locale', () => {
+            expect(store.$request().language).toEqual(['1']);
+        });
+
+        it('should not restrict content types', () => {
+            expect(store.$request().contentTypes).toBeUndefined();
+        });
+
+        it('should restrict to the asset base types even with nothing pre-selected', () => {
+            // Regression: a File field starts with no base-type chip, and "no chip" used to mean
+            // "no restriction" — so the list offered Pages and every other content type. A File
+            // field holds files (images, PDFs, videos), never content.
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should not send a mimetype restriction', () => {
+            // Any kind of file is fair game here — that is what separates it from an Image field.
+            expect(store.$request().mimeTypes).toBeUndefined();
+        });
+
+        it('should address the site root when no path is configured', () => {
+            expect(store.$request().assetPath).toBe('//dotcms.com/');
+        });
+
+        it('should address the configured folder when one is given', () => {
+            store.initPicker({ ...FILE_FIELD_CONFIG, path: '/images/' });
+
+            expect(store.$request().assetPath).toBe('//dotcms.com/images/');
+        });
+    });
+
+    describe('entry-point boundary', () => {
+        // `allowedBaseTypes` is what the field can EVER hold; `baseTypes` is only what starts
+        // selected. Conflating them is what let a File field list Pages.
+        it('should keep restricting after the editor clears every filter', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.clearFilters();
+
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should keep restricting after the editor removes the base-type filter', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.removeFilter('baseType');
+
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should let a narrower selection win over the boundary', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.patchFilters({ baseType: [DotCMSBaseTypesContentTypes.DOTASSET] });
+
+            expect(store.$request().baseTypes).toEqual([DotCMSBaseTypesContentTypes.DOTASSET]);
+        });
+
+        it('should stay unrestricted when the host configures no boundary', () => {
+            // Content Drive-style usage: the picker itself imposes nothing.
+            store.initPicker({ site: SITE });
+
+            expect(store.$request().baseTypes).toBeUndefined();
+        });
+    });
+
+    describe('Image field entry point', () => {
+        beforeEach(() => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+        });
+
+        it('should send the pre-selected locale', () => {
+            expect(store.$request().language).toEqual(['1']);
+        });
+
+        it('should restrict to the dotAsset and File Asset base types', () => {
+            expect(store.$request().baseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+        });
+
+        it('should send the mimetype restriction', () => {
+            expect(store.$request().mimeTypes).toEqual(['image/*']);
+        });
+
+        it('should keep the mimetype restriction out of the user-facing filters', () => {
+            // FR-004: nothing downstream can render it as a chip or offer to clear it.
+            expect(Object.values(store.filters())).not.toContainEqual(['image/*']);
+            expect(JSON.stringify(store.filters())).not.toContain('image/*');
+        });
+
+        it('should keep applying the mimetype restriction after the user clears every filter', () => {
+            store.clearFilters();
+
+            expect(store.$request().mimeTypes).toEqual(['image/*']);
+            // BEHAVIOR CHANGE (FR-009 / research R6a): clearing used to drop the seeded locale,
+            // leaving an Image field's editor in an unfiltered, unlocalized library. It now lands
+            // back on what the caller seeded. The mimetype half of this test is unaffected — that
+            // restriction was never a filter and still survives every clear.
+            expect(store.$request().language).toEqual(['1']);
+        });
+    });
+
+    // An invariant again (#37366). It briefly stopped being one when `openBrowserModal` could ask
+    // for folders; that capability is withdrawn, so `showFolders` is now false for EVERY entry
+    // point and there is no configuration that flips it. BROWSE_CONFIG is asserted alongside the
+    // field configs on purpose — it is the only caller that ever got folders, so a guard that
+    // omitted it would be a guard that cannot fail.
+    describe('showFolders invariant (every entry point)', () => {
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG],
+            ['browse (openBrowserModal)', BROWSE_CONFIG]
+        ])('should be false with no filters applied for the %s', (_name, config) => {
+            store.initPicker(config);
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should be false with every filter applied', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({
+                title: 'logo',
+                contentType: ['fileAsset'],
+                baseType: ['FILEASSET'],
+                languageId: ['1', '2']
+            });
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should be false with every filter applied for a browse caller', () => {
+            store.initPicker(BROWSE_CONFIG);
+            store.patchFilters({
+                title: 'logo',
+                contentType: ['fileAsset'],
+                baseType: ['FILEASSET'],
+                languageId: ['1', '2']
+            });
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should be false after filters are cleared', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.patchFilters({ title: 'logo' });
+            store.clearFilters();
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should send showFolders rather than omit it', () => {
+            // Load-bearing, and the reason this is asserted separately from the `false` checks:
+            // `showFolders` defaults to TRUE server-side (AbstractDriveRequestForm#showFolders), so
+            // an omitted key relists folders. `toBe(false)` alone would pass on `undefined` under a
+            // looser matcher, so assert the key's presence explicitly.
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request()).toHaveProperty('showFolders', false);
+        });
+
+        it('should ignore a re-added showFolders browse option', () => {
+            // The one falsifiable guard at this layer, and the regression actually worth guarding:
+            // that no configuration can re-enable folder listing. The cast simulates a future
+            // change re-introducing the option that #37366 withdrew — the request must still send
+            // `false`, because the store hardcodes it rather than reading it from `browse`.
+            store.initPicker({
+                ...BROWSE_CONFIG,
+                browse: { showFolders: true }
+            } as unknown as DotAssetPickerConfig);
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should not send a folder cursor at all', () => {
+            // Was "should never advance the folder cursor", asserting a pinned 0. The key is gone
+            // entirely now (#37366) — the endpoint defaults it to 0, and there is no folder stream
+            // for the picker to page.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.$request()).not.toHaveProperty('folderCursor');
+        });
+    });
+
+    describe('no router dependency', () => {
+        it('should construct with no router providers configured', () => {
+            // If any part of the store injects ActivatedRoute or Location, createService() throws.
+            expect(() => createService()).not.toThrow();
+        });
+
+        it('should not read a path from anywhere but its own configuration', () => {
+            store.initPicker({ ...FILE_FIELD_CONFIG, path: '/docs/' });
+
+            expect(store.path()).toBe('/docs/');
+        });
+    });
+
+    describe('search lifecycle', () => {
+        it('should not search before it is configured', () => {
+            spectator.flushEffects();
+
+            expect(contentDriveService.search).not.toHaveBeenCalled();
+        });
+
+        it('should not search when the configured site is SYSTEM_HOST', () => {
+            store.initPicker({
+                site: { ...SITE, identifier: 'SYSTEM_HOST', hostname: 'SYSTEM_HOST' }
+            });
+            spectator.flushEffects();
+
+            expect(contentDriveService.search).not.toHaveBeenCalled();
+        });
+
+        it('should search through the drive endpoint once configured', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({ showFolders: false, assetPath: '//dotcms.com/' })
+            );
+        });
+
+        it('should store the returned items and mark itself loaded', () => {
+            contentDriveService.search.mockReturnValue(
+                of({ ...EMPTY_RESPONSE, list: [{ inode: 'a' }], contentCount: 1 })
+            );
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.items()).toEqual([{ inode: 'a' }]);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+        });
+
+        it('should reset to page one when a filter changes', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            patchState(unprotected(store), {
+                pagination: { ...DEFAULT_ASSET_PICKER_PAGINATION, page: 3 }
+            });
+
+            store.patchFilters({ title: 'logo' });
+
+            expect(store.pagination().page).toBe(1);
+        });
+    });
+
+    describe('error handling', () => {
+        beforeEach(() => {
+            contentDriveService.search.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+        });
+
+        it('should record the failure for the host to report', () => {
+            // Not `DotHttpErrorManagerService`: it transitively needs `Router`, which the legacy
+            // Dojo host has none of. The store says what failed; the picker component toasts it.
+            expect(store.requestError()).toEqual({
+                messageKey: ASSET_PICKER_ERROR_KEYS.assets
+            });
+        });
+
+        it('should not leave itself loading', () => {
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+        });
+
+        it('should still accept a retry after failing', () => {
+            contentDriveService.search.mockReturnValue(of(EMPTY_RESPONSE));
+
+            store.patchFilters({ title: 'retry' });
+            spectator.flushEffects();
+
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+        });
+    });
+
+    describe('cursor paging', () => {
+        it('should not re-fire the search when the response writes the next cursor back', () => {
+            // The response updates `pages`, which `$request` reads. If that read were tracked, the
+            // request would recompute, refire the search, and loop forever.
+            contentDriveService.search.mockReturnValue(
+                of({ ...EMPTY_RESPONSE, nextContentCursor: 20, hasMoreContent: true })
+            );
+
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+            spectator.flushEffects();
+
+            expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        });
+
+        it('should resume page two from the cursor the previous page returned', () => {
+            contentDriveService.search.mockReturnValue(
+                of({ ...EMPTY_RESPONSE, nextContentCursor: 20, hasMoreContent: true })
+            );
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+            expect(store.$request().contentCursor).toBe(20);
+        });
+
+        it('should discard cursor bookmarks when the page size changes', () => {
+            contentDriveService.search.mockReturnValue(
+                of({ ...EMPTY_RESPONSE, nextContentCursor: 20, hasMoreContent: true })
+            );
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            store.setPagination({ limit: 50, page: 2 });
+
+            expect(store.pagination().page).toBe(1);
+            expect(store.$request().contentCursor).toBe(0);
+        });
+
+        it('should keep the count the endpoint actually returned', () => {
+            contentDriveService.search.mockReturnValue(of({ ...EMPTY_RESPONSE, contentCount: 42 }));
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.totalItems()).toBe(42);
+        });
+    });
+
+    describe('browse entry point (openBrowserModal)', () => {
+        /** A response that still has more of everything to give. */
+        const MORE_OF_EVERYTHING = {
+            ...EMPTY_RESPONSE,
+            hasMoreContent: true,
+            hasMoreFolders: true,
+            hasMoreLinks: true,
+            nextContentCursor: 20,
+            nextFolderCursor: 5,
+            nextLinkCursor: 3
+        };
+
+        it('should never ask for folders, not even for a browse caller', () => {
+            // Inverted in #37366. #37207 shipped this as "should ask for folders when the caller
+            // does"; QA rejected the design (TC-001), so the capability is withdrawn rather than
+            // the implementation fixed. The list carries content only; the sidebar tree is where
+            // folders live.
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should ask for menu links when the caller does', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().showLinks).toBe(true);
+        });
+
+        it('should offer pages alongside assets', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().baseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
+        });
+
+        it('should ask for live content only when the caller wants published', () => {
+            store.initPicker({ ...BROWSE_CONFIG, browse: { showWorking: false } });
+
+            expect(store.$request().live).toBe(true);
+        });
+
+        it('should return archived content when Archived is selected, without touching the version state', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            store.patchFilters({ status: ['ARCHIVED'] });
+
+            // The selection travels through `status`, which is now content condition's only
+            // representation. Nothing pins `archived`, so nothing contradicts it (FR-014b), and
+            // `live` — the separate version-state axis — is untouched (FR-014c).
+            expect(store.$request().status).toEqual(['ARCHIVED']);
+            expect(store.$request()).not.toHaveProperty('archived');
+            expect(store.$request().live).toBeUndefined();
+        });
+
+        it('should seed the Status filter from a caller that asked for archived content', () => {
+            store.initPicker({ ...BROWSE_CONFIG, status: ['ARCHIVED'] });
+
+            // Seeded, not pinned: it shows up in the chip and "Clear all" returns to it.
+            expect(store.getFilterValue('status')).toEqual(['ARCHIVED']);
+            expect(store.$request().status).toEqual(['ARCHIVED']);
+        });
+
+        // FR-014f, the seeding half. A field entry point carries no `browse`, so it may not seed
+        // Archived either: the bound has to hold before any chip exists, or it holds only because
+        // one happens to be on screen.
+        it('should drop a seeded Archived from a caller with no browse capabilities', () => {
+            store.initPicker({ ...FILE_FIELD_CONFIG, status: ['ARCHIVED', 'LOCKED'] });
+
+            expect(store.getFilterValue('status')).toEqual(['LOCKED']);
+            expect(store.$request().status).toEqual(['LOCKED']);
+        });
+
+        it('should keep a seeded Archived for a browse caller, which is what asked for it', () => {
+            store.initPicker({ ...BROWSE_CONFIG, status: ['ARCHIVED'] });
+
+            expect(store.getFilterValue('status')).toEqual(['ARCHIVED']);
+        });
+
+        it('should never carry a published-only pin together with a working-only condition', () => {
+            store.initPicker({
+                ...BROWSE_CONFIG,
+                browse: { showWorking: false },
+                status: ['ARCHIVED']
+            });
+
+            // SC-009. The toolbar is what makes this unreachable — it withholds Archived and
+            // Unpublished from a published-only picker — but a seed arrives from the caller, so the
+            // combination is asserted here too: if it ever holds, a field can be handed the working
+            // version of content the caller asked for as published.
+            const request = store.$request();
+
+            expect(request.live && request.status?.includes('ARCHIVED')).toBeFalsy();
+        });
+
+        // Two cursors, not three (#37366). Contentlets and menu links still page independently;
+        // the folder stream is gone, so the request carries no folder cursor to resume.
+        describe('two-cursor paging', () => {
+            beforeEach(() => {
+                contentDriveService.search.mockReturnValue(of(MORE_OF_EVERYTHING));
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+            });
+
+            it('should not carry a folder cursor on any page', () => {
+                expect(store.$request()).not.toHaveProperty('folderCursor');
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request()).not.toHaveProperty('folderCursor');
+            });
+
+            it('should resume every stream from where the previous page left off', () => {
+                // Contentlets and links page independently — one cursor cannot describe a page of a
+                // mixed list.
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().contentCursor).toBe(20);
+                expect(store.$request().linkCursor).toBe(3);
+            });
+
+            it('should start every stream at zero on page one', () => {
+                expect(store.$request().contentCursor).toBe(0);
+                expect(store.$request().linkCursor).toBe(0);
+            });
+        });
+
+        describe('exhausted streams', () => {
+            // "should stop asking for folders once there are no more" was removed in #37366: there
+            // is no folder stream to exhaust. `showFolders` is a hardcoded `false` on every page,
+            // which the `showFolders invariant` suite above covers.
+
+            it('should stop asking for links once there are no more', () => {
+                contentDriveService.search.mockReturnValue(
+                    of({ ...MORE_OF_EVERYTHING, hasMoreLinks: false, nextLinkCursor: 3 })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().showLinks).toBe(false);
+            });
+
+            it('should keep asking for content while content remains', () => {
+                // Reaching the end of one stream must not truncate the others.
+                contentDriveService.search.mockReturnValue(
+                    of({ ...MORE_OF_EVERYTHING, hasMoreFolders: false, hasMoreLinks: false })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().contentCursor).toBe(20);
+            });
+        });
+    });
+
+    describe('entry site resolution', () => {
+        /** What a caller hands over when it does not know, or does not care, which site it is on. */
+        const NO_SITE_CONFIG: DotAssetPickerConfig = {
+            allowedBaseTypes: ASSET_BASE_TYPES
+        };
+
+        beforeEach(() => {
+            siteService.getCurrentSite.mockReturnValue(of(SITE));
+        });
+
+        it('should not ask the server when the caller already supplied a site', () => {
+            // The File field and the Story Block both have one in hand; making them pay for a
+            // request they do not need would be a regression.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(siteService.getCurrentSite).not.toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(SITE.identifier);
+        });
+
+        it('should resolve the current site when the caller supplied none', () => {
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(siteService.getCurrentSite).toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(SITE.identifier);
+        });
+
+        it('should not search until a site is known', () => {
+            // `$isBrowsable` already guards on `browsingSite`, so the request simply waits rather
+            // than firing against an undefined path.
+            siteService.getCurrentSite.mockReturnValue(NEVER);
+
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.browsingSite()).toBeUndefined();
+            expect(contentDriveService.search).not.toHaveBeenCalled();
+        });
+
+        it('should still open when the lookup fails, leaving the site tree unselected', () => {
+            // Opening on the site tree with nothing chosen beats not opening at all — the sidebar
+            // lists every site the user can browse, so they can pick one.
+            siteService.getCurrentSite.mockReturnValue(throwError(() => new Error('offline')));
+
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.browsingSite()).toBeUndefined();
+            expect(store.status()).not.toBe(ComponentStatus.ERROR);
+        });
+
+        it('should prefer the remembered site over the resolved one', () => {
+            // `browseSite` is where the editor last picked something; it already wins over the
+            // caller's site, and it must win over the looked-up one too.
+            store.initPicker({
+                ...NO_SITE_CONFIG,
+                browseSite: { identifier: OTHER_SITE.identifier, hostname: OTHER_SITE.hostname }
+            });
+
+            expect(siteService.getCurrentSite).not.toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(OTHER_SITE.identifier);
+        });
+    });
+
+    // Two streams since #37366, and the invariant is unchanged: claim one page beyond while ANY
+    // surviving stream reports more, so a stream that outlives the others stays reachable. The
+    // folder case that #37273's review originally caught is gone with the folder stream itself;
+    // the menu-link case below is the same bug shape and is what now guards it.
+    describe('paginator row count across two streams', () => {
+        it('should ignore hasMoreFolders even if the endpoint reports it', () => {
+            // The response type still carries the folder pair, and a `showFolders: false` request
+            // always gets `hasMoreFolders: false` — but a server that reported `true` must not
+            // inflate the total for rows the picker never asked for and cannot show.
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: true,
+                    nextFolderCursor: 5
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(15);
+        });
+
+        it('should keep Next reachable while menu links remain', () => {
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: false,
+                    hasMoreLinks: true,
+                    nextLinkCursor: 3
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBeGreaterThan(15);
+        });
+
+        it('should settle on the exact total once every stream is exhausted', () => {
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: false,
+                    hasMoreLinks: false
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(15);
+        });
+    });
+
+    describe('opt-in guarantee (no browse options)', () => {
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG]
+        ])('should not ask for links for the %s', (_name, config) => {
+            store.initPicker(config);
+
+            expect(store.$request().showLinks).toBeFalsy();
+        });
+
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG]
+        ])('should send no folder cursor for the %s, on any page', (_name, config) => {
+            // Was "should keep the folder cursor pinned", asserting 0. The key is absent entirely
+            // now (#37366) — asserted on page 2 as well, since paging is what used to advance it.
+            contentDriveService.search.mockReturnValue(
+                of({ ...EMPTY_RESPONSE, hasMoreContent: true, nextContentCursor: 20 })
+            );
+            store.initPicker(config);
+            spectator.flushEffects();
+
+            store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+            expect(store.$request()).not.toHaveProperty('folderCursor');
+        });
+
+        it('should not mention archived content at all', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            // Not `archived: false` any more — the key is gone. The endpoint defaults it, so an
+            // unfiltered picker asks for exactly what it always did while leaving the Status chip
+            // free to say otherwise (FR-014b).
+            expect(store.$request()).not.toHaveProperty('archived');
+            expect(store.$request().status).toBeUndefined();
+        });
+
+        it('should omit userSearchable until a field filter carries a value', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            // An absent key leaves the request byte-identical to one that never mentioned it.
+            expect(store.$request().userSearchable).toBeUndefined();
+        });
+    });
+
+    describe('paginator row count', () => {
+        const page = (
+            list: DotContentDriveItem[],
+            hasMoreContent: boolean
+        ): DotContentDriveSearchResponse => ({
+            ...EMPTY_RESPONSE,
+            list,
+            contentCount: list.length,
+            hasMoreContent,
+            nextContentCursor: list.length
+        });
+
+        it('should claim a page beyond the current one while there is more content', () => {
+            // `contentCount` is the size of THIS page, so a full page looks like the last one and
+            // PrimeNG disables "next". Claiming one page beyond is what keeps the arrow clickable.
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(20).fill({} as DotContentDriveItem), true))
+            );
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.totalItems()).toBe(20);
+            expect(store.$totalRecords()).toBe(40);
+        });
+
+        it('should report the exact total once the last page is on screen', () => {
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(7).fill({} as DotContentDriveItem), false))
+            );
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(7);
+        });
+
+        it('should count the pages already behind it on a later page', () => {
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(20).fill({} as DotContentDriveItem), true))
+            );
+            store.initPicker(FILE_FIELD_CONFIG);
+            spectator.flushEffects();
+
+            // Page 2 comes back short and with nothing after it: 20 behind + 5 on screen.
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(5).fill({} as DotContentDriveItem), false))
+            );
+            store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(25);
+        });
+
+        it('should report nothing before the first response lands', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.$totalRecords()).toBe(0);
+        });
+    });
+
+    describe('folder tree', () => {
+        it('should load the tree when the picker is configured', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(folderService.searchFolders).toHaveBeenCalled();
+        });
+
+        it('should not load the tree before the picker is configured', () => {
+            expect(folderService.searchFolders).not.toHaveBeenCalled();
+        });
+
+        it('should root the tree at the browsed site and nothing else', () => {
+            // Sites used to be the roots — that is how the editor changed site. The site is now
+            // chosen explicitly in the sidebar's selector, so the tree shows one site's folders.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.folders()).toHaveLength(1);
+            expect(store.folders()[0].data).toEqual(
+                expect.objectContaining({ type: 'site', id: SITE.identifier })
+            );
+        });
+
+        it('should expand the site it opens on', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.folders()[0].expanded).toBe(true);
+        });
+
+        it('should open on the remembered site rather than the one being edited', () => {
+            store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: OTHER_SITE });
+
+            // Normalised to what `DotAssetPickerSite` actually declares. It used to store whatever
+            // object the caller passed, so a full `DotSite` leaked its `aliases`/`archived` into
+            // state that promises two fields — and only sometimes, depending on the caller.
+            expect(store.browsingSite()).toEqual({
+                identifier: OTHER_SITE.identifier,
+                hostname: OTHER_SITE.hostname
+            });
+            expect(store.folders()[0].data?.id).toBe(OTHER_SITE.identifier);
+            expect(store.folders()[0].expanded).toBe(true);
+        });
+
+        it('should track the selected node', () => {
+            const node = { key: 'docs', label: '/docs/' } as TreeNodeItem;
+
+            store.setSelectedNode(node);
+
+            expect(store.selectedNode()).toBe(node);
+        });
+
+        describe('when the folders request fails', () => {
+            beforeEach(() => {
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+                store.initPicker(FILE_FIELD_CONFIG);
+            });
+
+            it('should record the failure for the host to report', () => {
+                expect(store.requestError()).toEqual({
+                    messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                });
+            });
+
+            it('should stay in error instead of looking like an empty tree', () => {
+                // The success path used to run for the error fallback too and patch LOADED back
+                // over ERROR, so a failed load was indistinguishable from a site with no folders.
+                expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
+            });
+
+            it('should still accept a retry after failing', () => {
+                folderService.searchFolders.mockReturnValue(of(EMPTY_FOLDERS));
+
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+            });
+        });
+
+        describe('expanding a node', () => {
+            /**
+             * A collapsed folder hanging off the single `All` root — what expansion acts on now
+             * that a second site root no longer exists to expand.
+             */
+            const COLLAPSED_FOLDER = {
+                key: 'folder-docs',
+                label: `${SITE.hostname}/docs/`,
+                leaf: false,
+                data: {
+                    type: 'folder' as const,
+                    id: 'folder-docs',
+                    hostname: SITE.hostname,
+                    path: '/docs/'
+                }
+            } as TreeNodeItem;
+
+            /** The node as the tree is currently rendering it — not the reference we passed in. */
+            const renderedFolder = () =>
+                store.folders()[0].children?.find((node) => node.key === COLLAPSED_FOLDER.key);
+
+            const expandFolder = () => store.expandNode(renderedFolder() as TreeNodeItem);
+
+            beforeEach(() => {
+                store.initPicker(FILE_FIELD_CONFIG);
+                store.folders()[0].children = [structuredClone(COLLAPSED_FOLDER)];
+                folderService.searchFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            createFakeFolderSearchView({
+                                id: 'folder-1',
+                                name: 'images',
+                                path: '/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 40,
+                            totalEntries: 1
+                        } as DotPagination
+                    })
+                );
+            });
+
+            it('should stop showing the spinner once the request resolves', () => {
+                // Regression: the pre-request state refresh deep-cloned the tree, so the response
+                // cleared `loading` on a node that was no longer the one being rendered — the
+                // spinner span forever even though the call had returned 200.
+                expandFolder();
+
+                expect(renderedFolder()?.loading).toBeFalsy();
+            });
+
+            it('should show the loaded children under the node', () => {
+                expandFolder();
+
+                expect(renderedFolder()?.expanded).toBe(true);
+                expect(renderedFolder()?.children).toHaveLength(1);
+            });
+
+            it('should publish the node as a new object so the OnPush tree re-renders it', () => {
+                // `p-tree` and its `p-treeNode`s are OnPush and their `*ngFor` tracks by object
+                // identity: a node mutated in place keeps its identity, so the row is never
+                // re-rendered and the spinner only clears when something else triggers change
+                // detection. Publishing a fresh object is what makes the update visible.
+                const before = store.folders()[1];
+
+                store.expandNode(before);
+
+                expect(renderedFolder()).not.toBe(before);
+            });
+
+            it('should keep the highlight on the selected node across a load', () => {
+                // The selection is compared by reference, so re-pointing it at the new object graph
+                // is what stops the highlight from vanishing when a branch loads.
+                store.selectNode(store.folders()[0]);
+                const selectedKey = store.selectedNode()?.key;
+
+                expandFolder();
+
+                expect(store.selectedNode()?.key).toBe(selectedKey);
+                expect(store.selectedNode()).toBe(
+                    store.folders().find((node) => node.key === selectedKey)
+                );
+            });
+
+            it('should clear the spinner when the request fails', () => {
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                expandFolder();
+
+                expect(renderedFolder()?.loading).toBeFalsy();
+                expect(store.requestError()).toEqual({
+                    messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                });
+            });
+
+            it('should not re-fetch a node that already has children', () => {
+                expandFolder();
+                folderService.searchFolders.mockClear();
+
+                store.expandNode(renderedFolder() as TreeNodeItem);
+
+                expect(folderService.searchFolders).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('scoping to a node', () => {
+            // The tree is no longer how the editor changes site — the selector is (US1). What it
+            // still does is scope the list within the site it is rooted at.
+            beforeEach(() => store.initPicker(FILE_FIELD_CONFIG));
+
+            it('should address the whole site when the root is picked', () => {
+                store.selectNode(store.folders()[0]);
+
+                expect(store.$request().assetPath).toBe(`//${SITE.hostname}/`);
+            });
+
+            it('should scope the search to a folder of that site', () => {
+                const folder = {
+                    key: 'f1',
+                    label: `${SITE.hostname}/images/`,
+                    data: {
+                        type: 'folder' as const,
+                        id: 'folder-1',
+                        hostname: SITE.hostname,
+                        path: '/images/'
+                    }
+                } as TreeNodeItem;
+                store.folders()[0].children = [folder];
+
+                store.selectNode(folder);
+
+                expect(store.$request().assetPath).toBe(`//${SITE.hostname}/images/`);
+            });
+
+            it('should send the user back to page one', () => {
+                store.setPagination({ limit: 20, page: 3 });
+
+                store.selectNode(store.folders()[0]);
+
+                expect(store.pagination().page).toBe(1);
+            });
+
+            it('should ignore a click on a "Load more" sentinel', () => {
+                const before = store.$request().assetPath;
+
+                store.selectNode({
+                    key: 'load-more:sites',
+                    data: { type: 'load-more', id: 'load-more:sites' }
+                } as TreeNodeItem);
+
+                expect(store.$request().assetPath).toBe(before);
+            });
+        });
+
+        describe('folder search (US2)', () => {
+            // `/folder/search` returns each match with its **parent** path; the browsing service
+            // appends the name to build the node's own path. So `thumbnails` arrives as
+            // `path: '/images/'` and becomes `/images/thumbnails/` — which is what makes a flat
+            // result list addressable without a tree to walk up.
+            const results = {
+                folders: [
+                    createFakeFolderSearchView({
+                        id: 'f1',
+                        name: 'images',
+                        path: '/',
+                        hasChildren: false
+                    }),
+                    createFakeFolderSearchView({
+                        id: 'f2',
+                        name: 'thumbnails',
+                        path: '/images/',
+                        hasChildren: false
+                    })
+                ],
+                pagination: { currentPage: 1, perPage: 40, totalEntries: 2 } as DotPagination
+            };
+
+            beforeEach(() => store.initPicker(FILE_FIELD_CONFIG));
+
+            it('should search folder names recursively inside the site being browsed', () => {
+                store.setFolderSearch('ima');
+
+                expect(folderService.searchFolders).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        siteId: SITE.identifier,
+                        path: '/',
+                        recursive: true,
+                        name: 'ima',
+                        page: 1
+                    })
+                );
+            });
+
+            it('should treat a one-character term as no search', () => {
+                // `/folder/search` rejects a `name` shorter than two characters, so a single letter
+                // is treated as "no search" rather than sent and failed.
+                folderService.searchFolders.mockClear();
+
+                store.setFolderSearch('i');
+
+                expect(folderService.searchFolders).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ recursive: true })
+                );
+                expect(store.searchResults()).toBeNull();
+            });
+
+            it('should not leak into the asset search', () => {
+                store.setFolderSearch('images');
+
+                expect(store.$request().filters?.text).toBe('');
+            });
+
+            it('should leave the tree highlight where it was', () => {
+                // Searching changes what the sidebar *shows*; it must not move where the asset list
+                // and any upload are pointed.
+                const before = store.selectedNode();
+
+                store.setFolderSearch('images');
+
+                expect(store.selectedNode()).not.toBeUndefined();
+                expect(store.selectedNode()?.key).toBe(before?.key);
+            });
+
+            it('should publish the matches as a flat result list', () => {
+                folderService.searchFolders.mockReturnValue(of(results));
+
+                store.setFolderSearch('ima');
+
+                expect(store.searchResults()).toHaveLength(2);
+                expect(store.isSearchingFolders()).toBe(true);
+            });
+
+            it('should distinguish "searched, nothing matched" from "not searching"', () => {
+                // `null` and `[]` must not collapse, or the empty state fires before the editor has
+                // typed anything.
+                expect(store.searchResults()).toBeNull();
+
+                folderService.searchFolders.mockReturnValue(of(EMPTY_FOLDERS));
+                store.setFolderSearch('zzz');
+
+                expect(store.searchResults()).toEqual([]);
+                expect(store.showResultsEmptyState()).toBe(true);
+            });
+
+            it('should record that more matches exist than the one page shown', () => {
+                folderService.searchFolders.mockReturnValue(
+                    of({ ...results, pagination: { currentPage: 1, perPage: 2, totalEntries: 40 } })
+                );
+
+                store.setFolderSearch('a');
+                store.setFolderSearch('ab');
+
+                expect(store.searchHasMore()).toBe(true);
+                expect(store.showRefineHint()).toBe(true);
+            });
+
+            it('should surface a failed search as an error, not as an empty result', () => {
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.setFolderSearch('ima');
+
+                expect(store.searchStatus()).toBe(ComponentStatus.ERROR);
+                expect(store.showResultsEmptyState()).toBe(false);
+            });
+
+            describe('acting on a result', () => {
+                beforeEach(() => {
+                    folderService.searchFolders.mockReturnValue(of(results));
+                    store.setFolderSearch('ima');
+                });
+
+                it('should scope the asset list to the chosen folder', () => {
+                    store.selectSearchResult(store.searchResults()![1]);
+
+                    expect(store.$request().assetPath).toBe(
+                        `//${SITE.hostname}/images/thumbnails/`
+                    );
+                });
+
+                it('should keep the result list open so another can be picked without retyping', () => {
+                    store.selectSearchResult(store.searchResults()![0]);
+
+                    expect(store.searchResults()).toHaveLength(2);
+                    expect(store.folderSearch()).toBe('ima');
+                    expect(store.isSearchingFolders()).toBe(true);
+                });
+
+                it('should mark the chosen row as selected', () => {
+                    const target = store.searchResults()![1];
+
+                    store.selectSearchResult(target);
+
+                    expect(store.selectedResultKey()).toBe(target.key);
+                });
+
+                it('should return to the tree when the term is cleared', () => {
+                    store.setFolderSearch('');
+
+                    expect(store.searchResults()).toBeNull();
+                    expect(store.isSearchingFolders()).toBe(false);
+                    expect(store.folders()).toHaveLength(1);
+                });
+            });
+        });
+
+        describe('reopening on a remembered location (US4)', () => {
+            const REMEMBERED = {
+                identifier: OTHER_SITE.identifier,
+                hostname: OTHER_SITE.hostname
+            };
+
+            it('should open on the remembered site when it still resolves', () => {
+                store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: REMEMBERED });
+
+                expect(store.browsingSite()).toEqual(REMEMBERED);
+                expect(store.folders()[0].data?.id).toBe(REMEMBERED.identifier);
+            });
+
+            describe('when the remembered site is gone', () => {
+                beforeEach(() => {
+                    // A site the editor can no longer browse — deleted, archived, or permissions
+                    // revoked — fails the folder load rather than returning an empty tree.
+                    let firstCall = true;
+                    folderService.searchFolders.mockImplementation(() => {
+                        if (firstCall) {
+                            firstCall = false;
+
+                            return throwError(() => new HttpErrorResponse({ status: 404 }));
+                        }
+
+                        return of(EMPTY_FOLDERS);
+                    });
+
+                    // With a remembered *folder* too, so "drop the folder" is a real assertion
+                    // rather than one that passes because there was never a path.
+                    store.initPicker({
+                        ...FILE_FIELD_CONFIG,
+                        browseSite: REMEMBERED,
+                        path: '/images/'
+                    });
+                });
+
+                it('should fall back to the site the editor is actually on', () => {
+                    expect(store.browsingSite()).toEqual({
+                        identifier: SITE.identifier,
+                        hostname: SITE.hostname
+                    });
+                    expect(store.folders()[0].data?.id).toBe(SITE.identifier);
+                });
+
+                it('should drop the remembered folder along with the site it belonged to', () => {
+                    // `/images/` on a dead site says nothing about where to land on the live one.
+                    expect(store.path()).toBeUndefined();
+                });
+
+                it('should not surface an error for something the editor did not do', () => {
+                    // Reopening somewhere sensible is the correct outcome, not a failure to report.
+                    expect(store.requestError()).toBeNull();
+                    expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+                });
+            });
+
+            it('should still report a failure when the entry site itself cannot load', () => {
+                // No remembered site to fall back from — this one is a real error, and retrying the
+                // same site forever would hide it.
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
+                expect(store.requestError()).toEqual({
+                    messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                });
+            });
+
+            it('should try the fallback only once, even if it fails too', () => {
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: REMEMBERED });
+
+                // Remembered attempt, then one fallback. Never a loop.
+                expect(folderService.searchFolders).toHaveBeenCalledTimes(2);
+                expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
+            });
+        });
+
+        describe('per-level paging (US3)', () => {
+            // Removing the sites level must not have touched folder-level paging: it is the same
+            // `loadMore` method, and the sites branch used to sit in front of this one.
+            beforeEach(() => store.initPicker(FILE_FIELD_CONFIG));
+
+            it('should append the next page to the folder level that asked for it', () => {
+                const parent = {
+                    key: 'folder-docs',
+                    label: `${SITE.hostname}/docs/`,
+                    expanded: true,
+                    children: [
+                        {
+                            key: 'folder-a',
+                            label: `${SITE.hostname}/docs/a/`,
+                            data: {
+                                type: 'folder' as const,
+                                id: 'a',
+                                hostname: SITE.hostname,
+                                path: '/docs/a/'
+                            }
+                        }
+                    ],
+                    data: {
+                        type: 'folder' as const,
+                        id: 'folder-docs',
+                        hostname: SITE.hostname,
+                        path: '/docs/'
+                    }
+                } as unknown as TreeNodeItem;
+                store.folders()[0].children = [parent];
+
+                folderService.searchFolders.mockReturnValue(
+                    of({
+                        folders: [
+                            createFakeFolderSearchView({
+                                id: 'b',
+                                name: 'b',
+                                path: '/docs/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: {
+                            currentPage: 2,
+                            perPage: 40,
+                            totalEntries: 2
+                        } as DotPagination
+                    })
+                );
+
+                store.loadMore({
+                    key: 'load-more:folder-docs',
+                    label: '',
+                    data: {
+                        type: 'load-more',
+                        id: 'load-more:folder-docs',
+                        nextPage: 2,
+                        path: '/docs/',
+                        hostname: SITE.hostname
+                    }
+                } as unknown as TreeNodeItem);
+
+                expect(folderService.searchFolders).toHaveBeenLastCalledWith(
+                    expect.objectContaining({
+                        siteId: SITE.identifier,
+                        path: '/docs/',
+                        recursive: false,
+                        page: 2
+                    })
+                );
+            });
+        });
+
+        describe('changing the browsed site (US1)', () => {
+            const OTHER = { identifier: OTHER_SITE.identifier, hostname: OTHER_SITE.hostname };
+
+            beforeEach(() => store.initPicker({ ...FILE_FIELD_CONFIG, path: '/docs/' }));
+
+            it('should re-root the tree at the new site', () => {
+                store.setBrowsingSite(OTHER);
+
+                expect(store.browsingSite()).toEqual(OTHER);
+                expect(store.folders()).toHaveLength(1);
+                expect(store.folders()[0].data?.id).toBe(OTHER.identifier);
+            });
+
+            it('should re-scope the asset list to the new site root', () => {
+                store.setBrowsingSite(OTHER);
+
+                expect(store.$request().assetPath).toBe(`//${OTHER.hostname}/`);
+            });
+
+            it('should drop the folder the old site was scoped to', () => {
+                // `/docs/` exists on the site we came from. Carrying it over would either 404 or,
+                // worse, silently land on a same-named folder that is not the one the editor meant.
+                store.setBrowsingSite(OTHER);
+
+                expect(store.path()).toBeUndefined();
+            });
+
+            it('should clear an active folder term', () => {
+                // A term is only meaningful against the site it was typed for.
+                store.setFolderSearch('images');
+
+                store.setBrowsingSite(OTHER);
+
+                expect(store.folderSearch()).toBe('');
+                expect(store.searchResults()).toBeNull();
+            });
+
+            it('should send the user back to page one', () => {
+                store.setPagination({ limit: 20, page: 4 });
+
+                store.setBrowsingSite(OTHER);
+
+                expect(store.pagination().page).toBe(1);
+            });
+
+            it('should do nothing when the same site is re-selected', () => {
+                folderService.searchFolders.mockClear();
+
+                store.setBrowsingSite({
+                    identifier: SITE.identifier,
+                    hostname: SITE.hostname
+                });
+
+                expect(folderService.searchFolders).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('load more', () => {
+            it('should ignore a sites-level sentinel — there is no sites level left to page', () => {
+                store.initPicker(FILE_FIELD_CONFIG);
+                folderService.searchFolders.mockClear();
+                siteService.getSites.mockClear();
+
+                // The shape the old `isSitesLevel` branch keyed on: no hostname, empty parent path.
+                store.loadMore({
+                    key: 'load-more:sites',
+                    label: '',
+                    data: {
+                        type: 'load-more',
+                        id: 'load-more:sites',
+                        nextPage: 2,
+                        hostname: '',
+                        path: ''
+                    }
+                } as unknown as TreeNodeItem);
+
+                expect(siteService.getSites).not.toHaveBeenCalled();
+                expect(folderService.searchFolders).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    // ── Foundational (T009–T011): the two pre-existing store defects research found, plus the
+    //    "is there anything worth clearing" signal the shared Clear all button needs.
+    //    See specs/37174-shared-picker-toolbar/research.md R6a / R6b.
+
+    describe('clearFilters restores the caller seeds (R6a)', () => {
+        // The defect: `clearFilters` sets `filters: {}` while `initPicker` seeds `languageId` and
+        // `baseType` from the config. So "Clear all" strands an Image field's editor in an
+        // unfiltered, unlocalized library — which is what FR-009 forbids.
+        it('should restore the seeded locale rather than dropping it', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ title: 'logo' });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('languageId')).toEqual(['1']);
+        });
+
+        it('should restore the seeded base types rather than dropping them', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ contentType: ['fileAsset'] });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('baseType')).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should seed nothing the caller did not ask for', () => {
+            // A File field pre-selects no base type, only bounds them. Clearing must not invent one.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('baseType')).toBeUndefined();
+        });
+
+        it('should drop a filter the editor added', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ contentType: ['fileAsset'] });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('contentType')).toBeUndefined();
+        });
+
+        it('should clear the search term (FR-009a)', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.patchFilters({ title: 'logo' });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('title')).toBeUndefined();
+        });
+
+        it('should leave the browsed folder alone (FR-009b)', () => {
+            // The location is not a filter. An editor who reached the root by searching stays
+            // there rather than being teleported back to where the picker opened.
+            store.initPicker({ ...FILE_FIELD_CONFIG, path: '/images/' });
+            store.setSearch('logo');
+
+            store.clearFilters();
+
+            expect(store.path()).toBeUndefined();
+        });
+
+        it('should keep the mimetype restriction, which was never a filter', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.clearFilters();
+
+            expect(store.$request().mimeTypes).toEqual(['image/*']);
+        });
+
+        it('should land on the same visible state a freshly opened picker shows', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            const opening = JSON.stringify(store.filters());
+
+            store.patchFilters({ title: 'logo', contentType: ['fileAsset'] });
+            store.clearFilters();
+
+            expect(JSON.stringify(store.filters())).toBe(opening);
+        });
+    });
+
+    describe('the filter bag admits the shared chips keys (R6b)', () => {
+        // The defect: `DotAssetPickerFilters` declares four keys and nothing else, so it cannot
+        // hold the shared-assets toggle, a Status selection, or the dynamic per-field chips.
+        beforeEach(() => store.initPicker(FILE_FIELD_CONFIG));
+
+        it('should hold the shared-assets toggle', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.getFilterValue('sharedAssets')).toBe('false');
+        });
+
+        it('should hold a Status selection', () => {
+            store.patchFilters({ status: ['ARCHIVED', 'LOCKED'] });
+
+            expect(store.getFilterValue('status')).toEqual(['ARCHIVED', 'LOCKED']);
+        });
+
+        it('should hold a dynamic user-searchable field key', () => {
+            store.patchFilters({ us_myField: 'some value' });
+
+            expect(store.getFilterValue('us_myField')).toBe('some value');
+        });
+
+        it('should keep the named keys working alongside the dynamic ones', () => {
+            store.patchFilters({ title: 'logo', sharedAssets: 'false', us_alt: 'x' });
+
+            expect(store.getFilterValue('title')).toBe('logo');
+            expect(store.getFilterValue('sharedAssets')).toBe('false');
+            expect(store.getFilterValue('us_alt')).toBe('x');
+        });
+
+        it('should report an unset key as undefined, not as an empty value', () => {
+            expect(store.getFilterValue('sharedAssets')).toBeUndefined();
+        });
+    });
+
+    describe('$hasNonDefaultFilters', () => {
+        // Drives the shared Clear all button. Counting keys would keep it on screen permanently:
+        // the seeds are always present, so there is always something in the bag.
+        it('should be false on a freshly opened picker despite the seeds', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+
+        it('should be true once the editor adds a filter', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.patchFilters({ contentType: ['fileAsset'] });
+
+            expect(store.$hasNonDefaultFilters()).toBe(true);
+        });
+
+        it('should be true for a search term alone, matching Content Drive', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.patchFilters({ title: 'logo' });
+
+            expect(store.$hasNonDefaultFilters()).toBe(true);
+        });
+
+        it('should be false when a seeded value is re-selected by hand', () => {
+            // Indistinguishable from the seeded state, and clearing it would re-select the same
+            // thing — so there is nothing worth offering to clear.
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.patchFilters({ languageId: ['1'] });
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+
+        it('should be false again after clearing', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ title: 'logo' });
+
+            store.clearFilters();
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+
+        it('should not count the mimetype restriction as something to clear', () => {
+            // Otherwise an Image field would offer Clear all the moment it opened.
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+    });
+
+    // ── US1 (T023–T025): the Shared Assets chip has to drive a real filter, not a display toggle.
+    //    The request used to hardcode `includeSystemHost: true`.
+
+    describe('shared assets filter drives includeSystemHost', () => {
+        beforeEach(() => store.initPicker(IMAGE_FIELD_CONFIG));
+
+        it('should include shared assets when the filter is absent, preserving the current behaviour', () => {
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should include shared assets when the filter explicitly says so', () => {
+            store.patchFilters({ sharedAssets: 'true' });
+
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should exclude shared assets only when the filter explicitly disables them', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.$request().includeSystemHost).toBe(false);
+        });
+
+        it('should treat any unrecognised value as on rather than off', () => {
+            // Off is opt-in: a value that predates the toggle, or a typo in restored state, must
+            // not silently hide half the library.
+            store.patchFilters({ sharedAssets: 'nonsense' });
+
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should come back on after the editor clears every filter', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            store.clearFilters();
+
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should return to the first page when toggled', () => {
+            store.setPagination({ ...store.pagination(), page: 3 });
+
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.pagination().page).toBe(1);
+        });
+
+        it('should discard the cursor bookmarks when toggled', () => {
+            // A cursor from the wider result set would page into rows the narrower query never had.
+            store.setPagination({ ...store.pagination(), page: 3 });
+
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.$request().contentCursor).toBe(0);
+        });
+
+        it('should leave the caller restrictions untouched', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.$request().mimeTypes).toEqual(['image/*']);
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should not survive a close and reopen', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            expect(store.getFilterValue('sharedAssets')).toBeUndefined();
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+    });
+});

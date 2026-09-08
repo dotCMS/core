@@ -24,6 +24,7 @@ import {
 import {
     applyLoadMoreToHierarchy,
     buildLoadMoreNode,
+    canAddChildrenTo,
     buildUserSearchablePayload,
     decodeByFilterKey,
     decodeFilters,
@@ -44,11 +45,21 @@ import {
     resolveHierarchyAncestor,
     serializeUserSearchableValue,
     toLocalIsoString,
+    hasNonDefaultFilters,
+    withDefaultLanguage,
+    withDefaultSharedAssets,
+    withFilterDefaults,
     workflowEntryToToken
 } from './functions';
 import { createTreeNode } from './tree-folder.utils';
 
-import { FOLDER_TREE_HIERARCHY_PAGE_SIZE, FOLDER_TREE_PAGE_SIZE } from '../shared/constants';
+import {
+    FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+    FOLDER_TREE_PAGE_SIZE,
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY
+} from '../shared/constants';
 import { DotContentDriveFilters } from '../shared/models';
 
 describe('Utility Functions', () => {
@@ -90,23 +101,23 @@ describe('Utility Functions', () => {
         });
 
         it('should decode multiple filters correctly', () => {
-            const result = decodeFilters('contentType:Blog;status:published');
-            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
+            const result = decodeFilters('contentType:Blog;owner:jane');
+            expect(result).toEqual({ contentType: ['Blog'], owner: 'jane' });
         });
 
         it('should handle filters with spaces correctly', () => {
-            const result = decodeFilters('contentType:Blog; status:published');
-            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
+            const result = decodeFilters('contentType:Blog; owner:jane');
+            expect(result).toEqual({ contentType: ['Blog'], owner: 'jane' });
         });
 
         it('should handle filters with spaces in the value correctly', () => {
-            const result = decodeFilters('title: Some Random Title;status:published');
-            expect(result).toEqual({ title: 'Some Random Title', status: 'published' });
+            const result = decodeFilters('title: Some Random Title;owner:jane');
+            expect(result).toEqual({ title: 'Some Random Title', owner: 'jane' });
         });
 
         it('should ignore empty filter parts - edge case', () => {
-            const result = decodeFilters('contentType:Blog;;status:published;');
-            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
+            const result = decodeFilters('contentType:Blog;;owner:jane;');
+            expect(result).toEqual({ contentType: ['Blog'], owner: 'jane' });
         });
 
         it('should overwrite duplicated keys with the last value - edge case', () => {
@@ -115,8 +126,8 @@ describe('Utility Functions', () => {
         });
 
         it('should handle datetime values with multiple colons - edge case', () => {
-            const result = decodeFilters('modDate:2023-10-15T14:30:45;status:published');
-            expect(result).toEqual({ modDate: '2023-10-15T14:30:45', status: 'published' });
+            const result = decodeFilters('modDate:2023-10-15T14:30:45;owner:jane');
+            expect(result).toEqual({ modDate: '2023-10-15T14:30:45', owner: 'jane' });
         });
 
         it('should handle values with multiple colons and multiple semicolons - edge case', () => {
@@ -130,25 +141,28 @@ describe('Utility Functions', () => {
         });
 
         it('should handle filters without colons - edge case', () => {
-            const result = decodeFilters('contentType:Blog;status');
+            const result = decodeFilters('contentType:Blog;owner');
             expect(result).toEqual({ contentType: ['Blog'] });
         });
 
         it('should handle multiselector correctly', () => {
-            const result = decodeFilters('contentType:Blog,News;status:published');
-            expect(result).toEqual({ contentType: ['Blog', 'News'], status: 'published' });
+            const result = decodeFilters('contentType:Blog,News;owner:jane');
+            expect(result).toEqual({ contentType: ['Blog', 'News'], owner: 'jane' });
         });
 
         it('should handle multiselector with spaces correctly', () => {
-            const result = decodeFilters('contentType:Blog, News;status:published');
-            expect(result).toEqual({ contentType: ['Blog', 'News'], status: 'published' });
+            const result = decodeFilters('contentType:Blog, News;owner:jane');
+            expect(result).toEqual({ contentType: ['Blog', 'News'], owner: 'jane' });
         });
 
         it('should handle multiselector with a wrong value', () => {
-            const result = decodeFilters('contentType:Blog,;status:published,draft');
+            // `owner` is a stand-in for an unknown multi-value key. It used to be `status`, which
+            // is now a real, validated key — the values below are not valid statuses and would be
+            // sanitized away, which is not what this test is about.
+            const result = decodeFilters('contentType:Blog,;owner:jane,sam');
             expect(result).toEqual({
                 contentType: ['Blog'],
-                status: ['published', 'draft']
+                owner: ['jane', 'sam']
             });
         });
     });
@@ -300,6 +314,76 @@ describe('Utility Functions', () => {
             const result = decodeByFilterKey.workflow('schemeA:stepX,schemeB,schemeC:stepY');
             expect(result).toEqual(['schemeA:stepX', 'schemeB', 'schemeC:stepY']);
         });
+
+        it('should decode multiple statuses', () => {
+            expect(decodeByFilterKey.status('UNPUBLISHED,LOCKED')).toEqual([
+                'UNPUBLISHED',
+                'LOCKED'
+            ]);
+        });
+
+        it('should drop a status value that is not a real status', () => {
+            // A stale or hand-edited URL must degrade to "no status filter" rather than reaching
+            // the endpoint, which rejects an unknown status with a 400 — and that 400 surfaces as a
+            // stopped spinner over a stale grid.
+            expect(decodeByFilterKey.status('ARCHIVED,BOGUS')).toEqual(['ARCHIVED']);
+        });
+
+        it('should drop the key entirely when no status survives sanitizing', () => {
+            // Not an empty array: that would round-trip back into the URL as a bare `status:`.
+            expect(decodeFilters('status:BOGUS')).toEqual({});
+            expect(decodeFilters('contentType:Blog;status:BOGUS')).toEqual({
+                contentType: ['Blog']
+            });
+        });
+
+        it('should decode a SINGLE status as an array, not a string', () => {
+            // The case an explicit `decodeByFilterKey` entry exists to cover. Without it the key
+            // falls through to the comma sniff in `decodeFilterValue`, and a lone value decodes to
+            // the string 'ARCHIVED' — whose `.length` is 8, so every `?.status?.length` guard
+            // downstream reads as "a status is active" and the filter looks fine right up until
+            // someone selects exactly one.
+            expect(decodeByFilterKey.status('ARCHIVED')).toEqual(['ARCHIVED']);
+        });
+    });
+
+    describe('status filter round-trip', () => {
+        it('should survive encode → decode unchanged', () => {
+            const filters = { status: ['ARCHIVED', 'LOCKED'] };
+            expect(decodeFilters(encodeFilters(filters))).toEqual(filters);
+        });
+
+        it('should survive the round-trip with a single status', () => {
+            const filters = { status: ['LOCKED'] };
+            expect(decodeFilters(encodeFilters(filters))).toEqual(filters);
+        });
+    });
+
+    // FR-004 / SC-004: the chips moved to `@dotcms/ui`, and this encoding did not. A deep link
+    // written before the move has to resolve to the same filter set afterwards, so the whole bag —
+    // one entry per chip, including a `us.*` field filter — is round-tripped in one assertion
+    // rather than one per key.
+    describe('the whole filter bag survives the chips moving out of the portlet', () => {
+        const EVERY_FILTER = {
+            title: 'hello world',
+            baseType: ['1', '4'],
+            contentType: ['Blog', 'News'],
+            languageId: ['1', '2'],
+            workflow: ['schemeA:stepX'],
+            status: ['ARCHIVED', 'LOCKED'],
+            sharedAssets: 'false',
+            'us.body': 'a,b'
+        };
+
+        it('should survive encode → decode unchanged', () => {
+            expect(decodeFilters(encodeFilters(EVERY_FILTER))).toEqual(EVERY_FILTER);
+        });
+
+        it('should encode to the same string twice, so a shared link stays stable', () => {
+            expect(encodeFilters(decodeFilters(encodeFilters(EVERY_FILTER)))).toBe(
+                encodeFilters(EVERY_FILTER)
+            );
+        });
     });
 
     describe('workflow token (de)serialization', () => {
@@ -368,7 +452,7 @@ describe('Utility Functions', () => {
         it('should preserve the filters when encoding and then decoding', () => {
             const original: DotContentDriveFilters = {
                 contentType: ['Blog', 'News'],
-                status: 'published',
+                owner: 'jane',
                 'someContentType.url': 'http://some.url'
             };
 
@@ -388,6 +472,177 @@ describe('Utility Functions', () => {
 
             expect(encoded).toBe('workflow:schemeA:stepX,schemeB');
             expect(decoded).toEqual(original);
+        });
+    });
+
+    describe('withDefaultLanguage', () => {
+        const DEFAULT_LANGUAGE_ID = 2;
+
+        it('should seed the default language when the key is absent', () => {
+            expect(withDefaultLanguage({ title: 'Blog' }, DEFAULT_LANGUAGE_ID)).toEqual({
+                title: 'Blog',
+                languageId: ['2']
+            });
+        });
+
+        it('should seed the default language when the key is an empty array', () => {
+            expect(withDefaultLanguage({ languageId: [] }, DEFAULT_LANGUAGE_ID)).toEqual({
+                languageId: ['2']
+            });
+        });
+
+        it('should leave an existing selection untouched', () => {
+            const filters: DotContentDriveFilters = { languageId: ['1', '3'] };
+
+            expect(withDefaultLanguage(filters, DEFAULT_LANGUAGE_ID)).toEqual({
+                languageId: ['1', '3']
+            });
+        });
+
+        it('should leave the filters untouched when the default is unknown', () => {
+            // The languages request has not answered (or failed): the portlet must fall back to
+            // exactly its pre-seeding behaviour rather than inventing a language.
+            expect(withDefaultLanguage({ title: 'Blog' }, undefined)).toEqual({ title: 'Blog' });
+        });
+
+        it('should not mutate the filters it was given', () => {
+            const filters: DotContentDriveFilters = { title: 'Blog' };
+
+            withDefaultLanguage(filters, DEFAULT_LANGUAGE_ID);
+
+            expect(filters).toEqual({ title: 'Blog' });
+        });
+    });
+
+    describe('withDefaultSharedAssets', () => {
+        it('should seed the toggle as on when the key is absent', () => {
+            expect(withDefaultSharedAssets({ title: 'Blog' })).toEqual({
+                title: 'Blog',
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+            });
+        });
+
+        it('should leave an explicit opt-out untouched', () => {
+            expect(
+                withDefaultSharedAssets({
+                    [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                })
+            ).toEqual({ [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE });
+        });
+
+        it('should not mutate the filters it was given', () => {
+            const filters: DotContentDriveFilters = { title: 'Blog' };
+
+            withDefaultSharedAssets(filters);
+
+            expect(filters).toEqual({ title: 'Blog' });
+        });
+    });
+
+    describe('withFilterDefaults', () => {
+        it('should apply every default in one pass', () => {
+            expect(withFilterDefaults({}, 2)).toEqual({
+                languageId: ['2'],
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+            });
+        });
+
+        it('should still seed the toggle when the default language is unknown', () => {
+            // The languages request has not answered yet; that must not hold back an unrelated
+            // default.
+            expect(withFilterDefaults({}, undefined)).toEqual({
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+            });
+        });
+
+        it('should preserve values the caller already set', () => {
+            expect(
+                withFilterDefaults(
+                    {
+                        languageId: ['3'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                    },
+                    2
+                )
+            ).toEqual({
+                languageId: ['3'],
+                [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+            });
+        });
+    });
+
+    describe('hasNonDefaultFilters', () => {
+        const DEFAULT_LANGUAGE_ID = 1;
+
+        it('should report nothing to clear when only the seeded defaults are set', () => {
+            // Both defaults are always present, so counting keys would report a filtered drive to
+            // every user who has filtered nothing.
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['1'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(false);
+        });
+
+        it('should report nothing to clear for an empty filter set', () => {
+            expect(hasNonDefaultFilters({}, DEFAULT_LANGUAGE_ID)).toBe(false);
+        });
+
+        it('should report a change once shared assets are turned off', () => {
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['1'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(true);
+        });
+
+        it('should report a change once a non-default language is picked', () => {
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['2'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(true);
+        });
+
+        it('should report a change once more than one language is picked', () => {
+            expect(hasNonDefaultFilters({ languageId: ['1', '2'] }, DEFAULT_LANGUAGE_ID)).toBe(
+                true
+            );
+        });
+
+        it('should treat a language selection as a change while the default is unknown', () => {
+            expect(hasNonDefaultFilters({ languageId: ['1'] }, undefined)).toBe(true);
+        });
+
+        it.each([
+            ['title', { title: 'Blog' }],
+            ['contentType', { contentType: ['Blog'] }],
+            ['baseType', { baseType: ['1'] }],
+            ['workflow', { workflow: ['scheme-1'] }],
+            ['a field filter', { 'us.body': 'hello' }]
+        ])('should report a change for %s', (_label: string, filters: DotContentDriveFilters) => {
+            expect(
+                hasNonDefaultFilters(
+                    {
+                        languageId: ['1'],
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE,
+                        ...filters
+                    },
+                    DEFAULT_LANGUAGE_ID
+                )
+            ).toBe(true);
         });
     });
 
@@ -1658,5 +1913,77 @@ describe('mergeFolderNodePage', () => {
         const merged = mergeFolderNodePage([node('a', '/a/'), loadMore], [node('b', '/b/')]);
 
         expect(ids(merged)).toEqual(['a', loadMore.data?.id, 'b']);
+    });
+});
+
+// Every other test in this block hand-builds its node, which cannot catch a node shape that stops
+// carrying `permissions` — the gate would silently fall back to the site answer for every folder,
+// and the folder-level gate would be dead code that still looked tested. These drive the real chain:
+// the API view a folder search returns, through `folderSearchViewToDotFolder` and `createTreeNode`,
+// into the gate.
+describe('canAddChildrenTo, over a node built the way the tree builds them', () => {
+    const realNode = (permissions: string[]) =>
+        createTreeNode(
+            folderSearchViewToDotFolder(
+                createFakeFolderSearchView({ name: 'blog', path: '/', permissions }),
+                'demo.dotcms.com'
+            )
+        ).data;
+
+    it('should carry the folder permissions onto the node', () => {
+        expect(realNode(['READ', 'CAN_ADD_CHILDREN']).permissions).toEqual([
+            'READ',
+            'CAN_ADD_CHILDREN'
+        ]);
+    });
+
+    // The site answer is the opposite of the folder's in both directions, so a node that lost its
+    // permissions on the way through would produce the site's answer and fail here.
+    it('should allow a permitted folder inside a site that denies', () => {
+        expect(canAddChildrenTo(realNode(['READ', 'CAN_ADD_CHILDREN']), false)).toBe(true);
+    });
+
+    it('should deny a restricted folder inside a site that allows', () => {
+        expect(canAddChildrenTo(realNode(['READ']), true)).toBe(false);
+    });
+});
+
+describe('canAddChildrenTo', () => {
+    const node = (permissions?: string[]) =>
+        ({ type: 'folder', path: '/x/', permissions }) as unknown as DotFolderTreeNodeData;
+
+    it('should allow a folder that grants CAN_ADD_CHILDREN', () => {
+        expect(canAddChildrenTo(node(['READ', 'CAN_ADD_CHILDREN']), undefined)).toBe(true);
+    });
+
+    it('should refuse a folder that does not', () => {
+        expect(canAddChildrenTo(node(['READ', 'EDIT']), undefined)).toBe(false);
+    });
+
+    // A node with no permissions is the site root: its parent is the host, not a folder, so the
+    // tree carries nothing for it and the site-level answer decides.
+    it('should fall back to the site answer at the root', () => {
+        expect(canAddChildrenTo(node(), false)).toBe(false);
+        expect(canAddChildrenTo(node(), true)).toBe(true);
+    });
+
+    it('should treat an empty permission array as the root too', () => {
+        expect(canAddChildrenTo(node([]), false)).toBe(false);
+    });
+
+    // Both unknowns read as allowed: a lookup still in flight, and an instance too old to report
+    // the field. The alternative denies users who hold the permission.
+    it('should allow while the site answer is unknown', () => {
+        expect(canAddChildrenTo(node(), undefined)).toBe(true);
+    });
+
+    it('should allow when there is no target at all', () => {
+        expect(canAddChildrenTo(undefined, undefined)).toBe(true);
+    });
+
+    // The folder's own answer is the more specific one and must win in both directions.
+    it('should prefer the folder answer over the site answer', () => {
+        expect(canAddChildrenTo(node(['CAN_ADD_CHILDREN']), false)).toBe(true);
+        expect(canAddChildrenTo(node(['READ']), true)).toBe(false);
     });
 });

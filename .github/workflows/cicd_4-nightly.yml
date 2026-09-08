@@ -88,9 +88,16 @@ jobs:
       build-ref: ${{ steps.find-commit.outputs.build-ref }}
       tag-date: ${{ steps.find-commit.outputs.tag-date }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          # Bounded shallow checkout: Find Build Commit walks `git log` on main
+          # back to midnight UTC. The window that matters is commits landing
+          # between midnight and run time (~3h); max observed is ~19 commits/day,
+          # so 1000 commits is ~52 days of volume and can't realistically overrun
+          # the midnight boundary. use-latest-commit only needs HEAD. Avoids the
+          # fetch-depth: 0 full fetch (~2k+ branches, ~1.1 GB pack) when only
+          # main's recent history is consulted.
+          fetch-depth: 1000
           ref: main
 
       - name: Find Build Commit

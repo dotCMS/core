@@ -106,3 +106,59 @@ export interface DotAiError {
     param: string;
     type: string;
 }
+
+/**
+ * A dotAI capability a provider section can configure independently.
+ * Mirrors the backend `Capability` enum (com.dotcms.ai.client.langchain4j.Capability).
+ */
+export enum DotAiCapability {
+    CHAT = 'CHAT',
+    EMBEDDINGS = 'EMBEDDINGS',
+    IMAGE = 'IMAGE'
+}
+
+/**
+ * Primitive type of a {@link DotAiProviderField}, used to pick the right input control.
+ * Mirrors the backend `ProviderFieldType` enum.
+ */
+export enum DotAiProviderFieldType {
+    STRING = 'STRING',
+    NUMBER = 'NUMBER',
+    SECRET = 'SECRET'
+}
+
+/**
+ * Describes a single configurable provider property for one provider/capability combination.
+ * Mirrors the backend `ProviderField` record.
+ */
+export interface DotAiProviderField {
+    name: string;
+    type: DotAiProviderFieldType;
+    required: boolean;
+    hint: string;
+    /**
+     * When non-empty, the name of a sibling field whose presence satisfies this field's
+     * requirement (e.g. Azure's `model` is required unless `deploymentName` is set, and vice
+     * versa). Only meaningful when `required` is `false`.
+     */
+    requiredUnless?: string;
+}
+
+/**
+ * Aggregated capability/field metadata for one dotAI provider, as returned by
+ * `GET /v1/ai/providers`. Mirrors the backend `ProviderMetadata` record.
+ */
+export interface DotAiProviderMetadata {
+    provider: string;
+    supportedCapabilities: DotAiCapability[];
+    fields: Partial<Record<DotAiCapability, DotAiProviderField[]>>;
+}
+
+/**
+ * Result of testing a provider configuration's connection for one capability, as returned by
+ * `POST /v1/ai/providers/test/{capability}`.
+ */
+export interface DotAiTestConnectionResult {
+    success: boolean;
+    message: string;
+}

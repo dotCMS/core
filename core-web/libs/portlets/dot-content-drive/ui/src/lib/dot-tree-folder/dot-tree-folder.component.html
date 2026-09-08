@@ -9,6 +9,7 @@
         [metaKeySelection]="true"
         scrollHeight="auto"
         [pt]="treePt"
+        [showFolderIcons]="true"
         [showLoadMorePlusIcon]="true"
         loadMoreTestId="tree-load-more"
         loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
@@ -17,15 +18,22 @@
         (onNodeCollapse)="onNodeCollapse.emit($event)"
         (loadMore)="onLoadMore($event)">
         <ng-template #folderTreeNodeLabel let-node>
-            <span
-                data-testid="tree-node-label"
-                [attr.data-json-node]="node.data | json"
-                [attr.data-id]="node?.data?.id"
-                [attr.data-node-key]="node.key"
-                class="font-normal"
-                [class.active]="$activeDropNode()?.id === node?.data.id">
-                {{ node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | dotFolderName) }}
-            </span>
+            <!-- Every row renders the same way. A site row carries its hostname, which
+                 `dotFolderName` passes through untouched (there are no path segments to strip), and
+                 its icon comes from the node itself, which PrimeNG renders beside this label. Only
+                 the weight sets it apart, and it is told apart by having no folder path — a tree of
+                 plain folders simply has no such row. -->
+            <dot-truncated-label>
+                <span
+                    data-testid="tree-node-label"
+                    [attr.data-json-node]="node.data | json"
+                    [attr.data-id]="node?.data?.id"
+                    [attr.data-node-key]="node.key"
+                    [class]="node.data?.path ? 'font-normal' : 'font-semibold'"
+                    [class.active]="$activeDropNode()?.id === node?.data.id">
+                    {{ node.label | dotFolderName }}
+                </span>
+            </dot-truncated-label>
         </ng-template>
     </dot-folder-tree>
 } @else {

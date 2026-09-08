@@ -11,6 +11,8 @@ import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 import dev.langchain4j.model.image.ImageModel;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 
 /**
  * {@link ModelProviderStrategy} implementation for Google AI (Gemini API / AI Studio).
@@ -29,6 +31,39 @@ class GoogleAiGeminiModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "google_ai";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT, Capability.EMBEDDINGS, Capability.IMAGE);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        return switch (capability) {
+            case CHAT -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING),
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER, "Not applied to streaming requests"),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case EMBEDDINGS -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING),
+                    ProviderField.optional("dimensions", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case IMAGE -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING),
+                    ProviderField.optional("size", ProviderFieldType.STRING, "e.g. 1K, 2K"),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+        };
     }
 
     @Override

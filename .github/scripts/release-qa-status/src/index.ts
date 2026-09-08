@@ -48,7 +48,7 @@ import {
   listStandardReleaseTags,
   findPreviousTag,
   fetchCommitRange,
-  extractPRNumbers,
+  resolvePRNumbers,
   fetchPRDetails,
   fetchIssueInfos,
 } from './github';
@@ -204,18 +204,19 @@ async function main(): Promise<void> {
       );
       process.exit(1);
     }
-    if (tags.includes(args.toTag)) {
+    if (tags.some((r) => r.tag === args.toTag)) {
       fromTag = findPreviousTag(tags, args.toTag);
     } else {
       // The just-created release may not yet be indexed by the releases API
       // (eventual consistency). Fall back to the newest known tag as the
-      // predecessor — listReleases returns tags newest-first, so tags[0] is
-      // the previous standard release.
+      // predecessor — listReleases returns tags newest-first. Skip undocumented
+      // cuts here too, or a failed earlier attempt becomes the boundary.
+      const newest = tags.find((r) => r.hasNotes);
       process.stderr.write(
         `Note: ${args.toTag} not yet visible in releases API; ` +
-          `using newest indexed tag ${tags[0]} as previous.\n`
+          `using newest documented tag ${newest?.tag} as previous.\n`
       );
-      fromTag = tags[0];
+      fromTag = newest?.tag;
     }
     if (!fromTag) {
       process.stderr.write(
@@ -264,21 +265,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  const prNumbers = extractPRNumbers(commits);
+  const prNumbers = await resolvePRNumbers(octokit, owner, repo, commits);
   process.stderr.write(
-    `Extracted ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
+    `Resolved ${prNumbers.length} merged PRs from ${commits.length} commits.\n`
   );
-  if (commits.length > 0 && prNumbers.length === 0) {
-    // The extractPRNumbers regex only matches squash-merge commit subjects
-    // (`(#N)` at end). If `main` ever switches to merge commits the QA
-    // section would silently disappear from every release notification.
-    // Surface the situation explicitly so the cause is obvious.
-    process.stderr.write(
-      `Warning: no PR numbers extracted from ${commits.length} commits. ` +
-        `Has the merge strategy on the source branch changed? ` +
-        `Expected squash-merge commit subjects ending in "(#N)".\n`
-    );
-  }
 
   const prDetails = await fetchPRDetails(octokit, owner, repo, prNumbers);
   process.stderr.write(`Fetched details for ${prDetails.size} PRs.\n`);

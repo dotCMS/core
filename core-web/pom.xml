@@ -130,6 +130,26 @@
                     -->
                     <environmentVariables>
                         <PATH>${node.install.dir}:${env.PATH}</PATH>
+                        <!--
+                          The `unit-test` execution below passes the detectOpenHandles
+                          flag, and Jest forces runInBand whenever it sees it ("detect
+                          open handles makes no sense without runInBand"). So a project's
+                          whole suite runs in ONE Node process, with coverage on, and the
+                          heap grows suite after suite: `ui` alone peaks near 3.8GB across
+                          its 106 suites. Node's default ceiling on a 16GB runner is
+                          ~4.1GB, which left under 10% headroom and aborted the job
+                          outright: no failing test, just a heap OOM part-way through.
+
+                          6144 rather than something larger because nx.json sets
+                          "parallel": 3, so up to three of these processes coexist. A
+                          ceiling high enough to overcommit the runner would trade V8's
+                          OOM for the kernel's, which kills the process without a stack.
+
+                          The real fix is to drop the detectOpenHandles flag so Jest goes
+                          back to workers with separate heaps. That changes how the tests
+                          run and deserves its own validation, so it is tracked separately.
+                        -->
+                        <NODE_OPTIONS>--max-old-space-size=6144</NODE_OPTIONS>
                     </environmentVariables>
                 </configuration>
                 <executions>

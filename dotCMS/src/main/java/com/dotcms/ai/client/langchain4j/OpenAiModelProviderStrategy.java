@@ -11,6 +11,8 @@ import dev.langchain4j.model.openai.OpenAiImageModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 class OpenAiModelProviderStrategy implements ModelProviderStrategy {
@@ -18,6 +20,39 @@ class OpenAiModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "openai";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT, Capability.EMBEDDINGS, Capability.IMAGE);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        return switch (capability) {
+            case CHAT -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING, "Override the default OpenAI base URL"),
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER, "Request timeout in seconds"));
+            case EMBEDDINGS -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING),
+                    ProviderField.optional("dimensions", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case IMAGE -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING),
+                    ProviderField.optional("size", ProviderFieldType.STRING, "e.g. 1024x1024"),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+        };
     }
 
     @Override

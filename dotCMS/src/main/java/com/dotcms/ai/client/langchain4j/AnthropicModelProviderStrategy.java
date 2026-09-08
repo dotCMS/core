@@ -9,6 +9,8 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 
 /**
  * {@link ModelProviderStrategy} implementation for Anthropic (Claude).
@@ -28,6 +30,29 @@ class AnthropicModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "anthropic";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        return switch (capability) {
+            case CHAT -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING, "Base URL override for proxies/gateways"),
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER, "Not applied to streaming requests"),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case EMBEDDINGS -> throw new UnsupportedOperationException(
+                    "Embeddings are not supported by Anthropic (no embeddings API)");
+            case IMAGE -> throw new UnsupportedOperationException(
+                    "Image generation is not supported by Anthropic (no image API)");
+        };
     }
 
     @Override

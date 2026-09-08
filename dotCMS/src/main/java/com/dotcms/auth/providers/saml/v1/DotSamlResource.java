@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.auth.AuthAccessDeniedUtil;
 import com.dotcms.filters.interceptor.saml.SamlWebUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -22,6 +23,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -46,6 +48,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
@@ -267,6 +270,7 @@ public class DotSamlResource implements Serializable {
 
 					String queryString = (String) session.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
 
+					boolean loginIntentUnknown = false;
 					String loginPath = httpServletRequest.getParameter("RelayState");
 					Logger.debug(this, "RelayState, LoginPath: " + loginPath);
 					if (!UtilMethods.isSet(loginPath)) {
@@ -285,6 +289,7 @@ public class DotSamlResource implements Serializable {
 								// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
 								// session attribute.
 								loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+								loginIntentUnknown = true;
 							}
 						} else {
 
@@ -299,9 +304,28 @@ public class DotSamlResource implements Serializable {
 							loginPath = loginPath + "?" + queryString;
 						}
 					}
-					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
+					final User authorizedUser = reloadUser(user);
+					// IdP-initiated logins carry no RelayState, so the path defaulted to
+					// /dotAdmin/ above without expressing any real intent. Route those by what
+					// the user may actually do: users without back-end access get a front-end
+					// session at "/" when front-end SSO is enabled, instead of a 403 from a
+					// back-end destination they never asked for.
+					if (loginIntentUnknown
+							&& !AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, false)
+							&& SAMLHelper.isFrontEndEnabled(identityProviderConfiguration)) {
+						loginPath = "/";
+					}
+					// Only the back-end is gated here: a front-end SAML login must never be denied,
+					// since its post-login redirect is a content URL rather than a back-end path.
+					if (isBackEndLogin(loginPath)
+							&& !AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, false)) {
+						AuthAccessDeniedUtil.sendNoAccessPage(httpServletResponse, authorizedUser);
+						return;
+					}
+
+					Logger.debug(this, ()-> "Doing login to the user " + (authorizedUser != null? authorizedUser.getEmailAddress() : "unknown"));
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
-							identityProviderConfiguration, user, APILocator.getLoginServiceAPI());
+							identityProviderConfiguration, authorizedUser, APILocator.getLoginServiceAPI());
 
 					Logger.debug(this, "Final, LoginPath: " + loginPath);
 					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
@@ -317,6 +341,26 @@ public class DotSamlResource implements Serializable {
 		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
 		Logger.debug( this, ()-> message);
 		throw new DotSamlException(message);
+	}
+
+	private static User reloadUser(final User user) {
+		if (user == null) {
+			return null;
+		}
+		return Try.of(() -> APILocator.getUserAPI()
+				.loadUserById(user.getUserId(), APILocator.systemUser(), false))
+				.getOrElse(user);
+	}
+
+	/**
+	 * Determines whether the post-login redirect target points at the dotCMS back-end. Only
+	 * back-end logins are subject to the no-access role gate; front-end logins are never denied
+	 * here. Reuses {@link SamlWebUtils#isBackEndLoginPage(String)} so the back-end path set stays
+	 * in one place.
+	 */
+	private boolean isBackEndLogin(final String loginPath) {
+		final String path = Try.of(() -> URI.create(loginPath).getPath()).getOrElse(loginPath);
+		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPage(path);
 	}
 
 

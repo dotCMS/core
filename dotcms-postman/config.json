@@ -55,6 +55,7 @@
     "name": "default-split",
     "collections": [
       "ApiToken_Resource.postman_collection",
+      "BulkRefreshResource.postman_collection",
       "ContentImportResource.postman_collection",
       "Manifest_Download_End_Point.postman_collection",
       "Osgi.postman_collection",

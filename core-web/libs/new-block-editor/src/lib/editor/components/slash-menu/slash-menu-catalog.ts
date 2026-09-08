@@ -361,8 +361,9 @@ export function createBaseBlockItems(dotMessageService: DotMessageService): Bloc
  * Slash entries that open an overlay before mutating the document.
  *
  * Table is a caret-anchored popover via {@link EditorPopoverService}. Image, Video, and Audio
- * skip the popover entirely and open the centered `DotBrowserSelectorComponent` directly via
- * {@link EditorModalService} (per design + PM call — no in-popover Upload / URL tabs).
+ * skip the popover entirely and open the centered `DotAssetPickerComponent` directly via
+ * {@link EditorModalService} — the same picker the Edit Content File and Image fields use (per
+ * design + PM call — no in-popover Upload / URL tabs).
  */
 export function createSlashOverlayBlockItems(
     popovers: EditorPopoverService,

@@ -1,0 +1,200 @@
+<div class="idp-row">
+    <div class="idp-row-header" (click)="toggle.emit()">
+        <i class="pi text-sm" [class]="expanded() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+        <div class="min-w-0 flex-1">
+            <div class="text-sm font-semibold">
+                {{ idp().name || ('dotauth.idp.unnamed' | dm) }}
+            </div>
+            <div class="truncate font-mono text-xs text-(--text-color-tertiary)">
+                {{ idp().issuer || ('dotauth.idp.noIssuer' | dm) }}
+            </div>
+        </div>
+        <p-tag
+            [value]="
+                idp().enabled ? ('dotauth.status.enabled' | dm) : ('dotauth.status.disabled' | dm)
+            "
+            [severity]="idp().enabled ? 'success' : 'secondary'" />
+        <div (click)="$event.stopPropagation()">
+            <p-toggleswitch
+                [ngModel]="idp().enabled"
+                (ngModelChange)="onChange('enabled', $event)" />
+        </div>
+        <div (click)="$event.stopPropagation()">
+            <p-button
+                size="small"
+                [text]="true"
+                severity="danger"
+                icon="pi pi-trash"
+                [attr.aria-label]="'dotauth.action.delete' | dm"
+                (onClick)="remove.emit()" />
+        </div>
+    </div>
+    @if (expanded()) {
+        <div class="idp-row-body">
+            <!-- Discovery -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">
+                    {{ 'dotauth.idp.discovery.label' | dm }}
+                    <span
+                        class="font-normal tracking-normal text-(--text-color-tertiary) normal-case">
+                        — {{ 'dotauth.field.optional.lower' | dm }}
+                    </span>
+                </div>
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.discoveryUrl' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.idp.discoveryUrl' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <div class="flex gap-2">
+                        <input
+                            pInputText
+                            class="w-full"
+                            [ngModel]="idp().discoveryUrl"
+                            (ngModelChange)="onChange('discoveryUrl', $event)"
+                            placeholder="https://tenant.auth0.com/.well-known/openid-configuration" />
+                        <p-button
+                            severity="secondary"
+                            icon="pi pi-refresh"
+                            [label]="'dotauth.action.discover' | dm"
+                            [loading]="idp().discoveryStatus === 'loading'"
+                            (onClick)="discover.emit()" />
+                    </div>
+                    @if (idp().discoveryStatus === 'ok') {
+                        <div class="test-result ok">
+                            <i class="pi pi-check-circle"></i>
+                            {{ 'dotauth.discovery.idp.success' | dm }}
+                        </div>
+                    }
+                    @if (idp().discoveryStatus === 'error') {
+                        <div class="test-result err">
+                            <i class="pi pi-exclamation-circle"></i>
+                            {{ 'dotauth.discovery.idp.error' | dm }}
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Connection -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">{{ 'dotauth.idp.connection.label' | dm }}</div>
+                <div class="field-grid">
+                    <div class="field full">
+                        <label>
+                            {{ 'dotauth.field.displayName' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                [pTooltip]="'dotauth.tooltip.idp.displayName' | dm"
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().name"
+                            (ngModelChange)="onChange('name', $event)"
+                            placeholder="Auth0 — Production" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.issuerUrl' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                [pTooltip]="'dotauth.tooltip.idp.issuerUrl' | dm"
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().issuer"
+                            (ngModelChange)="onChange('issuer', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.jwksUrl' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                [pTooltip]="'dotauth.tooltip.idp.jwksUrl' | dm"
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().jwksUrl"
+                            (ngModelChange)="onChange('jwksUrl', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.expectedAudience' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                [pTooltip]="'dotauth.tooltip.idp.audience' | dm"
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().audience"
+                            (ngModelChange)="onChange('audience', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.allowedAlgs' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                [pTooltip]="'dotauth.tooltip.idp.allowedAlgs' | dm"
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().algs.join(', ')"
+                            (ngModelChange)="onAlgsChange($event)"
+                            placeholder="RS256, ES256" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claim mapping -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">{{ 'dotauth.idp.claims.label' | dm }}</div>
+                <div class="field-grid">
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimEmail' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimEmail"
+                            (ngModelChange)="onChange('claimEmail', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimGroups' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimGroups"
+                            (ngModelChange)="onChange('claimGroups', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimFirstName' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimFirstName"
+                            (ngModelChange)="onChange('claimFirstName', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimLastName' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimLastName"
+                            (ngModelChange)="onChange('claimLastName', $event)" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provisioning -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">{{ 'dotauth.idp.provisioning.label' | dm }}</div>
+                <dot-auth-provisioning
+                    [config]="idp()"
+                    [syncLabel]="'dotauth.field.syncOnExchange' | dm"
+                    syncKey="syncOnExchange"
+                    (fieldChange)="onProvisioningChange($event)" />
+            </div>
+        </div>
+    }
+</div>

@@ -143,9 +143,13 @@ jobs:
       formatted_tags: ${{ steps.format-tags.outputs.formatted_tags }}
     steps:
       # Checkout the repository
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          # Shallow checkout: nothing in this job reads git history (no git
+          # commands after checkout; Docker/NPM publishing works from the
+          # working tree). fetch-depth: 0 pulled every branch ref (~2k+
+          # branches, ~1.1 GB pack) at ~19-20 min per job.
+          fetch-depth: 1
 
       - name: Get SDKMan Version
         id: get-sdkman-version

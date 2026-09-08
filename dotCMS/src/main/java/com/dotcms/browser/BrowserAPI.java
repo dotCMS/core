@@ -250,31 +250,32 @@ public interface BrowserAPI {
 
 
     /**
-     * Retrieves a paginated collection of contentlets that reside under the specified parent
+     * Retrieves a paginated collection of the assets that reside under the specified parent
      * ({@code browserQuery.directParent}).
      * <p>
-     * Key differences compared to other retrieval methods:
+     * Three sources may contribute to a page — folders, menu links and contentlets — each gated
+     * by its own flag ({@code showFolders}, {@code showLinks}, {@code showContent}) and each
+     * paged by its own independent cursor:
      * <ul>
-     *   <li>This method applies pagination at the database level using
-     *       {@code browserQuery.offset} and {@code browserQuery.maxResults}
-     *       to fetch only the requested slice of contentlets.</li>
-     *   <li>Folders are <b>not</b> paginated by this method. They are returned in full
-     *       when {@code browserQuery.showFolders} is enabled.</li>
-     *   <li>Other retrieval methods may combine multiple asset types (contentlets, folders, links)
-     *       into a single list and then apply pagination at the aggregate level.
-     *       In contrast, this method paginates only contentlets from the database.</li>
+     *   <li>Folders and links are read in full from the database and sliced in memory by
+     *       {@code folderCursor} / {@code linkCursor}. Both are strictly the direct children of
+     *       the parent.</li>
+     *   <li>Contentlets are paged at the database level from {@code contentCursor}, and may be
+     *       gathered recursively when {@code skipFolder} is enabled.</li>
+     *   <li>The three sources consume {@code maxResults} in that order, so a page is filled with
+     *       folders first, then links, then contentlets.</li>
      * </ul>
      * <p>
-     * When implementing pagination:
-     * <ul>
-     *   <li>Enable {@code browserQuery.showFolders} to render folders before paginated contentlets.</li>
-     *   <li>Pagination will then continue over contentlets only.</li>
-     * </ul>
+     * When implementing pagination, feed each {@code next*Cursor} from the response back as the
+     * matching {@code *Cursor} on the following request and keep {@code offset} at 0. Once a
+     * source reports {@code hasMore* == false} its flag can be switched off to skip that query
+     * entirely. See {@link com.dotcms.browser.BrowserAPIImpl.PaginatedContents} for the full
+     * contract.
      *
      * @param browserQuery the query parameters defining parent, pagination, and flags for which
      *                     elements (content, folders, links) to include
-     * @return a {@code Map<String, Object>} containing the retrieved contentlets and, if requested,
-     * quested, folders and/or links
+     * @return a {@link com.dotcms.browser.BrowserAPIImpl.PaginatedContents} holding this page's
+     * merged, sorted list plus the per-source counts and cursors
      * @throws DotSecurityException if the user does not have permission to access the parent or
      *                              contents
      * @throws DotDataException     if a data retrieval error occurs at the database level

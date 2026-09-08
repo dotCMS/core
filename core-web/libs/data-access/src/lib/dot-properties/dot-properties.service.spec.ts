@@ -187,6 +187,47 @@ describe('DotPropertiesService', () => {
         req.flush(apiResponse);
     });
 
+    it('should get fresh feature flag value, coercing the same way as getFeatureFlag', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR;
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: { [featureFlag]: true }
+        };
+
+        service.getFreshFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toBe(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get fresh feature flag as true when not found', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+        const apiResponse = {
+            entity: { [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: 'NOT_FOUND' }
+        };
+
+        service.getFreshFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toEqual(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should not reuse the featureFlagCache — every call re-fetches from the server', () => {
+        const featureFlag = FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE;
+
+        service.getFreshFeatureFlag(featureFlag).subscribe();
+        service.getFreshFeatureFlag(featureFlag).subscribe();
+
+        const reqs = httpMock.match(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(reqs.length).toBe(2);
+        reqs.forEach((req) => req.flush(fakeResponse));
+    });
+
     afterEach(() => {
         httpMock.verify();
     });

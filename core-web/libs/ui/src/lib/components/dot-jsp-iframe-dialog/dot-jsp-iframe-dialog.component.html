@@ -1,0 +1,14 @@
+@let src = $iframeSrc();
+
+@if (src) {
+    <iframe
+        [src]="src"
+        class="block w-full border-none"
+        [style.min-height]="$minHeight()"
+        [attr.title]="$titleKey() | dm"
+        [attr.data-testid]="$testIdPrefix() + '-iframe'"></iframe>
+} @else {
+    <p class="text-500 m-0 p-3" [attr.data-testid]="$testIdPrefix() + '-empty'">
+        {{ $emptyKey() | dm }}
+    </p>
+}

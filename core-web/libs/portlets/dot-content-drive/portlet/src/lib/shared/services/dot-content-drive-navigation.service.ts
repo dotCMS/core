@@ -1,11 +1,11 @@
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, map, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -202,6 +202,7 @@ export class DotContentDriveNavigationService {
                         mode: 'edit',
                         contentletInode: contentlet.inode,
                         identifier: contentlet.identifier,
+                        languageId: contentlet.languageId,
                         title: contentlet.title
                     });
 
@@ -227,13 +228,21 @@ export class DotContentDriveNavigationService {
      * store init, before this search); in the rare case it hasn't, this falls back to the
      * full-screen editor — safe and functional, just not the panel.
      */
-    openEditByIdentifier(identifier: string): void {
-        this.#contentSearch
-            .get<ContentSearchEntity>({
-                query: `+identifier:${identifier} +working:true`,
-                limit: 1
-            })
+    openEditByIdentifier(identifier: string, languageId?: number): void {
+        const anyVersion = `+identifier:${identifier} +working:true`;
+        const preferred = this.#preferredLanguageId(languageId);
+
+        this.#resolveWorkingVersion(
+            preferred ? `${anyVersion} +languageId:${preferred}` : anyVersion
+        )
             .pipe(
+                // A link to content with no version in the preferred language must still open, so
+                // "nothing" falls back to any version rather than being read as "do not open". Only
+                // reached when that language is genuinely missing: the link carries the language that
+                // was open, so the first lookup normally hits.
+                switchMap((version) =>
+                    version || !preferred ? of(version) : this.#resolveWorkingVersion(anyVersion)
+                ),
                 take(1),
                 catchError((error: HttpErrorResponse) => {
                     this.#httpErrorManager.handle(error);
@@ -241,8 +250,7 @@ export class DotContentDriveNavigationService {
                     return EMPTY;
                 })
             )
-            .subscribe((entity) => {
-                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
+            .subscribe((contentlet) => {
                 if (!contentlet?.inode) {
                     return;
                 }
@@ -259,8 +267,47 @@ export class DotContentDriveNavigationService {
                     mode: 'edit',
                     contentletInode: contentlet.inode,
                     identifier,
+                    languageId: contentlet.languageId,
                     title: contentlet.title
                 });
             });
+    }
+
+    /**
+     * Resolves an identifier query to the single working contentlet it matches, or `undefined`.
+     *
+     * @param query The Lucene query to run.
+     *
+     * @return {*} {Observable<DotCMSContentlet | undefined>} The matched contentlet, if any.
+     */
+    #resolveWorkingVersion(query: string): Observable<DotCMSContentlet | undefined> {
+        return this.#contentSearch
+            .get<ContentSearchEntity>({ query, limit: 1 })
+            .pipe(map((entity) => entity?.jsonObjectView?.contentlets?.[0]));
+    }
+
+    /**
+     * Which language version the deep link should open, most authoritative first.
+     *
+     * One identifier has one inode PER LANGUAGE, so the identifier alone does not name a version.
+     * `languageId` comes from the URL that opened the panel and names the exact one, so it wins. It is
+     * only absent on a link written before the language was recorded; the rest is a best guess for that
+     * case — the drive's active Locale filter (its first language, if several are selected), then the
+     * environment default. Note both are usually still unresolved here: this runs from the shell's
+     * constructor while the store's languages request is in flight, which is exactly why the URL
+     * carrying the language matters.
+     *
+     * @param languageId The language the URL asked for, when it carried one.
+     *
+     * @return {*} {number | undefined} The language to look for, or `undefined` when none is known.
+     */
+    #preferredLanguageId(languageId?: number): number | undefined {
+        if (languageId) {
+            return languageId;
+        }
+
+        const [selected] = (this.#store.getFilterValue('languageId') as string[]) ?? [];
+
+        return Number(selected) || this.#store.defaultLanguageId() || undefined;
     }
 }

@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { of } from 'rxjs';
 
-import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -9,10 +9,11 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUsersListComponent } from './dot-users-list.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
-import { DotUserListItem } from '../services/dot-users.service';
+import { DotUsersService } from '../services/dot-users.service';
+import { createFakeUser } from '../testing/dot-user.mock';
 
-const MOCK_USERS: DotUserListItem[] = [
-    {
+const MOCK_USERS = [
+    createFakeUser({
         userId: 'dotcms.org.1',
         id: 'dotcms.org.1',
         firstName: 'Admin',
@@ -21,16 +22,12 @@ const MOCK_USERS: DotUserListItem[] = [
         name: 'Admin User',
         emailAddress: 'admin@dotcms.com',
         gravitar: 'abc',
-        active: true,
         admin: true,
-        backendUser: true,
         frontendUser: true,
-        hasConsoleAccess: true,
         lastLoginDate: 1717977600000,
-        lastLoginIP: '10.0.0.1',
-        failedLoginAttempts: 0
-    },
-    {
+        lastLoginIP: '10.0.0.1'
+    }),
+    createFakeUser({
         userId: 'dotcms.org.9',
         id: 'dotcms.org.9',
         firstName: 'Snow',
@@ -40,14 +37,10 @@ const MOCK_USERS: DotUserListItem[] = [
         emailAddress: 'snow@dotcms.com',
         gravitar: 'def',
         active: false,
-        admin: false,
         backendUser: false,
         frontendUser: true,
-        hasConsoleAccess: false,
-        lastLoginDate: null,
-        lastLoginIP: null,
-        failedLoginAttempts: 0
-    }
+        hasConsoleAccess: false
+    })
 ];
 
 const MESSAGES = {
@@ -101,6 +94,7 @@ describe('DotUsersListComponent', () => {
         componentProviders: [
             mockProvider(DotUsersListStore, {
                 users: jest.fn().mockReturnValue(MOCK_USERS),
+                userRoles: jest.fn().mockReturnValue({}),
                 selectedUsers: jest.fn().mockReturnValue([]),
                 filter: jest.fn().mockReturnValue(''),
                 roleFilter: jest.fn().mockReturnValue(''),
@@ -121,14 +115,25 @@ describe('DotUsersListComponent', () => {
                 open: jest
                     .fn()
                     .mockReturnValue({ onClose: { pipe: () => ({ subscribe: jest.fn() }) } })
-            }),
-            ConfirmationService
+            })
         ],
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(MESSAGES)
-            }
+            },
+            mockProvider(DotUsersService, {
+                getUsersPaginated: jest.fn().mockReturnValue(
+                    of({
+                        entity: [],
+                        errors: [],
+                        messages: [],
+                        permissions: [],
+                        i18nMessagesMap: {},
+                        pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
+                    })
+                )
+            })
         ]
     });
 
@@ -190,5 +195,58 @@ describe('DotUsersListComponent', () => {
             expect.anything(),
             expect.objectContaining({ data: { user: MOCK_USERS[0] } })
         );
+    });
+
+    describe('bulk delete', () => {
+        const REPLACEMENT = createFakeUser({
+            ...MOCK_USERS[0],
+            userId: 'dotcms.org.42',
+            id: 'dotcms.org.42',
+            emailAddress: 'ops@dotcms.com'
+        });
+
+        it('confirmDelete should open the bulk delete dialog and reset the replacement', () => {
+            spectator.component['$bulkReplacementUser'].set(REPLACEMENT);
+
+            spectator.component.confirmDelete();
+
+            expect(spectator.component['$bulkDeleteVisible']()).toBe(true);
+            expect(spectator.component['$bulkReplacementUser']()).toBeNull();
+        });
+
+        it('canConfirmBulkDelete should require a replacement not in the selection', () => {
+            const store = spectator.inject(DotUsersListStore, true);
+            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            spectator.detectChanges();
+
+            expect(spectator.component['$canConfirmBulkDelete']()).toBe(false);
+
+            spectator.component.onBulkReplacementSelect(MOCK_USERS[0]);
+            expect(spectator.component['$canConfirmBulkDelete']()).toBe(false);
+
+            spectator.component.onBulkReplacementSelect(REPLACEMENT);
+            expect(spectator.component['$canConfirmBulkDelete']()).toBe(true);
+        });
+
+        it('confirmBulkDelete should forward the replacement id to the store and close', () => {
+            const store = spectator.inject(DotUsersListStore, true);
+            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            spectator.detectChanges();
+
+            spectator.component.onBulkReplacementSelect(REPLACEMENT);
+            spectator.component.confirmBulkDelete();
+
+            expect(store.deleteSelectedUsers).toHaveBeenCalledWith('dotcms.org.42');
+            expect(spectator.component['$bulkDeleteVisible']()).toBe(false);
+        });
+
+        it('confirmBulkDelete should no-op when no replacement was picked', () => {
+            const store = spectator.inject(DotUsersListStore, true);
+            (store.deleteSelectedUsers as jest.Mock).mockClear();
+
+            spectator.component.confirmBulkDelete();
+
+            expect(store.deleteSelectedUsers).not.toHaveBeenCalled();
+        });
     });
 });
