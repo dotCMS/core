@@ -97,6 +97,7 @@ import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
+import { canEditOwningContentlet, notifyNoEditPermission } from '../shared/contentlet-permission';
 import {
     CONTAINER_INSERT_ERROR,
     EDITOR_STATE,
@@ -250,12 +251,31 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             );
 
             if (foundContentlet) {
-                contentlet = foundContentlet as DotCMSContentlet;
+                // The page-asset contentlet is the fresher one (new inode after
+                // a save), but it carries no permission — `canEdit` only exists
+                // on the DOM payload. Carry it across the swap or the quick-edit
+                // panel has nothing to gate on.
+                contentlet = {
+                    ...(foundContentlet as DotCMSContentlet),
+                    ...(contentletPayload?.canEdit === undefined
+                        ? {}
+                        : { canEdit: contentletPayload.canEdit })
+                };
             }
         }
 
         return { container, contentlet };
     });
+    /**
+     * Whether the currently selected contentlet may be modified. Drives the
+     * side panel's style tab and the style-editor guard, mirroring the
+     * quick-edit gate so neither tab offers a way to change a contentlet the
+     * user has no permission on. Fail-open when the permission is absent.
+     */
+    protected readonly $canEditSelectedContentlet = computed(
+        () => this.$contentletEditData()?.contentlet?.canEdit !== false
+    );
+
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotRouterService = inject(DotRouterService);
@@ -866,6 +886,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
+        // Inline editing writes contentlet fields, so it is gated like the
+        // pencil and Quick Edit. Unlike them there is no control to disable, so
+        // the refusal has to be announced — a click that does nothing reads as
+        // a broken editor.
+        if (!canEditOwningContentlet(element)) {
+            notifyNoEditPermission(this.messageService, this.dotMessageService);
+
+            return;
+        }
+
         this.inlineEditingService.handleInlineEdit({
             ...element.dataset
         } as unknown as { language: string; mode: string; inode: string; fieldName: string });
@@ -1332,6 +1362,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof EditEmaEditorComponent
      */
     protected handleOpenQuickEdit(): void {
+        // Same defense in depth as the pencil: the quick-edit button is already
+        // disabled without EDIT permission on this contentlet, but the panel
+        // must not be reachable through a stale toolbar or a programmatic emit.
+        if (this.uveStore.editorSelected()?.payload?.contentlet?.canEdit === false) {
+            return;
+        }
+
         this.uveStore.setEditPanelOpen(true);
         patchState(this.#rightSidebarTabState, { currentTab: 0 });
     }
@@ -1509,6 +1546,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     protected handleEditWithCopyDecision(payload: ActionPayload): void {
         const contentlet = payload?.contentlet;
         if (!contentlet?.inode) {
+            return;
+        }
+
+        // Defense in depth for the disabled pencil. The button is already
+        // disabled when the user lacks EDIT permission on this contentlet, but
+        // the toolbar can emit from stale bounds or be driven programmatically,
+        // so the guarantee must not rest on styling alone. Fail-open: only an
+        // explicit `false` denies, because headless pages carry no permission.
+        if (contentlet.canEdit === false) {
             return;
         }
 
@@ -1896,6 +1942,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     protected handleSelectContent(_contentletActionPayload: ActionPayload): void {
+        // Same gate as the pencil and Quick Edit: styling changes how this
+        // contentlet presents itself, so it follows contentlet permission.
+        if (!this.$canEditSelectedContentlet()) {
+            return;
+        }
+
         // The hover toolbar's `promoteHoverToSelected` (called inline in
         // the (click) before this output fires) has already pinned the
         // contentlet as `editorSelected`. We just need to open the

@@ -225,8 +225,9 @@ describe('buildAssetPickerConfig', () => {
         });
 
         it('should carry the browse options through untouched', () => {
+            // No `showFolders` — the option left `DotAssetPickerBrowseOptions` in #37366. The
+            // picker's list carries content only, so there is nothing for a caller to opt into.
             const browse = {
-                showFolders: true,
                 showLinks: true,
                 showWorking: false,
                 showArchived: false,
@@ -236,6 +237,16 @@ describe('buildAssetPickerConfig', () => {
             const config = buildAssetPickerConfig({ mode: 'browse', site: SITE, browse });
 
             expect(config.browse).toEqual(browse);
+        });
+
+        it('should never carry a folder browse option', () => {
+            const config = buildAssetPickerConfig({
+                mode: 'browse',
+                site: SITE,
+                browse: { showLinks: true }
+            });
+
+            expect(config.browse).not.toHaveProperty('showFolders');
         });
 
         it('should use the caller-supplied title', () => {

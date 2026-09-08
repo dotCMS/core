@@ -1344,4 +1344,101 @@ public class RoleResourceIntegrationTest {
 
         assertTrue(isDirectMember(role, member));
     }
+
+    // ==================== GET /v1/roles/layouts ====================
+
+    /**
+     * Given Scenario: An anonymous caller (no session, no credentials) requests the layout
+     * catalog. Before #37259 this endpoint had no authentication gate and answered 200 to anyone.
+     * Expected Result: rejected by the InitBuilder gate with the REST SecurityException (401);
+     * no layout data is returned.
+     */
+    @Test
+    public void testGetAllLayouts_anonymous_unauthorized() throws Exception {
+        try {
+            resource.getAllLayouts(anonymousRequest(), new MockHttpResponse().response());
+            fail("Anonymous caller should have been rejected");
+        } catch (final com.dotcms.rest.exception.SecurityException e) {
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getResponse().getStatus());
+        }
+    }
+
+    /**
+     * Given Scenario: An authenticated backend user WITHOUT access to the roles portlet and
+     * WITHOUT the CMS admin role requests the layout catalog.
+     * Expected Result: rejected by the portlet gate with the REST SecurityException, exactly as
+     * every sibling endpoint on this resource behaves; no layout data is returned.
+     */
+    @Test
+    public void testGetAllLayouts_backendUserWithoutRolesPortlet_rejected() throws Exception {
+        try {
+            resource.getAllLayouts(requestFor(limitedUser), new MockHttpResponse().response());
+            fail("Backend user without the roles portlet should have been rejected");
+        } catch (final com.dotcms.rest.exception.SecurityException e) {
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getResponse().getStatus());
+        }
+    }
+
+    /**
+     * Given Scenario: A non-admin backend user WITH access to the roles portlet requests the
+     * layout catalog — the Roles portlet (legacy and Angular) runs in this context.
+     * Expected Result: 200; the payload keeps its shape — every layout in the system, each with a
+     * {@code portletTitles} list parallel to its {@code portletIds} — and includes the layout
+     * just created for this user.
+     */
+    @Test
+    public void testGetAllLayouts_rolesPortletUser_ok() throws Exception {
+        final Layout rolesLayout = new LayoutDataGen().portletIds("roles").nextPersisted();
+        final Role portletRole = new RoleDataGen().layout(rolesLayout).nextPersisted();
+        final User portletUser = UserTestUtil.getUser("layoutsportletuser" + uniq(), false, true);
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), portletUser);
+        roleAPI.addRoleToUser(portletRole, portletUser);
+
+        final Response response = resource.getAllLayouts(requestFor(portletUser),
+                new MockHttpResponse().response());
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        final List<Map<String, Object>> layouts = layoutsFrom(response);
+        assertFalse(layouts.isEmpty());
+        assertEquals(APILocator.getLayoutAPI().findAllLayouts().size(), layouts.size());
+        assertLayoutsShape(layouts);
+        assertTrue("Freshly created layout must be in the catalog",
+                layouts.stream().anyMatch(l -> rolesLayout.getId().equals(l.get("id"))));
+    }
+
+    /**
+     * Given Scenario: The admin user (Basic auth, as the Postman DotFavoritePage collection does)
+     * requests the layout catalog.
+     * Expected Result: 200 with the unchanged payload shape — the existing consumers keep working.
+     */
+    @Test
+    public void testGetAllLayouts_admin_ok() throws Exception {
+        final Response response = resource.getAllLayouts(adminRequest(),
+                new MockHttpResponse().response());
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        final List<Map<String, Object>> layouts = layoutsFrom(response);
+        assertFalse(layouts.isEmpty());
+        assertEquals(APILocator.getLayoutAPI().findAllLayouts().size(), layouts.size());
+        assertLayoutsShape(layouts);
+    }
+
+    private static List<Map<String, Object>> layoutsFrom(final Response response) {
+        final LayoutMapResponseEntityView view = (LayoutMapResponseEntityView) response.getEntity();
+        assertNotNull(view);
+        return view.getEntity();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertLayoutsShape(final List<Map<String, Object>> layouts) {
+        for (final Map<String, Object> layout : layouts) {
+            assertNotNull("id", layout.get("id"));
+            assertNotNull("name", layout.get("name"));
+            assertTrue("portletIds must be a list", layout.get("portletIds") instanceof List);
+            assertTrue("portletTitles must be a list", layout.get("portletTitles") instanceof List);
+            assertEquals("one title per portlet id",
+                    ((List<String>) layout.get("portletIds")).size(),
+                    ((List<String>) layout.get("portletTitles")).size());
+        }
+    }
 }

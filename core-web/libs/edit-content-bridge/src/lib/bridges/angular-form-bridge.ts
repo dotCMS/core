@@ -9,8 +9,10 @@ import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
 import {
     buildAssetPickerConfig,
     buildAssetPickerDialogConfig,
+    CONTENT_STATUS,
     DotAssetPickerBrowseOptions,
-    DotAssetPickerComponent
+    DotAssetPickerComponent,
+    DotContentStatus
 } from '@dotcms/ui';
 
 import {
@@ -579,9 +581,8 @@ export class AngularFormBridge implements FormBridge {
                                     initialAssetPath: options.path,
                                     allowedBaseTypes: baseTypesFor(options.kinds),
                                     browse: browseOptionsFor(options),
-                                    ...(options.mimeTypes?.length
-                                        ? { mimeTypes: options.mimeTypes }
-                                        : {})
+                                    status: statusFilterFor(options.status),
+                                    mimeTypes: options.mimeTypes
                                 })
                             )
                         );
@@ -618,6 +619,14 @@ export class AngularFormBridge implements FormBridge {
     }
 }
 
+/**
+ * Every kind the browse contract admits.
+ *
+ * Declared rather than derived from {@link KIND_BASE_TYPES}, which covers only the kinds that map
+ * onto a base type — `link` has none, so deriving would report it as unsupported.
+ */
+const SUPPORTED_KINDS: readonly DotBrowserItemKind[] = ['file', 'dotasset', 'page', 'link'];
+
 /** Base types a `kinds` list asks the selector to offer. */
 const KIND_BASE_TYPES: Partial<Record<DotBrowserItemKind, string>> = {
     file: 'FILEASSET',
@@ -651,6 +660,21 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     const kinds = options.kinds ?? [];
     const wantsLinks = kinds.includes('link');
 
+    // Callers are VTL string literals, so `kinds` can carry anything the type no longer admits —
+    // `'folder'` above all, which `file_browser_field_render_new.vtl` asked for until #37366, and
+    // which a third-party template still might. Warn and drop it: an
+    // exception here would take the whole custom field down, while the rest of the request is still
+    // satisfiable. Mirrors the mimetype conflict below.
+    const unsupported = kinds.filter((kind) => !SUPPORTED_KINDS.includes(kind));
+
+    if (unsupported.length) {
+        console.warn(
+            `DotCustomFieldApi.openBrowserModal: unsupported kind(s) ${unsupported.join(', ')} — ` +
+                'ignored. Folders in particular are navigation, not content: they appear only in ' +
+                'the picker sidebar tree and can never be listed or returned.'
+        );
+    }
+
     if (wantsLinks && options.mimeTypes?.length) {
         // The browse endpoint drops links whenever a mimetype filter is set, because a link has no
         // file metadata to match against. Surfaced rather than worked around: silently returning
@@ -662,23 +686,34 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     }
 
     return {
-        ...(kinds.includes('folder') ? { showFolders: true } : {}),
         ...(wantsLinks ? { showLinks: true } : {}),
-        // Three states, expressed as the two flags the picker already understands.
+        // Version state only. `'archived'` no longer sets a second flag here — content condition
+        // has exactly one representation now, the Status filter, seeded below (FR-014b) — so this
+        // line answers a single question: is the query narrowed to published content?
         ...(options.status ? { showWorking: options.status !== 'live' } : {}),
-        ...(options.status ? { showArchived: options.status === 'archived' } : {}),
         ...(options.sort
             ? { sortField: options.sort.field, sortByDesc: options.sort.direction === 'desc' }
             : {})
     };
 }
 
-/** What the picker returned, in the terms the item itself reports. */
-function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
-    if (item['type'] === 'folder') {
-        return 'folder';
-    }
+/**
+ * The Status chip's seed.
+ *
+ * `'archived'` means *archived only*, and it travels as a seed the editor can clear from inside the
+ * dialog rather than a pinned flag (FR-014b). `'live'` and `'working'` answer the version-state
+ * question instead, which is why they are absent here and handled in {@link browseOptionsFor}.
+ */
+function statusFilterFor(status: DotBrowserOptions['status']): DotContentStatus[] | undefined {
+    return status === 'archived' ? [CONTENT_STATUS.ARCHIVED] : undefined;
+}
 
+/**
+ * What the picker returned, in the terms the item itself reports.
+ *
+ * No folder branch: the picker never lists a folder, so a row can never be one.
+ */
+function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
     if (item['type'] === 'link' || item['extension'] === 'link') {
         return 'link';
     }
@@ -695,9 +730,9 @@ function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
 /**
  * Maps a picked row onto the published selection shape.
  *
- * `url` is the one guarantee: a contentlet reports `url` (or `urlMap`), a folder its path, a link
- * its target. Contentlet-only fields are attached only for the kinds that actually have them, so a
- * consumer can never read a mimetype off a folder.
+ * `url` is the one guarantee: a contentlet reports `url` (or `urlMap`), a link its target.
+ * Contentlet-only fields are attached only for the kinds that actually have them, so a consumer can
+ * never read a mimetype off a menu link.
  */
 /**
  * A string, or nothing.
@@ -721,7 +756,7 @@ function toSelection(item: DotCMSContentlet | Record<string, unknown>): DotBrows
         url: String(row['url'] ?? row['urlMap'] ?? row['path'] ?? '')
     };
 
-    if (kind === 'folder' || kind === 'link') {
+    if (kind === 'link') {
         return base as DotBrowserSelection;
     }
 

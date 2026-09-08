@@ -25,7 +25,13 @@ public class IndexPolicyProvider {
     } // getInstance.
 
     /**
-     * Give the index policy for single content, by default it is {@link IndexPolicy}.WAIT_FOR
+     * Give the index policy for single content. Defaults to {@link IndexPolicy#DEFER},
+     * overridable with {@code INDEX_POLICY_SINGLE_CONTENT}.
+     *
+     * <p>DEFER means the index write is handed to a post-commit listener rather than applied
+     * inline, which is why content deletion needs a durable journal record to survive a failed
+     * or lost listener (see #37276).</p>
+     *
      * @return  IndexPolicy
      */
     public IndexPolicy forSingleContent () {
@@ -38,7 +44,9 @@ public class IndexPolicyProvider {
         return this.singleContentIndexPolicy;
     }
     /**
-     * Give the index policy for single content, by default it is {@link IndexPolicy}.WAIT_FOR
+     * Give the index policy for a content's dependencies. Defaults to
+     * {@link IndexPolicy#DEFER}, overridable with {@code INDEX_POLICY_DEPENDENCIES}.
+     *
      * @return  IndexPolicy
      */
     public IndexPolicy forContentDependencies () {
