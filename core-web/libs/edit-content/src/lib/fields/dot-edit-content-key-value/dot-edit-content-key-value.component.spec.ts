@@ -28,9 +28,9 @@ const KEY_VALUE_FIELD_MOCK = createFakeKeyValueField({
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentKeyValueComponent', () => {
@@ -79,7 +79,7 @@ describe('DotEditContentKeyValueComponent', () => {
         });
 
         it('should set the correct initial value', () => {
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             expect(keyValueField.$initialValue()).toEqual([
                 { key: 'key1', value: 'value1' },
                 { key: 'key2', value: 'value2' }
@@ -126,25 +126,25 @@ describe('DotEditContentKeyValueComponent', () => {
         it('should update form value when DotKeyValueComponent emits updatedList', (done) => {
             const control = spectator.hostComponent.formGroup.get(KEY_VALUE_FIELD_MOCK.variable);
 
-            control.valueChanges.subscribe((value) => {
+            control!.valueChanges.subscribe((value) => {
                 // JSON text, not an object, so key order survives.
                 expect(JSON.parse(value)).toEqual({ key14: 'value14' });
                 done();
             });
 
-            const dotKeyValue = spectator.query(DotKeyValueComponent);
+            const dotKeyValue = spectator.query(DotKeyValueComponent)!;
             dotKeyValue.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
-            expect(control.touched).toBeTruthy();
+            expect(control!.touched).toBeTruthy();
         });
 
         it('should call updateField method when DotKeyValueComponent emits updatedList', () => {
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             const updateFieldSpy = jest.spyOn(keyValueField, 'updateField');
             spectator.triggerEventHandler(DotKeyValueComponent, 'updatedList', [
                 { key: 'testKey', hidden: false, value: 'testValue' }
             ]);
 
-            const dotKeyValue = spectator.query(DotKeyValueComponent);
+            const dotKeyValue = spectator.query(DotKeyValueComponent)!;
             const testData = [{ key: 'testKey', hidden: false, value: 'testValue' }];
 
             dotKeyValue.updatedList.emit(testData);
@@ -175,29 +175,31 @@ describe('DotEditContentKeyValueComponent', () => {
         });
 
         it('should parse empty object correctly', () => {
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.writeValue({});
             spectator.detectChanges();
             expect(keyValueField.$initialValue()).toEqual([]);
         });
 
         it('should parse null value correctly', () => {
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.writeValue(null);
             spectator.detectChanges();
             expect(keyValueField.$initialValue()).toEqual([]);
         });
 
         it('should parse undefined value correctly', () => {
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
-            keyValueField.writeValue(undefined);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
+            // `undefined` is not part of the declared contract — Angular clears a control with
+            // `null` — but this test deliberately checks the accessor tolerates it.
+            keyValueField.writeValue(undefined as unknown as Record<string, string | null>);
             spectator.detectChanges();
             expect(keyValueField.$initialValue()).toEqual([]);
         });
 
         it('should display null values as the string "null" after import', () => {
             const testData = { key1: null, key2: 'value2' };
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.writeValue(testData);
             spectator.detectChanges();
 
@@ -209,7 +211,7 @@ describe('DotEditContentKeyValueComponent', () => {
 
         it('should parse valid key-value object correctly', () => {
             const testData = { key1: 'value1', key2: 'value2', key3: 'value3' };
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.writeValue(testData);
             spectator.detectChanges();
 
@@ -221,7 +223,7 @@ describe('DotEditContentKeyValueComponent', () => {
         });
 
         it('should not split string values into individual characters', () => {
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.writeValue('[object Object]' as unknown as Record<string, string | null>);
             spectator.detectChanges();
 
@@ -229,7 +231,7 @@ describe('DotEditContentKeyValueComponent', () => {
         });
 
         it('should not split array values into individual entries', () => {
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.writeValue(['key1', 'key2'] as unknown as Record<string, string | null>);
             spectator.detectChanges();
 
@@ -264,7 +266,7 @@ describe('DotEditContentKeyValueComponent', () => {
             const mockOnTouched = jest.fn();
 
             // Register the mock callbacks
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.registerOnChange(mockOnChange);
             keyValueField.registerOnTouched(mockOnTouched);
 
@@ -285,7 +287,7 @@ describe('DotEditContentKeyValueComponent', () => {
             const mockOnTouched = jest.fn();
 
             // Register the mock callbacks
-            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            const keyValueField = spectator.query(DotKeyValueFieldComponent)!;
             keyValueField.registerOnChange(mockOnChange);
             keyValueField.registerOnTouched(mockOnTouched);
 

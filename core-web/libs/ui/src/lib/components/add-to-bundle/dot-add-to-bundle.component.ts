@@ -14,6 +14,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import {
+    NgForm,
     ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormGroup,
@@ -52,19 +53,19 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
     styleUrls: ['dot-add-to-bundle.component.scss']
 })
 export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy {
-    form: UntypedFormGroup;
-    bundle$: Observable<DotBundle[]>;
+    form!: UntypedFormGroup;
+    bundle$!: Observable<DotBundle[]>;
     placeholder = '';
     dialogShow = false;
-    dialogActions: DotDialogActions;
+    dialogActions!: DotDialogActions;
 
-    @Input() assetIdentifier: string;
+    @Input() assetIdentifier = '';
 
     @Output() cancel = new EventEmitter<boolean>();
 
-    @ViewChild('formEl', { static: true }) formEl: HTMLFormElement;
+    @ViewChild('formEl', { static: true }) formEl!: NgForm;
 
-    @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Select;
+    @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown!: Select;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     readonly #dotMessageService = inject(DotMessageService);
     readonly #addToBundleService = inject(AddToBundleService);
@@ -84,11 +85,8 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                         : this.#dotMessageService.get('contenttypes.content.add_to_bundle.type');
                 }, 0);
 
-                this.form
-                    .get('addBundle')
-                    .setValue(
-                        this.getDefaultBundle(bundles) ? this.getDefaultBundle(bundles).name : ''
-                    );
+                const defaultBundle = this.getDefaultBundle(bundles);
+                this.form.get('addBundle')!.setValue(defaultBundle ? defaultBundle.name : '');
 
                 return bundles;
             }),
@@ -100,7 +98,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     ngAfterViewInit(): void {
         setTimeout(() => {
-            this.addBundleDropdown.editableInputViewChild.nativeElement.focus();
+            this.addBundleDropdown.editableInputViewChild?.nativeElement?.focus();
         });
     }
 
@@ -123,7 +121,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
      * @param {any} $event
      * @memberof DotAddToBundleComponent
      */
-    submitBundle(_event): void {
+    submitBundle(_event?: unknown): void {
         if (this.form.valid) {
             this.#addToBundleService
                 .addToBundle(this.assetIdentifier, this.setBundleData())
@@ -168,11 +166,13 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
         }
     }
 
-    private getDefaultBundle(bundles: DotBundle[]): DotBundle {
-        const lastBundle: DotBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
+    private getDefaultBundle(bundles: DotBundle[]): DotBundle | undefined {
+        const lastBundle: DotBundle | null = JSON.parse(
+            sessionStorage.getItem(LAST_BUNDLE_USED) ?? 'null'
+        );
 
         // return lastBundle ? this.bundle$.find(bundle => bundle.name === lastBundle.name) : null;
-        return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : null;
+        return lastBundle ? bundles.find((bundle) => bundle.name === lastBundle.name) : undefined;
     }
 
     private setDialogConfig(form: UntypedFormGroup): void {
@@ -196,7 +196,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
             this.dialogActions = {
                 ...this.dialogActions,
                 accept: {
-                    ...this.dialogActions.accept,
+                    ...this.dialogActions.accept!,
                     disabled: !this.form.valid
                 }
             };

@@ -178,7 +178,9 @@ describe('DotQueryToolPageComponent', () => {
 
         it('resets offset and triggers runSearch when clicked', () => {
             const store = setup();
-            store.query = jest.fn().mockReturnValue('+live:true');
+            // Cast because the target is a signal: `jest.fn()` has no signal brand, so it is not
+            // assignable to `(() => T) & { ... }` even though it behaves the same here.
+            store.query = jest.fn().mockReturnValue('+live:true') as unknown as typeof store.query;
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
             const btn = spectator.query(byTestId('query-tool-run-btn'))?.querySelector('button');
@@ -332,13 +334,15 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as cURL targets the _search endpoint with the store request body', () => {
             const store = setup();
+            // Cast because the target is a signal: `jest.fn()` has no signal brand, so it is not
+            // assignable to `(() => T) & { ... }` even though it behaves the same here.
             store.apiRequestBody = jest.fn().mockReturnValue({
                 query: '+live:true',
                 sort: 'modDate desc',
                 limit: 50,
                 offset: 20,
                 userId: 'admin@dotcms.com'
-            });
+            }) as unknown as typeof store.apiRequestBody;
             const copySpy = setupClipboardSpy();
             spectator.component.exportItems[1].command?.({} as never);
 
@@ -354,9 +358,13 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as fetch emits a fetch() call against the _search endpoint', () => {
             const store = setup();
-            store.apiRequestBody = jest
-                .fn()
-                .mockReturnValue({ query: '+live:true', sort: '', limit: 20, offset: 0 });
+            // Cast because the target is a signal: `jest.fn()` has no signal brand.
+            store.apiRequestBody = jest.fn().mockReturnValue({
+                query: '+live:true',
+                sort: '',
+                limit: 20,
+                offset: 0
+            }) as unknown as typeof store.apiRequestBody;
             const copySpy = setupClipboardSpy();
             spectator.component.exportItems[2].command?.({} as never);
 

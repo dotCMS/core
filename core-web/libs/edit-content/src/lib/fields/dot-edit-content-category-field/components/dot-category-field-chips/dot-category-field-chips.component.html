@@ -16,7 +16,7 @@
     @if ($showAllBtn()) {
         <button
             (click)="toogleShowAll()"
-            [label]="$btnLabel()"
+            [label]="$btnLabel() ?? ''"
             [disabled]="$disabled()"
             class="p-button-sm p-button-text p-button-secondary"
             data-testId="show-btn"

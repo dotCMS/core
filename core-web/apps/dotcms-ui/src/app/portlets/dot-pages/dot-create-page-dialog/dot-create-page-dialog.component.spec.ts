@@ -13,8 +13,10 @@ import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog.component';
 
-const createMockContentType = (partial: Partial<DotCMSContentType>): DotCMSContentType =>
-    partial as DotCMSContentType;
+/** Nullable per field: two tests build a page type whose name or variable is missing. */
+const createMockContentType = (
+    partial: Partial<{ [K in keyof DotCMSContentType]: DotCMSContentType[K] | null }>
+): DotCMSContentType => partial as DotCMSContentType;
 
 const MOCK_PAGE_TYPES: DotCMSContentType[] = [
     createMockContentType({

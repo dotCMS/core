@@ -19,7 +19,7 @@ describe('DotSpinnerComponent', () => {
     it('should render component without inline styles', () => {
         fixture.detectChanges();
         const innerElement = fixture.debugElement.query(By.css('div'));
-        expect(innerElement.styles.cssText).toBe('');
+        expect(innerElement.styles['cssText']).toBe('');
     });
 
     it('should render component with inline styles', () => {

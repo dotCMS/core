@@ -17,6 +17,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
+import { DotPortletToolbarActions } from '../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
+
 @Component({
     selector: 'dot-portlet-base',
     template: '<ng-content></ng-content>',
@@ -30,7 +32,7 @@ export class DotPortletBaseMockComponent {}
     standalone: false
 })
 export class DotPortletToolbarMockComponent {
-    @Input() actions;
+    @Input() actions!: DotPortletToolbarActions;
 }
 
 @Component({
@@ -63,25 +65,25 @@ export class DotContainerSelectorMockComponent {
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
-    code;
+    code!: { mode: string; options: Record<string, unknown> };
 
     @Input()
-    height;
+    height!: string;
 
     @Input()
-    show;
+    show!: string[];
 
     @Input()
-    value;
+    value!: string;
 
     @Input()
-    width;
+    width!: string;
 
     @Output()
     monacoInit = new EventEmitter<any>();
 
     @Input()
-    language;
+    language!: string;
 
     writeValue() {
         //
@@ -168,12 +170,12 @@ describe('DotTemplateAdvancedComponent', () => {
             const code = de.query(By.css('dot-textarea-content'));
 
             expect(container).not.toBeNull();
-            expect(container.attributes.class).toBeUndefined();
+            expect(container.attributes['class']).toBeUndefined();
 
             expect(code).not.toBeNull();
-            expect(code.attributes.formControlName).toBe('body');
-            expect(code.attributes.height).toBe('100%');
-            expect(code.attributes.language).toBe('html');
+            expect(code.attributes['formControlName']).toBe('body');
+            expect(code.attributes['height']).toBe('100%');
+            expect(code.attributes['language']).toBe('html');
             const codeComponent = code.componentInstance as DotTextareaContentMockComponent;
             expect(codeComponent.show).toEqual(['code']);
         });
@@ -182,7 +184,7 @@ describe('DotTemplateAdvancedComponent', () => {
     describe('events', () => {
         it('should emit updateTemplate event when the form changes', () => {
             const updateTemplate = jest.spyOn(component.updateTemplate, 'emit');
-            component.form.get('body').setValue('<body></body>');
+            component.form.get('body')!.setValue('<body></body>');
 
             expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
         });

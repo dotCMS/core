@@ -1,4 +1,4 @@
-import { Component, DebugElement, Input, Renderer2 } from '@angular/core';
+import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -16,7 +16,6 @@ class TestComponent {
 }
 
 describe('NgxTiptapDirective', () => {
-    let component: TestComponent;
     let fixture: ComponentFixture<TestComponent>;
 
     beforeEach(async () => {
@@ -28,22 +27,21 @@ describe('NgxTiptapDirective', () => {
         await TestBed.compileComponents();
 
         fixture = TestBed.createComponent(TestComponent);
-        component = fixture.componentInstance;
 
         const editor = new Editor({
             extensions: [StarterKit]
         });
 
-        component.editor = editor;
+        fixture.componentRef.setInput('editor', editor);
         fixture.detectChanges();
     });
 
     it('should create an instance', () => {
-        const hostEl = fixture.debugElement.query(By.css('div'));
-        const renderer = fixture.debugElement.injector.get(Renderer2);
+        // Resolved through the injector rather than constructed: the directive takes its
+        // ElementRef and Renderer2 via inject(), so it has no constructor parameters.
+        const directiveEl = fixture.debugElement.query(By.directive(EditorDirective));
 
-        const directive = new EditorDirective(hostEl, renderer);
-        expect(directive).toBeTruthy();
+        expect(directiveEl.injector.get(EditorDirective)).toBeTruthy();
     });
 });
 
@@ -77,7 +75,7 @@ describe('NgxTiptapDirective FormsModule', () => {
             extensions: [StarterKit]
         });
 
-        component.editor = editor;
+        fixture.componentRef.setInput('editor', editor);
 
         directiveEl = fixture.debugElement.query(By.directive(EditorDirective));
         directiveInstance = directiveEl.injector.get(EditorDirective);
@@ -86,11 +84,7 @@ describe('NgxTiptapDirective FormsModule', () => {
     });
 
     it('should create an instance', () => {
-        const hostEl = fixture.debugElement.query(By.css('div'));
-        const renderer = fixture.debugElement.injector.get(Renderer2);
-
-        const directive = new EditorDirective(hostEl, renderer);
-        expect(directive).toBeTruthy();
+        expect(directiveInstance).toBeTruthy();
     });
 
     it('should attach the editor to the div', () => {

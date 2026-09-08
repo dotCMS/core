@@ -144,7 +144,9 @@ export class DotImageEditorFocalOverlayComponent {
      * Intercepts Escape so the host dialog does not close while placing the focal
      * point; the keypress instead leaves the focal tool (the point stays set).
      */
-    protected onEscape(event: KeyboardEvent): void {
+    // `Event`, not `KeyboardEvent`: Angular types the payload of a key-modified binding
+    // (`keydown.escape`) as the base `Event`, and only `stopPropagation()` is needed here.
+    protected onEscape(event: Event): void {
         if (!this.$isActive()) {
             return;
         }

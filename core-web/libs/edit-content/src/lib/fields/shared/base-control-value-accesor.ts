@@ -8,7 +8,9 @@ import { ControlValueAccessor } from '@angular/forms';
  * Note: Child components must define the $value and $isDisabled signals.
  */
 export abstract class BaseControlValueAccessor<T> implements ControlValueAccessor {
-    $value = signal<T>(null);
+    // `T | null`: every accessor starts with no value, and `writeValue(null)` is how Angular
+    // clears a control. The seed below was already null.
+    $value = signal<T | null>(null);
     $isDisabled = signal<boolean>(false);
     abstract $hasError?: InputSignal<boolean>;
 
@@ -25,7 +27,10 @@ export abstract class BaseControlValueAccessor<T> implements ControlValueAccesso
      *
      * @param fn The callback function to register.
      */
-    registerOnChange(fn: (value: string) => void) {
+    // `unknown`, matching the `onChange` field it is stored in. The old `(value: string) => void`
+    // was unsound in the other direction: subclasses call `onChange` with records, string arrays
+    // and numbers, none of which a `string`-only callback can accept.
+    registerOnChange(fn: (value: unknown) => void) {
         this.onChange = fn;
     }
 
@@ -39,7 +44,10 @@ export abstract class BaseControlValueAccessor<T> implements ControlValueAccesso
         this.onTouched = fn;
     }
 
-    writeValue(value: T): void {
+    // `T | null`: Angular calls `writeValue(null)` to clear a control, and `$value` already
+    // holds `T | null`. `ControlValueAccessor` declares the parameter as `any`, so this is
+    // the narrowest honest signature rather than a widening of the interface.
+    writeValue(value: T | null): void {
         this.$value.set(value);
     }
 

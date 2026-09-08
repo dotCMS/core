@@ -27,7 +27,7 @@ import { DotTemplateItem, DotTemplateItemDesign } from '../store/dot-template.st
     standalone: true
 })
 class MockIframeComponent {
-    @Input() src: string;
+    @Input() src!: string;
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     iframeElement = {
@@ -75,7 +75,7 @@ describe('DotTemplateBuilderComponent', () => {
             layout: { body: { rows: [] } },
             containers: {},
             ...overrides
-        } as DotTemplateItemDesign;
+        } as unknown as DotTemplateItemDesign;
     };
 
     const createAdvancedItem = (overrides: Partial<any> = {}): DotTemplateItem => {

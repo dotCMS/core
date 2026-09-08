@@ -82,7 +82,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
         });
 
         it('should have dot-iframe-dialog url set', () => {
-            const dotIframeDialogComponent = spectator.query(DotIframeDialogComponent);
+            const dotIframeDialogComponent = spectator.query(DotIframeDialogComponent)!;
             expect(dotIframeDialogComponent.url).toEqual(
                 [
                     `/c/portal/layout`,

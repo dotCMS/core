@@ -43,18 +43,18 @@ export class DotOnboardingAuthorComponent implements OnInit {
     private dotAccountService = inject(DotAccountService);
     @Output() eventEmitter = new EventEmitter<'reset-user-profile'>();
 
-    userData$: Observable<{
+    userData$!: Observable<{
         username: string;
         showCreateContentLink: boolean;
         showCreateDataModelLink: boolean;
         showCreatePageLink: boolean;
         showCreateTemplateLink: boolean;
     }>;
-    username: string;
-    showCreateContentLink: boolean;
-    showCreateDataModelLink: boolean;
-    showCreatePageLink: boolean;
-    showCreateTemplateLink: boolean;
+    username!: string;
+    showCreateContentLink = false;
+    showCreateDataModelLink = false;
+    showCreatePageLink = false;
+    showCreateTemplateLink = false;
 
     resources = FOOTER_RESOURCES;
     apiAndServices = API_AND_SERVICES;
@@ -92,13 +92,13 @@ export class DotOnboardingAuthorComponent implements OnInit {
                                 return {
                                     username: user.givenName,
                                     showCreateContentLink:
-                                        permissions[PermissionsType.CONTENTLETS].canWrite,
+                                        !!permissions[PermissionsType.CONTENTLETS].canWrite,
                                     showCreateDataModelLink:
-                                        permissions[PermissionsType.STRUCTURES].canWrite,
+                                        !!permissions[PermissionsType.STRUCTURES].canWrite,
                                     showCreatePageLink:
-                                        permissions[PermissionsType.HTMLPAGES].canWrite,
+                                        !!permissions[PermissionsType.HTMLPAGES].canWrite,
                                     showCreateTemplateLink:
-                                        permissions[PermissionsType.TEMPLATES].canWrite
+                                        !!permissions[PermissionsType.TEMPLATES].canWrite
                                 };
                             }
                         )

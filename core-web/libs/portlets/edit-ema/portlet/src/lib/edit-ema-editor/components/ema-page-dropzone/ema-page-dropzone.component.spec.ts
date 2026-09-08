@@ -59,7 +59,7 @@ describe('EmaPageDropzoneComponent', () => {
             spectator.setInput('containers', BOUNDS_MOCK);
 
             const element = spectator.query('[data-type="container"]');
-            const style = getComputedStyle(element);
+            const style = getComputedStyle(element!);
 
             expect(style.position).toEqual('absolute');
             expect(style.left).toEqual('10px');
@@ -72,7 +72,7 @@ describe('EmaPageDropzoneComponent', () => {
             spectator.setInput('containers', BOUNDS_MOCK);
 
             const element = spectator.query('[data-type="contentlet"]');
-            const style = getComputedStyle(element);
+            const style = getComputedStyle(element!);
 
             expect(style.position).toEqual('absolute');
             expect(style.left).toEqual('20px');
@@ -106,7 +106,7 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.detectChanges();
 
                 const errorZone = spectator.query('.drop-zone_error') as HTMLElement;
-                const errorZoneText = errorZone.querySelector('span').textContent;
+                const errorZoneText = errorZone!.querySelector('span')!.textContent;
 
                 const { left, top, width, height } = errorZone.style;
                 const errorZoneReact = {
@@ -154,7 +154,7 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.detectChanges();
 
                 const errorZone = spectator.query('.drop-zone_error') as HTMLElement;
-                const errorZoneText = errorZone.querySelector('span').textContent;
+                const errorZoneText = errorZone!.querySelector('span')!.textContent;
 
                 const { left, top, width, height } = errorZone.style;
                 const errorZoneReact = {
@@ -227,8 +227,8 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.setInput('containers', BOUNDS_EMPTY_CONTAINER_MOCK);
                 spectator.detectChanges();
 
-                const errorZone = spectator.query('.drop-zone_error');
-                const errorZoneText = errorZone.querySelector('span').textContent;
+                const errorZone = spectator.query('.drop-zone_error')!;
+                const errorZoneText = errorZone!.querySelector('span')!.textContent;
 
                 // Check that the error message is displayed
                 expect(errorZone).toBeTruthy();

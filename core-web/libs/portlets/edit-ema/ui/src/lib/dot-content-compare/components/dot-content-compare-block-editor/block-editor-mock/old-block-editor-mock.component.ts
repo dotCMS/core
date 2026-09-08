@@ -23,8 +23,8 @@ import StarterKit from '@tiptap/starter-kit';
     template: '<div>Old Block Editor Mock</div>'
 })
 export class OldBlockEditorMockComponent implements OnInit {
-    @Input() value: JSONContent;
-    editor: Editor;
+    @Input() value!: JSONContent;
+    editor!: Editor;
     @Output() valueChange = new EventEmitter<JSONContent>();
 
     ngOnInit() {

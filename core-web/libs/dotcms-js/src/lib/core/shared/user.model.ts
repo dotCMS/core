@@ -6,8 +6,8 @@ import { LoggerService } from '../logger.service';
 export class UserModel {
     private loggerService = inject(LoggerService);
 
-    username: string;
-    password: string;
+    username = '';
+    password = '';
     locale: string;
     suppressAlerts = false;
 

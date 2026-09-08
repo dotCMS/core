@@ -13,8 +13,16 @@ export class DotAssetService {
      *
      * @memberof DotAssetService
      */
-    create(options: DotAssetCreateOptions): Promise<DotCMSContentlet[] | DotHttpErrorResponse[]> {
-        const promises = [];
+    create(options: DotAssetCreateOptions): Promise<DotCMSContentlet[]> {
+        // Only the success arm is ever *resolved*: the body below `throw`s the error array, which is
+        // why every consumer reads it from a `.catch`. The old
+        // `Promise<DotCMSContentlet[] | DotHttpErrorResponse[]>` described a value that never arrives.
+        //
+        // NOTE: the per-request `.catch((e) => e)` below resolves a rejected fetch *as* its error, so
+        // an element of `response` can be an `Error` rather than a `Response` and `res.json()` then
+        // throws — the consumer's `.catch` receives a `TypeError` instead of `DotHttpErrorResponse[]`.
+        // Pre-existing, and a behaviour fix rather than a typing one.
+        const promises: Promise<Response>[] = [];
         let filesCreated = 1;
         options.files.map((file: DotCMSTempFile) => {
             const data = {
@@ -54,7 +62,7 @@ export class DotAssetService {
                     try {
                         message = responseData.message || responseData.errors[0].message;
                     } catch {
-                        message = fallbackErrorMessages[res.status];
+                        message = fallbackErrorMessages[res.status] ?? '';
                     }
                     errors.push({
                         message: message,

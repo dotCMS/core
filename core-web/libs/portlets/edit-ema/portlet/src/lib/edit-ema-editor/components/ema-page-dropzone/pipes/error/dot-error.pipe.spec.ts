@@ -1,7 +1,7 @@
 import { DotErrorPipe } from './dot-error.pipe';
 
 import { PAYLOAD_MOCK } from '../../../../../shared/mocks';
-import { ClientData } from '../../../../../shared/models';
+import { ClientData, DraggedPayload } from '../../../../../shared/models';
 import { Container, EmaDragItem } from '../../types';
 
 describe('DotErrorPipe', () => {
@@ -24,7 +24,10 @@ describe('DotErrorPipe', () => {
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
             contentType: 'Some Other Content Type',
-            draggedPayload: null
+            // The pipe under test never reads the dragged payload — it rejects on content
+            // type or container capacity. `DraggedPayload` is required, so the omission is
+            // spelled out rather than passed as a null the type never allowed.
+            draggedPayload: undefined as unknown as DraggedPayload
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -46,7 +49,10 @@ describe('DotErrorPipe', () => {
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
             contentType: 'theEmperor',
-            draggedPayload: null
+            // The pipe under test never reads the dragged payload — it rejects on content
+            // type or container capacity. `DraggedPayload` is required, so the omission is
+            // spelled out rather than passed as a null the type never allowed.
+            draggedPayload: undefined as unknown as DraggedPayload
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -68,7 +74,10 @@ describe('DotErrorPipe', () => {
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
             contentType: 'theEmperor',
-            draggedPayload: null
+            // The pipe under test never reads the dragged payload — it rejects on content
+            // type or container capacity. `DraggedPayload` is required, so the omission is
+            // spelled out rather than passed as a null the type never allowed.
+            draggedPayload: undefined as unknown as DraggedPayload
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({
@@ -369,7 +378,10 @@ describe('DotErrorPipe', () => {
         const dragItem: EmaDragItem = {
             baseType: 'CONTENT',
             contentType: 'kenobi',
-            draggedPayload: null
+            // The pipe under test never reads the dragged payload — it rejects on content
+            // type or container capacity. `DraggedPayload` is required, so the omission is
+            // spelled out rather than passed as a null the type never allowed.
+            draggedPayload: undefined as unknown as DraggedPayload
         };
 
         expect(pipe.transform(container, dragItem)).toEqual({

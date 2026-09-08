@@ -5,7 +5,7 @@
     [placeholder]="'dot.common.select.workflows' | dm"
     [disabled]="disabled"
     [maxSelectedLabels]="3"
-    [options]="options$ | async"
+    [options]="(options$ | async) ?? []"
     appendTo="body"
     optionLabel="name"
     dataKey="id">

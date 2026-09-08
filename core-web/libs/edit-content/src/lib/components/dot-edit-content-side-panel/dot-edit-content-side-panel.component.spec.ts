@@ -172,7 +172,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
@@ -190,7 +190,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
@@ -208,7 +208,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest.spyOn(layout, 'confirmClose');
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
@@ -233,7 +233,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest.spyOn(layout, 'confirmClose');
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
@@ -260,7 +260,7 @@ describe('DotEditContentSidePanelComponent', () => {
         document.body.appendChild(mask);
 
         if (ownedByPanel) {
-            spectator.query(Drawer).mask = mask;
+            spectator.query(Drawer)!.mask = mask;
         }
 
         mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -271,7 +271,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
@@ -290,7 +290,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         jest.spyOn(layout, 'confirmClose').mockImplementation(() => {
             /* user chose "Keep editing" → never calls onProceed */
         });
@@ -308,7 +308,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest.spyOn(layout, 'confirmClose');
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
@@ -324,14 +324,14 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest.spyOn(layout, 'confirmClose');
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         // Asserted before dispatching on purpose: with an optional chain, a markup rename would
         // silently skip the click and leave the two negative assertions below passing anyway.
-        const inside = spectator.query(byTestId('side-panel-title'), { root: true });
+        const inside = spectator.query(byTestId('side-panel-title'), { root: true })!;
         expect(inside).toBeTruthy();
 
         // Bubbles up to the same document listener, but its target is not the mask.
@@ -345,7 +345,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = jest.spyOn(layout, 'confirmClose');
         const closedSpy = jest.fn();
         spectator.output('closed').subscribe(closedSpy);
@@ -363,7 +363,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         jest.spyOn(layout, 'confirmClose').mockImplementation(() => {
             /* user chose "Keep editing" → never calls onProceed */
         });
@@ -401,7 +401,7 @@ describe('DotEditContentSidePanelComponent', () => {
         const contentlet = { inode: 'inode-2' } as DotCMSContentlet;
         saved$.next(contentlet);
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         jest.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) =>
             onProceed()
         );
@@ -418,7 +418,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', { ...EDIT_DATA, onContentSaved, onCancel });
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         jest.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) =>
             onProceed()
         );

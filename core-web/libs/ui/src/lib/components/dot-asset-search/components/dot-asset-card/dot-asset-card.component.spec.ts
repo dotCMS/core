@@ -44,7 +44,7 @@ describe('DotAssetCardComponent', () => {
         const title = spectator.query('[data-testId="dot-card-title"]');
         const language = spectator.query('[data-testId="dot-card-language"]');
 
-        expect(title?.textContent?.trim()).toBe(contentlet.fileName);
+        expect(title?.textContent?.trim()).toBe(contentlet['fileName']);
         const languageContent = contentlet.language as string;
         expect(language?.textContent?.trim()).toBe(languageContent);
     });

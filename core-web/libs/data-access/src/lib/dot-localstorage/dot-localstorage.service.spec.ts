@@ -73,7 +73,7 @@ describe('DotLocalstorageService', () => {
 
     describe('listen', () => {
         it('should listen', () => {
-            service.listen('hola').subscribe((res: string) => {
+            service.listen<string>('hola').subscribe((res: string) => {
                 expect(res).toBe('this is the new value');
             });
             window.dispatchEvent(

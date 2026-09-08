@@ -44,7 +44,7 @@ describe('DotContentletEditorService', () => {
     it('should get action url', () => {
         const url = '/api/v1/portlet/_actionurl/test';
 
-        service.getActionUrl('test').subscribe((urlString: string) => {
+        service.getActionUrl('test').subscribe((urlString) => {
             expect(urlString).toEqual('testString');
         });
 
@@ -56,7 +56,7 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set data to add', () => {
-        service.editUrl$.subscribe((url: string) => {
+        service.editUrl$.subscribe((url) => {
             expect(url).toEqual(
                 [
                     `/c/portal/layout`,
@@ -70,7 +70,7 @@ describe('DotContentletEditorService', () => {
             );
         });
 
-        service.header$.subscribe((header: string) => {
+        service.header$.subscribe((header) => {
             expect(header).toEqual('This is a header for add');
         });
 
@@ -99,7 +99,7 @@ describe('DotContentletEditorService', () => {
             },
             writable: true
         });
-        service.editUrl$.subscribe((url: string) => {
+        service.editUrl$.subscribe((url) => {
             expect(url).toEqual(
                 [
                     '/c/portal/layout',
@@ -113,7 +113,7 @@ describe('DotContentletEditorService', () => {
             );
         });
 
-        service.header$.subscribe((header: string) => {
+        service.header$.subscribe((header) => {
             expect(header).toEqual('This is a header for edit');
         });
 
@@ -133,7 +133,7 @@ describe('DotContentletEditorService', () => {
             },
             writable: true
         });
-        service.editUrl$.subscribe((url: string) => {
+        service.editUrl$.subscribe((url) => {
             expect(url).toEqual(
                 [
                     `/c/portal/layout`,
@@ -147,7 +147,7 @@ describe('DotContentletEditorService', () => {
             );
         });
 
-        service.header$.subscribe((header: string) => {
+        service.header$.subscribe((header) => {
             expect(header).toEqual('This is a header for edit');
         });
 
@@ -167,7 +167,7 @@ describe('DotContentletEditorService', () => {
             },
             writable: true
         });
-        service.editUrl$.subscribe((url: string) => {
+        service.editUrl$.subscribe((url) => {
             expect(url).toEqual(
                 [
                     `/c/portal/layout`,
@@ -181,7 +181,7 @@ describe('DotContentletEditorService', () => {
             );
         });
 
-        service.header$.subscribe((header: string) => {
+        service.header$.subscribe((header) => {
             expect(header).toEqual('This is a header for edit');
         });
 
@@ -194,11 +194,11 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set url to create a contentlet', () => {
-        service.createUrl$.subscribe((url: string) => {
+        service.createUrl$.subscribe((url) => {
             expect(url).toEqual('hello.world.com');
         });
 
-        service.header$.subscribe((header: string) => {
+        service.header$.subscribe((header) => {
             expect(header).toEqual('This is a header for create');
         });
 
@@ -211,11 +211,11 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should clear url and undbind', () => {
-        service.addUrl$.subscribe((url: string) => {
+        service.addUrl$.subscribe((url) => {
             expect(url).toEqual('');
         });
 
-        service.editUrl$.subscribe((url: string) => {
+        service.editUrl$.subscribe((url) => {
             expect(url).toEqual('');
         });
 

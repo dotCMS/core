@@ -53,7 +53,13 @@ describe('DotAnalytics HTTP Utils', () => {
             context: {
                 site_auth: 'test-site-key',
                 session_id: 'test-session-id',
-                user_id: 'test-user-id'
+                user_id: 'test-user-id',
+                device: {
+                    screen_resolution: '1920x1080',
+                    language: 'en-US',
+                    viewport_width: '1920',
+                    viewport_height: '1080'
+                }
             },
             events: [
                 {
@@ -68,13 +74,8 @@ describe('DotAnalytics HTTP Utils', () => {
                             doc_search: 'test-search',
                             doc_host: 'example.com',
                             doc_path: '/page',
-                            title: 'Test Page'
-                        },
-                        device: {
-                            screen_resolution: '1920x1080',
-                            language: 'en-US',
-                            viewport_width: '1920',
-                            viewport_height: '1080'
+                            title: 'Test Page',
+                            locale_id: 'en-us'
                         }
                     }
                 }
@@ -208,7 +209,9 @@ describe('DotAnalytics HTTP Utils', () => {
                     ok: false,
                     status: 400,
                     statusText: 'Bad Request',
-                    json: jest.fn().mockResolvedValue({ message: errorMessage })
+                    json: jest.fn<() => Promise<unknown>>().mockResolvedValue({
+                        message: errorMessage
+                    })
                 } as unknown as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);
@@ -227,7 +230,10 @@ describe('DotAnalytics HTTP Utils', () => {
                     ok: false,
                     status: 500,
                     statusText: 'Internal Server Error',
-                    json: jest.fn().mockResolvedValue({ error: 'some error', code: 'ERR_500' })
+                    json: jest.fn<() => Promise<unknown>>().mockResolvedValue({
+                        error: 'some error',
+                        code: 'ERR_500'
+                    })
                 } as unknown as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);
@@ -246,7 +252,9 @@ describe('DotAnalytics HTTP Utils', () => {
                     ok: false,
                     status: 400,
                     statusText: 'Bad Request',
-                    json: jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+                    json: jest
+                        .fn<() => Promise<unknown>>()
+                        .mockRejectedValue(new Error('Invalid JSON'))
                 } as unknown as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);

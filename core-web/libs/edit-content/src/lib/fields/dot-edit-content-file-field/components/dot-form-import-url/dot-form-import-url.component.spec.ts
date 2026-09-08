@@ -115,7 +115,7 @@ describe('DotFormImportUrlComponent', () => {
             const uploadFileByUrlSpy = jest.spyOn(store, 'uploadFileByUrl');
 
             spectator.detectChanges();
-            spectator.component.form.get('url').setValue('');
+            spectator.component.form.get('url')!.setValue('');
 
             spectator.component.onSubmit();
 
@@ -129,7 +129,7 @@ describe('DotFormImportUrlComponent', () => {
             );
 
             spectator.detectChanges();
-            spectator.component.form.get('url').setValue('http://example.com/file.png');
+            spectator.component.form.get('url')!.setValue('http://example.com/file.png');
 
             spectator.component.onSubmit();
 

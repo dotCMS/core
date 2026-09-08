@@ -44,7 +44,10 @@ describe('DotConvertToBlockInfoComponent', () => {
         const fixture = TestBed.createComponent(DotConvertToBlockInfoComponent);
         const de = fixture.debugElement;
 
-        fixture.componentRef.setInput('$currentField', {
+        // The public name is the alias, `currentField`. This previously had to say
+        // `$currentField` because `input({ alias })` passed the options as the default value and
+        // never registered the alias — the same defect that made `[currentField]` a no-op.
+        fixture.componentRef.setInput('currentField', {
             id: '123'
         });
 

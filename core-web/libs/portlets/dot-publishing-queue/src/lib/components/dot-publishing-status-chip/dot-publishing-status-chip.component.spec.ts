@@ -65,13 +65,15 @@ describe('DotPublishingStatusChipComponent', () => {
     });
 
     it('renders nothing when status is null', () => {
-        spectator = createComponent({ props: { status: null } });
+        spectator = createComponent();
+        spectator.setInput('status', null);
         spectator.detectChanges();
         expect(spectator.query(byTestId('pq-status-chip'))).toBeFalsy();
     });
 
     it('exposes success severity for SUCCESS status', () => {
-        spectator = createComponent({ props: { status: PublishAuditStatus.SUCCESS } });
+        spectator = createComponent();
+        spectator.setInput('status', PublishAuditStatus.SUCCESS);
         spectator.detectChanges();
         expect(spectator.query(byTestId('pq-status-chip'))?.textContent?.trim()).toContain(
             'Success'
@@ -80,15 +82,15 @@ describe('DotPublishingStatusChipComponent', () => {
     });
 
     it('exposes danger severity for FAILED_TO_PUBLISH status', () => {
-        spectator = createComponent({
-            props: { status: PublishAuditStatus.FAILED_TO_PUBLISH }
-        });
+        spectator = createComponent();
+        spectator.setInput('status', PublishAuditStatus.FAILED_TO_PUBLISH);
         spectator.detectChanges();
         expect(spectator.component.$bucket()).toBe('danger');
     });
 
     it('exposes warn severity for BUNDLING status (in-flight)', () => {
-        spectator = createComponent({ props: { status: PublishAuditStatus.BUNDLING } });
+        spectator = createComponent();
+        spectator.setInput('status', PublishAuditStatus.BUNDLING);
         spectator.detectChanges();
         expect(spectator.component.$bucket()).toBe('warn');
     });
@@ -103,9 +105,8 @@ describe('DotPublishingStatusChipComponent', () => {
     });
 
     it('exposes info severity for WAITING_FOR_PUBLISHING status', () => {
-        spectator = createComponent({
-            props: { status: PublishAuditStatus.WAITING_FOR_PUBLISHING }
-        });
+        spectator = createComponent();
+        spectator.setInput('status', PublishAuditStatus.WAITING_FOR_PUBLISHING);
         spectator.detectChanges();
         expect(spectator.component.$bucket()).toBe('info');
     });

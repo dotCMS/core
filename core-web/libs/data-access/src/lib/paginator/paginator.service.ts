@@ -18,6 +18,9 @@ interface Links {
     next?: string;
     'x-page'?: string;
     prev?: string;
+    // `setLinks` parses the `Link` header and stores whatever `rel` values the
+    // server sends, which is not limited to the names above.
+    [key: string]: string | undefined;
 }
 
 interface PaginatiorServiceParams {
@@ -46,15 +49,20 @@ export class PaginatorService {
     public links: Links = {};
 
     public paginationPerPage = 40;
-    public currentPage: number;
-    public maxLinksPage: number;
-    public totalRecords: number;
+    // Populated from the response headers on the first request, so these hold
+    // zero values until one completes.
+    public currentPage = 0;
+    public maxLinksPage = 0;
+    public totalRecords = 0;
 
-    private _url: string;
-    private _filter: string;
-    private _searchParam: string;
-    private _sortField: string;
-    private _sortOrder: OrderDirection;
+    private _url = '';
+    private _filter = '';
+    private _searchParam = '';
+    private _sortField = '';
+    // Deliberately left undefined rather than defaulting to a member: `getParams`
+    // gates `direction` on truthiness, and OrderDirection.ASC === 1 would start
+    // sending a param that was previously omitted.
+    private _sortOrder?: OrderDirection;
     private _extraParams: Map<string, string> = new Map();
 
     get url(): string {
@@ -138,7 +146,7 @@ export class PaginatorService {
         }
     }
 
-    get sortOrder(): OrderDirection {
+    get sortOrder(): OrderDirection | undefined {
         return this._sortOrder;
     }
 
@@ -176,21 +184,26 @@ export class PaginatorService {
                 map((response: HttpResponse<DotCMSResponse<T>>) => {
                     this.setLinks(response.headers.get(PaginatorService.LINK_HEADER_NAME));
                     this.paginationPerPage = parseInt(
-                        response.headers.get(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME),
+                        response.headers.get(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME) ??
+                            '',
                         10
                     );
                     this.currentPage = parseInt(
-                        response.headers.get(PaginatorService.PAGINATION_CURRENT_PAGE_HEADER_NAME),
+                        response.headers.get(
+                            PaginatorService.PAGINATION_CURRENT_PAGE_HEADER_NAME
+                        ) ?? '',
                         10
                     );
                     this.maxLinksPage = parseInt(
                         response.headers.get(
                             PaginatorService.PAGINATION_MAX_LINK_PAGES_HEADER_NAME
-                        ),
+                        ) ?? '',
                         10
                     );
                     this.totalRecords = parseInt(
-                        response.headers.get(PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME),
+                        response.headers.get(
+                            PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME
+                        ) ?? '',
                         10
                     );
 
@@ -275,7 +288,7 @@ export class PaginatorService {
         return parseInt(String(offset / this.paginationPerPage), 10) + 1;
     }
 
-    private setLinks(linksString: string): void {
+    private setLinks(linksString: string | null): void {
         const linkSplit = linksString?.split(',') || [];
 
         linkSplit.forEach((linkRel) => {

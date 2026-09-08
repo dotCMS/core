@@ -571,7 +571,7 @@ export class AngularFormBridge implements FormBridge {
                     }
 
                     this.#zone.run(() => {
-                        ref = this.#dialogService.open(
+                        const opened = this.#dialogService.open(
                             DotAssetPickerComponent,
                             buildAssetPickerDialogConfig(
                                 buildAssetPickerConfig({
@@ -586,9 +586,21 @@ export class AngularFormBridge implements FormBridge {
                                 })
                             )
                         );
-                        this.#dialogRef = ref;
 
-                        ref.onClose.subscribe((item) => {
+                        // `open()` returns null when it refuses a duplicate — a
+                        // picker is already up. There is no dialog to await, so
+                        // settle now: leaving it unsettled would hang the
+                        // caller's `onClose` forever.
+                        if (!opened) {
+                            finish(null);
+
+                            return;
+                        }
+
+                        ref = opened;
+                        this.#dialogRef = opened;
+
+                        opened.onClose.subscribe((item) => {
                             finish(item ? toSelection(item) : null);
                         });
                     });

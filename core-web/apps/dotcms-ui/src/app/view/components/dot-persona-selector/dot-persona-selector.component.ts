@@ -61,28 +61,28 @@ export class DotPersonaSelectorComponent implements OnInit {
     iframeOverlayService = inject(IframeOverlayService);
     private dotSessionStorageService = inject(DotSessionStorageService);
 
-    @Input() disabled: boolean;
-    @Input() readonly: boolean;
+    @Input() disabled!: boolean;
+    @Input() readonly!: boolean;
 
     @Output() selected: EventEmitter<DotPersona> = new EventEmitter();
 
     @Output() delete: EventEmitter<DotPersona> = new EventEmitter();
 
     @ViewChild('searchableDropdown', { static: true })
-    searchableDropdown: SearchableDropdownComponent;
-    @ViewChild('personaDialog', { static: true }) personaDialog: DotAddPersonaDialogComponent;
+    searchableDropdown!: SearchableDropdownComponent;
+    @ViewChild('personaDialog', { static: true }) personaDialog!: DotAddPersonaDialogComponent;
 
-    addAction: (item: DotPersona) => void;
+    addAction!: (item: DotPersona) => void;
     canDespersonalize = false;
     isEditMode = false;
     paginationPerPage = 10;
     personas: DotPersona[] = [];
-    totalRecords: number;
-    value: DotPersona;
+    totalRecords!: number;
+    value: DotPersona | undefined;
     defaultPersonaIdentifier = DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND;
-    private personaSeachQuery: string;
+    private personaSeachQuery!: string;
 
-    private _pageState: DotPageRenderState;
+    private _pageState!: DotPageRenderState;
 
     get pageState(): DotPageRenderState {
         return this._pageState;
@@ -155,7 +155,10 @@ export class DotPersonaSelectorComponent implements OnInit {
      * @memberof DotPersonaSelectorComponent
      */
     reloadPersonasListCurrentPage(): void {
-        this.paginationService.getCurrentPage().pipe(take(1)).subscribe(this.setList.bind(this));
+        this.paginationService
+            .getCurrentPage<DotPersona[]>()
+            .pipe(take(1))
+            .subscribe(this.setList.bind(this));
     }
 
     /**
@@ -186,7 +189,7 @@ export class DotPersonaSelectorComponent implements OnInit {
         // Set filter if undefined
         this.paginationService.filter = filter;
         this.paginationService
-            .getWithOffset(offset)
+            .getWithOffset<DotPersona[]>(offset)
             .pipe(take(1), delay(0))
             .subscribe(this.setList.bind(this));
     }

@@ -1,6 +1,6 @@
 @if (!editing) {
     <div class="mb-4 flex flex-row items-center gap-4">
-        <div class="flex gap-2 items-center">
+        <div class="flex items-center gap-2">
             <p-radioButton
                 (click)="clean()"
                 [(ngModel)]="status"
@@ -10,7 +10,7 @@
                 {{ 'contenttypes.field.properties.relationship.new.label' | dm }}
             </label>
         </div>
-        <div class="flex gap-2 items-center">
+        <div class="flex items-center gap-2">
             <p-radioButton
                 (click)="clean()"
                 [(ngModel)]="status"
@@ -28,8 +28,8 @@
         <dot-new-relationships
             class="contents"
             (switch)="handleChange($event)"
-            [velocityVar]="group.get(property.name).value.velocityVar"
-            [cardinality]="group.get(property.name).value.cardinality"
+            [velocityVar]="group.get(property.name)?.value.velocityVar"
+            [cardinality]="group.get(property.name)?.value.cardinality"
             [editing]="editing" />
     } @else {
         <div class="field">

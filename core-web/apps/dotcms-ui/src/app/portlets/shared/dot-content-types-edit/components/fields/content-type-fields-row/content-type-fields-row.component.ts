@@ -5,6 +5,17 @@ import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotc
 import { FieldUtil } from '@dotcms/utils';
 
 /**
+ * A layout row that has columns.
+ *
+ * `DotCMSContentTypeLayoutRow.columns` is optional because a tab divider row has none (see
+ * `FieldUtil.createFieldTabDivider`), but the parent renders this component only inside
+ * `@if (row.columns && row.columns.length)` — a row without columns goes to
+ * `dot-content-type-fields-tab` instead.
+ */
+type FieldRowWithColumns = DotCMSContentTypeLayoutRow &
+    Required<Pick<DotCMSContentTypeLayoutRow, 'columns'>>;
+
+/**
  * Display all the Field Types
  *
  * @export
@@ -30,12 +41,12 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     readonly removeRow = output<DotCMSContentTypeLayoutRow>();
 
     /** Local copy of fieldRow for mutations */
-    fieldRow: DotCMSContentTypeLayoutRow;
+    fieldRow!: FieldRowWithColumns;
 
     emptyMessage = '';
 
     ngOnInit() {
-        this.fieldRow = this.$fieldRow();
+        this.fieldRow = this.$fieldRow() as FieldRowWithColumns;
         this.emptyMessage = this.dotMessageService.get('contenttypes.dropzone.rows.empty.message');
     }
 

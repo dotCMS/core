@@ -63,7 +63,7 @@ export class LoggerService {
      * @returns boolean
      */
     shouldShowLogs(): boolean {
-        const devMode: string = this.httpRequestUtils.getQueryStringParam(DEV_MODE_PARAM);
+        const devMode: string | null = this.httpRequestUtils.getQueryStringParam(DEV_MODE_PARAM);
 
         return !environment.production || devMode === 'on';
     } // isProduction.
@@ -77,13 +77,14 @@ export class LoggerService {
         try {
             throw new Error();
         } catch (e) {
-            caller = this.cleanCaller(this.stringUtils.getLine(e.stack, 4));
+            const stack = e instanceof Error ? (e.stack ?? '') : '';
+            caller = this.cleanCaller(this.stringUtils.getLine(stack, 4));
         }
 
         return caller;
     }
 
-    private cleanCaller(caller: string): string {
+    private cleanCaller(caller: string | null): string {
         return caller ? caller.trim().substr(3) : 'unknown';
     }
 }

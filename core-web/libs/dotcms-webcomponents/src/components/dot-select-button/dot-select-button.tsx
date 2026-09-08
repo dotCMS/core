@@ -14,7 +14,7 @@ export class DotSelectButton {
     @Prop({ reflect: true })
     options: DotSelectButtonOption[] = [];
 
-    @Event() selected: EventEmitter<string>;
+    @Event() selected!: EventEmitter<string>;
 
     render() {
         return (

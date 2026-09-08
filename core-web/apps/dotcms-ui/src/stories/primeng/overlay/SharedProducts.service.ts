@@ -80,7 +80,7 @@ export class ProductService {
             rating: this.generateRating()
         };
 
-        product.image = product.name.toLocaleLowerCase().split(/[ ,]+/).join('-') + '.jpg';
+        product.image = `${product.name?.toLocaleLowerCase().split(/[ ,]+/).join('-')}.jpg`;
 
         return product;
     }

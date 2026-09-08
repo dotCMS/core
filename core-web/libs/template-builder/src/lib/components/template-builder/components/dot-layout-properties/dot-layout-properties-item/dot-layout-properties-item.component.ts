@@ -25,9 +25,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 })
 export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
-    label: string;
+    label = '';
 
-    value: boolean;
+    value = false;
 
     @Output()
     switch: EventEmitter<boolean> = new EventEmitter();

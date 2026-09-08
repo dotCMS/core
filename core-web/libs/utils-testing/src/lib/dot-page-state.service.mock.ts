@@ -19,7 +19,7 @@ export class DotPageStateServiceMock {
         return of(mockDotRenderedPageState);
     }
 
-    setLock(_options: DotPageRenderOptions, _lock: boolean = null): void {
+    setLock(_options: DotPageRenderOptions, _lock: boolean | null = null): void {
         /* */
     }
 

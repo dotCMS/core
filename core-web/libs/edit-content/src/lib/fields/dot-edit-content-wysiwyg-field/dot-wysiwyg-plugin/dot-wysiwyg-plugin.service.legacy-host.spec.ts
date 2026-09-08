@@ -83,7 +83,9 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         jest.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(asset),
             close: closeSpy
-        } as DynamicDialogRef);
+            // `as unknown` first: a `close` that is a `jest.Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -135,7 +137,9 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
             // Never emits: the dialog stays open for the duration of the test.
             onClose: new Subject(),
             close: closeSpy
-        } as DynamicDialogRef);
+            // `as unknown` first: a `close` that is a `jest.Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         const button = editor.ui.registry.getAll().buttons['dotAddImage'];
@@ -158,7 +162,9 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         jest.spyOn(dialogService, 'open').mockReturnValue({
             onClose: new Subject(),
             close: closeSpy
-        } as DynamicDialogRef);
+            // `as unknown` first: a `close` that is a `jest.Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -183,7 +189,9 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         jest.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(undefined),
             close: closeSpy
-        } as DynamicDialogRef);
+            // `as unknown` first: a `close` that is a `jest.Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
+        } as unknown as DynamicDialogRef);
         button.onAction();
 
         expect(dialogService.open).toHaveBeenCalledTimes(2);

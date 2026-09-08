@@ -13,7 +13,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 
 @Injectable()
 class MockLoginService {
-    private _isLogin$: Observable<boolean>;
+    private _isLogin$!: Observable<boolean>;
     get isLogin$() {
         return this._isLogin$;
     }
@@ -37,14 +37,16 @@ describe('ValidPublicAuthGuardService', () => {
         publicAuthGuardService = TestBed.inject(PublicAuthGuardService);
         dotRouterService = TestBed.inject(DotRouterService);
         loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-            'toString'
-        ]);
+        // Minimal snapshots rather than `jest.fn<T>(name, methods)`: that shape is
+        // `jasmine.createSpyObj` migrated mechanically, and `jest.fn` takes neither argument — it
+        // produced a `jest.Mock` standing in for a router snapshot, which is why these two
+        // declarations reported ~30 missing properties. The specs only ever read `url` and `params`.
+        mockRouterStateSnapshot = { url: '' } as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { params: {} } as ActivatedRouteSnapshot;
     });
 
     it('should redirect to to Main Portlet if User is logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(true),
             writable: true
@@ -57,7 +59,7 @@ describe('ValidPublicAuthGuardService', () => {
     });
 
     it('should allow access to the requested route if User is NOT logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(false),
             writable: true

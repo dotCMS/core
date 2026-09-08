@@ -29,7 +29,8 @@ export interface DotAnnouncementsState {
     announcements: Announcement[];
     showUnreadAnnouncement: boolean;
     utmParameters?: string;
-    currentSite: Site;
+    /** Null until the current site resolves, which is after the store is constructed. */
+    currentSite: Site | null;
 }
 
 export enum TypesIcons {
@@ -62,7 +63,9 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         this.effect(() => {
             const announcements$ = this.http
                 .get<Announcement[]>(this.announcementsUrl)
-                .pipe(map((response) => response['entity']));
+                .pipe(
+                    map((response) => (response as unknown as { entity: Announcement[] }).entity)
+                );
 
             return combineLatest([announcements$, this.siteService.getCurrentSite()]).pipe(
                 tap(([announcements, currentSite]) => {
@@ -165,13 +168,13 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         };
     });
 
-    private generateUtmQueryString(currentSite: Site): string {
-        return `utm_source=platform&utm_medium=announcement&utm_campaign=${currentSite.hostname}`;
+    private generateUtmQueryString(currentSite: Site | null): string {
+        return `utm_source=platform&utm_medium=announcement&utm_campaign=${currentSite?.hostname ?? ''}`;
     }
 
     private updateWithUtmAndReadStatus(
         announcements: Announcement[],
-        currentSite: Site
+        currentSite: Site | null
     ): Announcement[] {
         const storedAnnouncements = this.getStoredAnnouncements();
 

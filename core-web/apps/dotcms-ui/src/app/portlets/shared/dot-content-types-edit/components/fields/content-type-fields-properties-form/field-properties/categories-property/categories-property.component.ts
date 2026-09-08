@@ -32,9 +32,9 @@ export class CategoriesPropertyComponent implements OnInit {
     categoriesCurrentPage: DotCMSContentTypeFieldCategories[] = [];
     loading = false;
     filterValue = '';
-    property: FieldProperty;
-    group: UntypedFormGroup;
-    placeholder: string;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
+    placeholder!: string;
 
     ngOnInit(): void {
         this.placeholder = !this.property.value
@@ -59,7 +59,7 @@ export class CategoriesPropertyComponent implements OnInit {
      * @param any event
      * @memberof CategoriesPropertyComponent
      */
-    handlePageChange(event): void {
+    handlePageChange(event: { filter: string; first: number }): void {
         this.getCategoriesList(event.filter, event.first);
     }
 

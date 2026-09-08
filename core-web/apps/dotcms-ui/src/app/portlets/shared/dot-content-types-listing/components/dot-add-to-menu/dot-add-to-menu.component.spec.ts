@@ -215,9 +215,9 @@ describe('DotAddToMenuComponent', () => {
     });
 
     it('should load form values when init', () => {
-        expect(component.form.get('defaultView').value).toEqual('list');
-        expect(component.form.get('menuOption').value).toEqual('123');
-        expect(component.form.get('title').value).toEqual(contentTypeVar.name);
+        expect(component.form.get('defaultView')!.value).toEqual('list');
+        expect(component.form.get('menuOption')!.value).toEqual('123');
+        expect(component.form.get('title')!.value).toEqual(contentTypeVar.name);
         expect(component.form.valid).toEqual(true);
         expect(dotMenuService.loadMenu).toHaveBeenCalledWith(true);
         expect(dotMenuService.loadMenu).toHaveBeenCalledTimes(1);
@@ -252,7 +252,7 @@ describe('DotAddToMenuComponent', () => {
         expect(dotAddToMenuService.addToLayout).toHaveBeenCalledWith({
             portletName: 'Nuevo',
             dataViewMode: 'list',
-            layoutId: component.form.get('menuOption').value
+            layoutId: component.form.get('menuOption')!.value
         });
         expect(component.cancel.emit).toHaveBeenCalledTimes(1);
     });

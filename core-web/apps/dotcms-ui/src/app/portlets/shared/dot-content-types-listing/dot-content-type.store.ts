@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { catchError, filter, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSAssetDialogFields, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
@@ -55,6 +55,7 @@ export class DotContentTypeStore extends ComponentStore<ContentTypeState> {
             return copyDialogFormFields$.pipe(
                 tap(() => this.isSaving(true)),
                 withLatestFrom(this.assetSelected$),
+                filter((pair): pair is [DotCopyContentTypeDialogFormFields, string] => !!pair[1]),
                 switchMap(([formFields, assetIdentifier]) =>
                     this.dotContentTypeService
                         .saveCopyContentType(assetIdentifier, formFields)

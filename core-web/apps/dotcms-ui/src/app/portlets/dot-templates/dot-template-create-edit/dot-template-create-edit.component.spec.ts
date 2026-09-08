@@ -63,7 +63,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     template: ''
 })
 export class DotApiLinkMockComponent {
-    @Input() href;
+    @Input() href!: string;
 }
 
 @Component({
@@ -71,8 +71,8 @@ export class DotApiLinkMockComponent {
     template: ''
 })
 export class DotTemplateBuilderMockComponent {
-    @Input() item;
-    @Input() didTemplateChanged;
+    @Input() item!: DotTemplateItem;
+    @Input() didTemplateChanged!: boolean;
     @Output() save = new EventEmitter();
     @Output() cancel = new EventEmitter();
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
@@ -83,7 +83,7 @@ export class DotTemplateBuilderMockComponent {
     template: '<ng-content></ng-content>'
 })
 export class DotPortletBaseMockComponent {
-    @Input() boxed;
+    @Input() boxed!: boolean;
 }
 
 @Component({
@@ -92,7 +92,7 @@ export class DotPortletBaseMockComponent {
         '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>'
 })
 export class DotPortletToolbarMockComponent {
-    @Input() title;
+    @Input() title!: string;
 }
 
 @Component({
@@ -161,11 +161,11 @@ class MockDotSystemConfigService {
     }
 }
 
-async function makeFormValid(fixture) {
+async function makeFormValid(fixture: ComponentFixture<DotTemplateCreateEditComponent>) {
     // can't use debugElement because the dialogs opens outside the component
-    const title: HTMLInputElement = document.querySelector(
+    const title = document.querySelector<HTMLInputElement>(
         '[data-testid="templatePropsTitleField"]'
-    );
+    )!;
 
     title.value = 'Hello World';
 
@@ -184,7 +184,7 @@ async function makeFormValid(fixture) {
     themeButton.click();
     fixture.detectChanges();
     await fixture.whenRenderingDone();
-    const item: HTMLElement = document.querySelector('.theme-selector__data-list-item');
+    const item = document.querySelector<HTMLElement>('.theme-selector__data-list-item')!;
     item.click();
 }
 
@@ -424,9 +424,9 @@ describe('DotTemplateCreateEditComponent', () => {
 
             it('should go to template list when cancel dialog button is clicked', () => {
                 // can't use debugElement because the dialogs opens outside the component
-                const button: HTMLButtonElement = document.querySelector(
+                const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogCancel"]'
-                );
+                )!;
                 button.click();
 
                 expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
@@ -435,9 +435,9 @@ describe('DotTemplateCreateEditComponent', () => {
             xit('should save template when save dialog button is clicked', async () => {
                 await makeFormValid(fixture);
 
-                const button: HTMLButtonElement = document.querySelector(
+                const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogSave"]'
-                );
+                )!;
 
                 button.click();
 
@@ -504,9 +504,9 @@ describe('DotTemplateCreateEditComponent', () => {
 
             it('should save template when save dialog button is clicked', async () => {
                 // can't use debugElement because the dialogs opens outside the component
-                const title: HTMLInputElement = document.querySelector(
+                const title = document.querySelector<HTMLInputElement>(
                     '[data-testid="templatePropsTitleField"]'
-                );
+                )!;
 
                 title.value = 'Hello World';
 
@@ -517,9 +517,9 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 title.dispatchEvent(event);
 
-                const button: HTMLButtonElement = document.querySelector(
+                const button = document.querySelector<HTMLButtonElement>(
                     '[data-testid="dotFormDialogSave"]'
-                );
+                )!;
                 button.click();
 
                 await fixture.whenStable();

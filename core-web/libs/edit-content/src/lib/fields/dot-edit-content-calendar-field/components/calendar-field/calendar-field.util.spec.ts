@@ -439,7 +439,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
 
             // Then: Should return current time in server timezone
             expect(result).toBeInstanceOf(Date);
-            expect(result.getTime()).toBeGreaterThan(0);
+            expect(result!.getTime()).toBeGreaterThan(0);
         });
 
         it('should parse "now" correctly for TIME fields', () => {
@@ -452,11 +452,11 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
 
             // Then: Should return current time components applied to today
             expect(result).toBeInstanceOf(Date);
-            expect(result.getTime()).toBeGreaterThan(0);
+            expect(result!.getTime()).toBeGreaterThan(0);
 
             // Should have today's date but current server time components
             const todayInServerTz = getCurrentServerTime(SERVER_TIMEZONE_MOCKS.GULF);
-            expect(result.getDate()).toBe(todayInServerTz.getDate());
+            expect(result!.getDate()).toBe(todayInServerTz.getDate());
         });
 
         it('should interpret fixed datetime as server timezone (Dubai example)', () => {

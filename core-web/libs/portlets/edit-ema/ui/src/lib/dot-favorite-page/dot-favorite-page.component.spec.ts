@@ -39,8 +39,8 @@ import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-fa
     standalone: false
 })
 export class DotFormDialogMockComponent {
-    @Input() saveButtonDisabled: boolean;
-    @Input() saveButtonLoading: boolean;
+    @Input() saveButtonDisabled = false;
+    @Input() saveButtonLoading = false;
     @Output() save = new EventEmitter();
     @Output() cancel = new EventEmitter();
 }
@@ -51,9 +51,9 @@ export class DotFormDialogMockComponent {
     standalone: false
 })
 export class DotHtmlToImageMockComponent {
-    @Input() height;
-    @Input() value;
-    @Input() width;
+    @Input() height!: number;
+    @Input() value!: string;
+    @Input() width!: number;
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -219,13 +219,13 @@ describe('DotFavoritePageComponent', () => {
                     expect(field.classes['field']).toBe(true);
 
                     expect(label.classes['p-label-input-required']).toBe(true);
-                    expect(label.attributes.for).toBe('title');
+                    expect(label.attributes['for']).toBe('title');
                     expect(label.nativeElement.textContent).toBe('Title');
 
-                    expect(input.attributes.autofocus).toBeDefined();
-                    expect(input.attributes.pInputText).toBeDefined();
-                    expect(input.attributes.formControlName).toBe('title');
-                    expect(input.attributes.id).toBe('title');
+                    expect(input.attributes['autofocus']).toBeDefined();
+                    expect(input.attributes['pInputText']).toBeDefined();
+                    expect(input.attributes['formControlName']).toBe('title');
+                    expect(input.attributes['id']).toBe('title');
 
                     expect(message).toBeDefined();
                 });
@@ -238,12 +238,12 @@ describe('DotFavoritePageComponent', () => {
 
                     expect(field.classes['field']).toBe(true);
 
-                    expect(label.attributes.for).toBe('url');
+                    expect(label.attributes['for']).toBe('url');
                     expect(label.nativeElement.textContent).toBe('Url');
 
-                    expect(input.attributes.pInputText).toBeDefined();
-                    expect(input.attributes.formControlName).toBe('url');
-                    expect(input.attributes.id).toBe('url');
+                    expect(input.attributes['pInputText']).toBeDefined();
+                    expect(input.attributes['formControlName']).toBe('url');
+                    expect(input.attributes['id']).toBe('url');
 
                     expect(message).toBeDefined();
                 });
@@ -256,12 +256,12 @@ describe('DotFavoritePageComponent', () => {
 
                     expect(field.classes['field']).toBe(true);
 
-                    expect(label.attributes.for).toBe('order');
+                    expect(label.attributes['for']).toBe('order');
                     expect(label.nativeElement.textContent).toBe('Order');
 
-                    expect(input.attributes.pInputText).toBeDefined();
-                    expect(input.attributes.formControlName).toBe('order');
-                    expect(input.attributes.id).toBe('order');
+                    expect(input.attributes['pInputText']).toBeDefined();
+                    expect(input.attributes['formControlName']).toBe('order');
+                    expect(input.attributes['id']).toBe('order');
 
                     expect(message).toBeDefined();
                 });
@@ -315,7 +315,7 @@ describe('DotFavoritePageComponent', () => {
             }));
 
             it('should be valid when required fields are set', () => {
-                component.form.get('thumbnail').setValue('test');
+                component.form.get('thumbnail')!.setValue('test');
                 expect(component.form.valid).toBe(true);
                 expect(component.form.getRawValue()).toEqual({
                     thumbnail: 'test',

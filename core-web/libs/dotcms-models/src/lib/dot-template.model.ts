@@ -41,7 +41,11 @@ export interface DotTemplate {
     canWrite?: boolean;
     canPublish?: boolean;
     containers?: DotContainerMap;
-    layout: DotLayout;
+    /**
+     * Null on an advanced (non-drawed) template, which has a body instead — `getTemplateItem` in
+     * the template store already falls back for exactly that case.
+     */
+    layout: DotLayout | null;
     selectedimage?: string;
     themeId?: string;
 }

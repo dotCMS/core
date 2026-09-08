@@ -10,8 +10,8 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [DotMessagePipe]
 })
 export class DotContentComparePreviewFieldComponent implements OnChanges {
-    @Input() fileURL: string;
-    @Input() label: string;
+    @Input() fileURL = '';
+    @Input() label = '';
     imageError = false;
 
     ngOnChanges() {

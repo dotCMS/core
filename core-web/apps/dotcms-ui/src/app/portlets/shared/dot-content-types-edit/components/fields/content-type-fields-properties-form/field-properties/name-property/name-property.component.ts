@@ -10,6 +10,6 @@ import { FieldProperty } from '../field-properties.model';
     standalone: false
 })
 export class NamePropertyComponent {
-    property: FieldProperty;
-    group: UntypedFormGroup;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
 }

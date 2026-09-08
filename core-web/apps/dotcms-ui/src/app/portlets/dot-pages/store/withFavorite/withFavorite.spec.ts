@@ -3,6 +3,7 @@ import { patchState, signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
@@ -164,7 +165,7 @@ describe('withFavorites', () => {
     });
 
     it('getFavoritePages() should call httpErrorManagerService.handle(error) and set favoriteState=error when request fails', () => {
-        const error = new Error('Favorites failed');
+        const error = new HttpErrorResponse({ status: 500, statusText: 'Favorites failed' });
         dotPageListService.getFavoritePages.mockReturnValueOnce(throwError(() => error));
 
         store.getFavoritePages();
@@ -201,7 +202,7 @@ describe('withFavorites', () => {
         ];
         patchState(store, { favoritePages: current, favoriteState: 'loaded' });
 
-        const error = new Error('Single page failed');
+        const error = new HttpErrorResponse({ status: 500, statusText: 'Single page failed' });
         dotPageListService.getSinglePage.mockReturnValueOnce(throwError(() => error));
 
         store.updateFavoritePageNode('page-2');

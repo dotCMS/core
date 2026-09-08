@@ -336,7 +336,7 @@ export class DotRolesEditComponent {
                 this.#store.deleteRole(this.role.id).then((result) => {
                     this.$submitting.set(false);
                     if (result?.deleted) {
-                        this.#ref.close({ deleted: true, ...result });
+                        this.#ref.close({ ...result, deleted: true });
                     } else if (result && result.deleted === false) {
                         // Server-side rejection with a 200 (e.g. hierarchy
                         // constraint) — no toast was fired, surface the

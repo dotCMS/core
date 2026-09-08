@@ -91,17 +91,30 @@ export function withView() {
                 if (!urlContentMap || Object.keys(urlContentMap).length === 0) return null;
                 return urlContentMap;
             }),
+            /**
+             * Both of the toolbar computeds below run only while a page is loaded: the toolbar
+             * lives inside the editor, the editor lives inside the shell's `@if ($canRead())`, and
+             * `$canRead` is `pageAsset()?.page?.canRead ?? false`. So `pageAsset()` and
+             * `pageParams()` — both `| null` in the state, for the interval before the first load —
+             * are non-null for every read that reaches here. The fallbacks are the unreachable
+             * branch, kept as empty values rather than asserted so that a future caller outside
+             * that gate degrades to an empty selector or a dead link instead of throwing.
+             */
             $personaSelector: computed<PersonaSelectorProps>(() => {
-                const page = store.pageAsset()?.page;
-                const viewAs = store.pageAsset()?.viewAs;
+                const pageAsset = store.pageAsset();
 
                 return {
-                    pageId: page?.identifier,
-                    value: viewAs?.persona ?? DEFAULT_PERSONA
+                    pageId: pageAsset?.page.identifier ?? '',
+                    value: pageAsset?.viewAs?.persona ?? DEFAULT_PERSONA
                 };
             }),
             $apiURL: computed<string>(() => {
                 const params = store.pageParams();
+
+                if (!params) {
+                    return '';
+                }
+
                 const pageURL = getFullPageURL({ url: params.url, params });
 
                 const apiPageType = store.pageType() === PageType.TRADITIONAL ? 'render' : 'json';
@@ -109,11 +122,19 @@ export function withView() {
 
                 return pageAPI;
             }),
-            $infoDisplayProps: computed<InfoOptions>(() => {
+            /**
+             * `| null` is what this has always returned — the default variant produces no info bar,
+             * and the toolbar template already reads it as `@if ($infoDisplayProps(); as options)`.
+             * The declared `InfoOptions` was simply narrower than the body.
+             */
+            $infoDisplayProps: computed<InfoOptions | null>(() => {
                 const viewAs = store.pageAsset()?.viewAs;
                 const mode = store.pageParams()?.mode;
 
-                if (!getIsDefaultVariant(viewAs?.variantId)) {
+                // `getIsDefaultVariant(viewAs?.variantId)` returning false does not narrow `viewAs`
+                // itself, and the branch reads `viewAs.variantId` — so it is checked here. A page
+                // with no `viewAs` has no variant, which is the default-variant case anyway.
+                if (viewAs && !getIsDefaultVariant(viewAs.variantId)) {
                     const variantId = viewAs.variantId;
 
                     const currentExperiment = store.pageExperiment?.();
@@ -192,7 +213,8 @@ export function withView() {
         })),
         withMethods((store) => ({
             viewSetDevice: (device: DotDevice, orientation?: Orientation) => {
-                const isValidOrientation = Object.values(Orientation).includes(orientation);
+                const isValidOrientation =
+                    !!orientation && Object.values(Orientation).includes(orientation);
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
 
                 const isDefaultDevice = !device || device.inode === 'default';

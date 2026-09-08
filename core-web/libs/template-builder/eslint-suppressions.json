@@ -1,0 +1,22 @@
+{
+  "src/lib/components/template-builder/components/dot-layout-properties/dot-layout-properties-item/dot-layout-properties-item.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/components/template-builder/components/remove-confirm-dialog/remove-confirm-dialog.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/components/template-builder/components/template-builder-actions/template-builder-actions.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/components/template-builder/template-builder.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 4
+    }
+  }
+}

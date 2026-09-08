@@ -41,7 +41,7 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     message: DotGlobalMessage = { value: '' };
 
     private visibility = false;
-    private icons = {
+    private icons: Record<string, string> = {
         loading: 'loading',
         success: 'pi pi-check-circle',
         error: 'pi pi-exclamation-circle',
@@ -56,15 +56,18 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.dotEventsService
-            .listen('dot-global-message')
+            .listen<DotGlobalMessage>('dot-global-message')
             .pipe(
-                filter((event: DotEvent<DotGlobalMessage>) => !!event.data),
+                filter(
+                    (event): event is DotEvent<DotGlobalMessage> & { data: DotGlobalMessage } =>
+                        !!event.data
+                ),
                 takeUntil(this.destroy$)
             )
-            .subscribe((event: DotEvent<DotGlobalMessage>) => {
+            .subscribe((event) => {
                 this.message = event.data;
                 this.visibility = true;
-                this.message.icon = this.icons[this.message.type] || '';
+                this.message.icon = this.icons[this.message.type ?? ''] || '';
 
                 if (this.message.life) {
                     setTimeout(() => {

@@ -64,9 +64,9 @@ function setNodeIndentMarkup(tr: Transaction, pos: number, delta: number): Trans
 
     const minIndent = INDENT_MIN;
     const maxIndent = INDENT_MAX;
-    const indent = clamp((node.attrs.indent || 0) + delta, minIndent, maxIndent);
+    const indent = clamp((node.attrs['indent'] || 0) + delta, minIndent, maxIndent);
 
-    if (indent === node.attrs.indent) return tr;
+    if (indent === node.attrs['indent']) return tr;
 
     const nodeAttrs = {
         ...node.attrs,
@@ -127,12 +127,12 @@ export const IndentExtension = Extension.create<IndentOptions>({
                     indent: {
                         default: 0,
                         renderHTML: (attributes) => {
-                            if (!attributes.indent || attributes.indent <= 0) {
+                            if (!attributes['indent'] || attributes['indent'] <= 0) {
                                 return {};
                             }
 
                             return {
-                                style: `margin-left: ${attributes.indent}px;`
+                                style: `margin-left: ${attributes['indent']}px;`
                             };
                         },
                         parseHTML: (element) => {

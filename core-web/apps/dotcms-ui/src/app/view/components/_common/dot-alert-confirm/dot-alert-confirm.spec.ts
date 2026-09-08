@@ -55,7 +55,9 @@ describe('DotAlertConfirmComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         detectChanges();
-        dialogService = spectator.inject(DotAlertConfirmService) as DotAlertConfirmServiceTest;
+        dialogService = spectator.inject(
+            DotAlertConfirmService
+        ) as unknown as DotAlertConfirmServiceTest;
     });
 
     it('should not show confirm or alert by default', () => {

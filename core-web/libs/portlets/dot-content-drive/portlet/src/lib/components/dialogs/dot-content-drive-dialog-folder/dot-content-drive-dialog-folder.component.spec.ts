@@ -14,6 +14,8 @@ import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog
 import { DEFAULT_FILE_ASSET_TYPES } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const mockSite = createFakeSite({
     hostname: 'demo.dotcms.com'
 });
@@ -196,7 +198,11 @@ describe('DotContentDriveDialogFolderComponent', () => {
         });
 
         it('should preview the current folder (not root) when name is null', () => {
-            component.folderForm.patchValue({ name: null });
+            // `name` is a `FormControl<string>` created `nonNullable`, so `null` is outside its
+            // declared type — but `patchValue` does not coerce, and `$finalPath` carries a `?? ''`
+            // for exactly this. Cast rather than substituted with `''` so the test keeps covering
+            // the nullish branch it was written for.
+            component.folderForm.patchValue({ name: null as unknown as string });
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/documents/');
@@ -370,8 +376,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
         /** Types `text` and lets the AutoComplete debounce run so the suggestions get filtered. */
         const type = (text: string) => {
             const input = extensionsInput();
-            input.value = text;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input!.value = text;
+            input!.dispatchEvent(new Event('input', { bubbles: true }));
             jest.advanceTimersByTime(500);
             spectator.detectChanges();
 
@@ -394,12 +400,12 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
         it('should add extension on enter key if not duplicate', () => {
             const input = type('*.pdf');
-            input.dispatchEvent(pressEnter());
+            input!.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toContain('*.pdf');
             // Input is cleared so the next entry starts fresh and existing chips are preserved.
-            expect(input.value).toBe('');
+            expect(input!.value).toBe('');
         });
 
         it('should preserve existing selection when adding another extension', () => {
@@ -409,7 +415,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.png');
-            input.dispatchEvent(pressEnter());
+            input!.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual([
@@ -429,7 +435,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.png');
-            input.dispatchEvent(pressEnter());
+            input!.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(renderedChips()).toEqual(['*.jpg', '*.png']);
@@ -445,11 +451,11 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.pdf');
-            input.dispatchEvent(pressEnter());
+            input!.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.pdf']);
-            expect(input.value).toBe('');
+            expect(input!.value).toBe('');
         });
 
         it('should render a chip for every saved extension, including ones off the suggested list', () => {
@@ -459,7 +465,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
             // neither see nor remove it and it was sent straight back on save. The folder is bound
             // at creation time here because that is how the shell opens this dialog.
             const editSpectator = createComponent({
-                props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+                props: {
+                    folder: editableFolder({ filesMasks: '*.jpg,*.svg' })
+                } as unknown as InferInputSignals<DotContentDriveDialogFolderComponent>
             });
             editSpectator.detectChanges();
 
@@ -486,7 +494,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 ).mockReturnValue(of(mockFileAssetTypes).pipe(delay(1000)));
 
                 const loading = createComponent({
-                    props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
+                    props: {
+                        folder: editableFolder({ filesMasks: '*.jpg,*.svg' })
+                    } as unknown as InferInputSignals<DotContentDriveDialogFolderComponent>
                 });
                 loading.detectChanges();
 
@@ -563,7 +573,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             const input = type('*.png');
-            input.dispatchEvent(pressEnter());
+            input!.dispatchEvent(pressEnter());
             spectator.detectChanges();
 
             expect(component.folderForm.get('allowedFileExtensions')?.value).toEqual(['*.png']);
@@ -652,7 +662,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             });
             spectator.detectChanges();
 
-            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]')!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -665,7 +675,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             component.folderForm.patchValue({ title: 'App', name: 'app' });
             spectator.detectChanges();
 
-            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]'));
+            spectator.click(spectator.query('[data-testid="content-drive-dialog-folder-create"]')!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -689,7 +699,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
 
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -712,7 +722,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -736,7 +746,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -759,7 +769,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -777,7 +787,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(store.reloadContentDrive).toHaveBeenCalled();
             expect(store.loadFolders).toHaveBeenCalled();
@@ -792,7 +802,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(createButton).toBeTruthy();
             expect(component.folderForm.valid).toBe(true);
 
-            spectator.click(createButton);
+            spectator.click(createButton!);
             spectator.detectChanges();
 
             expect(messageService.add).toHaveBeenCalledWith({
@@ -810,7 +820,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',
@@ -826,7 +836,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 '[data-testid="content-drive-dialog-folder-cancel"]'
             );
 
-            spectator.click(cancelButton);
+            spectator.click(cancelButton!);
 
             expect(store.closeDialog).toHaveBeenCalled();
         });
@@ -861,7 +871,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -886,7 +896,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalled();
             const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
@@ -902,7 +912,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -925,7 +935,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalled();
             const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
@@ -941,7 +951,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -965,7 +975,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalled();
             const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
@@ -981,7 +991,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalledWith({
                 assetPath: '//demo.dotcms.com/documents/test-folder/',
@@ -1004,7 +1014,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalled();
             const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
@@ -1020,7 +1030,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalled();
             const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
@@ -1065,7 +1075,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(folderService.saveFolder).toHaveBeenCalled();
             const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
@@ -1076,7 +1086,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalled();
             const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
@@ -1107,7 +1117,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(folderService.saveFolder).toHaveBeenCalled();
             const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
@@ -1134,7 +1144,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
             expect(lastCall?.assetPath).toBe('//demo.dotcms.com/archive/');
@@ -1184,7 +1194,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(folderService.saveFolder).toHaveBeenCalled();
             const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
@@ -1198,7 +1208,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(folderService.createFolder).toHaveBeenCalled();
             const lastCall = folderService.createFolder.mock.calls.at(-1)?.[0];
@@ -1243,7 +1253,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(folderService.saveFolder).toHaveBeenCalled();
             const lastCall = folderService.saveFolder.mock.calls.at(-1)?.[0];
@@ -1301,7 +1311,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
 
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(folderService.saveFolder).toHaveBeenCalled();
             expect(folderService.createFolder).not.toHaveBeenCalled();
@@ -1312,7 +1322,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
 
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             // assetPath uses $originalName() when it exists (for editing existing folders)
             // The name field in data is what tells the backend to rename it
@@ -1341,7 +1351,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(folderService.saveFolder).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -1354,7 +1364,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(store.reloadContentDrive).toHaveBeenCalled();
             expect(store.loadFolders).toHaveBeenCalled();
@@ -1366,7 +1376,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
 
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
             spectator.detectChanges();
 
             expect(messageService.add).toHaveBeenCalledWith({
@@ -1384,7 +1394,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
-            spectator.click(saveButton);
+            spectator.click(saveButton!);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',

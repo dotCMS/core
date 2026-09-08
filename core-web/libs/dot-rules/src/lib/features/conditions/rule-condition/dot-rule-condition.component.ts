@@ -27,25 +27,12 @@ import {
     ConditionModel
 } from '../../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
+import {
+    ConditionDeleteEmitEvent,
+    ConditionEmitEvent
+} from '../../../services/models/rule-event.model';
 import { DotVisitorsLocationContainerComponent } from '../geolocation/visitors-location/container/dot-visitors-location-container.component';
 import { DotServersideConditionComponent } from '../serverside-condition/dot-serverside-condition.component';
-
-export interface ConditionPayload {
-    condition: ConditionModel;
-    index?: number;
-    name?: string;
-    value: string;
-}
-
-export interface ConditionEvent {
-    type: string;
-    payload: ConditionPayload;
-}
-
-export interface DeleteConditionEvent {
-    type: string;
-    payload: { condition: ConditionModel };
-}
 
 @Component({
     selector: 'dot-rule-condition',
@@ -76,10 +63,10 @@ export class DotRuleConditionComponent {
     readonly $conditionTypePlaceholder = input<string>('', { alias: 'conditionTypePlaceholder' });
 
     // Outputs
-    readonly updateConditionType = output<ConditionEvent>();
-    readonly updateConditionParameter = output<ConditionEvent>();
-    readonly updateConditionOperator = output<ConditionEvent>();
-    readonly deleteCondition = output<DeleteConditionEvent>();
+    readonly updateConditionType = output<ConditionEmitEvent>();
+    readonly updateConditionParameter = output<ConditionEmitEvent>();
+    readonly updateConditionOperator = output<ConditionEmitEvent>();
+    readonly deleteCondition = output<ConditionDeleteEmitEvent>();
 
     // State
     readonly typeOptions = signal<{ label: string; value: string }[]>([]);

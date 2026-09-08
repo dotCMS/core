@@ -41,7 +41,7 @@ export const Audio = Node.create({
             mimeType: {
                 default: null,
                 parseHTML: (el) => el.getAttribute('mimeType'),
-                renderHTML: (attrs) => (attrs.mimeType ? { mimeType: attrs.mimeType } : {})
+                renderHTML: (attrs) => (attrs['mimeType'] ? { mimeType: attrs['mimeType'] } : {})
             },
             data: {
                 default: null,
@@ -85,15 +85,15 @@ export const Audio = Node.create({
             audio.classList.add('w-full');
 
             const resolvedSrc =
-                (node.attrs.src as string | null) ??
-                (node.attrs.data as DotAudioData | null)?.asset ??
+                (node.attrs['src'] as string | null) ??
+                (node.attrs['data'] as DotAudioData | null)?.asset ??
                 null;
             if (resolvedSrc) {
                 audio.setAttribute('src', resolvedSrc);
             }
 
-            if (node.attrs.title) {
-                audio.setAttribute('title', String(node.attrs.title));
+            if (node.attrs['title']) {
+                audio.setAttribute('title', String(node.attrs['title']));
             }
 
             dom.appendChild(audio);

@@ -1,41 +1,43 @@
 @if (form) {
-    <form (ngSubmit)="onSubmit()" [ngClass]="options?.customClass" [formGroup]="form">
+    <form (ngSubmit)="onSubmit()" [class]="options?.customClass" [formGroup]="form">
         @for (control of dynamicControls; track control) {
-            <div [ngClass]="control.type" class="field form-row">
-                @switch (control.type) {
-                    @case ('checkbox') {
-                        <p-checkbox
-                            [formControlName]="control.key"
-                            [binary]="true"
-                            [id]="control.key" />
-                        <label
-                            [checkIsRequiredControl]="control.key"
-                            [for]="control.key"
-                            dotFieldRequired>
-                            {{ control.label | titlecase }}
-                        </label>
+            @if (control.key; as controlKey) {
+                <div [class]="control.type" class="field form-row">
+                    @switch (control.type) {
+                        @case ('checkbox') {
+                            <p-checkbox
+                                [formControlName]="controlKey"
+                                [binary]="true"
+                                [id]="controlKey" />
+                            <label
+                                [checkIsRequiredControl]="controlKey"
+                                [for]="controlKey"
+                                dotFieldRequired>
+                                {{ control.label | titlecase }}
+                            </label>
+                        }
+                        @default {
+                            <label
+                                [class.p-label-input-required]="control.required"
+                                [for]="controlKey">
+                                {{ control.label | titlecase }}
+                            </label>
+                            <input
+                                [formControlName]="controlKey"
+                                [id]="controlKey"
+                                [type]="control.type"
+                                [min]="control.min"
+                                [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
+                                #group
+                                pInputText
+                                type="control.type" />
+                        }
                     }
-                    @default {
-                        <label
-                            [ngClass]="{ 'p-label-input-required': control.required }"
-                            [for]="control.key">
-                            {{ control.label | titlecase }}
-                        </label>
-                        <input
-                            [formControlName]="control.key"
-                            [id]="control.key"
-                            [type]="control.type"
-                            [min]="control.min"
-                            [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
-                            #group
-                            pInputText
-                            type="control.type" />
+                    @if (form.controls[controlKey].invalid && form.controls[controlKey].dirty) {
+                        <span class="error-message">This field is required</span>
                     }
-                }
-                @if (form.controls[control.key].invalid && form.controls[control.key].dirty) {
-                    <span class="error-message">This field is required</span>
-                }
-            </div>
+                </div>
+            }
         }
         <div class="form-action">
             <p-button (onClick)="hide.emit(true)" variant="outlined" label="CANCEL" />

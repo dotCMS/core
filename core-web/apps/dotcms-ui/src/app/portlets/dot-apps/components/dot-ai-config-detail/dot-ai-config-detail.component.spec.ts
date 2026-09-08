@@ -10,7 +10,7 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { DotAiProviderMetadata } from '@dotcms/dotcms-models';
+import { DotAiProviderConfig, DotAiProviderMetadata } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAiConfigDetailComponent } from './dot-ai-config-detail.component';
@@ -73,7 +73,7 @@ describe('DotAiConfigDetailComponent', () => {
             spectator.inject(DotAiService).getConfig.mockReturnValue(
                 of({
                     providerConfig: JSON.stringify({ settings: { textPrompt: 'hi' } })
-                } as never)
+                } as unknown as DotAiProviderConfig)
             );
 
             spectator.component.ngOnInit();

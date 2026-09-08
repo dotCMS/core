@@ -10,7 +10,7 @@ export class DotSafeUrlPipe implements PipeTransform {
     private dotRouterService = inject(DotRouterService);
     private activatedRoute = inject(ActivatedRoute);
 
-    transform(url) {
+    transform(url: string) {
         if (url) {
             const urlWithParameters = this.addURLWithParameters(url);
 

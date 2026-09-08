@@ -22,7 +22,7 @@ import { DotEditContentSidebarReferencesDialogComponent } from '../../../dot-edi
 import { DotRulesDialogComponent } from '../../../dot-edit-content-sidebar/components/dot-edit-content-sidebar-rules/components/rules-dialog/rules-dialog.component';
 
 const findItem = (model: MenuItem[], testId: string): MenuItem | undefined =>
-    model.find((item) => item.testId === testId);
+    model.find((item) => item['testId'] === testId);
 
 describe('DotEditContentCommandBarActionsComponent', () => {
     let spectator: Spectator<DotEditContentCommandBarActionsComponent>;

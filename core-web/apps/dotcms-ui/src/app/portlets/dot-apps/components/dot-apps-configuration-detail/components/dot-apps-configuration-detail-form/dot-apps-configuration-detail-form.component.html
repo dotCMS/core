@@ -5,7 +5,7 @@
                 <dot-icon
                     name="warning"
                     [pTooltip]="field.warnings.length ? field.warnings.join('. ') : ''"
-                    size="18" />
+                    [size]="18" />
             }
         </ng-template>
 
@@ -55,7 +55,7 @@
                             <ng-container
                                 *ngTemplateOutlet="warningIcon; context: { field: field }" />
                             <textarea
-                                (click)="field.hidden ? $event.target.select() : null"
+                                (click)="field.hidden && inputTextarea.select()"
                                 [id]="field.name"
                                 [formControlName]="field.name"
                                 #inputTextarea

@@ -251,18 +251,21 @@ describe('DotExperimentsConfigurationStore', () => {
     it('should execute commands of menu items', (done) => {
         jest.spyOn(store, 'showAddToBundle');
         dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+        // The auto-mock returns undefined, and `startExperiment` pipes off the result — an unhandled
+        // rejection after the assertion below has already passed.
+        dotExperimentsService.start.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
 
         spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
             // Start Experiment
-            menuItems[MENU_ITEMS_START_INDEX].command({
+            menuItems[MENU_ITEMS_START_INDEX].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             // Push Publish
-            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command({
+            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
@@ -271,7 +274,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             // Add to Bundle
-            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command({
+            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -454,7 +457,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion.variants[1].name).toEqual(
+                expect(experiment!.trafficProportion.variants[1].name!).toEqual(
                     variantEdited[1].name
                 );
                 done();
@@ -479,7 +482,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.description).toEqual(newDescription);
+                expect(experiment!.description!).toEqual(newDescription);
                 done();
             });
         });
@@ -522,7 +525,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion.variants).toEqual(
+                expect(experiment!.trafficProportion.variants!).toEqual(
                     expectedResponseRemoveVariant.trafficProportion.variants
                 );
                 done();
@@ -549,7 +552,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.goals).toEqual(expectedGoals);
+                expect(experiment!.goals!).toEqual(expectedGoals);
                 done();
             });
         });
@@ -581,7 +584,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.goals$.subscribe(({ primary }) => {
+            store.goals$.subscribe((goals) => {
+                const { primary } = goals!;
+
                 expect(primary.conditions.length).toBe(1);
                 expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
                 done();
@@ -609,7 +614,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.goals$.subscribe(({ primary }) => {
+            store.goals$.subscribe((goals) => {
+                const { primary } = goals!;
+
                 expect(primary.conditions.length).toBe(0);
                 done();
             });
@@ -642,7 +649,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.goals$.subscribe(({ primary }) => {
+            store.goals$.subscribe((goals) => {
+                const { primary } = goals!;
+
                 expect(primary.conditions.length).toBe(1);
                 done();
             });
@@ -671,7 +680,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.goals).toEqual(null);
+                expect(experiment!.goals!).toEqual(null);
                 done();
             });
         });
@@ -682,6 +691,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 endDate: 2
             };
 
+            dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
             dotExperimentsService.setScheduling.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
@@ -689,13 +699,19 @@ describe('DotExperimentsConfigurationStore', () => {
                 })
             );
 
+            // Load first, like every sibling test and like the app: the scheduling sidebar only
+            // opens for a loaded experiment. Without this the store has nothing to patch, and the
+            // assertion below used to pass only because `{ ...undefined, scheduling }` built a
+            // partial `DotExperiment` carrying a `scheduling` and nothing else.
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
             store.setSelectedScheduling({
                 scheduling: expectedScheduling,
                 experimentId: EXPERIMENT_MOCK.id
             });
 
             store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.scheduling).toEqual(expectedScheduling);
+                expect(experiment!.scheduling!).toEqual(expectedScheduling);
                 expect(dotExperimentsService.setScheduling).toHaveBeenCalledWith(
                     EXPERIMENT_MOCK.id,
                     expectedScheduling
@@ -708,7 +724,9 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.setScheduling.mockReturnValue(throwError('error'));
 
             store.setSelectedScheduling({
-                scheduling: null,
+                // Null is outside the payload type; this test only cares that a failing
+                // request surfaces the error, and the value never reaches the service.
+                scheduling: null as unknown as RangeOfDateAndTime,
                 experimentId: EXPERIMENT_MOCK.id
             });
 
@@ -720,6 +738,7 @@ describe('DotExperimentsConfigurationStore', () => {
         it('should set Traffic Allocation to the experiment', (done) => {
             const expectedTrafficAllocation = 10;
 
+            dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
             dotExperimentsService.setTrafficAllocation.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
@@ -727,13 +746,17 @@ describe('DotExperimentsConfigurationStore', () => {
                 })
             );
 
+            // Load first, like every sibling test and like the app: this sidebar only opens for
+            // a loaded experiment. Without it the store has nothing to patch.
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
             store.setSelectedAllocation({
                 trafficAllocation: expectedTrafficAllocation,
                 experimentId: EXPERIMENT_MOCK.id
             });
 
             store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.trafficAllocation).toEqual(expectedTrafficAllocation);
+                expect(experiment!.trafficAllocation!).toEqual(expectedTrafficAllocation);
                 expect(dotExperimentsService.setTrafficAllocation).toHaveBeenCalledWith(
                     EXPERIMENT_MOCK.id,
                     expectedTrafficAllocation
@@ -764,6 +787,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 ]
             };
 
+            dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
             dotExperimentsService.setTrafficProportion.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
@@ -771,13 +795,17 @@ describe('DotExperimentsConfigurationStore', () => {
                 })
             );
 
+            // Load first, like every sibling test and like the app: this sidebar only opens for
+            // a loaded experiment. Without it the store has nothing to patch.
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
             store.setSelectedTrafficProportion({
                 trafficProportion: expectedTrafficProportion,
                 experimentId: EXPERIMENT_MOCK.id
             });
 
             store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion).toEqual(expectedTrafficProportion);
+                expect(experiment!.trafficProportion!).toEqual(expectedTrafficProportion);
                 expect(dotExperimentsService.setTrafficProportion).toHaveBeenCalledWith(
                     EXPERIMENT_MOCK.id,
                     expectedTrafficProportion
@@ -790,7 +818,9 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.setTrafficProportion.mockReturnValue(throwError('error'));
 
             store.setSelectedTrafficProportion({
-                trafficProportion: null,
+                // Null is outside the payload type; this test only cares that a failing
+                // request surfaces the error, and the value never reaches the service.
+                trafficProportion: null as unknown as TrafficProportion,
                 experimentId: EXPERIMENT_MOCK.id
             });
 
@@ -821,7 +851,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.startExperiment(experimentWithGoalsAndVariant);
 
             store.state$.subscribe(({ experiment, status }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                expect(experiment!.status!).toEqual(DotExperimentStatus.RUNNING);
                 expect(status).toEqual(ComponentStatus.IDLE);
                 done();
             });
@@ -842,7 +872,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.stopExperiment(EXPERIMENT_MOCK_2);
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
+                expect(experiment!.status!).toEqual(DotExperimentStatus.ENDED);
                 done();
             });
         });

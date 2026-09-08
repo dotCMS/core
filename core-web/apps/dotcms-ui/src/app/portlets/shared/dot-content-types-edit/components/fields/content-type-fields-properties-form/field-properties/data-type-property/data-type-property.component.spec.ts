@@ -26,7 +26,7 @@ describe('DataTypePropertyComponent', () => {
         'contenttypes.field.properties.data_type.values.system': 'System-Field'
     });
 
-    let group;
+    let group: UntypedFormGroup;
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({

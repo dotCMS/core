@@ -11,7 +11,7 @@ import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-
     imports: [DotMessagePipe, DotIframeDialogComponent]
 })
 export class DotReorderMenuComponent {
-    @Input() url: string;
+    @Input() url!: string;
     @Output() shutdown: EventEmitter<unknown> = new EventEmitter();
 
     /**

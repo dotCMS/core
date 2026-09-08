@@ -92,7 +92,7 @@ describe('DotSiteComponent', () => {
             spectator.component.value.set('site1');
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
 
             expect(spectator.component.$options()).toEqual(expect.arrayContaining(mockSites));
             expect(select.loading).toBe(false);
@@ -104,7 +104,7 @@ describe('DotSiteComponent', () => {
         it('should update disabled state via ControlValueAccessor', () => {
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.disabled()).toBe(false);
 
             spectator.component.setDisabledState(true);
@@ -397,7 +397,7 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             // Get the Select component and open the dropdown
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             select.show();
             spectator.detectChanges();
             tick(); // Allow overlay to render
@@ -405,7 +405,7 @@ describe('DotSiteComponent', () => {
             // Query document.body since overlay is appended there
             const input = document.body.querySelector<HTMLInputElement>(
                 'input[type="text"][role="searchbox"]'
-            );
+            )!;
             expect(input).toBeTruthy();
 
             // Set the value and trigger the actual DOM input event
@@ -496,7 +496,7 @@ describe('DotSiteComponent', () => {
             tick(300);
 
             // Get the Select component and open the dropdown
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             select.show();
             spectator.detectChanges();
             tick(); // Allow overlay to render
@@ -504,7 +504,7 @@ describe('DotSiteComponent', () => {
             // Query document.body since overlay is appended there
             const input = document.body.querySelector<HTMLInputElement>(
                 'input[type="text"][role="searchbox"]'
-            );
+            )!;
 
             expect(input.value).toBe('');
             expect(siteService.getSites).toHaveBeenCalledWith({
@@ -597,7 +597,7 @@ describe('DotSiteComponent', () => {
                 spectator.setInput('panelStyleClass', 'mt-1');
                 spectator.detectChanges();
 
-                expect(spectator.query(Select).panelStyleClass).toBe('mt-1');
+                expect(spectator.query(Select)!.panelStyleClass).toBe('mt-1');
             });
         });
 
@@ -613,7 +613,7 @@ describe('DotSiteComponent', () => {
             spectator.setInput('placeholder', 'Custom placeholder');
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.placeholder()).toBe('Custom placeholder');
         });
 
@@ -621,7 +621,7 @@ describe('DotSiteComponent', () => {
             spectator.setInput('disabled', true);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.disabled()).toBe(true);
 
             spectator.setInput('disabled', false);
@@ -641,7 +641,7 @@ describe('DotSiteComponent', () => {
             spectator.setInput('id', 'custom-id');
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.inputId).toBe('custom-id');
         });
 
@@ -753,9 +753,9 @@ describe('DotSiteComponent', () => {
             expect(options.length).toBe(3);
 
             // Verify $options() binding to p-select
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.options).toEqual(options);
-            expect(select.options[0]).toEqual(mockSites[1]);
+            expect(select.options![0]).toEqual(mockSites[1]);
         }));
 
         it('should update pinnedOption when p-select onChange is triggered', () => {
@@ -817,13 +817,13 @@ describe('DotSiteComponent', () => {
 
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // Pinned is at top, duplicates removed — total count stays the same
-            expect(select.options[0]).toEqual(pinned);
-            expect(select.options.length).toBe(3);
+            expect(select.options![0]).toEqual(pinned);
+            expect(select.options!.length).toBe(3);
 
             // Verify example.com appears only once
-            const exampleCount = select.options.filter((s) => s.identifier === 'site1').length;
+            const exampleCount = select.options!.filter((s) => s.identifier === 'site1').length;
             expect(exampleCount).toBe(1);
         });
 
@@ -844,9 +844,9 @@ describe('DotSiteComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // Pinned should appear at top if it matches filter
-            expect(select.options[0]).toEqual(pinned);
+            expect(select.options![0]).toEqual(pinned);
         }));
 
         it('should not show pinnedOption when filtering if it does not match the filter', fakeAsync(() => {
@@ -866,11 +866,11 @@ describe('DotSiteComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // Pinned should not appear if it doesn't match filter
-            expect(select.options.find((s) => s.identifier === 'site99')).toBeFalsy();
+            expect(select.options!.find((s) => s.identifier === 'site99')).toBeFalsy();
             // Should only show filtered results
-            expect(select.options.length).toBeGreaterThan(0);
+            expect(select.options!.length).toBeGreaterThan(0);
         }));
 
         it('should show pinnedOption when filter is cleared', fakeAsync(() => {
@@ -891,9 +891,9 @@ describe('DotSiteComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // Pinned is always at the top after filter is cleared
-            expect(select.options[0]).toEqual(pinned);
+            expect(select.options![0]).toEqual(pinned);
         }));
 
         it('should handle case-insensitive filter matching for pinnedOption', fakeAsync(() => {
@@ -913,9 +913,9 @@ describe('DotSiteComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // EXAMPLE.COM matches the 'example' filter case-insensitively and is pinned at top
-            expect(select.options[0]).toEqual(pinned);
+            expect(select.options![0]).toEqual(pinned);
         }));
     });
 
@@ -1245,7 +1245,7 @@ describe('DotSiteComponent', () => {
 
         it('should unsubscribe from site events on destroy', () => {
             const sub = spectator.component['siteEventsSub'];
-            const unsubscribeSpy = jest.spyOn(sub, 'unsubscribe');
+            const unsubscribeSpy = jest.spyOn(sub!, 'unsubscribe');
             spectator.component.ngOnDestroy();
             expect(unsubscribeSpy).toHaveBeenCalled();
         });
@@ -1393,7 +1393,7 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         expect(hostSpectator.component.$isDisabled()).toBe(true);
         expect(hostSpectator.component.$disabled()).toBe(true);
 
-        const select = hostSpectator.query(Select);
+        const select = hostSpectator.query(Select)!;
         expect(select.disabled()).toBe(true);
     });
 

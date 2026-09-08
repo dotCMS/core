@@ -57,14 +57,14 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
 
     selectedThemeId: string | null = null;
 
-    private _layoutProperties: DotTemplateLayoutProperties;
+    private _layoutProperties!: DotTemplateLayoutProperties;
 
     @Output() selectTheme: EventEmitter<string> = new EventEmitter();
 
     @Output() layoutPropertiesChange: EventEmitter<DotTemplateLayoutProperties> =
         new EventEmitter();
 
-    group: UntypedFormGroup;
+    group!: UntypedFormGroup;
 
     destroy$: Subject<boolean> = new Subject<boolean>();
 

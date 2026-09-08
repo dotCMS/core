@@ -22,6 +22,7 @@ import { SelectModule } from 'primeng/select';
 import { SplitterModule } from 'primeng/splitter';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { SplitterPassThrough } from 'primeng/types/splitter';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -99,13 +100,13 @@ export class DotVelocityPlaygroundPageComponent {
     readonly $editorOptions = computed(() => ({
         ...DOT_MONACO_BASE_OPTIONS,
         language: VELOCITY_LANGUAGE_ID,
-        wordWrap: this.store.wrapCode() ? 'on' : 'off'
+        wordWrap: this.store.wrapCode() ? ('on' as const) : ('off' as const)
     }));
 
     readonly $outputOptions = computed(() => ({
         ...DOT_MONACO_RAW_OPTIONS,
         language: this.store.outputContentType(),
-        wordWrap: this.store.wrapCode() ? 'on' : 'off',
+        wordWrap: this.store.wrapCode() ? ('on' as const) : ('off' as const),
         readOnly: true
     }));
 
@@ -113,9 +114,9 @@ export class DotVelocityPlaygroundPageComponent {
     readonly $errorEditorOptions = computed(() => ({
         ...DOT_MONACO_RAW_OPTIONS,
         language: 'plaintext',
-        wordWrap: this.store.wrapCode() ? 'on' : 'off',
+        wordWrap: this.store.wrapCode() ? ('on' as const) : ('off' as const),
         readOnly: true,
-        lineNumbers: 'off',
+        lineNumbers: 'off' as const,
         folding: false
     }));
 
@@ -143,7 +144,13 @@ export class DotVelocityPlaygroundPageComponent {
 
     // 4. Template-bound static configuration
     readonly ComponentStatus = ComponentStatus;
-    readonly splitterPt = { root: { class: 'border-0! rounded-none! flex-1 min-h-0' } };
+    // `panel` is the only key PrimeNG declares as required on SplitterPassThroughOptions — the
+    // rest are optional, so this looks like an upstream oversight. An empty passthrough
+    // satisfies it and applies nothing.
+    readonly splitterPt: SplitterPassThrough = {
+        root: { class: 'border-0! rounded-none! flex-1 min-h-0' },
+        panel: {}
+    };
     readonly helpExamples = VELOCITY_HELP_EXAMPLES;
 
     readonly exportItems: MenuItem[] = [
@@ -194,8 +201,8 @@ export class DotVelocityPlaygroundPageComponent {
         this.store.selectHistoryEntry(entry);
     }
 
-    onSplitterResize(event: { sizes: number[] }): void {
-        const [left, right] = event.sizes;
+    onSplitterResize(event: { sizes: (string | number)[] }): void {
+        const [left, right] = event.sizes.map(Number);
         if (typeof left === 'number' && typeof right === 'number') {
             this.store.setSplitterRatio([left, right]);
         }

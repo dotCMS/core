@@ -59,7 +59,7 @@ export class DotExperimentsCreateComponent implements OnInit {
 
     vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
 
-    form: FormGroup<CreateForm>;
+    form!: FormGroup<CreateForm>;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
 
     ngOnInit(): void {
@@ -74,7 +74,7 @@ export class DotExperimentsCreateComponent implements OnInit {
      * @return void
      */
     handleSubmit(pageId: string) {
-        this.form.get('pageId').setValue(pageId);
+        this.form.get('pageId')?.setValue(pageId);
         this.dotExperimentsListStore.addExperiments(
             this.form.value as Pick<DotExperiment, 'pageId' | 'name' | 'description'>
         );
@@ -103,7 +103,10 @@ export class DotExperimentsCreateComponent implements OnInit {
                     DotValidators.noWhitespace
                 ]
             }),
+            // `nonNullable`, like `name` above: without it a `FormControl<string>` is
+            // `FormControl<string | null>`, because `reset()` would put null back.
             description: new FormControl<string>('', {
+                nonNullable: true,
                 validators: [Validators.maxLength(255), DotValidators.noWhitespace]
             })
         });

@@ -40,15 +40,15 @@ import { DotTag } from '@dotcms/dotcms-models';
 export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccessor {
     private dotTagsService = inject(DotTagsService);
 
-    @Input() placeholder: string;
+    @Input() placeholder!: string;
 
     value: DotTag[] = [];
-    filteredOptions: DotTag[];
+    filteredOptions: DotTag[] = [];
     disabled = false;
-    inputReference: HTMLInputElement;
-    @ViewChild('autoComplete', { static: true }) autoComplete: AutoComplete;
+    inputReference!: HTMLInputElement;
+    @ViewChild('autoComplete', { static: true }) autoComplete!: AutoComplete;
 
-    private lastDeletedTag: DotTag;
+    private lastDeletedTag: DotTag | null = null;
 
     propagateChange = (_: unknown) => {
         /* empty */
@@ -96,7 +96,10 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      * @memberof DotAutocompleteTagsComponent
      */
     addItem(): void {
-        this.value.unshift(this.value.pop());
+        const selected = this.value.pop();
+        if (selected) {
+            this.value.unshift(selected);
+        }
         this.propagateChange(this.getStringifyLabels());
     }
 
@@ -165,7 +168,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
             this.value.unshift(this.createNewTag(input.value));
             this.propagateChange(this.getStringifyLabels());
             this.filterTags({ query: input.value });
-            input.value = null;
+            input.value = '';
             this.autoComplete.hide();
         }
     }
@@ -179,10 +182,14 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
 
     private createNewTag(label: string): DotTag {
         return {
+            // `''` and `false` rather than omitting `id` and passing `persona: null`: both are
+            // required on `DotTag`, and a tag created here has not been persisted yet — the server
+            // assigns the id on save.
+            id: '',
             label: label,
             siteId: '',
             siteName: '',
-            persona: null
+            persona: false
         };
     }
 }

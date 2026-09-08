@@ -407,7 +407,7 @@ describe('DotUveIframeComponent', () => {
 
             it('should emit internalNav and inlineEditing when click target has data-mode', () => {
                 const div = doc.createElement('div');
-                div.dataset.mode = 'edit';
+                div.dataset['mode'] = 'edit';
 
                 const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
                 const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');

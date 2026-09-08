@@ -122,7 +122,8 @@ export class DotcmsConfigService {
     private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
-    private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
+    private configParamsSubject: BehaviorSubject<ConfigParams | null> =
+        new BehaviorSubject<ConfigParams | null>(null);
     private configUrl: string;
 
     /**
@@ -138,7 +139,7 @@ export class DotcmsConfigService {
     getConfig(): Observable<ConfigParams> {
         return this.configParamsSubject
             .asObservable()
-            .pipe(filter((config: ConfigParams) => !!config));
+            .pipe(filter((config): config is ConfigParams => !!config));
     }
 
     loadConfig(): void {
@@ -159,8 +160,8 @@ export class DotcmsConfigService {
                     paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
                     paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],
                     releaseInfo: {
-                        buildDate: res.config.releaseInfo?.buildDate,
-                        version: res.config.releaseInfo?.version
+                        buildDate: res.config.releaseInfo?.buildDate ?? '',
+                        version: res.config.releaseInfo?.version ?? ''
                     },
                     websocket: {
                         websocketReconnectTime:

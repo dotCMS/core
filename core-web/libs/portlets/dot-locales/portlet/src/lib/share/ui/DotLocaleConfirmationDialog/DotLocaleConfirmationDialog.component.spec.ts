@@ -57,24 +57,24 @@ describe('DotLocaleConfirmationDialogComponent', () => {
         spectator.component.data.ISOCode = 'en-us';
         spectator.detectChanges();
 
-        const inputElement = spectator.query<HTMLInputElement>(byTestId('input'));
+        const inputElement = spectator.query<HTMLInputElement>(byTestId('input'))!;
 
         spectator.typeInElement('fr-ca', inputElement);
 
-        const acceptButton = spectator.query<HTMLButtonElement>(byTestId('confirm-button'));
+        const acceptButton = spectator.query<HTMLButtonElement>(byTestId('confirm-button'))!;
         expect(acceptButton.disabled).toEqual(true);
     });
 
     it('should enable the confirm button if input value is same as ISOCode', () => {
-        const ref = spectator.component.ref as DialogRefMock;
+        const ref = spectator.component.ref as unknown as DialogRefMock;
         jest.spyOn(ref, 'close');
         spectator.component.data.ISOCode = 'en-us';
         spectator.detectChanges();
 
-        const inputElement = spectator.query<HTMLInputElement>(byTestId('input'));
+        const inputElement = spectator.query<HTMLInputElement>(byTestId('input'))!;
         spectator.typeInElement('en-us', inputElement);
 
-        const buttonElement = spectator.query<HTMLButtonElement>(byTestId('confirm-button'));
+        const buttonElement = spectator.query<HTMLButtonElement>(byTestId('confirm-button'))!;
 
         spectator.click(buttonElement);
 
@@ -83,11 +83,11 @@ describe('DotLocaleConfirmationDialogComponent', () => {
     });
 
     it('should close the dialog without confirmation when cancel button is clicked', () => {
-        const ref = spectator.component.ref as DialogRefMock;
+        const ref = spectator.component.ref as unknown as DialogRefMock;
         jest.spyOn(ref, 'close');
         spectator.detectChanges();
 
-        const cancelButton = spectator.query<HTMLButtonElement>(byTestId('cancel-button'));
+        const cancelButton = spectator.query<HTMLButtonElement>(byTestId('cancel-button'))!;
 
         spectator.click(cancelButton);
 

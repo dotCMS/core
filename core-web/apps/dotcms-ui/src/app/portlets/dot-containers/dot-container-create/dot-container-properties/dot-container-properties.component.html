@@ -4,7 +4,7 @@
             <label for="title">
                 {{ 'message.containers.create.title' | dm }}
             </label>
-            <div class="flex items-center gap-2 relative">
+            <div class="relative flex items-center gap-2">
                 <input
                     class="flex-1"
                     [required]="true"
@@ -14,7 +14,7 @@
                     type="text"
                     pInputText
                     formControlName="title" />
-                @if (form?.value?.identifier) {
+                @if (form.value.identifier) {
                     <div class="absolute right-0 -mr-16">
                         <dot-api-link [href]="vm.apiLink" />
                     </div>
@@ -56,7 +56,7 @@
             </div>
         </div>
         @if (vm.isContentTypeVisible) {
-            <div class="border border-gray-200 rounded-md" [@contentTypeAnimation]>
+            <div class="rounded-md border border-gray-200" [@contentTypeAnimation]>
                 <dot-loop-editor
                     (buttonClick)="showLoopInput()"
                     [isEditorVisible]="vm.showPrePostLoopInput"

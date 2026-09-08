@@ -26,11 +26,21 @@ export interface SuggestionsCommandProps {
     type: { name: string; level?: number };
 }
 
-export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
+/**
+ * Extends `MenuItem` directly rather than through `Omit<MenuItem, 'icon'>`.
+ *
+ * `MenuItem` carries a `[key: string]: any` index signature, so `keyof MenuItem` is
+ * `string | number` and `Exclude<string | number, 'icon'>` removes nothing. `Omit` therefore
+ * collapsed the type to its index signatures alone and silently discarded every declared
+ * member — `id`, `label`, `command`, `disabled`. Consumers still compiled, because the index
+ * signature typed each of them as `any`. `MenuItem` already declares `icon?: string`, so the
+ * omission bought nothing; the redeclaration below is kept only to document the contract.
+ */
+export interface DotMenuItem extends MenuItem {
     icon?: string;
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;
-    data?: Record<string, unknown>;
+    data?: { contentlet?: DotCMSContentlet };
     commandKey?: string;
 }
 
@@ -48,10 +58,15 @@ export enum ItemsType {
     standalone: false
 })
 export class SuggestionsComponent implements OnInit {
-    @ViewChild('list', { static: false }) list: SuggestionListComponent;
-    @ViewChild('list', { static: false, read: ElementRef }) listElement: ElementRef;
+    @ViewChild('list', { static: false }) list!: SuggestionListComponent;
+    @ViewChild('list', { static: false, read: ElementRef }) listElement!: ElementRef;
 
-    @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
+    // Set imperatively by ActionsMenu before the first change detection pass.
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
+    @Input() onSelectContentlet!: (props: SuggestionsCommandProps) => void;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() items: DotMenuItem[] = [];
 
     get sortedItems() {
@@ -64,16 +79,26 @@ export class SuggestionsComponent implements OnInit {
             return 1;
         });
     }
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() title = 'Select a block';
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() noResultsMessage = 'No Results';
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() currentLanguage = DEFAULT_LANG_ID;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() allowedContentTypes = '';
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() contentletIdentifier = '';
 
-    private itemsLoaded: ItemsType;
-    private selectedContentType: DotCMSContentType;
+    private itemsLoaded = ItemsType.BLOCK;
+    private selectedContentType?: DotCMSContentType;
     private dotLangs: { [key: string]: DotLanguage } = {};
-    private initialItems: DotMenuItem[];
+    private initialItems: DotMenuItem[] = [];
 
     isFilterActive = false;
 
@@ -167,7 +192,7 @@ export class SuggestionsComponent implements OnInit {
         switch (this.itemsLoaded) {
             case ItemsType.BLOCK:
                 this.items = this.initialItems.filter((item) =>
-                    item.label.toLowerCase().includes(filter.trim().toLowerCase())
+                    (item.label ?? '').toLowerCase().includes(filter.trim().toLowerCase())
                 );
                 break;
 
@@ -176,7 +201,9 @@ export class SuggestionsComponent implements OnInit {
                 break;
 
             case ItemsType.CONTENT:
-                this.loadContentlets(this.selectedContentType, filter);
+                if (this.selectedContentType) {
+                    this.loadContentlets(this.selectedContentType, filter);
+                }
         }
 
         this.isFilterActive = !!filter.length;

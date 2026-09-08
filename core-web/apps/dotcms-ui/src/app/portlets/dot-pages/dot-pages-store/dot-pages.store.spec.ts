@@ -226,7 +226,7 @@ describe('DotPageStore', () => {
     });
 
     it('should load null Favorite Pages data when error on initial data fetch', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
         jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         // Mock sessionStorage.getItem
         (sessionStorage.getItem as jest.Mock).mockReturnValue(null);
@@ -547,7 +547,7 @@ describe('DotPageStore', () => {
     });
 
     it('should handle error when get Pages value fails', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
         jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
 
@@ -618,17 +618,17 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             const menuActions = data.pages.menuActions;
 
-            expect(menuActions.length).toEqual(9);
+            expect(menuActions!.length).toEqual(9);
 
-            expect(menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
-            expect(menuActions[2].label).toEqual(undefined);
-            expect(menuActions[3].label).toEqual('Edit');
-            expect(menuActions[4].label).toEqual(mockWorkflowsActions[0].name);
-            expect(menuActions[5].label).toEqual(mockWorkflowsActions[1].name);
-            expect(menuActions[6].label).toEqual(mockWorkflowsActions[2].name);
-            expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
-            expect(menuActions[8].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(menuActions![2].label).toEqual(undefined);
+            expect(menuActions![3].label).toEqual('Edit');
+            expect(menuActions![4].label).toEqual(mockWorkflowsActions[0].name);
+            expect(menuActions![5].label).toEqual(mockWorkflowsActions[1].name);
+            expect(menuActions![6].label).toEqual(mockWorkflowsActions[2].name);
+            expect(menuActions![7].label).toEqual('contenttypes.content.push_publish');
+            expect(menuActions![8].label).toEqual('contenttypes.content.add_to_bundle');
 
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
@@ -687,7 +687,7 @@ describe('DotPageStore', () => {
 
             expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
 
-            menuActions[7].command({ originalEvent: createFakeEvent('click') });
+            menuActions[7].command!({ originalEvent: createFakeEvent('click') });
 
             expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                 assetIdentifier: item.identifier,
@@ -739,9 +739,11 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions.length).toEqual(8);
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions!.length).toEqual(8);
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
+            expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
         });
     });
 
@@ -766,14 +768,16 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
-            expect(data.pages.menuActions[2]).toEqual({ separator: true });
-            expect(data.pages.menuActions[3].label).toEqual('Assign Workflow');
-            expect(data.pages.menuActions[4].label).toEqual('Save');
-            expect(data.pages.menuActions[5].label).toEqual('Save / Publish');
-            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.push_publish');
-            expect(data.pages.menuActions[7].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
+            expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions![2]).toEqual({ separator: true });
+            expect(data.pages.menuActions![3].label).toEqual('Assign Workflow');
+            expect(data.pages.menuActions![4].label).toEqual('Save');
+            expect(data.pages.menuActions![5].label).toEqual('Save / Publish');
+            expect(data.pages.menuActions![6].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions![7].label).toEqual('contenttypes.content.add_to_bundle');
         });
     });
 
@@ -853,10 +857,10 @@ describe('DotPageStore', () => {
 
         dotPageStore.state$.subscribe(({ pages }) => {
             const menuAction = pages.menuActions;
-            const publishAction = menuAction.find(
+            const publishAction = menuAction!.find(
                 (action) => action.label === mockPublishAction.name
             );
-            publishAction.command({ originalEvent: createFakeEvent('click') });
+            publishAction!.command!({ originalEvent: createFakeEvent('click') });
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             done();

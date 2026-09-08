@@ -25,15 +25,24 @@ import {
 } from '../../../services/models/input.model';
 import { Verify } from '../../../services/utils/verify.util';
 
+/**
+ * The input kinds this component knows how to render, mirroring the `@if` branches in the
+ * template. Literals rather than `string` so `InputOrSpacer` below discriminates: with a plain
+ * `string` on both sides of the union, `input.type === 'dropdown'` narrows nothing and every
+ * field access in the template resolves against the wrong member.
+ */
+type InputType = 'dropdown' | 'restDropdown' | 'text' | 'number' | 'datetime';
+
 interface InputConfig {
     control: UntypedFormControl;
     name: string;
     placeholder?: Observable<string>;
     required?: boolean;
     value?: string;
-    type?: string;
+    type?: InputType;
     flex?: number;
-    argIndex?: number;
+    /** `null` while no comparison has been chosen, so no argument position is known yet. */
+    argIndex?: number | null;
     options$?: Observable<{ label: string; value: string }[]>;
     allowAdditions?: boolean;
     maxSelections?: number;
@@ -45,7 +54,7 @@ interface InputConfig {
 
 interface SpacerConfig {
     flex: number;
-    type: string;
+    type: 'spacer';
 }
 
 type InputOrSpacer = InputConfig | SpacerConfig;
@@ -133,10 +142,6 @@ export class DotServersideConditionComponent {
             : 1;
     }
 
-    private static isComparisonParameter(input: InputOrSpacer): input is InputConfig {
-        return input && 'name' in input && input.name === 'comparison';
-    }
-
     private isConditionWithFewFields(
         inputCount: number,
         field: ServerSideFieldModel | undefined
@@ -152,6 +157,13 @@ export class DotServersideConditionComponent {
         Object.keys(paramDefs).forEach((key) => {
             const paramDef = instance.getParameterDef(key);
             const param = instance.getParameter(key);
+            // `paramDefs` comes from `instance.type.parameters` while these two read
+            // `instance.parameterDefs` / `.parameters`, which the `type` setter rebuilds — so
+            // they are the same keys, but only because that setter ran.
+            if (!paramDef || !param) {
+                return;
+            }
+
             const input = this.createInputConfig(
                 instance,
                 paramDef.inputType.type,
@@ -176,13 +188,22 @@ export class DotServersideConditionComponent {
         let comparisonIdx: number | null = null;
 
         this.inputs.forEach((input, idx) => {
-            if (DotServersideConditionComponent.isComparisonParameter(input)) {
+            // Discriminate on `type` first. The old `input is InputConfig` predicate meant "is the
+            // comparison input", so its else branch narrowed to SpacerConfig and every real input
+            // had to be cast back. Splitting the two questions removes the cast.
+            if (input.type === 'spacer') {
+                return;
+            }
+
+            if (input.name === 'comparison') {
                 comparison = input;
                 this.applyRightHandSideCount(instance, comparison.value);
                 comparisonIdx = idx;
             } else if (comparisonIdx !== null && 'argIndex' in input) {
+                // `'argIndex' in input` is deliberate: only the text and datetime inputs seed
+                // `argIndex: null`, and dropdowns opt out of comparison-driven visibility.
                 if (this.rightHandArgCount !== null) {
-                    (input as InputConfig).argIndex = idx - comparisonIdx - 1;
+                    input.argIndex = idx - comparisonIdx - 1;
                 }
             }
         });
@@ -190,6 +211,27 @@ export class DotServersideConditionComponent {
         if (comparison) {
             this.applyRightHandSideCount(instance, comparison.value);
         }
+    }
+
+    /**
+     * Whether an input sits beyond the argument count of the selected comparison, and so must be
+     * hidden. Inputs with no `argIndex` are not argument-positioned and always show — only the
+     * text and datetime inputs seed `argIndex`.
+     *
+     * The template used to inline this and its negation separately, and the two disagreed for
+     * `undefined`: the input rendered while its validation message stayed hidden. Keeping one
+     * definition makes `!isArgHidden(input)` an exact complement by construction.
+     */
+    isArgHidden(input: InputConfig): boolean {
+        const argIndex = input.argIndex;
+
+        if (argIndex === null || argIndex === undefined) {
+            return false;
+        }
+
+        // `rightHandArgCount` is null until a comparison is picked; `>= 0` keeps the previous
+        // behaviour, where the old `argIndex >= null` coerced to `argIndex >= 0`.
+        return argIndex >= (this.rightHandArgCount ?? 0);
     }
 
     getErrorMessage(input: InputConfig): string {
@@ -229,10 +271,10 @@ export class DotServersideConditionComponent {
         const finalValue = Array.isArray(value) ? value.join(',') : (value ?? '');
         input.control.setValue(finalValue);
         input.control.markAsDirty();
-        input.modelValue = value ?? (input.maxSelections > 1 ? [] : '');
+        input.modelValue = value ?? ((input.maxSelections ?? 1) > 1 ? [] : '');
 
         // Don't emit empty values for multiselect fields to prevent API validation errors
-        if (!finalValue && input.maxSelections > 1) {
+        if (!finalValue && (input.maxSelections ?? 1) > 1) {
             return;
         }
 
@@ -323,22 +365,35 @@ export class DotServersideConditionComponent {
             control,
             name: param.key,
             placeholder: this.i18nService.get(placeholderKey, paramDef.key),
-            required: paramDef.inputType.dataType?.['minLength'] > 0,
+            required: DotServersideConditionComponent.isRequired(),
             argIndex: null // Initialize to allow visibility control based on comparison
         };
+    }
+
+    /**
+     * Always `false`, deliberately.
+     *
+     * This was `paramDef.inputType.dataType?.['minLength'] > 0`. `minLength` is a *constraint*
+     * on the data type, not a property of it, so that read was `undefined > 0` — false for every
+     * text and date-time input since it was written. Reading the real constraint would start
+     * enforcing required on those fields, which is a UI change rather than a typing one and
+     * belongs in its own issue.
+     */
+    private static isRequired(): boolean {
+        return false;
     }
 
     private createDateTimeInput(
         instance: ServerSideFieldModel,
         param: ParameterModel,
-        paramDef: ParameterDefinition,
+        _paramDef: ParameterDefinition,
         _i18nBaseKey: string
     ): InputConfig {
         const stringValue = instance.getParameterValue(param.key) || '';
         return {
             control: ServerSideFieldModel.createNgControl(instance, param.key),
             name: param.key,
-            required: paramDef.inputType.dataType?.['minLength'] > 0,
+            required: DotServersideConditionComponent.isRequired(),
             value: stringValue,
             visible: true,
             dateValue: this.parseStringToDate(stringValue),
@@ -371,7 +426,7 @@ export class DotServersideConditionComponent {
         const resourceKey = `${i18nBaseKey}.inputs.${paramDef.key}`;
         const placeholderKey = `${resourceKey}.placeholder`;
 
-        let currentValue = instance.getParameterValue(param.key);
+        let currentValue = instance.getParameterValue(param.key) ?? '';
         if (
             currentValue &&
             (currentValue.indexOf('"') !== -1 || currentValue.indexOf("'") !== -1)
@@ -476,7 +531,7 @@ export class DotServersideConditionComponent {
             resourceKey = `${resourceKey}.options`;
         }
 
-        const currentValue = instance.getParameterValue(param.key);
+        const currentValue = instance.getParameterValue(param.key) ?? '';
         let needsCustomAttribute = currentValue !== null;
 
         const opts: Array<{
@@ -558,7 +613,8 @@ export class DotServersideConditionComponent {
 
     private applyRightHandSideCount(
         instance: ServerSideFieldModel,
-        selectedComparison: string
+        // `undefined` when the comparison input has no value yet; the guard below covers it.
+        selectedComparison: string | undefined
     ): void {
         if (!selectedComparison) {
             return;
@@ -568,7 +624,9 @@ export class DotServersideConditionComponent {
             return;
         }
         const comparisonType = comparisonDef.inputType as DropdownInputModel;
-        const selectedComparisonDef = comparisonType.options?.[selectedComparison];
+        const selectedComparisonDef = comparisonType.options?.[selectedComparison] as
+            | ComparisonOption
+            | undefined;
         this.rightHandArgCount =
             DotServersideConditionComponent.getRightHandArgCount(selectedComparisonDef);
     }

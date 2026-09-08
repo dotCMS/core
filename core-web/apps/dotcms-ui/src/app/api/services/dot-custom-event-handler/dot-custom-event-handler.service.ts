@@ -166,7 +166,7 @@ export class DotCustomEventHandlerService {
         this.dotNavLogoService.setLogo($event.detail.payload.navBarLogo);
 
         this.dotUiColorsService.setColors(
-            document.querySelector('html'),
+            document.documentElement,
             <DotUiColors>$event.detail.payload.colors
         );
         this.dotIframeService.reloadColors();

@@ -9,7 +9,7 @@
         (keydown.enter)="onKeyEnter($event)"
         (ngModelChange)="onModelChange($event)"
         [ngModel]="value"
-        [ngStyle]="styles"
+        [style]="styles"
         class="textarea-content__plain-field"></textarea>
 }
 @if (selected === 'code') {
@@ -18,7 +18,7 @@
         (keydown.enter)="onKeyEnter($event)"
         (init)="onInit($event)"
         [(ngModel)]="value"
-        [ngStyle]="styles"
+        [style]="styles"
         [options]="editorOptions"
         class="textarea-content__code-field" />
 }

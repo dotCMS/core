@@ -56,7 +56,9 @@ export interface EditContentDialogData {
      * Optional relationship information when creating content for relationships
      */
     relationshipInfo?: {
-        parentContentletId: string;
+        // Optional: the only producer passes `contentlet?.inode`, and an unsaved parent has no
+        // inode yet. Nothing reads this object today, so there is no fallback to invent.
+        parentContentletId?: string;
         relationshipName: string;
         isParent: boolean;
     };

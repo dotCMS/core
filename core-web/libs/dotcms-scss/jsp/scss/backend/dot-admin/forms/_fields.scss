@@ -259,7 +259,8 @@ $key-val-width: 500px;
 }
 
 .tagLink {
-    height: 1.5rem;
+    min-height: 1.5rem;
+    height: auto;
     padding: $spacing-1;
     background: $color-palette-primary-200;
     border-radius: $border-radius-sm;
@@ -270,10 +271,7 @@ $key-val-width: 500px;
     text-decoration: none;
     border: 1px solid rgba(0, 0, 0, 0.1);
     width: auto;
-    max-width: 112px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
     padding-left: calc($spacing-1 + $font-size-sm);
     position: relative;
 

@@ -339,7 +339,7 @@ describe('IframeFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            const closeButton = spectator.query('p-button[icon="pi pi-times"]');
+            const closeButton = spectator.query('p-button[icon="pi pi-times"]')!;
             spectator.click(closeButton);
 
             expect(spectator.component.$isFullscreen()).toBe(false);
@@ -569,7 +569,7 @@ describe('IframeFieldComponent', () => {
         it('should render input and button instead of iframe', async () => {
             await spectator.fixture.whenStable();
             const input = spectator.query(`[data-testId="${fieldWithModal.variable}"]`);
-            const button = spectator.query(byTestId('custom-field-show-button'));
+            const button = spectator.query(byTestId('custom-field-show-button'))!;
             const iframe = spectator.query(byTestId('custom-field-iframe'));
 
             expect(input).toBeTruthy();
@@ -579,7 +579,7 @@ describe('IframeFieldComponent', () => {
 
         it('should open modal when button is clicked', async () => {
             await spectator.fixture.whenStable();
-            const button = spectator.query(byTestId('custom-field-show-button'));
+            const button = spectator.query(byTestId('custom-field-show-button'))!;
             expect(spectator.component.$showModal()).toBe(false);
 
             spectator.click(button);

@@ -9,10 +9,12 @@
             "e2eTestRunner": "playwright",
             "linter": "eslint",
             "style": "scss",
+            "strict": true,
             "unitTestRunner": "jest"
         },
         "@nx/angular:library": {
             "linter": "eslint",
+            "strict": true,
             "unitTestRunner": "jest"
         },
         "@nx/angular:component": {
@@ -105,7 +107,11 @@
         },
         "lint": {
             "cache": true,
-            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
+            "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{projectRoot}/eslint-suppressions.json"
+            ]
         },
         "@nx/jest:jest": {
             "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"],
@@ -316,7 +322,8 @@
                 "libs/sdk/types/**/*",
                 "libs/sdk/uve/**/*"
             ]
-        }
+        },
+        "./tools/plugins/typecheck-spec.plugin.mjs"
     ],
     "defaultBase": "main",
     "ignorePatterns": [

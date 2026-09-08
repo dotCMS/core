@@ -106,7 +106,8 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     /**
      * Represents an instance of the Monaco Code Editor.
      */
-    #editor: monaco.editor.IStandaloneCodeEditor = null;
+    /** Null until the editor mounts. */
+    #editor: monaco.editor.IStandaloneCodeEditor | null = null;
 
     /**
      * A computed property that generates the configuration options for the Monaco editor.
@@ -158,6 +159,12 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     insertContent(content: string): void {
         if (this.#editor) {
             const selection = this.#editor.getSelection();
+
+            // Null when the editor has no cursor position yet.
+            if (!selection) {
+                return;
+            }
+
             const range = new monaco.Range(
                 selection.startLineNumber,
                 selection.startColumn,
@@ -203,7 +210,7 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     }
 
     private removeEditor() {
-        this.#editor.dispose();
+        this.#editor?.dispose();
         this.#editor = null;
     }
 
@@ -259,13 +266,21 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
      */
     private detectLanguage() {
         // Skip language detection if a forced language is provided
-        if (this.$forcedLanguage()) {
-            this.setLanguage(this.$forcedLanguage());
+        const forcedLanguage = this.$forcedLanguage();
+
+        if (forcedLanguage) {
+            this.setLanguage(forcedLanguage);
 
             return;
         }
 
-        const content = this.#editor.getValue().trim();
+        const editor = this.#editor;
+
+        if (!editor) {
+            return;
+        }
+
+        const content = editor.getValue().trim();
 
         if (!content) {
             this.setLanguage(AvailableLanguageMonaco.PlainText);

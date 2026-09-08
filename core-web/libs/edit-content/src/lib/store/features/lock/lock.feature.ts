@@ -8,7 +8,7 @@ import {
     withMethods
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
@@ -141,8 +141,18 @@ export function withLock() {
                                 lockStatus: ComponentStatus.LOADING
                             })
                         ),
-                        switchMap(() =>
-                            dotContentletService.lockContent(store.contentlet()?.inode).pipe(
+                        switchMap(() => {
+                            const inode = store.contentlet()?.inode;
+
+                            // Nothing to lock before the contentlet loads. Settle the status so
+                            // the LOADING patch above does not leave the button spinning.
+                            if (!inode) {
+                                patchState(store, { lockStatus: ComponentStatus.LOADED });
+
+                                return EMPTY;
+                            }
+
+                            return dotContentletService.lockContent(inode).pipe(
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
@@ -160,7 +170,7 @@ export function withLock() {
                                                 locked: updated.locked,
                                                 lockedBy: updated.lockedBy,
                                                 lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
+                                                lockedOn: updated['lockedOn']
                                             }
                                         });
                                     },
@@ -172,8 +182,8 @@ export function withLock() {
                                         });
                                     }
                                 })
-                            )
-                        )
+                            );
+                        })
                     )
                 ),
 
@@ -191,8 +201,18 @@ export function withLock() {
                                 lockStatus: ComponentStatus.LOADING
                             })
                         ),
-                        switchMap(() =>
-                            dotContentletService.unlockContent(store.contentlet()?.inode).pipe(
+                        switchMap(() => {
+                            const inode = store.contentlet()?.inode;
+
+                            // Nothing to unlock before the contentlet loads. Settle the status so
+                            // the LOADING patch above does not leave the button spinning.
+                            if (!inode) {
+                                patchState(store, { lockStatus: ComponentStatus.LOADED });
+
+                                return EMPTY;
+                            }
+
+                            return dotContentletService.unlockContent(inode).pipe(
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
@@ -210,7 +230,7 @@ export function withLock() {
                                                 locked: updated.locked,
                                                 lockedBy: updated.lockedBy,
                                                 lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
+                                                lockedOn: updated['lockedOn']
                                             }
                                         });
                                     },
@@ -222,8 +242,8 @@ export function withLock() {
                                         });
                                     }
                                 })
-                            )
-                        )
+                            );
+                        })
                     )
                 ),
 

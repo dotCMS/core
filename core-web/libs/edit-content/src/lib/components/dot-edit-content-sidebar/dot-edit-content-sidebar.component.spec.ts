@@ -242,7 +242,7 @@ describe('DotEditContentSidebarComponent', () => {
                 spectator.detectChanges();
                 tick();
 
-                const tabView = spectator.query(byTestId('sidebar-tabs'));
+                const tabView = spectator.query(byTestId('sidebar-tabs'))!;
                 expect(tabView).toBeTruthy();
 
                 const tabs = tabView.querySelectorAll('[role="tab"]');
@@ -300,7 +300,7 @@ describe('DotEditContentSidebarComponent', () => {
             const messageService = spectator.inject(DotMessageService);
             const getSpy = jest.spyOn(messageService, 'get');
 
-            const tabView = spectator.query(byTestId('sidebar-tabs'));
+            const tabView = spectator.query(byTestId('sidebar-tabs'))!;
             const tabs = tabView.querySelectorAll('[role="tab"]');
 
             // Only the three remaining tabs (actions, history, comments)
@@ -315,7 +315,7 @@ describe('DotEditContentSidebarComponent', () => {
         });
 
         it('should NOT render a Settings tab', () => {
-            const tabView = spectator.query(byTestId('sidebar-tabs'));
+            const tabView = spectator.query(byTestId('sidebar-tabs'))!;
             const tabs = tabView.querySelectorAll('[role="tab"]');
             expect(tabs.length).toBe(3);
             expect(tabs[0].querySelector('i.pi.pi-cog')).toBeFalsy();
@@ -430,7 +430,7 @@ describe('DotEditContentSidebarComponent', () => {
 
             it('should emit workflowActionFired when the actions component fires an action', () => {
                 const emitSpy = jest.spyOn(spectator.component.workflowActionFired, 'emit');
-                const actionsComponent = spectator.query(DotWorkflowActionsComponent);
+                const actionsComponent = spectator.query(DotWorkflowActionsComponent)!;
                 const action = { id: 'action-1' } as DotCMSWorkflowAction;
 
                 actionsComponent.actionFired.emit(action);
@@ -505,7 +505,7 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
 
                 // Find and click the activities tab
-                const tabView = spectator.query(byTestId('sidebar-tabs'));
+                const tabView = spectator.query(byTestId('sidebar-tabs'))!;
                 expect(tabView).toBeTruthy();
 
                 const tabs = tabView.querySelectorAll('[role="tab"]');
@@ -534,7 +534,7 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
 
                 // Find and click the history tab
-                const tabView = spectator.query(byTestId('sidebar-tabs'));
+                const tabView = spectator.query(byTestId('sidebar-tabs'))!;
                 expect(tabView).toBeTruthy();
 
                 const tabs = tabView.querySelectorAll('[role="tab"]');

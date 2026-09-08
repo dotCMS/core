@@ -6,12 +6,10 @@
         tooltipPosition="bottom"
         [text]="true"
         [rounded]="true"
-        [pt]="{
-            root: {
-                class: device.inode === $activeDeviceInode() ? 'bg-gray-200!' : ''
-            },
-            icon: { class: 'text-gray-900!' }
-        }"
+        [styleClass]="
+            '[&_.p-button-icon]:text-gray-900! ' +
+            (device.inode === $activeDeviceInode() ? 'bg-gray-200!' : '')
+        "
         (click)="onDeviceSelect(device)"
         [attr.data-testid]="device.inode" />
 }

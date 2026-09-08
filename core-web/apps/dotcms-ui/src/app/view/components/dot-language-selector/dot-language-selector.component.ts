@@ -25,10 +25,10 @@ import { DotLanguage } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLanguageSelectorComponent implements OnChanges {
-    @Input() value: DotLanguage;
-    @Input() readonly: boolean;
+    @Input() value!: DotLanguage;
+    @Input() readonly!: boolean;
     @Output() selected = new EventEmitter<DotLanguage>();
-    @HostBinding('class.disabled') disabled: boolean;
+    @HostBinding('class.disabled') disabled = false;
 
     languagesList = signal<DotLanguage[]>([]);
 
@@ -46,9 +46,10 @@ export class DotLanguageSelectorComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         const { value } = changes;
-        if (value && value.currentValue) {
+        const pageId = this._pageId();
+        if (value && value.currentValue && pageId) {
             this.dotLanguagesService
-                .getLanguagesUsedPage(this._pageId())
+                .getLanguagesUsedPage(pageId)
                 .subscribe((languages: DotLanguage[]) => {
                     this.languagesList.set(languages);
                 });

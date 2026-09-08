@@ -3,7 +3,7 @@
         <ng-container
             *ngTemplateOutlet="
                 customRender;
-                context: { customRender: customRenderers?.[node.type], node: node }
+                context: { customRender: customRenderers[node.type], node: node }
             " />
     } @else {
         @switch (node.type) {

@@ -33,7 +33,7 @@
                     {{ 'page.scanner.geo.score.description' | dm }}
                 </p>
             </header>
-            @if (geoData().topIssues?.length > 0) {
+            @if (geoData().topIssues.length > 0) {
                 <div class="flex gap-6">
                     @for (severity of ['high', 'medium', 'low']; track severity) {
                         <div class="flex items-center gap-1">
@@ -150,7 +150,7 @@
 
 <!-- Top Issues card -->
 <section>
-    @if (geoData().topIssues?.length > 0) {
+    @if (geoData().topIssues.length > 0) {
         <p-card [header]="'page.scanner.geo.top.issues' | dm">
             <div class="mt-4 space-y-3">
                 @for (issue of geoData().topIssues; track $index) {

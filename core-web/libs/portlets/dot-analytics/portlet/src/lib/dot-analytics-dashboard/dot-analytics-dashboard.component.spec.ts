@@ -87,17 +87,17 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         it('should render a router-outlet for nested report routes', () => {
-            const outlet = spectator.query('router-outlet');
+            const outlet = spectator.query('router-outlet')!;
             expect(outlet).toExist();
         });
 
         it('should render filters component', () => {
-            const filters = spectator.query(byTestId('analytics-filters'));
+            const filters = spectator.query(byTestId('analytics-filters'))!;
             expect(filters).toExist();
         });
 
         it('should render refresh button', () => {
-            const refreshButton = spectator.query(byTestId('refresh-button'));
+            const refreshButton = spectator.query(byTestId('refresh-button'))!;
             expect(refreshButton).toExist();
         });
 
@@ -105,7 +105,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             it('should call onRefresh when refresh button is clicked', () => {
                 const spy = jest.spyOn(spectator.component, 'onRefresh');
 
-                const refreshButton = spectator.query(byTestId('refresh-button'));
+                const refreshButton = spectator.query(byTestId('refresh-button'))!;
                 expect(refreshButton).toExist();
 
                 spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', null);
@@ -120,7 +120,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent({
                 firstChild: {
                     snapshot: { url: [new UrlSegment('pageview', {})] }
-                }
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['firstChild']
             });
             store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
@@ -131,7 +131,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent({
                 firstChild: {
                     snapshot: { url: [new UrlSegment('conversions', {})] }
-                }
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['firstChild']
             });
             store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
@@ -280,7 +280,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
 
-            const message = spectator.query(byTestId('analytics-message'));
+            const message = spectator.query(byTestId('analytics-message'))!;
             expect(message).toExist();
         });
 
@@ -289,7 +289,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
 
-            const messageContent = spectator.query(byTestId('message-content'));
+            const messageContent = spectator.query(byTestId('message-content'))!;
             expect(messageContent).toExist();
         });
 
@@ -299,7 +299,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator.detectChanges();
 
             // PrimeNG 21: close button is inside p-message with aria-label attribute
-            const closeButton = spectator.query('p-message button[aria-label]');
+            const closeButton = spectator.query('p-message button[aria-label]')!;
             closeButton?.dispatchEvent(new Event('click'));
             spectator.detectChanges();
 
@@ -328,7 +328,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator.detectChanges();
 
             // PrimeNG 21: close button is inside p-message with aria-label attribute
-            const closeButton = spectator.query('p-message button[aria-label]');
+            const closeButton = spectator.query('p-message button[aria-label]')!;
             closeButton?.dispatchEvent(new Event('click'));
             spectator.detectChanges();
 

@@ -328,7 +328,7 @@ describe('UVEStore - Integration Tests ', () => {
                     locked: false
                 },
                 viewAs: {
-                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                    ...MOCK_RESPONSE_HEADLESS.viewAs!,
                     mode: 'EDIT'
                 }
             };

@@ -2,7 +2,7 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
-        "types": ["jasmine", "node"],
+        "types": ["jest", "node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
         "moduleResolution": "bundler",

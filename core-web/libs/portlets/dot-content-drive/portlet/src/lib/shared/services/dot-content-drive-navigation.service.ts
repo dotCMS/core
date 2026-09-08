@@ -79,7 +79,7 @@ export class DotContentDriveNavigationService {
      * @param contentlet - The page content item to edit
      */
     editPage(contentlet: DotCMSContentlet) {
-        const url = contentlet.urlMap || contentlet.url;
+        const url = contentlet['urlMap'] || contentlet.url;
 
         this.#dotRouterService.goToEditPage({ url, language_id: contentlet.languageId });
     }

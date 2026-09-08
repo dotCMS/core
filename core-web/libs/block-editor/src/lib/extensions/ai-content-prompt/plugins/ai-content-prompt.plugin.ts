@@ -41,7 +41,7 @@ export type AIContentPromptViewProps = AIContentPromptProps & {
 export class AIContentPromptView {
     public editor: Editor;
 
-    public node: Node;
+    public node: Node | null = null;
 
     public element: HTMLElement;
 

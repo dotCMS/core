@@ -18,7 +18,7 @@ const toRelative = (files) => files.map((f) => path.relative(coreWebDir, f)).joi
 // not impossible) doesn't break shell parsing. Commas inside the CSV are
 // shell-safe.
 export default {
-    '**/*.{ts,js,mjs,cjs,tsx,jsx}': (files) => {
+    '**/*.{ts,js,mjs,cjs,tsx,jsx,vue}': (files) => {
         const list = toRelative(files);
         return [
             `pnpm nx affected -t lint --exclude=tag:skip:lint --fix --files="${list}"`,

@@ -31,9 +31,9 @@ import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 })
 class TestFieldValidationMessageComponent {
     @Input()
-    field: NgControl;
+    field!: NgControl;
     @Input()
-    message: string;
+    message!: string;
 }
 
 @Component({
@@ -43,13 +43,13 @@ class TestFieldValidationMessageComponent {
 })
 class TestNewRelationshipsComponent {
     @Input()
-    cardinality: number;
+    cardinality!: number;
 
     @Input()
-    velocityVar: string;
+    velocityVar!: string;
 
     @Input()
-    editing: boolean;
+    editing!: boolean;
 
     @Output()
     switch: EventEmitter<any> = new EventEmitter();
@@ -232,7 +232,7 @@ describe('DotRelationshipsPropertyComponent', () => {
 
             comp.clean();
 
-            expect(comp.group.get('relationship').value).toEqual(comp.beforeValue);
+            expect(comp.group.get('relationship')!.value).toEqual(comp.beforeValue);
         });
     });
 
@@ -266,7 +266,7 @@ describe('DotRelationshipsPropertyComponent', () => {
             expect(dotNewRelationships).toBeDefined();
             expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
-            const relationshipValue = comp.group.get('relationship').value;
+            const relationshipValue = comp.group.get('relationship')!.value;
             expect(relationshipValue.velocityVar).toEqual('velocityVar');
             expect(relationshipValue.cardinality).toEqual(1);
         });
@@ -274,7 +274,7 @@ describe('DotRelationshipsPropertyComponent', () => {
         describe('with inverse relationship', () => {
             it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
                 // Same object reference as the form control value (legacy DOTTestBed pattern).
-                comp.property.value.velocityVar = 'contentType.fieldName';
+                comp.property.value['velocityVar'] = 'contentType.fieldName';
                 comp.ngOnInit();
                 fixture.detectChanges();
                 flushRelationshipHttpMocks();
@@ -285,7 +285,7 @@ describe('DotRelationshipsPropertyComponent', () => {
                 expect(de.query(By.css('dot-new-relationships'))).toBeDefined();
                 expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
-                const relationshipValue = comp.group.get('relationship').value;
+                const relationshipValue = comp.group.get('relationship')!.value;
                 expect(relationshipValue.velocityVar).toEqual('contentType.fieldName');
                 expect(relationshipValue.cardinality).toEqual(1);
             });

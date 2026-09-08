@@ -7,6 +7,8 @@ import { DotExperimentListFilterComponent } from './dot-experiment-list-filter.c
 
 import { ExperimentFilterOption } from '../../shared/models';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const OPTIONS: ExperimentFilterOption[] = [
     { value: 'DRAFT', label: 'Draft', count: '3', testId: 'option-draft' },
     { value: 'RUNNING', label: 'Running', count: '2', testId: 'option-running' },
@@ -57,7 +59,7 @@ describe('DotExperimentListFilterComponent', () => {
                 emptyLabel: 'All',
                 options: OPTIONS,
                 selected
-            } as unknown as Partial<DotExperimentListFilterComponent>
+            } as unknown as InferInputSignals<DotExperimentListFilterComponent>
         });
         spectator.detectChanges();
     };

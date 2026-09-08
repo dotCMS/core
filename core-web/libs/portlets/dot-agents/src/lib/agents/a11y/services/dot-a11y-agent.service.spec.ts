@@ -154,7 +154,8 @@ describe('DotA11yAgentService', () => {
         runService.run.mockReturnValue(
             of({ type: 'done', result: backendPayload } as AgentStreamEvent<unknown>)
         );
-        let report: FixReport | undefined;
+        // `done` events carry `result: FixReport | null`, so the local has to admit null too.
+        let report: FixReport | null | undefined;
         service.fixStream(REQUEST).subscribe((e) => {
             if (e.type === 'done') {
                 report = e.result;

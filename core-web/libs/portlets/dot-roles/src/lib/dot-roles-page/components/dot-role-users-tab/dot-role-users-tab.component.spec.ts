@@ -58,8 +58,7 @@ describe('DotRoleUsersTabComponent', () => {
             mockProvider(ConfirmationService, {
                 confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
                 requireConfirmation$: EMPTY,
-                accept: EMPTY,
-                reject: EMPTY
+                accept: EMPTY
             }),
             mockProvider(DotRolesPortletService, {
                 searchUsers: jest.fn().mockReturnValue(of([]))

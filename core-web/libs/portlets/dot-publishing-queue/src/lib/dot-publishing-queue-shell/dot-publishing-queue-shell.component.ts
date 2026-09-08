@@ -84,7 +84,7 @@ export class DotPublishingQueueShellComponent {
                 position: 'center'
             }
         );
-        this.#selectBundleRef.onClose.pipe(take(1)).subscribe(() => {
+        this.#selectBundleRef?.onClose.pipe(take(1)).subscribe(() => {
             this.#selectBundleRef = null;
             // Selecting/removing bundles inside the dialog may have changed the
             // active set — refresh the unified table so the user sees the latest.
@@ -105,7 +105,7 @@ export class DotPublishingQueueShellComponent {
             draggable: false,
             position: 'center'
         });
-        this.#uploadRef.onClose.pipe(take(1)).subscribe(() => {
+        this.#uploadRef?.onClose.pipe(take(1)).subscribe(() => {
             this.#uploadRef = null;
         });
     }
@@ -159,7 +159,7 @@ export class DotPublishingQueueShellComponent {
                     data: { allowRemove, bundleName }
                 }
             );
-            this.#assetListRef.onClose.pipe(take(1)).subscribe(() => {
+            this.#assetListRef?.onClose.pipe(take(1)).subscribe(() => {
                 this.#assetListRef = null;
                 this.#store.closeAssetList();
             });
@@ -182,7 +182,7 @@ export class DotPublishingQueueShellComponent {
                     position: 'center'
                 }
             );
-            this.#detailRef.onClose.pipe(take(1)).subscribe(() => {
+            this.#detailRef?.onClose.pipe(take(1)).subscribe(() => {
                 this.#detailRef = null;
                 this.#store.closeDetail();
             });

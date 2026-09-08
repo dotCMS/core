@@ -29,6 +29,8 @@ import { SearchComponent, DEBOUNCE_TIME } from './search.component';
 import { ContentletFilterContext } from '../../../../models/relationship.models';
 import { SearchParams } from '../../../../models/search.model';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 // Mock components for testing
 @Component({
     selector: 'dot-language-field',
@@ -87,7 +89,7 @@ describe('SearchComponent', () => {
         return {
             languageControl: { value: { isoCode, id } },
             $selectedLanguageLabel: signal(isoCode)
-        } as unknown as LanguageFieldComponent;
+        } as unknown as InferInputSignals<SearchComponent> as LanguageFieldComponent;
     }
 
     function makeMockSiteField(
@@ -98,7 +100,7 @@ describe('SearchComponent', () => {
         return {
             siteControl: { value: { label, data: { id, type } } },
             $selectedNodeLabel: signal(label)
-        } as unknown as SiteFieldComponent;
+        } as unknown as InferInputSignals<SearchComponent> as SiteFieldComponent;
     }
 
     const messageServiceMock = new MockDotMessageService({
@@ -174,7 +176,7 @@ describe('SearchComponent', () => {
         spectator = createComponent({
             props: {
                 isLoading: false
-            } as unknown
+            } as unknown as InferInputSignals<SearchComponent>
         });
         component = spectator.component;
     });
@@ -198,8 +200,10 @@ describe('SearchComponent', () => {
         it('should have valid form controls', () => {
             expect(component.form.get('query')).toBeTruthy();
             expect(component.form.get('systemSearchableFields')).toBeTruthy();
-            expect(component.form.get('systemSearchableFields').get('languageId')).toBeTruthy();
-            expect(component.form.get('systemSearchableFields').get('siteOrFolderId')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields')!.get('languageId')).toBeTruthy();
+            expect(
+                component.form.get('systemSearchableFields')!.get('siteOrFolderId')
+            ).toBeTruthy();
         });
     });
 
@@ -431,7 +435,11 @@ describe('SearchComponent', () => {
         });
 
         it('should fallback to language ID when no control value', () => {
-            jest.spyOn(component, '$languageField').mockReturnValue(null);
+            // `viewChild.required` cannot resolve to null, but the reader uses `field?.` —
+            // this forces that defensive path.
+            jest.spyOn(component, '$languageField').mockReturnValue(
+                null as unknown as LanguageFieldComponent
+            );
 
             const label = component['getLanguageDisplayLabel'](1);
             expect(label).toBe('Language Id: 1');
@@ -445,7 +453,11 @@ describe('SearchComponent', () => {
         });
 
         it('should fallback to ID when no control value', () => {
-            jest.spyOn(component, '$siteField').mockReturnValue(null);
+            // `viewChild.required` cannot resolve to null, but the reader uses `field?.` —
+            // this forces that defensive path.
+            jest.spyOn(component, '$siteField').mockReturnValue(
+                null as unknown as SiteFieldComponent
+            );
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe('site123');
@@ -609,7 +621,7 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
             spectator.setInput('isLoading', true);
             spectator.detectChanges();
@@ -618,7 +630,7 @@ describe('SearchComponent', () => {
                 'p-button[data-testid="search-button"] button'
             );
 
-            expect(searchButton.disabled).toBeTruthy();
+            expect(searchButton!.disabled).toBeTruthy();
         });
     });
 
@@ -667,15 +679,15 @@ describe('SearchComponent', () => {
 
     describe('Integration Tests', () => {
         it('should update form values when input changes', () => {
-            const queryInput = spectator.query('input[formControlName="query"]');
+            const queryInput = spectator.query('input[formControlName="query"]')!;
             spectator.typeInElement('test query', queryInput);
 
-            expect(component.form.get('query').value).toBe('test query');
+            expect(component.form.get('query')!.value).toBe('test query');
         });
 
         it('should trigger debounced search when typing in input', fakeAsync(() => {
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
-            const queryInput = spectator.query('input[formControlName="query"]');
+            const queryInput = spectator.query('input[formControlName="query"]')!;
 
             spectator.typeInElement('test search', queryInput);
 
@@ -705,9 +717,9 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
-            const searchButton = spectator.query('p-button[data-testid="search-button"] button');
+            const searchButton = spectator.query('p-button[data-testid="search-button"] button')!;
             spectator.click(searchButton);
 
             expect(searchSpy).toHaveBeenCalledWith({
@@ -733,9 +745,9 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
-            const searchButton = spectator.query('p-button[data-testid="search-button"] button');
+            const searchButton = spectator.query('p-button[data-testid="search-button"] button')!;
             spectator.click(searchButton);
 
             expect(searchSpy).toHaveBeenCalledWith({
@@ -759,9 +771,9 @@ describe('SearchComponent', () => {
             const openFiltersButton = spectator.query(
                 'p-button[data-testid="open-filters-button"] button'
             );
-            spectator.click(openFiltersButton);
+            spectator.click(openFiltersButton!);
 
-            const clearButton = spectator.query('p-button[data-testid="clear-button"] button');
+            const clearButton = spectator.query('p-button[data-testid="clear-button"] button')!;
             spectator.click(clearButton);
 
             expect(component.form.getRawValue()).toEqual({

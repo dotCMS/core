@@ -13,8 +13,8 @@ import { DotAvatarDirective } from './dot-avatar.directive';
     `
 })
 class TestHostComponent {
-    text: string;
-    image: string;
+    text = '';
+    image = '';
 }
 
 describe('DotAvatarDirective', () => {

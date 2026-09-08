@@ -42,7 +42,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
     function clickPButton(testId: string): void {
         const host = spectator.query(byTestId(testId));
         expect(host).toExist();
-        const nativeButton = host.querySelector('button');
+        const nativeButton = host!.querySelector('button');
         expect(nativeButton).toBeTruthy();
         spectator.click(nativeButton!);
     }

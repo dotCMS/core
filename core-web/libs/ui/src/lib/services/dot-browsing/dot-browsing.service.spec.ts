@@ -510,7 +510,7 @@ describe('DotBrowsingService', () => {
                 .searchFolders({ siteId: 'site-1', path: '/level1' }, 'example.com')
                 .subscribe(({ folders }) => {
                     expect(folders[0].label).toBe('example.com/level1/child/');
-                    expect(folders[0].data.path).toBe('/level1/child/');
+                    expect(folders[0].data!.path).toBe('/level1/child/');
                     done();
                 });
         });

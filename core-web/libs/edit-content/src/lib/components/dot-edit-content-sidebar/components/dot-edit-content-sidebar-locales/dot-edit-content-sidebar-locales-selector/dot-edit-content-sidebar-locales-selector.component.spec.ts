@@ -13,6 +13,8 @@ import { createFakeLanguage, MockDotMessageService } from '@dotcms/utils-testing
 
 import { DotEditContentSidebarLocalesSelectorComponent } from './dot-edit-content-sidebar-locales-selector.component';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const MOCK_MESSAGES = {
     'edit.content.sidebar.locales.selector.translated': 'Translated',
     'edit.content.sidebar.locales.selector.pending': 'Pending',
@@ -65,8 +67,8 @@ function typeInSearch(
     spectator: Spectator<DotEditContentSidebarLocalesSelectorComponent>,
     value: string
 ) {
-    const input = spectator.query<HTMLInputElement>(byTestId('search-input'));
-    input.value = value;
+    const input = spectator.query<HTMLInputElement>(byTestId('search-input'))!;
+    input!.value = value;
     spectator.dispatchFakeEvent(input, 'input');
     spectator.detectChanges();
 }
@@ -84,7 +86,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                     defaultLocale: DEFAULT_LOCALE,
                     currentLocale: CURRENT_LOCALE,
                     isLoading: true
-                } as unknown
+                } as unknown as InferInputSignals<DotEditContentSidebarLocalesSelectorComponent>
             });
         });
 
@@ -107,7 +109,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                     defaultLocale: DEFAULT_LOCALE,
                     currentLocale: CURRENT_LOCALE,
                     isLoading: false
-                } as unknown
+                } as unknown as InferInputSignals<DotEditContentSidebarLocalesSelectorComponent>
             });
         });
 
@@ -138,7 +140,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
         });
 
         it('should show the DEFAULT badge for the default locale', () => {
-            const badge = spectator.query(byTestId('default-badge'));
+            const badge = spectator.query(byTestId('default-badge'))!;
             expect(badge).toBeTruthy();
             expect(badge.textContent.trim()).toBe('DEFAULT');
         });
@@ -168,7 +170,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                     defaultLocale: DEFAULT_LOCALE,
                     currentLocale: CURRENT_LOCALE,
                     isLoading: false
-                } as unknown
+                } as unknown as InferInputSignals<DotEditContentSidebarLocalesSelectorComponent>
             });
         });
 
@@ -214,13 +216,13 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
             const translated = ENHANCED_LOCALES.filter((l) => l.translated).length;
             const pending = ENHANCED_LOCALES.filter((l) => !l.translated).length;
 
-            expect(spectator.query(byTestId('tab-all')).textContent).toContain(
+            expect(spectator.query(byTestId('tab-all'))!.textContent).toContain(
                 `${ENHANCED_LOCALES.length}`
             );
-            expect(spectator.query(byTestId('tab-translated')).textContent).toContain(
+            expect(spectator.query(byTestId('tab-translated'))!.textContent).toContain(
                 `${translated}`
             );
-            expect(spectator.query(byTestId('tab-pending')).textContent).toContain(`${pending}`);
+            expect(spectator.query(byTestId('tab-pending'))!.textContent).toContain(`${pending}`);
         });
 
         it('should filter to translated locales when activeTab input is "translated"', () => {
@@ -252,7 +254,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
         });
 
         it('should show current locale info in the sticky row', () => {
-            const row = spectator.query(byTestId('selected-locale'));
+            const row = spectator.query(byTestId('selected-locale'))!;
             expect(row.textContent).toContain(CURRENT_LOCALE.language);
         });
 
@@ -281,13 +283,13 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
             it('should show matching locales when typing in the search input', () => {
                 typeInSearch(spectator, 'english');
                 expect(spectator.queryAll(byTestId('locale-item')).length).toBe(1);
-                expect(spectator.query(byTestId('locale-item')).textContent).toContain('English');
+                expect(spectator.query(byTestId('locale-item'))!.textContent).toContain('English');
             });
 
             it('should filter by isoCode', () => {
                 typeInSearch(spectator, 'de-de');
                 expect(spectator.queryAll(byTestId('locale-item')).length).toBe(1);
-                expect(spectator.query(byTestId('locale-item')).textContent).toContain('German');
+                expect(spectator.query(byTestId('locale-item'))!.textContent).toContain('German');
             });
 
             it('should be case-insensitive', () => {
@@ -298,7 +300,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
             it('should show "All caught up" when no locales match', () => {
                 typeInSearch(spectator, 'xyznotfound');
                 expect(spectator.query(byTestId('no-results'))).toBeTruthy();
-                expect(spectator.query(byTestId('no-results')).textContent.trim()).toBe(
+                expect(spectator.query(byTestId('no-results'))!.textContent!.trim()).toBe(
                     'All caught up'
                 );
             });
@@ -307,7 +309,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                 typeInSearch(spectator, 'english');
                 spectator.setInput('activeTab', 'translated');
                 spectator.detectChanges();
-                expect(spectator.query<HTMLInputElement>(byTestId('search-input')).value).toBe(
+                expect(spectator!.query<HTMLInputElement>(byTestId('search-input'))!.value).toBe(
                     'english'
                 );
             });
@@ -322,7 +324,9 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                 typeInSearch(spectator, 'english');
                 spectator.click(byTestId('search-clear'));
                 spectator.detectChanges();
-                expect(spectator.query<HTMLInputElement>(byTestId('search-input')).value).toBe('');
+                expect(spectator!.query<HTMLInputElement>(byTestId('search-input'))!.value).toBe(
+                    ''
+                );
                 expect(spectator.query(byTestId('search-clear'))).toBeNull();
             });
 
@@ -348,7 +352,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                         defaultLocale: DEFAULT_LOCALE,
                         currentLocale: CURRENT_LOCALE,
                         isLoading: false
-                    } as unknown
+                    } as unknown as InferInputSignals<DotEditContentSidebarLocalesSelectorComponent>
                 });
             });
 
@@ -367,7 +371,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                         defaultLocale: DEFAULT_LOCALE,
                         currentLocale: CURRENT_LOCALE,
                         isLoading: false
-                    } as unknown
+                    } as unknown as InferInputSignals<DotEditContentSidebarLocalesSelectorComponent>
                 });
             });
 
@@ -380,7 +384,7 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
                 const btn = spectator
                     .query(byTestId('manage-locales-link'))
                     ?.querySelector('button');
-                spectator.click(btn);
+                spectator.click(btn!);
                 expect(router.gotoPortlet).toHaveBeenCalledWith('/locales');
             });
         });

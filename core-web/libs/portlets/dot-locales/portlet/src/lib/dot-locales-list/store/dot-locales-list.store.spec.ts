@@ -61,8 +61,8 @@ describe('DotLocalesListStore', () => {
 
         languageService.get.mockReturnValue(of([...mockLocales]));
         languageService.getISO.mockReturnValue(of(mockLanguagesISO));
-        languageService.makeDefault.mockReturnValue(of(null));
-        languageService.delete.mockReturnValue(of(null));
+        languageService.makeDefault.mockReturnValue(of(undefined));
+        languageService.delete.mockReturnValue(of(undefined));
 
         spectator.service.loadLocales({
             pushPublishEnvironments: [{ test: 1 }] as unknown as DotEnvironment[],
@@ -105,7 +105,7 @@ describe('DotLocalesListStore', () => {
             'test' as unknown as HttpErrorResponse
         );
 
-        languageService.delete.mockReturnValue(of(null));
+        languageService.delete.mockReturnValue(of(undefined));
 
         spectator.service.deleteLocale(1);
 

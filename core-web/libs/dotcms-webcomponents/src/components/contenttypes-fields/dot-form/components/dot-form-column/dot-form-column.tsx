@@ -9,11 +9,11 @@ import { DotCMSContentTypeLayoutColumn, DotCMSContentTypeField } from '@dotcms/d
 export class DotFormColumnComponent {
     /** Fields metada to be rendered */
     @Prop()
-    column: DotCMSContentTypeLayoutColumn;
+    column?: DotCMSContentTypeLayoutColumn;
 
     /** (optional) List of fields (variableName) separated by comma, to be shown */
     @Prop({ reflect: true })
-    fieldsToShow: string;
+    fieldsToShow?: string;
 
     render() {
         // When the user start dragging a form in the edit page the value of layout of the
@@ -28,6 +28,9 @@ export class DotFormColumnComponent {
     }
 
     private getFieldTag(field: DotCMSContentTypeField) {
-        return fieldMap[field.fieldType] ? fieldMap[field.fieldType](field) : '';
+        // Hoisted: a second lookup discards the narrowing the ternary just established.
+        const render = fieldMap[field.fieldType];
+
+        return render ? render(field) : '';
     }
 }

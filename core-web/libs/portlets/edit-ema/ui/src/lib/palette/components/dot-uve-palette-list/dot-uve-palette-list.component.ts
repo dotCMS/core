@@ -241,7 +241,10 @@ export class DotUvePaletteListComponent implements OnInit {
         }
 
         // Page-agnostic list types (Content Drive) reuse the generic content-types message.
-        return EMPTY_MESSAGES[this.$type()] ?? EMPTY_MESSAGES[DotUVEPaletteListTypes.CONTENT];
+        return (
+            EMPTY_MESSAGES[this.$type() as keyof typeof EMPTY_MESSAGES] ??
+            EMPTY_MESSAGES[DotUVEPaletteListTypes.CONTENT]
+        );
     });
 
     /**
@@ -262,7 +265,7 @@ export class DotUvePaletteListComponent implements OnInit {
                 language: this.$languageId(),
                 variantId: this.$variantId(),
                 listType: this.$type(),
-                host: this.$siteId(),
+                host: this.$siteId() ?? '',
                 allowedContentTypes: this.$allowedContentTypes()
             };
 

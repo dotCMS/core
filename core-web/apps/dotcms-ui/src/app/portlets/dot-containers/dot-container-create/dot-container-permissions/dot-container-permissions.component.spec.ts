@@ -12,8 +12,8 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     template: ''
 })
 export class IframeMockComponent {
-    @Input() src: string;
-    @ViewChild('iframeElement') iframeElement: ElementRef;
+    @Input() src!: string;
+    @ViewChild('iframeElement') iframeElement!: ElementRef;
 }
 
 @Component({
@@ -28,8 +28,8 @@ class DotTestHostComponent {
 }
 
 describe('ContainerPermissionsComponent', () => {
-    let hostComponent: DotTestHostComponent;
-    let fixture: ComponentFixture<DotTestHostComponent>;
+    let component: DotContainerPermissionsComponent;
+    let fixture: ComponentFixture<DotContainerPermissionsComponent>;
     let de: DebugElement;
 
     beforeEach(async () => {
@@ -45,18 +45,18 @@ describe('ContainerPermissionsComponent', () => {
 
         fixture = TestBed.createComponent(DotContainerPermissionsComponent);
         de = fixture.debugElement;
-        hostComponent = fixture.componentInstance;
-        hostComponent.containerId = '123';
+        component = fixture.componentInstance;
+        fixture.componentRef.setInput('containerId', '123');
         fixture.detectChanges();
     });
 
     it('should create', () => {
-        expect(hostComponent).toBeTruthy();
+        expect(component).toBeTruthy();
     });
 
     describe('permissions', () => {
         it('should set iframe permissions url', () => {
-            hostComponent.containerId = '123';
+            fixture.componentRef.setInput('containerId', '123');
             fixture.detectChanges();
             const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
             expect(permissions.componentInstance.src).toBe(

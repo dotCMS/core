@@ -60,22 +60,23 @@ export const Video = Node.create({
             mimeType: {
                 default: null,
                 parseHTML: (el) => el.getAttribute('mimeType'),
-                renderHTML: (attrs) => (attrs.mimeType ? { mimeType: attrs.mimeType } : {})
+                renderHTML: (attrs) => (attrs['mimeType'] ? { mimeType: attrs['mimeType'] } : {})
             },
             width: {
                 default: null,
                 parseHTML: (el) => el.getAttribute('width'),
-                renderHTML: (attrs) => (attrs.width ? { width: attrs.width } : {})
+                renderHTML: (attrs) => (attrs['width'] ? { width: attrs['width'] } : {})
             },
             height: {
                 default: null,
                 parseHTML: (el) => el.getAttribute('height'),
-                renderHTML: (attrs) => (attrs.height ? { height: attrs.height } : {})
+                renderHTML: (attrs) => (attrs['height'] ? { height: attrs['height'] } : {})
             },
             orientation: {
                 default: null,
                 parseHTML: (el) => el.getAttribute('orientation'),
-                renderHTML: (attrs) => (attrs.orientation ? { orientation: attrs.orientation } : {})
+                renderHTML: (attrs) =>
+                    attrs['orientation'] ? { orientation: attrs['orientation'] } : {}
             },
             data: {
                 default: null,
@@ -114,15 +115,15 @@ export const Video = Node.create({
             dom.classList.add('w-full', 'rounded');
 
             const resolvedSrc =
-                (node.attrs.src as string | null) ??
-                (node.attrs.data as DotVideoData | null)?.asset ??
+                (node.attrs['src'] as string | null) ??
+                (node.attrs['data'] as DotVideoData | null)?.asset ??
                 null;
             if (resolvedSrc) {
                 dom.setAttribute('src', resolvedSrc);
             }
 
-            if (node.attrs.title) {
-                dom.setAttribute('title', String(node.attrs.title));
+            if (node.attrs['title']) {
+                dom.setAttribute('title', String(node.attrs['title']));
             }
 
             return {

@@ -62,7 +62,9 @@ describe('DotKeyValueComponent', () => {
 
     const create = (props: Partial<Record<string, unknown>> = {}) => {
         spectator = createComponent({
-            props: { variables: [...mockKeyValue], ...props } as unknown
+            props: { variables: [...mockKeyValue], ...props } as unknown as NonNullable<
+                Parameters<typeof createComponent>[0]
+            >['props']
         });
         spectator.detectChanges();
 
@@ -118,7 +120,7 @@ describe('DotKeyValueComponent', () => {
     describe('rendering', () => {
         it('should render one row per pair', () => {
             expect(spectator.queryAll(byTestId('dot-key-value-key')).length).toBe(2);
-            expect(spectator.query(Table).value).toEqual(mockKeyValue);
+            expect(spectator.query(Table)!.value).toEqual(mockKeyValue);
         });
 
         it('should collect existing keys so the entry row can reject duplicates', () => {
@@ -133,14 +135,14 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should show the key glyph above the message', () => {
-            const icon = spectator.query(byTestId('dot-key-value-empty-icon'));
+            const icon = spectator.query(byTestId('dot-key-value-empty-icon'))!;
 
             expect(icon.className).toContain('material-symbols-outlined');
             expect(icon.textContent.trim()).toBe('key');
         });
 
         it('should use the existing message key rather than a new one', () => {
-            expect(spectator.query(byTestId('no-rows')).textContent).toContain('No Rows');
+            expect(spectator.query(byTestId('no-rows'))!.textContent).toContain('No Rows');
         });
 
         it('should keep the entry row usable so the empty state is escapable', () => {
@@ -214,7 +216,7 @@ describe('DotKeyValueComponent', () => {
          * happens.
          */
         const primengDropsRow = (from: number, to: number) => {
-            const table = spectator.query(Table);
+            const table = spectator.query(Table)!;
             const [moved] = table.value.splice(from, 1);
             table.value.splice(to, 0, moved);
             table.onRowReorder.emit({ dragIndex: from, dropIndex: to });
@@ -343,7 +345,7 @@ describe('DotKeyValueComponent', () => {
         /** Runs whatever the component handed the confirmation service. */
         const accept = () => {
             const request = jest.mocked(confirmation.confirm).mock.calls[0][0];
-            request.accept();
+            request.accept?.();
             spectator.detectChanges();
         };
 
@@ -433,8 +435,8 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should not present the pairs as editable controls', () => {
-            const key = spectator.query(byTestId('dot-key-value-key-output'));
-            const value = spectator.query(byTestId('dot-key-value-value-output'));
+            const key = spectator.query(byTestId('dot-key-value-key-output'))!;
+            const value = spectator.query(byTestId('dot-key-value-value-output'))!;
 
             // Without this a keyboard user tabs onto something that does nothing.
             expect(key.getAttribute('role')).toBeNull();
@@ -486,7 +488,7 @@ describe('DotKeyValueComponent', () => {
 
             expect(renderedKeys()).toHaveLength(40);
             expect(renderedKeys()[0]).toBe('key-000');
-            expect(spectator.query(byTestId('dot-key-value-load-more')).textContent).toContain(
+            expect(spectator.query(byTestId('dot-key-value-load-more'))!.textContent).toContain(
                 'Load more'
             );
         });
@@ -518,7 +520,7 @@ describe('DotKeyValueComponent', () => {
             // Matches the site/folder selector, which never states a count.
             create({ variables: manyPairs(50) });
 
-            expect(spectator.query(byTestId('dot-key-value-load-more')).textContent).toContain(
+            expect(spectator.query(byTestId('dot-key-value-load-more'))!.textContent).toContain(
                 'Load more'
             );
         });

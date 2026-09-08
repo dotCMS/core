@@ -66,7 +66,7 @@ describe('DotAnalyticsChartComponent', () => {
         });
 
         it('should have chart element when loaded', () => {
-            expect(spectator.query(UIChart)).toExist();
+            expect(spectator.query(UIChart)!).toExist();
         });
     });
 
@@ -102,7 +102,7 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('title', 'analytics.chart.title');
             spectator.detectChanges();
 
-            const card = spectator.query('[data-testid="analytics-chart"]');
+            const card = spectator.query('[data-testid="analytics-chart"]')!;
             const title = card?.querySelector('.p-card-title');
             expect(title).toExist();
             expect(title?.textContent?.trim()).toBe('Translated message');
@@ -112,7 +112,7 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('title', '');
             spectator.detectChanges();
 
-            const card = spectator.query('[data-testid="analytics-chart"]');
+            const card = spectator.query('[data-testid="analytics-chart"]')!;
             const title = card?.querySelector('.p-card-title');
             expect(title).not.toExist();
         });
@@ -121,7 +121,7 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('title', 'analytics.chart.title');
             spectator.detectChanges();
 
-            const card = spectator.query('[data-testid="analytics-chart"]');
+            const card = spectator.query('[data-testid="analytics-chart"]')!;
             const title = card?.querySelector('.p-card-title');
 
             expect(title).toExist();
@@ -134,25 +134,25 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            const skeleton = spectator.query('.chart-skeleton');
+            const skeleton = spectator.query('.chart-skeleton')!;
             expect(skeleton).toExist();
-            expect(spectator.query(UIChart)).not.toExist();
+            expect(spectator.query(UIChart)!).not.toExist();
         });
 
         it('should show loading skeleton when status is INIT', () => {
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
 
-            const skeleton = spectator.query('.chart-skeleton');
+            const skeleton = spectator.query('.chart-skeleton')!;
             expect(skeleton).toExist();
-            expect(spectator.query(UIChart)).not.toExist();
+            expect(spectator.query(UIChart)!).not.toExist();
         });
 
         it('should show line chart skeleton for line chart type', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            const lineSkeleton = spectator.query('.chart-skeleton--line');
+            const lineSkeleton = spectator.query('.chart-skeleton--line')!;
             expect(lineSkeleton).toExist();
         });
 
@@ -161,7 +161,7 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            const pieSkeleton = spectator.query('.chart-skeleton--pie');
+            const pieSkeleton = spectator.query('.chart-skeleton--pie')!;
             expect(pieSkeleton).toExist();
         });
 
@@ -170,7 +170,7 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            const pieSkeleton = spectator.query('.chart-skeleton--pie');
+            const pieSkeleton = spectator.query('.chart-skeleton--pie')!;
             expect(pieSkeleton).toExist();
         });
 
@@ -179,7 +179,7 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            const defaultSkeleton = spectator.query('.chart-skeleton--default');
+            const defaultSkeleton = spectator.query('.chart-skeleton--default')!;
             expect(defaultSkeleton).toExist();
         });
 
@@ -187,7 +187,7 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            expect(spectator.query(UIChart)).not.toExist();
+            expect(spectator.query(UIChart)!).not.toExist();
         });
     });
 
@@ -196,15 +196,15 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            expect(spectator.query('dot-analytics-state-message')).toExist();
-            expect(spectator.query(UIChart)).not.toExist();
+            expect(spectator.query('dot-analytics-state-message')!).toExist();
+            expect(spectator.query(UIChart)!).not.toExist();
         });
 
         it('should show error icon when in error state', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            const errorIcon = spectator.query('.pi-exclamation-triangle');
+            const errorIcon = spectator.query('.pi-exclamation-triangle')!;
             expect(errorIcon).toExist();
         });
     });
@@ -213,35 +213,35 @@ describe('DotAnalyticsChartComponent', () => {
         it('should correctly identify loading state', () => {
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
-            expect(spectator.query('.chart-skeleton')).toExist();
+            expect(spectator.query('.chart-skeleton')!).toExist();
 
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
-            expect(spectator.query('.chart-skeleton')).toExist();
+            expect(spectator.query('.chart-skeleton')!).toExist();
 
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.query('.chart-skeleton')).not.toExist();
+            expect(spectator.query('.chart-skeleton')!).not.toExist();
         });
 
         it('should correctly identify error state', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
-            expect(spectator.query('dot-analytics-state-message')).toExist();
+            expect(spectator.query('dot-analytics-state-message')!).toExist();
 
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.query('dot-analytics-state-message')).not.toExist();
+            expect(spectator.query('dot-analytics-state-message')!).not.toExist();
         });
 
         it('should correctly identify empty state', () => {
             spectator.setInput('data', { labels: [], datasets: [] });
             spectator.detectChanges();
-            expect(spectator.query('dot-analytics-empty-state')).toExist();
+            expect(spectator.query('dot-analytics-empty-state')!).toExist();
 
             spectator.setInput('data', createMockChartData());
             spectator.detectChanges();
-            expect(spectator.query('dot-analytics-empty-state')).not.toExist();
+            expect(spectator.query('dot-analytics-empty-state')!).not.toExist();
         });
     });
 
@@ -292,23 +292,23 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('data', { labels: [], datasets: [] });
             spectator.detectChanges();
 
-            const emptyState = spectator.query('dot-analytics-empty-state');
+            const emptyState = spectator.query('dot-analytics-empty-state')!;
             expect(emptyState).toExist();
-            expect(spectator.query(UIChart)).not.toExist();
+            expect(spectator.query(UIChart)!).not.toExist();
         });
 
         it('should show empty state icon and messages', () => {
             spectator.setInput('data', { labels: [], datasets: [] });
             spectator.detectChanges();
 
-            const emptyState = spectator.query('dot-analytics-empty-state');
+            const emptyState = spectator.query('dot-analytics-empty-state')!;
             expect(emptyState).toExist();
         });
 
         it('should not show empty state when data is available', () => {
-            const emptyState = spectator.query('dot-analytics-empty-state');
+            const emptyState = spectator.query('dot-analytics-empty-state')!;
             expect(emptyState).not.toExist();
-            expect(spectator.query(UIChart)).toExist();
+            expect(spectator.query(UIChart)!).toExist();
         });
     });
 });

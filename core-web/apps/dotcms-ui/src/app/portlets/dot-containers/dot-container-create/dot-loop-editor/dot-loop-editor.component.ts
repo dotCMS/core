@@ -66,13 +66,17 @@ export class DotLoopEditorComponent implements ControlValueAccessor, OnInit {
         }
     }
 
-    private _onChange = (_value: string | null) => undefined;
+    private _onChange: (value: string | null) => void = () => {
+        /* */
+    };
 
     public registerOnChange(fn: (value: string | null) => void): void {
         this._onChange = fn;
     }
 
-    public onTouched = () => undefined;
+    public onTouched: () => void = () => {
+        /* */
+    };
 
     public registerOnTouched(fn: () => void): void {
         this.onTouched = fn;

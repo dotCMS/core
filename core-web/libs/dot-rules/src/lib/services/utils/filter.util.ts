@@ -21,7 +21,7 @@ export class RuleFilter {
         return xform;
     }
 
-    static isFiltered(obj: { name: string }, filterText: string): boolean {
+    static isFiltered(obj: { name: string | null }, filterText: string): boolean {
         let isFiltered = false;
         if (filterText !== '') {
             let filter = filterText;
@@ -39,9 +39,12 @@ export class RuleFilter {
                             Object.prototype.hasOwnProperty.call(obj, '_' + fieldName);
                         if (hasField) {
                             try {
+                                // `fieldName` comes from the user's filter text, so the read is
+                                // dynamic by nature; `hasField` above is the guard.
+                                const actual = (obj as Record<string, unknown>)[fieldName];
                                 isFiltered =
-                                    obj[fieldName] !== fieldValue &&
-                                    obj[fieldName] !== this.transformValue(fieldValue);
+                                    actual !== fieldValue &&
+                                    actual !== this.transformValue(fieldValue);
                             } catch (e) {
                                 console.error(
                                     'Error while trying to check a field value while filtering.',
@@ -55,7 +58,7 @@ export class RuleFilter {
 
             filter = filter.trim().toLowerCase();
             if (filter) {
-                isFiltered = isFiltered || !(obj.name.toLowerCase().indexOf(filter) >= 0);
+                isFiltered = isFiltered || !(obj.name ?? '').toLowerCase().includes(filter);
             }
         }
 

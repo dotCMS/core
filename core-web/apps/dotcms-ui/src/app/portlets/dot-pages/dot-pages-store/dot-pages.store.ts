@@ -53,10 +53,15 @@ import { generateDotFavoritePageUrl } from '@dotcms/utils';
 import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
 
 export interface DotPagesInfo {
-    actionMenuDomId?: string;
+    /** Null once the row menu is dismissed — `actionMenuDomId$` filters that out. */
+    actionMenuDomId?: string | null;
     addToBundleCTId?: string;
     archived?: boolean;
-    items: DotCMSContentlet[];
+    /**
+     * Holds `undefined` where a page was removed: `getPages` pads the array to keep its length so
+     * the endless scroll keeps working, and every reader goes through `page?.`.
+     */
+    items: (DotCMSContentlet | undefined)[];
     keyword?: string;
     languageId?: string;
     menuActions?: MenuItem[];
@@ -81,7 +86,13 @@ export interface DotPagesState {
         canWrite: { contentlets: boolean; htmlPages: boolean };
         id: string;
     };
-    pages?: DotPagesInfo;
+    /**
+     * Required, not optional: the initial state seeds it and `patchState` never removes a key, so it
+     * is present for the whole life of the store. Declared optional, every read of `pages.items` /
+     * `pages.keyword` / `pages.status` across this store's spec needed narrowing for a state that
+     * cannot occur — 54 of them.
+     */
+    pages: DotPagesInfo;
     pageTypes?: DotCMSContentType[];
     portletStatus: ComponentStatus;
 }
@@ -98,6 +109,34 @@ interface UserPagePermission {
     canUserWritePage: boolean;
     canUserWriteContent: boolean;
 }
+
+/**
+ * What the portlet's init pipeline gathers before seeding the store, in order.
+ *
+ * Named so the operators that build these and the callbacks that read them agree: an array literal
+ * infers as a union array, not a tuple, so the two ends never matched.
+ */
+type DotPagesSourceData = [
+    ESContent,
+    DotCurrentUser,
+    DotLanguage[],
+    boolean,
+    boolean,
+    DotSessionStorageFilter | null,
+    boolean
+];
+
+/** {@link DotPagesSourceData} with the user's resolved permissions spliced in. */
+type DotPagesInitData = [
+    ESContent,
+    DotCurrentUser,
+    DotLanguage[],
+    boolean,
+    boolean,
+    DotPermissionsType,
+    DotSessionStorageFilter | null,
+    boolean
+];
 
 export const FAVORITE_PAGE_LIMIT = 500;
 
@@ -164,7 +203,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     });
 
     readonly isFavoritePanelCollaped$: Observable<boolean> = this.select((state) => {
-        return state?.favoritePages?.collapsed;
+        return state?.favoritePages?.collapsed ?? false;
     });
 
     readonly isPagesLoading$: Observable<boolean> = this.select(
@@ -181,7 +220,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly actionMenuDomId$: Observable<string> = this.select(
         ({ pages }) => pages?.actionMenuDomId
-    ).pipe(filter((i) => i !== null));
+    ).pipe(filter((id): id is string => !!id));
 
     readonly languageOptions$: Observable<SelectItem[]> = this.select(
         ({ languages }: DotPagesState) => {
@@ -193,9 +232,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
             if (languages?.length) {
                 languages.forEach((language) => {
-                    const countryCode = language.countryCode.length
-                        ? ` (${language.countryCode})`
-                        : '';
+                    const countryCode = language.countryCode ? ` (${language.countryCode})` : '';
 
                     languageOptions.push({
                         label: `${language.language}${countryCode}`,
@@ -220,12 +257,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
-            const langLabels = {};
+            const langLabels: Record<string, string> = {};
             if (languages?.length) {
                 languages.forEach((language) => {
-                    const countryCode = language.countryCode.length
-                        ? `-${language.countryCode}`
-                        : '';
+                    const countryCode = language.countryCode ? `-${language.countryCode}` : '';
 
                     langLabels[language.id] = `${language.languageCode}${countryCode}`;
                 });
@@ -238,7 +273,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly pageTypes$ = this.select(({ pageTypes }) => pageTypes);
 
     readonly setFavoritePages = this.updater<Partial<DotFavoritePagesInfo>>(
-        (state: DotPagesState, favoritePages: DotFavoritePagesInfo) => {
+        (state: DotPagesState, favoritePages: Partial<DotFavoritePagesInfo>) => {
             return {
                 ...state,
                 favoritePages: {
@@ -250,7 +285,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     );
 
     readonly setPages = this.updater<Partial<DotPagesInfo>>(
-        (state: DotPagesState, pagesInfo: DotPagesInfo) => {
+        (state: DotPagesState, pagesInfo: Partial<DotPagesInfo>) => {
             return {
                 ...state,
                 pages: {
@@ -518,15 +553,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         environments,
                         filterParams,
                         collapsedParam
-                    ]: [
-                        ESContent,
-                        DotCurrentUser,
-                        DotLanguage[],
-                        boolean,
-                        boolean,
-                        DotSessionStorageFilter,
-                        boolean
-                    ]) => {
+                    ]: DotPagesSourceData) => {
                         return this.dotCurrentUser
                             .getUserPermissions(
                                 currentUser.userId,
@@ -535,7 +562,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             )
                             .pipe(
                                 take(1),
-                                map((permissionsType: DotPermissionsType) => {
+                                map((permissionsType: DotPermissionsType): DotPagesInitData => {
                                     return [
                                         favoritePages,
                                         currentUser,
@@ -561,16 +588,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     permissions,
                     filterParams,
                     collapsedParam
-                ]: [
-                    ESContent,
-                    DotCurrentUser,
-                    DotLanguage[],
-                    boolean,
-                    boolean,
-                    DotPermissionsType,
-                    DotSessionStorageFilter,
-                    boolean
-                ]): void => {
+                ]: DotPagesInitData): void => {
                     this.setState({
                         favoritePages: {
                             collapsed: collapsedParam,
@@ -586,12 +604,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         loggedUser: {
                             id: currentUser.userId,
                             canRead: {
-                                contentlets: permissions.CONTENTLETS.canRead,
-                                htmlPages: permissions.HTMLPAGES.canRead
+                                contentlets: permissions['CONTENTLETS'].canRead ?? false,
+                                htmlPages: permissions['HTMLPAGES'].canRead ?? false
                             },
                             canWrite: {
-                                contentlets: permissions.CONTENTLETS.canWrite,
-                                htmlPages: permissions.HTMLPAGES.canWrite
+                                contentlets: permissions['CONTENTLETS'].canWrite ?? false,
+                                htmlPages: permissions['HTMLPAGES'].canWrite ?? false
                             }
                         },
                         pages: {
@@ -614,16 +632,16 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         },
                         isEnterprise: false,
                         environments: false,
-                        languages: null,
+                        languages: [],
                         loggedUser: {
-                            id: null,
+                            id: '',
                             canRead: {
-                                contentlets: null,
-                                htmlPages: null
+                                contentlets: false,
+                                htmlPages: false
                             },
                             canWrite: {
-                                contentlets: null,
-                                htmlPages: null
+                                contentlets: false,
+                                htmlPages: false
                             }
                         },
                         pages: {
@@ -874,7 +892,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 item?.contentType === 'dotFavoritePage'
                                     ? item.url
                                     : generateDotFavoritePageUrl({
-                                          pageURI: item.urlMap || item.url.split('?')[0],
+                                          pageURI: item['urlMap'] || item.url.split('?')[0],
                                           languageId: item.languageId,
                                           siteId: item.host
                                       })
@@ -903,10 +921,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
     );
 
-    private getSessionStorageFilterParams(): Observable<DotSessionStorageFilter> {
-        const params = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_FAVORITES_KEY));
+    private getSessionStorageFilterParams(): Observable<DotSessionStorageFilter | null> {
+        const stored = sessionStorage.getItem(SESSION_STORAGE_FAVORITES_KEY);
 
-        return of(params);
+        return of(stored ? (JSON.parse(stored) as DotSessionStorageFilter) : null);
     }
 
     private getLocalStorageFavoritePanelParams(): Observable<boolean> {
@@ -927,7 +945,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const favoritePageUrl = favoritePage
             ? favoritePage.url
             : generateDotFavoritePageUrl({
-                  pageURI: item.urlMap || item.url,
+                  pageURI: item['urlMap'] || item.url,
                   languageId: item.languageId,
                   siteId: item.host
               });
@@ -1015,7 +1033,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         workflow: action,
                         callback: 'ngWorkflowEventCallback',
                         inode: item.inode,
-                        selectedInodes: null
+                        selectedInodes: undefined
                     };
 
                     this.dotWorkflowEventHandlerService.open(wfActionEvent);

@@ -53,15 +53,15 @@ const cardinalities = [
 })
 class MockSearchableDropdownComponent {
     @Input()
-    data: string[];
+    data!: string[];
     @Input()
-    labelPropertyName: string | string[];
+    labelPropertyName!: string | string[];
     @Input()
     pageLinkSize = 3;
     @Input()
-    rows: number;
+    rows!: number;
     @Input()
-    totalRecords: number;
+    totalRecords!: number;
     @Input()
     placeholder = '';
 
@@ -75,16 +75,16 @@ class MockSearchableDropdownComponent {
 
 @Injectable()
 class MockPaginatorService {
-    url: string;
+    url!: string;
 
-    public paginationPerPage: 10;
-    public maxLinksPage: 5;
-    public totalRecords: 40;
+    public paginationPerPage!: 10;
+    public maxLinksPage!: 5;
+    public totalRecords!: 40;
 
     setExtraParams(): void {}
 
     public getWithOffset(): Observable<any[]> {
-        return null;
+        return of([]);
     }
 }
 

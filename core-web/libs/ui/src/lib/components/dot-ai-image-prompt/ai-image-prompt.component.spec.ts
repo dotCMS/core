@@ -67,7 +67,7 @@ describe('DotAIImagePromptComponent', () => {
         };
         patchState(store, { formValue: formMock });
 
-        spectator.triggerEventHandler(AiImagePromptFormComponent, 'generate', null);
+        spectator.triggerEventHandler(AiImagePromptFormComponent, 'generate', undefined);
         expect(generateImageSpy).toHaveBeenCalled();
         expect(dotAiService.generateAndPublishImage).toHaveBeenCalledWith(
             'Test',

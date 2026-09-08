@@ -75,7 +75,7 @@ export const Link = ({ children, attrs }: MarkProps) => {
  */
 export const Heading = ({ children, node }: TextComponentProp) => {
     const attrs = node?.attrs || {};
-    const level = attrs.level || 1;
+    const level = attrs['level'] || 1;
     const Tag = `h${level}` as keyof JSX.IntrinsicElements;
 
     return <Tag>{children}</Tag>;
@@ -121,8 +121,8 @@ export const TextBlock = (props: TextNodeProps = {}) => {
 
     // In React, class is not a valid attribute name, so we need to rename it to className
     if (mark.attrs) {
-        mark.attrs.className = mark.attrs.class;
-        delete mark.attrs.class;
+        mark.attrs['className'] = mark.attrs['class'];
+        delete mark.attrs['class'];
     }
 
     if (!Component) {

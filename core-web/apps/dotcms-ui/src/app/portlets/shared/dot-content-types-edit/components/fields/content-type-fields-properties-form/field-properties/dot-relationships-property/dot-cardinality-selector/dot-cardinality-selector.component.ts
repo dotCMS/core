@@ -35,15 +35,15 @@ export class DotCardinalitySelectorComponent implements OnInit {
     private dotRelationshipService = inject(DotRelationshipService);
 
     @Input()
-    value: number;
+    value!: number;
 
     @Input()
-    disabled: boolean;
+    disabled!: boolean;
 
     @Output()
     switch: EventEmitter<number> = new EventEmitter();
 
-    options: Observable<DotRelationshipCardinality[]>;
+    options!: Observable<DotRelationshipCardinality[]>;
 
     ngOnInit() {
         this.options = this.dotRelationshipService.loadCardinalities();

@@ -478,7 +478,7 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             const saveCall = mockUveStore.saveStyleEditor.mock.calls[0][0];
             expect(saveCall.contentletIdentifier).toBe(
-                originalActiveContentlet?.contentlet.identifier
+                originalActiveContentlet?.contentlet?.identifier
             );
             expect(saveCall.containerIdentifier).toBe(
                 originalActiveContentlet?.container.identifier

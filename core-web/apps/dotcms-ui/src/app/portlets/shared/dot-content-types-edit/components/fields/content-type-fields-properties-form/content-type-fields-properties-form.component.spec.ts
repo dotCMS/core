@@ -43,7 +43,7 @@ const mockDFormFieldData = {
     standalone: false
 })
 class DotHostTesterComponent {
-    mockDFormFieldData: DotCMSContentTypeField;
+    mockDFormFieldData!: DotCMSContentTypeField;
     contentType = dotcmsContentTypeBasicMock;
 }
 
@@ -53,11 +53,11 @@ class DotHostTesterComponent {
 })
 class TestDynamicFieldPropertyDirective {
     @Input()
-    propertyName: string;
+    propertyName!: string;
     @Input()
-    field: DotCMSContentTypeField;
+    field!: DotCMSContentTypeField;
     @Input()
-    group: UntypedFormGroup;
+    group!: UntypedFormGroup;
 }
 
 @Injectable()
@@ -71,7 +71,7 @@ class TestFieldPropertiesService {
     }
 
     getValue(field: DotCMSContentTypeField, propertyName: string): any {
-        return field[propertyName];
+        return field[propertyName as keyof DotCMSContentTypeField];
     }
 
     getDefaultValue(propertyName: string): any {
@@ -180,11 +180,11 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
         it('should init form', () => {
             expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith(DotCMSClazzes.TEXT);
-            expect(comp.form.get('clazz').value).toBe(DotCMSClazzes.TEXT);
+            expect(comp.form.get('clazz')!.value).toBe(DotCMSClazzes.TEXT);
 
-            expect(comp.form.get('id').value).toBe('123');
-            expect(comp.form.get('property1').value).toBe('');
-            expect(comp.form.get('property2').value).toBe(true);
+            expect(comp.form.get('id')!.value).toBe('123');
+            expect(comp.form.get('property1')!.value).toBe('');
+            expect(comp.form.get('property2')!.value).toBe(true);
             expect(comp.form.get('property3')).toBeNull();
         });
 
@@ -218,33 +218,33 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
 
         it('should set system indexed true when select user searchable', () => {
-            comp.form.get('indexed').setValue(false);
-            comp.form.get('searchable').setValue(true);
+            comp.form.get('indexed')!.setValue(false);
+            comp.form.get('searchable')!.setValue(true);
 
-            expect(comp.form.get('indexed').value).toBe(true);
-            expect(comp.form.get('indexed').disabled).toBe(true);
+            expect(comp.form.get('indexed')!.value).toBe(true);
+            expect(comp.form.get('indexed')!.disabled).toBe(true);
         });
 
         it('should set system indexed true when you select show in list', () => {
-            comp.form.get('indexed').setValue(false);
-            comp.form.get('listed').setValue(true);
+            comp.form.get('indexed')!.setValue(false);
+            comp.form.get('listed')!.setValue(true);
 
-            expect(comp.form.get('indexed').value).toBe(true);
-            expect(comp.form.get('indexed').disabled).toBe(true);
+            expect(comp.form.get('indexed')!.value).toBe(true);
+            expect(comp.form.get('indexed')!.disabled).toBe(true);
         });
 
         // TODO: fix because is failing intermittently
         xit('should set system indexed and required true when you select unique', () => {
-            comp.form.get('indexed').setValue(false);
-            comp.form.get('required').setValue(false);
+            comp.form.get('indexed')!.setValue(false);
+            comp.form.get('required')!.setValue(false);
 
-            comp.form.get('unique').setValue(true);
+            comp.form.get('unique')!.setValue(true);
 
-            expect(comp.form.get('indexed').value).toBe(true);
-            expect(comp.form.get('required').value).toBe(true);
+            expect(comp.form.get('indexed')!.value).toBe(true);
+            expect(comp.form.get('required')!.value).toBe(true);
 
-            expect(comp.form.get('indexed').disabled).toBe(true);
-            expect(comp.form.get('required').disabled).toBe(true);
+            expect(comp.form.get('indexed')!.disabled).toBe(true);
+            expect(comp.form.get('required')!.disabled).toBe(true);
         });
     });
 
@@ -262,7 +262,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
 
         it("should set unique and no break when indexed and required doesn't exist", () => {
-            comp.form.get('unique').setValue(true);
+            comp.form.get('unique')!.setValue(true);
 
             expect(comp.form.get('indexed')).toBe(null);
             expect(comp.form.get('required')).toBe(null);
@@ -334,7 +334,9 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             });
 
             it('should create fieldVariables array with newRenderMode when fieldVariables is undefined', () => {
-                comp.formFieldData.fieldVariables = undefined;
+                // The model declares `fieldVariables` required, but `transformFormValue`'s
+                // `|| []` exists for the case where it is absent — which is this test.
+                (comp.formFieldData as Partial<DotCMSContentTypeField>).fieldVariables = undefined;
                 const formValue = { newRenderMode: 'editable', name: 'customField' };
                 const result = comp.transformFormValue(formValue);
 

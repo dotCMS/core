@@ -98,6 +98,34 @@ export function getSortActiveClass(
     return sameOrderby && sameDirection;
 }
 
+/**
+ * One option inside a palette menu section.
+ *
+ * `MenuItem` carries a `[key: string]: any` index signature, which is the only reason `isActive`
+ * compiled at all — and under `noPropertyAccessFromIndexSignature` every read of it becomes
+ * `item['isActive']`. Declaring it here makes it a real property, and states that these options
+ * always have a label and a command.
+ */
+export interface DotPaletteMenuOption extends MenuItem {
+    label: string;
+    /**
+     * `MenuItem`'s own signature, made required. PrimeNG invokes the command with a
+     * `MenuItemCommandEvent`, so declaring it `() => void` here would be narrower than the caller —
+     * the builder's handlers ignore the argument, which a zero-arg function is free to do.
+     */
+    command: NonNullable<MenuItem['command']>;
+    isActive: boolean;
+}
+
+/**
+ * A palette menu section. `MenuItem.items` is optional in general; the two sections this builder
+ * returns always have theirs.
+ */
+export interface DotPaletteMenuSection extends MenuItem {
+    label: string;
+    items: DotPaletteMenuOption[];
+}
+
 export function buildPaletteMenuItems({
     viewMode,
     currentSort,
@@ -108,7 +136,7 @@ export function buildPaletteMenuItems({
     currentSort: DotPaletteSortOption;
     onSortSelect: (sortOption: DotPaletteSortOption) => void;
     onViewSelect: (viewMode: DotPaletteViewMode) => void;
-}): MenuItem[] {
+}): DotPaletteMenuSection[] {
     return [
         {
             label: 'uve.palette.menu.sort.title',

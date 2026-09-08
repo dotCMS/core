@@ -40,7 +40,13 @@ export const INPUT_CONFIG: ConfigActions = {
 
 export const DEFAULT_CONTENT_TYPE = 'asset';
 
-export const CONTENT_TYPES = {
+/**
+ * Maps the two binary-bearing base content types to the field their asset lives on.
+ *
+ * `Partial` because it is looked up with a contentlet's `contentType`, which can be any content
+ * type at all — the caller falls back to {@link DEFAULT_CONTENT_TYPE} on a miss.
+ */
+export const CONTENT_TYPES: Partial<Record<string, string>> = {
     DotAsset: 'asset',
     FileAsset: 'fileAsset'
 };

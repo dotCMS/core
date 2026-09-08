@@ -43,7 +43,7 @@
             <span
                 class="cursor-default text-gray-800"
                 data-testid="modified-date"
-                [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'"
+                [pTooltip]="(contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss') ?? undefined"
                 tooltipPosition="bottom">
                 {{ contentlet?.modDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
             </span>
@@ -59,7 +59,7 @@
             <dot-copy-button
                 data-testid="copy-id-button"
                 [copy]="contentlet.identifier"
-                [label]="contentlet.shortyId"
+                [label]="contentlet['shortyId']"
                 [tooltipText]="'Identifier' | dm"
                 customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
             <a

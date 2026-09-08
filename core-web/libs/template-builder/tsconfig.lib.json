@@ -7,6 +7,12 @@
         "inlineSources": true,
         "types": []
     },
-    "exclude": ["src/test-setup.ts", "src/**/*.spec.ts", "jest.config.ts", "src/**/*.test.ts"],
+    "exclude": [
+        "src/test-setup.ts",
+        "src/**/*.spec.ts",
+        "jest.config.ts",
+        "src/**/*.test.ts",
+        "src/**/mocks.ts"
+    ],
     "include": ["src/**/*.ts"]
 }

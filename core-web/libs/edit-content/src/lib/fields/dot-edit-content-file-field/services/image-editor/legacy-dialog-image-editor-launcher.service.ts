@@ -58,6 +58,20 @@ export class LegacyDialogImageEditorLauncher implements ImageEditorLauncher {
                 data
             });
 
+            // `DialogService.open` returns null when it refuses to open a duplicate — the editor
+            // is already up, so there is no second dialog to listen to. Complete without
+            // emitting rather than wiring a `message` listener that could never be torn down.
+            if (!dialogRef) {
+                subscriber.complete();
+
+                // An explicit no-op teardown, not a bare `return`: the other path returns a real
+                // teardown function, and under `noImplicitReturns` a mix of the two is `TS7030`.
+                // `portlets-dot-query-tool-portlet` has that flag without `strict` and caught it.
+                return () => {
+                    /* nothing was wired up */
+                };
+            }
+
             const onMessage = (event: MessageEvent<ImageEditorMessage>) => {
                 if (event.origin !== window.location.origin) {
                     return;

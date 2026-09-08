@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import { DotCMSAnalytics } from '../../core/shared/models';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../core/shared/models';
 
 // Mock initializeContentAnalytics to avoid real initialization
 const mockAnalyticsInstance = {
@@ -8,7 +8,9 @@ const mockAnalyticsInstance = {
     track: jest.fn()
 } as unknown as DotCMSAnalytics;
 
-const mockInitialize = jest.fn(() => mockAnalyticsInstance);
+const mockInitialize = jest.fn<(config: DotCMSAnalyticsConfig) => DotCMSAnalytics>(
+    () => mockAnalyticsInstance
+);
 
 jest.mock('../../core/dot-analytics.content', () => ({
     initializeContentAnalytics: mockInitialize

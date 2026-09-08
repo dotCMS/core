@@ -25,7 +25,7 @@
                 </label>
                 <div class="toggle-row flex items-center gap-2.5">
                     <p-toggleswitch
-                        [ngModel]="config()[syncKey()]"
+                        [ngModel]="syncValue"
                         (ngModelChange)="onChange(syncKey(), $event)" />
                 </div>
             </div>

@@ -165,6 +165,39 @@
                         </configuration>
                     </execution>
 
+                    <!-- Runs before lint so a type error surfaces before the slower gate. Two
+                         kinds of project rely on it. Vite projects build with esbuild, which does
+                         not type check, so `build` never catches them and this is their only gate.
+                         Every project with a tsconfig.spec.json gets the target inferred by
+                         tools/plugins/typecheck-spec.plugin.mjs, because `nx test` runs ts-jest
+                         with isolatedModules: it transpiles without building a program, so a
+                         spec can carry type errors indefinitely while its suite stays green.
+                         That puts the target on 51 projects against lint's 56.
+
+                         The root `core-web` project carries skip:typecheck: its target is
+                         `tsc -p tsconfig.base.json` with no emit, which compiles the whole workspace
+                         as one program (specs and scripts included) and reports ~2570 errors. It
+                         has never passed and is not a per-project gate. -->
+                    <execution>
+                        <id>typecheck-test</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${skip.validate}</skip>
+                            <arguments>
+                                <argument>exec</argument>
+                                <argument>nx</argument>
+                                <argument>affected</argument>
+                                <argument>-t</argument>
+                                <argument>typecheck</argument>
+                                <argument>--base=${git.origin.branch}</argument>
+                                <argument>--exclude=tag:skip:typecheck</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
                     <execution>
                         <id>lint-test</id>
                         <goals>

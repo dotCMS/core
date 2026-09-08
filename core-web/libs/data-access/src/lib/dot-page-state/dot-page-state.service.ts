@@ -69,7 +69,7 @@ export class DotPageStateService {
      */
     get(options: DotPageRenderOptions = {}): void {
         if (!options.url) {
-            options.url = this.dotRouterService.queryParams.url;
+            options.url = this.dotRouterService.queryParams['url'];
         }
 
         this.requestPage(options).subscribe((pageState: DotPageRenderState) => {
@@ -83,7 +83,7 @@ export class DotPageStateService {
      * @returns {DotPageRenderState}
      * @memberof DotPageStateService
      */
-    getInternalNavigationState(): DotPageRenderState {
+    getInternalNavigationState(): DotPageRenderState | null {
         if (this.isInternalNavigation) {
             this.isInternalNavigation = false;
 
@@ -127,7 +127,7 @@ export class DotPageStateService {
     setInternalNavigationState(state: DotPageRenderState): void {
         const urlParam = generateDotFavoritePageUrl({
             deviceInode: state.viewAs.device?.inode,
-            languageId: state.viewAs.language.id,
+            languageId: state.viewAs.language?.id || 1,
             pageURI: state.page.pageURI,
             siteId: state.site?.identifier
         });
@@ -151,7 +151,7 @@ export class DotPageStateService {
 
         this.getRunningExperiment(state.page.identifier)
             .pipe(take(1))
-            .subscribe((experiment: DotExperiment) => {
+            .subscribe((experiment: DotExperiment | null) => {
                 if (experiment) {
                     state.runningExperiment = experiment;
                     this.setCurrentState(state);
@@ -169,7 +169,7 @@ export class DotPageStateService {
      * @param {boolean} [lock=null]
      * @memberof DotPageStateService
      */
-    setLock(options: DotPageRenderOptions, lock: boolean = null): void {
+    setLock(options: DotPageRenderOptions, lock: boolean | null = null): void {
         this.getLockMode(this.currentState.page.inode, lock)
             .pipe(
                 take(1),
@@ -199,7 +199,7 @@ export class DotPageStateService {
     setLocalState(state: DotPageRenderState): void {
         this.getRunningExperiment(state.page.identifier)
             .pipe(take(1))
-            .subscribe((experiment: DotExperiment) => {
+            .subscribe((experiment: DotExperiment | null) => {
                 if (experiment) {
                     state.runningExperiment = experiment;
                 }
@@ -277,42 +277,37 @@ export class DotPageStateService {
                 return this.handleSetPageStateFailed(err);
             }),
             take(1),
-            switchMap(
-                (
-                    [page, user]: [page: DotPageRenderParameters, user: CurrentUser] = [null, null]
-                ) => {
-                    if (page) {
-                        const urlParam = generateDotFavoritePageUrl({
-                            deviceInode: page.viewAs?.device?.inode,
-                            languageId: page.viewAs?.language?.id || 1,
-                            pageURI: page.page?.pageURI,
-                            siteId: page.site?.identifier
-                        });
+            switchMap((result) => {
+                // `handleSetPageStateFailed` collapses the error path to `undefined`,
+                // so this destructure has to tolerate it.
+                const [page, user] = result ?? [null, null];
 
-                        return forkJoin([
-                            this.getFavoritePage(user, urlParam),
-                            this.getRunningExperiment(page.page.identifier)
-                        ]).pipe(
-                            take(1),
-                            switchMap(
-                                ([favoritePage, experiment]: [
-                                    favoritePage: DotCMSContentlet,
-                                    experiment: DotExperiment
-                                ]) => {
-                                    return this.setLocalPageState(
-                                        page,
-                                        favoritePage,
-                                        experiment,
-                                        options.viewAs?.device
-                                    );
-                                }
-                            )
-                        );
-                    }
+                if (page && user) {
+                    const urlParam = generateDotFavoritePageUrl({
+                        deviceInode: page.viewAs?.device?.inode,
+                        languageId: page.viewAs?.language?.id || 1,
+                        pageURI: page.page?.pageURI,
+                        siteId: page.site?.identifier
+                    });
 
-                    return of(this.currentState);
+                    return forkJoin([
+                        this.getFavoritePage(user, urlParam),
+                        this.getRunningExperiment(page.page.identifier)
+                    ]).pipe(
+                        take(1),
+                        switchMap(([favoritePage, experiment]) => {
+                            return this.setLocalPageState(
+                                page,
+                                favoritePage,
+                                experiment ?? undefined,
+                                options.viewAs?.device
+                            );
+                        })
+                    );
                 }
-            )
+
+                return of(this.currentState);
+            })
         );
     }
 
@@ -367,7 +362,10 @@ export class DotPageStateService {
         return this.loginService.auth.loginAsUser || this.loginService.auth.user;
     }
 
-    private getLockMode(workingInode: string, lock: boolean): Observable<string> {
+    private getLockMode(
+        workingInode: string,
+        lock: boolean | null
+    ): Observable<string | null | undefined> {
         if (lock === true) {
             return this.dotContentletLockerService.lock(workingInode).pipe(map((x) => x?.message));
         } else if (lock === false) {
@@ -379,7 +377,10 @@ export class DotPageStateService {
         return of(null);
     }
 
-    private handleSetPageStateFailed(err: HttpErrorResponse): Observable<DotHttpErrorHandled> {
+    // Declared as `undefined` because that is what it emits: the error is handled
+    // for its side effects and the stream is collapsed with `map(() => undefined)`.
+    // The caller relies on this to fall back to its `[null, null]` destructuring default.
+    private handleSetPageStateFailed(err: HttpErrorResponse): Observable<undefined> {
         return this.dotHttpErrorManagerService.handle(err).pipe(
             take(1),
             tap(({ status }: DotHttpErrorHandled) => {
@@ -397,7 +398,10 @@ export class DotPageStateService {
         this.state$.next(state);
     }
 
-    private getFavoritePage(user: CurrentUser, urlParam: string): Observable<DotCMSContentlet> {
+    private getFavoritePage(
+        user: CurrentUser,
+        urlParam: string
+    ): Observable<DotCMSContentlet | undefined> {
         return this.dotFavoritePageService
             .get({
                 limit: 10,
@@ -416,13 +420,13 @@ export class DotPageStateService {
 
                     return of(null);
                 }),
-                switchMap((content: ESContent) => {
+                switchMap((content: ESContent | null) => {
                     return of(content?.jsonObjectView?.contentlets[0]);
                 })
             );
     }
 
-    private getRunningExperiment(pageId: string): Observable<DotExperiment> {
+    private getRunningExperiment(pageId: string): Observable<DotExperiment | null> {
         return this.dotLicenseService.isEnterprise().pipe(
             switchMap((isEnterprise: boolean) => {
                 if (!isEnterprise) {
@@ -442,7 +446,7 @@ export class DotPageStateService {
 
                             return of(null);
                         }),
-                        switchMap((experiments: DotExperiment[]) => {
+                        switchMap((experiments: DotExperiment[] | null) => {
                             return of(
                                 experiments && experiments.length > 0 ? experiments[0] : null
                             );

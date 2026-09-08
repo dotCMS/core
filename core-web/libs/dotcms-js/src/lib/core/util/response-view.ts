@@ -15,47 +15,44 @@ import { DotCMSResponse } from '@dotcms/dotcms-models';
  * </code>
  */
 export class ResponseView<T = any> {
-    private bodyJsonObject: DotCMSResponse<T>;
+    // `HttpResponse.body` is nullable, so the parsed body genuinely can be absent.
+    private bodyJsonObject: DotCMSResponse<T> | null;
     private headers: HttpHeaders;
 
     public constructor(private resp: HttpResponse<DotCMSResponse<T>>) {
-        try {
-            this.bodyJsonObject = resp.body;
-            this.headers = resp.headers;
-        } catch (e) {
-            this.bodyJsonObject = null;
-        }
+        this.bodyJsonObject = resp.body;
+        this.headers = resp.headers;
     }
 
-    public header(headerName: string): string {
+    public header(headerName: string): string | null {
         return this.headers.get(headerName);
     }
 
     get i18nMessagesMap(): { [key: string]: string } {
-        return this.bodyJsonObject.i18nMessagesMap;
+        return this.bodyJsonObject?.i18nMessagesMap ?? {};
     }
 
-    get contentlets(): T {
-        return this.bodyJsonObject.contentlets;
+    get contentlets(): T | undefined {
+        return this.bodyJsonObject?.contentlets;
     }
 
-    get entity(): T {
-        return this.bodyJsonObject.entity;
+    get entity(): T | undefined {
+        return this.bodyJsonObject?.entity;
     }
 
-    get tempFiles(): T {
-        return this.bodyJsonObject.tempFiles;
+    get tempFiles(): T | undefined {
+        return this.bodyJsonObject?.tempFiles;
     }
 
     get errorsMessages(): string {
         let errorMessages = '';
 
-        if (this.bodyJsonObject.errors) {
+        if (this.bodyJsonObject?.errors) {
             this.bodyJsonObject.errors.forEach((e: any) => {
                 errorMessages += e.message;
             });
         } else {
-            errorMessages = this.bodyJsonObject.messages.toString();
+            errorMessages = this.bodyJsonObject?.messages.toString() ?? '';
         }
 
         return errorMessages;
@@ -71,7 +68,7 @@ export class ResponseView<T = any> {
 
     public existError(errorCode: string): boolean {
         return (
-            this.bodyJsonObject.errors &&
+            !!this.bodyJsonObject?.errors &&
             this.bodyJsonObject.errors.filter((e: any) => e.errorCode === errorCode).length > 0
         );
     }

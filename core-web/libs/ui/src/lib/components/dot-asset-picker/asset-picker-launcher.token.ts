@@ -17,10 +17,12 @@ import { DotAssetPickerEntryOptions } from './asset-picker-config';
  * the whole form. The launcher therefore stays stateless and borrows the caller's service — which
  * also means it needs no `DialogService` provider next to it in any host.
  *
- * **It returns the raw `DynamicDialogRef`.** Each entry point already tracks its refs so it can
- * close an open picker when the field is destroyed; PrimeNG never closes dialogs on service
- * teardown (`DialogService` has no `ngOnDestroy`), so hiding the ref behind an observable would
- * force every caller to invent a second teardown path.
+ * **It returns the raw `DynamicDialogRef`** — or `null`, which is how `DialogService.open` reports
+ * the duplicate refusal described above, passed straight through rather than hidden behind a cast.
+ * Each entry point already tracks its refs so it can close an open picker when the field is
+ * destroyed; PrimeNG never closes dialogs on service teardown (`DialogService` has no
+ * `ngOnDestroy`), so hiding the ref behind an observable would force every caller to invent a second
+ * teardown path.
  */
 export interface DotAssetPickerLauncher {
     /**
@@ -33,7 +35,7 @@ export interface DotAssetPickerLauncher {
         dialogService: DialogService,
         options: DotAssetPickerEntryOptions,
         overrides?: Pick<DynamicDialogConfig, 'baseZIndex'>
-    ): DynamicDialogRef;
+    ): DynamicDialogRef | null;
 }
 
 /**

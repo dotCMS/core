@@ -14,7 +14,7 @@ import {
     DotHttpErrorManagerService,
     DotTempFileUploadService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSTempFile, DotPageRenderParameters } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotPageRenderParameters } from '@dotcms/dotcms-models';
 
 import { DotFavoritePageFormData } from '../dot-favorite-page.component';
 
@@ -25,14 +25,16 @@ export const enum DotFavoritePageActionState {
 
 export interface DotFavoritePageState {
     pageRenderedHtml?: string;
-    formState: DotFavoritePageFormData;
-    imgWidth: number;
-    imgHeight: number;
-    renderThumbnail: boolean;
-    showFavoriteEmptySkeleton: boolean;
+    // Null between `setInitialStateData` and the page render resolving — that method seeds
+    // every one of these with null, so the state genuinely holds it.
+    formState: DotFavoritePageFormData | null;
+    imgWidth: number | null;
+    imgHeight: number | null;
+    renderThumbnail: boolean | null;
+    showFavoriteEmptySkeleton: boolean | null;
     loading: boolean;
     closeDialog: boolean;
-    actionState: DotFavoritePageActionState;
+    actionState: DotFavoritePageActionState | null;
 }
 
 interface DotFavoritePageInitialProps {
@@ -141,7 +143,17 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             const file = new File([formData.thumbnail], 'image.png');
 
             return this.dotTempFileUploadService.upload(file).pipe(
-                switchMap(([{ id, image }]: DotCMSTempFile[]) => {
+                switchMap((response) => {
+                    // `upload` resolves to a status-code string on failure, not an array —
+                    // destructuring that would have yielded characters.
+                    if (!Array.isArray(response)) {
+                        return throwError(() =>
+                            this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
+                        );
+                    }
+
+                    const [{ id, image }] = response;
+
                     if (!image) {
                         return throwError(() =>
                             this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
@@ -162,7 +174,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
         return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
             'dotFavoritePage',
             {
-                screenshot: formData.thumbnail,
+                screenshot: formData.thumbnail ?? null,
                 title: formData.title,
                 url: formData.url,
                 order: formData.order,
@@ -178,13 +190,15 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
 
     private setUnknownPageInitialStateData(
         formInitialState: DotFavoritePageFormData,
-        favoritePage: DotCMSContentlet
+        // Optional, matching `DotFavoritePageInitialProps` — the body already reads it
+        // through `?.` and truthiness checks.
+        favoritePage?: DotCMSContentlet
     ) {
         this.patchState({
             loading: false,
             formState: {
                 ...formInitialState,
-                title: favoritePage?.title
+                title: favoritePage?.title ?? ''
             },
             imgHeight: IMG_RATIO_43,
             imgWidth: 1024,
@@ -195,7 +209,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     }
 
     constructor() {
-        super(null);
+        super();
     }
 
     /**
@@ -225,7 +239,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             url: favoritePageUrl
         };
 
-        const urlParams = { url: favoritePageUrl.split('?')[0] };
+        const urlParams: Record<string, string> = { url: favoritePageUrl.split('?')[0] };
         const searchParams = new URLSearchParams(favoritePageUrl.split('?')[1]);
 
         for (const entry of searchParams) {
@@ -247,13 +261,14 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                             title:
                                 pageRender.urlContentMap?.title ||
                                 favoritePage?.title ||
-                                pageRender.page.title
+                                pageRender.page.title ||
+                                ''
                         },
                         imgHeight:
-                            parseInt(pageRender.viewAs.device?.cssHeight, 10) ||
-                            (parseInt(pageRender.viewAs.device?.cssWidth, 10) || 1024) /
+                            parseInt(pageRender.viewAs.device?.cssHeight ?? '', 10) ||
+                            (parseInt(pageRender.viewAs.device?.cssWidth ?? '', 10) || 1024) /
                                 IMG_RATIO_43,
-                        imgWidth: parseInt(pageRender.viewAs.device?.cssWidth, 10) || 1024,
+                        imgWidth: parseInt(pageRender.viewAs.device?.cssWidth ?? '', 10) || 1024,
                         pageRenderedHtml: pageRender.page.rendered,
                         renderThumbnail: !(favoritePage && !!favoritePage['screenshot']),
                         showFavoriteEmptySkeleton: favoritePage && !favoritePage['screenshot']

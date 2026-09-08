@@ -87,18 +87,18 @@ describe('DotAddPersonaDialogComponent', () => {
 
         it('should set dialog actions with correct labels and initial state', () => {
             expect(spectator.component.dialogActions).toBeDefined();
-            expect(spectator.component.dialogActions.accept.label).toEqual('Accept');
-            expect(spectator.component.dialogActions.accept.disabled).toBe(true);
-            expect(spectator.component.dialogActions.accept.action).toEqual(expect.any(Function));
-            expect(spectator.component.dialogActions.cancel.label).toEqual('Cancel');
-            expect(spectator.component.dialogActions.cancel.action).toEqual(expect.any(Function));
+            expect(spectator.component.dialogActions.accept!.label).toEqual('Accept');
+            expect(spectator.component.dialogActions.accept!.disabled).toBe(true);
+            expect(spectator.component.dialogActions.accept!.action).toEqual(expect.any(Function));
+            expect(spectator.component.dialogActions.cancel!.label).toEqual('Cancel');
+            expect(spectator.component.dialogActions.cancel!.action).toEqual(expect.any(Function));
         });
 
         it('should enable accept button when form becomes valid', () => {
             spectator.triggerEventHandler('dot-create-persona-form', 'isValid', true);
             spectator.detectChanges();
 
-            expect(spectator.component.dialogActions.accept.disabled).toBe(false);
+            expect(spectator.component.dialogActions.accept!.disabled).toBe(false);
         });
 
         it('should reset form, disable accept and set visible to false on closeDialog', () => {
@@ -109,7 +109,7 @@ describe('DotAddPersonaDialogComponent', () => {
 
             expect(formComponent.resetForm).toHaveBeenCalled();
             expect(spectator.component.visible).toBe(false);
-            expect(spectator.component.dialogActions.accept.disabled).toBe(true);
+            expect(spectator.component.dialogActions.accept!.disabled).toBe(true);
         });
 
         it('should call closeDialog when p-dialog visibleChange emits false', () => {
@@ -177,12 +177,12 @@ describe('DotAddPersonaDialogComponent', () => {
                 );
                 expect(spectator.component.createdPersona.emit).toHaveBeenCalledTimes(1);
                 expect(spectator.component.closeDialog).toHaveBeenCalled();
-                expect(spectator.component.dialogActions.accept.disabled).toBe(true);
+                expect(spectator.component.dialogActions.accept!.disabled).toBe(true);
             });
 
             it('should call dotHttpErrorManagerService when endpoint fails and re-enable accept button', () => {
                 const fake500Response = mockResponseView(500);
-                spectator.component.dialogActions.accept.disabled = true;
+                spectator.component.dialogActions.accept!.disabled = true;
                 jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
@@ -191,7 +191,7 @@ describe('DotAddPersonaDialogComponent', () => {
                 submitForm();
 
                 expect(spectator.component.createdPersona.emit).not.toHaveBeenCalled();
-                expect(spectator.component.dialogActions.accept.disabled).toBe(false);
+                expect(spectator.component.dialogActions.accept!.disabled).toBe(false);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
             });

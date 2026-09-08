@@ -4,6 +4,9 @@ import { DotContentState } from '@dotcms/dotcms-models';
 /**
  * @deprecated Use dot-contentlet-status-badge instead
  */
+/** The four states this icon renders, and exactly the keys of its `labels` map. */
+type DotStateIconType = 'archived' | 'published' | 'revision' | 'draft';
+
 @Component({
     tag: 'dot-state-icon',
     styleUrl: 'dot-state-icon.scss',
@@ -11,11 +14,11 @@ import { DotContentState } from '@dotcms/dotcms-models';
 })
 export class DotStateIcon {
     @Prop({ reflect: true })
-    state: DotContentState = null;
+    state?: DotContentState;
     @Prop({ reflect: true })
     size = '16px';
     @Prop({ reflect: true })
-    labels = {
+    labels: Record<DotStateIconType, string> = {
         archived: 'Archived',
         published: 'Published',
         revision: 'Revision',
@@ -23,8 +26,10 @@ export class DotStateIcon {
     };
 
     render() {
-        const state = this.state ? this.getType(this.state) : '';
-        const name = this.labels[state];
+        const state = this.state ? this.getType(this.state) : undefined;
+        // Undefined with no state, which is also what the previous `''` produced when used as a
+        // key: neither is a label, so the tooltip and aria-label stay empty.
+        const name = state ? this.labels[state] : undefined;
         return (
             <Host
                 aria-label={name}
@@ -39,7 +44,13 @@ export class DotStateIcon {
         );
     }
 
-    private getType({ live, working, archived, deleted, hasLiveVersion }: DotContentState): string {
+    private getType({
+        live,
+        working,
+        archived,
+        deleted,
+        hasLiveVersion
+    }: DotContentState): DotStateIconType {
         if (this.isTrue(deleted) || this.isTrue(archived)) {
             return 'archived'; // crossed
         }
@@ -57,7 +68,11 @@ export class DotStateIcon {
         return 'draft'; // empty
     }
 
-    private isTrue(value: string | boolean): boolean {
+    /**
+     * `undefined` is accepted because `archived`, `deleted` and `hasLiveVersion` are all optional on
+     * {@link DotContentState} — an absent flag is not true, which the falsy branch already returned.
+     */
+    private isTrue(value: string | boolean | undefined): boolean {
         return value ? value.toString() === 'true' : false;
     }
 }

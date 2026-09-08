@@ -96,7 +96,7 @@ describe('DotEditContentFormResolutions', () => {
 
         it('should return defaultValue when field value is not in contentlet', () => {
             const contentlet = { ...mockContentlet };
-            delete contentlet.testField;
+            delete contentlet['testField'];
 
             const result = resolutionValue[FIELD_TYPES.TEXTAREA](contentlet, mockField);
             expect(result).toBe('default value');
@@ -243,7 +243,10 @@ describe('DotEditContentFormResolutions', () => {
 
         it('should return defaultValue when hostName is missing', () => {
             const contentlet = { ...mockContentlet };
-            delete contentlet.hostName;
+            // Cast at the delete: the property is required on `DotCMSContentlet`, and this
+            // test is specifically about it being absent. The variable keeps its type for
+            // the resolution call below.
+            delete (contentlet as Partial<DotCMSContentlet>).hostName;
 
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
             expect(result).toBe('default value');
@@ -251,7 +254,10 @@ describe('DotEditContentFormResolutions', () => {
 
         it('should return defaultValue when url is missing', () => {
             const contentlet = { ...mockContentlet };
-            delete contentlet.url;
+            // Cast at the delete: the property is required on `DotCMSContentlet`, and this
+            // test is specifically about it being absent. The variable keeps its type for
+            // the resolution call below.
+            delete (contentlet as Partial<DotCMSContentlet>).url;
 
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
             expect(result).toBe('default value');
@@ -286,7 +292,10 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         it('should return defaultValue when contentlet is undefined', () => {
-            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField);
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](
+                undefined as unknown as null,
+                mockField
+            );
             expect(result).toBe('default value');
         });
 
@@ -295,7 +304,10 @@ describe('DotEditContentFormResolutions', () => {
             delete field.defaultValue;
 
             const contentlet = { ...mockContentlet };
-            delete contentlet.hostName;
+            // Cast at the delete: the property is required on `DotCMSContentlet`, and this
+            // test is specifically about it being absent. The variable keeps its type for
+            // the resolution call below.
+            delete (contentlet as Partial<DotCMSContentlet>).hostName;
 
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field);
             expect(result).toBe('');
@@ -310,9 +322,13 @@ describe('DotEditContentFormResolutions', () => {
             });
 
             it('should return folderPath from queryParams when contentlet is undefined', () => {
-                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField, {
-                    folderPath: 'default/level1/'
-                });
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](
+                    undefined as unknown as null,
+                    mockField,
+                    {
+                        folderPath: 'default/level1/'
+                    }
+                );
                 expect(result).toBe('default/level1/');
             });
 

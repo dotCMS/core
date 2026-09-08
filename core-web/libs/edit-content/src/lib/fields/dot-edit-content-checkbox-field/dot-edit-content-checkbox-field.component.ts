@@ -42,7 +42,7 @@ export class DotEditContentCheckboxFieldComponent extends BaseWrapperField {
     /**
      * Input contentlet DotCMSContentlet
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Computed signal that holds the options for the checkbox field.
      * It is used to display the options for the checkbox field.

@@ -58,14 +58,14 @@ describe('DotLinkComponent', () => {
     });
 
     it('should set link properties and attr correctly', () => {
-        expect(link.attributes.target).toEqual('_blank');
-        expect(link.properties.href).toEqual('/api/v1/123');
-        expect(link.properties.title).toEqual('/api/v1/123');
+        expect(link.attributes['target']).toEqual('_blank');
+        expect(link.properties['href']).toEqual('/api/v1/123');
+        expect(link.properties['title']).toEqual('/api/v1/123');
     });
 
     it('should update link when href is change', () => {
-        expect(link.properties.href).toEqual('/api/v1/123');
-        expect(link.properties.title).toEqual('/api/v1/123');
+        expect(link.properties['href']).toEqual('/api/v1/123');
+        expect(link.properties['title']).toEqual('/api/v1/123');
 
         hostComp.updateLink('/api/new/1000');
         hostFixture.detectChanges();
@@ -73,8 +73,8 @@ describe('DotLinkComponent', () => {
         // Re-query the link after changes
         link = de.query(By.css('a'));
 
-        expect(link.properties.href).toEqual('/api/new/1000');
-        expect(link.properties.title).toEqual('/api/new/1000');
+        expect(link.properties['href']).toEqual('/api/new/1000');
+        expect(link.properties['title']).toEqual('/api/new/1000');
     });
 
     it('should set the link relative always', () => {
@@ -84,7 +84,7 @@ describe('DotLinkComponent', () => {
         // Re-query the link after changes
         link = de.query(By.css('a'));
 
-        expect(link.properties.href).toEqual('/api/no/start/slash');
-        expect(link.properties.title).toEqual('/api/no/start/slash');
+        expect(link.properties['href']).toEqual('/api/no/start/slash');
+        expect(link.properties['title']).toEqual('/api/no/start/slash');
     });
 });

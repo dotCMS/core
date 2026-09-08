@@ -12,7 +12,7 @@ import { Component, Element, Event, EventEmitter, Prop, Host, h } from '@stencil
 })
 export class DotBinaryFilePreviewComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** file name to be displayed */
     @Prop({ reflect: true, mutable: true })
@@ -28,7 +28,7 @@ export class DotBinaryFilePreviewComponent {
 
     /** Emit when the file is deleted */
     @Event()
-    delete: EventEmitter;
+    delete!: EventEmitter;
 
     render() {
         return this.fileName ? (
@@ -46,8 +46,10 @@ export class DotBinaryFilePreviewComponent {
 
     private clearFile(): void {
         this.delete.emit();
-        this.fileName = null;
-        this.previewUrl = null;
+        // Back to the props' own declared default rather than null: `render` gates on `fileName`
+        // being truthy, so both are equivalent, and `''` is what the component started with.
+        this.fileName = '';
+        this.previewUrl = '';
     }
 
     private getPreviewElement() {

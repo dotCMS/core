@@ -37,7 +37,7 @@ class MockMarkdownComponent {}
     standalone: false
 })
 class TestHostComponent {
-    app: DotApp;
+    app!: DotApp;
 }
 
 const messages = {
@@ -126,8 +126,8 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         expect(
             de.query(By.css('.dot-apps-configuration__configurations')).nativeElement.textContent
         ).toContain(`${appData.configurationsCount} ${messages['apps.configurations']}`);
-        const description = component.app.description
-            .replace(/\n/gi, '')
+        const description = component.app
+            .description!.replace(/\n/gi, '')
             .replace(/\r/gi, '')
             .replace(/ {3}/gi, '');
         expect(
@@ -149,7 +149,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         expect(size).toBe('large');
 
         expect(dotCopy.label).toBe(component.app.key);
-        expect(dotCopy.copy).toBe(component.app.key);
+        expect(dotCopy.copy()).toBe(component.app.key);
     });
 
     it('should redirect to detail configuration list page when app Card clicked', () => {

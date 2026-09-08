@@ -8,6 +8,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -49,7 +50,7 @@ describe('ForgotPasswordComponent', () => {
         const loginPageState = spectator.inject(
             DotLoginPageStateService
         ) as unknown as MockDotLoginPageStateService;
-        loginPageState.get().subscribe((loginInfo) => {
+        loginPageState.get().subscribe((loginInfo: DotLoginInformation) => {
             expect(loginInfo.i18nMessagesMap['forgot-password']).toEqual('Forgot Password');
             expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toContain('Email Address');
             expect(loginInfo.i18nMessagesMap['cancel']).toContain('Cancel');
@@ -71,13 +72,13 @@ describe('ForgotPasswordComponent', () => {
     it('should do the request password correctly and redirect to login', fakeAsync(() => {
         tick();
         spectator.detectChanges();
-        const control = spectator.component.forgotPasswordForm.get('login');
+        const control = spectator.component.forgotPasswordForm.get('login')!;
         control.setValue('test');
         control.markAsTouched();
         control.markAsDirty();
         spectator.detectChanges();
 
-        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(''));
         jest.spyOn(window, 'confirm').mockReturnValue(true);
         spectator.detectChanges();
 
@@ -100,7 +101,7 @@ describe('ForgotPasswordComponent', () => {
     it('should show error message for required form fields', fakeAsync(() => {
         tick();
         spectator.detectChanges();
-        const control = spectator.component.forgotPasswordForm.get('login');
+        const control = spectator.component.forgotPasswordForm.get('login')!;
         control.setValue('');
         control.markAsTouched();
         control.markAsDirty();
@@ -139,7 +140,7 @@ describe('ForgotPasswordComponent', () => {
         spectator.detectChanges();
 
         jest.spyOn(window, 'confirm').mockReturnValue(true);
-        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(''));
         spectator.component.forgotPasswordForm.setValue({ login: 'test@test.com' });
         spectator.detectChanges();
         spectator.click('[data-testid="submitButton"]');

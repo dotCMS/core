@@ -26,7 +26,7 @@ export class DotWorkflowTaskComponent implements OnInit {
     ngOnInit() {
         this.dotWorkflowTaskDetailService.view({
             header: this.dotMessageService.get('workflow.task.dialog.header'),
-            id: this.route.snapshot.params.asset
+            id: this.route.snapshot.params['asset']
         });
     }
 

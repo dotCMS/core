@@ -16,8 +16,8 @@ import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy
     imports: [DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule],
     changeDetection: ChangeDetectionStrategy.Eager,
     host: {
-        '[class.bg-gray-100]': '!site()?.configured',
-        '[class.text-gray-500]': '!site()?.configured',
+        '[class.bg-gray-100]': '!site().configured',
+        '[class.text-gray-500]': '!site().configured',
         '(click)': 'onClick($event)'
     }
 })
@@ -25,7 +25,7 @@ export class DotAppsConfigurationItemComponent {
     private dotMessageService = inject(DotMessageService);
     private dotAlertConfirmService = inject(DotAlertConfirmService);
 
-    site = input<DotAppsSite>();
+    site = input.required<DotAppsSite>();
 
     edit = output<DotAppsSite>();
     export = output<DotAppsSite>();
@@ -43,7 +43,7 @@ export class DotAppsConfigurationItemComponent {
      * @param DotAppsSites site
      * @memberof DotAppsConfigurationItemComponent
      */
-    editConfigurationSite($event: MouseEvent, site?: DotAppsSite): void {
+    editConfigurationSite($event: MouseEvent, site: DotAppsSite): void {
         $event.stopPropagation();
         this.edit.emit(site);
     }

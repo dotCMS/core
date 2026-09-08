@@ -27,8 +27,8 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
     imports: [DotIframeDialogComponent]
 })
 class TestHostComponent {
-    url: string;
-    header: string;
+    url: string | null = null;
+    header!: string;
     onBeforeClose = jest.fn();
 }
 
@@ -40,8 +40,8 @@ class TestHostComponent {
     imports: [DotIframeDialogComponent]
 })
 class TestHost2Component {
-    url: string;
-    header: string;
+    url: string | null = null;
+    header!: string;
     onBeforeClose = jest.fn();
 }
 
@@ -140,11 +140,12 @@ describe('DotIframeDialogComponent', () => {
             });
 
             describe('dot-iframe', () => {
-                let dotIframeComponent: { src?: string };
+                let dotIframeComponent: { src?: () => string };
 
                 beforeEach(() => {
                     dotIframeDe = de?.query(By.css('dot-iframe')) ?? null;
-                    dotIframeComponent = dotIframeDe?.componentInstance ?? ({} as { src?: string });
+                    dotIframeComponent =
+                        dotIframeDe?.componentInstance ?? ({} as { src?: () => string });
                 });
 
                 it('should have', () => {
@@ -152,7 +153,7 @@ describe('DotIframeDialogComponent', () => {
                 });
 
                 it('should set src attr', () => {
-                    expect(dotIframeComponent.src).toBe('hello/world');
+                    expect(dotIframeComponent.src?.()).toBe('hello/world');
                 });
 
                 it('should focus in the iframe window on dot-iframe load', () => {

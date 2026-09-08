@@ -27,7 +27,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
     private dotWorkflowService = inject(DotWorkflowService);
 
-    options$: Observable<DotCMSWorkflow[]>;
+    options$!: Observable<DotCMSWorkflow[]>;
     value: DotCMSWorkflow[] = [];
     disabled = false;
 
@@ -41,7 +41,7 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
      * @param {*} fn
      * @memberof DotWorkflowsSelectorFieldComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 

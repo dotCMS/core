@@ -1,13 +1,27 @@
+import { Node, Schema } from 'prosemirror-model';
 import { Step, StepResult } from 'prosemirror-transform';
+
+/**
+ * ProseMirror declares `Node.attrs` readonly, but changing document attributes requires
+ * mutating them in place — that is the whole point of these steps. This view is the single
+ * place where that is spelled out, instead of casting at each assignment.
+ */
+type MutableDoc = { attrs: Record<string, unknown>; type: { defaultAttrs: unknown } };
+
+const asMutable = (doc: Node) => doc as unknown as MutableDoc;
+
+const isDuplicateStepId = (err: unknown, stepType: string) =>
+    err instanceof Error && err.message === `Duplicate use of step JSON ID ${stepType}`;
 
 // Adapted from https://discuss.prosemirror.net/t/changing-doc-attrs/784
 export class SetDocAttrStep extends Step {
     private key: string;
-    private value: string;
-    private prevValue: string;
+    private value: unknown;
+    /** Captured by {@link apply} so {@link invert} can put the old value back. */
+    private prevValue: unknown;
     private STEP_TYPE = 'setDocAttr';
 
-    constructor(key, value) {
+    constructor(key: string, value: unknown) {
         super();
         this.key = key;
         this.value = value;
@@ -17,7 +31,7 @@ export class SetDocAttrStep extends Step {
         return this.STEP_TYPE;
     }
 
-    static override fromJSON(_schema, json) {
+    static override fromJSON(_schema: Schema, json: { key: string; value: unknown }) {
         return new SetDocAttrStep(json.key, json.value);
     }
 
@@ -25,21 +39,24 @@ export class SetDocAttrStep extends Step {
         try {
             Step.jsonID(this.prototype.STEP_TYPE, SetDocAttrStep);
         } catch (err) {
-            if (err.message !== `Duplicate use of step JSON ID ${this.prototype.STEP_TYPE}`)
+            if (!isDuplicateStepId(err, this.prototype.STEP_TYPE)) {
                 throw err;
+            }
         }
 
         return true;
     }
 
-    apply(doc) {
-        this.prevValue = doc.attrs[this.key];
+    apply(doc: Node) {
+        const mutableDoc = asMutable(doc);
+        this.prevValue = mutableDoc.attrs[this.key];
+
         // avoid clobbering doc.type.defaultAttrs
-        if (doc.attrs === doc.type.defaultAttrs) {
-            doc.attrs = Object.assign({}, doc.attrs);
+        if (mutableDoc.attrs === mutableDoc.type.defaultAttrs) {
+            mutableDoc.attrs = { ...mutableDoc.attrs };
         }
 
-        doc.attrs[this.key] = this.value;
+        mutableDoc.attrs[this.key] = this.value;
 
         return StepResult.ok(doc);
     }
@@ -84,15 +101,17 @@ export class RestoreDefaultDOMAttrs extends Step {
         try {
             Step.jsonID(this.prototype.STEP_TYPE, RestoreDefaultDOMAttrs);
         } catch (err) {
-            if (err.message !== `Duplicate use of step JSON ID ${this.prototype.STEP_TYPE}`)
+            if (!isDuplicateStepId(err, this.prototype.STEP_TYPE)) {
                 throw err;
+            }
         }
 
         return true;
     }
 
-    apply(doc) {
-        doc.attrs = Object.assign({}, doc.type.defaultAttrs);
+    apply(doc: Node) {
+        const mutableDoc = asMutable(doc);
+        mutableDoc.attrs = { ...(mutableDoc.type.defaultAttrs as Record<string, unknown>) };
 
         return StepResult.ok(doc);
     }

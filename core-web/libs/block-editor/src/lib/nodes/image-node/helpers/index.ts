@@ -6,13 +6,19 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 const LANGUAGE_ID = 'language_id';
 
-export const imageLinkElement = (attrs, newAttrs): DOMOutputSpec => {
+export const imageLinkElement = (
+    attrs: Record<string, unknown>,
+    newAttrs: Record<string, unknown>
+): DOMOutputSpec => {
     const { href = null, target } = newAttrs;
 
     return ['a', { href, target }, imageElement(attrs, newAttrs)];
 };
 
-export const imageElement = (attrs, newAttrs): DOMOutputSpec => {
+export const imageElement = (
+    attrs: Record<string, unknown>,
+    newAttrs: Record<string, unknown>
+): DOMOutputSpec => {
     return ['img', mergeAttributes(attrs, newAttrs)];
 };
 

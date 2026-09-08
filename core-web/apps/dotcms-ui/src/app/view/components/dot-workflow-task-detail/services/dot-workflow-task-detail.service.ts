@@ -21,11 +21,14 @@ export interface DotTaskAction {
 export class DotWorkflowTaskDetailService {
     private dotMenuService = inject(DotMenuService);
 
-    private data: BehaviorSubject<DotTaskAction> = new BehaviorSubject(null);
+    /** Null between dialogs — `clear()` sets it back, and `getViewUrl` tests for it. */
+    private data: BehaviorSubject<DotTaskAction | null> = new BehaviorSubject<DotTaskAction | null>(
+        null
+    );
     private _header: BehaviorSubject<string> = new BehaviorSubject('');
 
     get viewUrl$(): Observable<string> {
-        return this.data.pipe(mergeMap((action: DotTaskAction) => this.getViewUrl(action)));
+        return this.data.pipe(mergeMap((action) => this.getViewUrl(action)));
     }
 
     get header$(): Observable<string> {
@@ -51,7 +54,7 @@ export class DotWorkflowTaskDetailService {
         this.data.next(null);
     }
 
-    private getViewUrl(action: DotTaskAction): Observable<string> {
+    private getViewUrl(action: DotTaskAction | null): Observable<string> {
         return action === null
             ? of('')
             : this.dotMenuService.getDotMenuId('workflow').pipe(

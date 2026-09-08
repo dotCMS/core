@@ -416,8 +416,8 @@ describe('DotPublishingQueueTableComponent', () => {
             bundlesRows.set([]);
             spectator.detectChanges();
             const style = spectator.component.$ptConfig().table.style as Record<string, string>;
-            expect(style.width).toBe('100%');
-            expect(style.height).toBe('100%');
+            expect(style['width']).toBe('100%');
+            expect(style['height']).toBe('100%');
         });
     });
 });

@@ -1,4 +1,4 @@
-import { NgClass, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -21,7 +21,7 @@ const SELECT_VALUE_ACCESSOR: Provider = {
 
 @Component({
     selector: 'dot-experiment-options',
-    imports: [NgClass, NgTemplateOutlet],
+    imports: [NgTemplateOutlet],
     templateUrl: './dot-experiment-options.component.html',
     styleUrls: ['./dot-experiment-options.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,10 +32,10 @@ const SELECT_VALUE_ACCESSOR: Provider = {
     standalone: true
 })
 export class DotExperimentOptionsComponent implements ControlValueAccessor {
-    value: string;
+    value!: string;
     expanded = new Set<number>();
     @ContentChildren(forwardRef(() => DotExperimentOptionsItemDirective))
-    itemList: QueryList<DotExperimentOptionsItemDirective>;
+    itemList!: QueryList<DotExperimentOptionsItemDirective>;
     private cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
 
     onChange = (_: unknown) => {

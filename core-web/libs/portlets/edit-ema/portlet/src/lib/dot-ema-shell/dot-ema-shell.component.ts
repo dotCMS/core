@@ -158,8 +158,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 href: 'layout',
                 id: 'layout',
                 isDisabled: isLayoutDisabled,
+                // `undefined`, not `null`: `NavigationBarItem.tooltip` is an optional `string`, and
+                // the nav bar renders the tooltip only when it is set — the two behave identically.
                 tooltip: templateDrawed
-                    ? null
+                    ? undefined
                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
             },
             {
@@ -200,8 +202,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         );
 
         return {
-            siteId: this.uveStore.pageAsset()?.site?.identifier,
-            languageId: this.uveStore.pageAsset()?.viewAs?.language?.id,
+            // Both come from the page asset, which is null until the first load. The SEO tools panel
+            // is only opened from the toolbar of a loaded page, and `handleScannerToolClick` below
+            // already guards `siteId` before using it — these are the values for the interval that
+            // consumers were already written to tolerate. `0` rather than a default language id, so
+            // a URL built during that interval is visibly wrong rather than quietly English.
+            siteId: this.uveStore.pageAsset()?.site?.identifier ?? '',
+            languageId: this.uveStore.pageAsset()?.viewAs?.language?.id ?? 0,
             currentUrl,
             requestHostName
         };
@@ -232,7 +239,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         const { data } = this.#activatedRoute.snapshot;
 
-        const baseClientHost = data?.uveConfig?.url;
+        const baseClientHost = data?.['uveConfig']?.url;
 
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
 
@@ -251,7 +258,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         if (!page || !this.uveStore.pageParams()) return;
 
         const params = this.uveStore.pageFriendlyParams();
-        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const baseClientHost = this.#activatedRoute.snapshot.data?.['uveConfig']?.url;
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
         const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
         const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
@@ -286,10 +293,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             currentPageParams.language_id === params.language_id &&
             currentPageParams.mode === params.mode &&
             currentPageParams.variantName === params.variantName &&
-            currentPageParams[PERSONA_KEY] === params.personaId;
+            currentPageParams[PERSONA_KEY] === params['personaId'];
 
         if (!hasPageData || !paramsMatch) {
-            this.uveStore.pageLoad(params);
+            this.uveStore['pageLoad'](params);
         }
 
         this.#siteService.switchSite$
@@ -301,13 +308,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.uveStore.resetPageParams();
+        this.uveStore['resetPageParams']();
     }
 
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
+                const inode = this.uveStore.pageAsset()?.page?.inode;
+
+                if (inode) {
+                    this.uveStore.workflowFetch(inode);
+                }
                 break;
             }
 
@@ -321,7 +332,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
                 // emitted). Reload to refresh pageLanguages so the UVE toolbar language
                 // dropdown reflects the newly created version.
-                this.uveStore.pageReload();
+                this.uveStore['pageReload']();
                 break;
             }
         }
@@ -337,7 +348,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
 
         if (!htmlPageReferer) {
-            this.uveStore.pageReload();
+            this.uveStore['pageReload']();
 
             return;
         }
@@ -345,14 +356,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
 
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams()?.url)) {
             // Navigate to the new URL if it's different from the current one
-            this.uveStore.pageLoad({ url: targetUrl });
+            this.uveStore['pageLoad']({ url: targetUrl });
 
             return;
         }
 
-        this.uveStore.pageReload();
+        this.uveStore['pageReload']();
     }
 
     /**
@@ -492,7 +503,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.pageReload();
+        this.uveStore['pageReload']();
     }
 
     /**
@@ -507,7 +518,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Gets lock options from $lockOptions signal and calls store method to handle the lock/unlock
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = this.$lockOptions();
+        // The template only renders this button inside `@if ($lockOptions()?.canLock)`, so the
+        // guard is a formality — but it is the honest way to say the options may be absent.
+        const lockOptions = this.$lockOptions();
+        if (!lockOptions) {
+            return;
+        }
+
+        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = lockOptions;
         this.uveStore.workflowToggleLock(inode, isLocked, isLockedByCurrentUser, lockedBy);
     }
 
@@ -519,32 +537,32 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     #getPageParams(): DotPageAssetParams {
         const { queryParams, data } = this.#activatedRoute.snapshot;
-        const uveConfig = data?.uveConfig;
+        const uveConfig = data?.['uveConfig'];
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
 
         // Clone queryParams to avoid mutation errors
         const params = { ...queryParams };
-        const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
+        const validHost = checkClientHostAccess(params['clientHost'], allowedDevURLs);
 
         //Sanitize the url
-        params.url = sanitizeURL(params.url);
+        params['url'] = sanitizeURL(params['url']);
 
         if (!validHost) {
-            delete params.clientHost;
+            delete params['clientHost'];
         }
 
         if (uveConfig?.url && !validHost) {
-            params.clientHost = uveConfig.url;
+            params['clientHost'] = uveConfig.url;
         }
 
         // If the editor mode is not valid, set it to edit mode
         const UVE_MODES = Object.values(UVE_MODE);
 
-        if (!params.mode || !UVE_MODES.includes(params.mode)) {
-            params.mode = UVE_MODE.EDIT;
+        if (!params['mode'] || !UVE_MODES.includes(params['mode'])) {
+            params['mode'] = UVE_MODE.EDIT;
         }
 
-        if (params.mode !== UVE_MODE.LIVE && params.publishDate) {
+        if (params['mode'] !== UVE_MODE.LIVE && params['publishDate']) {
             delete params?.['publishDate'];
         }
 
@@ -556,17 +574,21 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         return params as DotPageAssetParams;
     }
 
-    #getViewParams(uveMode: UVE_MODE): DotUveViewParams {
+    // `| undefined` because `mode` is optional on `DotPageAssetParams`; the only thing read from it
+    // here is whether the mode is a preview one, and an absent mode is not.
+    #getViewParams(uveMode: UVE_MODE | undefined): DotUveViewParams {
         const { queryParams } = this.#activatedRoute.snapshot;
 
         const isPreviewMode = uveMode === UVE_MODE.PREVIEW || uveMode === UVE_MODE.LIVE;
 
         const viewParams: DotUveViewParams = {
-            device: queryParams.device,
-            orientation: queryParams.orientation,
-            seo: queryParams.seo
+            device: queryParams['device'],
+            orientation: queryParams['orientation'],
+            seo: queryParams['seo']
         };
 
+        // `undefined`, not `null`: absent means "this preset is not in the URL", which is what edit
+        // mode has. `null` is the store's separate signal for "a preset was explicitly cleared".
         return isPreviewMode
             ? viewParams
             : { device: undefined, orientation: undefined, seo: undefined };

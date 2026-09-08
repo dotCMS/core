@@ -462,7 +462,13 @@ describe('DotBrowserSelectorStore', () => {
                 })
             );
 
-            const node = { ...TREE_SELECT_MOCK[0], children: undefined, leaf: false };
+            // Annotated because the literal's `children: undefined` would otherwise infer
+            // exactly `undefined`; loadChildren populates it.
+            const node: TreeNodeItem = {
+                ...TREE_SELECT_MOCK[0],
+                children: undefined,
+                leaf: false
+            };
             const mockItem: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node
@@ -505,7 +511,13 @@ describe('DotBrowserSelectorStore', () => {
                 })
             );
 
-            const node = { ...TREE_SELECT_MOCK[0], children: undefined, leaf: false };
+            // Annotated because the literal's `children: undefined` would otherwise infer
+            // exactly `undefined`; loadChildren populates it.
+            const node: TreeNodeItem = {
+                ...TREE_SELECT_MOCK[0],
+                children: undefined,
+                leaf: false
+            };
             store.loadChildren({
                 originalEvent: createFakeEvent('click'),
                 node
@@ -513,7 +525,8 @@ describe('DotBrowserSelectorStore', () => {
             tick(50);
 
             expect(node.children).toHaveLength(folders.length + 1);
-            expect(node.children?.[node.children.length - 1].type).toBe(LOAD_MORE_NODE_TYPE);
+            const children = node.children!;
+            expect(children[children.length - 1].type).toBe(LOAD_MORE_NODE_TYPE);
         }));
 
         it('should handle error when loading children', fakeAsync(() => {
@@ -523,7 +536,13 @@ describe('DotBrowserSelectorStore', () => {
 
             dotBrowsingService.searchFolders.mockReturnValue(throwError(() => new Error('error')));
 
-            const node = { ...TREE_SELECT_MOCK[0], children: undefined, leaf: false };
+            // Annotated because the literal's `children: undefined` would otherwise infer
+            // exactly `undefined`; loadChildren populates it.
+            const node: TreeNodeItem = {
+                ...TREE_SELECT_MOCK[0],
+                children: undefined,
+                leaf: false
+            };
             const mockItem: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node

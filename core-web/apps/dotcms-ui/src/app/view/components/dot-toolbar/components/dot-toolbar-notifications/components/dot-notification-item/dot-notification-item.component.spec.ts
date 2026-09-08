@@ -9,6 +9,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotNotificationItemComponent } from './dot-notification-item.component';
 
+import { aliasedProps } from '../../../../../../../test/spectator-aliased-props';
+
 describe('DotNotificationItemComponent', () => {
     let spectator: Spectator<DotNotificationItemComponent>;
     let component: DotNotificationItemComponent;
@@ -56,9 +58,7 @@ describe('DotNotificationItemComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            props: {
-                data: mockNotification
-            } as unknown
+            props: aliasedProps<DotNotificationItemComponent>({ data: mockNotification })
         });
         component = spectator.component;
     });

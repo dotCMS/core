@@ -6,7 +6,10 @@ export const PlaceholderPlugin = new Plugin({
         init() {
             return DecorationSet.empty;
         },
-        apply(tr, set) {
+        // `this` is annotated because ProseMirror binds the state field's `init`/`apply` to the
+        // Plugin instance, not to this object literal — which is what makes `tr.getMeta(this)`
+        // match the `tr.setMeta(PlaceholderPlugin, ...)` calls in `asset-uploader.extension`.
+        apply(this: Plugin, tr, set: DecorationSet) {
             // Adjust decoration positions to changes made by the transaction
             set = set.map(tr.mapping, tr.doc);
             // See if the transaction adds or removes any placeholders
@@ -18,7 +21,9 @@ export const PlaceholderPlugin = new Plugin({
                 });
                 set = set.add(tr.doc, [deco]);
             } else if (action && action.remove) {
-                set = set.remove(set.find(null, null, (spec) => spec.key == action.remove.id));
+                set = set.remove(
+                    set.find(undefined, undefined, (spec) => spec['key'] == action.remove.id)
+                );
             }
 
             return set;

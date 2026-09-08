@@ -40,16 +40,16 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
 
     @Input()
-    patternErrorMessage: string;
+    patternErrorMessage = '';
 
     /**
      * Overrides the copy shown for a `required` error, without affecting
      * any other validator's message on the same field.
      */
     @Input()
-    requiredErrorMessage: string;
+    requiredErrorMessage = '';
 
-    defaultMessage: string;
+    defaultMessage = '';
     errorMsg = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -63,14 +63,16 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         this.cd.markForCheck();
     }
 
-    _field: UntypedFormControl | AbstractControl;
+    _field!: UntypedFormControl | AbstractControl;
 
     /**
      * Form control to check
      * @param control
      */
     @Input()
-    set field(control: UntypedFormControl | AbstractControl) {
+    set field(control: UntypedFormControl | AbstractControl | null) {
+        // Callers pass `form.get('x')`, which is nullable. The guard below already handled that
+        // at runtime; the signature just did not say so.
         if (control) {
             this._field = control;
             control.statusChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
@@ -92,8 +94,8 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
      * @param {ValidationErrors} errors
      * @private
      */
-    private getErrors(errors: ValidationErrors) {
-        let errorMsgs = [];
+    private getErrors(errors: ValidationErrors | null) {
+        let errorMsgs: string[] = [];
         if (errors) {
             errorMsgs = [
                 ...this.getMsgDefaultValidators(errors),
@@ -105,35 +107,36 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
     }
 
     private getMsgDefaultValidators(errors: ValidationErrors) {
-        let errorMsgs = [];
+        let errorMsgs: string[] = [];
         Object.entries(errors).forEach(([key, value]) => {
             if (key in NG_DEFAULT_VALIDATORS_ERRORS_MSG) {
+                const validator = key as DefaultsNGValidatorsTypes;
                 let errorTranslated = '';
                 const { requiredLength, requiredPattern } = value;
                 switch (key) {
                     case 'maxlength':
                     case 'minlength':
                         errorTranslated = this.dotMessageService.get(
-                            NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
+                            NG_DEFAULT_VALIDATORS_ERRORS_MSG[validator],
                             requiredLength
                         );
                         break;
 
                     case 'pattern':
                         errorTranslated = this.dotMessageService.get(
-                            this.patternErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
+                            this.patternErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[validator],
                             requiredPattern
                         );
                         break;
 
                     case 'required':
                         errorTranslated = this.dotMessageService.get(
-                            this.requiredErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
+                            this.requiredErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[validator]
                         );
                         break;
 
                     default:
-                        errorTranslated = NG_DEFAULT_VALIDATORS_ERRORS_MSG[key];
+                        errorTranslated = NG_DEFAULT_VALIDATORS_ERRORS_MSG[validator];
                         break;
                 }
 
@@ -145,7 +148,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
     }
 
     private getMsgCustomsValidators(errors: ValidationErrors) {
-        let errorMsgs = [];
+        let errorMsgs: string[] = [];
         Object.entries(errors).forEach(([, value]) => {
             if (typeof value === 'string') {
                 errorMsgs = [...errorMsgs, value];

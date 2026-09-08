@@ -16,7 +16,8 @@ import {
     signal,
     TemplateRef,
     ViewChild,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -87,67 +88,68 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loggerService = inject(LoggerService);
     paginatorService = inject(PaginatorService);
 
-    @Input() columns: DataTableColumn[];
-    @Input() url: string;
-    @Input() actionHeaderOptions: ActionHeaderOptions;
-    @Input() buttonActions: ButtonAction[] = [];
-    @Input() sortOrder: string;
-    @Input() sortField: string;
-    @Input() multipleSelection = false;
-    @Input() paginationPerPage = 40;
-    @Input() paginatorExtraParams: { [key: string]: string } = {};
+    readonly columns = input.required<DataTableColumn[]>();
+    readonly url = input.required<string>();
+    readonly actionHeaderOptions = input.required<ActionHeaderOptions>();
+    readonly buttonActions = input<ButtonAction[]>([]);
+    readonly sortOrder = input.required<string>();
+    readonly sortField = input.required<string>();
+    readonly multipleSelection = input(false);
+    readonly paginationPerPage = input(40);
+    readonly paginatorExtraParams = input<{
+        [key: string]: string;
+    }>({});
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() actions: DotActionMenuItem[] = [];
-    @Input() dataKey = '';
-    @Input() checkbox = false;
-    @Input() mapItems: <T = Record<string, unknown>[]>(item: T) => T;
-    @Input() contextMenu = false;
-    @Output() rowWasClicked: EventEmitter<unknown> = new EventEmitter();
+    readonly dataKey = input('');
+    readonly checkbox = input(false);
+    readonly mapItems = input<<T = Record<string, unknown>[]>(item: T) => T>();
+    readonly contextMenu = input(false);
+    @Output() rowWasClicked: EventEmitter<Record<string, unknown>> = new EventEmitter();
     @Output() selectedItems: EventEmitter<unknown> = new EventEmitter();
     @Output() contextMenuSelect: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('gf', { static: true })
-    globalSearch: ElementRef;
+    globalSearch!: ElementRef;
     @ViewChild('dataTable', { static: true })
-    dataTable: Table;
+    dataTable!: Table;
 
     @ViewChild('cm', { static: false })
     contextMenuRef: ContextMenu | undefined;
 
-    @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
+    @ContentChildren(PrimeTemplate) templates!: QueryList<ElementRef>;
 
     // Signal to track when contextMenuRef is available
     private readonly contextMenuRefSignal = signal<ContextMenu | undefined>(undefined);
 
     // Computed signal for context menu component
     readonly contextMenuComponent = computed(() => {
-        const hasContextMenu = this.contextMenu;
+        const hasContextMenu = this.contextMenu();
         const ref = this.contextMenuRefSignal();
         return hasContextMenu && ref ? ref : null;
     });
 
-    @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
-    @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
-    @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
+    @ContentChild('rowTemplate') rowTemplate!: TemplateRef<unknown>;
+    @ContentChild('beforeSearchTemplate') beforeSearchTemplate!: TemplateRef<unknown>;
+    @ContentChild('headerTemplate') headerTemplate!: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';
-    items: unknown[];
-    selected: Record<string, unknown>[];
-    filter;
+    items: unknown[] = [];
+    selected: Record<string, unknown>[] = [];
+    filter = '';
     isContentFiltered = false;
-    dateColumns: DataTableColumn[];
+    dateColumns: DataTableColumn[] = [];
     loading = true;
-    contextMenuItems: MenuItem[];
-    maxLinksPage: number;
-    totalRecords: number;
-
-    constructor() {
-        this.paginatorService.url = this.url;
-    }
+    contextMenuItems: MenuItem[] = [];
+    maxLinksPage!: number;
+    totalRecords!: number;
 
     ngOnInit(): void {
         this.globalSearch.nativeElement.focus();
         this.paginationSetUp();
-        this.dateColumns = this.columns.filter((column) => column.format === this.DATE_FORMAT);
+        this.dateColumns = this.columns().filter((column) => column.format === this.DATE_FORMAT);
     }
 
     ngAfterViewInit(): void {
@@ -196,8 +198,8 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     handleRowClick(rowData: Record<string, unknown>): void {
         // If the system template or system container is clicked, do nothing.
         if (
-            rowData?.identifier === 'SYSTEM_TEMPLATE' ||
-            rowData?.identifier === 'SYSTEM_CONTAINER'
+            rowData?.['identifier'] === 'SYSTEM_TEMPLATE' ||
+            rowData?.['identifier'] === 'SYSTEM_CONTAINER'
         ) {
             return;
         }
@@ -212,7 +214,11 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      * @memberof DotListingDataTableComponent
      */
     loadDataPaginationEvent(event: TableLazyLoadEvent): void {
-        this.loadData(event.first, event.sortField as string, event.sortOrder);
+        this.loadData(
+            event.first ?? 0,
+            event.sortField as string,
+            (event.sortOrder as OrderDirection) ?? undefined
+        );
     }
 
     /**
@@ -242,7 +248,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loadFirstPage(): void {
         this.loading = true;
         this.paginatorService
-            .get()
+            .get<unknown[]>()
             .pipe(take(1))
             .subscribe((items) => {
                 this.setItems(items);
@@ -256,9 +262,9 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      */
     loadCurrentPage(): void {
         this.loading = true;
-        if (this.columns) {
+        if (this.columns()) {
             this.paginatorService
-                .getCurrentPage()
+                .getCurrentPage<unknown[]>()
                 .pipe(take(1))
                 .subscribe((items) => this.setItems(items));
         }
@@ -280,8 +286,12 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      * @memberof ListingDataTableComponent
      */
     focusFirstRow(): void {
-        const rows: HTMLTableRowElement[] = this.dataTable.tableViewChild.nativeElement.rows;
-        if (rows.length > 1) {
+        // PrimeNG only assigns `tableViewChild` once the table renders, and this is called from a
+        // keyboard handler that can arrive first.
+        const rows: HTMLTableRowElement[] | undefined =
+            this.dataTable.tableViewChild?.nativeElement.rows;
+
+        if (rows && rows.length > 1) {
             rows[1].focus();
         }
     }
@@ -297,11 +307,12 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         );
     }
 
-    private setItems(items): void {
+    private setItems(items: unknown[]): void {
         // Defer state updates to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
         // This is needed because p-table with lazy loading triggers onLazyLoad during initialization
         setTimeout(() => {
-            this.items = this.mapItems === undefined ? items : this.mapItems(items);
+            const mapItems = this.mapItems();
+            this.items = mapItems === undefined ? items : mapItems(items);
             this.loading = false;
             this.maxLinksPage = this.paginatorService.maxLinksPage;
             this.totalRecords = this.paginatorService.totalRecords;
@@ -310,28 +321,31 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     }
 
     private isTypeNumber(col: DataTableColumn): boolean {
-        return this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number';
+        const first = this.items?.[0] as Record<string, unknown> | undefined;
+
+        return typeof first?.[col.fieldName] === 'number';
     }
 
     private setSortParams(sortFieldParam?: string, sortOrderParam?: OrderDirection) {
         return {
-            sortField: sortFieldParam || this.sortField,
-            sortOrder: sortOrderParam || this.sortOrder
+            sortField: sortFieldParam || this.sortField(),
+            sortOrder: sortOrderParam || this.sortOrder()
         };
     }
 
     private getPage(offset: number): void {
         this.paginatorService
-            .getWithOffset(offset)
+            .getWithOffset<unknown[]>(offset)
             .pipe(take(1))
             .subscribe((items) => this.setItems(items));
     }
 
     private paginationSetUp(): void {
-        this.paginatorService.url = this.url;
-        this.paginatorService.paginationPerPage = this.paginationPerPage;
-        if (this.paginatorExtraParams) {
-            Object.entries(this.paginatorExtraParams).forEach(([key, value]) =>
+        this.paginatorService.url = this.url();
+        this.paginatorService.paginationPerPage = this.paginationPerPage();
+        const paginatorExtraParams = this.paginatorExtraParams();
+        if (paginatorExtraParams) {
+            Object.entries(paginatorExtraParams).forEach(([key, value]) =>
                 this.paginatorService.setExtraParams(key, value)
             );
         }

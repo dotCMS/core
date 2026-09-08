@@ -19,6 +19,8 @@ export interface DotFolder {
 }
 
 export interface CompleteEvent {
-    originalEvent: InputEvent;
+    // `Event`, matching PrimeNG's own `AutoCompleteCompleteEvent`; it is not narrowed to
+    // `InputEvent` there and callers only read `query`.
+    originalEvent: Event;
     query: string;
 }

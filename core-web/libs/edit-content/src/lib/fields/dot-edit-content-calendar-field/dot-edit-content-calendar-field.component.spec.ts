@@ -30,11 +30,11 @@ import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
-    utcTimezone: DotSystemTimezone;
-    contentType: DotCMSContentType;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
+    utcTimezone!: DotSystemTimezone;
+    contentType!: DotCMSContentType;
 }
 
 describe('DotEditContentCalendarFieldComponent', () => {
@@ -66,7 +66,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     const CONTENT_TYPE_WITHOUT_EXPIRE = {
         ...CONTENT_TYPE_MOCK,
-        expireDateVar: null
+        // Absent, not null: `expireDateVar` is optional on DotCMSContentType, and the
+        // component compares it with `===` against a string either way.
+        expireDateVar: undefined
     };
 
     describe('Calendar field timezone information', () => {
@@ -158,7 +160,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -222,7 +224,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [fieldWithoutHint.variable]: new FormControl()
                         }),
                         field: fieldWithoutHint,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [fieldWithoutHint.variable]: null
@@ -249,7 +251,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITH_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -259,7 +261,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showClear).toBe(true);
 
             expect(calendar.placeholder).toBe('Never expires');
@@ -276,7 +278,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -286,7 +288,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showClear).toBe(false);
             expect(calendar.placeholder).toBe('');
         });
@@ -304,7 +306,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -336,7 +338,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [DATE_FIELD_MOCK.variable]: new FormControl()
                         }),
                         field: DATE_FIELD_MOCK,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [DATE_FIELD_MOCK.variable]: null
@@ -369,7 +371,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [dateTimeField.variable]: new FormControl()
                         }),
                         field: dateTimeField,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [dateTimeField.variable]: null
@@ -379,7 +381,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -397,7 +399,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [dateField.variable]: new FormControl()
                         }),
                         field: dateField,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [dateField.variable]: null
@@ -407,7 +409,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showTime).toBe(false);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -425,7 +427,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [timeField.variable]: new FormControl()
                         }),
                         field: timeField,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [timeField.variable]: null
@@ -435,7 +437,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
+            const calendar = spectator.query(DatePicker)!;
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(true);
             expect(calendar.icon).toBe('pi pi-clock');
@@ -455,7 +457,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [field.variable]: new FormControl()
                         }),
                         field,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [field.variable]: null
@@ -477,7 +479,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             (_label, fieldType) => {
                 buildHost(fieldType);
 
-                const calendar = spectator.query(DatePicker);
+                const calendar = spectator.query(DatePicker)!;
                 expect(calendar.hideOnDateTimeSelect).toBe(false);
             }
         );
@@ -488,7 +490,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 buildHost(fieldType);
 
                 // No full-width override is applied; PrimeNG default sizing is used.
-                const calendar = spectator.query(DatePicker);
+                const calendar = spectator.query(DatePicker)!;
                 expect(calendar.inputStyleClass).toBeFalsy();
 
                 const datepickerEl = spectator.query('p-datepicker');
@@ -755,7 +757,11 @@ describe('DotEditContentCalendarFieldComponent', () => {
         // through handleChangeValue when the control transitions to null.
         const fieldWithoutDefault = { ...DATE_FIELD_MOCK, defaultValue: undefined };
 
-        const buildSeededHost = (field: DotCMSContentTypeField) =>
+        // Return type annotated: through a helper, Spectator's `HP` inference loses the host
+        // component and the result widens to `SpectatorHost<C, unknown>`.
+        const buildSeededHost = (
+            field: DotCMSContentTypeField
+        ): SpectatorHost<DotEditContentCalendarFieldComponent, MockFormComponent> =>
             createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -842,7 +848,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [fieldWithName.variable]: new FormControl()
                         }),
                         field: fieldWithName,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [fieldWithName.variable]: null
@@ -871,7 +877,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                             [fieldWithoutHint.variable]: new FormControl()
                         }),
                         field: fieldWithoutHint,
-                        utcTimezone: null,
+                        utcTimezone: undefined,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
                         contentlet: createFakeContentlet({
                             [fieldWithoutHint.variable]: null

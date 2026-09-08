@@ -21,7 +21,7 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
                 <div
                     data-type="gridColumn"
                     class="grid-block__column"
-                    [style.grid-column]="'span ' + (columnSpans[$index] ?? 6)">
+                    [style.grid-column]="'span ' + columnSpan($index)">
                     <ng-container
                         *ngComponentOutlet="
                             blockEditorItem;
@@ -37,6 +37,11 @@ export class DotGridBlock {
     @Input() customRenderers: CustomRenderer | undefined;
 
     blockEditorItem = DotCMSBlockEditorItemComponent;
+
+    /** Span for a column, defaulting when the node declares fewer spans than columns. */
+    columnSpan(index: number): number {
+        return this.columnSpans[index] ?? 6;
+    }
 
     get columnSpans(): number[] {
         const rawCols = Array.isArray(this.node?.attrs?.['columns'])

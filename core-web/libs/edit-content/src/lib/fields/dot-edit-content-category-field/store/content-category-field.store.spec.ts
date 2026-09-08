@@ -23,7 +23,7 @@ import { DotCategoryFieldKeyValueObj } from '../models/dot-category-field.models
 import { CategoriesService } from '../services/categories.service';
 import { transformCategories } from '../utils/category-field.utils';
 
-const EMPTY_ARRAY = [];
+const EMPTY_ARRAY: never[] = [];
 
 describe('CategoryFieldStore', () => {
     let spectator: SpectatorService<InstanceType<typeof CategoryFieldStore>>;

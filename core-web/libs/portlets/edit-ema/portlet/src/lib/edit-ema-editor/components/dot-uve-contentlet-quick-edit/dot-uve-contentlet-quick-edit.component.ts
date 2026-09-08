@@ -106,7 +106,7 @@ export class DotUveContentletQuickEditComponent {
     });
 
     readonly $needsCopyDecision = computed(
-        () => !this.#decisionMade() && Number(this.data().contentlet?.onNumberOfPages ?? 1) > 1
+        () => !this.#decisionMade() && Number(this.data().contentlet?.['onNumberOfPages'] ?? 1) > 1
     );
 
     /**

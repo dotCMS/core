@@ -64,7 +64,9 @@ export class RelationshipFieldService {
      * });
      * ```
      */
-    prepareField(params: { field: DotCMSContentTypeField; contentlet: DotCMSContentlet }) {
+    // `contentlet` is nullable: manual translation has no contentlet yet, and
+    // `getRelationshipFromContentlet` below already returns `[]` for that case.
+    prepareField(params: { field: DotCMSContentTypeField; contentlet: DotCMSContentlet | null }) {
         const { field, contentlet } = params;
 
         return of({ field, contentlet }).pipe(
@@ -103,14 +105,16 @@ export class RelationshipFieldService {
                         data
                     })),
                     switchMap((newState) => {
-                        const hasShowFields = showFields?.length > 0;
-
-                        if (!hasShowFields) {
+                        // Inlined rather than held in a `hasShowFields` boolean: narrowing does
+                        // not survive the round trip through a boolean, and `#buildDynamicColumns`
+                        // below needs `showFields` to be a real array.
+                        if (!showFields?.length) {
                             return of({
                                 ...newState,
                                 columns: DEFAULT_RELATIONSHIP_COLUMNS
                             });
                         }
+
                         return this.#buildDynamicColumns(contentTypeId, showFields).pipe(
                             map((columns) => ({ ...newState, columns }))
                         );

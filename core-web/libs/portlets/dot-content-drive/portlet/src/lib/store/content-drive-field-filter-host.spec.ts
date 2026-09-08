@@ -60,7 +60,7 @@ describe('provideContentDriveFieldFilterHost', () => {
         fields.set([]);
         spectator = createService({ providers: [provideContentDriveFieldFilterHost()] });
         host = spectator.inject(DOT_FIELD_FILTER_HOST);
-        store = spectator.inject(DotContentDriveStore, true) as never;
+        store = spectator.inject(DotContentDriveStore) as never;
     });
 
     afterEach(() => jest.clearAllMocks());

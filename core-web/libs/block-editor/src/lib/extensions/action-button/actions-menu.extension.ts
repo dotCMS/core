@@ -1,6 +1,6 @@
 import { PluginKey } from 'prosemirror-state';
-import { Subject } from 'rxjs';
-import tippy, { GetReferenceClientRect } from 'tippy.js';
+import { Observable, Subject } from 'rxjs';
+import tippy, { GetReferenceClientRect, Instance } from 'tippy.js';
 
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 
@@ -11,7 +11,7 @@ import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 
-import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
+import { Action, RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
 import {
     clearFilter,
@@ -32,6 +32,7 @@ import {
 import { NodeTypes } from '../../shared/utils';
 import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../ai-content-prompt/ai-content-prompt.extension';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../ai-image-prompt/ai-image-prompt.extension';
+import { BubbleFormValue, BubbleFormValues } from '../bubble-form/model';
 
 const AI_BLOCK_EXTENSIONS_IDS = [AI_CONTENT_PROMPT_EXTENSION_NAME, AI_IMAGE_PROMPT_EXTENSION_NAME];
 declare module '@tiptap/core' {
@@ -60,6 +61,13 @@ export type FloatingMenuOptions = Omit<FloatingMenuPluginProps, 'editor' | 'elem
     element: HTMLElement | null;
     suggestion: Omit<SuggestionOptions, 'editor'>;
 };
+
+/**
+ * A menu entry contributed by a remote custom block. `DotMenuItem` leaves `id` and
+ * `commandKey` optional, but `mapCustomActions` always fills both and the dispatch below
+ * indexes on them, so they are required here.
+ */
+type CustomActionItem = DotMenuItem & { id: string; commandKey: string };
 
 function getTippyInstance({
     element,
@@ -100,7 +108,9 @@ function execCommand({
     customBlocks: RemoteCustomExtensions;
 }) {
     const { type, payload } = props;
-    const whatToDo = {
+    // Indexed by node name and by the ids remote blocks contribute, so it is a lookup table
+    // rather than a fixed-shape object. The built-in entries below are still exhaustive.
+    const whatToDo: Record<string, () => void> = {
         dotContent: () => {
             editor.chain().addContentletBlock({ range, payload }).addNextLine().run();
         },
@@ -108,50 +118,54 @@ function execCommand({
             editor.chain().addHeading({ range, type }).run();
         },
         table: () => {
-            editor.commands
-                .openForm(
-                    [
-                        {
-                            key: 'rows',
-                            label: 'Rows',
-                            required: true,
-                            value: '3',
-                            controlType: 'number',
-                            type: 'number',
-                            min: 1
-                        },
-                        {
-                            key: 'columns',
-                            label: 'Columns',
-                            required: true,
-                            value: '3',
-                            controlType: 'number',
-                            type: 'number',
-                            min: 1
-                        },
-                        {
-                            key: 'header',
-                            label: 'Add Row Header',
-                            required: false,
-                            value: true,
-                            controlType: 'text',
-                            type: 'checkbox'
-                        }
-                    ],
-                    { customClass: 'dotTableForm' }
-                )
-                .pipe?.(
+            // `openForm` is declared `any` because a Subject-returning command cannot satisfy
+            // TipTap's command contract; narrow it here, where the values are actually read.
+            const tableForm$: Observable<BubbleFormValue> = editor.commands.openForm(
+                [
+                    {
+                        key: 'rows',
+                        label: 'Rows',
+                        required: true,
+                        value: '3',
+                        controlType: 'number',
+                        type: 'number',
+                        min: 1
+                    },
+                    {
+                        key: 'columns',
+                        label: 'Columns',
+                        required: true,
+                        value: '3',
+                        controlType: 'number',
+                        type: 'number',
+                        min: 1
+                    },
+                    {
+                        key: 'header',
+                        label: 'Add Row Header',
+                        required: false,
+                        value: true,
+                        controlType: 'text',
+                        type: 'checkbox'
+                    }
+                ],
+                { customClass: 'dotTableForm' }
+            );
+
+            tableForm$
+                .pipe(
                     take(1),
-                    filter((value) => !!value)
+                    filter((value): value is BubbleFormValues => !!value)
                 )
                 .subscribe((value) => {
                     requestAnimationFrame(() => {
                         editor
                             .chain()
                             .insertTable({
-                                rows: value.rows,
-                                cols: value.columns,
-                                withHeaderRow: !!value.header
+                                // The number controls emit their value as a string.
+                                rows: Number(value['rows']),
+                                cols: Number(value['columns']),
+                                withHeaderRow: !!value['header']
                             })
                             .focus()
                             .run();
@@ -189,7 +203,9 @@ function execCommand({
     getCustomActions(customBlocks).forEach((option) => {
         whatToDo[option.id] = () => {
             try {
-                editor.commands[option.commandKey]();
+                // Remote blocks register their commands at runtime, so the key is not in
+                // `SingleCommands`. The try/catch below is what handles a missing one.
+                (editor.commands as unknown as Record<string, () => void>)[option.commandKey]();
             } catch {
                 console.warn(`Custom command ${option.commandKey} does not exists.`);
             }
@@ -201,7 +217,7 @@ function execCommand({
         : editor.chain().setTextSelection(range).focus().run();
 }
 
-function mapCustomActions(actions): Array<DotMenuItem> {
+function mapCustomActions(actions: Action[]): CustomActionItem[] {
     return actions.map((action) => ({
         icon: action.icon,
         label: action.menuLabel,
@@ -210,7 +226,7 @@ function mapCustomActions(actions): Array<DotMenuItem> {
     }));
 }
 
-function getCustomActions(customBlocks): Array<DotMenuItem> {
+function getCustomActions(customBlocks: RemoteCustomExtensions): CustomActionItem[] {
     return customBlocks.extensions
         .map((extension) => mapCustomActions(extension.actions || []))
         .flat();
@@ -221,8 +237,10 @@ export const ActionsMenu = (
     customBlocks: RemoteCustomExtensions,
     disabledExtensions: { shouldShowAIExtensions: boolean | unknown }
 ) => {
-    let myTippy;
-    let suggestionsComponent: ComponentRef<SuggestionsComponent>;
+    let myTippy: Instance | undefined;
+    // Null between `onExit` and the next `onStart`; every read below is either inside a
+    // callback that only runs while the menu is open, or guarded.
+    let suggestionsComponent: ComponentRef<SuggestionsComponent> | null = null;
     const suggestionKey = new PluginKey('suggestionPlugin');
     const destroy$: Subject<boolean> = new Subject<boolean>();
     let shouldShow = true;
@@ -235,10 +253,19 @@ export const ActionsMenu = (
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
         if (shouldShow) {
             setUpSuggestionComponent(editor, range);
+
+            const element = getEditorElement(editor)?.parentElement;
+
+            if (!element || !clientRect || !suggestionsComponent) {
+                return;
+            }
+
             myTippy = getTippyInstance({
-                element: getEditorElement(editor)?.parentElement,
+                element,
                 content: suggestionsComponent.location.nativeElement,
-                rect: clientRect,
+                // TipTap's `clientRect` may return null; tippy's `GetReferenceClientRect` does
+                // not allow that. Cast rather than substitute a rect, so runtime is unchanged.
+                rect: clientRect as GetReferenceClientRect,
                 onHide: () => {
                     editor.commands.focus();
                     const queryRange = updateQueryRange({ editor, range });
@@ -257,7 +284,7 @@ export const ActionsMenu = (
         }
     }
 
-    function onBeforeStart({ editor }): void {
+    function onBeforeStart({ editor }: { editor: Editor }): void {
         editor.commands.freezeScroll(true);
 
         const isCodeBlock =
@@ -305,17 +332,27 @@ export const ActionsMenu = (
      * @param {object} options.range - The range object.
      * @return {DotMenuItem[]} - The array of DotMenuItem objects.
      */
-    function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
+    function getItems({
+        allowedBlocks = [],
+        editor,
+        range
+    }: {
+        allowedBlocks?: string[];
+        editor: Editor;
+        range: Range;
+    }): DotMenuItem[] {
         let filteredSuggestionOptions: DotMenuItem[] = [...suggestionOptions];
 
         if (!disabledExtensions?.shouldShowAIExtensions) {
             filteredSuggestionOptions = suggestionOptions.filter(
-                (item) => !AI_BLOCK_EXTENSIONS_IDS.includes(item.id)
+                (item) => !item.id || !AI_BLOCK_EXTENSIONS_IDS.includes(item.id)
             );
         }
 
         const items = allowedBlocks.length
-            ? filteredSuggestionOptions.filter((item) => allowedBlocks.includes(item.id))
+            ? filteredSuggestionOptions.filter(
+                  (item) => !!item.id && allowedBlocks.includes(item.id)
+              )
             : filteredSuggestionOptions;
 
         const customItems = [...items, ...getCustomActions(customBlocks)];
@@ -325,9 +362,17 @@ export const ActionsMenu = (
         return customItems;
     }
 
-    function onCommand({ item, editor, range }) {
-        const { id, attributes } = item;
-        const props = {
+    function onCommand({
+        item,
+        editor,
+        range
+    }: {
+        item: DotMenuItem;
+        editor: Editor;
+        range: Range;
+    }) {
+        const { id = '', attributes } = item;
+        const props: SuggestionsCommandProps = {
             type: { name: id.includes('heading') ? 'heading' : id, ...attributes }
         };
 
@@ -335,7 +380,15 @@ export const ActionsMenu = (
         onSelection({ editor, range, props });
     }
 
-    function onSelection({ editor, range, props }) {
+    function onSelection({
+        editor,
+        range,
+        props
+    }: {
+        editor: Editor;
+        range: Range;
+        props: SuggestionsCommandProps;
+    }) {
         const newRange = updateQueryRange({ editor, range });
         execCommand({ editor: editor, range: newRange, props, customBlocks });
     }
@@ -348,7 +401,7 @@ export const ActionsMenu = (
      *
      * @return range {Range}
      */
-    function updateQueryRange({ editor, range }) {
+    function updateQueryRange({ editor, range }: { editor: Editor; range: Range }): Range {
         const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
         range.to = range.to + suggestionQuery;
 
@@ -368,19 +421,19 @@ export const ActionsMenu = (
 
         if (key === 'Escape') {
             event.stopImmediatePropagation();
-            myTippy.hide();
+            myTippy?.hide();
 
             return true;
         }
 
         if (key === 'Enter') {
-            suggestionsComponent.instance.execCommand();
+            suggestionsComponent?.instance.execCommand();
 
             return true;
         }
 
         if (key === 'ArrowDown' || key === 'ArrowUp') {
-            suggestionsComponent.instance.updateSelection(event);
+            suggestionsComponent?.instance.updateSelection(event);
 
             return true;
         }
@@ -388,7 +441,7 @@ export const ActionsMenu = (
         return false;
     }
 
-    function onExit({ editor }): void {
+    function onExit({ editor }: { editor: Editor }): void {
         myTippy?.destroy();
         editor.commands.freezeScroll(false);
         suggestionsComponent?.destroy();
@@ -450,7 +503,7 @@ export const ActionsMenu = (
                         return chain()
                             .deleteRange(range)
                             .command((props) => {
-                                const node = props.editor.schema.nodes.dotContent.create({
+                                const node = props.editor.schema.nodes['dotContent'].create({
                                     data: payload
                                 });
                                 props.tr.replaceSelectionWith(node);
@@ -480,7 +533,9 @@ export const ActionsMenu = (
         addProseMirrorPlugins() {
             return [
                 FloatingActionsPlugin({
-                    command: execCommand,
+                    // The plugin's `command` contract has no `customBlocks`; supply it from the
+                    // closure rather than widening the shared type.
+                    command: (props) => execCommand({ ...props, customBlocks }),
                     editor: this.editor,
                     render: () => {
                         return {

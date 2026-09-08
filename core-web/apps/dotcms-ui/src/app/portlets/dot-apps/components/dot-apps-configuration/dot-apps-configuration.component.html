@@ -17,7 +17,7 @@
                     <button
                         (click)="openExportDialog()"
                         [label]="'apps.confirmation.export.all.button' | dm"
-                        [disabled]="!app.configurationsCount"
+                        [disabled]="!app?.configurationsCount"
                         pButton
                         link
                         icon="pi pi-download"
@@ -25,7 +25,7 @@
                     <button
                         (click)="deleteAllConfigurations()"
                         [label]="'apps.confirmation.delete.all.button' | dm"
-                        [disabled]="!app.configurationsCount"
+                        [disabled]="!app?.configurationsCount"
                         pButton
                         link
                         icon="pi pi-trash"></button>
@@ -36,7 +36,7 @@
                 (edit)="gotoConfiguration($event)"
                 (export)="openExportDialog($event)"
                 (delete)="deleteConfiguration($event)"
-                [siteConfigurations]="app.sites"
+                [siteConfigurations]="app?.sites"
                 [hideLoadDataButton]="!$showMoreData()"
                 [itemsPerPage]="paginationPerPage" />
         </div>

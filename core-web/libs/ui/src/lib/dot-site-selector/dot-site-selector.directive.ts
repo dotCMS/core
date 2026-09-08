@@ -26,7 +26,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
 
     private readonly destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly dotEvents = ['login-as', 'logout-as'];
-    private readonly control: Select;
+    private readonly control: Select | null;
 
     constructor() {
         this.control = this.primeDropdown;
@@ -61,6 +61,10 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      * @param options
      */
     private setOptions(options: Array<DotSite>): void {
+        if (!this.primeDropdown) {
+            return;
+        }
+
         this.primeDropdown.options = [...options];
         this.cd.detectChanges();
     }

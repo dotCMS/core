@@ -188,7 +188,8 @@ export interface NormalizedViewAsState {
 
 export interface TranslateProps {
     page: DotCMSPage;
-    currentLanguage: DotLanguage;
+    /** Undefined for a page in a language the editor has not resolved yet. */
+    currentLanguage: DotLanguage | undefined;
 }
 
 /**
@@ -198,9 +199,15 @@ export interface TranslateProps {
  * type-safely.
  */
 export interface DotUveViewParams {
-    orientation: Orientation | null;
-    device: string | null;
-    seo: string | null;
+    /**
+     * Three states, not two: absent means the preset is not in the URL at all (edit mode has
+     * none), `null` means a store action cleared one that was there, and a value means it is
+     * active. `createUrlTree` drops both absent and null keys, so the two agree on the URL — they
+     * differ in what the store is saying.
+     */
+    orientation?: Orientation | null;
+    device?: string | null;
+    seo?: string | null;
 }
 
 export enum Orientation {

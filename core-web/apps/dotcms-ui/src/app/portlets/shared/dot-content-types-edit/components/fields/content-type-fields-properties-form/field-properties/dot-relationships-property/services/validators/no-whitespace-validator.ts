@@ -1,4 +1,4 @@
-import { UntypedFormControl } from '@angular/forms';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 /**
  * Check if a valur has only white space
@@ -7,7 +7,7 @@ import { UntypedFormControl } from '@angular/forms';
  * @param {FormControl} formControl
  * @returns
  */
-export function noWhitespaceValidator(control: UntypedFormControl) {
+export function noWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
     const isWhitespace = (control.value || '').trim().length === 0;
     const isValid = !isWhitespace;
 

@@ -24,7 +24,7 @@ export class DotMenuComponent {
     $float = input<boolean>(false, { alias: 'float' });
 
     @ViewChild('menu', { static: true })
-    menu: Menu;
+    menu!: Menu;
 
     // computed style class based on the float input
     $styleClass = computed(() =>

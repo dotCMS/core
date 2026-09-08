@@ -19,7 +19,7 @@
                     {{ 'edit.content.sidebar.workflow.select.workflow' | dm }}
                 </a>
             } @else {
-                {{ workflow.scheme?.name }}
+                {{ workflow?.scheme?.name }}
 
                 @if ($showWorkflowSelection()) {
                     <p-button
@@ -29,9 +29,9 @@
                         icon="pi pi-pencil" />
                 }
 
-                @if (workflow.resetAction) {
+                @if (workflow?.resetAction; as resetAction) {
                     <p-button
-                        (click)="onResetWorkflow.emit(workflow.resetAction.id.toString())"
+                        (click)="onResetWorkflow.emit(resetAction.id.toString())"
                         styleClass="p-button-link"
                         data-testId="reset-workflow-button"
                         icon="pi pi-replay" />
@@ -45,17 +45,17 @@
                 @if (isLoading) {
                     <p-skeleton />
                 } @else {
-                    {{ workflow.step?.name }}
+                    {{ workflow?.step?.name }}
                 }
             </span>
 
-            @if (workflow.task) {
+            @if (workflow?.task; as task) {
                 <span class="text-gray-600">{{ 'Assignee' | dm }}</span>
                 <span class="text-gray-800" data-testId="workflow-assigned">
                     @if (isLoading) {
                         <p-skeleton />
                     } @else {
-                        {{ workflow.task.assignedTo }}
+                        {{ task.assignedTo }}
                     }
                 </span>
             }

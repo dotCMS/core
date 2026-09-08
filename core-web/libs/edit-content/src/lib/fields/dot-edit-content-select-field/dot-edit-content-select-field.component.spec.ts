@@ -24,9 +24,9 @@ import {
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    contentlet: DotCMSContentlet;
-    field: DotCMSContentTypeField;
+    formGroup!: FormGroup;
+    contentlet!: DotCMSContentlet;
+    field!: DotCMSContentTypeField;
 }
 
 describe('DotEditContentSelectFieldComponent', () => {

@@ -14,7 +14,8 @@ export interface ContentletFilters {
     contentType: string;
     filter: string;
     currentLanguage: number;
-    contentletIdentifier: string;
+    /** Absent when nothing is being edited; `getContentlets` skips the exclusion clause. */
+    contentletIdentifier?: string;
 }
 
 export enum NodeTypes {

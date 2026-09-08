@@ -54,5 +54,5 @@ export class DotEditContentCategoryFieldComponent extends BaseWrapperField {
      * Represents a DotCMS contentlet and is a required input
      * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
 }

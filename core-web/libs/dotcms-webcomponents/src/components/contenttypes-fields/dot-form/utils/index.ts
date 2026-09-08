@@ -12,13 +12,21 @@ export const DOT_ATTR_PREFIX = 'dot';
 /**
  * Sets attributes to the HtmlElement from fieldVariables array
  *
+ * `element` is optional because Stencil invokes a `ref` callback a second time with `undefined`
+ * when the element is torn down — that is what its generated `(elm?: HTMLDotXElement) => void`
+ * prop type says. There is nothing to set attributes on at that point, so it is a no-op.
+ *
  * @param HTMLElement element
  * @param DotCMSContentTypeFieldVariable fieldVariables
  */
 export function setAttributesToTag(
-    element: HTMLElement,
+    element: HTMLElement | undefined,
     fieldVariables: DotCMSContentTypeFieldVariable[]
 ): void {
+    if (!element) {
+        return;
+    }
+
     fieldVariables.forEach(({ key, value }) => {
         element.setAttribute(key, value);
     });
@@ -28,7 +36,7 @@ export function setAttributesToTag(
  * Given a string formatted value "key|value,llave|valor" return an object.
  * @param values
  */
-const pipedValuesToObject = (values: string): { [key: string]: string } => {
+const pipedValuesToObject = (values: string): { [key: string]: string } | null => {
     return isStringType(values)
         ? values.split(',').reduce((acc, item) => {
               const [key, value] = item.split('|');
@@ -50,7 +58,13 @@ function isDotAttribute(name: string): boolean {
  * @param Element element
  * @param Attr[] attributes
  */
-export function setDotAttributesToElement(element: Element, attributes: Attr[]): void {
+export function setDotAttributesToElement(element: Element | null, attributes: Attr[]): void {
+    // Nullable because every caller passes a `querySelector` result straight in, and these run
+    // inside a `setTimeout` — by then the element may be gone. Nothing to set attributes on.
+    if (!element) {
+        return;
+    }
+
     attributes.forEach(({ name, value }) => {
         element.setAttribute(name.replace(DOT_ATTR_PREFIX, ''), value);
     });
@@ -75,7 +89,10 @@ export function getDotAttributesFromElement(attributes: Attr[], attrException: s
  * @param DotCMSContentTypeField field
  * @returns boolean
  */
-export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: string): boolean => {
+export const shouldShowField = (
+    field: DotCMSContentTypeField,
+    fieldsToShow: string | undefined
+): boolean => {
     const fields2Show = fieldsToShow ? fieldsToShow.split(',') : [];
     return !fields2Show.length || fields2Show.includes(field.variable);
 };
@@ -89,7 +106,7 @@ export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: str
 export const getFieldVariableValue = (
     fieldVariables: DotCMSContentTypeFieldVariable[],
     key: string
-): string => {
+): string | null => {
     if (fieldVariables && fieldVariables.length) {
         const [variable] = fieldVariables.filter(
             (item: DotCMSContentTypeFieldVariable) => item.key.toUpperCase() === key.toUpperCase()
@@ -126,7 +143,9 @@ export const getFieldsFromLayout = (
 ): DotCMSContentTypeField[] => {
     return layout.reduce(
         (acc: DotCMSContentTypeField[], { columns }: DotCMSContentTypeLayoutRow) =>
-            acc.concat(...columns.map((col: DotCMSContentTypeLayoutColumn) => col.fields)),
+            // `?? []` for a row with no columns: the layout goes momentarily empty while a field is
+            // being dragged in the edit page, which `dot-form-row` documents.
+            acc.concat(...(columns ?? []).map((col: DotCMSContentTypeLayoutColumn) => col.fields)),
         []
     );
 };
@@ -134,8 +153,11 @@ export const getFieldsFromLayout = (
 const fieldParamsConversionFromBE = {
     'Key-Value': (field: DotCMSContentTypeField) => {
         if (field.defaultValue && typeof field.defaultValue !== 'string') {
-            const valuesArray = Object.keys(field.defaultValue).map((key: string) => {
-                return { key: key, value: field.defaultValue[key] };
+            // Bound to a local so the `typeof` narrowing survives into the callback — TypeScript
+            // discards it for a property read inside a closure.
+            const defaultValue = field.defaultValue as Record<string, string>;
+            const valuesArray = Object.keys(defaultValue).map((key: string) => {
+                return { key: key, value: defaultValue[key] };
             });
             field.defaultValue = getJsonStringFromDotKeyArray(valuesArray);
         }
@@ -143,11 +165,19 @@ const fieldParamsConversionFromBE = {
     }
 };
 
-export const fieldCustomProcess = {
+/**
+ * Per-tag value transforms, keyed by DOM tag name. Only one field needs one, and `dot-form` branches
+ * on the lookup (`process ? process(value) : value`) because every other tag misses.
+ */
+export const fieldCustomProcess: Record<string, ((value: string) => unknown) | undefined> = {
     'DOT-KEY-VALUE': pipedValuesToObject
 };
 
-export const fieldMap = {
+/**
+ * Renderers keyed by content-type field type. A type with no entry is simply not rendered, which
+ * `dot-form-column` already checks for before indexing.
+ */
+export const fieldMap: Record<string, ((field: DotCMSContentTypeField) => unknown) | undefined> = {
     Time: DotFormFields.Time,
     Textarea: DotFormFields.Textarea,
     Text: DotFormFields.Text,

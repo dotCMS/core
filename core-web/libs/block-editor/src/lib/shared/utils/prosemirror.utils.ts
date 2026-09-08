@@ -56,11 +56,16 @@ export const findParentNode = (
     NodesTypesToFind?: Array<NodeTypes>
 ) => {
     let depth = selectionStart.depth;
-    let parent;
+    // Annotated rather than inferred: the `some` callback below reads it inside a closure,
+    // which stops control-flow inference from resolving the type of an untyped `let`.
+    let parent: Node;
     do {
         parent = selectionStart.node(depth);
         if (parent) {
-            if (Array.isArray(NodesTypesToFind) && NodesTypesToFind.includes(parent.type.name)) {
+            if (
+                Array.isArray(NodesTypesToFind) &&
+                NodesTypesToFind.some((nodeType) => nodeType === parent.type.name)
+            ) {
                 break;
             }
 
@@ -98,9 +103,9 @@ export const textNodeRange = (selectionStart: ResolvedPos, pos: number) => {
  */
 export const getPosAtDocCoords = (view: EditorView, event: MouseEvent) => {
     const { clientX: left, clientY: top } = event;
-    const { pos } = view.posAtCoords({ left, top });
 
-    return pos;
+    // Null when the coordinates fall outside the editor.
+    return view.posAtCoords({ left, top })?.pos;
 };
 
 /**
@@ -108,7 +113,15 @@ export const getPosAtDocCoords = (view: EditorView, event: MouseEvent) => {
  *
  * @param {*} { editor, nodeType, selectionRange }
  */
-export const deleteByNode = ({ editor, nodeType, selectionRange }) => {
+export const deleteByNode = ({
+    editor,
+    nodeType,
+    selectionRange
+}: {
+    editor: Editor;
+    nodeType: NodeTypes;
+    selectionRange: SelectionRange;
+}) => {
     if (CustomNodeTypes.includes(nodeType)) {
         deleteSelectedCustomNodeType(editor, selectionRange);
     } else {
@@ -150,7 +163,7 @@ export const deleteSelectedCustomNodeType = (editor: Editor, selectionRange: Sel
  */
 export const deleteSelectionNode = (editor: Editor, selectionRange: SelectionRange) => {
     const selectionParentNode = findParentNode(selectionRange.$from);
-    const nodeSelectionNodeType: NodeTypes = selectionParentNode.type.name;
+    const nodeSelectionNodeType = selectionParentNode.type.name;
 
     const closestOrderedOrBulletNode = findParentNode(selectionRange.$from, [
         NodeTypes.ORDERED_LIST,
@@ -194,12 +207,13 @@ export const formatHTML = (html: string) => {
         .replace(listRex, (content) => replaceInlineContent(content));
 };
 
-export const replaceInlineContent = (content) => {
+export const replaceInlineContent = (content: string) => {
     // Get Images inside <a> Tag
     const images = content.match(imgTagRex) || [];
 
     // Check that after removing the images, it's not empty
-    const text = new DOMParser().parseFromString(content, 'text/html').documentElement.textContent;
+    const text =
+        new DOMParser().parseFromString(content, 'text/html').documentElement.textContent ?? '';
 
     // Move the <img/> tag to the end of the <p> tag.
     return text.trim().length > 0
@@ -207,12 +221,13 @@ export const replaceInlineContent = (content) => {
         : images.join('');
 };
 
-export const replaceInlineLinkImage = (content) => {
+export const replaceInlineLinkImage = (content: string) => {
     const container = document.createElement('div');
     container.innerHTML = content;
-    const href = container.querySelector('a').getAttribute('href');
-    const title = container.querySelector('a').getAttribute('href');
-    const alt = container.querySelector('a').getAttribute('alt');
+    const anchor = container.querySelector('a');
+    const href = anchor?.getAttribute('href');
+    const title = anchor?.getAttribute('href');
+    const alt = anchor?.getAttribute('alt');
 
     return content
         .replace(/<a(|\s+[^>]*)>/gm, '')
@@ -289,7 +304,7 @@ export const findNodeByType = (
     editor: Editor, // The TipTap editor instance
     nodeType: NodeTypes // The type of the node to search for
 ): DotTiptapNodeInformation[] | null => {
-    const nodes = [];
+    const nodes: DotTiptapNodeInformation[] = [];
 
     // Traverse the document's descendants
     editor.state.doc.descendants((node, currentPosition) => {

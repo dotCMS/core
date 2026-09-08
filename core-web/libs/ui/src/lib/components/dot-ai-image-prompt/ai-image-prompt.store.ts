@@ -176,7 +176,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
     });
 
     private updateImageState(
-        response: DotAIImageContent,
+        response: DotAIImageContent | null,
         formValue: AIImagePrompt,
         isImageWithError: boolean,
         imagesArray: DotGeneratedAIImage[],

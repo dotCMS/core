@@ -20,7 +20,7 @@ import { RouterModule, NavigationExtras } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { take, tap } from 'rxjs/operators';
+import { filter, take, tap } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -59,14 +59,16 @@ export class ForgotPasswordComponent implements OnInit {
 
     message = '';
 
-    forgotPasswordForm: UntypedFormGroup;
-    loginInfo$: Observable<DotLoginInformation>;
+    forgotPasswordForm!: UntypedFormGroup;
+    loginInfo$!: Observable<DotLoginInformation>;
 
     private forgotPasswordConfirmationMessage = '';
 
     ngOnInit(): void {
         this.loginInfo$ = this.loginPageStateService.get().pipe(
             take(1),
+            // Null until `set()` has fetched the login page state.
+            filter((loginInfo): loginInfo is DotLoginInformation => !!loginInfo),
             tap((loginInfo: DotLoginInformation) => {
                 this.forgotPasswordConfirmationMessage =
                     loginInfo.i18nMessagesMap['an-email-with-instructions-will-be-sent'];
@@ -86,14 +88,14 @@ export class ForgotPasswordComponent implements OnInit {
         if (confirm(this.forgotPasswordConfirmationMessage)) {
             this.message = '';
             this.loginService
-                .recoverPassword(this.forgotPasswordForm.get('login').value)
+                .recoverPassword(this.forgotPasswordForm.controls['login'].value)
                 .pipe(take(1))
                 .subscribe(
                     () => {
                         this.goToLogin({
                             queryParams: {
                                 resetEmailSent: true,
-                                resetEmail: this.forgotPasswordForm.get('login').value
+                                resetEmail: this.forgotPasswordForm.controls['login'].value
                             }
                         });
                     },

@@ -16,7 +16,7 @@
             <dot-block-editor
                 [languageId]="$languageId()"
                 [formControlName]="field.variable"
-                [contentlet]="$contentlet()"
+                [contentlet]="$contentlet() ?? undefined"
                 [hasError]="fieldHasError"
                 [field]="field" />
         } @else {
@@ -24,7 +24,7 @@
             <dot-old-block-editor
                 [languageId]="$languageId()"
                 [formControlName]="field.variable"
-                [contentlet]="$contentlet()"
+                [contentlet]="$contentlet() ?? undefined"
                 [hasFieldError]="fieldHasError"
                 [field]="field" />
         }

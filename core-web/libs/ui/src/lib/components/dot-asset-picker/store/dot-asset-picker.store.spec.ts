@@ -14,6 +14,7 @@ import { DotContentDriveService, DotFolderService, DotSiteService } from '@dotcm
 import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotPagination,
@@ -33,6 +34,12 @@ const SITE: DotSite = {
     aliases: null,
     archived: false
 };
+
+/**
+ * A contentlet stub. `DotCMSContentlet` has far more required fields than any of these tests
+ * reads — they only ever look at `inode` — so the shape is asserted once here.
+ */
+const asset = (inode = ''): DotCMSContentlet => ({ inode }) as DotCMSContentlet;
 
 const EMPTY_RESPONSE: DotContentDriveSearchResponse = {
     folderCount: 0,
@@ -374,7 +381,7 @@ describe('DotAssetPickerStore', () => {
 
         it('should store the returned items and mark itself loaded', () => {
             contentDriveService.search.mockReturnValue(
-                of({ ...EMPTY_RESPONSE, list: [{ inode: 'a' }], contentCount: 1 })
+                of({ ...EMPTY_RESPONSE, list: [asset('a')], contentCount: 1 })
             );
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();

@@ -48,8 +48,7 @@ describe('DotRolesTreeComponent', () => {
             mockProvider(ConfirmationService, {
                 confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
                 requireConfirmation$: EMPTY,
-                accept: EMPTY,
-                reject: EMPTY
+                accept: EMPTY
             }),
             mockProvider(DotAlertConfirmService, { alert: jest.fn() })
         ],

@@ -19,9 +19,9 @@ import { MULTI_SELECT_FIELD_MOCK } from '../../utils/mocks';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 // https://jestjs.io/docs/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
@@ -69,7 +69,7 @@ describe('DotEditContentMultiselectFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            spectator.query(MultiSelect).show();
+            spectator.query(MultiSelect)!.show();
             spectator.detectChanges();
 
             const options = spectator.component.$options();
@@ -102,11 +102,13 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         });
 
         it('should render no options selected', () => {
-            expect(spectator.query(MultiSelect).valuesAsString).toEqual(undefined);
+            // `valuesAsString` is not on PrimeNG 21's `MultiSelect`; `label` is the rendered summary
+            // and reads empty when nothing is selected.
+            expect(spectator.query(MultiSelect)!.label()).toBeFalsy();
         });
 
         it('should render options', () => {
-            spectator.query(MultiSelect).show();
+            spectator.query(MultiSelect)!.show();
             spectator.detectChanges();
 
             const multiSelectItems = spectator.queryAll(MultiSelectItem);
@@ -145,6 +147,6 @@ describe('DotEditContentMultiselectFieldComponent', () => {
                 value: 'one'
             }
         ];
-        expect(spectator.query(MultiSelect).options).toEqual(expectedList);
+        expect(spectator.query(MultiSelect)!.options).toEqual(expectedList);
     });
 });

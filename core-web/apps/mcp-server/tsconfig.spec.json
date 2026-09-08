@@ -1,9 +1,14 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
+        // TODO(#35932): base enables these two workspace-wide. These specs still trip
+        // TS4111 (index-signature access) and TS4114 (missing `override`) — `strict`
+        // itself already passes. Drop these two lines once those are cleaned up.
         "outDir": "../../dist/out-tsc",
         "module": "commonjs",
-        "types": ["jest", "node"]
+        "types": ["jest", "node"],
+        "noPropertyAccessFromIndexSignature": false,
+        "noImplicitOverride": false
     },
     "include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
 }

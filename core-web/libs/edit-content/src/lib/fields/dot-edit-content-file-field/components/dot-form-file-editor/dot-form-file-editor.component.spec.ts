@@ -138,20 +138,28 @@ describe('DotFormFileEditorComponent', () => {
         // The real TS language service that produces these markers can't run in jsdom, so we
         // inject them; this exercises our gate, not Monaco's marker generation.
         const setMarkers = (markers: ReturnType<typeof marker>[]) => {
-            jest.spyOn(monaco.editor, 'getModelMarkers').mockReturnValue(markers);
+            // The fixtures carry only the members the gate reads — `IMarker.resource` is a
+            // `Uri`, which jsdom cannot produce.
+            jest.spyOn(monaco.editor, 'getModelMarkers').mockReturnValue(
+                markers as unknown as monaco.editor.IMarker[]
+            );
             spectator.component.contentField.setErrors(
                 markers.length ? { monaco: { value: markers.map((m) => m.message) } } : null
             );
         };
 
         const spyUpload = () =>
-            jest.spyOn(spectator.component.store, 'uploadFile').mockImplementation(() => undefined);
+            // rxMethod calls resolve to an `RxMethodRef` ({ destroy }).
+            jest.spyOn(spectator.component.store, 'uploadFile').mockImplementation(() => ({
+                destroy: () => undefined
+            }));
 
         beforeEach(() => {
             spectator.component.ngOnInit();
             spectator.component.form.controls.name.setValue('script.js');
 
-            const editor = monaco.editor.create();
+            // `create` requires the container element even for the stubbed editor.
+            const editor = monaco.editor.create(document.createElement('div'));
             spectator.component.onEditorInit(
                 editor as unknown as monaco.editor.IStandaloneCodeEditor
             );

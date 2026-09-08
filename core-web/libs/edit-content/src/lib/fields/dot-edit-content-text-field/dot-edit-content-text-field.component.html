@@ -1,6 +1,5 @@
 @let field = $field();
 @let showLabel = $showLabel();
-@let dataType = field.dataType;
 @let fieldHasError = $hasError();
 
 <dot-card-field [hasError]="fieldHasError">
@@ -18,9 +17,9 @@
             [class.ng-invalid]="fieldHasError"
             [class.ng-dirty]="fieldHasError"
             [attr.data-testId]="field.variable"
-            [type]="inputTextOptions[dataType].type"
-            [attr.inputmode]="inputTextOptions[dataType].inputMode"
-            [attr.step]="inputTextOptions[dataType].step"
+            [type]="$inputTextOptions().type"
+            [attr.inputmode]="$inputTextOptions().inputMode"
+            [attr.step]="$inputTextOptions().step"
             pInputText />
     </dot-card-field-content>
     @if ((fieldHasError && isRequired) || (!fieldHasError && field.hint)) {

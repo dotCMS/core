@@ -4,7 +4,6 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
-import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import {
@@ -17,6 +16,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
+    DotCMSContentType,
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
     FeaturedFlags
@@ -161,7 +161,7 @@ describe('ContentTypesFormComponent', () => {
         });
         spectator.detectChanges();
 
-        spectator.component.form.get('name').setValue('content type name');
+        spectator.component.form.get('name')!.setValue('content type name');
         expect(spectator.component.form.valid).toBe(true);
     });
 
@@ -209,7 +209,7 @@ describe('ContentTypesFormComponent', () => {
         spectator.detectChanges();
 
         // Form is only valid when "name" property is set
-        spectator.component.form.get('description').setValue('hello world');
+        spectator.component.form.get('description')!.setValue('hello world');
         spectator.detectChanges();
 
         expect(spectator.component.canSave).toBe(true);
@@ -224,7 +224,7 @@ describe('ContentTypesFormComponent', () => {
         });
         spectator.detectChanges();
 
-        spectator.component.form.get('name').setValue(null);
+        spectator.component.form.get('name')!.setValue(null);
         spectator.detectChanges();
 
         expect(spectator.component.canSave).toBe(false);
@@ -239,7 +239,7 @@ describe('ContentTypesFormComponent', () => {
         });
         spectator.detectChanges();
 
-        spectator.component.form.get('description').setValue('some desc');
+        spectator.component.form.get('description')!.setValue('some desc');
         spectator.detectChanges();
 
         expect(spectator.component.canSave).toBe(true);
@@ -254,8 +254,8 @@ describe('ContentTypesFormComponent', () => {
         });
         spectator.detectChanges();
 
-        spectator.component.form.get('name').setValue(null);
-        spectator.component.form.get('description').setValue('some desc');
+        spectator.component.form.get('name')!.setValue(null);
+        spectator.component.form.get('description')!.setValue('some desc');
         spectator.detectChanges();
 
         expect(spectator.component.canSave).toBe(false);
@@ -276,11 +276,11 @@ describe('ContentTypesFormComponent', () => {
         // The form is valid in edit mode with a name, so canSave starts as false (no changes)
         expect(spectator.component.canSave).toBe(false); // by default is false
 
-        spectator.component.form.get('name').setValue('A new  name');
+        spectator.component.form.get('name')!.setValue('A new  name');
         spectator.detectChanges();
         expect(spectator.component.canSave).toBe(true); // name updated set it to true
 
-        spectator.component.form.get('name').setValue('Hello World');
+        spectator.component.form.get('name')!.setValue('Hello World');
         spectator.detectChanges();
         expect(spectator.component.canSave).toBe(false); // revert the change button disabled set it to false
     });
@@ -299,11 +299,11 @@ describe('ContentTypesFormComponent', () => {
         // The form is valid in edit mode with a name, so canSave starts as false (no changes)
         expect(spectator.component.canSave).toBe(false); // by default is false
 
-        spectator.component.form.get('name').setValue('A new  name');
+        spectator.component.form.get('name')!.setValue('A new  name');
         spectator.detectChanges();
         expect(spectator.component.canSave).toBe(true); // name updated set it to true
 
-        spectator.component.form.get('name').setValue('Hello World');
+        spectator.component.form.get('name')!.setValue('Hello World');
         spectator.detectChanges();
         expect(spectator.component.canSave).toBe(false); // revert the change button disabled set it to false
     });
@@ -354,7 +354,7 @@ describe('ContentTypesFormComponent', () => {
         expect(spectator.component.form.get('fixed')).not.toBeNull();
         expect(spectator.component.form.get('system')).not.toBeNull();
         expect(spectator.component.form.get('folder')).not.toBeNull();
-        const workflowAction = spectator.component.form.get('systemActionMappings');
+        const workflowAction = spectator.component.form.get('systemActionMappings')!;
         expect(workflowAction.get(DotCMSSystemActionType.NEW)).not.toBeNull();
 
         expect(spectator.component.form.get('detailPage')).toBeNull();
@@ -408,7 +408,7 @@ describe('ContentTypesFormComponent', () => {
         expect(spectator.component.form.get('folder')).not.toBeNull();
         expect(spectator.component.form.get('newEditContent')).not.toBeNull();
 
-        const workflowAction = spectator.component.form.get('systemActionMappings');
+        const workflowAction = spectator.component.form.get('systemActionMappings')!;
         expect(workflowAction.get(DotCMSSystemActionType.NEW)).not.toBeNull();
     });
 
@@ -495,7 +495,7 @@ describe('ContentTypesFormComponent', () => {
 
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('systemActionMappings').value).toEqual({
+            expect(spectator.component.form.get('systemActionMappings')!.value).toEqual({
                 NEW: '44d4d4cd-c812-49db-adb1-1030be73e69a'
             });
         });
@@ -509,7 +509,7 @@ describe('ContentTypesFormComponent', () => {
 
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('systemActionMappings').value).toEqual({
+            expect(spectator.component.form.get('systemActionMappings')!.value).toEqual({
                 NEW: ''
             });
         });
@@ -549,8 +549,8 @@ describe('ContentTypesFormComponent', () => {
         const dateFieldMsg = spectator.query('#field-dates-hint');
 
         expect(dateFieldMsg).toBeTruthy();
-        expect(spectator.component.form.get('publishDateVar').disabled).toBe(true);
-        expect(spectator.component.form.get('expireDateVar').disabled).toBe(true);
+        expect(spectator.component.form.get('publishDateVar')!.disabled).toBe(true);
+        expect(spectator.component.form.get('expireDateVar')!.disabled).toBe(true);
     });
 
     it('should render the new content banner when the feature flag is enabled', () => {
@@ -560,7 +560,7 @@ describe('ContentTypesFormComponent', () => {
             id: '123'
         });
 
-        activatedRoute.snapshot.data.featuredFlags[
+        activatedRoute.snapshot.data['featuredFlags'][
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = true;
 
@@ -574,7 +574,7 @@ describe('ContentTypesFormComponent', () => {
 
     it('should hide the new content banner when the feature flag is disabled', () => {
         // Need to update the flag before component initialization
-        activatedRoute.snapshot.data.featuredFlags[
+        activatedRoute.snapshot.data['featuredFlags'][
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = false;
 
@@ -593,7 +593,7 @@ describe('ContentTypesFormComponent', () => {
         expect(newContentBanner).toBeNull();
 
         // Reset flag for other tests
-        activatedRoute.snapshot.data.featuredFlags[
+        activatedRoute.snapshot.data['featuredFlags'][
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = true;
     });
@@ -614,12 +614,12 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should render enabled dates fields when date fields are passed', () => {
-            expect(spectator.component.form.get('publishDateVar').disabled).toBe(false);
-            expect(spectator.component.form.get('expireDateVar').disabled).toBe(false);
+            expect(spectator.component.form.get('publishDateVar')!.disabled).toBe(false);
+            expect(spectator.component.form.get('expireDateVar')!.disabled).toBe(false);
         });
 
         it('should patch publishDateVar', () => {
-            const field: AbstractControl = spectator.component.form.get('publishDateVar');
+            const field = spectator.component.form.get('publishDateVar')!;
             field.setValue('123');
 
             spectator.component.handleDateVarChange({ value: '123' }, 'expireDateVar');
@@ -628,7 +628,7 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should patch expireDateVar', () => {
-            const field: AbstractControl = spectator.component.form.get('expireDateVar');
+            const field = spectator.component.form.get('expireDateVar')!;
 
             field.setValue('123');
 
@@ -683,7 +683,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     describe('send data with valid form', () => {
-        let data;
+        let data: DotCMSContentType | null;
 
         beforeEach(() => {
             jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
@@ -695,14 +695,14 @@ describe('ContentTypesFormComponent', () => {
             data = null;
             jest.spyOn(spectator.component, 'submitForm');
             spectator.component.$send.subscribe((res) => (data = res));
-            spectator.component.form.controls.name.setValue('A content type name');
+            spectator.component.form.controls['name'].setValue('A content type name');
             // Set host to match SiteServiceMock currentSite identifier
-            spectator.component.form.controls.host.setValue('123-xyz-567-xxl');
+            spectator.component.form.controls['host'].setValue('123-xyz-567-xxl');
             spectator.detectChanges();
         });
 
         it('should submit form correctly', () => {
-            const metadata = {};
+            const metadata: Record<string, boolean> = {};
             metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
             spectator.component.submitForm();
 
@@ -756,11 +756,11 @@ describe('ContentTypesFormComponent', () => {
                 it('should show workflow disabled and with message if the license community its true', () => {
                     const workflowMsg = spectator.query('#field-workflow-hint');
                     expect(workflowMsg).toBeDefined();
-                    expect(spectator.component.form.get('workflows').disabled).toBe(true);
+                    expect(spectator.component.form.get('workflows')!.disabled).toBe(true);
                     expect(
                         spectator.component.form
-                            .get('systemActionMappings')
-                            .get(DotCMSSystemActionType.NEW).disabled
+                            .get('systemActionMappings')!
+                            .get(DotCMSSystemActionType.NEW)!.disabled
                     ).toBe(true);
                 });
             });
@@ -780,13 +780,13 @@ describe('ContentTypesFormComponent', () => {
 
                     const workflowMsg = enterpriseSpectator.query('#field-workflow-hint');
                     expect(workflowMsg).toBeDefined();
-                    expect(enterpriseSpectator.component.form.get('workflows').disabled).toBe(
+                    expect(enterpriseSpectator.component.form.get('workflows')!.disabled).toBe(
                         false
                     );
                     expect(
                         enterpriseSpectator.component.form
-                            .get('systemActionMappings')
-                            .get(DotCMSSystemActionType.NEW).disabled
+                            .get('systemActionMappings')!
+                            .get(DotCMSSystemActionType.NEW)!.disabled
                     ).toBe(false);
                 });
             });
@@ -813,7 +813,7 @@ describe('ContentTypesFormComponent', () => {
                 });
                 jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 spectator.detectChanges();
-                expect(spectator.component.form.get('workflows').value).toEqual([
+                expect(spectator.component.form.get('workflows')!.value).toEqual([
                     {
                         ...mockWorkflows[0],
                         id: '123',
@@ -835,7 +835,7 @@ describe('ContentTypesFormComponent', () => {
                 });
                 jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 spectator.detectChanges();
-                expect(spectator.component.form.get('workflows').value).toEqual([]);
+                expect(spectator.component.form.get('workflows')!.value).toEqual([]);
             });
             it('should initialize workflowsSelected$ with the value from workflows field', async () => {
                 spectator.setInput('contentType', {

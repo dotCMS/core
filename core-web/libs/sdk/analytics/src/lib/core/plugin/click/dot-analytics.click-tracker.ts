@@ -127,15 +127,15 @@ export class DotCMSClickTracker {
      */
     private attachClickListener(element: HTMLElement): void {
         if (this.trackedElements.has(element)) {
-            const identifier = element.dataset.dotAnalyticsIdentifier || 'unknown';
+            const identifier = element.dataset['dotAnalyticsIdentifier'] || 'unknown';
             this.logger.debug(`Element ${identifier} already has listener, skipping`);
             return; // Already tracked
         }
 
         // Cache DOM index as data-attribute to avoid O(3n) query on each click
-        if (!element.dataset.dotAnalyticsDomIndex) {
+        if (!element.dataset['dotAnalyticsDomIndex']) {
             const allContentlets = findContentlets();
-            element.dataset.dotAnalyticsDomIndex = String(allContentlets.indexOf(element));
+            element.dataset['dotAnalyticsDomIndex'] = String(allContentlets.indexOf(element));
         }
 
         const clickHandler = (event: MouseEvent) => {
@@ -170,7 +170,7 @@ export class DotCMSClickTracker {
         this.trackedElements.add(element);
         this.elementHandlers.set(element, clickHandler);
 
-        const identifier = element.dataset.dotAnalyticsIdentifier || 'unknown';
+        const identifier = element.dataset['dotAnalyticsIdentifier'] || 'unknown';
         this.logger.log(`Attached listener to contentlet ${identifier}`, element);
     }
 

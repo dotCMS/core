@@ -1,0 +1,47 @@
+{
+  "src/lib/dot-content-compare/components/dot-content-compare-block-editor/block-editor-mock/block-editor-mock.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/dot-content-compare/components/dot-content-compare-block-editor/block-editor-mock/old-block-editor-mock.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/dot-content-compare/dot-content-compare.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/dot-device-selector-seo/dot-device-selector-seo.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/dot-results-seo-tool/dot-results-seo-tool.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 4
+    }
+  },
+  "src/lib/dot-select-seo-tool/dot-select-seo-tool.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/dot-seo-image-preview/dot-seo-image-preview.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  }
+}

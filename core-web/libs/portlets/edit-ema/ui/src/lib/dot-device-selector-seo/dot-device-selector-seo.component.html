@@ -58,7 +58,7 @@
             </div>
         </div>
 
-        @if (hideSocialMedia) {
+        @if (hideSocialMedia()) {
             <div class="dot-device-selector__link--container">
                 <a
                     [href]="previewUrl"
@@ -72,7 +72,7 @@
         }
     </div>
 
-    @if (!hideSocialMedia) {
+    @if (!hideSocialMedia()) {
         <div class="dot-device-selector__column" data-testId="social-media-tiles">
             <div class="dot-device-selector__panel">
                 <div class="dot-device-selector__header">

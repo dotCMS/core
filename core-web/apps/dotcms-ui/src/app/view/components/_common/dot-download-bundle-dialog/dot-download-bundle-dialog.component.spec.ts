@@ -154,7 +154,7 @@ describe('DotDownloadBundleDialogComponent', () => {
             });
 
             it('should close dialog on Cancel', () => {
-                component.dialogActions.cancel.action();
+                component.dialogActions?.cancel!.action!();
                 expect(component.showDialog).toBe(false);
             });
 
@@ -185,9 +185,9 @@ describe('DotDownloadBundleDialogComponent', () => {
 
                 it('should disable buttons and change to label to downloading...', () => {
                     component.handleSubmit();
-                    expect(component.dialogActions.accept.disabled).toBe(true);
-                    expect(component.dialogActions.cancel.disabled).toBe(true);
-                    expect(component.dialogActions.accept.label).toBe('Downloading...');
+                    expect(component.dialogActions?.accept!.disabled).toBe(true);
+                    expect(component.dialogActions?.cancel!.disabled).toBe(true);
+                    expect(component.dialogActions?.accept!.label).toBe('Downloading...');
                 });
 
                 it('should fetch to the correct url when publish', fakeAsync(() => {

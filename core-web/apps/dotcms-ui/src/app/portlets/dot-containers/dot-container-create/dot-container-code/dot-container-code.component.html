@@ -1,4 +1,4 @@
-<div [formGroup]="fg" class="px-4">
+<div [formGroup]="fg()" class="px-4">
     <div class="field mb-1">
         <label dotFieldRequired>
             {{ 'message.containers.create.content_type_code' | dm }}
@@ -70,7 +70,7 @@
                         <div [formGroupName]="i">
                             <button
                                 (click)="handleAddVariable(containerContent.value)"
-                                [disabled]="contentTypes.length === 0"
+                                [disabled]="contentTypes().length === 0"
                                 [label]="'add-variable' | dm"
                                 class="p-button-outlined p-button-sm my-2 ml-4"
                                 pButton></button>

@@ -83,9 +83,7 @@
                 <div class="flex h-full min-h-0 flex-col px-4 pt-4">
                     <!-- Lock / unlock button — separated from the workflow actions below
                          by a divider, matching the sidebar's section separators. -->
-                    @if (
-                        !$store.isNew() && !$store.isViewingHistoricalVersion() && $store.canLock()
-                    ) {
+                    @if (!isNew && !$store.isViewingHistoricalVersion() && $store.canLock()) {
                         <div
                             class="mb-4 border-b border-surface-200 pb-4"
                             data-testId="sidebar-lock-section">

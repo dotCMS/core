@@ -1,4 +1,7 @@
+import { PluginKey } from 'prosemirror-state';
 import { Props } from 'tippy.js';
+
+import { Editor, Range } from '@tiptap/core';
 
 // Assets
 import {
@@ -12,7 +15,10 @@ import {
     listStarsIcon,
     mountsStarsIcon
 } from '../components/suggestions/suggestion-icons';
-import { DotMenuItem } from '../components/suggestions/suggestions.component';
+import {
+    DotMenuItem,
+    ItemsType as ItemsTypeEnum
+} from '../components/suggestions/suggestions.component';
 
 const headings: DotMenuItem[] = [...Array(6).keys()].map((level) => {
     const size = level + 1;
@@ -118,7 +124,7 @@ export const getEditorBlockOptions = () => {
             // get all blocks except the Paragraph
             .filter(({ id }) => id != paragraph.id)
             .map(({ label, id }) => ({ label, code: id }))
-            .sort((a, b) => a.label.localeCompare(b.label))
+            .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''))
     );
 };
 
@@ -152,7 +158,7 @@ export const SuggestionPopperModifiers = [
 
 export const CONTENT_SUGGESTION_ID = 'dotContent';
 
-const FORBIDDEN_CHANGE_TO_BLOCKS = {
+const FORBIDDEN_CHANGE_TO_BLOCKS: Record<string, boolean> = {
     horizontalRule: true,
     table: true,
     image: true,
@@ -162,10 +168,22 @@ const FORBIDDEN_CHANGE_TO_BLOCKS = {
 };
 
 export const changeToItems: DotMenuItem[] = [
-    ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id])
+    ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id ?? ''])
 ];
 
-export const clearFilter = function ({ type, editor, range, suggestionKey, ItemsType }) {
+export const clearFilter = function ({
+    type,
+    editor,
+    range,
+    suggestionKey,
+    ItemsType
+}: {
+    type: ItemsTypeEnum;
+    editor: Editor;
+    range: Range;
+    suggestionKey: PluginKey;
+    ItemsType: typeof ItemsTypeEnum;
+}) {
     const queryRange = {
         to: range.to + suggestionKey.getState(editor.view.state).query?.length,
         from: type === ItemsType.BLOCK ? range.from : range.from + 1

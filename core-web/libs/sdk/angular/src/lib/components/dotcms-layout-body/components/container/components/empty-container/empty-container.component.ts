@@ -1,4 +1,3 @@
-import { NgStyle } from '@angular/common';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
@@ -13,11 +12,10 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
  */
 @Component({
     selector: 'dotcms-empty-container',
-    imports: [NgStyle],
     changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         @if ($isDevMode()) {
-            <div [ngStyle]="emptyContainerStyle" data-testid="empty-container">
+            <div [style]="emptyContainerStyle" data-testid="empty-container">
                 <span data-testid="empty-container-message" data-dot-object="empty-content">
                     This container is empty.
                 </span>

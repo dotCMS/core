@@ -122,7 +122,8 @@ describe('createAnalyticsQueue', () => {
                     doc_search: 'test-search',
                     doc_host: 'example.com',
                     doc_path: '/page',
-                    title: 'Test Page'
+                    title: 'Test Page',
+                    locale_id: 'en-us'
                 }
             }
         };
@@ -335,7 +336,9 @@ describe('createAnalyticsQueue', () => {
             sendBatchCallback(events, []);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledTimes(1);
-            expect(sendAnalyticsEvent).toHaveBeenCalledWith(
+            // Asserted through an untyped mock reference: matching the full request body
+            // against the DotCMSEvent union makes tsc bail with TS2589 (excessively deep).
+            expect(sendAnalyticsEvent as unknown as jest.Mock).toHaveBeenCalledWith(
                 {
                     context: mockContext,
                     events

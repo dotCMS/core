@@ -10,16 +10,14 @@ import {
     DotMessageService,
     DotIframeService,
     DotRouterService,
-    DotUiColorsService,
-    DotLoadingIndicatorService
+    DotUiColorsService
 } from '@dotcms/data-access';
 import { LoginService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
-    MockDotRouterService,
-    MockDotUiColorsService
+    MockDotRouterService
 } from '@dotcms/utils-testing';
 
 import { DotReorderMenuComponent } from './dot-reorder-menu.component';
@@ -68,7 +66,6 @@ describe('DotReorderMenuComponent', () => {
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                { provide: DotLoadingIndicatorService, useValue: {} },
                 {
                     provide: IframeOverlayService,
                     useValue: {

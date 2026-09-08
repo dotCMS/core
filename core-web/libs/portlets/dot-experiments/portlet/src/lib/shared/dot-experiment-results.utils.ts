@@ -46,8 +46,11 @@ export const getPropertyColors = (index: number): LineChartColorsProperties => {
     return ExperimentChartDatasetColorsVariants[index];
 };
 
-export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
-    return !!experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
+export const isPromotedVariant = (
+    experiment: DotExperiment | null,
+    variantName: string
+): boolean => {
+    return !!experiment?.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
 };
 
 export const getPreviousDay = (givenDate: string) => {

@@ -33,7 +33,8 @@ describe('DotImageEditorService', () => {
 
     describe('getFileSize', () => {
         it('should issue a HEAD request and parse Content-Length to a number', () => {
-            const result: number[] = [];
+            // `getFileSize` emits null when Content-Length is absent or unparseable.
+            const result: (number | null)[] = [];
             spectator.service.getFileSize('/dA/asset.png').subscribe((size) => result.push(size));
 
             const req = httpMock.expectOne('/dA/asset.png');

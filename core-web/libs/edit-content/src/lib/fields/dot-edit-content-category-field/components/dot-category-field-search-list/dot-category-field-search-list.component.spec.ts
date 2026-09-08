@@ -1,4 +1,4 @@
-import { createFakeEvent } from '@openng/spectator';
+import { createFakeEvent, type InferInputSignals } from '@openng/spectator';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
@@ -32,7 +32,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
                 selected: CATEGORY_MOCK_TRANSFORMED,
                 categories: CATEGORY_MOCK_TRANSFORMED,
                 state: ComponentStatus.LOADED
-            } as unknown
+            } as unknown as InferInputSignals<DotCategoryFieldSearchListComponent>
         });
     });
 

@@ -1,10 +1,6 @@
 import { createFormBridge } from './lib/factories/form-bridge.factory';
 
-import type { FormBridge } from './lib/interfaces/form-bridge.interface';
-
-interface DotCustomFieldApiWindow extends Window {
-    DotCustomFieldApi: FormBridge;
-}
+import type { DotCustomFieldApiWindow } from './lib/interfaces/dot-custom-field-api-window.interface';
 
 /**
  * Initializes and exposes the DojoFormBridge as an IIFE (Immediately Invoked Function Expression)

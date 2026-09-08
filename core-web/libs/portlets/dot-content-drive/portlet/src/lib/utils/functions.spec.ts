@@ -8,9 +8,14 @@ import {
     DotContentDriveItem,
     DotPagination,
     FolderSearchView,
-    isTreeNodeContentData,
-    PERMISSIONS_TYPE
+    PERMISSIONS_TYPE,
+    PermissionType,
+    isTreeNodeContentData
 } from '@dotcms/dotcms-models';
+import {
+    DotFolderTreeNodeContentData,
+    DotFolderTreeNodeData
+} from '@dotcms/portlets/content-drive/ui';
 import {
     createFakeCheckboxField,
     createFakeDateField,
@@ -184,14 +189,24 @@ describe('Utility Functions', () => {
         });
 
         it('should encode multiple filters correctly', () => {
-            const result = encodeFilters({ contentType: ['Blog'], status: 'published' });
+            // Scalar `status` on purpose: this covers encodeFilters' non-array branch, a shape the
+            // declared type does not describe. Cast past it, as the null/undefined test below does.
+            const result = encodeFilters({
+                contentType: ['Blog'],
+                status: 'published'
+            } as unknown as DotContentDriveFilters);
             const parts = result.split(';');
             expect(parts.length).toBe(2);
             expect(parts).toEqual(expect.arrayContaining(['contentType:Blog', 'status:published']));
         });
 
         it('should ignore filters with empty string values', () => {
-            const result = encodeFilters({ contentType: ['Blog'], status: '' });
+            // An empty *string* is the case under test — distinct from an empty array, which the
+            // next test shows is encoded rather than skipped.
+            const result = encodeFilters({
+                contentType: ['Blog'],
+                status: ''
+            } as unknown as DotContentDriveFilters);
             expect(result).toBe('contentType:Blog');
         });
 
@@ -214,7 +229,10 @@ describe('Utility Functions', () => {
         });
 
         it('should handle filters with spaces in the value correctly', () => {
-            const result = encodeFilters({ title: 'Some Random Title', status: 'published' });
+            const result = encodeFilters({
+                title: 'Some Random Title',
+                status: 'published'
+            } as unknown as DotContentDriveFilters);
             expect(result).toBe('title:Some Random Title;status:published');
         });
 
@@ -671,7 +689,7 @@ describe('Utility Functions', () => {
                 '/main/': 'sub-folder',
                 '/main/sub-folder/': 'inner-folder'
             };
-            mockDotFolderService.searchFolders.mockImplementation(({ path }) =>
+            mockDotFolderService.searchFolders.mockImplementation(({ path = '' }) =>
                 searchResult(
                     childOf[path] ? [createFakeFolderSearchView({ path, name: childOf[path] })] : []
                 )
@@ -887,6 +905,9 @@ describe('Utility Functions', () => {
         });
 
         describe('deep-link ancestor pinning', () => {
+            // `path` is defaulted to `''` in every `mockImplementation` below: the service declares
+            // it optional, and each table routes on a literal path. `''` matches none of them, so a
+            // pathless request lands on the empty-page fallback the tables already have.
             const page = (names: string[], parentPath: string, total: number) =>
                 of({
                     folders: names.map((name) =>
@@ -896,7 +917,7 @@ describe('Utility Functions', () => {
                 });
 
             it('should pin an ancestor that sorts past the first page to the top of its level', (done) => {
-                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) =>
+                mockDotFolderService.searchFolders.mockImplementation(({ path = '', name }) =>
                     path === '/'
                         ? name
                             ? page(['zzz'], '/', 1)
@@ -919,7 +940,7 @@ describe('Utility Functions', () => {
             });
 
             it('should pin a nested ancestor into its own level, leaving the root level alone', (done) => {
-                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) => {
+                mockDotFolderService.searchFolders.mockImplementation(({ path = '', name }) => {
                     if (path === '/') {
                         return page(['parent'], '/', 1);
                     }
@@ -947,7 +968,7 @@ describe('Utility Functions', () => {
             });
 
             it('should not look the ancestor up when it is already on the first page', (done) => {
-                mockDotFolderService.searchFolders.mockImplementation(({ path }) =>
+                mockDotFolderService.searchFolders.mockImplementation(({ path = '' }) =>
                     path === '/' ? page(['zzz'], '/', 1) : page([], path, 0)
                 );
 
@@ -964,7 +985,7 @@ describe('Utility Functions', () => {
             it('should leave the level untouched when the ancestor cannot be resolved', (done) => {
                 // What a folder the user cannot READ looks like: filtered out of every response,
                 // never a 403. It must not be pinned, and the readable siblings must still render.
-                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) =>
+                mockDotFolderService.searchFolders.mockImplementation(({ path = '', name }) =>
                     path === '/' && !name ? page(['a-one'], '/', 253) : page([], path, 0)
                 );
 
@@ -981,7 +1002,7 @@ describe('Utility Functions', () => {
                 // The pin is a best-effort extra request inside a forkJoin. Letting a transient
                 // failure through would reject the whole hierarchy load, which loadFolders turns
                 // into an empty tree — costing every readable folder to save one pin.
-                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) => {
+                mockDotFolderService.searchFolders.mockImplementation(({ path = '', name }) => {
                     if (path === '/' && name) {
                         return throwError(() => new Error('Service error'));
                     }
@@ -1004,7 +1025,7 @@ describe('Utility Functions', () => {
                     (_, i) => `folder-${String(i).padStart(3, '0')}`
                 );
 
-                mockDotFolderService.searchFolders.mockImplementation(({ path, name }) =>
+                mockDotFolderService.searchFolders.mockImplementation(({ path = '', name }) =>
                     path === '/'
                         ? name
                             ? page(['zzz'], '/', 1)
@@ -1317,7 +1338,11 @@ describe('Utility Functions', () => {
                                 addChildrenAllowed: true
                             }
                         ],
-                        totalEntries: 1
+                        totalEntries: 1,
+                        // Required on the level type. One folder means production would derive
+                        // `Math.floor(1 / FOLDER_TREE_PAGE_SIZE) + 1`, and it goes unread anyway:
+                        // `totalEntries` matches the folder count, so no sentinel is appended.
+                        nextPage: 1
                     }
                 ],
                 'test.com'
@@ -1922,13 +1947,13 @@ describe('mergeFolderNodePage', () => {
 // the API view a folder search returns, through `folderSearchViewToDotFolder` and `createTreeNode`,
 // into the gate.
 describe('canAddChildrenTo, over a node built the way the tree builds them', () => {
-    const realNode = (permissions: string[]) =>
+    const realNode = (permissions: PermissionType[]) =>
         createTreeNode(
             folderSearchViewToDotFolder(
                 createFakeFolderSearchView({ name: 'blog', path: '/', permissions }),
                 'demo.dotcms.com'
             )
-        ).data;
+        ).data as DotFolderTreeNodeContentData;
 
     it('should carry the folder permissions onto the node', () => {
         expect(realNode(['READ', 'CAN_ADD_CHILDREN']).permissions).toEqual([
@@ -1949,7 +1974,7 @@ describe('canAddChildrenTo, over a node built the way the tree builds them', () 
 });
 
 describe('canAddChildrenTo', () => {
-    const node = (permissions?: string[]) =>
+    const node = (permissions?: PermissionType[]) =>
         ({ type: 'folder', path: '/x/', permissions }) as unknown as DotFolderTreeNodeData;
 
     it('should allow a folder that grants CAN_ADD_CHILDREN', () => {

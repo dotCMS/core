@@ -6,7 +6,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotHttpErrorManagerService, DotMessageDisplayService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
@@ -43,7 +43,7 @@ class TestHostComponent {
     value: DotCMSContentTypeField = {
         ...dotcmsContentTypeFieldBasicMock,
         contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
-        id: mockFieldVariables[0].fieldId
+        id: mockFieldVariables[0].fieldId!
     };
 }
 
@@ -173,10 +173,10 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             comp.changeControls.subscribe((c) => controls.push(c));
 
             changeTo(mockFieldVariables);
-            expect(controls.at(-1).accept.disabled).toBe(true);
+            expect(controls.at(-1)!.accept!.disabled).toBe(true);
 
             changeTo([{ key: 'fresh', value: 'v' } as DotFieldVariable]);
-            expect(controls.at(-1).accept.disabled).toBe(false);
+            expect(controls.at(-1)!.accept!.disabled).toBe(false);
         });
     });
 
@@ -208,7 +208,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         beforeEach(() => {
             httpErrorManager = de.injector.get(DotHttpErrorManagerService);
-            jest.spyOn(httpErrorManager, 'handle').mockReturnValue(of(null));
+            jest.spyOn(httpErrorManager, 'handle').mockReturnValue(
+                of({ redirected: false, status: HttpCode.SERVER_ERROR })
+            );
             jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
         });
@@ -354,7 +356,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             ...EMPTY_FIELD,
             clazz: DotCMSClazzes.BLOCK_EDITOR,
             contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
-            id: mockFieldVariables[0].fieldId
+            id: mockFieldVariables[0].fieldId!
         };
 
         beforeEach(() => {
@@ -389,7 +391,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             ...EMPTY_FIELD,
             clazz: DotCMSClazzes.CUSTOM_FIELD,
             contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
-            id: mockFieldVariables[0].fieldId
+            id: mockFieldVariables[0].fieldId!
         };
 
         beforeEach(() => {

@@ -98,7 +98,7 @@ export class DotExperimentsInlineEditTextComponent {
     $textChanged = output<string>({ alias: 'textChanged' });
 
     inplace = viewChild.required(Inplace);
-    form: FormGroup;
+    form!: FormGroup;
 
     private previousIsLoading = false;
 

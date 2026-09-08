@@ -1,3 +1,4 @@
+import { MenuItem } from 'primeng/api';
 import { FocusableOption } from '@angular/cdk/a11y';
 import {
     Component,
@@ -10,6 +11,8 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-suggestions-list-item',
@@ -25,15 +28,35 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     @HostBinding('attr.data-index')
     @Input()
-    index: string;
+    // `SuggestionsComponent` passes either the item's own tabindex or the loop index.
+    index: string | number = '';
 
-    @Input() command: () => void;
+    // Assigned by SuggestionsComponent for every item it renders.
+    // Mirrors PrimeNG's own `MenuItem['command']` so a `DotMenuItem` can be passed straight in.
+    @Input() command?: MenuItem['command'];
     @Input() label = '';
     @Input() url = '';
     @Input() page = false;
-    @Input() data = null;
+    // Typed rather than left as `= null`: under `strict` that infers the type `null`, so the
+    // template's `data?.contentlet` narrowed to `never` and the Angular compiler rejected it.
+    // `SuggestionsComponent` only ever passes `{ contentlet }` for contentlet suggestions.
+    @Input() data: { contentlet?: DotCMSContentlet } | null = null;
 
     icon = false;
+
+    /**
+     * A contentlet's `language` is either a plain code or a full `DotLanguage`; `p-tag` needs a
+     * string.
+     */
+    get languageLabel(): string {
+        const language = this.data?.contentlet?.language;
+
+        if (!language) {
+            return '';
+        }
+
+        return typeof language === 'string' ? language : (language.isoCode ?? '');
+    }
 
     private readonly element = inject(ElementRef);
     private readonly sanitizer = inject(DomSanitizer);
@@ -42,7 +65,8 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     onMouseDown(e: MouseEvent) {
         e.preventDefault();
         if (!this.disabled) {
-            this.command();
+            // Every field on `MenuItemCommandEvent` is optional; the handlers here ignore it.
+            this.command?.({});
         }
     }
 
@@ -74,6 +98,10 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
         if (!this.isIntoView()) {
             const child = this.element.nativeElement as HTMLElement;
             const parent = child.parentElement;
+
+            if (!parent) {
+                return;
+            }
 
             // Get BoundingClientRect of the elements
             const {

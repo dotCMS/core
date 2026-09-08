@@ -26,7 +26,11 @@ describe('DotKeyValueFieldComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({ props: { hasError: false } as unknown });
+        spectator = createComponent({
+            props: { hasError: false } as unknown as NonNullable<
+                Parameters<typeof createComponent>[0]
+            >['props']
+        });
     });
 
     describe('reading stored values', () => {
@@ -144,7 +148,7 @@ describe('DotKeyValueFieldComponent', () => {
 
     describe('shared editor wiring (FR-030)', () => {
         it('should not offer hidden values in Edit Content', () => {
-            const editor = spectator.query(DotKeyValueComponent);
+            const editor = spectator.query(DotKeyValueComponent)!;
 
             expect(editor.$showHiddenField()).toBe(false);
         });

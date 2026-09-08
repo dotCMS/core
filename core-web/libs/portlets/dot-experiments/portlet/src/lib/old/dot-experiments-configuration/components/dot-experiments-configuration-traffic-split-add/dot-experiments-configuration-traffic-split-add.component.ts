@@ -56,7 +56,7 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
     private fb = inject(FormBuilder);
 
-    form: FormGroup;
+    form!: FormGroup;
     stepStatus = ComponentStatus;
     sidebarSizes = SIDEBAR_SIZES;
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
@@ -103,7 +103,9 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
     splitVariantsEvenly() {
         const amountOfVariants = this.variants.length;
         this.variants.controls.forEach((variant) => {
-            variant.get('weight').setValue(Math.trunc((100 / amountOfVariants) * 100) / 100);
+            // `?.` because `get` reports a missing control; `addVariantToForm` always adds `weight`,
+            // so there is nothing to set for a group that somehow lacks it.
+            variant.get('weight')?.setValue(Math.trunc((100 / amountOfVariants) * 100) / 100);
         });
     }
 
@@ -115,7 +117,7 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
      * @returns void
      * @memberof DotExperimentsConfigurationTrafficSplitAddComponent
      */
-    checkControl(arrayIndex: number, value: number): void {
+    checkControl(arrayIndex: number, value: number | null): void {
         ((this.form.get('variants') as FormArray).controls[arrayIndex] as FormGroup).controls[
             'weight'
         ].setValue(value);
@@ -123,15 +125,23 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
 
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
+            // `trafficProportion` is null until the experiment resolves, and this takes the *first*
+            // emission — which can be that one. Nothing to build a split form from in that case.
+            const { trafficProportion } = data;
+
+            if (!trafficProportion) {
+                return;
+            }
+
             this.form = this.fb.group({
-                type: new FormControl<TrafficProportionTypes>(data.trafficProportion.type, {
+                type: new FormControl<TrafficProportionTypes>(trafficProportion.type, {
                     nonNullable: true,
                     validators: [Validators.required]
                 }),
                 variants: this.fb.array<Variant>([])
             });
 
-            data.trafficProportion.variants.forEach((variant) => {
+            trafficProportion.variants.forEach((variant) => {
                 this.variants.push(this.addVariantToForm(variant));
             });
         });
@@ -153,7 +163,7 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
         return (_control: AbstractControl): ValidationErrors | null => {
             let sum = 0;
             this.variants.controls.forEach((variant) => {
-                sum += variant.get('weight').value;
+                sum += variant.get('weight')?.value ?? 0;
                 variant.setErrors(null);
             });
 

@@ -18,6 +18,7 @@ import { MessageModule } from 'primeng/message';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
+import { AccordionPassThrough } from 'primeng/types/accordion';
 
 import { finalize, map, take } from 'rxjs/operators';
 
@@ -188,6 +189,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * the content overflows the zero-height row and a collapsed panel still reserves its full
      * height. Same workaround as `dot-page-scanner-a11y-report`.
      */
+    /**
+     * PrimeNG types `pt.motion` as `MotionOptions` (animation config), which has no way to
+     * express the wrapper attributes below — but the runtime spreads this straight into the
+     * motion options, and the collapse fix documented above was verified against it. The value
+     * is therefore left byte-for-byte as it was; only the cast is new.
+     *
+     * TODO(#37120): confirm with PrimeNG whether `pt.motion` still honours `root`, then drop
+     * either the cast or the workaround.
+     */
     protected readonly accordionPt = {
         motion: {
             root: {
@@ -196,7 +206,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 }
             }
         }
-    };
+    } as unknown as AccordionPassThrough;
 
     /**
      * Panel styling has to go on `p-accordion-panel`'s `pt.root`: Accordion's PassThrough
@@ -1042,7 +1052,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Tracks which scheme panel is expanded, and clears the pending action when a different scheme
      * takes over so the Execute button can't stay armed for a panel the user has collapsed.
      */
-    protected onOpenSchemeChange(value: string | number | string[] | number[] | undefined): void {
+    protected onOpenSchemeChange(
+        value: string | number | string[] | number[] | null | undefined
+    ): void {
         const openId = Array.isArray(value) ? value[0]?.toString() : value?.toString();
 
         this.$openSchemeId.set(openId);

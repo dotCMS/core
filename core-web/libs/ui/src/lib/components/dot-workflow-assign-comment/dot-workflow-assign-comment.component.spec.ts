@@ -116,7 +116,7 @@ describe('DotWorkflowAssignCommentComponent', () => {
         });
 
         it('should default to the first role so the step is valid on arrival', () => {
-            const values = [];
+            const values: DotWorkflowAssignCommentValue[] = [];
             spectator = createComponent({ props: { assignable: true } });
             spectator
                 .output<DotWorkflowAssignCommentValue>('valueChange')

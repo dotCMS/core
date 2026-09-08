@@ -1,9 +1,10 @@
 import { Editor } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-// EditorView is intentionally not imported: TipTap 3.x nests its own prosemirror-view under
-// @tiptap/pm/node_modules, which causes TS2322 "separate declarations of a private property"
-// when the top-level prosemirror-view type is used in plugin PluginSpec callbacks.
-// Removing explicit annotations lets TypeScript infer the correct type from PluginSpec context.
+import { EditorView } from '@tiptap/pm/view';
+// EditorView is taken from @tiptap/pm/view, not the top-level prosemirror-view: TipTap 3.x
+// nests its own copy under @tiptap/pm/node_modules, and mixing the two yields TS2322
+// "separate declarations of a private property". PluginSpec callbacks still infer their own
+// types from context — only the plain helpers below are annotated.
 
 export const GRID_RESIZE_PLUGIN_KEY = new PluginKey('gridResize');
 
@@ -48,7 +49,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
     let currentHandles: { handle: HTMLDivElement; gridEl: HTMLElement }[] = [];
     let dragging = false;
 
-    function getOrCreateOverlay(view): HTMLDivElement {
+    function getOrCreateOverlay(view: EditorView): HTMLDivElement {
         if (!overlayContainer) {
             overlayContainer = document.createElement('div');
             overlayContainer.className = 'grid-block__resize-overlay';
@@ -105,7 +106,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
         handle.style.height = `${gridRect.height}px`;
     }
 
-    function findGridBlockPos(view, gridEl: HTMLElement): number | null {
+    function findGridBlockPos(view: EditorView, gridEl: HTMLElement): number | null {
         const gridInner = gridEl.querySelector('.grid-block__grid');
         const firstCol = gridInner
             ? gridInner.querySelector('[data-type="gridColumn"]')
@@ -131,7 +132,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
         return null;
     }
 
-    function syncHandles(view) {
+    function syncHandles(view: EditorView) {
         if (dragging) {
             return;
         }
@@ -161,7 +162,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
     function attachDragListeners(
         handle: HTMLDivElement,
         gridEl: HTMLElement,
-        view,
+        view: EditorView,
         container: HTMLDivElement
     ) {
         handle.addEventListener('pointerdown', (e: PointerEvent) => {

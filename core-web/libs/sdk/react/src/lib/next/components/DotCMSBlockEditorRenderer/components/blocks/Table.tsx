@@ -37,9 +37,9 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
         <BlockEditorItemComponent content={node.content ?? []} />
     );
 
-    const caption: string | undefined = attrs?.caption || undefined;
-    const ariaLabel: string | undefined = attrs?.ariaLabel || undefined;
-    const ariaLabelledBy: string | undefined = attrs?.ariaLabelledby || undefined;
+    const caption: string | undefined = attrs?.['caption'] || undefined;
+    const ariaLabel: string | undefined = attrs?.['ariaLabel'] || undefined;
+    const ariaLabelledBy: string | undefined = attrs?.['ariaLabelledby'] || undefined;
 
     return (
         <table aria-label={ariaLabel} aria-labelledby={ariaLabelledBy}>
@@ -48,8 +48,8 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
                 {content.map((rowNode, rowIndex) => (
                     <tr key={`row-${rowIndex}`}>
                         {rowNode.content?.map((cellNode, cellIndex) => {
-                            const colSpan = Number(cellNode.attrs?.colspan || 1);
-                            const rowSpan = Number(cellNode.attrs?.rowspan || 1);
+                            const colSpan = Number(cellNode.attrs?.['colspan'] || 1);
+                            const rowSpan = Number(cellNode.attrs?.['rowspan'] || 1);
                             // Cell type — not row index — decides th vs td. Matches the
                             // VTL renderer (storyblock/render.vtl).
                             if (cellNode.type === 'tableHeader') {
@@ -58,7 +58,7 @@ export const TableRenderer: React.FC<TableRendererProps> = ({
                                         key={`cell-${cellIndex}`}
                                         colSpan={colSpan}
                                         rowSpan={rowSpan}
-                                        scope={cellNode.attrs?.scope || undefined}>
+                                        scope={cellNode.attrs?.['scope'] || undefined}>
                                         {renderCellContent(cellNode)}
                                     </th>
                                 );

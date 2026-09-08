@@ -36,7 +36,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotTextareaComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value specifies the value of the textarea element */
     @Prop({ mutable: true, reflect: true })
@@ -75,13 +75,13 @@ export class DotTextareaComponent {
     regexCheck = '';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
 
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.
@@ -113,7 +113,7 @@ export class DotTextareaComponent {
 
     @Watch('regexCheck')
     regexCheckWatch(): void {
-        this.regexCheck = checkProp<DotTextareaComponent, string>(this, 'regexCheck');
+        this.regexCheck = checkProp<DotTextareaComponent, string>(this, 'regexCheck') ?? '';
     }
 
     @Watch('value')
@@ -149,12 +149,12 @@ export class DotTextareaComponent {
         this.regexCheckWatch();
     }
 
-    private getDisabledAtt(): boolean {
-        return this.disabled || null;
+    private getDisabledAtt(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
-    private getRequiredAttr(): boolean {
-        return this.required ? true : null;
+    private getRequiredAttr(): boolean | undefined {
+        return this.required ? true : undefined;
     }
 
     private isValid(): boolean {
@@ -174,7 +174,7 @@ export class DotTextareaComponent {
     }
 
     private shouldShowErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {
@@ -194,8 +194,8 @@ export class DotTextareaComponent {
         }
     }
 
-    private setValue(event): void {
-        this.value = event.target.value.toString();
+    private setValue(event: Event): void {
+        this.value = (event.target as HTMLTextAreaElement).value.toString();
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

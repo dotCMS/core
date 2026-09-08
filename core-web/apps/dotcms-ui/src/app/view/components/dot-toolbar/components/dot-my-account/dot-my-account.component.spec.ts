@@ -47,14 +47,14 @@ describe('DotMyAccountComponent', () => {
                 removeStarterPage: () => of('') as any
             }),
             mockProvider(DotMessageService, {
-                get: (key) => key
+                get: (key: string) => key
             }),
             mockProvider(DotMenuService, {
                 isPortletInMenu: () => of(true)
             }),
             mockProvider(LoginService, {
                 auth$: of(mockAuth),
-                watchUser: (callback) => callback(mockAuth),
+                watchUser: (callback: (auth: Auth) => void) => callback(mockAuth),
                 setAuth: () => {}
             }),
             mockProvider(DotRouterService, {

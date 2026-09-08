@@ -11,7 +11,7 @@ import { DotIconComponent } from '@dotcms/ui';
 })
 export class DotNavIconComponent {
     @Input()
-    icon: string;
+    icon!: string;
 
     isFaIcon(icon: string): boolean {
         return icon.startsWith('fa-');

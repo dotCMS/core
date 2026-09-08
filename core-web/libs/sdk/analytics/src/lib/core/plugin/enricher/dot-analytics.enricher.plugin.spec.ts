@@ -197,7 +197,8 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Should NOT have page/utm/custom data
             expect(result.page).toBeUndefined();
             expect(result.utm).toBeUndefined();
-            expect(result.custom).toBeUndefined();
+            // `custom` is not part of EnrichedTrackPayload, so assert on the raw shape
+            expect((result as unknown as Record<string, unknown>)['custom']).toBeUndefined();
         });
 
         it('should pass through properties without modifying them for custom events', () => {

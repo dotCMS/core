@@ -135,7 +135,7 @@ describe('DotExperimentsListTableComponent', () => {
             spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
             const experimentRow = spectator.query(byTestId('experiment-row'));
-            expect(experimentRow.querySelectorAll('td').length).toBe(COLUMNS_QTY_BY_ROW);
+            expect(experimentRow!.querySelectorAll('td').length!).toBe(COLUMNS_QTY_BY_ROW);
 
             expect(spectator.query(byTestId('experiment-row__name'))).toHaveText(
                 DRAFT_EXPERIMENT_MOCK.name
@@ -177,7 +177,7 @@ describe('DotExperimentsListTableComponent', () => {
                 const actionMenuButton = spectator.query(byTestId('experiment-row__action-button'));
                 expect(actionMenuButton).toExist();
 
-                spectator.click(actionMenuButton);
+                spectator.click(actionMenuButton!);
                 expect(spectator.queryAll(MenuItemContent)).toExist();
                 expect(spectator.queryAll(MenuItemContent).length).toBe(MENU_ITEMS_QTY);
             });

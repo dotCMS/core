@@ -9,7 +9,7 @@ describe('DotGenerateSecurePasswordService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({ providers: [DotGenerateSecurePasswordService] });
         service = TestBed.inject(DotGenerateSecurePasswordService);
-        service.showDialog$.subscribe((data) => (password = data.password));
+        service.showDialog$.subscribe((data) => (password = data['password']));
     });
 
     it('should receive bundleID', () => {

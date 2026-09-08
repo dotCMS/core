@@ -232,7 +232,7 @@ describe('DotExperimentsListStore', () => {
             groupedExperiments.map((groupedExperiment) => {
                 const expectedExperimentId = expected.find(
                     (group) => group.status === groupedExperiment.status
-                ).experiments[0].id;
+                )!.experiments[0].id;
                 expect(groupedExperiment.experiments[0].id).toEqual(expectedExperimentId);
             });
             done();

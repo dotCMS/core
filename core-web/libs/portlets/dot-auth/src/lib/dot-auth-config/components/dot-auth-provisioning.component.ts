@@ -43,7 +43,7 @@ interface RoleBehaviorOption {
     templateUrl: './dot-auth-provisioning.component.html'
 })
 export class DotAuthProvisioningComponent {
-    readonly config = input.required<DotAuthProvisioningConfig & Record<string, unknown>>();
+    readonly config = input.required<DotAuthProvisioningConfig>();
     readonly syncLabel = input.required<string>();
     readonly syncKey = input<string>('syncOnLogin');
     // ponytail: OIDC has no backend key for sync-on-login yet; hide the toggle there
@@ -81,6 +81,15 @@ export class DotAuthProvisioningComponent {
             description: 'dotauth.roleBehavior.none.description'
         }
     ];
+
+    /**
+     * Value of the sync toggle. Its key differs between OIDC (`syncOnLogin` is absent) and SAML,
+     * so it is read dynamically — the one place that needs to, which is why `config` no longer
+     * has to advertise an index signature the concrete config types do not have.
+     */
+    protected get syncValue(): boolean {
+        return (this.config() as unknown as Record<string, unknown>)[this.syncKey()] === true;
+    }
 
     defaultRolesText(): string {
         return (this.config().defaultRoles ?? []).join(', ');

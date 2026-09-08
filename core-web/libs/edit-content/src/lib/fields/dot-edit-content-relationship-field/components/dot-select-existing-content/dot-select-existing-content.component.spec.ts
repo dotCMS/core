@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -127,11 +127,15 @@ describe('DotSelectExistingContentComponent', () => {
         const item3 = createFakeContentlet({ inode: '3', identifier: 'id-3' });
 
         const markConstrained = (ids: string[]) => {
-            patchState(store, { constrainedIdentifiers: new Set(ids) });
+            patchState(store as unknown as WritableStateSource<object>, {
+                constrainedIdentifiers: new Set(ids)
+            });
         };
 
         beforeEach(() => {
-            patchState(store, { searchData: [item1, item2, item3] });
+            patchState(store as unknown as WritableStateSource<object>, {
+                searchData: [item1, item2, item3]
+            });
             markConstrained([]);
             spectator.detectChanges();
         });
@@ -268,7 +272,7 @@ describe('DotSelectExistingContentComponent', () => {
 
         it('forces $selectAll to false in selected-view mode to avoid wiping the selection', () => {
             spectator.component.$selectionItems.set([item1, item2, item3]);
-            patchState(store, { viewMode: 'selected' });
+            patchState(store as unknown as WritableStateSource<object>, { viewMode: 'selected' });
             spectator.detectChanges();
 
             expect(store.isSelectedView()).toBe(true);

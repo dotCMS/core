@@ -7,7 +7,7 @@
                 <i
                     [style.font-size.px]="16"
                     class="material-symbols-outlined"
-                    [ngClass]="
+                    [class]="
                         !!vm.scheduling?.endDate || !!vm.scheduling?.startDate
                             ? 'text-green-600'
                             : 'text-gray-500'
@@ -40,7 +40,7 @@
                         @if (!(!!vm.scheduling?.endDate || !!vm.scheduling?.startDate)) {
                             {{ 'experiments.configure.scheduling.setup' | dm }}
                         } @else {
-                            @if (!!vm.scheduling?.startDate) {
+                            @if (!!vm.scheduling.startDate) {
                                 <span>
                                     {{ 'start' | dm | titlecase }}:
                                     <span>
@@ -51,10 +51,10 @@
                                     </span>
                                 </span>
                             }
-                            @if (vm.scheduling?.startDate && vm.scheduling.endDate) {
+                            @if (vm.scheduling.startDate && vm.scheduling.endDate) {
                                 <span class="mx-1">-</span>
                             }
-                            @if (!!vm.scheduling?.endDate) {
+                            @if (!!vm.scheduling.endDate) {
                                 <span>
                                     {{ 'end' | dm | titlecase }}:
                                     <span>

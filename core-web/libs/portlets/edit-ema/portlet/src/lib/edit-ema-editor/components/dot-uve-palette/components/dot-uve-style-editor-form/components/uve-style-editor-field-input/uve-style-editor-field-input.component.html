@@ -6,7 +6,7 @@
         [id]="$field().id"
         class="w-full"
         [placeholder]="
-            $field().config?.placeholder ?? ('style.editor.text.field.default.placeholder' | dm)
+            $field().config.placeholder ?? ('style.editor.text.field.default.placeholder' | dm)
         "
         (blur)="commit.emit()"
         (keydown.enter)="commit.emit()" />

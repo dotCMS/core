@@ -87,7 +87,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         component = spectator.component;
-        button = spectator.query(byTestId('persona-button'));
+        button = spectator.query(byTestId('persona-button'))!;
         selectedSpy = jest.spyOn(component.selected, 'emit');
     });
 
@@ -194,7 +194,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
             const onRemoveSpy = jest.spyOn(component, 'onRemove');
 
             const removeIcon = spectator.query('.p-chip-remove-icon');
-            spectator.click(removeIcon);
+            spectator.click(removeIcon!);
 
             expect(onRemoveSpy).toHaveBeenCalledWith(
                 expect.anything(), // This is a mouse event, not relevant for this test
@@ -212,7 +212,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
             const onRemoveSpy = jest.spyOn(component, 'onRemove');
 
             const removeIcon = spectator.query('.p-chip-remove-icon');
-            spectator.click(removeIcon);
+            spectator.click(removeIcon!);
 
             expect(onRemoveSpy).toHaveBeenCalledWith(
                 expect.anything(), // This is a mouse event, not relevant for this test

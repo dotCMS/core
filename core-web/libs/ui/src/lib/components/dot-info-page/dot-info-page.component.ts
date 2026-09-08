@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -21,5 +21,5 @@ export interface InfoPage {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotInfoPageComponent {
-    @Input({ required: true }) info: InfoPage;
+    readonly info = input.required<InfoPage>();
 }

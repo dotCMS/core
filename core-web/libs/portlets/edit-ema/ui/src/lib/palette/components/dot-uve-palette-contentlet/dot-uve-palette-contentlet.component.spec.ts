@@ -46,11 +46,13 @@ describe('DotUvePaletteContentletComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
+            // Keyed by the public alias `contentlet`, which is what Spectator applies at
+            // runtime. The cast is unavoidable: `InferInputSignals` types `props` by the
+            // declared member name (`$contentlet`), so the two disagree. Renaming the key to
+            // `$contentlet` type-checks and then fails at runtime — 11 specs proved it.
             props: {
                 contentlet: baseContentlet
-                // Quick way to avoid type errors when passing the baseContentlet to the component since we are not prefixing with $
-                // The ideal would be using a host component and pass the baseContentlet as a property to the host component
-            } as unknown
+            } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
         });
         spectator.detectChanges();
     });
@@ -119,7 +121,7 @@ describe('DotUvePaletteContentletComponent', () => {
             const thumbnail = spectator.query('[data-testid="contentlet-thumbnail"]');
 
             expect(thumbnail).toBeTruthy();
-            expect(thumbnail.tagName.toLowerCase()).toBe('dot-content-thumbnail');
+            expect(thumbnail!.tagName.toLowerCase()).toBe('dot-content-thumbnail');
             expect(spectator.component.$thumbnail()).toEqual(
                 expect.objectContaining({ type: expect.any(String), icon: expect.any(String) })
             );

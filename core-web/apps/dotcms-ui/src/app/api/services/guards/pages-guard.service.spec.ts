@@ -31,7 +31,7 @@ describe('PagesGuardService', () => {
     });
 
     it('should allow access to Pages Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(true));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
@@ -41,7 +41,7 @@ describe('PagesGuardService', () => {
     });
 
     it('should deny access to Pages Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(

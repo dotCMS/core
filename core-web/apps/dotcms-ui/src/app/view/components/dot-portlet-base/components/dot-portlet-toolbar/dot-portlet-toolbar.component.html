@@ -14,34 +14,34 @@
         </div>
 
         <div class="dot-portlet-toolbar__actions" data-testId="actionsWrapper">
-            @if (actions?.cancel) {
+            @if (actions) {
                 <button
                     (click)="onCancelClick($event)"
-                    [label]="cancelButtonLabel || ('cancel' | dm)"
+                    [label]="cancelButtonLabel() || ('cancel' | dm)"
                     class="p-button-outlined"
                     data-testId="actionsCancelButton"
                     pButton></button>
             }
 
             @if (actions?.primary?.length) {
-                @if (actions?.primary?.length === 1) {
+                @if (actions.primary.length === 1) {
                     <button
                         (click)="onPrimaryClick($event)"
-                        [label]="actions?.primary[0]?.label || ('save' | dm)"
-                        [disabled]="actions?.primary[0]?.disabled"
+                        [label]="actions.primary[0].label || ('save' | dm)"
+                        [disabled]="actions.primary[0].disabled"
                         data-testId="actionsPrimaryButton"
                         pButton></button>
                 } @else {
                     <button
                         (click)="menu.toggle($event)"
-                        [label]="actionsButtonLabel || ('actions' | dm)"
+                        [label]="actionsButtonLabel() || ('actions' | dm)"
                         data-testId="actionsMenuButton"
                         pButton
                         icon="pi pi-chevron-down"
                         iconPos="right"></button>
                     <p-menu
                         [popup]="true"
-                        [model]="actions?.primary"
+                        [model]="actions.primary"
                         #menu
                         data-testId="actionsMenu" />
                 }

@@ -18,7 +18,12 @@ export interface DotNotificationResponse {
     totalUnreadNotifications: number;
 }
 
+/**
+ * Icons by notification level. An index signature because `DotNotification.level` is a plain
+ * string — the three below are the levels that have an icon, and the reader falls back for the rest.
+ */
 export interface NotificationIcons {
+    [level: string]: string;
     ERROR: string;
     INFO: string;
     WARNING: string;

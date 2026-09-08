@@ -65,7 +65,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
             const dialogEl = spectator.query('p-dialog');
             expect(dialogEl).toBeTruthy();
             expect(spectator.component.dialogShow).toBe(true);
-            expect(spectator.component.value).toEqual(passwordGenerateData.password);
+            expect(spectator.component.value).toEqual(passwordGenerateData['password']);
             expect(spectator.component.typeInput).toBe('password');
         });
 

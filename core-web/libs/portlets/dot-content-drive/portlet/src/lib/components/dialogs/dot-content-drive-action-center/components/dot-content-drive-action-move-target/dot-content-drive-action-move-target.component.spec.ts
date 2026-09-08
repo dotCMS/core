@@ -17,7 +17,7 @@ describe('DotContentDriveActionMoveTargetComponent', () => {
         providers: [
             provideHttpClient(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotHttpErrorManagerService),
             // Backs the picker's own store. The picker renders for real: this component exists only to

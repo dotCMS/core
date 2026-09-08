@@ -133,13 +133,20 @@ export class ExistingContentService {
             this.search({ contentTypeId, systemSearchableFields }),
             this.#getLanguages()
         ]).pipe(
-            map(([columns, searchResponse, languages]) => [
-                columns,
-                {
-                    contentlets: this.#prepareContent(searchResponse.contentlets, languages),
-                    totalResults: searchResponse.totalResults
-                }
-            ]),
+            // The return type is annotated because TS widens an array literal to
+            // `(Column[] | RelationshipFieldSearchResponse)[]`, not the tuple this method declares.
+            map(
+                ([columns, searchResponse, languages]): [
+                    Column[],
+                    RelationshipFieldSearchResponse
+                ] => [
+                    columns,
+                    {
+                        contentlets: this.#prepareContent(searchResponse.contentlets, languages),
+                        totalResults: searchResponse.totalResults
+                    }
+                ]
+            ),
             catchError((error: HttpErrorResponse) => {
                 return this.#httpErrorManagerService.handle(error).pipe(map(() => null));
             })
@@ -165,7 +172,9 @@ export class ExistingContentService {
     #getLanguages(): Observable<LanguagesMap> {
         return this.#dotLanguagesService.get().pipe(
             map((languages) =>
-                languages.reduce((acc, lang) => {
+                // The accumulator's type has to be given explicitly: from the `{}` seed alone
+                // TS infers `{}`, which has no index signature to write to.
+                languages.reduce<LanguagesMap>((acc, lang) => {
                     acc[lang.id] = { ...lang };
 
                     return acc;

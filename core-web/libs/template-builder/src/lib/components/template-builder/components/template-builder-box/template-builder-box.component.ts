@@ -6,10 +6,10 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    Input,
     OnChanges,
     Output,
-    inject
+    inject,
+    input
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -58,10 +58,20 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteColumnRejected: EventEmitter<void> = new EventEmitter<void>();
-    @Input() items: DotTemplateBuilderContainer[];
-    @Input() width = 1;
-    @Input() containerMap: DotContainerMap;
-    @Input() actions = ['add', 'delete', 'edit'];
+    readonly items = input<DotTemplateBuilderContainer[]>([]);
+    readonly width = input(1);
+    readonly containerMap = input.required<DotContainerMap>();
+    readonly actions = input(['add', 'delete', 'edit']);
+
+    /**
+     * Title of the container behind `identifier`, falling back to the raw identifier.
+     *
+     * `DotContainerMap` is an index signature, so TS types every lookup as present; a container
+     * referenced by the layout but missing from the map is a real runtime case, hence the guard.
+     */
+    getContainerTitle(identifier: string): string {
+        return this.containerMap()[identifier]?.title || identifier;
+    }
     dialogVisible = false;
     boxVariant = TemplateBuilderBoxSize.small;
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
@@ -71,7 +81,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     get dropdownLabel(): string {
         return this.boxVariant === this.templateBuilderSizes.large || this.dialogVisible
-            ? this._dropdownLabel
+            ? (this._dropdownLabel ?? '')
             : '';
     }
 
@@ -80,7 +90,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     ngOnChanges(): void {
-        this.boxVariant = getBoxVariantByWidth(this.width);
+        this.boxVariant = getBoxVariantByWidth(this.width());
         this._dropdownLabel = this.dotMessage.get('dot.template.builder.add.container');
     }
 
@@ -102,8 +112,11 @@ export class TemplateBuilderBoxComponent implements OnChanges {
      * @memberof TemplateBuilderBoxComponent
      */
     private getContainerReference(dotContainer: DotContainer): string {
-        return dotContainer.source === CONTAINER_SOURCE.FILE
-            ? dotContainer.path
-            : dotContainer.identifier;
+        // Both are optional on DotContainer; a container always has one of them.
+        return (
+            (dotContainer.source === CONTAINER_SOURCE.FILE
+                ? dotContainer.path
+                : dotContainer.identifier) ?? ''
+        );
     }
 }

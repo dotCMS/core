@@ -26,10 +26,10 @@ import {
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
     forceLanguage?: AvailableLanguageMonaco;
-    hasError: boolean;
+    hasError!: boolean;
 }
 
 describe('DotEditContentMonacoEditorControlComponent', () => {

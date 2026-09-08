@@ -8,7 +8,7 @@ import { Observable, of, Subject, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
 
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { Editor } from '@tiptap/core';
 
@@ -92,7 +92,13 @@ describe('EditorModalService — asset pickers', () => {
     };
 
     /** The config object handed to `DialogService.open` for the Nth call. */
-    const openedConfig = (call = 0) => dialogService.open.mock.calls[call][1];
+    const openedConfig = (call = 0) =>
+        dialogService.open.mock.calls[call][1] as DynamicDialogConfig<{
+            mimeTypes: string[];
+            title: string;
+            site: DotSite;
+            languageId: string;
+        }>;
 
     beforeEach(() => {
         jest.clearAllMocks();

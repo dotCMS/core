@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, Observable, of, throwError } from 'rxjs';
 
 import { DotPermissionsService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
@@ -9,25 +9,17 @@ import { DotSite } from '@dotcms/dotcms-models';
 import { withSitePermissions } from './withSitePermissions';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
-import {
-    DotContentDriveSortOrder,
-    DotContentDriveState,
-    DotContentDriveStatus
-} from '../../../shared/models';
+import { DotContentDriveState } from '../../../shared/models';
+import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
 
 const site = (identifier: string): DotSite =>
     ({ identifier, hostname: 'demo.dotcms.com' }) as DotSite;
 
 const initialState: DotContentDriveState = {
-    currentSite: null,
+    // Seeded from the store's own initial state so this fixture cannot drift from it; only the
+    // keys this feature's tests care about are overridden.
+    ...DOT_CONTENT_DRIVE_INITIAL_STATE,
     path: '',
-    filters: {},
-    items: [],
-    selectedItems: [],
-    status: DotContentDriveStatus.LOADING,
-    totalItems: 0,
-    pagination: { limit: 40, offset: 0 },
-    sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };
 
@@ -48,7 +40,7 @@ describe('withSitePermissions', () => {
     });
 
     // Never emits: the lookup is in flight, which is what the undefined state stands for.
-    const build = (response = NEVER) => {
+    const build = (response: Observable<boolean> = NEVER) => {
         canAddChildren.mockReturnValue(response);
         spectator = createService();
         store = spectator.service;

@@ -1,7 +1,7 @@
 <p-panel
     [toggleable]="true"
     [collapsed]="$isCollapsed()"
-    (collapsedChange)="$isCollapsed.set($event)"
+    (collapsedChange)="$isCollapsed.set(!!$event)"
     [pt]="$panelPT()">
     <ng-template pTemplate="header">
         <div class="flex min-w-0 flex-1 items-center gap-2">

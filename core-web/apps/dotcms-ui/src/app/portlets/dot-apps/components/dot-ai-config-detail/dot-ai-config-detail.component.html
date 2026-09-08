@@ -9,7 +9,7 @@
             </p>
             @if (siteName()) {
                 <p class="mt-1 mb-0 text-sm text-gray-500">
-                    {{ 'apps.ai.config.site' | dm: [siteName()] }}
+                    {{ 'apps.ai.config.site' | dm: [siteName() ?? ''] }}
                 </p>
             }
         </div>

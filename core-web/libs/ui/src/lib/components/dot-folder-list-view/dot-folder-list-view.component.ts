@@ -413,7 +413,9 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * The counts hold the widths the `rem` values rendered at (14px root, `1ch` of 8.67px in the
      * header font) to within a few px: 19ch for 12rem, 26ch for 16rem, 15ch for 9rem, 11ch for 7rem.
      */
-    private readonly EXTRA_COL_TYPE_CH: Partial<Record<DotFolderListViewColumn['type'], number>> = {
+    private readonly EXTRA_COL_TYPE_CH: Partial<
+        Record<NonNullable<DotFolderListViewColumn['type']>, number>
+    > = {
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATE]: 19,
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME]: 26,
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME]: 15,

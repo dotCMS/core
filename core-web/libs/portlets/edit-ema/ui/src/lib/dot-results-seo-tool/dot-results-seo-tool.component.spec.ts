@@ -136,14 +136,14 @@ describe('DotResultsSeoToolComponent', () => {
 
     it('should display title', () => {
         const titleElement = spectator.query(byTestId('results-seo-tool-search-title'));
-        expect(titleElement.textContent).toContain(seoOGTagsMock.title);
-        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_OG_TITLE_LENGTH);
+        expect(titleElement!.textContent).toContain(seoOGTagsMock.title);
+        expect(titleElement!.textContent.length).toBeLessThan(SEO_LIMITS.MAX_OG_TITLE_LENGTH);
     });
 
     it('should display description', () => {
         const titleElement = spectator.query(byTestId('results-seo-tool-search-description'));
-        expect(titleElement.textContent).toContain(seoOGTagsMock.description);
-        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
+        expect(titleElement!.textContent).toContain(seoOGTagsMock.description);
+        expect(titleElement!.textContent.length).toBeLessThan(SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
     });
 
     it('should display host Name', () => {
@@ -359,22 +359,22 @@ describe('DotResultsSeoToolComponent', () => {
     });
 
     it('should display the default icon when noFavicon is true', () => {
-        const imageElement = spectator.query(byTestId('favicon-image'));
+        const imageElement = spectator.query(byTestId('favicon-image'))!;
         spectator.dispatchFakeEvent(imageElement, 'error');
         spectator.detectComponentChanges();
 
         const defaultIcon = spectator.query(byTestId('favicon-default'));
         expect(defaultIcon).toBeTruthy();
-        expect(defaultIcon.querySelector('.pi-globe')).toBeTruthy();
+        expect(defaultIcon!.querySelector('.pi-globe')).toBeTruthy();
     });
 
     it('should display the favicon image when noFavicon is false', () => {
-        spectator.component.seoOGTags.favicon = 'favicon-image-url.png';
+        spectator.component.seoOGTags!.favicon = 'favicon-image-url.png';
 
         spectator.detectComponentChanges();
 
         const faviconImage = spectator.query(byTestId('favicon-image'));
         expect(faviconImage).toBeTruthy();
-        expect(faviconImage.getAttribute('src')).toBe('favicon-image-url.png');
+        expect(faviconImage!.getAttribute('src')).toBe('favicon-image-url.png');
     });
 });

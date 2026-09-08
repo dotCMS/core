@@ -35,7 +35,7 @@ describe('DotAnalyticsFiltersComponent', () => {
         spectator = createComponent({
             props: {
                 timeRange: TIME_RANGE_OPTIONS.last7days
-            } as unknown
+            } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
         });
     });
 
@@ -45,17 +45,17 @@ describe('DotAnalyticsFiltersComponent', () => {
         });
 
         it('should have analytics filters container', () => {
-            const filtersContainer = spectator.query(byTestId('analytics-filters'));
+            const filtersContainer = spectator.query(byTestId('analytics-filters'))!;
             expect(filtersContainer).toBeTruthy();
         });
 
         it('should have period dropdown', () => {
-            const dropdown = spectator.query(byTestId('period-dropdown'));
+            const dropdown = spectator.query(byTestId('period-dropdown'))!;
             expect(dropdown).toBeTruthy();
         });
 
         it('should not show custom calendar initially', () => {
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'))!;
             expect(calendar).toBeFalsy();
         });
     });
@@ -80,20 +80,20 @@ describe('DotAnalyticsFiltersComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$showCustomTimeRange()).toBe(true);
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'))!;
             expect(calendar).toBeTruthy();
         });
 
         it('should hide custom calendar when switching away from CUSTOM_TIME_RANGE', () => {
             spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('custom-date-range-calendar'))).toBeTruthy();
+            expect(spectator.query(byTestId('custom-date-range-calendar'))!).toBeTruthy();
 
             spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.last7days);
             spectator.detectChanges();
 
             expect(spectator.component.$showCustomTimeRange()).toBe(false);
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'))!;
             expect(calendar).toBeFalsy();
         });
     });
@@ -104,11 +104,11 @@ describe('DotAnalyticsFiltersComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$showCustomTimeRange()).toBe(true);
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'))!;
             expect(calendar).toBeTruthy();
 
             expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.custom);
-            const customDateRange = spectator.component.$customDateRange();
+            const customDateRange = spectator.component.$customDateRange()!;
             const from = format(customDateRange[0], 'yyyy-MM-dd');
             const to = format(customDateRange[1], 'yyyy-MM-dd');
             expect([from, to]).toEqual(['2024-01-01', '2024-01-31']);
@@ -119,7 +119,7 @@ describe('DotAnalyticsFiltersComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$showCustomTimeRange()).toBe(false);
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'))!;
             expect(calendar).toBeFalsy();
 
             expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
@@ -131,7 +131,7 @@ describe('DotAnalyticsFiltersComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$showCustomTimeRange()).toBe(false);
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'))!;
             expect(calendar).toBeFalsy();
 
             expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last30days);
@@ -277,7 +277,7 @@ describe('DotAnalyticsFiltersComponent', () => {
             // The #buttonbar ng-template overrides the default button bar content.
             // Since PrimeNG renders the overlay only when opened (not in unit tests),
             // we verify the datepicker host element is present with the correct attribute.
-            const calendar = spectator.query(byTestId('custom-date-range-calendar'));
+            const calendar = spectator.query(byTestId('custom-date-range-calendar'))!;
             expect(calendar).toBeTruthy();
             // The host element exists — the buttonbar template is provided via ng-template
             // and replaces the default buttonbar (removing the Today button).
@@ -288,7 +288,7 @@ describe('DotAnalyticsFiltersComponent', () => {
             // When the overlay is not opened, neither Today nor Clear buttons are in the DOM.
             const todayBtn = spectator.query(
                 '.p-datepicker-today-button, [data-testid="today-btn"]'
-            );
+            )!;
             expect(todayBtn).toBeNull();
         });
     });

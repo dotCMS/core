@@ -19,7 +19,7 @@ import { ImageEditorStore } from '../../store/image-editor.store';
 
 /** Resolves the inner native button for a PrimeNG control by its testid. */
 function nativeButton(spectator: Spectator<DotImageEditorFooterComponent>, testId: string) {
-    return spectator.query(byTestId(testId))?.querySelector('button') as HTMLElement;
+    return spectator.query(byTestId(testId))?.querySelector('button') as HTMLButtonElement;
 }
 
 describe('DotImageEditorFooterComponent', () => {

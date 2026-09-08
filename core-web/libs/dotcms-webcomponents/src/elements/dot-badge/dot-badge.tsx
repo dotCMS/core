@@ -6,9 +6,9 @@ import { Component, h, Host, Prop } from '@stencil/core';
     shadow: true
 })
 export class DotBadge {
-    @Prop() bgColor: string = null;
-    @Prop() color: string = null;
-    @Prop() size: string = null;
+    @Prop() bgColor?: string;
+    @Prop() color?: string;
+    @Prop() size?: string;
     @Prop() bordered = false;
 
     render() {
@@ -19,7 +19,7 @@ export class DotBadge {
                     '--color': this.color,
                     '--font-size': this.size
                 }}>
-                <div class={this.bordered ? 'bordered' : null}>
+                <div class={this.bordered ? 'bordered' : undefined}>
                     <slot />
                 </div>
             </Host>

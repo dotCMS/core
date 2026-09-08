@@ -16,7 +16,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { TableModule, TableRowSelectEvent } from 'primeng/table';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -83,6 +83,18 @@ export class DotDataViewComponent {
      * Emits the selected `DotCMSContentlet` when a row is selected.
      */
     onRowSelect = output<DotCMSContentlet>();
+
+    /**
+     * PrimeNG types the row-select payload as a single row, an array, or undefined. This table is
+     * single-select, so only the single-row case is forwarded.
+     */
+    protected handleRowSelect(event: TableRowSelectEvent): void {
+        const row = event.data;
+
+        if (row && !Array.isArray(row)) {
+            this.onRowSelect.emit(row);
+        }
+    }
 
     /**
      * Controls the accepted file types for the OS file picker.

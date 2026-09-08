@@ -8,6 +8,22 @@
         // source, so Nx 23's @rollup/plugin-typescript treats them as external
         // declarations rather than pulling cross-project source into the program
         // (which triggers TS6059). Requires ^build so deps are built first.
+        //
+        // TODO(#37120): this is the ONE config in the workspace that still needs the
+        // deprecated `baseUrl` + `ignoreDeprecations` pair. `tsconfig.base.json` dropped
+        // both, but @nx/rollup 23.1.1 cannot cope here: `updatePaths` (@nx/js
+        // buildable-libs-utils) overwrites each dependency key with its output path
+        // relative to the WORKSPACE ROOT (`dist/libs/sdk/react`), then with-nx resolves it
+        // against `resolvePathsBaseUrl()`. That helper falls back to the directory of the
+        // tsconfig that declares `paths` when no `baseUrl` exists anywhere in the chain —
+        // here `libs/sdk/experiments` — producing
+        // `libs/sdk/experiments/dist/libs/sdk/react` and a TS2307. Anchoring `baseUrl` at
+        // the workspace root is the only way to make Nx agree with tsc. The flag is scoped
+        // to this file, so it silences nothing anywhere else: `tsc -p` on this config still
+        // completes a full semantic pass under strict mode. Drop both once Nx resolves
+        // dependency outputs against the workspace root instead.
+        "baseUrl": "../../..",
+        "ignoreDeprecations": "6.0",
         "paths": {
             "@dotcms/client": ["dist/libs/sdk/client"],
             "@dotcms/client/*": ["dist/libs/sdk/client/*"],

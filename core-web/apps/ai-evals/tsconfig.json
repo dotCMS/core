@@ -8,7 +8,12 @@
         }
     ],
     "compilerOptions": {
+        // TODO(#35932): base enables these two workspace-wide. This project still trips
+        // TS4111 (index-signature access) and TS4114 (missing `override`) — `strict`
+        // itself already passes. Drop these two lines once those are cleaned up.
+        "noPropertyAccessFromIndexSignature": false,
+        "noImplicitOverride": false,
         "esModuleInterop": true,
-        "moduleResolution": "node"
+        "moduleResolution": "bundler"
     }
 }

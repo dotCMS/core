@@ -213,22 +213,22 @@ describe('DotFolderListViewComponent', () => {
 
     describe('DOM', () => {
         it('should show the table', () => {
-            const table = spectator.query(byTestId('table'));
+            const table = spectator.query(byTestId('table'))!;
 
             expect(table).toBeTruthy();
         });
 
         describe('Header', () => {
             it('should show the header', () => {
-                const header = spectator.query(byTestId('header-row'));
+                const header = spectator.query(byTestId('header-row'))!;
 
                 expect(header).toBeTruthy();
             });
 
             it('should show sortable columns with sort icon', () => {
                 const sortableColumnsCount = HEADER_COLUMNS.filter((col) => col.sortable).length;
-                const sortableColumns = spectator.queryAll(byTestId('header-column-sortable'));
-                const sortIcons = spectator.queryAll(byTestId('sort-icon'));
+                const sortableColumns = spectator.queryAll(byTestId('header-column-sortable'))!;
+                const sortIcons = spectator.queryAll(byTestId('sort-icon'))!;
 
                 expect(sortableColumns.length).toBe(sortableColumnsCount);
                 expect(sortIcons.length).toBe(sortableColumnsCount);
@@ -240,13 +240,13 @@ describe('DotFolderListViewComponent', () => {
                 ).length;
                 const notSortableColumns = spectator.queryAll(
                     byTestId('header-column-not-sortable')
-                );
+                )!;
 
                 expect(notSortableColumns.length).toBe(notSortableColumnsCount);
             });
 
             it('should have a checkbox column', () => {
-                const checkboxColumn = spectator.query(byTestId('header-checkbox'));
+                const checkboxColumn = spectator.query(byTestId('header-checkbox'))!;
 
                 expect(checkboxColumn).toBeTruthy();
             });
@@ -260,7 +260,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             // Verify the table is still rendered when empty
-            const tableElement = spectator.query(byTestId('table'));
+            const tableElement = spectator.query(byTestId('table'))!;
             expect(tableElement).toBeTruthy();
         });
 
@@ -269,7 +269,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             // Paginator is always rendered ([paginator]="true")
-            const paginator = spectator.query('.p-paginator');
+            const paginator = spectator.query('.p-paginator')!;
             expect(paginator).toBeTruthy();
         });
 
@@ -330,7 +330,7 @@ describe('DotFolderListViewComponent', () => {
         const variantB = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-es' };
 
         it('should key rows on identifier by default', () => {
-            expect(spectator.query(Table).dataKey).toBe('identifier');
+            expect(spectator.query(Table)!.dataKey).toBe('identifier');
         });
 
         it('should treat rows sharing an identifier as the same row by default', () => {
@@ -340,7 +340,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('selection', [variantA]);
             spectator.detectChanges();
 
-            const table = spectator.query(Table);
+            const table = spectator.query(Table)!;
 
             expect(table.isSelected(variantA)).toBe(true);
             expect(table.isSelected(variantB)).toBe(true);
@@ -352,7 +352,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('selection', [variantA]);
             spectator.detectChanges();
 
-            const table = spectator.query(Table);
+            const table = spectator.query(Table)!;
 
             expect(table.isSelected(variantA)).toBe(true);
             expect(table.isSelected(variantB)).toBe(false);
@@ -375,7 +375,7 @@ describe('DotFolderListViewComponent', () => {
         }));
 
         it('should delegate paging to the parent by default', () => {
-            expect(spectator.query(Table).lazy).toBe(true);
+            expect(spectator.query(Table)!.lazy).toBe(true);
         });
 
         it('should honour the offset when paging an in-memory list', () => {
@@ -389,7 +389,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             // Page two of twenty-five: the last five rows, not the first twenty over again.
-            expect(spectator.queryAll(byTestId('item-row')).length).toBe(5);
+            expect(spectator.queryAll(byTestId('item-row'))!.length).toBe(5);
         });
 
         it('should reach page two without the caller binding an offset', () => {
@@ -551,7 +551,10 @@ describe('DotFolderListViewComponent', () => {
             languagesService.get.mockClear();
 
             const scoped = createComponent({
-                props: { items: mockItems, visibleColumns: ['title', 'live', 'contentType'] }
+                props: {
+                    items: mockItems,
+                    visibleColumns: ['title', 'live', 'contentType']
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
             scoped.detectChanges();
 
@@ -573,7 +576,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            expect(spectator.query(Table).totalRecords).toBe(manyItems.length);
+            expect(spectator.query(Table)!.totalRecords).toBe(manyItems.length);
         });
 
         it('should hide the paginator when an in-memory list fits on one page', () => {
@@ -584,7 +587,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            expect(spectator.query('.p-paginator')).toBeNull();
+            expect(spectator.query('.p-paginator')!).toBeNull();
         });
 
         it('should show the paginator when an in-memory list outgrows a page', () => {
@@ -593,7 +596,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            expect(spectator.query('.p-paginator')).toBeTruthy();
+            expect(spectator.query('.p-paginator')!).toBeTruthy();
         });
     });
 
@@ -611,16 +614,16 @@ describe('DotFolderListViewComponent', () => {
         it('should leave the checkboxes usable by default', () => {
             spectator.detectChanges();
 
-            expect(spectator.query(TableCheckbox).disabled()).toBeFalsy();
-            expect(spectator.query(TableHeaderCheckbox).disabled()).toBeFalsy();
+            expect(spectator.query(TableCheckbox)!.disabled()).toBeFalsy();
+            expect(spectator.query(TableHeaderCheckbox)!.disabled()).toBeFalsy();
         });
 
         it('should freeze the row and header checkboxes while disabled', () => {
             spectator.setInput('disabled', true);
             spectator.detectChanges();
 
-            expect(spectator.query(TableCheckbox).disabled()).toBe(true);
-            expect(spectator.query(TableHeaderCheckbox).disabled()).toBe(true);
+            expect(spectator.query(TableCheckbox)!.disabled()).toBe(true);
+            expect(spectator.query(TableHeaderCheckbox)!.disabled()).toBe(true);
         });
 
         it('should select a row by clicking it when not disabled', () => {
@@ -651,7 +654,8 @@ describe('DotFolderListViewComponent', () => {
      */
     describe('visibleColumns', () => {
         /** Header cells excluding the leading checkbox column. */
-        const headerCells = (): HTMLElement[] => spectator.queryAll('thead th').slice(1);
+        const headerCells = (): HTMLElement[] =>
+            spectator.queryAll<HTMLElement>('thead th').slice(1);
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
@@ -676,14 +680,14 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('visibleColumns', ['title', 'live', 'modUser']);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('item-title'))).toBeTruthy();
-            expect(spectator.query(byTestId('item-status'))).toBeTruthy();
-            expect(spectator.query(byTestId('item-mod-user-name'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-title'))!).toBeTruthy();
+            expect(spectator.query(byTestId('item-status'))!).toBeTruthy();
+            expect(spectator.query(byTestId('item-mod-user-name'))!).toBeTruthy();
 
-            expect(spectator.query(byTestId('item-language'))).toBeFalsy();
-            expect(spectator.query(byTestId('item-content-type'))).toBeFalsy();
-            expect(spectator.query(byTestId('item-mod-date'))).toBeFalsy();
-            expect(spectator.query(byTestId('item-actions'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-language'))!).toBeFalsy();
+            expect(spectator.query(byTestId('item-content-type'))!).toBeFalsy();
+            expect(spectator.query(byTestId('item-mod-date'))!).toBeFalsy();
+            expect(spectator.query(byTestId('item-actions'))!).toBeFalsy();
         });
 
         it('should keep the requested columns in their canonical order', () => {
@@ -701,8 +705,8 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('visibleColumns', ['title']);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('header-checkbox'))).toBeTruthy();
-            expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
+            expect(spectator.query(byTestId('header-checkbox'))!).toBeTruthy();
+            expect(spectator.query(byTestId('item-checkbox'))!).toBeTruthy();
         });
 
         it('should size the title column so extras cannot collapse it', () => {
@@ -847,7 +851,7 @@ describe('DotFolderListViewComponent', () => {
             ]);
 
             // Same sequence in the body, which is the assertion that actually catches a mismatch.
-            const cells = [...spectator.query(byTestId('item-row')).querySelectorAll('td')].map(
+            const cells = [...spectator.query(byTestId('item-row'))!.querySelectorAll('td')].map(
                 (cell) => cell.getAttribute('data-testid') ?? cell.getAttribute('data-testId')
             );
 
@@ -868,7 +872,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             expect(headerCells().length).toBe(2);
-            expect(spectator.query('[data-testid="item-extra-author"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="item-extra-author"]')!).toBeTruthy();
         });
     });
 
@@ -886,8 +890,8 @@ describe('DotFolderListViewComponent', () => {
         it('should offer sortable headers by default', () => {
             spectator.detectChanges();
 
-            expect(spectator.queryAll(byTestId('sort-icon')).length).toBeGreaterThan(0);
-            expect(spectator.queryAll(byTestId('header-column-sortable')).length).toBeGreaterThan(
+            expect(spectator.queryAll(byTestId('sort-icon'))!.length).toBeGreaterThan(0);
+            expect(spectator.queryAll(byTestId('header-column-sortable'))!.length).toBeGreaterThan(
                 0
             );
         });
@@ -896,8 +900,8 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('readOnly', true);
             spectator.detectChanges();
 
-            expect(spectator.queryAll(byTestId('sort-icon')).length).toBe(0);
-            expect(spectator.queryAll(byTestId('header-column-sortable')).length).toBe(0);
+            expect(spectator.queryAll(byTestId('sort-icon'))!.length).toBe(0);
+            expect(spectator.queryAll(byTestId('header-column-sortable'))!.length).toBe(0);
         });
 
         it('should not emit sort when a header is clicked while readOnly', () => {
@@ -905,7 +909,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
             const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
 
-            spectator.click(spectator.queryAll('thead th')[1]);
+            spectator.click(spectator.queryAll('thead th')![1]);
 
             expect(sortSpy).not.toHaveBeenCalled();
         });
@@ -917,7 +921,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', true);
             spectator.detectChanges();
 
-            const loadingRow = spectator.query(byTestId('loading-row'));
+            const loadingRow = spectator.query(byTestId('loading-row'))!;
 
             expect(loadingRow).toBeTruthy();
         });
@@ -927,7 +931,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            const loadingRow = spectator.query(byTestId('loading-row'));
+            const loadingRow = spectator.query(byTestId('loading-row'))!;
 
             expect(loadingRow).toBeNull();
         });
@@ -937,7 +941,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', true);
             spectator.detectChanges();
 
-            const loadingRows = spectator.queryAll(byTestId('loading-row'));
+            const loadingRows = spectator.queryAll(byTestId('loading-row'))!;
 
             expect(loadingRows.length).toBeGreaterThan(0);
         });
@@ -947,8 +951,8 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', true);
             spectator.detectChanges();
 
-            const loadingRows = spectator.queryAll(byTestId('loading-row'));
-            const itemRows = spectator.queryAll(byTestId('item-row'));
+            const loadingRows = spectator.queryAll(byTestId('loading-row'))!;
+            const itemRows = spectator.queryAll(byTestId('item-row'))!;
 
             expect(loadingRows.length).toBe(mockItems.length);
             expect(itemRows.length).toBe(0);
@@ -959,7 +963,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', true);
             spectator.detectChanges();
 
-            const loadingRow = spectator.query(byTestId('loading-row'));
+            const loadingRow = spectator.query(byTestId('loading-row'))!;
             const firstCell = loadingRow?.querySelector('td');
             const skeleton = firstCell?.querySelector('p-skeleton');
 
@@ -1046,7 +1050,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should show the item row', () => {
-            const itemRow = spectator.query(byTestId('item-row'));
+            const itemRow = spectator.query(byTestId('item-row'))!;
 
             expect(itemRow).toBeTruthy();
         });
@@ -1062,14 +1066,14 @@ describe('DotFolderListViewComponent', () => {
             const longTitle = 'Easy Snowboard Tricks You can Start Using Right Away';
 
             it('should lay the table out with fixed columns so the widths are honoured', () => {
-                expect(spectator.query('table').style.tableLayout).toBe('fixed');
+                expect(spectator.query<HTMLTableElement>('table')!.style.tableLayout).toBe('fixed');
             });
 
             it('should truncate a long title rather than widen the table', () => {
                 spectator.setInput('items', [{ ...firstItem, title: longTitle }]);
                 spectator.detectChanges();
 
-                const title = spectator.query(byTestId('item-title-text'));
+                const title = spectator.query(byTestId('item-title-text'))!;
 
                 expect(title.classList.contains('truncate')).toBe(true);
             });
@@ -1080,7 +1084,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.setInput('items', [{ ...firstItem, title: longTitle }]);
                 spectator.detectChanges();
 
-                const title = spectator.query(byTestId('item-title-text'));
+                const title = spectator.query(byTestId('item-title-text'))!;
 
                 expect(title.getAttribute('title')).toBe(longTitle);
             });
@@ -1093,86 +1097,86 @@ describe('DotFolderListViewComponent', () => {
                 ]);
                 spectator.detectChanges();
 
-                const contentType = spectator.query(byTestId('item-content-type'));
+                const contentType = spectator.query(byTestId('item-content-type'))!;
 
                 expect(contentType.classList.contains('truncate')).toBe(true);
             });
         });
 
         it('should have a checkbox column', () => {
-            const checkboxColumn = spectator.query(byTestId('header-checkbox'));
+            const checkboxColumn = spectator.query(byTestId('header-checkbox'))!;
 
             expect(checkboxColumn).toBeTruthy();
         });
 
         it('should have a title column', () => {
-            const titleColumn = spectator.query(byTestId('item-title'));
-            const titleText = spectator.query(byTestId('item-title-text'));
+            const titleColumn = spectator.query(byTestId('item-title'))!;
+            const titleText = spectator.query(byTestId('item-title-text'))!;
 
             expect(titleColumn).toBeTruthy();
             expect(titleText.textContent.trim()).toBe(firstItem.title);
         });
 
         it('should have a status column', () => {
-            const statusColumn = spectator.query(byTestId('item-status'));
+            const statusColumn = spectator.query(byTestId('item-status'))!;
 
             expect(statusColumn).toBeTruthy();
         });
 
         it('should have a language column', () => {
-            const languageColumn = spectator.query(byTestId('item-language'));
+            const languageColumn = spectator.query(byTestId('item-language'))!;
 
             expect(languageColumn).toBeTruthy();
         });
 
         it('should have a content type column', () => {
-            const contentTypeColumn = spectator.query(byTestId('item-content-type'));
+            const contentTypeColumn = spectator.query(byTestId('item-content-type'))!;
 
             expect(contentTypeColumn).toBeTruthy();
         });
 
         it('should have a mod user name column', () => {
-            const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+            const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'))!;
             const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
 
             expect(modUserNameColumn.textContent.trim()).toBe(modUserName);
         });
 
         it('should have a mod date column', () => {
-            const modDateColumn = spectator.query(byTestId('item-mod-date'));
+            const modDateColumn = spectator.query(byTestId('item-mod-date'))!;
 
             expect(modDateColumn).toBeTruthy();
         });
 
         it('should have a contentlet thumbnail', () => {
-            const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+            const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'))!;
 
             expect(contentletThumbnail).toBeTruthy();
         });
 
         it('should show contentlet thumbnail instead of folder icon for non-folder items', () => {
-            const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'));
-            const folderIcon = spectator.query(byTestId('folder-icon'));
+            const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'))!;
+            const folderIcon = spectator.query(byTestId('folder-icon'))!;
 
             expect(contentletThumbnail).toBeTruthy();
             expect(folderIcon).toBeFalsy();
         });
 
         it('should have a contentlet title', () => {
-            const contentletTitle = spectator.query(byTestId('item-title-text'));
+            const contentletTitle = spectator.query(byTestId('item-title-text'))!;
 
             expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
         });
 
         it('should have item title text with truncate class', () => {
-            const itemTitleText = spectator.query(byTestId('item-title-text'));
+            const itemTitleText = spectator.query(byTestId('item-title-text'))!;
 
             expect(itemTitleText).toBeTruthy();
             expect(itemTitleText.classList.contains('truncate')).toBe(true);
         });
 
         it('should not have max-width: 100% style on item-title td', () => {
-            const itemTitleTd = spectator.query(byTestId('item-title'));
+            const itemTitleTd = spectator.query(byTestId('item-title'))!;
             const computedStyle = window.getComputedStyle(itemTitleTd);
 
             expect(computedStyle.maxWidth).not.toBe('100%');
@@ -1185,8 +1189,8 @@ describe('DotFolderListViewComponent', () => {
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
 
-                const lockIcon = spectator.query(byTestId('lock-icon'));
-                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+                const lockIcon = spectator.query(byTestId('lock-icon'))!;
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'))!;
 
                 expect(lockIcon).toBeTruthy();
                 expect(lockOpenIcon).toBeFalsy();
@@ -1198,8 +1202,8 @@ describe('DotFolderListViewComponent', () => {
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
 
-                const lockIcon = spectator.query(byTestId('lock-icon'));
-                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+                const lockIcon = spectator.query(byTestId('lock-icon'))!;
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'))!;
 
                 expect(lockIcon).toBeFalsy();
                 expect(lockOpenIcon).toBeTruthy();
@@ -1229,7 +1233,7 @@ describe('DotFolderListViewComponent', () => {
                     spectator.detectChanges();
 
                     expect(
-                        spectator.query(byTestId('shared-asset-hint')).getAttribute('title')
+                        spectator.query(byTestId('shared-asset-hint'))!.getAttribute('title')
                     ).toBe('content-drive.list-view.shared-asset');
                 });
 
@@ -1241,7 +1245,7 @@ describe('DotFolderListViewComponent', () => {
                     spectator.setInput('loading', false);
                     spectator.detectChanges();
 
-                    const hint = spectator.query(byTestId('shared-asset-hint'));
+                    const hint = spectator.query(byTestId('shared-asset-hint'))!;
 
                     expect(hint.textContent.trim()).toBe(
                         'content-drive.list-view.shared-asset.label'
@@ -1288,16 +1292,16 @@ describe('DotFolderListViewComponent', () => {
                 it('should show the plain lock icon when no rows are marked', () => {
                     spectator.detectChanges();
 
-                    expect(spectator.query(byTestId('lock-icon'))).toBeTruthy();
-                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                    expect(spectator.query(byTestId('lock-icon'))!).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))!).toBeFalsy();
                 });
 
                 it('should mark a locked row whose inode the caller flagged', () => {
                     spectator.setInput('lockedByOthers', [lockedItem.inode]);
                     spectator.detectChanges();
 
-                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeTruthy();
-                    expect(spectator.query(byTestId('lock-icon'))).toBeFalsy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))!).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-icon'))!).toBeFalsy();
                 });
 
                 it('should explain the marker on hover', () => {
@@ -1305,7 +1309,7 @@ describe('DotFolderListViewComponent', () => {
                     spectator.detectChanges();
 
                     expect(
-                        spectator.query(byTestId('lock-foreign-icon')).getAttribute('title')
+                        spectator.query(byTestId('lock-foreign-icon'))!.getAttribute('title')
                     ).toBe('content-drive.list-view.locked-by-another-user');
                 });
 
@@ -1315,8 +1319,8 @@ describe('DotFolderListViewComponent', () => {
                     spectator.setInput('lockedByOthers', ['some-other-inode']);
                     spectator.detectChanges();
 
-                    expect(spectator.query(byTestId('lock-icon'))).toBeTruthy();
-                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                    expect(spectator.query(byTestId('lock-icon'))!).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))!).toBeFalsy();
                 });
 
                 it('should not mark an unlocked row even when its inode is flagged', () => {
@@ -1325,8 +1329,8 @@ describe('DotFolderListViewComponent', () => {
                     spectator.setInput('lockedByOthers', [lockedItem.inode]);
                     spectator.detectChanges();
 
-                    expect(spectator.query(byTestId('lock-open-icon'))).toBeTruthy();
-                    expect(spectator.query(byTestId('lock-foreign-icon'))).toBeFalsy();
+                    expect(spectator.query(byTestId('lock-open-icon'))!).toBeTruthy();
+                    expect(spectator.query(byTestId('lock-foreign-icon'))!).toBeFalsy();
                 });
             });
         });
@@ -1345,7 +1349,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not make rows draggable', () => {
-                expect(spectator.query(byTestId('item-row')).getAttribute('draggable')).toBe(
+                expect(spectator.query(byTestId('item-row'))!.getAttribute('draggable')).toBe(
                     'false'
                 );
             });
@@ -1360,13 +1364,13 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not render the kebab menu button', () => {
-                expect(spectator.query(byTestId('kebab-menu-button'))).toBeFalsy();
+                expect(spectator.query(byTestId('kebab-menu-button'))!).toBeFalsy();
             });
 
             it('should not emit rightClick on context menu', () => {
                 const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
 
-                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'contextmenu');
+                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row'))!, 'contextmenu');
 
                 expect(rightClickSpy).not.toHaveBeenCalled();
             });
@@ -1374,7 +1378,7 @@ describe('DotFolderListViewComponent', () => {
             it('should not emit doubleClick on a double click', () => {
                 const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
 
-                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'dblclick');
+                spectator.dispatchFakeEvent(spectator.query(byTestId('item-row'))!, 'dblclick');
 
                 expect(doubleClickSpy).not.toHaveBeenCalled();
             });
@@ -1390,7 +1394,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should still render the row checkboxes', () => {
-                expect(spectator.query(byTestId('item-checkbox'))).toBeTruthy();
+                expect(spectator.query(byTestId('item-checkbox'))!).toBeTruthy();
             });
 
             it('should not toggle a row when a cell without its own click handler is clicked', () => {
@@ -1402,7 +1406,7 @@ describe('DotFolderListViewComponent', () => {
                 // alone.
                 const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
 
-                spectator.click(spectator.query(byTestId('item-status')));
+                spectator.click(spectator.query(byTestId('item-status'))!);
 
                 expect(selectionChangeSpy).not.toHaveBeenCalled();
             });
@@ -1421,7 +1425,7 @@ describe('DotFolderListViewComponent', () => {
                 ]);
                 spectator.detectChanges();
 
-                const statusColumn = spectator.query(byTestId('item-status'));
+                const statusColumn = spectator.query(byTestId('item-status'))!;
 
                 expect(statusColumn.textContent.trim()).toBe('Published');
             });
@@ -1436,7 +1440,7 @@ describe('DotFolderListViewComponent', () => {
                 ]);
                 spectator.detectChanges();
 
-                const statusColumn = spectator.query(byTestId('item-status'));
+                const statusColumn = spectator.query(byTestId('item-status'))!;
 
                 expect(statusColumn.textContent.trim()).toBe('Archived');
             });
@@ -1453,7 +1457,7 @@ describe('DotFolderListViewComponent', () => {
                 ]);
                 spectator.detectChanges();
 
-                const statusColumn = spectator.query(byTestId('item-status'));
+                const statusColumn = spectator.query(byTestId('item-status'))!;
 
                 expect(statusColumn.textContent.trim()).toBe('Draft');
             });
@@ -1491,15 +1495,15 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not show lock icon for folders', () => {
-                const lockIcon = spectator.query(byTestId('lock-icon'));
-                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'));
+                const lockIcon = spectator.query(byTestId('lock-icon'))!;
+                const lockOpenIcon = spectator.query(byTestId('lock-open-icon'))!;
 
                 expect(lockIcon).toBeFalsy();
                 expect(lockOpenIcon).toBeFalsy();
             });
 
             it('should not show status badge for folders', () => {
-                const statusColumn = spectator.query(byTestId('item-status'));
+                const statusColumn = spectator.query(byTestId('item-status'))!;
                 const statusBadge = statusColumn?.querySelector('dot-contentlet-status-badge');
 
                 expect(statusBadge).toBeFalsy();
@@ -1507,7 +1511,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not show language tag for folders', () => {
-                const languageColumn = spectator.query(byTestId('item-language'));
+                const languageColumn = spectator.query(byTestId('item-language'))!;
                 const languageTag = languageColumn?.querySelector('p-tag');
 
                 expect(languageTag).toBeFalsy();
@@ -1516,40 +1520,40 @@ describe('DotFolderListViewComponent', () => {
 
             it('should have a content type column for folders', () => {
                 // Query the content type column (same pattern as regular items test)
-                const contentTypeColumn = spectator.query(byTestId('item-content-type'));
+                const contentTypeColumn = spectator.query(byTestId('item-content-type'))!;
 
                 expect(contentTypeColumn).toBeTruthy();
             });
 
             it('should show owner instead of modUserName for folders', () => {
-                const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+                const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'))!;
 
                 expect(modUserNameColumn?.textContent?.trim()).toBe('admin');
             });
 
             it('should show folder title', () => {
-                const titleColumn = spectator.query(byTestId('item-title'));
+                const titleColumn = spectator.query(byTestId('item-title'))!;
 
                 expect(titleColumn?.textContent?.trim()).toContain('Test Folder');
             });
 
             it('should show folder icon instead of contentlet thumbnail for folders', () => {
-                const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'));
-                const folderIcon = spectator.query(byTestId('folder-icon'));
+                const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'))!;
+                const folderIcon = spectator.query(byTestId('folder-icon'))!;
 
                 expect(contentletThumbnail).toBeFalsy();
                 expect(folderIcon).toBeTruthy();
             });
 
             it('should have kebab menu button for folders', () => {
-                const kebabButton = spectator.query(byTestId('kebab-menu-button'));
+                const kebabButton = spectator.query(byTestId('kebab-menu-button'))!;
 
                 expect(kebabButton).toBeTruthy();
             });
 
             it('should emit rightClick when folder row is right clicked', () => {
                 const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
-                const row = spectator.query(byTestId('item-row'));
+                const row = spectator.query(byTestId('item-row'))!;
 
                 spectator.dispatchFakeEvent(row, 'contextmenu');
 
@@ -1632,7 +1636,7 @@ describe('DotFolderListViewComponent', () => {
              * genuinely selected row.
              */
             const rowChecked = (): boolean[] => {
-                const table = spectator.query(Table);
+                const table = spectator.query(Table)!;
 
                 return mockItems.map((item) => table.isSelected(item));
             };
@@ -1655,7 +1659,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.setInput('selection', [firstItem]);
                 spectator.detectChanges();
 
-                expect(spectator.query(Table).selection).toEqual([firstItem]);
+                expect(spectator.query(Table)!.selection).toEqual([firstItem]);
             });
 
             it('should follow the caller-provided selection when it changes', () => {
@@ -1706,7 +1710,9 @@ describe('DotFolderListViewComponent', () => {
 
                 expect(rowChecked()).toEqual([true, true, false, false, false]);
 
-                spectator.click(spectator.queryAll(byTestId('item-row'))[0].querySelector('input'));
+                spectator.click(
+                    spectator.queryAll(byTestId('item-row'))![0].querySelector('input')!
+                );
                 spectator.detectChanges();
 
                 // Parent said nothing, so the row is still in — and the box has to say so. Asserted
@@ -1722,7 +1728,9 @@ describe('DotFolderListViewComponent', () => {
                 spectator.setInput('selection', [firstItem, secondItem]);
                 spectator.detectChanges();
 
-                spectator.click(spectator.queryAll(byTestId('item-row'))[0].querySelector('input'));
+                spectator.click(
+                    spectator.queryAll(byTestId('item-row'))![0].querySelector('input')!
+                );
                 spectator.setInput('selection', [thirdItem]);
                 spectator.detectChanges();
 
@@ -2013,7 +2021,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.component.onDragStart(event, item);
                 spectator.detectChanges();
 
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 expect(row.classList.contains('cursor-grabbing')).toBe(true);
                 expect(spectator.component.state.isDragging()).toBe(true);
             });
@@ -2026,7 +2034,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.component.onDragStart(event, item);
                 spectator.detectChanges();
 
-                let row = spectator.query(byTestId('item-row')) as HTMLElement;
+                let row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 expect(row.classList.contains('cursor-grabbing')).toBe(true);
                 expect(spectator.component.state.isDragging()).toBe(true);
 
@@ -2034,7 +2042,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.component.onDragEnd();
                 spectator.detectChanges();
 
-                row = spectator.query(byTestId('item-row')) as HTMLElement;
+                row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 expect(row.classList.contains('cursor-grabbing')).toBe(false);
                 expect(spectator.component.state.isDragging()).toBe(false);
             });
@@ -2044,14 +2052,14 @@ describe('DotFolderListViewComponent', () => {
                 const item = mockItems[0];
 
                 // Verify initial state in DOM
-                let row = spectator.query(byTestId('item-row')) as HTMLElement;
+                let row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 expect(row.classList.contains('cursor-grabbing')).toBe(false);
 
                 // Start drag and verify state + DOM
                 spectator.component.onDragStart(event, item);
                 spectator.detectChanges();
 
-                row = spectator.query(byTestId('item-row')) as HTMLElement;
+                row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(true);
                 expect(row.classList.contains('cursor-grabbing')).toBe(true);
 
@@ -2059,7 +2067,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.component.onDragEnd();
                 spectator.detectChanges();
 
-                row = spectator.query(byTestId('item-row')) as HTMLElement;
+                row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(false);
                 expect(row.classList.contains('cursor-grabbing')).toBe(false);
             });
@@ -2073,7 +2081,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should set dragOverRowId when dragging over a row with internal drag', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
                 const preventDefaultSpy = jest.spyOn(dragOverEvent, 'preventDefault');
 
@@ -2085,7 +2093,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not set dragOverRowId when dragging over with file drop', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
                 const dragOverEvent = createFileDragOverEvent([mockFile]);
 
@@ -2096,7 +2104,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not set dragOverRowId when dataTransfer is null', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dragOverEvent = new DragEvent('dragover');
                 Object.defineProperty(dragOverEvent, 'dataTransfer', {
                     value: null,
@@ -2110,7 +2118,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should set dragOverRowId when dragOverRowId matches item identifier', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
 
                 row.dispatchEvent(dragOverEvent);
@@ -2120,7 +2128,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should update dragOverRowId when dragging over different rows', () => {
-                const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
+                const rows = spectator.queryAll(byTestId('item-row'))! as HTMLElement[];
                 const dragOverEvent = createDragOverEvent();
 
                 // Drag over second item
@@ -2140,7 +2148,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should clear dragOverRowId when dropping on a row with internal drag', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
@@ -2168,7 +2176,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not handle file drops and let them bubble up', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
                 const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
                 const dropEvent = new DragEvent('drop');
@@ -2187,7 +2195,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not handle drops that are not internal drags', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
@@ -2205,7 +2213,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should clear dragOverRowId on drop even if it was set', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
                     value: {
@@ -2237,7 +2245,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should clear dragOverRowId when drag ends', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
 
                 // Set dragOverRowId first
@@ -2254,7 +2262,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should clear dragOverRowId and isDragging state together', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dragStartEvent = createDragStartEvent();
                 const dragOverEvent = createDragOverEvent();
 
@@ -2289,7 +2297,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should update dragOverRowId when dragging over different items', () => {
-                const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
+                const rows = spectator.queryAll(byTestId('item-row'))! as HTMLElement[];
                 const dragOverEvent = createDragOverEvent();
 
                 // Drag over first item
@@ -2304,7 +2312,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should reflect dragOverRowId state changes immediately', () => {
-                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+                const row = spectator.query(byTestId('item-row'))! as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
 
                 // Verify initial state
@@ -2328,7 +2336,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should emit rightClick event when row is right clicked', () => {
             const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
-            const row = spectator.query(byTestId('item-row'));
+            const row = spectator.query(byTestId('item-row'))!;
 
             spectator.dispatchFakeEvent(row, 'contextmenu');
 
@@ -2375,7 +2383,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should emit rightClick with correct item for different rows', () => {
             const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
-            const rows = spectator.queryAll(byTestId('item-row'));
+            const rows = spectator.queryAll(byTestId('item-row'))!;
 
             // Right click on second row
             spectator.dispatchFakeEvent(rows[1], 'contextmenu');
@@ -2396,7 +2404,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should emit doubleClick event when row is double clicked', () => {
             const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
-            const row = spectator.query(byTestId('item-row'));
+            const row = spectator.query(byTestId('item-row'))!;
 
             spectator.dispatchFakeEvent(row, 'dblclick');
 
@@ -2405,7 +2413,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should emit doubleClick event when thumbnail is clicked', () => {
             const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
-            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'))!;
 
             spectator.click(thumbnail);
 
@@ -2414,7 +2422,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should emit doubleClick event when title text is clicked', () => {
             const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
-            const titleText = spectator.query(byTestId('item-title-text'));
+            const titleText = spectator.query(byTestId('item-title-text'))!;
 
             spectator.click(titleText);
 
@@ -2448,7 +2456,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
-            spectator.click(spectator.query(byTestId('item-title-text')));
+            spectator.click(spectator.query(byTestId('item-title-text'))!);
 
             expect(emitSpy).not.toHaveBeenCalled();
         });
@@ -2473,7 +2481,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             const selectionSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
-            spectator.click(spectator.query(byTestId('item-title-text')));
+            spectator.click(spectator.query(byTestId('item-title-text'))!);
 
             expect(selectionSpy).toHaveBeenCalledWith([mockItems[0]]);
         });
@@ -2492,7 +2500,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should emit scroll event when table body is scrolled', () => {
             const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
-            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
+            const tableBody = spectator.query('.p-datatable-table-container')! as HTMLElement;
 
             const scrollEvent = new Event('scroll');
             tableBody.dispatchEvent(scrollEvent);
@@ -2501,7 +2509,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should add scroll event listener on ngAfterViewInit and emit scroll events', () => {
-            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
+            const tableBody = spectator.query('.p-datatable-table-container')! as HTMLElement;
             const addListenerSpy = jest.spyOn(tableBody, 'addEventListener');
 
             spectator.component.ngAfterViewInit();
@@ -2517,7 +2525,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should remove scroll event listener on ngOnDestroy and stop emitting', () => {
-            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
+            const tableBody = spectator.query('.p-datatable-table-container')! as HTMLElement;
             const removeListenerSpy = jest.spyOn(tableBody, 'removeEventListener');
 
             spectator.component.ngOnDestroy();
@@ -2631,7 +2639,7 @@ describe('DotFolderListViewComponent', () => {
 
             expect(headerByLabel('My Text')).toBeTruthy();
 
-            const cells = spectator.queryAll(byTestId('item-extra-myText'));
+            const cells = spectator.queryAll(byTestId('item-extra-myText'))!;
             expect(cells.length).toBe(2);
             expect(cells[0].textContent?.trim()).toBe('hello');
 
@@ -2653,7 +2661,7 @@ describe('DotFolderListViewComponent', () => {
             ]);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('item-extra-title'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-extra-title'))!).toBeFalsy();
             expect(headerByLabel('Dup')).toBeFalsy();
         });
 
@@ -2672,7 +2680,7 @@ describe('DotFolderListViewComponent', () => {
             ]);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('item-extra-image-photo'))).toBeTruthy();
+            expect(spectator.query(byTestId('item-extra-image-photo'))!).toBeTruthy();
         });
 
         it('should render distinct boolean icons for true/false and stay blank when absent', () => {
@@ -2686,7 +2694,7 @@ describe('DotFolderListViewComponent', () => {
             ]);
             spectator.detectChanges();
 
-            const cells = spectator.queryAll(byTestId('item-extra-myBool'));
+            const cells = spectator.queryAll(byTestId('item-extra-myBool'))!;
             expect(
                 cells[0]
                     .querySelector('[data-testid="item-extra-bool-myBool"]')
@@ -2938,7 +2946,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('extraColumns', []);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('item-extra-myText'))).toBeFalsy();
+            expect(spectator.query(byTestId('item-extra-myText'))!).toBeFalsy();
         });
     });
 

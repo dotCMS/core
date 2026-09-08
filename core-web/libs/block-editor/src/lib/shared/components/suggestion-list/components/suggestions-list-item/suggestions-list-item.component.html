@@ -12,12 +12,12 @@
 <div class="data-wrapper">
     <span>{{ label }}</span>
     @if (page) {
-        <span class="url">{{ data.contentlet.url }}</span>
+        <span class="url">{{ data?.contentlet?.url }}</span>
     }
-    @if (data?.contentlet) {
+    @if (data?.contentlet; as contentlet) {
         <div class="state">
-            <dot-contentlet-status-badge [state]="data.contentlet" />
-            <p-tag severity="info" [value]="data.contentlet.language | lowercase" />
+            <dot-contentlet-status-badge [state]="contentlet" />
+            <p-tag severity="info" [value]="languageLabel | lowercase" />
         </div>
     }
 </div>

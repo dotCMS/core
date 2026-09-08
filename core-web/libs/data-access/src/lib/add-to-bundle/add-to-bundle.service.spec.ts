@@ -20,7 +20,8 @@ const mockCurrentUser: DotCurrentUser = {
     surname: 'User',
     roleId: 'admin',
     email: 'test@test.com',
-    admin: true
+    admin: true,
+    loginAs: false
 };
 
 const mockBundleItems: DotBundle[] = [

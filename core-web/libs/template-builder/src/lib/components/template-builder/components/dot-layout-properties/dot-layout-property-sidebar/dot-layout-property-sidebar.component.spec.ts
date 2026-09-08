@@ -90,7 +90,7 @@ describe('DotLayoutSidebarComponent', () => {
             By.css('dot-layout-properties-item')
         ).nativeElement;
 
-        dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
+        dotLayoutPropertiesItem.switch.subscribe((value: boolean) => (res = value));
         jest.spyOn(comp, 'propagateChange');
         layoutPropertyItemEl.click();
         comp.setValue(true, 'left');
@@ -108,7 +108,7 @@ describe('DotLayoutSidebarComponent', () => {
             By.css('dot-layout-properties-item')
         ).nativeElement;
 
-        dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
+        dotLayoutPropertiesItem.switch.subscribe((value: boolean) => (res = value));
         layoutPropertyItemEl.click();
 
         jest.spyOn(comp.propertyItemLeft, 'setChecked');
@@ -129,7 +129,7 @@ describe('DotLayoutSidebarComponent', () => {
             By.css('dot-layout-properties-item')
         ).nativeElement;
 
-        dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
+        dotLayoutPropertiesItem.switch.subscribe((value: boolean) => (res = value));
         layoutPropertyItemEl.click();
 
         jest.spyOn(comp.propertyItemLeft, 'setUnchecked');

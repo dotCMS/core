@@ -15,10 +15,10 @@ export class LanguagePipe implements PipeTransform {
     /**
      * Transform the language to a string.
      *
-     * @param {DotLanguage} language - The language to transform.
+     * @param {DotLanguage | null} language - The language to transform, or null when unset.
      * @returns {string} The transformed language.
      */
-    transform(language: DotLanguage): string {
+    transform(language: DotLanguage | null): string {
         if (!language?.language) {
             return '';
         }

@@ -157,7 +157,7 @@ describe('DotLoginAsComponent', () => {
             spectator.detectChanges();
 
             // Act - Simulate user selecting a user and submitting
-            component.form.get('loginAsUser').setValue(testUser);
+            component.form.get('loginAsUser')!.setValue(testUser);
             spectator.detectChanges();
 
             // Verify that the form is valid before clicking
@@ -202,8 +202,8 @@ describe('DotLoginAsComponent', () => {
             spectator.detectChanges();
 
             // Set form values as a user would
-            component.form.get('loginAsUser').setValue(mockUser());
-            component.form.get('password').setValue('password');
+            component.form.get('loginAsUser')!.setValue(mockUser());
+            component.form.get('password')!.setValue('password');
             spectator.detectChanges();
 
             // Mock the passwordElem viewChild to simulate the element being available
@@ -257,7 +257,7 @@ describe('DotLoginAsComponent', () => {
             spectator.detectChanges();
 
             // Act - Simulate user login
-            component.form.get('loginAsUser').setValue(mockUser());
+            component.form.get('loginAsUser')!.setValue(mockUser());
             spectator.detectChanges();
 
             component.doLoginAs();
@@ -288,8 +288,8 @@ describe('DotLoginAsComponent', () => {
             spectator.detectChanges();
 
             // Fill the form
-            component.form.get('loginAsUser').setValue(mockUser());
-            component.form.get('password').setValue('password');
+            component.form.get('loginAsUser')!.setValue(mockUser());
+            component.form.get('password')!.setValue('password');
             spectator.detectChanges();
 
             // Act - Call doLoginAs directly
@@ -352,14 +352,14 @@ describe('DotLoginAsComponent', () => {
             spectator.setInput('visible', true);
             spectator.detectChanges();
 
-            component.form.get('loginAsUser').setValue(mockUser());
+            component.form.get('loginAsUser')!.setValue(mockUser());
             component.errorMessage.set('some error');
             component.needPassword.set(true);
 
             component.close();
 
             expect(cancelSpy).toHaveBeenCalledWith(true);
-            expect(component.form.get('loginAsUser').value).toBeNull();
+            expect(component.form.get('loginAsUser')!.value).toBeNull();
             expect(component.errorMessage()).toBe('');
             expect(component.needPassword()).toBe(false);
         });

@@ -171,7 +171,7 @@ describe('DotCMSEditableTextComponent', () => {
                     const editorComponent = spectator.query(EditorComponent);
 
                     spectator.detectChanges();
-                    expect(spectator.component.mode).toBe('plain');
+                    expect(spectator.component.mode()).toBe('plain');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['plain'],
                         base_url: 'http://localhost:8080/ext/tinymcev7'
@@ -184,7 +184,7 @@ describe('DotCMSEditableTextComponent', () => {
 
                     const editorComponent = spectator.query(EditorComponent);
 
-                    expect(spectator.component.mode).toBe('minimal');
+                    expect(spectator.component.mode()).toBe('minimal');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['minimal'],
                         base_url: 'http://localhost:8080/ext/tinymcev7'
@@ -197,7 +197,7 @@ describe('DotCMSEditableTextComponent', () => {
 
                     const editorComponent = spectator.query(EditorComponent);
 
-                    expect(spectator.component.mode).toBe('full');
+                    expect(spectator.component.mode()).toBe('full');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['full'],
                         base_url: 'http://localhost:8080/ext/tinymcev7'

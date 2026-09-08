@@ -44,10 +44,10 @@ export class DotAccountService {
     /**
      * Put request to add the getting starter portlet to menu
      *
-     * @returns {Observable<string>}
+     * @returns {Observable<string | null>} — null when the request failed
      * @memberof DotAccountService
      */
-    addStarterPage(): Observable<string> {
+    addStarterPage(): Observable<string | null> {
         return this.http
             .put<DotCMSResponse<string>>('/api/v1/toolgroups/gettingstarted/_addtouser', {})
             .pipe(
@@ -64,10 +64,10 @@ export class DotAccountService {
     /**
      * put request to remove the getting starter portlet to menu
      *
-     * @returns {Observable<string>}
+     * @returns {Observable<string | null>} — null when the request failed
      * @memberof DotAccountService
      */
-    removeStarterPage(): Observable<string> {
+    removeStarterPage(): Observable<string | null> {
         return this.http
             .put<DotCMSResponse<string>>('/api/v1/toolgroups/gettingstarted/_removefromuser', {})
             .pipe(

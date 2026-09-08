@@ -93,7 +93,7 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     /**
      * Model of the items selected
      */
-    itemsSelected: DotCategoryFieldKeyValueObj[];
+    itemsSelected: DotCategoryFieldKeyValueObj[] = [];
 
     /**
      * Represents an array of temporary selected items.
@@ -193,9 +193,9 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
      * Retrieves the message configuration based on the current component state.
      *
      * @private
-     * @returns {PrincipalConfiguration | null} Returns the message configuration, or null if no configuration is found.
+     * @returns {PrincipalConfiguration} The message configuration for the current state.
      */
-    private getMessageConfig(): PrincipalConfiguration | null {
+    private getMessageConfig(): PrincipalConfiguration {
         const configKey =
             this.$state() === ComponentStatus.ERROR ? ComponentStatus.ERROR : 'noResults';
         const { title, icon, subtitle } = CATEGORY_FIELD_EMPTY_MESSAGES[configKey];

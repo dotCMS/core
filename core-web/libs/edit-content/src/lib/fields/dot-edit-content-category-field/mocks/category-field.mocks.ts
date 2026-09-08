@@ -290,9 +290,9 @@ export const CATEGORY_HIERARCHY_MOCK: HierarchyParent[] = [
 
         parentList: [
             {
-                inode: CATEGORY_FIELD_MOCK.categories.inode,
-                key: CATEGORY_FIELD_MOCK.categories.key,
-                name: CATEGORY_FIELD_MOCK.categories.categoryName
+                inode: CATEGORY_FIELD_MOCK.categories!.inode,
+                key: CATEGORY_FIELD_MOCK.categories!.key,
+                name: CATEGORY_FIELD_MOCK.categories!.categoryName
             },
             {
                 inode: CATEGORY_LEVEL_1[0].inode,
@@ -308,9 +308,9 @@ export const CATEGORY_HIERARCHY_MOCK: HierarchyParent[] = [
 
         parentList: [
             {
-                inode: CATEGORY_FIELD_MOCK.categories.inode,
-                key: CATEGORY_FIELD_MOCK.categories.key,
-                name: CATEGORY_FIELD_MOCK.categories.categoryName
+                inode: CATEGORY_FIELD_MOCK.categories!.inode,
+                key: CATEGORY_FIELD_MOCK.categories!.key,
+                name: CATEGORY_FIELD_MOCK.categories!.categoryName
             },
             {
                 inode: CATEGORY_LEVEL_1[1].inode,

@@ -4,7 +4,13 @@ import { Injectable } from '@angular/core';
 
 import { map, filter } from 'rxjs/operators';
 
-const getValue = <T>(item): T => {
+const getValue = <T>(item: string | null): T => {
+    // A missing key previously fell through parseInt(null) === NaN to JSON.parse(null),
+    // which coerces to "null" and returns null. Same result, stated directly.
+    if (item === null) {
+        return null as T;
+    }
+
     const isNumber = parseInt(item, 0) as unknown;
 
     if (isNumber) {
@@ -37,13 +43,9 @@ export class DotLocalstorageService {
      * @memberof DotLocalstorageService
      */
     setItem<T>(key: string, value: T): void {
-        let data;
-
-        if (typeof value === 'object') {
-            data = JSON.stringify(value);
-        } else {
-            data = value;
-        }
+        // `setItem` stringifies its argument anyway, so String() matches the previous
+        // runtime behaviour for non-object values.
+        const data: string = typeof value === 'object' ? JSON.stringify(value) : String(value);
 
         localStorage.setItem(key, data);
     }
@@ -57,7 +59,7 @@ export class DotLocalstorageService {
      * @memberof DotLocalstorageService
      */
     getItem<T>(key: string): T {
-        const item: string = localStorage.getItem(key);
+        const item: string | null = localStorage.getItem(key);
 
         return <T>getValue(item);
     }

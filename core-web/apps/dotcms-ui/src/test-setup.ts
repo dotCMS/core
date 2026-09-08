@@ -51,7 +51,10 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
 
 // Add element.animate polyfill for Jest/JSDOM environment
 if (typeof Element !== 'undefined' && !Element.prototype.animate) {
-    Element.prototype.animate = function () {
+    // The stub carries only the members jsdom callers touch — `finished` and `ready` resolve to
+    // nothing here, where `Animation` declares them as `Promise<Animation>` — so the cast is on the
+    // object rather than a return annotation the body cannot satisfy.
+    Element.prototype.animate = function (): Animation {
         return {
             cancel: () => {},
             finish: () => {},
@@ -69,7 +72,7 @@ if (typeof Element !== 'undefined' && !Element.prototype.animate) {
             currentTime: 0,
             timeline: null,
             effect: null
-        };
+        } as unknown as Animation;
     };
 }
 
@@ -81,7 +84,9 @@ console.error = (...args: unknown[]) => {
     // Skip CSS parsing errors from JSDOM
     if (
         firstArg.includes('Error: Could not parse CSS stylesheet') ||
-        (args[0]?.message && args[0].message.includes('Could not parse CSS stylesheet'))
+        // `args` is `unknown[]`, so the message has to be reached through a narrowing the way the
+        // check further down already does.
+        (args[0] as { message?: string })?.message?.includes('Could not parse CSS stylesheet')
     ) {
         return;
     }

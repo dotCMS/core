@@ -15,7 +15,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 export class PushPublishServiceMock {
-    _lastEnvironmentPushed: string[];
+    _lastEnvironmentPushed!: string[];
 
     get lastEnvironmentPushed(): string[] {
         return this._lastEnvironmentPushed;

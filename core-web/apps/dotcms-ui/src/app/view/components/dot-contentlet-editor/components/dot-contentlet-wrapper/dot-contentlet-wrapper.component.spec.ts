@@ -291,7 +291,7 @@ describe('DotContentletWrapperComponent', () => {
 
                 it('should show confirmation dialog and handle accept', () => {
                     jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                        conf.accept();
+                        conf.accept!();
                     });
 
                     dotIframeDialog.triggerEventHandler('custom', {
@@ -323,7 +323,7 @@ describe('DotContentletWrapperComponent', () => {
 
                 it('should show confirmation dialog and handle reject', () => {
                     jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                        conf.reject();
+                        conf.reject!();
                     });
 
                     dotIframeDialog.triggerEventHandler('custom', {

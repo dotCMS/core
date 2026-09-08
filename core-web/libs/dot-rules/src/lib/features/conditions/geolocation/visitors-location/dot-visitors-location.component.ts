@@ -23,7 +23,8 @@ import { LoggerService } from '@dotcms/dotcms-js';
 import { GCircle } from '../../../../models/gcircle.model';
 import { DotAreaPickerDialogComponent } from '../dialog/dot-area-picker-dialog.component';
 
-type DistanceUnit = 'km' | 'm' | 'mi';
+export const DISTANCE_UNITS = ['km', 'm', 'mi'] as const;
+export type DistanceUnit = (typeof DISTANCE_UNITS)[number];
 
 interface ComparisonOption {
     label: string | Observable<string>;

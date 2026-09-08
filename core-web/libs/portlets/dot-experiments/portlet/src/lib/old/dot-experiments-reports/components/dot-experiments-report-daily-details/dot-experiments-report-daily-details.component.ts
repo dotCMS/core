@@ -30,7 +30,9 @@ export class DotExperimentsReportDailyDetailsComponent {
     $detailData = input<DotExperimentVariantDetail[]>([], { alias: 'detailData' });
     $hasEnoughSessions = input.required<boolean>({ alias: 'hasEnoughSessions' });
     $experimentId = input.required<string>({ alias: 'experimentId' });
-    $promotedVariantId = input.required<Variant>({ alias: 'promotedVariantId' });
+    // Undefined until a variant wins; the template's `@if (!$promotedVariantId() ...)` reads it
+    // as absent-or-present already.
+    $promotedVariantId = input.required<Variant | undefined>({ alias: 'promotedVariantId' });
 
     protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
 
@@ -48,7 +50,7 @@ export class DotExperimentsReportDailyDetailsComponent {
      */
     promoteVariant($event: MouseEvent, experimentId: string, variant: DotExperimentVariantDetail) {
         this.confirmationService.confirm({
-            target: $event.target,
+            target: $event.target ?? undefined,
             message: this.dotMessageService.get('experiment.reports.promote.warning'),
             icon: 'pi pi-info-circle',
             acceptLabel: this.dotMessageService.get('Yes'),

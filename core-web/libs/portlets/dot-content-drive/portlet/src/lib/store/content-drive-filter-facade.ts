@@ -28,7 +28,9 @@ const toBaseTypeNames = (raw: DotFilterValue | undefined): string[] | undefined 
 
     const keys = Array.isArray(raw) ? raw : [raw];
 
-    return keys.map((key) => MAP_NUMBERS_TO_BASE_TYPES[Number(key)]).filter(Boolean);
+    return keys
+        .map((key) => MAP_NUMBERS_TO_BASE_TYPES[Number(key)])
+        .filter((name): name is DotCMSBaseTypesContentTypes => !!name);
 };
 
 /** Base-type names → the numeric keys the URL round-trips. Unknown names are dropped. */

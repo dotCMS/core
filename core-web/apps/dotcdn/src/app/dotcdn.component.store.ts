@@ -145,6 +145,9 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                         ...state,
                         isPurgeZoneLoading: action.loadingState === LoadingState.LOADING
                     };
+
+                default:
+                    return state;
             }
         }
     );
@@ -247,7 +250,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         return { chartData, statsData, cdnDomain: stats.cdnDomain };
     }
 
-    private formatDate(date) {
+    private formatDate(date: string) {
         return new Date(date).toLocaleDateString('en-GB', {
             month: '2-digit',
             day: '2-digit'

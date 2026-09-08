@@ -78,7 +78,7 @@ describe('DotStatusFilterComponent', () => {
         });
 
         it('should write the selection to the facade, not to any store', () => {
-            spectator.component.onSelectionChange([CONTENT_STATUS.ARCHIVED]);
+            spectator.component['onSelectionChange']([CONTENT_STATUS.ARCHIVED]);
             spectator.detectChanges();
 
             expect(patchFilters).toHaveBeenCalledWith({
@@ -90,7 +90,7 @@ describe('DotStatusFilterComponent', () => {
             storedValue.set([CONTENT_STATUS.LOCKED]);
             spectator.detectChanges();
 
-            spectator.component.onSelectionChange([]);
+            spectator.component['onSelectionChange']([]);
             spectator.detectChanges();
 
             expect(removeFilter).toHaveBeenCalledWith(STATUS_FILTER_KEY);
@@ -98,7 +98,7 @@ describe('DotStatusFilterComponent', () => {
 
         it('should combine selections rather than replace them one at a time', () => {
             // OR-combined: more boxes means more content, same as content types and locales.
-            spectator.component.onSelectionChange([
+            spectator.component['onSelectionChange']([
                 CONTENT_STATUS.UNPUBLISHED,
                 CONTENT_STATUS.LOCKED
             ]);

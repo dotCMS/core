@@ -64,17 +64,17 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
         });
 
         it('should display workflow scheme name', () => {
-            const workflowName = spectator.query(byTestId('workflow-name'));
-            expect(workflowName.textContent.trim()).toBe(WORKFLOW_MOCKS.EXISTING.scheme.name);
+            const workflowName = spectator.query(byTestId('workflow-name'))!;
+            expect(workflowName.textContent!.trim()).toBe(WORKFLOW_MOCKS.EXISTING.scheme!.name);
         });
 
         it('should display workflow step', () => {
-            const workflowStep = spectator.query(byTestId('workflow-step'));
-            expect(workflowStep.textContent.trim()).toBe(WORKFLOW_MOCKS.EXISTING.step.name);
+            const workflowStep = spectator.query(byTestId('workflow-step'))!;
+            expect(workflowStep.textContent.trim()).toBe(WORKFLOW_MOCKS.EXISTING.step!.name);
         });
 
         it('should display assignee when task exists', () => {
-            const workflowAssigned = spectator.query(byTestId('workflow-assigned'));
+            const workflowAssigned = spectator.query(byTestId('workflow-assigned'))!;
             expect(workflowAssigned.textContent.trim()).toBe(
                 WORKFLOW_MOCKS.EXISTING.task?.assignedTo
             );
@@ -90,7 +90,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
             } as any);
             spectator.detectChanges();
 
-            const selectLink = spectator.query(byTestId('select-workflow-link'));
+            const selectLink = spectator.query(byTestId('select-workflow-link'))!;
             expect(selectLink).toBeTruthy();
         });
 
@@ -140,14 +140,14 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
             });
 
             it('should show select workflow link', () => {
-                const selectLink = spectator.query(byTestId('select-workflow-link'));
+                const selectLink = spectator.query(byTestId('select-workflow-link'))!;
 
                 expect(selectLink).toBeTruthy();
                 expect(selectLink).toHaveText('edit.content.sidebar.workflow.select.workflow');
             });
 
             it('should open dialog when select workflow link is clicked', () => {
-                const selectLink = spectator.query(byTestId('select-workflow-link'));
+                const selectLink = spectator.query(byTestId('select-workflow-link'))!;
                 spectator.click(selectLink);
                 expect(spectator.component.$showDialog()).toBeTruthy();
             });
@@ -161,8 +161,8 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                     workflowSelection: WORKFLOW_SELECTION_MOCK.WITH_OPTIONS
                 } as any);
 
-                const workflowName = spectator.query(byTestId('workflow-name'));
-                expect(workflowName).toHaveText(WORKFLOW_MOCKS.NEW.scheme.name);
+                const workflowName = spectator.query(byTestId('workflow-name'))!;
+                expect(workflowName).toHaveText(WORKFLOW_MOCKS.NEW.scheme!.name);
             });
 
             it('should show edit button when workflow selection is available', () => {
@@ -172,7 +172,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                     workflowSelection: WORKFLOW_SELECTION_MOCK.WITH_OPTIONS
                 } as any);
 
-                const editButton = spectator.query(byTestId('edit-workflow-button'));
+                const editButton = spectator.query(byTestId('edit-workflow-button'))!;
                 expect(editButton).toBeTruthy();
             });
 
@@ -187,7 +187,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                 } as any);
                 spectator.detectChanges();
 
-                const editButton = spectator.query(byTestId('edit-workflow-button'));
+                const editButton = spectator.query(byTestId('edit-workflow-button'))!;
                 expect(editButton).toBeFalsy();
             });
 
@@ -198,7 +198,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                     workflowSelection: WORKFLOW_SELECTION_MOCK.WITH_OPTIONS
                 } as any);
 
-                const resetButton = spectator.query(byTestId('reset-workflow-button'));
+                const resetButton = spectator.query(byTestId('reset-workflow-button'))!;
                 expect(resetButton).toBeTruthy();
             });
 
@@ -209,7 +209,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                     workflowSelection: WORKFLOW_SELECTION_MOCK.WITH_OPTIONS
                 } as any);
 
-                const resetButton = spectator.query(byTestId('reset-workflow-button'));
+                const resetButton = spectator.query(byTestId('reset-workflow-button'))!;
                 expect(resetButton).toBeFalsy();
             });
         });
@@ -222,7 +222,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                     workflowSelection: WORKFLOW_SELECTION_MOCK.WITH_OPTIONS
                 } as any);
 
-                const editButton = spectator.query(byTestId('edit-workflow-button'));
+                const editButton = spectator.query(byTestId('edit-workflow-button'))!;
                 spectator.click(editButton);
                 expect(spectator.component.$showDialog()).toBeTruthy();
             });
@@ -238,7 +238,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                     workflowSelection: WORKFLOW_SELECTION_MOCK.WITH_OPTIONS
                 } as any);
 
-                const resetButton = spectator.query(byTestId('reset-workflow-button'));
+                const resetButton = spectator.query(byTestId('reset-workflow-button'))!;
                 spectator.click(resetButton);
                 expect(resetSpy).toHaveBeenCalledWith('123');
             });
