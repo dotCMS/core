@@ -1,10 +1,16 @@
 <section class="flex h-full min-w-0 flex-col overflow-hidden">
     <div class="flex shrink-0 items-center gap-3 border-b border-surface-200 p-4">
+        <!-- max-w-xs caps it: dot-search-input's host is `block w-full`, so unconstrained it
+             ate the bar and squeezed everything after it. Capped, it reads as a filter sitting
+             at the left rather than a full-width band. -->
         <dot-search-input
+            class="max-w-xs"
             [placeholder]="'dotai.config.filter.placeholder'"
             (search)="$filter.set($event)"
             data-testid="dotai-config-filter" />
 
+        <!-- flex-1 takes the slack, which is what keeps the filter left and the action right;
+             truncate because a long host string would otherwise do the squeezing itself. -->
         <span class="flex-1 truncate text-sm text-muted-color" data-testid="dotai-config-host">
             {{ store.resolvedConfig()?.configHost }}
         </span>
@@ -12,7 +18,10 @@
         <!-- redactionFailed leaves providerConfig null while isConfigured stays true, so
              without that second clause the button opens a dialog containing `{}` — which reads
              as "the provider has no configuration" rather than "we would not show it". -->
+        <!-- shrink-0 + whitespace-nowrap: PrimeNG sets no white-space on the button or its
+             label, so a squeezed button broke "View provider config" across two lines. -->
         <p-button
+            class="shrink-0 whitespace-nowrap"
             variant="text"
             [label]="'dotai.config.view-provider' | dm"
             [disabled]="!store.isConfigured() || store.redactionFailed()"
