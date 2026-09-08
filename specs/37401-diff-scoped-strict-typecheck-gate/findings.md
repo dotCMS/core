@@ -410,7 +410,55 @@ Two items this spike deliberately did not touch:
   day one. Its own change, pinned exactly, retiring `.nvmrc` and updating those workflows.
 - **The `strict-max` ratchet.** Measured (§6) and recorded; not proposed.
 
-## 13. Still open
+## 13. Accepted deviations and scope additions
+
+`/speckit-converge` compared the built code against the approved spec. Nothing in the specified
+scope was missing, but eight gaps surfaced. All are resolved below — six by conscious acceptance,
+two by correcting the artifact.
+
+### Deviations accepted, not fixed
+
+**SC-005 — the 10s budget is not met (deferred to #37448).** Two of five corpus cases run at
+11.4s and 12.0s. The three untried optimisations are named in §5 and §10 and are scope for the
+follow-up task, which explicitly gates the blocking flip on a measured tail under budget. Fixing
+it here would mean optimising before the decision to build the production gate has been taken.
+
+**SC-002 — the criterion as written is unachievable in this workspace, and that is the finding.**
+It asks for zero findings across at least three pull requests carrying no strict debt. Only two
+structurally-clean pull requests exist across 42, and both report findings — every one adjudicated
+real (§3), because declaring `strict: true` does not mean anything compiles the project (§4). The
+precision guarantee that replaces it is measured **per finding, not per case: 0 false positives of
+11**, and it is pinned by tests that assert no finding is an infrastructure diagnostic and that
+every finding sits on a line its pull request wrote.
+
+### Additions that outran the approved spec
+
+Four behaviours were built that no functional requirement authorises. Each is defensible and each
+is kept — but the spec was **approved on PR 1 before they existed**, so they are recorded here
+rather than back-annotated into `spec.md`. Per the two-PR flow, spec changes after sign-off need
+re-approval; silently editing an approved spec to match what was built inverts the point of the
+gate.
+
+| Addition | Why it exists | Beyond |
+|---|---|---|
+| **Infrastructure-code exclusion** (`TS2307`, `TS2688`, `TS6053` in `lib/filter.mjs`) | Adjudication found one such diagnostic reported on a clean pull request; it appears under plain `tsc` too. Without the exclusion the false-positive rate would have been 1 in 12 | FR-004 |
+| **Output formatters** (`lib/format.mjs`) — four formats, per-code fix hints, GitHub annotations, job summary | Requested during implementation. Coding agents read CI output and act on it; the text and github formats lead with the scope rule so an agent does not refactor an entire legacy file | FR-006, which asks only for file, line and code |
+| **`--scope core-web`** | Requested during implementation. Makes a backend-only pull request a 132 ms no-op. FR-010 governs project fan-out, a different concern | — |
+| **Third flag set `strict-max`** | Measured so a future ratchet arrives with its cost already known rather than blind. Never the blocking set | FR-007, which specifies two |
+
+### Artifacts corrected
+
+**`data-model.md`** now lists `infrastructure` among the `Diagnostic.origin` values and
+`strict` / `null-checks` / `strict-max` for `RunReport.flagSet`, matching
+`contracts/report.schema.json` and `lib/filter.mjs`. It had drifted while the schema and the code
+moved together.
+
+**`quickstart.md`** now documents `--format` and `--scope`, which the recommended invocation uses
+and the validation guide did not name.
+
+---
+
+## 14. Still open
 
 - **US3** — full flag-set × granularity matrix, and the whole-file adoption cost.
 - **US4** — Angular template strictness: cost, and go/no-go.

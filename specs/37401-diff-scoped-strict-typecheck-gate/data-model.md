@@ -75,7 +75,7 @@ One reported error from either compiler, before or after filtering.
 | `column` | integer | 1-based. |
 | `code` | string | Compiler diagnostic code. |
 | `message` | string | Single line; nested explanatory chains are flattened. |
-| `origin` | `"changed"` \| `"dependency"` \| `"untouched"` | Why it survived or was discarded. |
+| `origin` | `"changed"` \| `"dependency"` \| `"untouched"` \| `"infrastructure"` | Why it survived or was discarded. |
 | `layer` | `"source"` \| `"template"` | Which arm produced it; lets the report count them apart (FR-015). |
 
 **Rules**
@@ -83,6 +83,11 @@ One reported error from either compiler, before or after filtering.
 - `origin` is assigned by the filter and is the field the whole spike turns on:
   `"changed"` survives; `"dependency"` (a file from another project) and `"untouched"` (a file in
   this project the pull request did not touch) are discarded but **counted** (FR-004).
+- `"infrastructure"` marks a diagnostic that is never a strictness violation whatever the flags —
+  `TS2307` (cannot find module), `TS2688`, `TS6053`. Added after adjudication found one such
+  diagnostic reported on a pre-registered clean pull request; it appears under plain `tsc` too, so
+  a strictness gate reporting it is crying wolf. Discarded and counted like any other, never
+  silently dropped.
 - Under line-level granularity, a diagnostic in a changed file whose line falls outside every
   `changedLines` range is discarded as `"untouched"`.
 
@@ -95,7 +100,7 @@ The harness's output, one per invocation. Schema: [`contracts/report.schema.json
 | Field | Type | Notes |
 |---|---|---|
 | `base` / `head` | string | The resolved commit SHAs actually compared. |
-| `flagSet` | `"strict"` \| `"nullChecks"` | Which candidate flag set ran (FR-007). |
+| `flagSet` | `"strict"` \| `"null-checks"` \| `"strict-max"` | Which candidate flag set ran (FR-007). `strict` is the repo convention (8 + 4); `strict-max` adds `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` and is measured for a future ratchet, never the blocking set. |
 | `granularity` | `"file"` \| `"line"` | Which candidate granularity ran (FR-008). |
 | `targets` | array of `ProjectTarget` | Including each one's selected mode. |
 | `unmapped` | array of `UnmappedFile` | |
