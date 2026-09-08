@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -161,7 +162,16 @@ public class BulkUploadResource {
         if (formPart == null) {
             throw new BadRequestException("A JSON 'form' part is required");
         }
-        return new ObjectMapper().readValue(formPart.getValue(), BulkUploadForm.class);
+
+        // getValueAs rather than getValue: getValue() refuses any part that is not text/plain, so
+        // a client correctly declaring ';type=application/json' — which is what the contract shows
+        // and what curl sends — was answered "Media type is not text/plain." This reads the part
+        // whatever it declares, so both a typed and an untyped form part work.
+        final String json = formPart.getValueAs(String.class);
+        if (!UtilMethods.isSet(json)) {
+            throw new BadRequestException("The 'form' part is empty");
+        }
+        return new ObjectMapper().readValue(json, BulkUploadForm.class);
     }
 
     /**
