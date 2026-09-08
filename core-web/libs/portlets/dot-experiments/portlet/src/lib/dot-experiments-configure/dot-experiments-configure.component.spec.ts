@@ -4,7 +4,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 import { provideLocationMocks } from '@angular/common/testing';
 import { ApplicationRef, Component, input, signal, WritableSignal } from '@angular/core';
 import { FieldTree } from '@angular/forms/signals';
-import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Params, provideRouter, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -200,12 +200,15 @@ describe('DotExperimentsConfigureComponent', () => {
     const createComponentOn = ({
         experimentId,
         configProps,
-        section
+        section,
+        pageFilter
     }: {
         experimentId?: string;
         configProps?: Record<string, string>;
         /** The `section` query param, set by the return leg of the variant round-trip. */
         section?: string;
+        /** The page narrowing the screen was opened with, when it came from a filtered list. */
+        pageFilter?: Params;
     }) =>
         createComponentFactory({
             component: DotExperimentsConfigureComponent,
@@ -225,6 +228,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap(experimentId ? { experimentId } : {}),
+                            queryParams: { ...(section ? { section } : {}), ...(pageFilter ?? {}) },
                             queryParamMap: convertToParamMap(section ? { section } : {}),
                             data: configProps ? { config: configProps } : {}
                         }
@@ -455,7 +459,7 @@ describe('DotExperimentsConfigureComponent', () => {
                         ?.querySelector('[data-testid="message-button"]') as HTMLElement
                 );
 
-                expect(navigate).toHaveBeenCalledWith(['/experiments']);
+                expect(navigate).toHaveBeenCalledWith(['/experiments'], { queryParams: {} });
             });
         });
 
@@ -972,6 +976,45 @@ describe('DotExperimentsConfigureComponent', () => {
                 spectator.component.scrollToFirstValidationError();
 
                 expect(scrollIntoView).toHaveBeenCalledTimes(1);
+            });
+        });
+    });
+
+    /**
+     * Opened from a list narrowed to one page (#37005, FR-021c).
+     *
+     * Arriving from UVE the list is already narrowed to the page the editor came from, and New
+     * carries that narrowing on to this screen. Leaving by the error state's way out dropped it,
+     * landing the editor on every experiment on the site.
+     */
+    describe('opened from a narrowed list', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS,
+            pageFilter: { pageId: 'page-1', language_id: '2' }
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should return to the list still narrowed to that page', () => {
+            storeMock.status.set(ComponentStatus.ERROR);
+            spectator.detectChanges();
+
+            const navigate = jest
+                .spyOn(spectator.inject(Router), 'navigate')
+                .mockResolvedValue(true);
+
+            spectator.click(
+                spectator
+                    .query(byTestId('experiments-configure-error'))
+                    ?.querySelector('[data-testid="message-button"]') as HTMLElement
+            );
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1', language_id: '2' }
             });
         });
     });

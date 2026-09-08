@@ -36,6 +36,7 @@ import {
 import { dotExperimentsResultsApiEvents } from '../store/dot-experiments-results-api.events';
 import { dotExperimentsResultsPageEvents } from '../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../store/dot-experiments-results.store';
+import { listReturnParams } from '../util/dot-experiments-list.util';
 
 /** Route `data` key `dotAnalyticsHealthCheckResolver` publishes the analytics health under. */
 const HEALTH_STATUS_ROUTE_DATA_KEY = 'healthStatus';
@@ -198,9 +199,17 @@ export class DotExperimentsResultsComponent {
         this.#listenForActionSuccess();
     }
 
-    /** Leaves the Results screen for the list. */
+    /**
+     * Leaves the Results screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * Read off the address rather than derived from the experiment's page: a Results screen
+     * reached from the site-wide list must go back to the site-wide list, not to the list of the
+     * one page this experiment happens to run on.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#router.navigate([EXPERIMENTS_URL], {
+            queryParams: listReturnParams(this.#route.snapshot.queryParams)
+        });
     }
 
     /** Runs the whole load again, experiment included: a failed load left nothing behind. */

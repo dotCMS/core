@@ -600,7 +600,11 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.isNew()).toBe(false);
             expect(navigate).toHaveBeenCalledWith(['..', created.id, 'configuration'], {
                 relativeTo: activatedRouteStub,
-                replaceUrl: true
+                replaceUrl: true,
+                // The page narrowing the screen was opened with has to survive the swap: it is
+                // what the back arrow returns to, and what a reload of the new address rebuilds
+                // the chip and the editor link from (#37005).
+                queryParamsHandling: 'preserve'
             });
         });
 

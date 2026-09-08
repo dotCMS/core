@@ -73,6 +73,7 @@ const experimentWith = (status: DotExperimentStatus): DotExperiment => ({
 /** Kebab item ids, as declared by the component. */
 const MENU_ITEM = {
     configure: 'experiments-configure',
+    results: 'experiments-view-results',
     archive: 'experiments-archive',
     restore: 'experiments-restore',
     cancelSchedule: 'experiments-cancel-schedule',
@@ -502,7 +503,9 @@ describe('DotExperimentsListComponent', () => {
 
                 clickRow();
 
-                expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results']);
+                expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                    queryParams: {}
+                });
             }
         );
 
@@ -515,7 +518,10 @@ describe('DotExperimentsListComponent', () => {
 
             clickRow();
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'configuration']);
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: {} }
+            );
         });
 
         it('should open the row from the keyboard', () => {
@@ -525,7 +531,9 @@ describe('DotExperimentsListComponent', () => {
             spectator.dispatchKeyboardEvent(row, 'keydown', 'Enter');
             spectator.detectChanges();
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results']);
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                queryParams: {}
+            });
         });
 
         it('should not navigate when the kebab is opened', () => {
@@ -549,12 +557,56 @@ describe('DotExperimentsListComponent', () => {
             expect(visibleMenuItemIds()[0]).toBe(MENU_ITEM.configure);
         });
 
+        /**
+         * Every door out of a narrowed list carries the narrowing (#37005, FR-021c).
+         *
+         * Whatever the editor opens from here has to be able to come back to the list they were
+         * looking at. Without the filter travelling, the screen they open has no way to know it
+         * was reached from one page's list, and its back arrow drops them on every experiment on
+         * the site.
+         */
+        it.each([
+            [
+                'the row itself',
+                () => spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement)
+            ],
+            ['the kebab Configure entry', () => runMenuItem(MENU_ITEM.configure)]
+        ])('should carry the page filter when opening Configure from %s', (_label, open) => {
+            const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            open();
+
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: { pageId: 'page-1', language_id: 2 } }
+            );
+        });
+
+        it('should carry the page filter when opening Results', () => {
+            const experiment = renderRowWith(DotExperimentStatus.RUNNING);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            runMenuItem(MENU_ITEM.results);
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                queryParams: { pageId: 'page-1', language_id: 2 }
+            });
+        });
+
         it('should open the Configure screen of the row', () => {
             const experiment = renderRowWith(DotExperimentStatus.RUNNING);
 
             runMenuItem(MENU_ITEM.configure);
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'configuration']);
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: {} }
+            );
         });
     });
 
@@ -574,7 +626,7 @@ describe('DotExperimentsListComponent', () => {
 
             clickButton('experiments-new');
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new']);
+            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], { queryParams: {} });
         });
 
         // #37005, FR-024. Arriving from UVE the list is already narrowed to the page the editor

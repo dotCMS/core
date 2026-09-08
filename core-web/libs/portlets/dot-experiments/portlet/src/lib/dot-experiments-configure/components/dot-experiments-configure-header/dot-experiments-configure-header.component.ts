@@ -1,7 +1,7 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -18,7 +18,7 @@ import { EXPERIMENTS_URL, STATUS_LABEL_KEYS, STATUS_SEVERITIES } from '../../../
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-import { resultsCommandsOf } from '../../../util/dot-experiments-list.util';
+import { listReturnParams, resultsCommandsOf } from '../../../util/dot-experiments-list.util';
 
 /** Title shown while the draft has no name yet. */
 const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
@@ -168,6 +168,7 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly $addToBundleAssetId = signal<string | null>(null);
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
+    readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -187,9 +188,17 @@ export class DotExperimentsConfigureHeaderComponent {
         }
     }
 
-    /** Leaves the Configure screen for the list. */
+    /**
+     * Leaves the Configure screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * The narrowing is read off the address rather than held from entry: creating the draft swaps
+     * `/experiments/new` for the experiment's own URL, and this button has to answer the same way
+     * on either side of that swap.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#router.navigate([EXPERIMENTS_URL], {
+            queryParams: listReturnParams(this.#route.snapshot.queryParams)
+        });
     }
 
     /**

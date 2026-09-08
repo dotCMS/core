@@ -3,7 +3,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { Component, input } from '@angular/core';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
 
 import { Confirmation, ConfirmationService, MenuItem } from 'primeng/api';
 
@@ -104,6 +104,8 @@ const createStoreMock = () => ({
 describe('DotExperimentsConfigureHeaderComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureHeaderComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
+    /** The address the screen arrived on, as `ActivatedRoute` reports it. */
+    let routeQueryParams: Params;
     let dispatch: jest.SpyInstance;
     let confirm: jest.SpyInstance;
 
@@ -113,6 +115,18 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
         providers: [
             provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),
+            // Overrides the one `provideRouter` installs: the back button reads the address it
+            // arrived on, and these tests set it directly rather than driving a navigation.
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        get queryParams() {
+                            return routeQueryParams;
+                        }
+                    }
+                }
+            },
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotPushPublishDialogService),
@@ -160,6 +174,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        routeQueryParams = {};
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
         const confirmationService = spectator.inject(ConfirmationService, true);
@@ -395,7 +410,53 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
             clickButton('experiments-configure-back-btn');
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments']);
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], { queryParams: {} });
+        });
+
+        /**
+         * Back returns to the list the screen was opened from, narrowing included (#37005).
+         *
+         * Arriving from UVE the list is already narrowed to one page, and New carries that
+         * narrowing on to this screen. Leaving by the back arrow dropped it, so the editor landed
+         * on every experiment on the site — a list they had not asked for and, on a busy site, one
+         * where the page they came from is nowhere in sight.
+         */
+        it('should return to the list still narrowed to the page it arrived with', () => {
+            routeQueryParams = { pageId: 'page-1', language_id: '2' };
+            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            spectator.detectChanges();
+
+            clickButton('experiments-configure-back-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1', language_id: '2' }
+            });
+        });
+
+        it('should carry no language when the address brought none', () => {
+            routeQueryParams = { pageId: 'page-1' };
+            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            spectator.detectChanges();
+
+            clickButton('experiments-configure-back-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1' }
+            });
+        });
+
+        it('should ignore params the list does not read', () => {
+            // `url` and `section` are this screen's own arrival hints; echoing them would put
+            // dead params on the list's address, which it then writes back on every filter change.
+            routeQueryParams = { pageId: 'page-1', url: '/index', section: 'variants' };
+            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            spectator.detectChanges();
+
+            clickButton('experiments-configure-back-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1' }
+            });
         });
     });
 });

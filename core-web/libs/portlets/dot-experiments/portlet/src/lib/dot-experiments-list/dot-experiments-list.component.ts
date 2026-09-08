@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Params, Router, RouterLink } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -84,6 +84,7 @@ import {
     formatSchedule,
     goalTypeOf,
     isAllowed,
+    pageFilterParams,
     resultsCommandsOf,
     resolvePagePath,
     variantsCount
@@ -552,7 +553,8 @@ export class DotExperimentsListComponent {
         this.#router.navigate(
             isAllowed('results', experiment.status)
                 ? resultsCommandsOf(experiment.id)
-                : configureCommandsOf(experiment.id)
+                : configureCommandsOf(experiment.id),
+            { queryParams: this.#pageFilterParams() }
         );
     }
 
@@ -573,27 +575,25 @@ export class DotExperimentsListComponent {
      * the two cannot carry different addresses.
      */
     onNewExperiment(): void {
-        const pageId = this.store.selectedPageId();
+        this.#router.navigate(NEW_EXPERIMENT_COMMANDS, { queryParams: this.#pageFilterParams() });
+    }
 
-        if (!pageId) {
-            this.#router.navigate(NEW_EXPERIMENT_COMMANDS);
-
-            return;
-        }
-
-        const languageId = this.store.languageId();
-
-        this.#router.navigate(NEW_EXPERIMENT_COMMANDS, {
-            // Omitted rather than defaulted when unknown: with no language the prefill search is
-            // not narrowed and `pickPageVersion` settles it, which beats asserting a language the
-            // caller never named.
-            queryParams: languageId ? { pageId, language_id: languageId } : { pageId }
-        });
+    /**
+     * The narrowing to carry through every door out of this screen (FR-021c).
+     *
+     * Empty when the list is site-wide, so it can be handed to `navigate` unconditionally. What
+     * comes back travels as `?pageId=` (plus `&language_id=`), which is the same address the
+     * receiving screen's back arrow reads to return here.
+     */
+    #pageFilterParams(): Params {
+        return pageFilterParams(this.store.selectedPageId(), this.store.languageId());
     }
 
     /** Opens the Configure screen of an existing experiment. */
     onConfigure(experiment: DotExperiment): void {
-        this.#router.navigate(configureCommandsOf(experiment.id));
+        this.#router.navigate(configureCommandsOf(experiment.id), {
+            queryParams: this.#pageFilterParams()
+        });
     }
 
     /**
@@ -604,7 +604,9 @@ export class DotExperimentsListComponent {
      * experiment with nothing to count yet, so it is offered whatever the status (AC6).
      */
     onViewResults(experiment: DotExperiment): void {
-        this.#router.navigate(resultsCommandsOf(experiment.id));
+        this.#router.navigate(resultsCommandsOf(experiment.id), {
+            queryParams: this.#pageFilterParams()
+        });
     }
 
     confirmArchive(experiment: DotExperiment): void {

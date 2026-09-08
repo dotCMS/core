@@ -88,6 +88,7 @@ import {
     toVariantWeightRows
 } from '../util/dot-experiments-configure-form.util';
 import { totalWeight } from '../util/dot-experiments-configure.util';
+import { listReturnParams } from '../util/dot-experiments-list.util';
 
 /** Number of card placeholders drawn while an existing experiment loads. */
 const SKELETON_CARDS = [0, 1, 2];
@@ -615,9 +616,16 @@ export class DotExperimentsConfigureComponent {
         firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    /** Leaves the Configure screen for the list. */
+    /**
+     * Leaves the Configure screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * The error state's only way out, and it has the same job as the header's back arrow — so it
+     * answers with the same address. See {@link listReturnParams}.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#router.navigate([EXPERIMENTS_URL], {
+            queryParams: listReturnParams(this.#route.snapshot.queryParams)
+        });
     }
 
     /** What the form is filled from, and diffed against. */

@@ -1180,13 +1180,19 @@ export const DotExperimentsConfigureStore = signalStore(
                  * keeps `/new` out of the history, so Back leaves the screen instead of
                  * returning to a creation form for an experiment that already exists (AC3).
                  * Relative navigation, so the portlet's mount point is not restated here.
+                 *
+                 * `queryParamsHandling: 'preserve'` keeps the page narrowing the screen was
+                 * opened with. Without it the swap dropped `?pageId=`, and from then on the
+                 * screen had no way back to the list it came from — the back arrow landed on
+                 * every experiment on the site (#37005, FR-021c).
                  */
                 createdSubscription = events
                     .on(dotExperimentsConfigureApiEvents.createSucceeded)
                     .subscribe(({ payload }) => {
                         router.navigate(['..', payload.id, CONFIGURATION_SEGMENT], {
                             relativeTo: route,
-                            replaceUrl: true
+                            replaceUrl: true,
+                            queryParamsHandling: 'preserve'
                         });
                     });
 
