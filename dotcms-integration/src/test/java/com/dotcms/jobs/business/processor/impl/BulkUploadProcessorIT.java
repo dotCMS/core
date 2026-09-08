@@ -30,6 +30,7 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,13 +115,22 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * captured fingerprint, and a fake would hide it if it were not.
      */
     private Job jobFor(final Folder folder, final int count) throws Exception {
+        return jobFor(folder, count, 0);
+    }
+
+    /**
+     * As above, but every file is padded to at least {@code minBytes}. Only the throughput
+     * measurement needs realistically sized content; everywhere else a few bytes say the same
+     * thing faster.
+     */
+    private Job jobFor(final Folder folder, final int count, final int minBytes) throws Exception {
         final HttpServletRequest request = request();
         final List<Map<String, Object>> stagedFiles = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             final String fileName = "bulk-" + UUID.randomUUID() + ".txt";
             final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
-                    fileName, request, new ByteArrayInputStream(("content " + i).getBytes()));
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, minBytes)));
 
             final Map<String, Object> file = new HashMap<>();
             file.put("tempFileId", tempFile.id);
@@ -146,6 +156,13 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 .parameters(parameters)
                 .progressTracker(new DefaultProgressTracker())
                 .build();
+    }
+
+    /** File content: distinct per file, padded to {@code minBytes} where a size is asked for. */
+    private static byte[] bodyOf(final int index, final int minBytes) {
+        final byte[] body = new byte[Math.max(minBytes, 16)];
+        Arrays.fill(body, (byte) ('a' + (index % 26)));
+        return body;
     }
 
     /**
@@ -609,4 +626,56 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         assertTrue(((Number) outcome.get("skippedCount")).intValue() > 0,
                 "and they are recorded as skipped, which is a distinct outcome");
     }
+
+    /**
+     * Method to test: the bulk-upload processor, at the configured maximum
+     * <p>
+     * Given scenario: A full batch — 100 files of 1 MB, {@code CONTENT_BULK_UPLOAD_MAX_FILES} —
+     * run on a single node.
+     * <p>
+     * Expected result: It finishes inside 120 seconds with all 100 created (SC-003).
+     * <p>
+     * <b>Read the ceiling as an order of magnitude, not as a performance target.</b> 120s for 100
+     * files is roughly 1.2s per file, which is several times slower than this run is on any
+     * machine that would execute it — the headroom is deliberate, so that CI jitter, a cold cache
+     * or a loaded box never turn this red. What it is written to catch is the regression that
+     * matters: **a per-file search-index wait creeping back in**. That is what FR-008 removed and
+     * what SC-003 names explicitly, and it does not fail anything else in the suite — every other
+     * test would still pass, just slowly. It changes throughput by an order of magnitude, so it
+     * lands well outside this bound while ordinary variance stays well inside it.
+     * <p>
+     * The criterion is deliberately absolute rather than measured against today's single-file
+     * upload: that path waits for each file to become searchable, which is the very pathology
+     * being removed, so comparing against it would make SC-003 true by construction.
+     */
+    @Test
+    public void test_run_sustainsThroughputAtTheConfiguredMaximum() throws Exception {
+        final int fileCount = 100;
+        final long ceilingMillis = 120_000L;
+
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        // Staged outside the measurement: the submission is a separate leg with its own bound
+        // (FR-013b), and SC-003 is about the run.
+        final Job job = jobFor(folder, fileCount, 1024 * 1024);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+
+        final long startedAt = System.currentTimeMillis();
+        processor.process(job);
+        final long elapsed = System.currentTimeMillis() - startedAt;
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(fileCount, ((Number) outcome.get("successCount")).intValue(),
+                "a timing measurement over a run that did not do the work says nothing.\n"
+                        + "Recorded per-item results: " + describe(outcome));
+
+        assertTrue(elapsed < ceilingMillis, String.format(
+                "a full batch of %d files took %dms, past the %dms ceiling. The headroom here is "
+                        + "generous enough that jitter does not explain this: look first for a "
+                        + "per-file search-index wait, which is what SC-003 guards against and "
+                        + "what an IndexPolicy other than DEFER would reintroduce",
+                fileCount, elapsed, ceilingMillis));
+    }
+
 }
