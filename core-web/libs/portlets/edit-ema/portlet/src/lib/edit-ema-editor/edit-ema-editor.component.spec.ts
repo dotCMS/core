@@ -2859,7 +2859,7 @@ describe('EditEmaEditorComponent', () => {
                     const DENIED_PAYLOAD: ActionPayload = {
                         ...EDIT_ACTION_PAYLOAD_MOCK,
                         contentlet: {
-                            ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                            ...EDIT_ACTION_PAYLOAD_MOCK.contentlet!,
                             canEdit: false
                         }
                     };
@@ -2867,7 +2867,7 @@ describe('EditEmaEditorComponent', () => {
                     const DENIED_MULTI_PAGE_PAYLOAD: ActionPayload = {
                         ...MULTI_PAGE_PAYLOAD,
                         contentlet: {
-                            ...MULTI_PAGE_PAYLOAD.contentlet,
+                            ...MULTI_PAGE_PAYLOAD.contentlet!,
                             canEdit: false
                         }
                     };
@@ -2964,7 +2964,7 @@ describe('EditEmaEditorComponent', () => {
                         payload: {
                             ...EDIT_ACTION_PAYLOAD_MOCK,
                             contentlet: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet!,
                                 ...(canEdit === undefined ? {} : { canEdit })
                             }
                         }
@@ -3014,7 +3014,7 @@ describe('EditEmaEditorComponent', () => {
                                 uuid: '1'
                             },
                             contentlet: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet!,
                                 identifier: 'perm-contentlet',
                                 inode: 'stale-inode-from-dom',
                                 canEdit: false
@@ -3144,7 +3144,7 @@ describe('EditEmaEditorComponent', () => {
                         payload: {
                             ...EDIT_ACTION_PAYLOAD_MOCK,
                             contentlet: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet!,
                                 ...(canEdit === undefined ? {} : { canEdit })
                             }
                         }
