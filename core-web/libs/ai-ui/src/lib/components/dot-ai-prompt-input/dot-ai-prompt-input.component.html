@@ -1,8 +1,22 @@
-<div class="rounded-lg border border-surface-200 bg-surface-0">
+<!-- One flex row that wraps. Collapsed, everything shares a line; expanded, the textarea
+     takes `basis-full` and `order-first`, which pushes it onto its own line and leaves the
+     projected controls together on the next one. Same DOM either way, so nothing is
+     re-projected and focus survives the transition. -->
+<div
+    class="flex flex-wrap items-center gap-3 rounded-lg border border-surface-200 bg-surface-0 p-3"
+    data-testid="ai-prompt-card">
+    <ng-content select="[promptStart]" />
+
+    <!-- rows=1 is the floor; the height is written from scrollHeight as you type, and
+         max-h caps it so a long prompt scrolls rather than eating the screen. -->
     <textarea
+        #field
         pTextarea
-        [rows]="rows()"
-        class="w-full resize-none rounded-none! border-0! bg-transparent! shadow-none! focus:shadow-none!"
+        rows="1"
+        class="max-h-40 min-w-0 resize-none overflow-y-auto rounded-none! border-0! bg-transparent! p-0! shadow-none! focus:shadow-none!"
+        [class.flex-1]="!$expanded()"
+        [class.basis-full]="$expanded()"
+        [class.order-first]="$expanded()"
         [value]="value()"
         (input)="onInput($event)"
         (keydown)="onKeydown($event)"
@@ -11,13 +25,9 @@
         [attr.aria-label]="ariaLabel()"
         data-testid="ai-prompt-input"></textarea>
 
-    <div class="flex flex-wrap items-center gap-3 px-3 pb-3">
-        <ng-content select="[promptStart]" />
-
-        <!-- ml-auto on the wrapper, so the trailing group hugs the right edge whether or not
-             anything was projected into promptStart. -->
-        <div class="ml-auto flex flex-wrap items-center gap-3">
-            <ng-content select="[promptEnd]" />
-        </div>
+    <!-- ml-auto on the wrapper, so the trailing group hugs the right edge whether or not
+         anything was projected into promptStart. -->
+    <div class="ml-auto flex flex-wrap items-center gap-3">
+        <ng-content select="[promptEnd]" />
     </div>
 </div>
