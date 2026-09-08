@@ -13,6 +13,7 @@ import com.dotcms.jobs.business.processor.impl.BulkUploadIndexingIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadConcurrencyIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadReclaimIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadResourceIT;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadSecurityIT;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
 import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
@@ -48,6 +49,7 @@ import org.junit.platform.suite.api.Suite;
         BulkUploadIndexingIT.class,
         BulkUploadConcurrencyIT.class,
         BulkUploadReclaimIT.class,
+        BulkUploadSecurityIT.class,
         JobProcessorDiscoveryTest.class
 })
 public class Junit5Suite1 {
