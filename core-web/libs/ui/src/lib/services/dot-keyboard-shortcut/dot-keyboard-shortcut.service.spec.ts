@@ -565,6 +565,79 @@ describe('DotKeyboardShortcutService', () => {
         });
     });
 
+    /**
+     * A printable character can need a modifier to type at all, and which modifier depends on the
+     * keyboard layout: `/` is its own key on US QWERTY, Shift+7 on German QWERTZ and Spanish, and
+     * Shift+: on French AZERTY. The browser reports the character that was produced *and* the
+     * modifier that produced it, so folding that modifier into the lookup makes the same character
+     * resolve differently per layout — and a `/` claim registered on a US machine is simply dead for
+     * everyone else.
+     *
+     * Command and Control are never layout mechanics, so they are still required to match.
+     */
+    describe('keyboard layouts', () => {
+        it('should fire a bare character claim when the layout needs shift to type it', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            // What a German QWERTZ Shift+7 looks like to the browser.
+            press({ key: '/', shiftKey: true });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('should fire a bare character claim when the layout needs alt to type it', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            press({ key: '/', altKey: true });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('should suppress the browser default for a shifted character press', () => {
+            register({ combination: '/', label: 'search', handler: handlerMock() });
+
+            const event = press({ key: '/', shiftKey: true });
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        // Command and Control are real command modifiers, so they must not fall through to the bare
+        // character. `Mod + /` is a different shortcut from `/`, on every layout.
+        it('should not fire a bare character claim when a command modifier is held', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            press({ key: '/', metaKey: true });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        // The more specific claim still wins where one exists, so this stays expressible.
+        it('should prefer an explicit shift claim over the bare character', () => {
+            const bare = handlerMock();
+            const shifted = handlerMock();
+            register({ combination: '/', label: 'search', handler: bare });
+            register({ combination: 'shift+/', label: 'shifted search', handler: shifted });
+
+            press({ key: '/', shiftKey: true });
+
+            expect(shifted).toHaveBeenCalledTimes(1);
+            expect(bare).not.toHaveBeenCalled();
+        });
+
+        // A multi-character key name is never produced by a layout, so it keeps matching exactly.
+        it('should still require the modifier for a named key', () => {
+            const handler = handlerMock();
+            register({ combination: 'escape', label: 'close', handler });
+
+            press({ key: 'Escape', shiftKey: true });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+    });
+
     describe('documentation surface', () => {
         it('should expose the active shortcuts with their labels', () => {
             register({ combination: 'mod+k', label: 'search', handler: handlerMock() });

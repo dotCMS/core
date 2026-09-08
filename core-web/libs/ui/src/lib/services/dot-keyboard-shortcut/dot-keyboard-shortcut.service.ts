@@ -43,6 +43,30 @@ function combinationOf(event: KeyboardEvent): string {
 }
 
 /**
+ * The claims an event could match, most specific first.
+ *
+ * A printable character can need a modifier to type at all, and which one depends on the layout:
+ * `/` is its own key on US QWERTY but `Shift+7` on QWERTZ and Spanish, `Shift+:` on AZERTY. The
+ * browser reports both the character and the modifier that produced it, so folding that modifier in
+ * would make one character resolve differently per layout, leaving a `/` claim dead outside the US.
+ * A single character therefore also matches on the character alone, with the exact combination
+ * tried first so `shift+/` stays expressible.
+ *
+ * Command and Control are never layout mechanics and are never dropped: `Mod + /` stays distinct.
+ * AltGr is the known gap — it reports as Ctrl+Alt on Windows, indistinguishable from a real one, so
+ * characters typed that way keep their modifiers. Nothing shipped today is produced that way.
+ */
+function lookupKeysFor(event: KeyboardEvent): string[] {
+    const exact = combinationOf(event);
+    const character = event.key.toLowerCase();
+
+    const layoutCouldRequireModifier =
+        character.length === 1 && !event.metaKey && !event.ctrlKey && exact !== character;
+
+    return layoutCouldRequireModifier ? [exact, character] : [exact];
+}
+
+/**
  * `<input>` types that accept no characters, so a printable key pressed on one is a shortcut rather
  * than typing.
  *
@@ -295,19 +319,23 @@ export class DotKeyboardShortcutService {
             return;
         }
 
-        const stack = this.#claims.get(combinationOf(event));
+        // Most specific claim first, then the bare character for a layout that needed a modifier to
+        // type it. A stack that declines in full falls through to the next candidate.
+        for (const combination of lookupKeysFor(event)) {
+            const stack = this.#claims.get(combination);
 
-        if (!stack?.length) {
-            return;
-        }
+            if (!stack?.length) {
+                continue;
+            }
 
-        // Newest first. A handler returning `false` declines and the key falls through; if every
-        // claimant declines, the browser default stands untouched.
-        for (let index = stack.length - 1; index >= 0; index--) {
-            if (stack[index].handler(event) !== false) {
-                event.preventDefault();
+            // Newest first. A handler returning `false` declines and the key falls through; if every
+            // claimant declines, the browser default stands untouched.
+            for (let index = stack.length - 1; index >= 0; index--) {
+                if (stack[index].handler(event) !== false) {
+                    event.preventDefault();
 
-                return;
+                    return;
+                }
             }
         }
     }

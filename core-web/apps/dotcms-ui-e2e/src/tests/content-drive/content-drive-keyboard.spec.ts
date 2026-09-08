@@ -133,6 +133,36 @@ test.describe('Content Drive Keyboard', () => {
         await expect(drive.searchField).toBeFocused();
     });
 
+    /**
+     * The search key is not on its own key everywhere. `/` is `Shift+7` on German QWERTZ and
+     * Spanish, `Shift+:` on French AZERTY, so the browser reports the character *and* the Shift that
+     * produced it. Folding that modifier into the lookup left the shortcut dead for those users
+     * while looking perfectly fine on a US machine.
+     *
+     * Driven through CDP rather than `keyboard.press`, which maps keys through a US layout and
+     * cannot express "the `/` character, with Shift held". This is still a real browser input event,
+     * not a constructed DOM one — it goes through the same path a physical keypress does.
+     */
+    test('reaches the search shortcut on a layout that needs shift for the slash @critical', async ({
+        adminPage
+    }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await expect(drive.searchField).not.toBeFocused();
+
+        const cdp = await adminPage.context().newCDPSession(adminPage);
+        await cdp.send('Input.dispatchKeyEvent', {
+            type: 'keyDown',
+            key: '/',
+            code: 'Digit7',
+            text: '/',
+            modifiers: 8 // Shift
+        });
+
+        await expect(drive.searchField).toBeFocused();
+    });
+
     test('focuses the search box with the alias too', async ({ adminPage }) => {
         const drive = new ContentDrivePage(adminPage);
         const keyboard = new ContentDriveKeyboard(adminPage);

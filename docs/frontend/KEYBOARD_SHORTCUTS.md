@@ -57,6 +57,37 @@ inside the search box it focuses — otherwise pressing it twice would be a dead
 This is the answer to the "editable targets" gap noted in review. A combination that carries a
 modifier needs no such policy.
 
+### Keyboard layouts
+
+**Check a single-character shortcut against a non-US layout before choosing it.** `/` is its own key
+on US QWERTY, but `Shift+7` on German QWERTZ and Spanish, and `Shift+:` on French AZERTY. The browser
+reports the character that was produced *and* the modifier that produced it, so `/` arrives as
+`shift+/` for a large part of the user base.
+
+That is not theoretical: this is exactly how `/` shipped, dead for every one of those layouts, chosen
+on the reasoning that it "collides with nothing" — which only held on the layout it was tested on.
+
+The registry now compensates. A single-character key matches on the character alone as well as on
+the exact combination, so a `/` claim is reached however the layout produced the character. The exact
+combination is tried first, so `shift+/` remains expressible if anything ever wants to distinguish
+it. Command and Control are never dropped, because they are never layout mechanics: `Mod + /` stays a
+different shortcut.
+
+Two things this does **not** solve, and which a new shortcut still has to be checked against:
+
+- **AltGr.** On Windows it reports as Ctrl+Alt, indistinguishable from a real Ctrl+Alt press, so a
+  character typed that way keeps its modifiers and will not match a bare claim. Several punctuation
+  characters need AltGr on Nordic and Eastern European layouts. Avoid them for shortcuts.
+- **Characters that do not exist on a layout at all.** No amount of matching helps if the user cannot
+  type the character. Prefer letters and digits, which are present everywhere, for anything a user
+  must be able to reach.
+
+When adding a single-character shortcut, cover it the way `dot-keyboard-shortcut.service.spec.ts`
+does — dispatch the character with the modifier a non-US layout would use — and, for a
+user-facing key, add a browser-level case with CDP as
+`content-drive-keyboard.spec.ts` does. Playwright's `keyboard.press` maps through a US layout and
+cannot express this on its own.
+
 ### Standing down while an overlay is above
 
 **Every Content Drive claim declines when something is stacked over the listing** — `Escape` and
