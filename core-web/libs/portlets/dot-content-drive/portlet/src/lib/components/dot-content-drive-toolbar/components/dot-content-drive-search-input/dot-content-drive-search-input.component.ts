@@ -10,7 +10,8 @@ import {
 import {
     DotKeyboardShortcutService,
     DotKeyboardShortcutUnregister,
-    DotSearchInputComponent
+    DotSearchInputComponent,
+    hasOverlayAbove
 } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -67,6 +68,21 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
         // `viewChild.required`: the search box is rendered unconditionally in this template, so it
         // always resolves by the time a keypress can reach here.
         const focusSearch = () => {
+            // Stand down while an overlay is above the portlet, exactly as Escape and the tree
+            // toggle do. The shell's own dialogs — Action Center, the folder and content-type
+            // selectors, upload — claim neither combination, so without this the shortcut pulls
+            // focus to the search box *behind* an open modal. `mod+k` is the worse half: it carries
+            // a modifier, so the registry's typing rule never short-circuits it and it fires from
+            // anywhere inside the dialog.
+            //
+            // No container argument: this is a base-layer surface with no entry in the z-index
+            // stack, so the question is "is any overlay open at all", which is the right one here.
+            // The AssetPicker's toolbar deliberately does *not* do this — it *is* the top overlay,
+            // and asking the same question there would make it decline permanently.
+            if (hasOverlayAbove()) {
+                return false;
+            }
+
             this.$searchInput().focus();
 
             return true;

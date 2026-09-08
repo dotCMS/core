@@ -2,6 +2,8 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ope
 
 import { By } from '@angular/platform-browser';
 
+import { ZIndexUtils } from 'primeng/utils';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotSearchInputComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -142,6 +144,47 @@ describe('DotContentDriveSearchInputComponent', () => {
             const event = pressModK();
 
             expect(event.defaultPrevented).toBe(true);
+        });
+
+        /**
+         * Review finding: this is the base-layer box, and the shell's own dialogs (Action Center,
+         * folder and content-type selectors, upload) claim neither combination. Without standing
+         * down, the shortcut pulls focus to the search field *behind* an open modal. Escape and the
+         * tree toggle already decline the same way, for the same reason.
+         *
+         * `getCurrent` is mocked rather than trusted: the z-index stack is a module-level singleton
+         * and an earlier test in the file can leave an entry behind.
+         */
+        it('should decline while an overlay is above the listing', () => {
+            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            spectator.detectChanges();
+
+            const event = pressSlash();
+
+            expect(document.activeElement).not.toBe(input());
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        // The modifier form carries no typing guard, so it reaches the handler from anywhere inside
+        // an open dialog. It has to stand down too.
+        it('should decline the alias while an overlay is above the listing', () => {
+            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            spectator.detectChanges();
+
+            pressModK();
+
+            expect(document.activeElement).not.toBe(input());
+        });
+
+        it('should resume once the overlay closes', () => {
+            const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            spectator.detectChanges();
+            pressSlash();
+
+            stack.mockReturnValue(0);
+            pressSlash();
+
+            expect(document.activeElement).toBe(input());
         });
 
         // The reason a bare printable key needs the registry's typing rule: without it, typing a
