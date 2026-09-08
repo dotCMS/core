@@ -175,7 +175,12 @@ export function healEmojiHtml(html: string, emojis: readonly EmojiItem[]): strin
     }
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    const spans = doc.querySelectorAll('span[data-type="emoji"]');
+    // The `i` flag is not decoration. CSS attribute-VALUE matching is case-sensitive (only the
+    // attribute NAME is not), so without it `data-type="EMOJI"` passed the case-insensitive guard
+    // above, paid for the DOMParser, matched zero spans and returned the HTML untouched with the
+    // `<img>` still exposed. Guard and selector have to agree about case or the mismatch is just
+    // finding 2 again in the other direction.
+    const spans = doc.querySelectorAll('span[data-type="emoji" i]');
 
     if (!spans.length) {
         return html;

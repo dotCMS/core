@@ -40,7 +40,7 @@ live in `tasks.md` (gitignored, local).
   the Contentlet REST API because no server-side Story Block validation exists.
 - **Not deliberate** — an oversight. There was no "fail loud" intent.
 - **Fix**: `try/catch` inside `healEmojiNodes`, returning the input **untouched** on any throw, so
-  an unparseable document degrades to exactly the pre-fix behavior. Deliberately *not* a catch in
+  an unparseable document degrades to exactly the pre-fix behavior. Deliberately _not_ a catch in
   `loadContent` — the heal fails closed at its own boundary rather than making every caller
   defensive. Precedent: `content-match.utils.ts:72`.
 - **Also**: harden `attrsEqual` / `marksEqual` against non-array `marks` and non-object `attrs`.
@@ -63,7 +63,7 @@ live in `tasks.md` (gitignored, local).
 
 - **Where**: `editor.component.ts:500-506`
 - **Defect**: the heal runs first, so it rewrites `emoji` nodes nested inside a customer's unknown
-  node *before* `preserveUnknownNodesInDocument` stashes that node into `attrs.originalNode`.
+  node _before_ `preserveUnknownNodesInDocument` stashes that node into `attrs.originalNode`.
   `restoreUnknownBlockNodes` then writes the altered payload back on save.
 - **Why it matters**: `dotcms-models/src/lib/unknown-block.util.ts:338-343` documents that payload
   as "inert data… left byte-for-byte as stored", and the mark pass skips `dotUnsupportedBlock` to
@@ -117,10 +117,10 @@ live in `tasks.md` (gitignored, local).
 - **Defect**: `filterEmojis` returns five arbitrary rows for an empty query and
   `SlashMenuService.open` sets `isOpen` unconditionally, so a bare colon pops a menu of
   unrelated emoji.
-- **Repro is narrower than first reported** — see *Corrections* below. The trigger must follow a
+- **Repro is narrower than first reported** — see _Corrections_ below. The trigger must follow a
   space, line start, or `\0`, so the case is `hi :`, not `Note:` or `10:30`.
-- **Test defect**: `dot-emoji.extension.spec.ts:414` is named *"does not open a session for a bare
-  `:` with no query"* but its body types `:smi` then a space and asserts the session deactivates.
+- **Test defect**: `dot-emoji.extension.spec.ts:414` is named _"does not open a session for a bare
+  `:` with no query"_ but its body types `:smi` then a space and asserts the session deactivates.
   The bare-`:` claim is never asserted.
 - **Fix**: `onStart` / `onUpdate` close rather than open when `props.query` is empty; add a test
   that actually types a bare colon; rename the existing test to match what it asserts.
@@ -149,7 +149,7 @@ These are must-have because they bound the only inference this change makes:
 
 - **Where**: `extensions/dot-emoji.extension.ts:107-116`
 - **Position**: deferred. It is a one-line upstream gesture, and research R4's argument was about
-  not *deleting* the plugin, not about covering it.
+  not _deleting_ the plugin, not about covering it.
 - **Counter-argument on the record**: a deliberate decision with no test is one line from being
   removed by the next reader. Revisit if that plugin is ever touched again.
 
@@ -195,7 +195,7 @@ Carried for a future pass; none blocks PR 2.
   `text(link + bold)` runs inherits **bold** as well — wider than AC-015, which says it carries
   "that same `link` mark".
 - **Rejected, both sessions agreeing**: the gate requires full mark sets to **match**, which fires
-  strictly *less* often than an `href`-only comparison; the inheritance then carries the set that
+  strictly _less_ often than an `href`-only comparison; the inheritance then carries the set that
   already matched. Narrower gate, wider payload, both deliberate — and the comment at
   `emoji-heal.utils.ts:59-64` already says so.
 - **Residual action**: none beyond the two-mark fixture already in scope, which makes the behavior
@@ -225,7 +225,7 @@ Recorded so the next reader does not inherit the errors.
 
 The plan's Implementation Step 1 required a tests-only commit confirmed Red. In practice the specs
 landed inside the `fix(...)` commits (`a6b0b408eb`, `5832b14b02`), T013's Red evidence exists only
-as prose in `tasks.md`, and `emoji.fixtures.ts` was created two commits *after* the specs meant to
+as prose in `tasks.md`, and `emoji.fixtures.ts` was created two commits _after_ the specs meant to
 use it — which is how the duplicate fixtures noted above arose. Worth tightening on the next
 feature; not a defect in this one.
 
@@ -234,6 +234,49 @@ hiding real ranking bugs. Test names asserting more than their bodies do is a re
 here and deserves attention in review, not just at authoring time.
 
 ---
+
+## Independent re-verification of the fixes
+
+Fixes landed in `f1db0899a4`. Re-verified by the reviewing session against that commit — behaviorally,
+with fixtures written independently of the branch's own tests, not by reading the diff.
+
+**Gate at `f1db0899a4`**: 19/19 suites, **284/284 tests passing**, lint clean, Prettier clean.
+
+| #   | Fix                                     | How it was verified                                                                                                                                                                                                                                                                               | Result               |
+| --- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 1   | Error boundary                          | 6 malformed shapes built independently: `"attrs": null`, `"marks": {}`, `marks` as a string, `attrs` as an array, `content` as a non-array, `null` nested in `content`. Asserted no throw **and** that the return is never empty/undefined.                                                       | Pass (13 assertions) |
+| 2   | HTML guard regex                        | Double-quoted, single-quoted, unquoted, whitespace-padded, and uppercase-attribute-**name** markup, each asserting the `jsdelivr` `<img>` is gone.                                                                                                                                                | Pass (6 assertions)  |
+| 3   | Heal ordering                           | Round-tripped an `emoji` node nested in a custom block through `preserveUnknownNodesInDocument` → `healEmojiNodes` → `restoreUnknownBlockNodes`, asserting **exact `JSON.stringify` equality** with the original. Second case asserts a sibling top-level emoji still heals in the same document. | Pass (2 assertions)  |
+| 4–7 | Suppression, stats, HTML emit, bare `:` | Verified in source at `dot-emoji.extension.ts:340-350`, `:363-378`, `editor.component.ts:579-587`, `:528-535`.                                                                                                                                                                                    | Confirmed            |
+
+Coverage moved as follows:
+
+| File                     | Branch, before | Branch, after |
+| ------------------------ | -------------- | ------------- |
+| `emoji-heal.utils.ts`    | 75.00%         | **80.24%**    |
+| `dot-emoji.extension.ts` | 69.56%         | see note      |
+| `editor.component.ts`    | 53.19%         | 55.20%        |
+
+`emoji-heal.utils.ts` statements are 94.73%, functions 100%. Remaining uncovered lines are
+`107-111`, `181`, `379` — the `asAttrs` object-comparison branch, the `healEmojiHtml` fallback, and
+the `catch`. These are the defensive paths, reachable only through shapes the suite constructs
+deliberately; leaving them uncovered is a reasonable call rather than a gap.
+
+### One residual gap found during re-verification — not a regression
+
+`healEmojiHtml`'s guard is now `/data-type\s*=\s*['"]?emoji/i`, but the selector on the next line
+is `span[data-type="emoji"]`, and CSS attribute-**value** matching is case-sensitive. So
+`data-type="EMOJI"` passes the guard, pays for the `DOMParser`, matches no span, and returns the
+HTML untouched with the `<img src="cdn.jsdelivr.net/…">` still exposed. Verified by asserting the
+defect shape directly.
+
+- **Not a regression.** The old `includes('data-type="emoji"')` guard failed the same input earlier
+  and more cheaply. Behavior for uppercase values is unchanged.
+- **Low likelihood.** The extension writes lowercase; this needs hand-authored or transformed HTML.
+- **But guard and selector still disagree** — now in the opposite direction. That disagreement is
+  the exact shape of finding 2.
+- **Fix if taken**: `span[data-type="emoji" i]` on the selector, or drop the `/i` from the guard so
+  the two agree on being case-sensitive. Deferred by default; noted so the next reader sees it.
 
 ## Assessment
 
@@ -244,3 +287,27 @@ the suite drives a real TipTap editor rather than mocks. But findings 1, 2 and 3
 defects in the heal — the one component whose entire justification is that it must not damage
 content it had no reason to touch — and all three are small, localized changes that should land
 before this reaches customer content.
+
+### Residual gap — CLOSED, not deferred
+
+The reviewer flagged that `/data-type\s*=\s*['"]?emoji/i` is case-insensitive while
+`span[data-type="emoji"]` is not — CSS matches attribute *values* case-sensitively, only *names*
+case-insensitively. So `data-type="EMOJI"` passed the guard, paid for the `DOMParser`, matched zero
+spans, and returned the HTML with the `<img>` still exposed.
+
+Recorded as deferred-by-default; closed instead. The selector now carries the CSS `i` flag
+(`span[data-type="emoji" i]`), which costs nothing and makes the regex's `/i` honest — guard and
+selector agree about case, and the disagreement was itself the shape of finding 2.
+
+Verified non-vacuously: with the flag removed the new uppercase-value spec fails, so it discriminates
+rather than passing by construction.
+
+Also taken from the review notes: `slash-menu.service.ts`'s `update()` docblock now states that it
+does **not** open the menu and that a caller whose first event can arrive while the dropdown is shut
+must call `open()`. The API shape gave no hint, and that trap cost this feature an afternoon.
+
+Deferred as agreed: typing the test doubles against the service interface so the compiler catches an
+omitted method. Three stubs diverged from the real interface during this work, each presenting as
+absence rather than error.
+
+Final gate: 19/19 suites, **288/288 tests**, lint clean, Prettier clean.

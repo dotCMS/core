@@ -1,7 +1,7 @@
 import { type JSONContent } from '@tiptap/core';
 import { emojis } from '@tiptap/extension-emoji';
 
-import { healEmojiNodes } from './emoji-heal.utils';
+import { healEmojiHtml, healEmojiNodes } from './emoji-heal.utils';
 
 import {
     NESTED_BLOCKS,
@@ -292,6 +292,40 @@ describe('healEmojiNodes — #37340', () => {
         it('returns the input untouched for null attrs and non-array marks', () => {
             expect(() => healEmojiNodes(MALFORMED_MARKS, emojis)).not.toThrow();
             expect(healEmojiNodes(MALFORMED_MARKS, emojis)).toBeDefined();
+        });
+    });
+
+    describe('healEmojiHtml — guard and selector must agree about case', () => {
+        const withImage = (attr: string) =>
+            `<p>dotCMS <span ${attr}="emoji" data-name="copyright">` +
+            '<img src="https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/00a9-fe0f.png">' +
+            '</span></p>';
+
+        it.each([
+            ['double-quoted lowercase', 'data-type'],
+            ['uppercase attribute NAME', 'DATA-TYPE']
+        ])('%s heals and drops the CDN image', (_label, attr) => {
+            expect(healEmojiHtml(withImage(attr), emojis)).not.toContain('jsdelivr');
+        });
+
+        /**
+         * The residual gap peer review found after the first fix: the guard is case-insensitive
+         * but CSS attribute-VALUE matching is not, so an uppercase VALUE passed the guard, matched
+         * no spans and left the `<img>` exposed for `DotImage` to claim.
+         */
+        it('an uppercase attribute VALUE heals too', () => {
+            const html =
+                '<p><span data-type="EMOJI" data-name="copyright">' +
+                '<img src="https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/00a9-fe0f.png">' +
+                '</span></p>';
+
+            expect(healEmojiHtml(html, emojis)).not.toContain('jsdelivr');
+        });
+
+        it('leaves HTML with no emoji span untouched', () => {
+            const plain = '<p>dotCMS 2026</p>';
+
+            expect(healEmojiHtml(plain, emojis)).toBe(plain);
         });
     });
 
