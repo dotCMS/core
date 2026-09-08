@@ -440,13 +440,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
                 syncCharacterStatsFromEditor(editor, this.stats);
-                const currentJson = editor.getJSON();
-                const json = this.withDocStats({
-                    ...currentJson,
-                    content: restoreUnknownBlockNodes(currentJson.content ?? [])
-                });
-                this.onChange(JSON.stringify(json));
-                this.valueChange.emit(json);
+                this.emitValue(editor);
             },
             onBlur: () => {
                 this.onTouched();
@@ -475,6 +469,26 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             content: ''
         });
         return editor;
+    }
+
+    /**
+     * Pushes the editor's current document out to the host — the reactive-form control and the
+     * `valueChange` output.
+     *
+     * Shared by {@link buildEditor}'s `onUpdate` and by {@link loadContent} when the emoji heal
+     * rewrote something, so both paths emit the identical shape. They used to differ, which is
+     * how a healed document could sit in the editor while the form control still held the
+     * unhealed string.
+     */
+    private emitValue(editor: Editor): void {
+        const currentJson = editor.getJSON();
+        const json = this.withDocStats({
+            ...currentJson,
+            content: restoreUnknownBlockNodes(currentJson.content ?? [])
+        });
+
+        this.onChange(JSON.stringify(json));
+        this.valueChange.emit(json);
     }
 
     /**
@@ -513,6 +527,27 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             ),
             { emitUpdate: false }
         );
+
+        // `emitUpdate: false` above is deliberate: a host push or a reactive-forms write must not
+        // look like an author edit. But when the heal actually rewrote something, the document in
+        // the editor no longer matches the value the host is holding, and without an emit the
+        // repair is lost the moment the author saves without typing anything — which is exactly
+        // what they would do, having seen the © render correctly.
+        //
+        // `healEmojiNodes` returns the SAME reference when it changed nothing, so this fires only
+        // for content that actually carried an `emoji` node. Everything else is untouched and the
+        // form stays pristine.
+        //
+        // Deferred to a microtask because `writeValue` is one of this method's callers, and
+        // calling `onChange` synchronously inside it trips Angular's "value changed after it was
+        // checked" check (NG0100).
+        if (healed !== parsed) {
+            queueMicrotask(() => {
+                if (!editor.isDestroyed) {
+                    this.emitValue(editor);
+                }
+            });
+        }
     }
 
     /**

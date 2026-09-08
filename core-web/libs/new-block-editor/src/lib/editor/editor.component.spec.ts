@@ -368,3 +368,86 @@ describe('DotCMSEditorComponent — #36985 value-load gating', () => {
         });
     });
 });
+
+/**
+ * #37340 — the heal has to reach the HOST, not just the editor's own document.
+ *
+ * `emoji-heal.utils.spec.ts` covers the transform as a pure function, and that is not the same
+ * thing: `loadContent` calls `setContent` with `emitUpdate: false`, so a healed document can sit
+ * in the editor while the reactive-form control still holds the unhealed string. An author who
+ * opens the field, sees the © render correctly and hits Publish then saves the ORIGINAL — which
+ * is precisely what happened in manual testing.
+ *
+ * These specs assert at the call site: did the host receive a healed value, without anyone typing.
+ */
+describe('DotCMSEditorComponent — the emoji heal reaches the host (#37340)', () => {
+    const HREF = 'https://dotcms.com';
+
+    const linkMark = () => ({ type: 'link', attrs: { href: HREF } });
+
+    /** The reported payload: text(link) + bare emoji + text(link), identical link marks. */
+    const brokenBody = (): JSONContent => ({
+        type: 'doc',
+        content: [
+            {
+                type: 'paragraph',
+                content: [
+                    { type: 'text', marks: [linkMark()], text: 'dotCMS Copyright ' },
+                    { type: 'emoji', attrs: { name: 'copyright' } },
+                    { type: 'text', marks: [linkMark()], text: 'All rights reserved' }
+                ]
+            }
+        ]
+    });
+
+    /** Same sentence, no emoji node. The heal must leave this alone and emit nothing. */
+    const cleanBody = (): JSONContent => ({
+        type: 'doc',
+        content: [
+            {
+                type: 'paragraph',
+                content: [
+                    {
+                        type: 'text',
+                        marks: [linkMark()],
+                        text: 'dotCMS Copyright © All rights reserved'
+                    }
+                ]
+            }
+        ]
+    });
+
+    it('emits a healed value to the form control with NO author edit', async () => {
+        const fixture = await mountEditor();
+        const component = fixture.componentInstance;
+        const emitted: string[] = [];
+
+        component.registerOnChange((value: string) => emitted.push(value));
+        component.writeValue(JSON.stringify(brokenBody()));
+        await settle(fixture);
+
+        expect(emitted.length).toBeGreaterThan(0);
+
+        const last = JSON.parse(emitted[emitted.length - 1]) as JSONContent;
+        expect(JSON.stringify(last)).not.toContain('"emoji"');
+
+        const inline = (last.content?.[0] as JSONContent)?.content ?? [];
+        expect(inline).toHaveLength(1);
+        expect(inline[0].text).toContain('©');
+        expect(inline[0].marks?.map((mark) => mark.type)).toEqual(['link']);
+    });
+
+    it('emits NOTHING for content that carried no emoji node', async () => {
+        const fixture = await mountEditor();
+        const component = fixture.componentInstance;
+        const emitted: string[] = [];
+
+        component.registerOnChange((value: string) => emitted.push(value));
+        component.writeValue(JSON.stringify(cleanBody()));
+        await settle(fixture);
+
+        // The form must stay pristine. Emitting here would mark every field the author merely
+        // OPENED as dirty, which is the cost the `healed !== parsed` guard exists to avoid.
+        expect(emitted).toEqual([]);
+    });
+});

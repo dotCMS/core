@@ -316,7 +316,13 @@ class in one change with no list to maintain across extension upgrades.
     output, never a literal `:name:`.
   - **Identity when absent.** A document containing no `emoji` node is returned unchanged. This is
     the overwhelmingly common case and the one to assert explicitly.
-  - The healed shape reaches storage on the author's next save, like any other edit.
+  - **The healed shape is emitted to the host as soon as the heal rewrites something**, so a
+    plain Save persists it — the author does not have to type anything first. Emitted only when
+    the heal actually changed the document (`healEmojiNodes` returns the same reference otherwise),
+    so a field carrying no `emoji` node stays pristine and is never marked dirty by being opened.
+    *Amended after manual testing: the original wording said "reaches storage on the author's next
+    save", which was true only if they also made an edit — an author who opened the field, saw the
+    © render correctly and hit Publish saved the unhealed value.*
 - **Remove the `has('emoji')` / `isAllowed('emoji')` gates** from `enableEmoticons` and from the
   toolbar picker button. `emoji` cannot be selected in Allowed Blocks, so the gates never express
   an admin's choice — they only disable emoji authoring on every field that restricts anything
