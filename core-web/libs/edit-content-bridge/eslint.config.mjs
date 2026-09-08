@@ -30,6 +30,12 @@ export default [
             '@nx/dependency-checks': [
                 'error',
                 {
+                    // ONE options object — eslint rejects more than one for a rule.
+                    // `@nx/vite` is here because vite.config.mts imports nxViteTsPaths
+                    // for the test run; it is a dev-only import and must not become a
+                    // runtime dependency of this published library, which is what
+                    // `eslint --fix` would otherwise write into package.json.
+                    ignoredFiles: ['{projectRoot}/vite.config.mts'],
                     ignoredDependencies: [
                         'rxjs',
                         '@angular/core',
@@ -37,7 +43,8 @@ export default [
                         'vite',
                         'primeng',
                         'vite-tsconfig-paths',
-                        '@analogjs/vite-plugin-angular'
+                        '@analogjs/vite-plugin-angular',
+                        '@nx/vite'
                     ]
                 }
             ]
