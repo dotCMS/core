@@ -1,11 +1,12 @@
 # Coverage matrix
 
-Nine product-surface axes. For **each**, decide **In scope** (≥1 manual case) or **Out of scope**.
+Ten coverage axes. For **each**, decide **In scope** (≥1 manual case) or **Out of scope**.
 The plan publishes no out-of-scope list, so this walk is invisible in the output — which is exactly
 why it must be deliberate. A forgotten axis and a consciously excluded one produce an identical
 plan, and only one of them is right.
 
-Walk the matrix **once** over the union of everything the PR changed, not once per issue.
+Walk the matrix **once** over the union of everything the PR set changed — not once per PR, and not
+once per issue.
 
 | Axis | What to vary | In scope when |
 |---|---|---|
@@ -99,5 +100,7 @@ the fixed behavior. Spell out environment, user, site, screen, and click sequenc
 | Touches `com.dotcms.rest.*` | **Response contract** — response JSON matches the declared `@Schema`. `Medium`. |
 | Adds or changes a startup/upgrade task, or any DDL | **Upgrade on a populated DB** — restore a pre-fix snapshot, deploy, confirm the task runs once cleanly and the schema matches, then restart and confirm it does not re-run. Cross-reference `docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`. `High`. |
 
-An axis or mandatory case already covered by a test the PR itself added gets **no manual case** —
-CI checks it on every build. Drop it silently; the plan does not enumerate what was skipped.
+An axis or mandatory case already covered by a test one of the PRs itself added gets **no manual
+case** — CI checks it on every build. Drop it silently; the plan does not enumerate what was skipped.
+This holds only when that test exercises the same path a person would: a spec that mocks the store or
+builds a fake component does not retire the case (SKILL.md §5).
