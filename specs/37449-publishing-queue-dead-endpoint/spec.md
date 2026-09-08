@@ -43,8 +43,9 @@ unnoticed; with Problem 1 it lasts minutes.
 **Severity / Impact**: High. Every editor who push-publishes on an instance where any enabled
 endpoint is unreachable. All pushes are delayed by minutes per attempt, three attempts per
 bundle, with no error shown until the wait ends. Content publish and expire dates run in the
-same job and are delayed too. Problem 2 turns the delay into a misleading row that cannot be
-retried or deleted from the portlet while it is "in progress".
+same job and are delayed too. Problem 2 turns the delay into a misleading row: the bundle looks
+scheduled although nobody scheduled it, and nothing tells the user it is waiting for a stuck
+publisher.
 
 ## Reproduction *(mandatory)*
 
@@ -163,12 +164,14 @@ Problem 2 alone reproduces with any bundle whose assets were added earlier, by r
   `?status=BUNDLE_REQUESTED` includes due, not-yet-picked-up bundles.
 - **AC-006**: Existing push-publishing integration tests stay green, and a push to a healthy
   receiver behaves as before.
-- **Verification method**: Two new integration tests in `dotcms-integration`, registered in a
-  `MainSuite`: one for AC-001 to AC-003 using an endpoint whose connection never completes (a
-  local listener with a saturated accept backlog, or a non-routable address) and a short
-  configured connect timeout; one for AC-004 and AC-005 through the v1 API with a bundle whose
-  queue entries carry a backdated entered date. Run with
-  `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=<Class>`.
+- **Verification method**: Integration tests in `dotcms-integration`, in classes already
+  registered in a `MainSuite`: one asserting the publisher's HTTP client carries the configured
+  connect timeout and its default (AC-001); one running the publisher job over two bundles where
+  the first fails unexpectedly and asserting the second is still processed (AC-002, AC-003);
+  one for AC-004 and AC-005 through the v1 API with a bundle whose queue entries carry a
+  backdated entered date. The effect of the timeout on a real endpoint that drops connection
+  attempts is verified manually, since that behavior belongs to the network stack, not to this
+  code. Run with `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=<Class>`.
 
 ## Assumptions
 
