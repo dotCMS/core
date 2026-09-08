@@ -25,6 +25,21 @@ import { DotAiIndexBuildNotice } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
 
 /**
+ * Button treatment shared by both confirmations: a primary accept and an outlined cancel.
+ *
+ * Spread rather than repeated because these two drifted apart once already — the rebuild
+ * dialog kept a filled primary cancel after the delete one moved to outlined, and both render
+ * through the same `<p-confirmDialog>`, so the difference showed on one screen.
+ *
+ * Primary is the *absence* of a severity class: `.p-button` carries the primary styling
+ * itself and the theme defines no `p-button-primary` to ask for — `p-button-secondary` exists
+ * there, `p-button-primary` does not. Setting one would resolve to nothing.
+ */
+const CONFIRM_BUTTONS = {
+    rejectButtonStyleClass: 'p-button-outlined'
+} as const;
+
+/**
  * Embeddings tab: the index inventory plus the operations on it.
  *
  * Filtering and sorting are entirely client-side, because `indexCount` returns every index in
@@ -114,28 +129,20 @@ export default class DotAiEmbeddingsComponent {
 
     protected confirmDeleteIndex(index: DotAiIndex): void {
         this.#confirmationService.confirm({
+            ...CONFIRM_BUTTONS,
             header: this.#messageService.get('dotai.embeddings.delete.header'),
             message: this.#messageService.get('dotai.embeddings.delete.message', index.name),
-            // No acceptButtonStyleClass: primary is `.p-button`'s own styling, and the theme
-            // defines no `p-button-primary` to ask for — checked in @primeuix/styles, where
-            // `p-button-secondary` exists and `p-button-primary` does not. Setting it would
-            // be a class that resolves to nothing.
-            rejectButtonStyleClass: 'p-button-outlined',
             accept: () => this.store.deleteIndex(index.name)
         });
     }
 
     protected confirmRebuild(): void {
         this.#confirmationService.confirm({
+            ...CONFIRM_BUTTONS,
             header: this.#messageService.get('dotai.embeddings.rebuild.header'),
-            // States plainly that the store is discarded — this is not undoable.
+            // The message is now the only thing conveying how final this is, the accept
+            // button no longer being red. It states plainly that the store is discarded.
             message: this.#messageService.get('dotai.embeddings.rebuild.message'),
-            // Accept stays danger here: this one drops every embedding in the instance.
-            // Cancel matches the delete dialog's — the two confirms share one
-            // `<p-confirmDialog>`, so leaving this unset gave the same screen two different
-            // cancel buttons, one of them a filled primary sitting beside a red accept.
-            acceptButtonStyleClass: 'p-button-danger',
-            rejectButtonStyleClass: 'p-button-outlined',
             accept: () => this.store.rebuildEmbeddingsDb()
         });
     }

@@ -52,7 +52,9 @@ describe('DotAiEmbeddingsComponent', () => {
             ConfirmationService,
             { provide: DialogService, useValue: { open: jest.fn() } }
         ],
-        providers: [mockProvider(DotMessageService)],
+        // Echoes the key, so assertions on dialog copy read as the key that was asked
+        // for rather than `undefined`.
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })],
         shallow: true
     });
 
@@ -213,16 +215,21 @@ describe('DotAiEmbeddingsComponent', () => {
             expect(config().rejectButtonStyleClass).toBe('p-button-outlined');
         });
 
-        it('should keep the rebuild accept red, since it drops every embedding', () => {
+        it('should give the rebuild confirmation the same treatment', () => {
+            // Both render through one `<p-confirmDialog>`, and they drifted apart once
+            // already, so this pins them together rather than each in isolation.
             clickButton('dotai-embeddings-rebuild');
 
-            expect(config().acceptButtonStyleClass).toBe('p-button-danger');
+            expect(config().acceptButtonStyleClass).toBeUndefined();
+            expect(config().rejectButtonStyleClass).toBe('p-button-outlined');
         });
 
-        it('should use the same cancel treatment in both, since they share one dialog', () => {
+        it('should still say in words how final a rebuild is', () => {
+            // The red accept was carrying that on its own; the message is now the only
+            // signal, so it must not be dropped.
             clickButton('dotai-embeddings-rebuild');
 
-            expect(config().rejectButtonStyleClass).toBe('p-button-outlined');
+            expect(config().message).toBe('dotai.embeddings.rebuild.message');
         });
     });
 
