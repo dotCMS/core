@@ -1,5 +1,11 @@
 # strict-gate — spike harness (issue #37401)
 
+> **Temporary by design — delete this when #37198 merges.**
+> This gate exists only while `core-web/tsconfig.base.json` is non-strict. Once the
+> workspace-wide strict migration lands, every file in this directory comes out.
+> Procedure, inventory and preconditions:
+> [`specs/37401-diff-scoped-strict-typecheck-gate/DECOMMISSION.md`](../../../../specs/37401-diff-scoped-strict-typecheck-gate/DECOMMISSION.md)
+
 **This is spike output, not production tooling.** It exists to answer one question:
 
 > Can a diff-scoped strict typecheck block new non-strict TypeScript from landing on `main`,
@@ -73,3 +79,9 @@ Full measurements, adjudication of every finding, and the go/no-go:
 
 Pending the follow-up task's decision to **promote** this into the real gate (durable script +
 CI hook in `core-web/pom.xml` + local hook in `lint-staged.config.mjs`) or **delete** it.
+
+Either way the end state is the same: **#37198 merging retires this gate.** Promotion only changes
+how much there is to remove — see §3.3 of
+[`DECOMMISSION.md`](../../../../specs/37401-diff-scoped-strict-typecheck-gate/DECOMMISSION.md).
+Note the precondition in §2: #37198 makes the baseline strict but adds nothing that *runs* a
+type-check, so removal should follow a replacement, not precede one.

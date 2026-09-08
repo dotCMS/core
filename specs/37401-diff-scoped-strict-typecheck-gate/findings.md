@@ -392,6 +392,11 @@ one of these. But the estimate was wrong and the write-up says so.
 
 ## 12. Follow-up
 
+**This gate is scaffolding with an expiry date.** Whatever the follow-up builds is removed when
+#37198 merges and the workspace baseline turns strict — the removal procedure, the full inventory,
+and the precondition that #37198 adds no mechanism which actually runs a type-check are in
+[DECOMMISSION.md](./DECOMMISSION.md).
+
 **Recommendation: build it.** The follow-up task covers:
 
 - The durable script, promoted from `core-web/tools/scripts/strict-gate/`.
