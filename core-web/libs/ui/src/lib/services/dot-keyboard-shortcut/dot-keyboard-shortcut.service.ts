@@ -43,6 +43,29 @@ function combinationOf(event: KeyboardEvent): string {
 }
 
 /**
+ * `<input>` types that accept no characters, so a printable key pressed on one is a shortcut rather
+ * than typing.
+ *
+ * The listing is the reason this list exists rather than a blanket `INPUT` check: every row carries
+ * a checkbox and they are the primary way to select, so "tick a few rows, then press the search key"
+ * is an ordinary sequence that did nothing at all while every `INPUT` counted as typing.
+ *
+ * `select` is deliberately *not* here — browsers use a printable key for type-ahead inside one, so
+ * it really is typing.
+ */
+const NON_TEXT_INPUT_TYPES = new Set([
+    'button',
+    'checkbox',
+    'color',
+    'file',
+    'image',
+    'radio',
+    'range',
+    'reset',
+    'submit'
+]);
+
+/**
  * Whether the event landed somewhere that consumes text.
  *
  * `closest` rather than a tag check alone: a rich text surface puts the caret in a child node, so
@@ -55,8 +78,13 @@ function isEditableTarget(target: EventTarget | null): boolean {
         return false;
     }
 
+    if (element.tagName === 'INPUT') {
+        // `type` is normalised lowercase by the DOM, and defaults to `text` when absent or unknown,
+        // so anything not on the list is treated as text-taking.
+        return !NON_TEXT_INPUT_TYPES.has((element as HTMLInputElement).type);
+    }
+
     return (
-        element.tagName === 'INPUT' ||
         element.tagName === 'TEXTAREA' ||
         element.tagName === 'SELECT' ||
         Boolean(element.closest?.('[contenteditable=""],[contenteditable="true"]'))

@@ -108,6 +108,31 @@ test.describe('Content Drive Keyboard', () => {
         await expect(drive.searchField).toHaveValue('a/b');
     });
 
+    /**
+     * Ticking a row leaves focus on its checkbox, which is an `<input>`. A blanket "any input is
+     * typing" rule swallowed the search key there, and since the checkboxes are the primary way to
+     * select rows, "tick a few, then search" is an ordinary sequence that did nothing at all.
+     *
+     * The focus assertion before the keypress is load-bearing: without it the test would pass
+     * vacuously if the click left focus somewhere else.
+     */
+    test('reaches the search shortcut from a row checkbox @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { drive, keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        const checkbox = keyboard.row(0).getByTestId('item-checkbox').locator('input');
+        await checkbox.click();
+        await keyboard.expectSelectedCount(1);
+        await expect(checkbox).toBeFocused();
+
+        await adminPage.keyboard.press('/');
+
+        await expect(drive.searchField).toBeFocused();
+    });
+
     test('focuses the search box with the alias too', async ({ adminPage }) => {
         const drive = new ContentDrivePage(adminPage);
         const keyboard = new ContentDriveKeyboard(adminPage);

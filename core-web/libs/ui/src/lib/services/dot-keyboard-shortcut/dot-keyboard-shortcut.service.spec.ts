@@ -482,6 +482,58 @@ describe('DotKeyboardShortcutService', () => {
             expect(event.defaultPrevented).toBe(false);
         });
 
+        /**
+         * An `input` is not automatically a text field. A checkbox takes no characters, so a bare
+         * printable key there is a shortcut, not typing.
+         *
+         * This matters directly in the listing: rows carry checkboxes and they are the primary way
+         * to select, so "tick a few rows, then press the search key" is an ordinary sequence. With
+         * every `INPUT` treated as typing it did nothing at all.
+         */
+        it('should fire a bare printable key from a checkbox', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            pressFrom(mount(checkbox), { key: '/' });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('should fire a bare printable key from a radio button', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            pressFrom(mount(radio), { key: '/' });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        // A typed input is still typing, whatever its type attribute says beyond the non-text set.
+        it('should not fire from a search-typed input', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            const field = document.createElement('input');
+            field.type = 'search';
+            pressFrom(mount(field), { key: '/' });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        // Browsers use a printable key for type-ahead selection inside a `select`, so it is typing.
+        it('should not fire from a select', () => {
+            const handler = handlerMock();
+            register({ combination: '/', label: 'search', handler });
+
+            pressFrom(mount(document.createElement('select')), { key: '/' });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
         it('should fire a bare printable key from a non-editable element', () => {
             const handler = handlerMock();
             register({ combination: '/', label: 'search', handler });

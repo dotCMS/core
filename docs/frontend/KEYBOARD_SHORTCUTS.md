@@ -38,9 +38,17 @@ key on the keyboard. Clearing filters stays on the visible **Clear all** control
 ### Bare printable keys and typing
 
 `/` is a single character, so the registry ignores it while focus is in something that takes text —
-an `input`, `textarea`, `select`, or anything inside a `contenteditable`. Without that rule, typing a
-slash into the very search box the shortcut focuses would re-fire the shortcut instead of entering a
-character.
+a text-accepting `input`, a `textarea`, a `select`, or anything inside a `contenteditable`. Without
+that rule, typing a slash into the very search box the shortcut focuses would re-fire the shortcut
+instead of entering a character.
+
+**"An `input`" is not enough**, and getting this wrong is a real bug rather than a nicety. A
+checkbox, radio, button, file or range input accepts no characters, so a printable key pressed on
+one is a shortcut. The listing is where it bites: every row carries a checkbox and they are the
+primary way to select, so "tick a few rows, then press the search key" is an ordinary sequence that
+did nothing at all while every `INPUT` counted as typing. `NON_TEXT_INPUT_TYPES` in the service is
+the list. A `select` is deliberately absent from it: browsers use a printable key for type-ahead
+inside one, so that really is typing.
 
 The rule is narrow on purpose: it applies only to a one-character `key` pressed with no modifier. So
 `Escape` and the arrows still reach their claimants while typing, and `Mod + K` still works from
