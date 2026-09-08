@@ -28,7 +28,6 @@ import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -44,24 +43,6 @@ import org.junit.jupiter.api.Test;
  * cancellation (US4). Only the US1 cases are here.
  */
 @EnableWeld
-@Disabled("""
-        Red, and deliberately kept rather than deleted: the bodies are written and the failure is
-        real. The run reports successCount = 10 — that assertion passes — while
-        FolderAPI.getWorkingContent on the target folder returns 0. So either the outcome is lying
-        or the assets are not landing in the folder that was asked for, and both are serious: a
-        report that claims files were created when they were not is the exact failure mode this
-        whole feature exists to prevent.
-
-        Not a test-harness problem. Errors were eliminated first (CDI injection needed @EnableWeld,
-        staging needed a user on the mock request); what remains is a genuine discrepancy between
-        what the processor records and what the database holds. Prime suspects, in order: the
-        run executes outside an HTTP request and may need an explicit transaction boundary around
-        fireContentWorkflow, and applyTarget resolves the folder through FolderAPI.find with a value
-        the submission stored as an identifier where find may expect an inode.
-
-        Enabled again once that is resolved. BulkUploadResourceIT (8/8) and JobItemResultFactoryIT
-        (4/4) are green and cover the submission and the checkpoint.
-""")
 public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
     @BeforeAll
@@ -76,6 +57,27 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
     private Host site() {
         return new SiteDataGen().nextPersisted();
+    }
+
+    /**
+     * Renders the per-item reasons into the assertion message.
+     * <p>
+     * Without this a failure reads "expected 10 but was 0" and says nothing about <b>why</b> —
+     * which cost a full diagnostic cycle once already. The reasons are recorded per file precisely
+     * so they can be read; a test that hides them wastes what the feature went to trouble to
+     * produce.
+     */
+    @SuppressWarnings("unchecked")
+    private String describe(final Map<String, Object> outcome) {
+        final Object results = outcome.get("results");
+        if (!(results instanceof List)) {
+            return "none recorded";
+        }
+        final StringBuilder sb = new StringBuilder();
+        for (final Object item : (List<Object>) results) {
+            sb.append("\n  ").append(item);
+        }
+        return sb.toString();
     }
 
     /**
@@ -156,7 +158,7 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         assertEquals(10, ((Number) outcome.get("successCount")).intValue(),
                 "every file the author chose must be created — this is the criterion the whole "
                         + "ticket exists for, since today the selection is accepted and only the "
-                        + "first file lands");
+                        + "first file lands.\nRecorded per-item results: " + describe(outcome));
         assertEquals(0, ((Number) outcome.get("failedCount")).intValue());
         assertEquals(10, ((Number) outcome.get("total")).intValue(),
                 "and the counts are authoritative, not the number the client believes it sent");
@@ -194,7 +196,7 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         assertEquals(1, created.size());
 
         final Contentlet asset = created.get(0);
-        assertEquals("dotAsset", asset.getContentType().variable(),
+        assertEquals("DotAsset", asset.getContentType().variable(),
                 "the content type resolves the same way the single-file upload resolves it");
         assertEquals(folder.getInode(), asset.getFolder(),
                 "and it lands where the author asked, not at the site root");

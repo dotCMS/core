@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.processor.impl;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
 import com.dotcms.jobs.business.batch.BatchItemResult;
 import com.dotcms.jobs.business.batch.BatchItemStatus;
@@ -20,6 +21,9 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.util.Optional;
 import com.dotmarketing.util.Logger;
@@ -117,16 +121,40 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             final File binary = resolveStagedContent(job, tempFileId, user)
                     .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
 
+            final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
+
             final Contentlet contentlet = new Contentlet();
             contentlet.setContentTypeId(contentTypeIdFor(job.parameters(), user));
-            contentlet.setBinary(FileAssetAPI.BINARY_FIELD, binary);
-            contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
-            contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+
+            // The two base types name their binary field differently, and getting it wrong fails
+            // with "Unable to get The Asset From the Given dotAsset Contentlet" — a message that
+            // does not mention the field, so it is worth naming here. A dotAsset carries 'asset'
+            // and derives its title from the file; a fileAsset carries 'fileAsset' and needs the
+            // title and file name set explicitly.
+            if (isFileAsset) {
+                contentlet.setBinary(FileAssetAPI.BINARY_FIELD, binary);
+                contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
+                contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+            } else {
+                contentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, binary);
+            }
             applyTarget(contentlet, job.parameters(), user);
+
+            // The action has to be resolved explicitly. fireContentWorkflow with no action logs
+            // "should not have a null workflow action", creates nothing, and RETURNS NORMALLY —
+            // so a run that did no work reported every file as a success. PUBLISH is the system
+            // action because that is what the single-file path fires, and FR-006 requires a batch
+            // to behave observably like N single uploads.
+            final WorkflowAction action = APILocator.getWorkflowAPI()
+                    .findActionMappedBySystemActionContentlet(
+                            contentlet, WorkflowAPI.SystemAction.PUBLISH, user)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "No workflow action is mapped to PUBLISH for this content type"));
 
             final Contentlet created = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                     new ContentletDependencies.Builder()
                             .modUser(user)
+                            .workflowActionId(action.getId())
                             .respectAnonymousPermissions(false)
                             // DEFER, never WAIT_FOR: the per-file wait also flushes the
                             // system-wide query cache, so a full batch would charge every other
@@ -135,6 +163,13 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                             .indexPolicy(IndexPolicy.DEFER)
                             .indexPolicyDependencies(IndexPolicy.DEFER)
                             .build());
+
+            // Never report a success we cannot point at. The whole feature exists so the author is
+            // told what actually happened, so "created" has to mean a contentlet that exists.
+            if (created == null || !UtilMethods.isSet(created.getIdentifier())) {
+                throw new IllegalStateException(
+                        "The workflow returned no persisted contentlet for " + fileName);
+            }
 
             createdInodes.add(created.getInode());
             record(job, seq, fileName, BatchItemStatus.SUCCESS, null, null,
