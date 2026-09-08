@@ -195,4 +195,30 @@ describe('DotAiEmbeddingsComponent', () => {
             expect(storeMock.deleteFromIndex).not.toHaveBeenCalled();
         });
     });
+
+    describe('the per-row delete action', () => {
+        const deleteButton = () =>
+            spectator.query(byTestId('dotai-embeddings-delete'))?.querySelector('button');
+
+        it('should be secondary, so a red control does not sit on every row', () => {
+            // The destructive step is the confirm dialog, whose accept button carries
+            // p-button-danger; the row action only opens it.
+            expect(deleteButton()?.className).toContain('p-button-secondary');
+            expect(deleteButton()?.className).not.toContain('p-button-danger');
+        });
+
+        it('should leave the glyph unsized', () => {
+            const glyph = deleteButton()?.querySelector('.material-symbols-outlined');
+
+            expect(glyph).toBeTruthy();
+            expect(glyph?.className.split(/\s+/)).toEqual(['material-symbols-outlined']);
+        });
+
+        it('should keep Rebuild DB red, since that one drops every embedding', () => {
+            expect(
+                spectator.query(byTestId('dotai-embeddings-rebuild'))?.querySelector('button')
+                    ?.className
+            ).toContain('p-button-danger');
+        });
+    });
 });

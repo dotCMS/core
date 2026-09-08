@@ -123,16 +123,17 @@
                             }
                         </td>
                         <td class="text-right">
+                            <!-- Secondary, not danger: a red control on every row reads as a
+                                 warning about the row itself. The destructive step is the
+                                 confirm dialog, whose accept button is `p-button-danger`. -->
                             <p-button
-                                severity="danger"
+                                severity="secondary"
                                 [outlined]="true"
                                 size="small"
                                 [ariaLabel]="'dotai.embeddings.delete' | dm"
                                 (onClick)="confirmDeleteIndex(index)"
                                 data-testid="dotai-embeddings-delete">
-                                <span
-                                    class="material-symbols-outlined text-base!"
-                                    aria-hidden="true">
+                                <span class="material-symbols-outlined" aria-hidden="true">
                                     delete
                                 </span>
                             </p-button>
