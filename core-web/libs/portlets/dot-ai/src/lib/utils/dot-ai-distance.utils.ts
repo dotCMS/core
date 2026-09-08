@@ -1,6 +1,15 @@
 import { DOT_AI_VECTOR_OPERATOR } from '@dotcms/dotcms-models';
 
 /**
+ * The request names the operator (`innerProduct`); the **response echoes the pgvector symbol**
+ * (`<#>`). Both have to be recognised here, because the bar is drawn from the response.
+ */
+const INNER_PRODUCT_FORMS: ReadonlySet<string> = new Set([
+    DOT_AI_VECTOR_OPERATOR.INNER_PRODUCT,
+    '<#>'
+]);
+
+/**
  * Turns a raw vector distance into a 0–100 "closeness" value for the result bar.
  *
  * The three operators the backend supports do not share a scale, and they do not even agree on
@@ -17,15 +26,6 @@ import { DOT_AI_VECTOR_OPERATOR } from '@dotcms/dotcms-models';
  *
  * The raw distance is still shown beside the bar, so nothing is hidden by the normalisation.
  */
-/**
- * The request names the operator (`innerProduct`); the **response echoes the pgvector symbol**
- * (`<#>`). Both have to be recognised here, because the bar is drawn from the response.
- */
-const INNER_PRODUCT_FORMS: ReadonlySet<string> = new Set([
-    DOT_AI_VECTOR_OPERATOR.INNER_PRODUCT,
-    '<#>'
-]);
-
 export function toClosenessPercent(distance: number, operator: string): number {
     if (!Number.isFinite(distance)) {
         return 0;

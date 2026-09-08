@@ -1,3 +1,8 @@
+/**
+ * View-model-only types for the dotAI portlet. Wire shapes and their conversions live in
+ * `@dotcms/data-access`; nothing here crosses the network.
+ */
+
 import {
     ComponentStatus,
     DotAiChatAnswer,
@@ -17,11 +22,6 @@ export interface DotAiGeneratedImage {
     revisedPrompt: string;
     published: boolean;
 }
-
-/**
- * View-model-only types for the dotAI portlet. Wire shapes and their conversions live in
- * `@dotcms/data-access`; nothing here crosses the network.
- */
 
 /**
  * The five tabs, in display order. The `id` is also the route segment, so this array is the
