@@ -144,8 +144,12 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                             LAST_BUNDLE_USED,
                             JSON.stringify(this.setBundleData())
                         );
+                        // Read before the reset: `setBundleData()` builds from the form controls,
+                        // so calling it afterwards hands the caller a blanked bundle.
+                        const added = this.setBundleData();
+
                         this.form.reset();
-                        this.onAdded?.(this.setBundleData());
+                        this.onAdded?.(added);
                         this.close();
                     } else {
                         this.#loggerService.debug(result.errorMessages);

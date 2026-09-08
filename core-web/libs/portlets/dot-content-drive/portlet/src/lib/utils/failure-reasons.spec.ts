@@ -68,6 +68,17 @@ describe('messageKeyForFailureReason', () => {
         });
     });
 
+    it('should not treat an inherited Object key as a known reason', () => {
+        // `in` walks the prototype chain, so `'constructor'` would pass a guard written with it and
+        // the lookup would hand `DotMessageService.get()` a function instead of a message key.
+        expect(messageKeyForFailureReason('constructor')).toBe(
+            messageKeyForFailureReason('UNCLASSIFIED')
+        );
+        expect(messageKeyForFailureReason('toString')).toBe(
+            messageKeyForFailureReason('UNCLASSIFIED')
+        );
+    });
+
     describe('wording constraints from the spec', () => {
         it('should not describe a rejected file by its extension', () => {
             // FR-039: the server resolves the media type by detection and sniffing, not by trusting

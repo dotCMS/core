@@ -27,8 +27,11 @@ const MESSAGE_KEY_BY_REASON: Record<DotBulkUploadFailureReason, string> = {
     UNCLASSIFIED: 'content-drive.upload.failure.unclassified'
 };
 
+// `hasOwnProperty`, not `in`: `in` walks the prototype chain, so a reason of `constructor` or
+// `toString` would pass the guard and the lookup would return an inherited *function* straight into
+// `DotMessageService.get()`.
 const isKnownReason = (reason: string): reason is DotBulkUploadFailureReason =>
-    reason in MESSAGE_KEY_BY_REASON;
+    Object.prototype.hasOwnProperty.call(MESSAGE_KEY_BY_REASON, reason);
 
 /**
  * Resolves a failure reason to the message key that explains it to the author.

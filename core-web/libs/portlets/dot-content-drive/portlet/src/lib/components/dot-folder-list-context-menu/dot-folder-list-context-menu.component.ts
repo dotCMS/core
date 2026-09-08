@@ -699,7 +699,12 @@ export class DotFolderListViewContextMenuComponent {
                     actionName: this.#dotMessageService.get('Remote-Publish'),
                     successCount: 1,
                     skippedCount: 0,
-                    failedCount: 0
+                    failedCount: 0,
+                    // Nothing in the listing changes when an asset is pushed, so this is one of the
+                    // few successes that still has to be said out loud. Without it the shell's gate
+                    // (`isPartial || confirmSuccess || backgrounded`) drops the result, and the
+                    // dialog signals success only by closing — the outcome would appear nowhere.
+                    confirmSuccess: true
                 })
         });
     }
