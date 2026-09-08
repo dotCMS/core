@@ -14901,7 +14901,8 @@ paths:
           \ FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,\
           \ FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, LICENSE_REQUIRED.\
           \ SCHEDULED = bundles pushed with a future publishDate not yet picked up\
-          \ by the publisher cron."
+          \ by the publisher cron. BUNDLE_REQUESTED also includes queued bundles whose\
+          \ publishDate is already due but that the publisher has not picked up yet."
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
