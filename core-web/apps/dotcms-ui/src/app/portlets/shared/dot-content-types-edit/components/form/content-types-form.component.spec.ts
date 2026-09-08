@@ -454,13 +454,11 @@ describe('ContentTypesFormComponent', () => {
             systemActionMappings: {
                 NEW: ''
             },
-            workflows: [
-                {
-                    ...mockWorkflows[2],
-                    creationDate: '2018-04-05T14:21:33.321Z',
-                    modDate: '2018-04-03T22:35:58.958Z'
-                }
-            ],
+            // The fixture's own Date values, not ISO strings. DotWorkflowServiceMock
+            // hands the workflows over through `structuredClone`, which preserves a Date
+            // — the string overrides that used to be here were an artifact of the old
+            // environment's structuredClone flattening them.
+            workflows: [{ ...mockWorkflows[2] }],
             newEditContent: false
         });
     });
@@ -717,20 +715,9 @@ describe('ContentTypesFormComponent', () => {
                 folder: '',
                 system: false,
                 name: 'A content type name',
-                workflows: [
-                    {
-                        id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        creationDate: '2018-04-05T14:21:33.321Z',
-                        name: 'System Workflow',
-                        description: '',
-                        archived: false,
-                        mandatory: false,
-                        defaultScheme: false,
-                        modDate: '2018-04-03T22:35:58.958Z',
-                        entryActionId: null,
-                        system: true
-                    }
-                ],
+                // Same as above: the mock structuredClones the fixture, so the Date
+                // instances survive.
+                workflows: [{ ...mockWorkflows[2] }],
                 systemActionMappings: { NEW: '' },
                 detailPage: '',
                 urlMapPattern: '',

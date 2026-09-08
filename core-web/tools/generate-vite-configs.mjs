@@ -231,6 +231,7 @@ function jestSettings(dir) {
             // Package-shaped only: `@scope/name`, `name`, or either with a trailing
             // slash (`d3/`, `internmap/`). This drops the `-` left behind by `d3(/|-)`.
             if (/^@?[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9._-]*)?$/.test(name) && name.length > 1) {
+                if (INLINE_EXCLUDE.has(name)) continue;
                 esm.push(name);
             }
         }
@@ -252,6 +253,18 @@ function jestSettings(dir) {
         aliases
     };
 }
+
+/**
+ * Packages that appear in a transformIgnorePatterns list but must NOT be inlined.
+ *
+ * The two lists are not the same question. Jest's was "transform this, it ships ESM";
+ * Vite's deps.inline is "run this through my transform instead of importing it as-is",
+ * and for a package Vite already handles natively that is a downgrade. `uuid` publishes
+ * an ESM wrapper over a CJS bundle (export const v1 = uuid.v1); inlined, Vite's
+ * default-interop leaves the default undefined and two dot-templates spec files died on
+ * "Cannot read properties of undefined (reading 'v1')".
+ */
+const INLINE_EXCLUDE = new Set(['uuid']);
 
 /** tsconfigs in this workspace carry `//` comments, which JSON.parse rejects. */
 function stripJsonComments(src) {
@@ -465,8 +478,14 @@ export default defineConfig(() => ({
         // Vitest's default 'stable' strategy returns _name_hash instead, and
         // sdk-react's Column test — which asserts toHaveClass('col-start-2') on a class
         // read out of a *.module.css — failed on the hash. 'non-scoped' restores the
-        // Jest reading. CSS is still not processed; only the class name mapping changes.
-        css: { modules: { classNameStrategy: 'non-scoped' } },
+        // Jest reading.
+        //
+        // 'include: []' is load-bearing, not decoration: an object under 'css' turns CSS
+        // PROCESSING on, and processing a .scss file starts sass-embedded, whose dart
+        // subprocess outlives the run — content-drive finished all 30 files and then
+        // hung indefinitely without printing a summary. An empty include leaves every
+        // file unprocessed while the module-name strategy still applies.
+        css: { include: [], modules: { classNameStrategy: 'non-scoped' } },
         environment: '${env}',${environmentOptionsFor(env)}
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {

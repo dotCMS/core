@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -125,7 +125,13 @@ describe('DotEmaDialogComponent', () => {
                 useValue: new MockDotMessageService({})
             },
             mockProvider(DotContentTypeService),
-            mockProvider(DotContentletService),
+            // The content-compare store pipes getContentletVersions() from its loadData
+            // effect; a bare mockProvider returns undefined and it dereferences nothing,
+            // asynchronously — which Jest dropped and Vitest counts as an unhandled
+            // error. Nothing in this spec asserts on the versions.
+            mockProvider(DotContentletService, {
+                getContentletVersions: vi.fn(() => EMPTY)
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
             mockProvider(DotIframeService),

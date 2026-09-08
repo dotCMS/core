@@ -149,6 +149,11 @@ describe('DotPersonaSelectorComponent', () => {
             }
         );
         paginatorService = spectator.component.paginationService;
+        // Seeded so the dropdown's showOverlayHandler() skips its deferred
+        // getBoundingClientRect(). That read runs in a setTimeout that fires after the
+        // test, when the panel's container is already null — jsdom has no layout to
+        // measure anyway. Jest discarded the resulting error; Vitest counts it.
+        spectator.component.searchableDropdown.overlayPanelMinHeight = '0';
         spectator.detectChanges();
     });
 

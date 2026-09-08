@@ -22,6 +22,45 @@ function makePointerEvent(type: string, props: Partial<PointerEvent> = {}): Poin
     return event;
 }
 
+/**
+ * A jsdom-native AbortController for this file only.
+ *
+ * The component passes `{ signal }` to `addEventListener`, and zone.js handles that
+ * option by registering an `abort` listener ON THE SIGNAL using the jsdom
+ * `EventTarget.prototype.addEventListener` it captured at patch time. Under Vitest the
+ * global AbortSignal is Node's — `signal instanceof window.EventTarget` is false — so
+ * jsdom's brand check rejects it with "'addEventListener' called on an object that is
+ * not a valid instance of EventTarget", the drag listeners are never attached, and both
+ * pointermove and pointerup do nothing. Jest's older jsdom accepted it.
+ *
+ * Scoped to this spec rather than the project setup: it swaps a global, and this is the
+ * only component in the workspace that hands an AbortSignal to addEventListener.
+ */
+class JsdomAbortSignal extends EventTarget {
+    aborted = false;
+    reason: unknown = undefined;
+    onabort: ((this: AbortSignal, event: Event) => void) | null = null;
+
+    throwIfAborted(): void {
+        if (this.aborted) {
+            throw this.reason;
+        }
+    }
+}
+
+class JsdomAbortController {
+    readonly signal = new JsdomAbortSignal();
+
+    abort(reason?: unknown): void {
+        if (this.signal.aborted) {
+            return;
+        }
+        this.signal.aborted = true;
+        this.signal.reason = reason ?? new Error('AbortError');
+        this.signal.dispatchEvent(new Event('abort'));
+    }
+}
+
 describe('DotUveIframeResizeHandlesComponent', () => {
     let spectator: Spectator<DotUveIframeResizeHandlesComponent>;
     let updateEditorResizeState: Mock;
@@ -46,12 +85,20 @@ describe('DotUveIframeResizeHandlesComponent', () => {
         ]
     });
 
+    let originalAbortController: typeof AbortController;
+
     beforeEach(() => {
+        originalAbortController = globalThis.AbortController;
+        globalThis.AbortController = JsdomAbortController as unknown as typeof AbortController;
         updateEditorResizeState = vi.fn();
         updateEditorOnResizeEnd = vi.fn();
         viewExitDevicePreset = vi.fn();
         viewSetIframeSize = vi.fn();
         spectator = createComponent();
+    });
+
+    afterEach(() => {
+        globalThis.AbortController = originalAbortController;
     });
 
     /**

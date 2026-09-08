@@ -110,7 +110,14 @@ describe('DotEmaBookmarksComponent', () => {
 
     it('should open a dynamic dialog when toggleBookmark is called', () => {
         const dialogService = spectator.inject(DialogService);
-        const dialogServiceOpenSpy = vi.spyOn(dialogService, 'open');
+        // mockImplementation, not a bare spy: the real open() instantiates
+        // DotFavoritePageComponent, which needs DotSessionStorageService — absent here,
+        // so Angular threw NG0201 from inside the click handler and reported it
+        // asynchronously, which Jest dropped. The component ignores the returned ref,
+        // and the assertion below is only about the arguments.
+        const dialogServiceOpenSpy = vi
+            .spyOn(dialogService, 'open')
+            .mockImplementation(() => undefined);
 
         const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
 

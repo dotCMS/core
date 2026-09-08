@@ -9,6 +9,7 @@ import { Mock, Mocked, describe, expect, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
@@ -120,7 +121,12 @@ describe('DotContentDriveStore', () => {
             mockProvider(DotLanguagesService, {
                 get: vi.fn().mockReturnValue(of(mockLocales))
             }),
-            provideHttpClient()
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 

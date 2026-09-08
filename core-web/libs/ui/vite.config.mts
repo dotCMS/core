@@ -52,8 +52,14 @@ export default defineConfig(() => ({
         // Vitest's default 'stable' strategy returns _name_hash instead, and
         // sdk-react's Column test — which asserts toHaveClass('col-start-2') on a class
         // read out of a *.module.css — failed on the hash. 'non-scoped' restores the
-        // Jest reading. CSS is still not processed; only the class name mapping changes.
-        css: { modules: { classNameStrategy: 'non-scoped' } },
+        // Jest reading.
+        //
+        // 'include: []' is load-bearing, not decoration: an object under 'css' turns CSS
+        // PROCESSING on, and processing a .scss file starts sass-embedded, whose dart
+        // subprocess outlives the run — content-drive finished all 30 files and then
+        // hung indefinitely without printing a summary. An empty include leaves every
+        // file unprocessed while the module-name strategy still applies.
+        css: { include: [], modules: { classNameStrategy: 'non-scoped' } },
         environment: 'happy-dom',
         environmentOptions: { happyDOM: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

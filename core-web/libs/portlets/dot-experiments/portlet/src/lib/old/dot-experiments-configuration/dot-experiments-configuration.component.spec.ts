@@ -132,6 +132,9 @@ describe('DotExperimentsConfigurationComponent', () => {
         dotExperimentsConfigurationStore = spectator.inject(DotExperimentsConfigurationStore, true);
 
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        // The store pipes cancelSchedule; a bare mockProvider returns undefined and it
+        // dereferences nothing, asynchronously.
+        dotExperimentsService.cancelSchedule.mockReturnValue(of(EXPERIMENT_MOCK));
 
         vi.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(vi.fn());
     });

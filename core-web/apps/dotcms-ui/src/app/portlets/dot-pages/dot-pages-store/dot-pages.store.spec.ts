@@ -1,4 +1,4 @@
-import { Observable, of, throwError } from 'rxjs';
+import { firstValueFrom, Observable, of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
@@ -44,6 +44,7 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
+    DotEnvironment,
     ESContent
 } from '@dotcms/dotcms-models';
 import {
@@ -71,7 +72,6 @@ import {
     SESSION_STORAGE_FAVORITES_KEY
 } from './dot-pages.store';
 
-import { PushPublishServiceMock } from '../../../view/components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
 
 // Mock data for content types (replacement for removed dot-edit-page module)
@@ -107,6 +107,26 @@ export const favoritePagesInitialTestData = [
 ];
 
 @Injectable()
+/**
+ * Declared here rather than imported from dot-push-publish-env-selector's spec.
+ * Importing one spec file from another evaluates that file, which registers ITS suites
+ * and hooks into this one — including a `beforeEach` that reconfigures the TestBed
+ * after ours, so the store's initial load never landed and five expectations read
+ * pre-load state.
+ */
+class PushPublishServiceMock {
+    getEnvironments(): Observable<DotEnvironment[]> {
+        return of([
+            { id: '22e332', name: 'my environment' },
+            { id: 'joa08', name: 'my environment 2' }
+        ] as DotEnvironment[]);
+    }
+
+    pushPublishContent(): Observable<unknown> {
+        return of([]);
+    }
+}
+
 class MockESPaginatorService {
     paginationPerPage = 15;
     totalRecords = 20;
@@ -127,6 +147,21 @@ export class DialogServiceMock {
         /* */
     }
 }
+
+/**
+ * A ComponentStore selector's SETTLED value.
+ *
+ * `select()` emits on rxjs' queue scheduler, so a `subscribe` placed right after the
+ * state was populated still receives the pre-load value first. The assertions below
+ * used to run against that inside the subscribe handler, where rxjs reports a failure
+ * asynchronously — Jest discarded it, so five wrong expectations sat green, and Vitest
+ * counts each as an unhandled error.
+ */
+const settled = async <T>(source: Observable<T>): Promise<T> => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    return firstValueFrom(source);
+};
 
 describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
@@ -203,8 +238,8 @@ describe('DotPageStore', () => {
         dotPageStore.setArchived('true');
     });
 
-    it('should load Favorite Pages initial data', () => {
-        dotPageStore.state$.subscribe((data) => {
+    it('should load Favorite Pages initial data', async () => {
+        await settled(dotPageStore.state$).then((data) => {
             expect(data.environments).toEqual(true);
             expect(data.favoritePages.items).toEqual(favoritePagesInitialTestData);
             expect(data.favoritePages.showLoadMoreButton).toEqual(false);
@@ -260,8 +295,8 @@ describe('DotPageStore', () => {
     });
 
     // Selectors
-    it('should get language options for dropdown', () => {
-        dotPageStore.languageOptions$.subscribe((data) => {
+    it('should get language options for dropdown', async () => {
+        await settled(dotPageStore.languageOptions$).then((data) => {
             expect(data).toEqual([
                 { label: 'All', value: null },
                 { label: 'English (US)', value: 1 },
@@ -270,8 +305,8 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should get language Labels for row field', () => {
-        dotPageStore.languageLabels$.subscribe((data) => {
+    it('should get language Labels for row field', async () => {
+        await settled(dotPageStore.languageLabels$).then((data) => {
             expect(data).toEqual({ '1': 'en-US', '2': 'IT' });
         });
     });
@@ -721,7 +756,7 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should not have Add/Edit Bookmark actions in context menu when contentlet is archived', () => {
+    it('should not have Add/Edit Bookmark actions in context menu when contentlet is archived', async () => {
         vi.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
             of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
         );
@@ -742,14 +777,14 @@ describe('DotPageStore', () => {
             url: '/index2'
         });
 
-        dotPageStore.state$.subscribe((data) => {
+        await settled(dotPageStore.state$).then((data) => {
             expect(data.pages.menuActions.length).toEqual(8);
             expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
             expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
         });
     });
 
-    it('should get all menu actions from a favorite page when page is archived', () => {
+    it('should get all menu actions from a favorite page when page is archived', async () => {
         vi.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
             of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
         );
@@ -769,7 +804,7 @@ describe('DotPageStore', () => {
             url: '/index1'
         });
 
-        dotPageStore.state$.subscribe((data) => {
+        await settled(dotPageStore.state$).then((data) => {
             expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
             expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
             expect(data.pages.menuActions[2]).toEqual({ separator: true });

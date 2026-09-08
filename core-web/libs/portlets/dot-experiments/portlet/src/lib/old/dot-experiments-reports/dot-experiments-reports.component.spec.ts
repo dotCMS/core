@@ -164,6 +164,9 @@ describe('DotExperimentsReportsComponent', () => {
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
         dotExperimentsService.getResults.mockReturnValue(of({ ...EXPERIMENT_RESULTS_MOCK }));
+        // The store pipes promoteVariant; a bare mockProvider returns undefined and it
+        // dereferences nothing, asynchronously.
+        dotExperimentsService.promoteVariant.mockReturnValue(of(EXPERIMENT_MOCK));
 
         router = spectator.inject(Router);
     });

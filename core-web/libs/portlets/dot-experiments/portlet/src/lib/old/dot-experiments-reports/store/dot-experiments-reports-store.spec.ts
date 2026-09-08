@@ -100,6 +100,9 @@ describe('DotExperimentsReportsStore', () => {
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
         dotExperimentsService.getResults.mockReturnValue(of(EXPERIMENT_MOCK_RESULTS));
+        // The store pipes promoteVariant, and a bare mockProvider returns undefined —
+        // the test below asserts only that the call happened, so the value is a stand-in.
+        dotExperimentsService.promoteVariant.mockReturnValue(of(EXPERIMENT_MOCK));
     });
 
     it('should set initial data', () =>

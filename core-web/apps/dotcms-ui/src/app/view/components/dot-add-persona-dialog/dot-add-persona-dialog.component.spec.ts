@@ -7,6 +7,8 @@ import {
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import {
@@ -42,6 +44,11 @@ describe('DotAddPersonaDialogComponent', () => {
         imports: [BrowserAnimationsModule],
         detectChanges: false,
         providers: [
+            // The tags autocomplete hits /api/v1/tags as soon as the dialog renders, and
+            // in jsdom that XHR fails with status 0 — asynchronously, so Jest dropped it.
+            // The testing backend parks the request; nothing here asserts on it.
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotWorkflowActionsFireService,
             mockProvider(DotHttpErrorManagerService, {
                 handle: vi.fn().mockReturnValue(of(undefined))

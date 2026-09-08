@@ -112,6 +112,11 @@ describe('SearchableDropdownComponent', () => {
         hostComp = hostFixture.componentInstance;
         de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
         comp = de.componentInstance;
+        // Seeded so showOverlayHandler() skips its deferred measurement. That read is
+        // inside a setTimeout, fires after the test has finished, and by then the
+        // panel's container is null — jsdom has no layout to measure anyway. Jest
+        // discarded the resulting error; Vitest counts it.
+        comp.overlayPanelMinHeight = '0';
 
         for (let i = 0; i < NROWS; i++) {
             data[i] = {
@@ -494,6 +499,11 @@ describe('SearchableDropdownComponent', () => {
         hostComp = hostFixture.componentInstance;
         de = hostFixture.debugElement.query(By.css('dot-searchable-dropdown'));
         comp = de.componentInstance;
+        // Seeded so showOverlayHandler() skips its deferred measurement. That read is
+        // inside a setTimeout, fires after the test has finished, and by then the
+        // panel's container is null — jsdom has no layout to measure anyway. Jest
+        // discarded the resulting error; Vitest counts it.
+        comp.overlayPanelMinHeight = '0';
 
         for (let i = 0; i < NROWS; i++) {
             data[i] = {

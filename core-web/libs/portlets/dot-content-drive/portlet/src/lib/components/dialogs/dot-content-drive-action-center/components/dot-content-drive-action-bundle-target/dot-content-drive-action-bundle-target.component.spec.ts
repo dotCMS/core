@@ -8,6 +8,7 @@ import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AddToBundleService, DotCurrentUserService, DotMessageService } from '@dotcms/data-access';
 import { DotBundle } from '@dotcms/dotcms-models';
@@ -33,7 +34,12 @@ describe('DotContentDriveActionBundleTargetComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentDriveActionBundleTargetComponent,
         providers: [
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotMessageService, {
                 get: vi.fn().mockImplementation((key: string) => key)
             }),

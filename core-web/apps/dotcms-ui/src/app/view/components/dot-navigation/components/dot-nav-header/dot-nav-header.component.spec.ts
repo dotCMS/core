@@ -150,7 +150,9 @@ describe('DotNavHeaderComponent', () => {
                 spectator.detectChanges();
 
                 const whitelabelLogo = spectator.query(byTestId('whitelabel-logo')) as HTMLElement;
-                expect(whitelabelLogo.style.backgroundImage).toBe('url(/dA/logo.png)');
+                // Quoted, matching the input: the DOM preserves the url()'s quotes on
+                // serialisation rather than stripping them.
+                expect(whitelabelLogo.style.backgroundImage).toBe('url("/dA/logo.png")');
             });
         });
 

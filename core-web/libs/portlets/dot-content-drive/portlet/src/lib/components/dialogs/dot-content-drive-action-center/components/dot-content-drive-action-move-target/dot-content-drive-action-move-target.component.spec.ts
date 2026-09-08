@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotBrowsingService } from '@dotcms/ui';
@@ -20,7 +21,12 @@ describe('DotContentDriveActionMoveTargetComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentDriveActionMoveTargetComponent,
         providers: [
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotMessageService, {
                 get: vi.fn().mockImplementation((key: string) => key)
             }),
@@ -29,7 +35,12 @@ describe('DotContentDriveActionMoveTargetComponent', () => {
             // host it, so stubbing it out would leave nothing under test.
             mockProvider(DotBrowsingService, {
                 getSitesTreePath: vi.fn(() => of([])),
-                getSitesPage: vi.fn(() => of({ sites: [], total: 0 })),
+                // `pagination`, not `total`: the host-folder store reads
+                // `pagination.totalEntries` off this response, and the wrong shape left
+                // it dereferencing undefined inside an effect.
+                getSitesPage: vi.fn(() =>
+                    of({ sites: [], pagination: { currentPage: 1, perPage: 15, totalEntries: 0 } })
+                ),
                 getCurrentSiteAsTreeNodeItem: vi.fn(() => of(null))
             })
         ],

@@ -9,6 +9,7 @@ import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -194,7 +195,12 @@ describe('DotContentDriveToolbarComponent', () => {
                 editContent: vi.fn(),
                 editPage: vi.fn()
             }),
-            provideHttpClient()
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         detectChanges: false
     });

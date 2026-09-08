@@ -101,6 +101,13 @@ describe('DotExperimentsListStore', () => {
 
         dotExperimentsService.getAll.mockReturnValue(of(EXPERIMENT_MOCK_ALL));
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        // The store pipes each of these, so a bare mockProvider — which returns
+        // undefined — made it dereference nothing. The tests below assert only that the
+        // call happened; rxjs reported the failure asynchronously, so Jest dropped it
+        // and Vitest counts it as an unhandled error.
+        dotExperimentsService.archive.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.cancelSchedule.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.stop.mockReturnValue(of(EXPERIMENT_MOCK));
 
         store = spectator.inject(DotExperimentsListStore);
         messageService = spectator.inject(MessageService);

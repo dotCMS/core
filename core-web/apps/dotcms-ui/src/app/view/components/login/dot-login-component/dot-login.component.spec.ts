@@ -4,6 +4,8 @@ import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/v
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -77,6 +79,11 @@ describe('DotLoginComponent', () => {
             { provide: ActivatedRoute, useClass: ActivatedRouteMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
             DotMessageService,
+            // The real DotMessageService fetches /api/v2/languages/<lang>/keys as soon
+            // as init() runs, and in jsdom that XHR fails with status 0. The testing
+            // backend parks the request instead; nothing here asserts on it.
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotLoadingIndicatorService,
             DotRouterService,
             LoggerService,

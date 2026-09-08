@@ -28,9 +28,14 @@ Object.defineProperty(window, 'ResizeObserver', {
  * an unhandled error. The editor is not what these specs assert on — they exercise the
  * page around it — so this is a no-op surface, not a fake editor.
  */
+const disposable = { dispose: () => undefined };
+
+// Every editor member the wrapper touches (grepped off its bundle: `this.editor.*`),
+// so a missing one cannot resurface as another unhandled error.
 const monacoEditorStub = {
-    onDidChangeModelContent: () => ({ dispose: () => undefined }),
-    onDidChangeModelDecorations: () => ({ dispose: () => undefined }),
+    onDidBlurEditorText: () => disposable,
+    onDidChangeModelContent: () => disposable,
+    onDidChangeModelDecorations: () => disposable,
     getValue: () => '',
     setValue: () => undefined,
     getModel: () => null,

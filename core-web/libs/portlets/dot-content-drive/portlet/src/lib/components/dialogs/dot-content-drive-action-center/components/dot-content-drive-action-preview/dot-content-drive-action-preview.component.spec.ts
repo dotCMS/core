@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
@@ -58,7 +59,12 @@ describe('DotContentDriveActionPreviewComponent', () => {
             mockProvider(DotLanguagesService, { get: vi.fn(() => of([])) }),
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
-            provideHttpClient()
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         detectChanges: false
     });

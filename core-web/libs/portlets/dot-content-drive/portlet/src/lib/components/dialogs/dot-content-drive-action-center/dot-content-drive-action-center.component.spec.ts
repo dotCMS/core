@@ -4,10 +4,12 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
+import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -28,6 +30,7 @@ import { DotBulkActionView, DotContentDriveItem, DotEnvironment } from '@dotcms/
 import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
+import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
 
 import { DotContentDriveActionExecution } from '../../../shared/models';
@@ -186,8 +189,32 @@ describe('DotContentDriveActionCenterComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionCenterComponent,
+        // The move-target picker is stubbed. Rendered for real it constructs
+        // edit-content's HostFolderFiledStore, whose init pipes DotBrowsingService —
+        // and this spec's mock of that service returns shapes the store cannot read, so
+        // the store threw inside an effect on every test. rxjs reported it
+        // asynchronously, which Jest discarded and Vitest counts as an unhandled error.
+        //
+        // Stubbing rather than completing the mock: the picker has its own spec, and
+        // teaching this one another library's store semantics was what made the
+        // difference between the seeded destination surviving and being overwritten —
+        // behaviour these tests never actually exercised, because the store had already
+        // crashed before it could emit.
+        overrideComponents: [
+            [
+                DotContentDriveActionCenterComponent,
+                {
+                    remove: { imports: [DotContentDriveActionMoveTargetComponent] },
+                    add: { imports: [MockComponent(DotContentDriveActionMoveTargetComponent)] }
+                }
+            ]
+        ],
         providers: [
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
                 items: mockItems,

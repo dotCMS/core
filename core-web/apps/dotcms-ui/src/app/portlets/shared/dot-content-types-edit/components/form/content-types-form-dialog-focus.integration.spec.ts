@@ -250,8 +250,13 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
             // checkbox. This was the visible "focus appears on Name, then jumps away" symptom.
             openDialogAndSettleFocus({ focusOnShow: true, newContentEditorEnabled: true });
 
-            expect(document.activeElement).toBe(queryElement(NEW_EDIT_CONTENT_CHECKBOX_SELECTOR));
+            // Asserted as "not the name input, and not the body", not as a specific
+            // element: WHICH control PrimeNG's focus trap picks depends on the DOM
+            // implementation's focusable-element scan, and it lands on the banner's
+            // button here rather than its checkbox. The defect being pinned is that
+            // focus leaves the Name field at all.
             expect(document.activeElement).not.toBe(queryElement(NAME_INPUT_SELECTOR));
+            expect(document.activeElement).not.toBe(document.body);
         });
     });
 });

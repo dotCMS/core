@@ -141,6 +141,10 @@ describe('DotExperimentsConfigurationStore', () => {
         dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
         dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        // The store pipes both of these, and a bare mockProvider returns undefined; the
+        // tests below assert only that the call happened.
+        dotExperimentsService.start.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.cancelSchedule.mockReturnValue(of(EXPERIMENT_MOCK));
     });
 
     it('should set initial data', () =>
