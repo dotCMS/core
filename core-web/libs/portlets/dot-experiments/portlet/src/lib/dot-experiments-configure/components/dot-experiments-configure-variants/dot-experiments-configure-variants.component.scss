@@ -42,3 +42,49 @@
         animation: none;
     }
 }
+
+/**
+ * A variant arriving or leaving is a change the user asked for, so the row states it rather than
+ * announcing it: the same short fade the weights warning uses, on the same duration family. The 2px
+ * settle reads as the row taking its place in the table instead of blinking into it.
+ *
+ * This only reaches the row that actually changed because the table tracks rows by variant id
+ * (`trackVariantById`); on the default identity `trackBy` every row is re-created on any edit and
+ * the whole table would flash.
+ */
+.variant-row-enter {
+    animation: variant-row-in 150ms ease-out;
+}
+
+@keyframes variant-row-in {
+    from {
+        opacity: 0;
+        transform: translateY(-2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.variant-row-leave {
+    animation: variant-row-out 120ms ease-in forwards;
+}
+
+@keyframes variant-row-out {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .variant-row-enter,
+    .variant-row-leave {
+        animation: none;
+    }
+}
