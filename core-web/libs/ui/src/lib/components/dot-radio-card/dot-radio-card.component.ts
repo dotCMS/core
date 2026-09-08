@@ -28,7 +28,10 @@ import { RadioButton, RadioButtonClickEvent } from 'primeng/radiobutton';
     selector: 'dot-radio-card',
     imports: [Card, RadioButton, FormField],
     templateUrl: './dot-radio-card.component.html',
-    styleUrl: './dot-radio-card.component.scss'
+    styleUrl: './dot-radio-card.component.scss',
+    // Utilities, not stylesheet rules: nothing here competes with PrimeNG's own `.p-card`, which is
+    // the only reason the rest of this component's box styling has to stay unlayered.
+    host: { class: 'block h-full' }
 })
 export class DotRadioCardComponent<T> {
     /** The field every card of the group is bound to. The radio inside is its control. */
