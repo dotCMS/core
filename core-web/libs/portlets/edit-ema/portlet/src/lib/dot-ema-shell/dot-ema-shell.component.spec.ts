@@ -1571,7 +1571,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(experimentsItem()?.href).toBe('/experiments');
                 expect(experimentsItem()?.queryParams).toEqual({
-                    pageAsset: MOCK_RESPONSE_HEADLESS.page.identifier
+                    pageId: MOCK_RESPONSE_HEADLESS.page.identifier
                 });
             });
 

@@ -116,7 +116,7 @@ Sits alongside the existing `filter`, `selectedStatuses` and `selectedGoals` and
 - **Derivation**: a `pageAssetFilteredExperiments` computed narrows on
   `experiment.pageId === selectedPageId`, inserted into the existing chain after `siteScoped` and
   **before** the status/goal counts, so the chip counts describe the narrowed set.
-- **URL**: serialised as `pageAsset` by `toQueryParams` and read back by `parseViewState`
+- **URL**: serialised as `pageId` by `toQueryParams` and read back by `parseViewState`
   (`util/dot-experiments-list-store.util.ts`). Written as `null` when unset, so a pristine list
   still carries no query string. **Never named `page`** — that key is pagination
   (`:158`).

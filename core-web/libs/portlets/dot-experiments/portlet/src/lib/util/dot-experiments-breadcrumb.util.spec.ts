@@ -17,7 +17,7 @@ describe('dot-experiments-breadcrumb.util', () => {
         // not to the site-wide one, or stepping back through the trail widens the filter silently.
         it('should keep the page filter when there is one', () => {
             expect(experimentsListCrumb('Experiments List', PAGE_ASSET_ID).url).toBe(
-                `/dotAdmin/#/experiments?pageAsset=${PAGE_ASSET_ID}`
+                `/dotAdmin/#/experiments?pageId=${PAGE_ASSET_ID}`
             );
         });
 

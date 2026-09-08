@@ -20,16 +20,17 @@ tests assert against.
 | Switch | Destination | Query params | Requirement |
 |---|---|---|---|
 | **off** | `/edit-page/experiments/{pageId}` | current UVE params, **merged** (`url`, `language_id`, `{persona}`, …) | FR-016 |
-| **on** | `/experiments` | `pageAsset={pageId}` only — **not merged** | FR-021, FR-021a, FR-022 |
+| **on** | `/experiments` | `pageId={pageId}` only — **not merged** | FR-021, FR-021a, FR-022 |
 
 **Off is byte-identical to today.** The item's `href` stays `experiments/{page.identifier}`, the
 `edit-page` prefix and `queryParamsHandling: 'merge'` stay, so the address an editor sees does not
 change (FR-016). Verified by a router-spy assertion, not by inspection.
 
-**On carries `pageAsset`, nothing else.** Merging UVE's params would put `url`, `language_id` and
+**On carries `pageId`, nothing else.** Merging UVE's params would put `url`, `language_id` and
 `{persona}` into the list's URL, where its `parseViewState` does not recognise them — stale keys
 that survive every later filter change. See [research.md R3](../research.md) for why the key is
-`pageAsset` and not `page` (which is pagination).
+`pageId` — the name the Configure screen already prefills from — and not `page` (which is
+pagination).
 
 **Visibility and permissions are unchanged on both branches** (FR-023): the item keeps
 `isDisabled: !page?.canEdit`. The switch changes the destination, never who can reach it.
@@ -58,7 +59,7 @@ else keeps the `edit-page` prefix. All four existing items (`content`, `layout`,
 ```
 
 Navigated with `Router.navigate(['/edit-page/content'], { queryParams })` and **no**
-`queryParamsHandling` — the portlet's URL carries `filter`/`orderby`/`pageAsset`, none of which
+`queryParamsHandling` — the portlet's URL carries `filter`/`orderby`/`pageId`, none of which
 UVE wants.
 
 `experimentReturn=portlet` is the origin marker §3 reads to decide where the return lands. The

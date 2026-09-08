@@ -191,22 +191,22 @@ describe('page filter view state', () => {
     };
 
     describe('parseViewState', () => {
-        it('should read the page filter from ?pageAsset=', () => {
-            expect(parseViewState(reader({ pageAsset: 'page-1' })).selectedPageId).toBe('page-1');
+        it('should read the page filter from ?pageId=', () => {
+            expect(parseViewState(reader({ pageId: 'page-1' })).selectedPageId).toBe('page-1');
         });
 
         it('should default to no page filter when the param is absent', () => {
             expect(parseViewState(reader({})).selectedPageId).toBeNull();
         });
 
-        it('should treat an empty ?pageAsset= as no filter, not as a page named ""', () => {
-            expect(parseViewState(reader({ pageAsset: '' })).selectedPageId).toBeNull();
+        it('should treat an empty ?pageId= as no filter, not as a page named ""', () => {
+            expect(parseViewState(reader({ pageId: '' })).selectedPageId).toBeNull();
         });
 
         // The collision this param name exists to avoid. `?page=2` is pagination; it must not be
-        // read as a page-asset filter, and `?pageAsset=` must not move the cursor.
-        it('should keep ?page= and ?pageAsset= independent', () => {
-            const view = parseViewState(reader({ page: '2', pageAsset: 'page-1' }));
+        // read as a page filter, and `?pageId=` must not move the cursor.
+        it('should keep ?page= and ?pageId= independent', () => {
+            const view = parseViewState(reader({ page: '2', pageId: 'page-1' }));
 
             expect(view.page).toBe(2);
             expect(view.selectedPageId).toBe('page-1');
@@ -216,14 +216,14 @@ describe('page filter view state', () => {
     describe('toQueryParams', () => {
         it('should write the page filter as pageAsset', () => {
             expect(toQueryParams({ ...DEFAULTS, selectedPageId: 'page-1' })).toMatchObject({
-                pageAsset: 'page-1'
+                pageId: 'page-1'
             });
         });
 
         // The util's existing rule: a value equal to its default is written as `null`, which
         // removes the param — so a pristine list carries no query string at all.
         it('should omit the param when there is no page filter', () => {
-            expect(toQueryParams(DEFAULTS)['pageAsset']).toBeNull();
+            expect(toQueryParams(DEFAULTS)['pageId']).toBeNull();
         });
 
         it('should not write the filter into the pagination key', () => {
@@ -236,8 +236,8 @@ describe('page filter view state', () => {
     it('should round-trip through both directions unchanged', () => {
         const written = toQueryParams({ ...DEFAULTS, selectedPageId: 'page-1' });
 
-        expect(
-            parseViewState(reader({ pageAsset: String(written['pageAsset']) })).selectedPageId
-        ).toBe('page-1');
+        expect(parseViewState(reader({ pageId: String(written['pageId']) })).selectedPageId).toBe(
+            'page-1'
+        );
     });
 });

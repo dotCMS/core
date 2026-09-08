@@ -31,7 +31,7 @@ const LIST_CRUMB_ID = 'experiments-list';
  * @param pageAssetId identifier the list is filtered by, or `null` when it is site-wide
  */
 export function experimentsListCrumb(label: string, pageAssetId: string | null): MenuItem {
-    const filter = pageAssetId ? `?pageAsset=${pageAssetId}` : '';
+    const filter = pageAssetId ? `?pageId=${pageAssetId}` : '';
 
     return {
         id: LIST_CRUMB_ID,

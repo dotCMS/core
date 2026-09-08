@@ -760,7 +760,7 @@ describe('DotExperimentsListComponent', () => {
                     expect.objectContaining({
                         id: 'experiments-list',
                         label: LIST_TITLE_COPY,
-                        url: `/dotAdmin/#/experiments?pageAsset=${PAGE_ID}`
+                        url: `/dotAdmin/#/experiments?pageId=${PAGE_ID}`
                     })
                 );
             });

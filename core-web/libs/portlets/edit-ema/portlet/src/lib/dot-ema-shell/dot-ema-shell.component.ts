@@ -227,7 +227,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 ...(experimentsPortletEnabled
                     ? {
                           href: '/experiments',
-                          queryParams: { pageAsset: page?.identifier }
+                          queryParams: { pageId: page?.identifier }
                       }
                     : { href: `experiments/${page?.identifier}` }),
                 id: 'experiments',

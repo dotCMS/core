@@ -427,7 +427,7 @@ export class DotExperimentsListComponent {
      *
      * Nothing else does. `processUrl` in the breadcrumb feature only builds a trail for a URL that
      * matches a main-menu entry, and this portlet matches neither test: it is opt-in, so it is
-     * absent from `/api/v1/menu`, and the arrival from UVE carries `?pageAsset=` without an `mId`,
+     * absent from `/api/v1/menu`, and the arrival from UVE carries `?pageId=` without an `mId`,
      * which that matcher rejects outright. With no crumb of its own the trail kept whatever the
      * previous screen left — so, arriving from the editor, the list rendered the *page's* name as
      * its title.
