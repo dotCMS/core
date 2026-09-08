@@ -101,6 +101,13 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             progressTracker.updateProgress((seq + 1) / (float) stagedFiles.size());
         }
 
+        // FR-033 — release the staged content, whatever terminal state this run reached, and
+        // including the files it never got to. Cheap to overlook because it is the happy path: the
+        // reclaim was written for the two failure routes and both were tested, while a run that
+        // simply succeeds reaches a terminal state too. Nothing purges staged content on a
+        // schedule, so a batch that skipped this leaked its own bytes permanently.
+        reclaimStagedContent(job, stagedFiles, user);
+
         // FR-008a — resolve index visibility ONCE for the batch, and before the completion signal.
         // Per-file WAIT_FOR would not merely block on a refresh; it also flushes the system-wide
         // query cache on every file, charging every other user for this batch. But DEFER alone only
@@ -207,8 +214,11 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             record(job, seq, fileName, BatchItemStatus.FAILED,
                     BatchFailureReason.STAGED_CONTENT_UNAVAILABLE, e.getMessage(), null);
         } catch (final Exception e) {
+            // The exception class travels with the diagnostic message. It is never shown to the
+            // author, and it is the first thing anyone needs when an UNCLASSIFIED turns up — which
+            // by design means something nobody anticipated.
             record(job, seq, fileName, BatchItemStatus.FAILED, reasons.classify(e),
-                    e.getMessage(), null);
+                    e.getClass().getName() + ": " + e.getMessage(), null);
         }
     }
 
@@ -317,6 +327,39 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     }
 
     /**
+     * Releases every file's staged content once the run is done with it.
+     * <p>
+     * <b>Every file, not only the ones that succeeded.</b> A cancelled run leaves items it never
+     * reached, and those are the likeliest to be forgotten precisely because no per-item outcome
+     * was written for them — there is no row pointing at what to clean up. Driven from the job's
+     * own parameters instead, which list every file the batch was given.
+     * <p>
+     * Best-effort per file: one failure must not stop the rest, and none of it may fail a run whose
+     * work is already done and recorded. A file that cannot be released is logged loudly, because
+     * nothing else will ever collect it.
+     */
+    private void reclaimStagedContent(final Job job, final List<Map<String, Object>> stagedFiles,
+                                      final User user) {
+        for (final Map<String, Object> file : stagedFiles) {
+            final String tempFileId = String.valueOf(file.get("tempFileId"));
+            try {
+                resolveStagedContent(job, tempFileId, user).ifPresent(binary -> {
+                    if (binary.exists() && !binary.delete()) {
+                        Logger.warn(this, String.format(
+                                "Bulk upload job [%s]: could not delete staged content '%s'; "
+                                        + "nothing purges it on a schedule, so it will remain",
+                                job.id(), tempFileId));
+                    }
+                });
+            } catch (final Exception e) {
+                Logger.warn(this, String.format(
+                        "Bulk upload job [%s]: could not reclaim staged content '%s': %s",
+                        job.id(), tempFileId, e.getMessage()), e);
+            }
+        }
+    }
+
+    /**
      * Makes every asset this run created visible to search, in one pass.
      */
     private void resolveIndexVisibility(final Job job, final List<String> createdInodes) {
@@ -403,6 +446,12 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             metadata.put("failedCount", failed);
             metadata.put("skippedCount", skipped);
             metadata.put("results", results);
+
+            // Contract §3. Lets the client report "already uploaded" instead of "everything
+            // failed" — the two look identical in the counts, because a duplicate collides on
+            // every file, and only this tells them apart (FR-040a).
+            metadata.put("duplicateSubmission",
+                    job.parameters().containsKey("duplicateOfJobId"));
         } catch (final DotDataException e) {
             Logger.error(this, String.format(
                     "Bulk upload job [%s]: could not build the outcome: %s",

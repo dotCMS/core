@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.weld.junit5.EnableWeld;
@@ -437,5 +438,175 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
         assertEquals(BatchFailureReason.OVER_SIZE_LIMIT,
                 reasonFor(outcome, "over-the-fallback.bin"));
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#process} — reclaim at the terminal state
+     * <p>
+     * Given scenario: A batch completes successfully.
+     * <p>
+     * Expected result: The staged content is gone (FR-033). <b>This is the happy path, which is
+     * exactly why it went unchecked:</b> the reclaim was written for the two failure routes — a
+     * refusal and a read that dies — and both were tested carefully. A run that succeeds reaches a
+     * terminal state too, and nothing purges staged content on a schedule, so every completed batch
+     * was leaking its own bytes permanently: invisible to the author, uncollected by any run, and
+     * growing with every upload.
+     */
+    @Test
+    public void test_run_reclaimsStagedContentWhenItReachesATerminalState() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 3);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+        final List<String> tempFileIds = new ArrayList<>();
+        staged.forEach(file -> tempFileIds.add(String.valueOf(file.get("tempFileId"))));
+
+        new BulkUploadProcessor().process(job);
+
+        assertEquals(3, APILocator.getFolderAPI().getWorkingContent(folder, admin(), false).size(),
+                "the run succeeded, so the assets exist");
+
+        for (final String tempFileId : tempFileIds) {
+            final Optional<DotTempFile> leftBehind = APILocator.getTempFileAPI()
+                    .getTempFile(List.of(admin().getUserId()), tempFileId);
+
+            assertTrue(leftBehind.isEmpty() || !leftBehind.get().file.exists(), String.format(
+                    "staged content '%s' survived a completed run; nothing purges it on a "
+                            + "schedule, so this leaks permanently and grows with every batch",
+                    tempFileId));
+        }
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#process} — reclaim after cancellation
+     * <p>
+     * Given scenario: A run is cancelled, so some of its files were never reached.
+     * <p>
+     * Expected result: Their content is reclaimed too (FR-033, explicitly "including for files the
+     * run never reached"). Those are the files most likely to be forgotten, because no per-item
+     * outcome was ever written for them — there is no row pointing at what to clean up.
+     */
+    @Test
+    public void test_run_reclaimsContentOfFilesItNeverReached() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 5);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+        final String lastTempFileId = String.valueOf(staged.get(4).get("tempFileId"));
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.cancel(job);
+        processor.process(job);
+
+        final Optional<DotTempFile> leftBehind = APILocator.getTempFileAPI()
+                .getTempFile(List.of(admin().getUserId()), lastTempFileId);
+
+        assertTrue(leftBehind.isEmpty() || !leftBehind.get().file.exists(),
+                "a file the run never reached still had content staged for it, and a cancelled "
+                        + "run is a terminal state like any other");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#getResultMetadata} — the duplicate flag
+     * <p>
+     * Given scenario: A run the submission recognised as a repeat of one that already succeeded.
+     * <p>
+     * Expected result: The outcome carries {@code duplicateSubmission: true} (contract §3,
+     * FR-040a). <b>The counts alone cannot express this</b>: a duplicate collides on every file, so
+     * it is numerically identical to a batch whose files genuinely all collided. Only the flag
+     * separates "you already uploaded these" from "none of these could be created", and those need
+     * opposite reactions from the author.
+     */
+    @Test
+    public void test_outcome_flagsARunThatRepeatsOneAlreadyDone() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job built = jobFor(folder, 1);
+        final Map<String, Object> parameters = new HashMap<>(built.parameters());
+        parameters.put("duplicateOfJobId", "an-earlier-run");
+        final Job job = Job.builder().from(built).parameters(parameters).build();
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        assertEquals(Boolean.TRUE, processor.getResultMetadata(job).get("duplicateSubmission"),
+                "a repeat must be reportable as one, or the client shows 'everything failed' for "
+                        + "files the author already has");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#getResultMetadata} — not over-flagging
+     * <p>
+     * Given scenario: An ordinary first-time run.
+     * <p>
+     * Expected result: {@code duplicateSubmission: false}. A batch wrongly reported as a repeat
+     * would send the author looking for files that were never created.
+     */
+    @Test
+    public void test_outcome_doesNotFlagAnOrdinaryRun() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 1);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        assertEquals(Boolean.FALSE, processor.getResultMetadata(job).get("duplicateSubmission"));
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#process} — progress while the run is in flight
+     * <p>
+     * Given scenario: A batch large enough that progress must move more than once.
+     * <p>
+     * Expected result: The tracker reports a rising fraction and finishes at 1.0 (FR-024). Progress
+     * is the difference between a batch an author can leave and one they have to guess about —
+     * without it the interface can only say "working", which for fifty files is indistinguishable
+     * from being stuck.
+     */
+    @Test
+    public void test_run_reportsProgressAsFilesComplete() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 5);
+
+        final DefaultProgressTracker tracker =
+                (DefaultProgressTracker) job.progressTracker().orElseThrow();
+
+        new BulkUploadProcessor().process(job);
+
+        assertEquals(1.0f, tracker.progress(), 0.001f,
+                "a finished run reports itself finished; a tracker stuck below 1.0 leaves the "
+                        + "interface showing an in-flight batch forever");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#cancel} and the outcome it leaves
+     * <p>
+     * Given scenario: A run cancelled before it reached every file.
+     * <p>
+     * Expected result: Files already created stay (FR-026), and the outcome records the untouched
+     * ones as <b>SKIPPED rather than FAILED</b> (FR-028). That distinction is the whole point:
+     * skipped files were never tried, and reporting them as failures tells the author their files
+     * were rejected when they simply stopped the run themselves. Cancellation also takes effect
+     * between files, never mid-file, so nothing is left half-created (FR-027).
+     */
+    @Test
+    public void test_cancel_keepsWhatWasCreatedAndMarksTheRestSkippedNotFailed() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 4);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.cancel(job);
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(0, ((Number) outcome.get("failedCount")).intValue(),
+                "a cancelled run's untouched files are not failures — they were never attempted.\n"
+                        + describe(outcome));
+        assertTrue(((Number) outcome.get("skippedCount")).intValue() > 0,
+                "and they are recorded as skipped, which is a distinct outcome");
     }
 }

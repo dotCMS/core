@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.asset.bulkupload;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -336,6 +337,84 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
         assertEquals(firstPrint, againPrint,
                 "the same batch must fingerprint the same, or a retry looks like a new batch and "
                         + "collides against the files the first attempt created");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadHelper#submit} — recognising a resubmission
+     * <p>
+     * Given scenario: The identical batch is submitted twice, the second time after the first has
+     * been recorded as successful.
+     * <p>
+     * Expected result: The second submission is flagged as a duplicate (FR-040a). Without the flag
+     * the second run collides against the files the first one created and reports "every file
+     * failed" — and an author who trusts that report deletes files that were already there. The
+     * flag is what makes a duplicate distinguishable from a batch whose files <b>genuinely</b> all
+     * collided, which is a real and different outcome.
+     * <p>
+     * <b>Expected to FAIL until T085.</b>
+     */
+    @Test
+    public void test_submit_flagsAResubmissionOfABatchThatAlreadySucceeded() throws Exception {
+        final Folder folder = targetFolder();
+
+        final BulkUploadSubmitResponse first = helper().submit(
+                form(folder.getIdentifier(), null), parts(2, 10), new FakeBatchStaging(),
+                admin, request());
+
+        // The first run finished and did its work, which is the precondition for the second being
+        // a duplicate rather than a legitimate retry of something that never ran.
+        markSucceeded(first.jobId());
+
+        final BulkUploadSubmitResponse again = helper().submit(
+                form(folder.getIdentifier(), null), parts(2, 10), new FakeBatchStaging(),
+                admin, request());
+
+        final Object flagged = jobQueueManagerAPI.getJob(again.jobId())
+                .parameters().get("duplicateOfJobId");
+
+        assertNotNull(flagged,
+                "a resubmission of a batch that already succeeded must be recognisable, or the "
+                        + "client's retry promise in C-002a cannot hold");
+        assertEquals(first.jobId(), flagged,
+                "and it points at the run that already did the work, so the author can be sent to "
+                        + "its outcome instead of being told everything failed");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadHelper#submit} — not over-flagging
+     * <p>
+     * Given scenario: The same files submitted into a <b>different</b> folder.
+     * <p>
+     * Expected result: Not a duplicate. The same files landing somewhere else is a different
+     * intention, and treating it as a repeat would silently refuse work the author meant to do —
+     * which is worse than the problem the flag solves.
+     */
+    @Test
+    public void test_submit_doesNotFlagTheSameFilesIntoADifferentFolder() throws Exception {
+        final Folder here = targetFolder();
+        final Folder there = targetFolder();
+
+        final BulkUploadSubmitResponse first = helper().submit(
+                form(here.getIdentifier(), null), parts(2, 10), new FakeBatchStaging(),
+                admin, request());
+        markSucceeded(first.jobId());
+
+        final BulkUploadSubmitResponse elsewhere = helper().submit(
+                form(there.getIdentifier(), null), parts(2, 10), new FakeBatchStaging(),
+                admin, request());
+
+        assertNull(jobQueueManagerAPI.getJob(elsewhere.jobId())
+                        .parameters().get("duplicateOfJobId"),
+                "the same files into another folder is a different batch, not a repeat");
+    }
+
+    /** Marks a job succeeded, standing in for the run having completed. */
+    private void markSucceeded(final String jobId) throws Exception {
+        new com.dotmarketing.common.db.DotConnect()
+                .setSQL("UPDATE job SET state = ? WHERE id = ?")
+                .addParam("SUCCESS")
+                .addParam(jobId)
+                .loadResult();
     }
 
     /**

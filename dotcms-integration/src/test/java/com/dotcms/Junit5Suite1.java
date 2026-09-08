@@ -10,6 +10,7 @@ import com.dotcms.jobs.business.processor.impl.BulkUploadProcessorIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadResumeIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadNotificationIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadIndexingIT;
+import com.dotcms.jobs.business.processor.impl.BulkUploadConcurrencyIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadReclaimIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadResourceIT;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
@@ -45,6 +46,7 @@ import org.junit.platform.suite.api.Suite;
         BulkUploadResumeIT.class,
         BulkUploadNotificationIT.class,
         BulkUploadIndexingIT.class,
+        BulkUploadConcurrencyIT.class,
         BulkUploadReclaimIT.class,
         JobProcessorDiscoveryTest.class
 })
