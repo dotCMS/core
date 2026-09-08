@@ -492,13 +492,6 @@ export class DotExperimentsListComponent {
         this.#dispatch.pageAssetFilterChanged(null);
     }
 
-    /** Creates for the filtered page, carrying `?pageId=` so Configure arrives prefilled. */
-    onNewExperimentForPage(): void {
-        const pageId = this.store.selectedPageId();
-
-        this.#router.navigate(NEW_EXPERIMENT_COMMANDS, { queryParams: { pageId } });
-    }
-
     onClearFilters(): void {
         this.$searchTerm.set('');
         this.#dispatch.statusesChanged([]);
@@ -568,9 +561,34 @@ export class DotExperimentsListComponent {
         this.$rowMenuItems.set(this.#buildRowMenuItems(experiment));
     }
 
-    /** Opens the Configure screen with nothing created yet: the draft is POSTed from there. */
+    /**
+     * Opens the Configure screen with nothing created yet: the draft is POSTed from there.
+     *
+     * While the list is narrowed to a page, the new experiment starts from that page: the filter
+     * travels as `?pageId=` (plus `&language_id=` when the address carried one) and Configure
+     * prefills its Page card from it (FR-024). Arriving from the editor and being handed an empty
+     * picker would ask the user to find, by hand, the page they were standing on a click ago.
+     *
+     * Both entry points — this button and the filtered empty state's offer — come through here, so
+     * the two cannot carry different addresses.
+     */
     onNewExperiment(): void {
-        this.#router.navigate(NEW_EXPERIMENT_COMMANDS);
+        const pageId = this.store.selectedPageId();
+
+        if (!pageId) {
+            this.#router.navigate(NEW_EXPERIMENT_COMMANDS);
+
+            return;
+        }
+
+        const languageId = this.store.languageId();
+
+        this.#router.navigate(NEW_EXPERIMENT_COMMANDS, {
+            // Omitted rather than defaulted when unknown: with no language the prefill search is
+            // not narrowed and `pickPageVersion` settles it, which beats asserting a language the
+            // caller never named.
+            queryParams: languageId ? { pageId, language_id: languageId } : { pageId }
+        });
     }
 
     /** Opens the Configure screen of an existing experiment. */

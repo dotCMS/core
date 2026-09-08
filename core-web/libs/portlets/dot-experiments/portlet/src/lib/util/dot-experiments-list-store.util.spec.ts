@@ -161,9 +161,9 @@ describe('comparatorFor', () => {
  * The switch-on entry point lands on the site-wide list narrowed to the page the editor came from,
  * and that narrowing has to survive a reload and a shared link like every other filter.
  *
- * The param is `pageAsset`, deliberately **not** `page`: `page` is already the pagination cursor
- * in this very function, so reusing it would silently collide with `?page=2`. `pageAsset` also
- * matches the content type the list's own lookup queries (`+contentType:htmlpageasset`).
+ * The param is `pageId`, deliberately **not** `page`: `page` is already the pagination cursor in
+ * this very function, so reusing it would silently collide with `?page=2`. `pageId` is also the
+ * name Configure's own prefill answers on, so one address shape serves both screens.
  */
 describe('page filter view state', () => {
     const reader = (params: Record<string, string | string[]>): QueryParamReader => ({
@@ -187,7 +187,8 @@ describe('page filter view state', () => {
         perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
         orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
         direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
-        selectedPageId: null
+        selectedPageId: null,
+        languageId: null
     };
 
     describe('parseViewState', () => {

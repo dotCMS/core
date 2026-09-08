@@ -576,6 +576,22 @@ describe('DotExperimentsListComponent', () => {
 
             expect(navigate).toHaveBeenCalledWith(['/experiments', 'new']);
         });
+
+        // #37005, FR-024. Arriving from UVE the list is already narrowed to the page the editor
+        // came from, and the toolbar's New is the button they reach for. Sending it to an empty
+        // picker asks them to find, by hand, the page they were standing on a click ago.
+        it('should carry the filtered page and its language into the creation screen', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            clickButton('experiments-new');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                queryParams: { pageId: 'page-1', language_id: 2 }
+            });
+        });
     });
 
     describe('confirm then dispatch', () => {
@@ -806,6 +822,20 @@ describe('DotExperimentsListComponent', () => {
 
                 expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
                     queryParams: { pageId: PAGE_ID }
+                });
+            });
+
+            // The language is omitted above because the address the list was opened with carried
+            // none; when it did, it has to travel too, or Configure prefills whichever version of
+            // the page sorts first instead of the one the editor was looking at.
+            it('should carry the editor language when the address brought one', () => {
+                storeMock.languageId.mockReturnValue(2);
+                spectator.detectChanges();
+
+                spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                    queryParams: { pageId: PAGE_ID, language_id: 2 }
                 });
             });
         });
