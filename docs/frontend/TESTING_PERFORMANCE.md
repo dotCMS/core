@@ -110,12 +110,32 @@ Everything else, on `libs/data-access` (85 files / 853 tests):
 | `pool: 'threads'` | `environment` 12.9s → **33.1s** | **Regression.** The DOM is more expensive in worker threads. Stay on `forks` |
 | `environment: 'happy-dom'` (from `jsdom`) | `environment` 6.4s → 3.1s **but** `tests` 2.7s → **22.7s** and **4 files fail** | **Regression here.** Only per project, only where the baseline shows `environment` dominant |
 | `NODE_COMPILE_CACHE=…` | inside the noise | **No measurable gain** on Node 24, and the docs note it is disabled by the `v8` coverage provider, which this suite uses |
+| `deps.optimizer.web.enabled` | `data-access` 10.13s → 10.38s; `dotcms-ui` 34.16s → 37.59s with `transform` **31.54s → 31.58s** | **Dead end, structurally.** See below — do not retry |
 | Drop the Angular plugin where nothing imports `@angular/*` | 5 projects, `deps.inline` 23 → 1, ~25% off each project's wall, identical test counts | **Works.** Now detected rather than assumed |
 
 Three of those contradict the generic advice in Vitest's own
 [improving-performance](https://vitest.dev/guide/improving-performance.html) guide, which leads with
 "switch to `threads`", offers `happy-dom` as a cheaper `jsdom`, and recommends `isolate: false`.
 All three are neutral-to-worse in this workspace. Measure before adopting.
+
+### Why `deps.optimizer` cannot help this workspace
+
+It looks like the obvious win — `transform` and `import` are the two largest phases in every
+Angular project here (`dotcms-ui`: 31.5s and 110.7s) and the optimizer's whole job is to pre-bundle
+dependencies with esbuild once instead of letting Vite transform them per import.
+
+It does nothing, and the reason is structural rather than a tuning problem: **the optimizer only
+pre-bundles dependencies that are EXTERNALISED, and `server.deps.inline` deliberately inlines
+almost everything that matters.** That list is a correctness fix — every package shipping
+Angular-compiled code must resolve to one `@angular/core` instance or components die with NG0203 /
+`ngModule of null` — so it is not negotiable, and it leaves the optimizer with nothing to bundle.
+
+The measurement says exactly that: enabling it on `dotcms-ui` moved `transform` from 31.54s to
+31.58s. Not "a small gain" — no effect at all, plus ~10% of wall in overhead. `data-access` behaved
+the same way. Both kept all their tests passing, so this is useless rather than dangerous.
+
+Reopening this is only worth it if `deps.inline` ever shrinks, which would mean the
+single-Angular-instance problem was solved some other way.
 
 ### Beware of your own machine
 
