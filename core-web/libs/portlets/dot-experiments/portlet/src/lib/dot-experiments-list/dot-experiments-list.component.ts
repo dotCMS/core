@@ -55,7 +55,6 @@ import {
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
 import {
-    CONFIGURATION_SEGMENT,
     EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
     LIST_TABLE_STYLE,
@@ -78,23 +77,18 @@ import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 import {
+    configureCommandsOf,
     ExperimentScheduleLabels,
     formatSchedule,
     goalTypeOf,
     isAllowed,
+    resultsCommandsOf,
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
 
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
-
-/** Configure URL of an experiment that already exists. */
-const configureCommandsOf = (experimentId: string): string[] => [
-    EXPERIMENTS_URL,
-    experimentId,
-    CONFIGURATION_SEGMENT
-];
 
 @Component({
     selector: 'dot-experiments-list',
@@ -122,7 +116,9 @@ const configureCommandsOf = (experimentId: string): string[] => [
     // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
     // screens do the same in `old/dot-experiments-shell`.
     providers: [DotExperimentsListStore, ConfirmationService, DotExperimentsService],
-    host: { class: 'flex flex-col h-full min-h-0' }
+    host: {
+        class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
+    }
 })
 export class DotExperimentsListComponent {
     readonly store = inject(DotExperimentsListStore);
@@ -417,6 +413,22 @@ export class DotExperimentsListComponent {
         }
     }
 
+    /**
+     * Opens the screen the row's status makes relevant.
+     *
+     * An experiment that is collecting or has collected data is read, not edited, so RUNNING and
+     * ENDED land on Results; every other status has nothing to report yet and lands on Configure.
+     * The gate is `AllowedActionsByExperimentStatus.results`, shared with the rest of the screen,
+     * rather than a second status list that could drift from it.
+     */
+    onRowClick(experiment: DotExperiment): void {
+        this.#router.navigate(
+            isAllowed('results', experiment.status)
+                ? resultsCommandsOf(experiment.id)
+                : configureCommandsOf(experiment.id)
+        );
+    }
+
     /** Rebuilds the kebab menu for the given row before the popup opens. */
     onRowMenuToggle(experiment: DotExperiment): void {
         this.$rowMenuItems.set(this.#buildRowMenuItems(experiment));
@@ -430,6 +442,17 @@ export class DotExperimentsListComponent {
     /** Opens the Configure screen of an existing experiment. */
     onConfigure(experiment: DotExperiment): void {
         this.#router.navigate(configureCommandsOf(experiment.id));
+    }
+
+    /**
+     * Opens the Results screen of an experiment.
+     *
+     * Ungated on purpose, unlike every other menu entry: `AllowedActionsByExperimentStatus.results`
+     * clears RUNNING and ENDED only, but the screen renders a waiting state of its own for an
+     * experiment with nothing to count yet, so it is offered whatever the status (AC6).
+     */
+    onViewResults(experiment: DotExperiment): void {
+        this.#router.navigate(resultsCommandsOf(experiment.id));
     }
 
     confirmArchive(experiment: DotExperiment): void {
@@ -446,8 +469,15 @@ export class DotExperimentsListComponent {
 
         return [
             {
-                // The primary action of the row: it leads the menu, and is the only entry every
-                // status allows.
+                // Temporary home: the design leads the row with View Results as its own control,
+                // but it sits in the menu until that lands. Leads the menu because, unlike every
+                // other entry, the Results screen is reachable on any status — it renders its own
+                // waiting state for an experiment with nothing counted yet (AC6).
+                id: 'experiments-view-results',
+                label: this.#dotMessageService.get('experiments.list.actions.view-results'),
+                command: () => this.onViewResults(experiment)
+            },
+            {
                 id: 'experiments-configure',
                 label: this.#dotMessageService.get('experiments.list.action.configure'),
                 visible: isAllowed('configuration', status),
@@ -503,19 +533,6 @@ export class DotExperimentsListComponent {
                     })
             },
             {
-                id: 'experiments-delete',
-                label: this.#dotMessageService.get('experiments.action.delete'),
-                visible: isAllowed('delete', status),
-                command: () =>
-                    this.#confirm({
-                        headerKey: 'experiments.action.delete',
-                        messageKey: 'experiments.action.delete.confirm-question',
-                        messageArg: experiment.name,
-                        acceptLabelKey: 'experiments.action.delete',
-                        accept: () => this.#dispatch.deleteExperiment(experiment)
-                    })
-            },
-            {
                 id: 'experiments-push-publish',
                 label: this.#dotMessageService.get('contenttypes.content.push_publish'),
                 visible: isAllowed('pushPublish', status),
@@ -530,6 +547,23 @@ export class DotExperimentsListComponent {
                 label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: isAllowed('addToBundle', status),
                 command: () => this.$addToBundleAssetId.set(experiment.id)
+            },
+            // Delete closes the menu, kept apart by a rule so it is never hit while reaching for
+            // the entry above it. The rule is bound to the same gate as delete itself: without it
+            // an experiment that cannot be deleted would end its menu on a dangling line.
+            { separator: true, visible: isAllowed('delete', status) },
+            {
+                id: 'experiments-delete',
+                label: this.#dotMessageService.get('experiments.action.delete'),
+                visible: isAllowed('delete', status),
+                command: () =>
+                    this.#confirm({
+                        headerKey: 'experiments.action.delete',
+                        messageKey: 'experiments.action.delete.confirm-question',
+                        messageArg: experiment.name,
+                        acceptLabelKey: 'experiments.action.delete',
+                        accept: () => this.#dispatch.deleteExperiment(experiment)
+                    })
             }
         ];
     }

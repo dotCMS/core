@@ -82,6 +82,11 @@ a:visited {
     @apply text-sm font-normal;
 }
 
+/*
+ * Scoped with the rest of the convention on purpose: these describe a *field's* hint and a *field's*
+ * error. A message that is not about a field — a dialog reporting that an action failed — is a
+ * `p-message`, not a field error wearing a form's clothes.
+ */
 .form .p-field-hint {
     @apply text-sm text-gray-500;
 }

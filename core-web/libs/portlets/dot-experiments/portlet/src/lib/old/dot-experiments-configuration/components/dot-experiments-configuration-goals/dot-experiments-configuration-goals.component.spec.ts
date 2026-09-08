@@ -34,7 +34,7 @@ import {
 
 import { DotExperimentsConfigurationGoalsComponent } from './dot-experiments-configuration-goals.component';
 
-import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
+import { DotExperimentsDetailsTableComponent } from '../../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
 

@@ -36,16 +36,18 @@ import {
 
 import {
     getBayesianDatasets,
-    getBayesianVariantResult,
-    getConversionRate,
-    getConversionRateRage,
     getParsedChartData,
     getPreviousDay,
-    getProbabilityToBeBest,
     getPropertyColors,
     getSuggestedWinner,
     isPromotedVariant,
     orderVariants
+} from '../../../shared/dot-experiment-results.utils';
+import {
+    getBayesianVariantResult,
+    getConversionRate,
+    getConversionRateRage,
+    getProbabilityToBeBest
 } from '../../shared/dot-experiment.utils';
 
 export interface DotExperimentsReportsState {
