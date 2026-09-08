@@ -509,4 +509,50 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 "a file the run never reached still had content staged for it, and a cancelled "
                         + "run is a terminal state like any other");
     }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#getResultMetadata} — the duplicate flag
+     * <p>
+     * Given scenario: A run the submission recognised as a repeat of one that already succeeded.
+     * <p>
+     * Expected result: The outcome carries {@code duplicateSubmission: true} (contract §3,
+     * FR-040a). <b>The counts alone cannot express this</b>: a duplicate collides on every file, so
+     * it is numerically identical to a batch whose files genuinely all collided. Only the flag
+     * separates "you already uploaded these" from "none of these could be created", and those need
+     * opposite reactions from the author.
+     */
+    @Test
+    public void test_outcome_flagsARunThatRepeatsOneAlreadyDone() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job built = jobFor(folder, 1);
+        final Map<String, Object> parameters = new HashMap<>(built.parameters());
+        parameters.put("duplicateOfJobId", "an-earlier-run");
+        final Job job = Job.builder().from(built).parameters(parameters).build();
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        assertEquals(Boolean.TRUE, processor.getResultMetadata(job).get("duplicateSubmission"),
+                "a repeat must be reportable as one, or the client shows 'everything failed' for "
+                        + "files the author already has");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#getResultMetadata} — not over-flagging
+     * <p>
+     * Given scenario: An ordinary first-time run.
+     * <p>
+     * Expected result: {@code duplicateSubmission: false}. A batch wrongly reported as a repeat
+     * would send the author looking for files that were never created.
+     */
+    @Test
+    public void test_outcome_doesNotFlagAnOrdinaryRun() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 1);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        assertEquals(Boolean.FALSE, processor.getResultMetadata(job).get("duplicateSubmission"));
+    }
 }

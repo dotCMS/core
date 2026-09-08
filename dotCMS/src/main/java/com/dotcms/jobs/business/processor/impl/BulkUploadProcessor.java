@@ -443,6 +443,12 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             metadata.put("failedCount", failed);
             metadata.put("skippedCount", skipped);
             metadata.put("results", results);
+
+            // Contract §3. Lets the client report "already uploaded" instead of "everything
+            // failed" — the two look identical in the counts, because a duplicate collides on
+            // every file, and only this tells them apart (FR-040a).
+            metadata.put("duplicateSubmission",
+                    job.parameters().containsKey("duplicateOfJobId"));
         } catch (final DotDataException e) {
             Logger.error(this, String.format(
                     "Bulk upload job [%s]: could not build the outcome: %s",

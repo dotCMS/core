@@ -4,6 +4,7 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.inject.Inject;
@@ -224,8 +226,54 @@ public class BulkUploadHelper {
         final String fingerprint = submissionFingerprint(form, staged, targetId, user);
         if (fingerprint != null) {
             parameters.put("submissionFingerprint", fingerprint);
+
+            // If this exact batch already ran and succeeded, say so and point at it. The client can
+            // then send the author to that run's outcome rather than letting this one collide
+            // against the files the first attempt created and report "every file failed" — which
+            // an author who trusts it answers by deleting files that were already there.
+            findSucceededSubmission(fingerprint)
+                    .ifPresent(jobId -> parameters.put("duplicateOfJobId", jobId));
         }
         return parameters;
+    }
+
+    /**
+     * The id of an earlier run of this exact batch that already succeeded, if there is one.
+     * <p>
+     * <b>The collision branch of FR-040, chosen over returning the original handle.</b> Handing back
+     * the first job's id would mean a submission that answers with someone else's run — the client
+     * could not tell an accepted batch from a deduplicated one without inspecting the id it got,
+     * and the content it just uploaded would be left unreferenced. Flagging instead keeps the two
+     * facts separate: this submission was accepted, and it repeats one that already ran. FR-040a is
+     * satisfied because the flag distinguishes a duplicate from a batch whose files genuinely all
+     * collided, which is a real and different outcome the author must still be told about.
+     * <p>
+     * Matched on the fingerprint alone, so the same files into a different folder are correctly
+     * <b>not</b> a duplicate — the target is part of what is hashed. Only SUCCESS counts: a batch
+     * that failed or was cancelled is something the author may legitimately want to run again.
+     */
+    private Optional<String> findSucceededSubmission(final String fingerprint) {
+        try {
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("SELECT id FROM job WHERE queue_name = ? AND state = ? "
+                            + "AND parameters->>'submissionFingerprint' = ? "
+                            + "ORDER BY created_at DESC")
+                    .addParam(QUEUE_NAME)
+                    .addParam("SUCCESS")
+                    .addParam(fingerprint)
+                    .setMaxRows(1)
+                    .loadObjectResults();
+
+            return rows.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(String.valueOf(rows.get(0).get("id")));
+        } catch (final Exception e) {
+            // Never fail a submission over this. The batch is valid either way; all that is lost is
+            // the ability to recognise it as a repeat, which degrades to today's behaviour.
+            Logger.warn(this, "Could not check whether this batch was already submitted: "
+                    + e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 
     /**
