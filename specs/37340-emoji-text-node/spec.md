@@ -1,8 +1,8 @@
-# Issue Resolution Specification: Block Editor emoji conversion splits marked text and drops characters
+# Issue Resolution Specification: Block Editor converts typed characters into `emoji` nodes, splitting marked text
 
 **Feature Branch**: `37340-emoji-text-node`
 
-**Created**: 2026-09-03
+**Created**: 2026-09-03 · **Revised**: 2026-09-07 (v2 — scope reduced to the editor, see [Revision History](#revision-history))
 
 **Status**: Draft
 
@@ -10,118 +10,146 @@
 
 **Related GitHub Issue**: [#37340](https://github.com/dotCMS/core/issues/37340) — *AC amendment required, see Assumptions*
 
-**Input**: User description: "Giving you the context of the ticket and my two doubts; let's start the specify fix. Keep in mind that we want to preserve the node registration for compatibility, and we need to fix the whole class. I think the best approach is that if an emoji is added inside a paragraph, it should be part of that node instead of a standalone emoji node."
+**Input**: Developer direction, v2: "The implementation was too big and we weren't attacking the real
+issue. Emoji should be inserted as regular text — both from `:smiley:` and from the picker. Keep the
+node registered but never use it, because of its limitations. The extension is only needed for the
+inline `:smiley:` shortcode — add a comment explaining that." Clarified 2026-09-04: "Keep emoji nodes
+that already exist, but don't let the user add any other emoji node — just emojis in text."
 
 <!--
-  This is the dotCMS ISSUE-RESOLUTION spec (used by /speckit-specify-fix). Unlike the
-  feature spec, it is framed around a defect: what is wrong, how to reproduce it, and how
-  we will know it is fixed. It still flows into /speckit-plan, where the Legacy Impact and
-  ADR Alignment gates apply. Keep this technology-light — root-cause and fix details are
-  refined in the plan.
+  dotCMS ISSUE-RESOLUTION spec (/speckit-specify-fix). Framed around a defect: what is wrong,
+  how to reproduce it, how we know it is fixed. Technology-light — code-level design belongs in
+  the plan. This is v2: v1 grew a renderer-side programme (VTL + Java + four SDK renderers + a
+  generated shortcode map) around a defect whose cause is four lines of editor configuration.
 -->
 
 ## Problem Statement *(mandatory)*
 
-When a content author types or pastes any character that Unicode classifies as an emoji into
-Block Editor text, the editor silently replaces that character with a standalone `emoji`
-node. The replacement node is created **bare** — it carries none of the formatting that
-surrounded it.
+When an author types or pastes any character that Unicode classifies as an emoji into Block
+Editor text, the editor silently replaces that character with a standalone `emoji` node. The
+replacement is created **bare** — it carries none of the formatting that surrounded it.
 
-Two consequences follow, both persisted into the stored Story Block JSON:
+Two consequences, both persisted into the stored Story Block JSON:
 
 1. **Marked text is torn in two.** A single linked phrase becomes `text(link)` +
-   `emoji(no marks)` + `text(link)`. The rendered output is two `<a>` elements where the
-   author created one.
-2. **The character is lost on published pages.** The stored node holds only a shortcode
-   (`{"type":"emoji","attrs":{"name":"copyright"}}`) — no literal character. Consumers with
-   no `emoji` branch drop it entirely: the VTL renderer emits nothing, and **all three JS SDKs
-   (React, Vue, Angular)** fall through to their unknown-block component.
+   `emoji(no marks)` + `text(link)`. The rendered output is two `<a>` elements where the author
+   created one.
+2. **The character is lost downstream.** The node stores only a TipTap shortcode
+   (`{"type":"emoji","attrs":{"name":"copyright"}}`) — no literal character. Consumers have no
+   `emoji` branch: the VTL renderer emits nothing, and the JS SDKs fall through to their
+   unknown-block component. The same blindness reaches the server: `StoryBlockUtil` counts only
+   `"text"` nodes, so an emoji-only Story Block field is treated as **empty** by required-field
+   validation and contributes **zero** to character counts.
 
-The customer reported this for `©`, `®`, and `™`. Those three are not a special case — they
-are the visible symptom of a defect that spans a large class of characters (measured below).
+The customer reported `©`, `®`, and `™`. Those are not a special case — they are the visible
+symptom of a defect spanning a large class of characters.
 
 **Severity / Impact**: Medium.
 
 - **Who**: any author using the new Block Editor (`FEATURE_FLAG_NEW_BLOCK_EDITOR`), plus every
-  downstream consumer of the content they authored.
+  downstream consumer of that content.
 - **Accessibility** — the reported symptom. One logical link yields two keyboard tab stops and
-  two entries in the NVDA Elements List / VoiceOver rotor, with the announcement fragmented
-  ("link dotCMS Copyright", then "link All rights reserved"). Maps to WCAG 2.2 Level A
-  failures: 1.3.1 Info and Relationships, 2.4.4 Link Purpose (In Context), 4.1.2 Name, Role,
-  Value. Closest documented technique is H2 (combining adjacent links to the same resource).
-- **Content loss** — on VTL-rendered pages the character disappears from published output.
-  Legal symbols (`©`, `®`, `™`) vanishing from a footer is a customer-visible defect
-  independent of accessibility.
-- **How often**: every time an affected character is typed. Links still resolve and navigate,
-  which is why this is Medium rather than High.
+  two NVDA Elements List / VoiceOver rotor entries, announced as fragments ("link dotCMS
+  Copyright", then "link All rights reserved"). WCAG 2.2 Level A failures: 1.3.1, 2.4.4, 4.1.2;
+  closest technique is H2.
+- **Content loss** — legal symbols vanish from VTL-rendered pages.
+- **How often**: every time an affected character is typed. Links still resolve, which is why
+  this is Medium.
 
 ## Clarifications
 
-Decisions taken during `/speckit-clarify`. Earlier decisions from the specify session are in
-[Resolved Decisions](#resolved-decisions).
+### Session 2026-09-07 (v2 — supersedes the v1 session below)
 
-### Session 2026-09-03
+- Q: What is the actual fix boundary? → A: **The editor only.** Stop creating `emoji` nodes, and
+  heal the ones already stored into text when a document is loaded. No renderer, SDK, or Java
+  change. Rationale in [Fix Scope & Non-Goals](#fix-scope--non-goals-mandatory).
+- Q: Does the emoji picker keep working? → A: **Yes, unchanged in the UI.** It already calls
+  `insertContent(emoji.native)` with a literal character; only the conversion that turned that
+  character back into a node is removed.
+- Q: Does `:smiley:` shortcode entry keep working? → A: **Yes — it is the only reason the
+  extension is still needed at authoring time.** It resolves the shortcode against the
+  extension's `emojis` table and inserts the **character**, not a node. This must be recorded in
+  a code comment (AC-010).
+- Q: What happens to `emoji` nodes already saved by the affected customer? → A: **They are healed
+  on the editor's parse path.** Loading a document containing an `emoji` node turns that node into a
+  `text` node holding the resolved character. Editor-side only: no Java, no migration, no heal
+  script. The shortcode table needed to resolve the character already ships inside the editor's own
+  dependency, so nothing crosses a build boundary.
+- Q: Should the heal also inherit the neighbouring `link` mark, so the reported payload renders as
+  one anchor again? → A: **No — the rule is strictly `emoji(marks) → text(same marks, character)`.**
+  Marks are preserved, never invented, and adjacent text nodes are not merged. Inheriting a
+  neighbour's mark would be inferring **one** author's intent from **one** payload shape; in another
+  document the same shape is deliberate, and a wrong guess is silent and irreversible. Whether a
+  symbol belongs inside a link is an editorial judgment, not a transform's. **The heal therefore
+  restores the character, not the link** — see
+  [Fix Scope non-goals](#fix-scope--non-goals-mandatory).
+- Q: Removing the four creation paths still leaves the node's inherited `parseHTML`, which matches
+  `<span data-type="emoji">` — so copying a stored emoji between fields re-creates the node. Keep
+  that? → A: **No — neutralize `parseHTML` so pasted emoji HTML lands as text.** Stored JSON is
+  unaffected: `setContent` with a JSON value goes through `Node.fromJSON`, which never consults
+  `parseHTML`. The editor's HTML-string fall-through (`normalizeEditorContent`, for hosts that pass
+  HTML rather than ProseMirror JSON) then degrades an emoji span to its character text rather than
+  to nothing, because the rendered span already carries the character — an acceptable, and arguably
+  better, outcome.
+- Q: What should `emoji` in a field's Allowed Blocks control, now that emoji are plain characters
+  an author can always type? → A: **Nothing — remove the gate.** Investigation during this session
+  found `emoji` is **not selectable** in Allowed Blocks at all: the option list comes from
+  `getEditorBlockOptions()`, which offers block nodes only, and `link`/`emoji`/`youtube` were
+  deliberately excluded (#37175). So `has('emoji')` is true only when a field carries **no**
+  restriction, and on **every** restricted field the toolbar picker button is hidden and the `:)`
+  rule stops firing — a latent defect nobody configured. Both gates go.
+- Q: How does support find the content that needs attention? → A: **No longer the blocking problem
+  it was.** This question was answered with a read-only query while stored nodes were being left
+  alone; the heal supersedes it, since content repairs itself as fields are opened. A locating query
+  remains useful and may be shared ad hoc, but it is not a deliverable and there is no report
+  feature.
+- Q: Constitution Principle V requires an explicit statement when a test type is skipped. Which
+  are skipped here? → A: **Jest unit tests only — no integration, Postman, Karate or e2e test is
+  written, and that is a deliberate, recorded decision.** Rationale: this change touches no Java,
+  no database, no REST endpoint, no renderer and no build artifact, so those layers have nothing to
+  assert. The one claim that reaches beyond the editor — that a `text` node carrying a `link` mark
+  renders as a single `<a>` — is pre-existing behavior in every renderer, unchanged by this work.
+  Accessibility (AC-020, AC-021) is not automatable and is routed to the post-merge QA plan.
+  Everything else, AC-013 through AC-019 included, is a Jest assertion.
+- Q: Do we still need renderer link-run coalescing (v1 "Gap B")? → A: **No.** Content authored
+  after the fix is a single `text` node carrying the `link` mark, so nothing needs coalescing.
+  Healed content deliberately keeps its two anchors until an author reapplies the link — coalescing
+  it in the renderers would be the same inference the heal refuses to make, just moved downstream
+  and duplicated five times.
 
-- Q: How do renderers resolve an `emoji` node's `name` attribute to a character, given no
-  shortcode table exists in Java or in any SDK? → A: **Option A — a generated shared map.**
-  Generate the `name` → character table at build time from `@tiptap/extension-emoji`'s own
-  `emojis` list, so it cannot drift from the editor. Expose it to the JS SDKs as a small runtime
-  module (**not** `@dotcms/types`, which is types-only) and to VTL through the existing
-  `StoryBlockRenderHelper`.
-- Q: Where does Gap B (adjacent-link coalescing) live for the VTL path — the Velocity macro,
-  Java, or the shared read path? → A: **Option A — pre-group in Java.**
-  `StoryBlockRenderHelper` merges adjacent same-link text nodes before the macro renders. The
-  `.vm`/`.vtl` edits stay additive, the mark-attribute equality logic becomes JUnit-testable
-  instead of interpreted per request, and no API contract changes. The four JS SDK renderers
-  still implement Gap B themselves.
-- Q: How do the three published SDK packages ship a change that alters rendered HTML for
-  content consumers already have? → A: **Option A — coordinated minor bump, independent
-  version numbers.** `@dotcms/react`, `@dotcms/vue` and `@dotcms/angular` are released
-  together, each with a `### Fixed` entry for Gap B that explicitly warns rendered HTML changes
-  for existing content (snapshot diffs expected), and an `### Added` entry for Gap A. Not a
-  major bump — the prior output is a WCAG 2.2 Level A failure, so the fix must be on by
-  default rather than opt-in.
-- Q: What does a renderer output for an `emoji` node whose `name` does not resolve? → A:
-  **Render the node's `text` if present, else the literal `:name:` — never nothing — and warn.**
-  Resolution precedence is: (1) the generated map, (2) the node's own `text` if it carries one,
-  (3) `:name:`. Every renderer also emits a warning, in the JS SDKs via `console.warn` and in
-  Java via `Logger.warn` (Constitution Principle II), with the message
-  `[dotCMS Block Editor]: Emoji <name> is not supported`. Warned once per distinct name per
-  render scope so a page with repeats does not flood the console or the log. The scope is
-  defined per surface (one render call in the JS SDKs; one `StoryBlockRenderHelper` instance —
-  i.e. one Story Block field render — in Java), so no request-scoped state is required.
-- Q: The two linked text nodes in the reported data are not adjacent — an unmarked `emoji` node
-  sits between them. Should coalescing absorb it? → A: **Option A, narrowed to `emoji` nodes
-  only.** A run of `text(link) + unmarked node + text(link)` collapses into a single `<a>` only
-  when the intervening node is an **`emoji`** node carrying no marks and both `link` marks are
-  identical. Any other unmarked inline atom (e.g. `hardBreak`) is **not** absorbed and still
-  breaks the run. This confines the inference to the exact node type this defect produces,
-  rather than silently swallowing arbitrary nodes into links.
+### Session 2026-09-03 (v1 — retained for the record, mostly superseded)
+
+- **Still binding**: `enableEmoticons` (`:)`) is preserved but now inserts the literal character;
+  AC-002's character sample is representative, not exhaustive; existing stored nodes are not
+  migrated in Java.
+- **Superseded by the v2 session**: the generated `name` → character map, `StoryBlockRenderHelper`
+  pre-grouping, the `:name:` unresolved-name fallback across five renderers, the coordinated SDK
+  release, and the `emoji`-node absorption rule for link runs. All were consequences of fixing
+  the symptom in the renderers; v2 fixes the cause in the editor instead.
 
 ## Reproduction *(mandatory)*
 
 **Environment**: `main` (verified against commit `69073e17f1`), `@tiptap/extension-emoji@3.22.2`,
-`emoji-regex@10.6.0`. Requires `FEATURE_FLAG_NEW_BLOCK_EDITOR` enabled. Not browser-specific —
-the defect is in the stored document, so it reproduces in any browser and in any renderer.
+`emoji-regex@10.6.0`, `FEATURE_FLAG_NEW_BLOCK_EDITOR` enabled. Not browser-specific — the defect
+is in the stored document.
 
 **Steps to Reproduce**:
 
 1. Enable `FEATURE_FLAG_NEW_BLOCK_EDITOR`.
-2. Edit a contentlet with a Story Block (Block Editor) field.
+2. Edit a contentlet with a Story Block field.
 3. Type `dotCMS Copyright All rights reserved` in a paragraph.
 4. Select the whole line and apply a link to `https://dotcms.com`.
 5. Place the cursor between `Copyright ` and `All`, then type or paste `©`.
-6. Observe the underline break — the single link is now two links. Save the contentlet.
+6. Observe the underline break — one link is now two. Save the contentlet.
 7. Inspect the stored field JSON.
-8. Render the content through VTL and through the React/Vue SDK on a page.
-9. Tab through the rendered link.
+8. Render the content through VTL and through a JS SDK, and tab through the link.
 
 **Expected Behavior**:
 
 - Step 6: the link stays visually and structurally intact.
 - Step 7: one `text` node carrying one `link` mark, with `©` inside its text.
-- Step 8: `<p><a href="https://dotcms.com">dotCMS Copyright © All rights reserved</a></p>`.
-- Step 9: exactly one focus stop; one screen-reader entry with the complete accessible name.
+- Step 8: `<p><a href="https://dotcms.com">dotCMS Copyright © All rights reserved</a></p>`, one
+  focus stop, one rotor entry.
 
 **Actual Behavior**:
 
@@ -137,33 +165,22 @@ the defect is in the stored document, so it reproduces in any browser and in any
   ]
   ```
 
-- Step 8 — two anchors, and under VTL the `©` is absent entirely:
-
-  ```html
-  <p>
-    <a href="https://dotcms.com">dotCMS Copyright </a>
-    <span data-name="copyright" data-type="emoji">©</span>
-    <a href="https://dotcms.com">All rights reserved</a>
-  </p>
-  ```
-
-- Step 9 — two tab stops, two rotor entries, fragmented announcement.
+- Step 8 — two anchors, two tab stops; under VTL the `©` is absent entirely.
 
 **Reproducibility**: Always, for any character in the affected class.
 
-**Measured scope of the affected class** (script run against the shipped extension: each entry
-in the extension's `emojis` list tested against `emoji-regex@10.6.0` followed by the same
-`emojiToShortcode` lookup the conversion performs):
+**Measured scope of the affected class** (each entry in the extension's `emojis` list tested
+against `emoji-regex@10.6.0` plus the same `emojiToShortcode` lookup the conversion performs):
 
 | Measure | Count |
 | --- | --- |
 | Entries in the extension's `emojis` list | 1949 |
 | Entries that convert to an `emoji` node when typed | **1907** |
-| …of those, **text-presentation** (no `Emoji_Presentation` property — render as typography, not as pictures) | **219** |
+| …of those, **text-presentation** (render as typography, not as pictures) | **219** |
 | …of those, pictographic | 1688 |
 
-The 219 text-presentation characters are the ones authors type as ordinary punctuation and
-have no reason to expect to become emoji. They include, beyond the three reported:
+The 219 text-presentation characters are the ones authors type as ordinary punctuation. Beyond
+the three reported:
 
 ```
 ‼ ⁉ ✔ ✖ ✂ ✏ ✒ ⚠ ℹ ♻ ▪ ▫ ◼ ◻ ↔ ↕ ↖ ↗ ↘ ↙ ↩ ↪ ⤴ ⤵ ⬅ ⬆ ⬇ ➡
@@ -172,411 +189,366 @@ have no reason to expect to become emoji. They include, beyond the three reporte
 
 A `✔` inside a linked list item splits that link exactly as `©` does.
 
-**Additional verified findings that shape the fix** (each reproduced against a real TipTap
-editor in jsdom):
+**Verified findings that shape the fix** (each reproduced against a real TipTap editor in jsdom):
 
-- **Applying a link over an *existing* `emoji` node already works.** The link mark is applied,
-  one `<a>` is produced, and the mark survives a save/reload round-trip. `allowsMarkType(link)`
-  reports `false` for the node, but ProseMirror does not enforce that for atoms in these code
-  paths. **No schema change is needed for mark inheritance.**
-- **The split is therefore an ordering defect, not a schema limitation.** The conversion runs
-  after the mark is applied and rebuilds the node without marks, destroying the mark that was
-  already there.
-- **Narrowing the extension's `emojis` option is not a viable fix.** That option also feeds
-  rendering, so removing an entry makes already-stored nodes of that name render as a literal
-  shortcode. Verified:
-
-  ```text
-  full list      → "dotCMS © 2026"
-  filtered list  → "dotCMS :copyright: 2026"
-  ```
-
-- **The image fallback is broader than the issue records.** 1908 of 1949 entries carry a
-  `fallbackImage` pointing at `cdn.jsdelivr.net`. The render path takes it whenever
-  `isEmojiSupported()` returns false, even with `forceFallbackImages: false`, producing
-  `<img alt="copyright emoji">` and a third-party request from the editor. The 26
-  `regional_indicator_*` entries have no `version`, so their support check is
-  unconditionally false and they always render as an image.
+- **The picker already inserts a literal character.** `emoji-picker.component.ts:48` calls
+  `insertContent(emoji.native)`. It only produces a node because the conversion converts the
+  character straight back. Removing the conversion fixes the picker with no picker change.
+- **Applying a link over an existing `emoji` node already works** — one `<a>`, and the mark
+  survives a round-trip. **No schema change is needed.** The split is an *ordering* defect: the
+  conversion runs after the mark is applied and rebuilds the node without it.
+- **Filtering the extension's `emojis` option is not a viable fix.** That option also feeds
+  rendering and shortcode resolution: `full list → "dotCMS © 2026"`, `filtered list → "dotCMS
+  :copyright: 2026"`.
+- **The image fallback is broader than #37340 records.** 1908 of 1949 entries carry a
+  `fallbackImage` on `cdn.jsdelivr.net`, taken whenever `isEmojiSupported()` is false even with
+  `forceFallbackImages: false` — producing `<img alt="copyright emoji">` and a third-party
+  request. Not creating nodes removes this from newly authored content.
 
 ## Scope of Investigation *(mandatory)*
 
-<!--
-  Keep to WHAT is affected, not the code-level fix (that is the plan's job). But DO name the
-  product area, since dotCMS mixes modern and legacy surfaces — this drives Legacy Impact in
-  the plan.
--->
-
-- **Affected area**: content editing (new Block Editor authoring) and page rendering (Story
-  Block renderers — VTL and the JS SDKs). No REST contract, DB schema, or Elasticsearch
-  mapping is involved unless a data migration is chosen (see Regression Risk).
-- **Suspected surface**: predominantly modern and frontend.
-  - `core-web/libs/new-block-editor` — Angular, modern. Where the conversion is registered.
-  - `core-web/libs/sdk/react`, `core-web/libs/sdk/vue`, `core-web/libs/sdk/angular` — modern.
-    **The Angular SDK ships two independent Block Editor renderers** (`dotcms-block-editor-renderer`
-    and the semantic/native successor `dotcms-block-editor-renderer-semantic`), each with its own
-    node dispatch and its own recursive mark renderer. Neither is mentioned in #37340; both carry
-    Gap A and Gap B identically. Verified: `grep` for an `emoji` node type across `libs/sdk/`
-    returns **zero** hits in any SDK.
-  - `core-web/libs/sdk/types` — the shared `internal.ts` enum of Story Block node types has no
-    `emoji` member; all three JS SDKs dispatch from it.
-  - **Release surface**: `package.json` + `CHANGELOG.md` for `@dotcms/react` (1.2.6),
-    `@dotcms/vue` (1.5.5) and `@dotcms/angular` (1.1.1). There is no changesets tooling in
-    `core-web` — versions are hand-bumped and changelogs hand-written (`## vX.Y.Z` with
-    `### Fixed` / `### Added`), so the release artifacts are part of the change, not a
-    follow-up.
-  - `dotCMS/src/main/webapp/WEB-INF/velocity/` (`VM_global_library.vm`, `static/storyblock/render.vtl`)
-    — **legacy Velocity macro surface**. Not `com.dotmarketing.*` Java, but legacy in style and
-    the highest-risk edit in this change: the macro is shared by all Story Block rendering.
-  - `com.dotcms.rendering.velocity.viewtools.content.util.StoryBlockRenderHelper` — **modern**
-    `com.dotcms.*`. Carries **both** server-side responsibilities: Velocity cannot resolve a
-    shortcode to a character on its own, so the generated map is read here, and it also
-    pre-groups adjacent same-link text nodes so the macro never has to look ahead at siblings. This helper is already exposed in the Velocity context as
-    `$dotStoryBlockRenderHelper` and already invoked as `.render($element)` from `render.vtl`,
-    so the resolution extends an established extension point rather than adding a new Velocity
-    tool. **Legacy Impact is therefore lower than a Velocity-only fix would suggest**: the Java
-    edit lands in a modern package, and the `.vm`/`.vtl` edits stay additive.
-  - A **generated** `name` → character map, produced at build time from
-    `@tiptap/extension-emoji`'s `emojis` list and consumed by both the JS SDKs and the Java
-    helper. CI must verify the committed artifact matches what the build produces — the same
-    guarantee the repo already applies to `openapi.yaml`.
-  - No `com.dotmarketing.*` Java package is expected to change.
+- **Affected area**: content editing only — the new Block Editor. No REST contract, DB schema, or
+  Elasticsearch mapping. No renderer.
+- **Suspected surface**: modern frontend, a single library.
+  - `core-web/libs/new-block-editor/src/lib/editor/extensions/` — where the emoji extension is
+    registered (`editor-extensions.ts:171`). Where the conversion is suppressed.
+  - `core-web/libs/new-block-editor/src/lib/editor/utils/` — the document parse path, where
+    `preserveUnknownNodesInDocument` already normalizes incoming JSON. Where stored `emoji` nodes
+    are healed into text.
+  - `core-web/libs/new-block-editor/src/lib/editor/components/toolbar/` — the picker button's
+    `isAllowed('emoji')` gate. Removed, per the Allowed Blocks finding above.
+  - `core-web/libs/new-block-editor/CLAUDE.md` — carries the legacy-compat rationale for
+    `AIContent`; the same rationale for `emoji` belongs beside it.
 - **Related known decisions**:
-  - #37175 established that `link`, `emoji`, and `youtube` are registered **regardless of a
-    field's Allowed Blocks**, so that stored content authored with them still parses. That
-    decision is binding here and is why registration is preserved.
-  - #37145 established that dropping a registration TipTap needs to parse stored content is a
-    data-loss path — removing the `Highlight` mark caused TipTap to abort the whole document.
-  - `core-web/libs/new-block-editor/CLAUDE.md` documents the same legacy-compat reasoning for
-    the `AIContent` node: the registration exists solely so old content parses, and removing
-    it "would silently drop those blocks on load".
-  - The plan formally consults `dotCMS/platform-adrs`.
+  - **#37175** — `link`, `emoji`, and `youtube` are registered **regardless** of a field's Allowed
+    Blocks, so stored content authored with them still parses. Binding here: registration stays.
+  - **#37145** — dropping a registration TipTap needs in order to parse stored content is a
+    data-loss path; removing the `Highlight` mark made TipTap abort the whole document.
+  - `new-block-editor/CLAUDE.md` documents the identical pattern for `AIContent`: the
+    registration exists solely so old content parses, and removing it "would silently drop those
+    blocks on load".
+  - The plan consults `dotCMS/platform-adrs`. **ADR-0019** (date-lockstep SDK versioning) is why
+    v1's SDK version-bump criterion was withdrawn; v2 touches no SDK, so it does not apply.
 
 **Observation for planning** (not a defect): the extension's `addStorage` runs a canvas-based
-`isEmojiSupported()` probe once per distinct emoji version at editor construction. This cost
-remains as long as the node is registered, and is worth measuring but is not in scope to fix.
+`isEmojiSupported()` probe per distinct emoji version at editor construction. That cost stays as
+long as the node is registered. Worth measuring, not in scope to fix.
 
 ## Root-Cause Hypothesis
 
-The `emoji` extension's `appendTransaction` hook runs on **every** document change. It scans
-changed text nodes with `emoji-regex`, and for each match found in its `emojis` list it
-replaces the matched range with a new inline `emoji` node.
+`@tiptap/extension-emoji` creates `emoji` nodes from five independent paths. **All five are
+authoring-time; none is needed to parse or render stored content.**
 
-Two properties of that replacement produce the defect:
+| # | Path | Trigger | Marks on the new node |
+| --- | --- | --- | --- |
+| 1 | `addProseMirrorPlugins` → `appendTransaction` | **any** emoji character appearing anywhere in changed text | none — `tr.replaceRangeWith` |
+| 2 | `addInputRules` → `inputRegex` | typing `:copyright:` | none |
+| 3 | `addInputRules` → emoticon rule (`enableEmoticons`) | typing `:) ` | none |
+| 4 | `addPasteRules` → `pasteRegex` | pasting `:copyright:` | none |
+| 5 | `parseHTML` → `span[data-type="emoji"]` | pasting HTML copied from another Block Editor field | whatever the paste carries |
 
-1. **It is indiscriminate.** The gate is "is this character in the Unicode emoji set", which
-   is true for 1907 of 1949 catalogued characters — including 219 that render as typography
-   and that authors type as ordinary text. There is no notion of author intent.
-2. **It discards formatting.** The replacement creates the node with no marks. The hook does
-   set stored marks afterwards, but stored marks only affect what the author types *next* —
-   they are never applied to the node just created. So any mark the replaced text carried is
-   lost at that position, splitting the surrounding run.
+Path 1 is the reported defect and the reason typed, pasted and picker-inserted characters all
+become nodes. Paths 2–4 create the same bare node from an explicit author action. Path 5 is not a
+creation *rule* but has the same effect, and a fix that closes only 1–4 lets authors keep spreading
+the broken shape by copy-paste.
 
-The two renderer gaps identified in the issue are **independent pre-existing defects** that
-this bug makes visible, and both must be addressed for already-stored content:
+Paths 1–4 each call `tr.setStoredMarks(...)` after inserting. **Stored marks only affect what is
+typed next** — they are never applied to the node just created. So a mark the replaced text
+carried is lost at that position, splitting the surrounding run.
 
-- **Gap A** — no renderer has an `emoji` branch, so the character is dropped (VTL) or renders
-  as an unknown block (React, Vue, and both Angular renderers).
-- **Gap B** — no renderer coalesces text nodes that share an identical `link` mark, so
-  each emits its own `<a>`. In the reported data the two linked text nodes are not even
-  adjacent — the unmarked `emoji` node sits between them — so plain adjacency merging is not
-  sufficient on its own. All five renderer implementations use the same recursive
-  "outermost mark wraps the rest" pattern and none looks at its siblings, which is precisely
-  why none of them coalesce. This is latent for any stored JSON with adjacent same-link text
-  nodes and predates the new editor.
+The two consequences follow directly:
+
+- **Split marked text** — a bare inline node inside a marked run ends the run.
+- **Dropped character downstream** — the node carries a shortcode, not a character, and **no
+  consumer outside the editor can resolve one**, because the lookup table ships inside an npm
+  dependency of the editor. v1 treated this as two renderer gaps to fill in five places; v2 treats
+  it as the reason the node is the wrong shape for stored content — so it stops creating them and
+  converts the ones that exist.
 
 ## Fix Scope & Non-Goals *(mandatory)*
 
-**Chosen approach** (developer decision, per user input): *an emoji typed or pasted into
-paragraph text stays part of that text node.* Suppress the automatic
-character-to-node conversion entirely, while keeping the `emoji` node **registered** so that
-content already saved with `emoji` nodes continues to parse and render.
+**Chosen approach**: *the Block Editor never creates an `emoji` node again, and converts the ones
+it finds into text — preserving their marks exactly, and inferring nothing.*
 
-This approach was selected over a per-character allowlist because it fixes the entire class in
-one change, requires no list to maintain across extension upgrades, and eliminates the marks
-problem structurally — text nodes carry marks natively, so there is no node left to strip
-them. It is also consistent with how insertion already works: the emoji picker calls
-`insertContent(emoji.native)` with a raw character, so the picker needs no `emoji` node to
-function.
+The `emoji` node type is structurally wrong for this content. It stores a shortcode instead of a
+character, it cannot carry the marks around it, and nothing outside the editor understands it.
+A literal character in a `text` node has none of those problems: it carries marks natively, every
+renderer already handles text, and the backend already stores it. Choosing it fixes the whole
+class in one change with no list to maintain across extension upgrades.
 
 **In scope**:
 
-- Suppress automatic conversion of typed or pasted characters into `emoji` nodes, for the
-  whole affected class — all 1907 convertible characters, not only `©`/`®`/`™`.
-- Keep the `emoji` node registered, with its `emojis` option **unfiltered**, so already-stored
-  `emoji` nodes still parse and still resolve their character.
-- Keep emoji insertion working end to end: the toolbar picker inserts the literal character
-  into the text node, and it inherits the surrounding marks like any other typed character.
-- Redirect the `:)`-style emoticon input rule (`enableEmoticons`, gated on `has('emoji')`) to
-  insert the literal character into the text node instead of creating an `emoji` node. The
-  shortcut is preserved for authors who use it; only its output changes.
-- Preserve behavior parity whether or not `emoji` appears in a field's Allowed Blocks.
-- **Gap A** — add an `emoji` branch to the VTL Story Block renderer and to **all four JS SDK
-  renderers** (React, Vue, Angular standard, Angular semantic), plus the `emoji` member in the
-  shared `libs/sdk/types` node-type enum, so already-stored `emoji` nodes render their character
-  as inline text and never as a block-level element inside a `<p>`.
-- **The `name` → character map that Gap A depends on**, generated at build time from
-  `@tiptap/extension-emoji`'s `emojis` list so it cannot drift from the editor. Consumed by the
-  JS SDKs via a small runtime module and by VTL via `StoryBlockRenderHelper`. A CI check
-  verifies the committed artifact matches the generated one.
-- **A defined, identical fallback in all five renderers** when a `name` does not resolve —
-  reachable because no Story Block schema validation was found in `dotCMS/src/main/java`, so
-  arbitrary node JSON can arrive through the Contentlet REST API. Precedence: map → the node's
-  own `text` → `:name:`. Never empty, plus a warning (see Clarifications).
-- **Gap B** — collapse a run of text nodes sharing an identical `link` mark into a single `<a>`,
-  comparing full mark attributes so links differing in `href`, `target`, `rel`, `title`, or
-  `aria-label` stay separate. A run continues across an intervening **`emoji` node that carries
-  no marks**, which is absorbed into the anchor; any other unmarked inline atom breaks the run.
-  Two stored shapes must both resolve to one anchor:
-  - **Shape 1** — emoji typed *into* linked text: `text(link) + emoji(no marks) + text(link)`.
-    The reported case; needs the absorption rule.
-  - **Shape 2** — link applied *over* an existing emoji node: the `emoji` node carries the
-    `link` mark and already renders as one anchor today.
+- **Suppress all five node-creation paths.** Typed and pasted characters, `:shortcode:` entry,
+  `:)` emoticons and HTML paste all yield a literal character in the surrounding `text` node.
+- **Preserve both author shortcuts, with different output.** `:copyright:` and `:) ` still fire;
+  they resolve against the extension's `emojis` table and insert the character. Losing them would
+  be a functional regression; keeping the node would not fix the bug.
+- **Neutralize the node's `parseHTML` so HTML paste cannot mint an `emoji` node.** Pasted emoji
+  HTML lands as its character in the text node. **Stored JSON parsing is untouched** — a JSON value
+  is deserialized through `Node.fromJSON`, which never consults `parseHTML`, which is why this does
+  not conflict with the registration below.
+- **Keep the `emoji` node registered, with `emojis` unfiltered.** Two reasons, both required:
+  stored `emoji` nodes must still parse (#37145 / #37175 / `AIContent`), and the `emojis` table is
+  the shortcode → character source the `:shortcode:` and `:)` input rules read. **A code
+  comment must state that this is the extension's only remaining purpose** (AC-010).
+- **Heal stored `emoji` nodes into text on the parse path.** Loading a document that contains one
+  yields a `text` node holding the resolved character in its place. The transform is
+  `emoji(marks) → text(same marks, character)` and nothing more:
+  - **Marks are preserved, never inherited.** A bare node yields bare text; a node carrying a
+    `link` mark (because a link was applied over it) yields text carrying that same mark.
+  - **No merging, no link repair.** Adjacent text nodes are not joined and the split link is not
+    rejoined. That is an editorial judgment, not a transform's — see the non-goal below.
+  - **Recursive.** `emoji` nodes occur inside headings, list items, blockquotes and table cells,
+    not only paragraphs.
+  - **Non-destructive on failure.** An unresolvable `name` leaves the node untouched — never blank
+    output, never a literal `:name:`.
+  - **Identity when absent.** A document containing no `emoji` node is returned unchanged. This is
+    the overwhelmingly common case and the one to assert explicitly.
+  - The healed shape reaches storage on the author's next save, like any other edit.
+- **Remove the `has('emoji')` / `isAllowed('emoji')` gates** from `enableEmoticons` and from the
+  toolbar picker button. `emoji` cannot be selected in Allowed Blocks, so the gates never express
+  an admin's choice — they only disable emoji authoring on every field that restricts anything
+  else. Removing them is a prerequisite for AC-008, not a separate improvement.
+- Regression coverage at the editor layer, per Constitution Principle V.
 
-  Implemented per surface:
-  - **VTL** — the grouping happens in `StoryBlockRenderHelper` (Java), *before* the macro
-    renders. The `.vm`/`.vtl` change stays additive; no sibling lookahead in Velocity.
-  - **JS SDKs** — each of the four renderers implements the grouping itself, against the same
-    shared fixture so all surfaces agree.
-- **Release artifacts for the three published SDK packages**: a coordinated minor version bump
-  (independent numbers) plus `CHANGELOG.md` entries — `### Added` for Gap A, `### Fixed` for
-  Gap B with an explicit warning that rendered HTML changes for existing content.
-- Regression coverage at each layer, per Constitution Principle V.
+**Explicitly out of scope / non-goals** — with the consequence each one accepts:
 
-**Explicitly out of scope / non-goals**:
-
-- **The legacy Block Editor** (`core-web/libs/block-editor`). It never registered the emoji
-  extension, so it cannot create this split.
+- **Every renderer change.** No VTL, no Java, no React/Vue/Angular SDK, no `libs/sdk/types` enum
+  member, no generated shortcode map, no changelog or version bump.
+  *Consequence*: an `emoji` node in a field nobody ever opens in the editor still renders as nothing
+  in VTL and as an unknown block in the SDKs. Accepted — the heal reaches everything an author
+  touches, no shipped renderer ever supported the node, and nothing creates new ones after this fix.
+  **Track separately if a second report arrives.**
+- **Inferring marks during the heal, or rejoining the split link.**
+  *Consequence, stated plainly*: **the heal restores the character, not the link.** A field saved
+  before the fix comes back with its `©` visible in every renderer, but still as two `<a>` elements.
+  Rejoining them is a normal edit the author can now actually perform — select the line, reapply the
+  link. Accepted by developer decision: inheriting a neighbour's mark would be inferring one
+  author's intent from one payload shape, and a wrong guess is silent, irreversible, and would
+  change content for users who never had this bug.
+- **Any Java transform, data migration, or heal script.** The heal is a pure JSON transform on the
+  editor's parse path. Keeps this change out of the DB and out of
+  [rollback-unsafe territory](../../docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) entirely.
+- **A report *feature* for contentlets carrying the split** — no endpoint, no UI, no scheduled job.
+  #37340 asks for one; the heal makes it largely unnecessary, since content repairs itself as fields
+  are opened. Productizing a report is a separate issue if it is ever needed.
 - **Removing the `emoji` node registration.** Explicitly preserved for backward compatibility.
-- **Shortcode authoring as a feature.** The `:` suggestion trigger is already inert by design;
-  this change does not add or restore `:rocket:` shortcode entry.
-- **A report of affected contentlets.** #37340 asks for a query identifying content already
-  carrying the split. It is read-only and useful, but explicitly deferred out of this change —
-  track it separately.
-- **Reworking the extension's image-fallback path** beyond what Gap A requires. The
-  `cdn.jsdelivr.net` dependency and the `<img alt="… emoji">` accessible name are recorded
-  here as findings and should be tracked separately.
-- **The `isEmojiSupported()` startup cost.** Measured and noted, not fixed here.
-- **Any wholesale rewrite of the VTL Story Block macro.** Gap A and Gap B are additive edits;
-  progressive enhancement only, per Constitution Principle I.
-- **Emoji-only-link accessible naming.** A link whose entire text is one emoji gets its
-  accessible name from that character and may fail WCAG 2.4.4. The link popover already
-  supports `aria-label` for this. Authoring guidance, not a code defect.
+- **The legacy Block Editor** (`core-web/libs/block-editor`). It never registered the extension,
+  so it cannot create this split.
+- **Shortcode authoring as a feature.** The `:` *suggestion* trigger stays inert by design; this
+  change neither adds nor restores a `:rocket:` autocomplete menu. Only the input rule fires.
+- **Reworking the image-fallback path.** The `cdn.jsdelivr.net` dependency and the
+  `<img alt="… emoji">` accessible name are recorded as findings; new content stops hitting them.
+- **The `isEmojiSupported()` startup cost.** Measured, not fixed here.
+- **Emoji-only-link accessible naming.** A link whose entire text is one emoji may fail WCAG
+  2.4.4. The link popover already supports `aria-label`. Authoring guidance, not a code defect.
 
 ## Regression Risk *(mandatory)*
 
-- **Blast radius**:
-  - **Highest risk is the VTL path.** `VM_global_library.vm` renders *every* Story Block field
-    on *every* VTL-rendered page, for all customers, flag or no flag. A defect in coalescing
-    affects far more content than this bug does.
-    **Mitigated by the Q2 decision**: the grouping logic moves into `StoryBlockRenderHelper`
-    (Java), so it is JUnit-testable in isolation and the interpreted macro edit stays additive.
-    The residual risk is that the helper now sits on the render path for every Story Block —
-    it must be allocation-cheap and must return the input unchanged when nothing coalesces.
-  - The React, Vue, and both Angular SDK text renderers carry the same coalescing risk for
-    headless consumers — five implementations of the same logic, which must stay behaviourally
-    identical or the same content renders differently per framework.
-  - Within the editor, suppressing conversion touches the shared `appendTransaction` path, so
-    every Block Editor keystroke is on that path.
-  - **Cross-editor exposure**: content authored in the new editor and then opened in the
-    **legacy** editor is a pre-existing loss path — the legacy editor has no `emoji`
-    registration, and by the mechanism documented for `AIContent` the node would be dropped on
-    load. This change reduces future exposure by not creating new nodes, but does not fix
-    existing ones. **The plan should confirm this behavior empirically.**
+- **Blast radius**: one Angular library, behind an opt-in feature flag. Two hot paths inside it:
+  - **The extension's plugin/rule set**, on every keystroke in every Block Editor field. The
+    change *removes* work from that path rather than adding it.
+  - **The document parse path**, on every field load. The heal must be a cheap recursive walk that
+    returns the input unchanged when no `emoji` node is present — the overwhelmingly common case,
+    and the one AC-017 asserts. It runs once per load, not per keystroke.
+  - Compared with v1, `VM_global_library.vm` — which renders every Story Block field on every
+    VTL page for every customer, flag or not — is no longer touched at all. That was v1's single
+    highest-risk edit.
 - **Backward compatibility**:
-  - Stored `emoji` nodes MUST keep working. The node stays registered and `emojis` stays
-    unfiltered — the verified failure mode of filtering it is rendering `:copyright:` as
-    literal text.
-  - No REST contract, DB schema, or ES mapping changes. Not rollback-unsafe in the
-    [documented categories](../../docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) **unless** a data
-    migration is chosen — and render-only was decided, so none is.
-  - The generated map is a **new drift surface**: if it falls behind the extension's `emojis`
-    list, renderers resolve a `name` the editor can produce to nothing. The CI equality check in
-    AC-012 is what prevents that, and is why generation is required over a hand-written table.
-  - **The cross-build handoff is the riskiest unproven mechanic in this change, and the plan
-    must prove it rather than assume it.** The map is generated from `@tiptap/extension-emoji`,
-    a `core-web` npm dependency, but consumed by `StoryBlockRenderHelper` on the Java
-    classpath. The `openapi.yaml` precedent is **not** a like-for-like comparison: that artifact
-    is generated *inside* the Maven build, whereas this one originates in the frontend
-    toolchain and must cross into Java resources. The plan must answer, concretely: which build
-    generates it, where the artifact is committed, how Java loads it, and how the CI diff-check
-    runs against a JS-produced file without requiring the frontend toolchain in the Java build.
-    If that handoff proves awkward, generating the table inside the Maven build from a
-    committed source of truth is the fallback to evaluate.
-  - The map adds weight to three **published** npm packages (`@dotcms/react`, `@dotcms/vue`,
-    `@dotcms/angular`). It must be tree-shakeable and must not land in `@dotcms/types`.
-  - **Gap B is a consumer-visible output change** in those same published packages: content a
-    consumer already has starts rendering one `<a>` where it rendered two. Downstream snapshot
-    tests will diff, and CSS relying on adjacent-anchor selectors may shift. Shipped as a minor
-    bump with an explicit changelog warning rather than opt-in, because the prior output is a
-    WCAG 2.2 Level A failure and must not stay on by default.
-  - Renderer coalescing must not merge across differing mark attributes, and must keep other
-    marks (e.g. `bold`) nested correctly inside the single `<a>`.
-  - This change **contradicts an acceptance criterion in issue #37340**, which requires
-    pictographic emoji to keep producing `emoji` nodes. See Assumptions.
-- **Data considerations**:
-  - Content already saved with the split needs to render as one link **without a re-save**.
-    Gap B coalescing achieves this at render time and is the preferred path.
-  - Existing `emoji` nodes remain in stored content indefinitely. Gap A is what keeps them
-    rendering, which is why it is in scope rather than optional.
-  - **Decided: render-only.** Stored `emoji` nodes are NOT normalized — no data migration and
-    no heal-on-load. Gap A and Gap B make existing content render correctly without a re-save,
-    which satisfies AC-019 on its own and keeps this change out of Java, the DB, and
-    rollback-relevant territory. Accepted consequence: old `emoji` nodes persist indefinitely,
-    so the legacy-editor drop path and the `<img>` fallback stay live for that content.
+  - Stored `emoji` nodes MUST keep parsing. The node stays registered and `emojis` stays
+    unfiltered; the verified failure mode of filtering is rendering `:copyright:` as literal text.
+  - **The HTML-string load path changes shape, not content.** `normalizeEditorContent` falls
+    through to HTML for any non-JSON string value, which is not how dotCMS stores Story Block
+    fields but is reachable for hosts that pass HTML. With `parseHTML` neutralized, an emoji span
+    in such a value resolves to its character as text instead of to an `emoji` node — the span
+    already contains the character. The plan should confirm this empirically, including the
+    `fallbackImage` variant where the span wraps an `<img>` rather than a character.
+  - **The heal is lossy in exactly one direction, by design**: a node's `name` is replaced by its
+    character and the shortcode leaves storage. That is the intent — the character is the content,
+    and no consumer outside the editor can resolve a shortcode anyway.
+  - **The heal must not damage content that never had this bug.** This is the change's sharpest
+    risk and the reason marks are preserved rather than inherited: a transform that guessed at
+    marks could alter documents unrelated to the defect, silently and irreversibly. Two criteria
+    bound it — AC-014 (marks preserved exactly, none inherited) and AC-017 (a document with no
+    `emoji` node is returned unchanged).
+  - **Cross-editor exposure** (pre-existing, improved): content carrying `emoji` nodes opened in
+    the **legacy** editor is a loss path — no registration there, so by the `AIContent` mechanism
+    the node is dropped on load. This change reduces future exposure by not creating nodes, and
+    *removes* it for any field healed and re-saved through the new editor. **The plan should
+    confirm the legacy-drop behavior empirically.**
+  - **One case joins itself, with no merge logic.** Where a link was applied *over* an existing
+    node, that node already carries the `link` mark, so the heal yields `text(link)` between two
+    `text(link)` nodes. ProseMirror joins adjacent text nodes with identical marks during
+    normalization. **The plan must confirm this empirically rather than assert it** — it is the one
+    place the spec relies on library behavior instead of its own code.
+  - No REST contract, DB schema, or ES mapping change. Not rollback-unsafe in any documented
+    category.
+- **Data considerations**: an `emoji` node persists only until a field is opened and saved through
+  the new editor. Because the heal turns it into a `text` node, three server-side blind spots
+  resolve themselves with **no Java change**: `StoryBlockUtil.isTextContentEmpty` (which counts only
+  `"text"` nodes and feeds required-field validation at `ESContentletAPIImpl.java:8180`, so a
+  required Story Block field whose only content is one emoji currently fails to save as "empty"),
+  `StoryBlockUtil.getCharCount` (emoji nodes count as zero characters), and Elasticsearch text
+  extraction. Those three are live defects today, independent of links, and none is reported.
 
 ## Acceptance & Verification *(mandatory)*
 
-<!-- Measurable, so the fix is provably done. -->
-
 **Editor — root cause**
 
-- **AC-001**: The reproduction steps above no longer produce the actual behavior; they produce
-  the expected behavior. Specifically, step 7 yields exactly one `text` node carrying one
-  `link` mark whose text contains `©`.
-- **AC-002**: Typing or pasting any character in the affected class into paragraph text stores
-  a plain `text` node and creates **no** `emoji` node. Verified against a **representative
-  sample** (decided — not exhaustive): all three reported symbols, ~20 further
-  text-presentation characters, and a handful of pictographic and multi-codepoint cases
-  including a ZWJ sequence and a flag.
-- **AC-003**: AC-002 holds at the **start** and at the **end** of linked text, not only in the
-  middle.
-- **AC-004**: AC-002 holds when the character arrives by **paste** — plain-text paste, HTML
-  paste, and `&copy;` HTML-entity paste.
+- **AC-001**: The reproduction steps no longer produce the actual behavior. Step 7 yields exactly
+  one `text` node carrying one `link` mark whose text contains `©`.
+- **AC-002**: Typing or pasting any character in the affected class into paragraph text stores a
+  plain `text` node and creates **no** `emoji` node. Verified against a **representative sample**:
+  all three reported symbols, ~20 further text-presentation characters, and a handful of
+  pictographic and multi-codepoint cases including a ZWJ sequence and a flag.
+- **AC-003**: AC-002 holds at the **start** and at the **end** of linked text, not only mid-run.
+- **AC-004**: AC-002 holds when the character arrives by **paste** — plain-text paste, HTML paste,
+  and `&copy;` HTML-entity paste.
 - **AC-005**: Inserting an emoji from the toolbar picker inserts the literal character into the
   surrounding text node, and inside a link yields a **single** `<a>` in the editor DOM.
-- **AC-006**: Typing a `:)`-style emoticon inserts the literal character into the surrounding
-  text node and creates **no** `emoji` node. Inside linked text it leaves the link as a single
-  `text` node with one `link` mark.
-- **AC-007**: Behavior is identical whether or not `emoji` is in the field's Allowed Blocks.
-- **AC-008**: The character renders as text; no `<img alt="… emoji">` is emitted for
-  newly authored content.
+- **AC-006**: Typing `:copyright:` inserts `©` into the surrounding text node and creates **no**
+  `emoji` node. Pasting the same shortcode does the same. An unknown shortcode is left as typed.
+- **AC-007**: Typing a `:)`-style emoticon inserts the literal character into the surrounding text
+  node, creates **no** `emoji` node, and preserves the author's surrounding whitespace.
+- **AC-008**: Emoji authoring is available on **every** Block Editor field: the toolbar picker
+  button is rendered and the `:)` / `:shortcode:` rules fire on a field with a restricted
+  `allowedBlocks` list exactly as on an unrestricted one. Regression-guarded against the current
+  behavior, where restricting any block silently removes both.
+- **AC-009**: A field whose stored `allowedBlocks` value happens to contain `emoji` — writable
+  through the field-variable API even though the settings UI never offers it — behaves identically
+  to one that does not. The value is inert, not an error.
+- **AC-010**: `editor-extensions.ts` (or the extension module it delegates to) carries a comment
+  stating that the `emoji` extension is registered **only** so stored `emoji` nodes parse and so
+  `:shortcode:` / emoticon entry can resolve a character, that no code path creates `emoji` nodes,
+  and that removing the registration would silently drop stored nodes on load — mirroring the
+  `AIContent` comment. `new-block-editor/CLAUDE.md` reflects the same.
+- **AC-011**: The character renders as text; no `<img alt="… emoji">` is emitted for newly
+  authored content.
+- **AC-012**: Pasting HTML that contains `<span data-type="emoji">` — the shape produced by copying
+  content out of another Block Editor field — creates **no** `emoji` node; the character lands in
+  the surrounding text node. Asserted together with AC-013, which proves the same change leaves
+  stored-JSON parsing intact — `parseHTML` governs HTML entry points only.
 
-**Renderers — Gap A (existing `emoji` nodes)**
+**Editor — healing stored nodes**
 
-- **AC-009**: Given stored JSON containing an `emoji` node, the VTL renderer outputs the
-  character. It is no longer silently dropped.
-- **AC-010**: The React, Vue, and both Angular SDK renderers render the character for the same
-  input instead of falling through to their unknown-block component.
-- **AC-011**: No renderer emits a block-level element (e.g. `<div>`) inside a `<p>` for an
-  `emoji` node, in UVE or on the live site.
-- **AC-012**: The `name` → character map is generated from `@tiptap/extension-emoji`'s `emojis`
-  list, and a CI check fails if the committed artifact does not match what the build produces.
-  VTL and all four JS SDK renderers resolve a given `name` to the **same** character.
-- **AC-013**: For an `emoji` node whose `name` does not resolve, every renderer outputs the
-  node's `text` when it carries one and otherwise the literal `:name:` — **never** empty
-  output — and emits `[dotCMS Block Editor]: Emoji <name> is not supported` as a warning
-  (`console.warn` in the JS SDKs, `Logger.warn` in Java). The warning fires once per distinct
-  unresolved name per **render scope**, not once per occurrence. The render scope is defined
-  per surface, because "render pass" has no common meaning across them:
-  - **JS SDKs** — one render call of the block-editor renderer component.
-  - **Java / VTL** — one `StoryBlockRenderHelper` instance, i.e. one Story Block **field**
-    render including its nested blocks. `GenericRenderableImpl` creates at most one helper per
-    `toHtml` call and shares it across the recursion, so this scope needs no request-scoped
-    state. A page rendering N Story Block fields may therefore warn up to N times per distinct
-    name — bounded, and preferable to threading request state through the render path.
-
-**Renderers — Gap B (link run coalescing)**
-
-- **AC-014**: Given stored JSON with adjacent text nodes sharing an identical `link` mark, VTL
-  and all four JS SDK renderers each emit exactly **one** `<a>`.
-- **AC-015**: **Shape 1** — given `text(link) + emoji(no marks) + text(link)` with identical
-  `link` marks, every renderer emits exactly **one** `<a>` containing the emoji character
-  inline. This is the reported customer payload.
-- **AC-016**: An intervening unmarked inline atom that is **not** an `emoji` node (e.g.
-  `hardBreak`) is **not** absorbed: the run breaks and two `<a>` elements are emitted.
-- **AC-017**: Given adjacent text nodes whose `link` marks differ in any of `href`, `target`,
-  `rel`, `title`, or `aria-label`, each renderer emits **two** `<a>` elements.
-- **AC-018**: A `bold` (or other) mark inside a coalesced link still nests correctly within the
-  single `<a>`.
-- **AC-019**: Content already saved with the split renders as a single link **without requiring
-  a re-save**.
+- **AC-013**: Loading a document that contains an `emoji` node yields a document with **no** `emoji`
+  node: each has become a `text` node holding the character resolved from its `attrs.name`.
+- **AC-014**: The resulting `text` node carries **exactly** the marks the `emoji` node carried —
+  none for a node created by the defect, and the `link` mark for a node a link was applied over.
+  **No mark is inherited from a neighbouring node, and adjacent text nodes are not merged.** This is
+  the criterion that keeps the transform from altering content unrelated to this defect.
+- **AC-015**: The heal is recursive — `emoji` nodes inside headings, list items, blockquotes and
+  table cells are healed identically to those in paragraphs.
+- **AC-016**: An `emoji` node whose `name` does not resolve against the `emojis` table is left
+  **untouched** — never replaced with empty text and never with a literal `:name:`.
+- **AC-017**: A document containing no `emoji` node is returned **unchanged** by the heal (identity
+  path). Asserted explicitly, because it is the overwhelmingly common case.
+- **AC-018**: Removing the `emoji` extension registration is proven to lose that content — the
+  regression guard for AC-013. Asserted by parsing the fixture document with the extension absent
+  and observing the node is dropped (the `AIContent` / #37145 mechanism).
+- **AC-019**: **The reported payload heals as specified, and no further.** Loading
+  `text(link) + emoji(no marks) + text(link)` yields `text(link) + text(no marks) + text(link)`:
+  the `©` is present and renders in VTL and every SDK, and the output is still **two** `<a>`
+  elements. That is the expected result, not a shortfall — rejoining them is the author's edit.
 
 **Accessibility verification**
 
-- **AC-020**: Tabbing through the rendered link produces exactly **one** focus stop.
-- **AC-021**: The NVDA Elements List / VoiceOver rotor shows **one** entry carrying the
-  complete accessible name, including the symbol.
-
-**Release**
-
-- **AC-022**: `@dotcms/react`, `@dotcms/vue` and `@dotcms/angular` each carry a minor version
-  bump and a `CHANGELOG.md` entry for this release: `### Added` for `emoji` node support,
-  `### Fixed` for link run coalescing, the latter stating explicitly that rendered HTML
-  changes for existing content.
+- **AC-020**: For content authored **after** the fix, tabbing through the rendered link produces
+  exactly **one** focus stop.
+- **AC-021**: The NVDA Elements List / VoiceOver rotor shows **one** entry carrying the complete
+  accessible name, including the symbol.
 
 **Verification method**:
 
-- **Unit (Jest/Spectator)** in `core-web/libs/new-block-editor` — drives a real TipTap editor
-  and asserts document shape for AC-001 through AC-008. Parameterize over a character sample so
-  the class, not three literals, is covered. Use real `NgZone` in service tests; a mocked one
-  breaks the change-detection scheduler.
+- **Unit (Jest/Spectator)** in `core-web/libs/new-block-editor`, driving a real TipTap editor and
+  asserting document shape — AC-001 through AC-012. Parameterize over a character sample so the
+  class, not three literals, is covered. Use real `NgZone` in service tests; a mocked one breaks
+  the change-detection scheduler.
   `pnpm nx test new-block-editor`
-- **Unit (Jest)** for the React, Vue, and Angular SDK renderers — AC-010 through AC-018. The
-  Angular SDK needs both of its renderers covered.
-  `pnpm nx test sdk-react` / `pnpm nx test sdk-vue` / `pnpm nx test sdk-angular`
-- **VTL renderer end-to-end** — AC-009, AC-011 through AC-018, on top of the JUnit coverage
-  above. Exercised via a Postman collection
-  rendering a fixture contentlet whose Story Block field holds both an `emoji` node and
-  adjacent same-link text nodes.
-  `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=<collection>`
-- **Regression fixture** — a stored-JSON fixture reproducing the exact three-node payload from
-  the Actual Behavior section, shared across the renderer test suites so all five renderer
-  implementations assert against identical input. This fixture is what proves **AC-019**: it is only ever
-  rendered, never re-saved.
-- **Unit (JUnit)** for `StoryBlockRenderHelper` — the Gap B grouping and the map lookup, in
-  `dotCMS/src/test/java/com/dotcms/rendering/velocity/viewtools/content/util/`, alongside the
-  existing `StoryBlockAPIImplToMapTest`. Covers **AC-014 through AC-017** — including
-  **AC-015** (an unmarked `emoji` node is absorbed into the run) and **AC-016** (a non-`emoji`
-  unmarked atom breaks it), the two behaviors this Java grouping exists to implement — plus the
-  no-op path where nothing coalesces and the input is returned unchanged. AC-018 (nested marks
-  inside the anchor) is asserted at the VTL end-to-end layer instead, since it depends on macro
-  rendering rather than on grouping.
-  `./mvnw test -pl :dotcms-core -Dtest=StoryBlockRenderHelperTest`
-- **Generated map and unresolved-name fallback** — AC-012 and AC-013. A CI step regenerates the map and fails on any diff against the
-  committed artifact, plus a unit test asserting VTL and the SDKs agree on a sample of names.
-- **Release artifacts** — AC-022. Reviewed on the PR: three `package.json` bumps and three
-  `CHANGELOG.md` entries. No automated gate exists, so this is a review checklist item.
-- **Manual accessibility pass** — AC-020 and AC-021, with NVDA and with VoiceOver. Not
-  automatable; must be recorded in the post-merge QA plan.
+- **Unit (Jest)** for the heal as a pure JSON transform — AC-013 through AC-017 and AC-019. Fast,
+  no editor instance needed. AC-014 (marks preserved, none inherited) and AC-017 (identity path) are
+  the two that bound the risk and must not be folded into a broader assertion.
+- **Unit (Jest/Spectator)** for AC-018 and for the AC-012 ↔ AC-013 pair — the same fixture must
+  survive a JSON load with `parseHTML` neutralized, proving parse rules govern HTML entry points
+  only.
+- **Regression fixture** — the exact three-node payload from Actual Behavior, shared across the
+  editor suites so every assertion runs against identical input.
+- **Manual accessibility pass** — AC-020 and AC-021, with NVDA and with VoiceOver, on content
+  authored after the fix. Not automatable; record in the post-merge QA plan. Note that a *healed*
+  field still shows two focus stops by design (AC-019); the single-stop criterion applies to newly
+  authored content.
+- **Empirical check the plan owes** — whether ProseMirror joins the adjacent `text(link)` nodes
+  produced when the heal converts a node that already carried the `link` mark. Confirm, do not
+  assume.
+- **Manual cross-editor check** — open a field carrying `emoji` nodes in the legacy editor before
+  and after this change, to confirm the pre-existing drop path is unchanged (Regression Risk).
 
-Per Constitution Principle V, these tests are written, developer-approved, and confirmed
+**Test types deliberately not used** (Constitution Principle V requires this be stated, not
+implied):
+
+| Test type | Used | Why |
+| --- | --- | --- |
+| Unit (Jest/Spectator) | **Yes** | Every automatable acceptance criterion lives in the editor. |
+| Integration (JUnit) | No | No Java, no database, no API is touched. v1 needed these because it changed `StoryBlockRenderHelper`; v2 does not. |
+| Postman | No | No REST endpoint changes. The VTL render path is unmodified. |
+| Karate | No | Same — no API surface. |
+| e2e (Playwright) | No | The storage round-trip it would prove is plain ProseMirror JSON serialization, already covered at the unit layer. Adds a running-instance dependency for no new assertion. |
+| Manual | **Yes** | **AC-020 and AC-021 only** — screen-reader output, not automatable, recorded in the post-merge QA plan. Every other criterion, AC-013 through AC-019 included, is a Jest test. AC-014 and AC-017 in particular bound the heal's risk and must not be routed here. |
+
+Per Constitution Principle V, the tests that **are** written are developer-approved and confirmed
 failing (Red) before any implementation.
 
 ## Assumptions
 
-- **This spec's approach supersedes an acceptance criterion in issue #37340.** That issue
-  requires "Genuine pictographic emoji inserted via the emoji picker still work and still
-  produce `emoji` nodes — no regression." The approach chosen here deliberately stops producing
-  `emoji` nodes for **all** newly authored content, pictographic included. The user's stated
-  direction is explicit and takes precedence. **Action: amend the AC on #37340 before this spec
-  is approved**, so the issue and the spec do not disagree in the record.
-- Emoji rendered as a literal character in a text node is acceptable product behavior. This is
-  already what the picker produces (`insertContent(emoji.native)`), and what the legacy Block
-  Editor has always produced.
-- Losing shortcode round-tripping (`:rocket:`) for new content is acceptable. The `:`
-  suggestion trigger is already inert by design in this editor.
-- The customer on helpdesk ticket 39197 authored the affected content in the **new** Block
-  Editor. Only the new editor registers the emoji extension, so only it can create this split.
-  **This remains unconfirmed** and is the triage precondition recorded on #37340 — if they were
-  on the legacy editor, this diagnosis does not explain their data.
-- All measurements in this spec were taken against `@tiptap/extension-emoji@3.22.2` and
-  `emoji-regex@10.6.0`. The counts are version-specific; the defect class is not.
+- **This spec supersedes an acceptance criterion on issue #37340**, which requires "genuine
+  pictographic emoji inserted via the emoji picker still work and still produce `emoji` nodes".
+  This approach deliberately stops producing `emoji` nodes for **all** newly authored content,
+  pictographic included. **Action: amend that AC on #37340 before this spec is approved**, so the
+  issue and the spec do not disagree in the record.
+- **#37340 also frames two renderer gaps ("no `emoji` branch", "no link coalescing") as in-scope.**
+  v2 declares both non-goals and explains why in Fix Scope. **Action: record that on the issue too.**
+- **#37340's migration criterion is met only in part and must be amended**: "already-split content
+  renders as a single link **without requiring a re-save**." The heal restores the **character**
+  without a re-save — it renders in VTL and every SDK on the next load. It does **not** restore the
+  single link: the output stays two `<a>` elements until an author reapplies the link. That half is
+  a deliberate developer decision (Resolved Decision 3), not an oversight. **Action: amend that AC
+  on #37340 alongside the other two.**
+- Emoji as a literal character in a text node is acceptable product behavior. It is already what
+  the picker produces and what the legacy Block Editor has always produced.
+- Losing shortcode round-tripping (`:rocket:` in storage) for new content is acceptable; the
+  character is the content.
+- The customer on helpdesk ticket 39197 authored the affected content in the **new** Block Editor.
+  Only the new editor registers the extension. **Unconfirmed** — the triage precondition recorded
+  on #37340. If they were on the legacy editor, this diagnosis does not explain their data.
+- All measurements are against `@tiptap/extension-emoji@3.22.2` and `emoji-regex@10.6.0`. The
+  counts are version-specific; the defect class is not.
 
 ## Resolved Decisions
 
-All three open questions were decided by the developer on 2026-09-03. None remain open; the
-spec carries no `[NEEDS CLARIFICATION]` markers.
-
 | # | Question | Decision | Rationale / consequence |
 | --- | --- | --- | --- |
-| 1 | Existing stored `emoji` nodes — render-only, heal-on-edit, or migrate? | **Render-only** | Gap A + Gap B satisfy AC-019 without a re-save. No Java, no DB, not rollback-relevant. Accepted trade-off: old nodes persist, so the legacy-editor drop path and the `<img>` fallback stay live for that content. |
-| 2 | `enableEmoticons` (`:)`) — keep as text, or drop? | **Insert literal character** | Preserves a shortcut authors already use, while removing the node creation that strips marks. `:)` now yields `🙂` inside the text node. Covered by AC-006. |
-| 3 | Does AC-002's character sample need to be exhaustive? | **Representative sample** | All 3 reported symbols, ~20 further text-presentation characters, plus pictographic and multi-codepoint cases (ZWJ sequence, flag). Fast, readable, and stable across extension upgrades. |
+| 1 | Fix boundary — editor, renderers, or both? | **Editor only** | The cause is authoring-side, and the shortcode table only exists there. Fixing it in the editor removes the need for five renderer implementations, a generated map, and an SDK release. |
+| 2 | Existing stored `emoji` nodes | **Healed on the editor's parse path** | `emoji(marks) → text(same marks, character)`. The shortcode table already ships inside the editor's dependency, so nothing crosses a build boundary. No Java, no migration, no heal script. |
+| 3 | Should the heal inherit neighbouring marks and rejoin the split link? | **No — marks preserved, never inherited** | Inheriting a neighbour's mark infers **one** author's intent from **one** payload shape; elsewhere that shape is deliberate, and a wrong guess is silent and irreversible. Accepted consequence: the heal restores the character, not the link. AC-014, AC-019. |
+| 4 | `:shortcode:` and `:)` shortcuts | **Kept, output changed to a literal character** | Removing them would be a functional regression; keeping the node would not fix the bug. AC-006, AC-007. |
+| 5 | Emoji node registration | **Preserved, `emojis` unfiltered** | #37145 / #37175 / `AIContent`: dropping a registration TipTap needs to parse stored content loses the content. Filtering `emojis` verifiably renders `:copyright:` as text. |
+| 6 | Renderer link-run coalescing (v1 "Gap B") | **Dropped** | Retyped content is one marked `text` node, so nothing remains to coalesce for this defect. A genuinely latent coalescing gap can be filed on its own merits. |
+| 7 | AC-002 character sample | **Representative, not exhaustive** | Three reported symbols, ~20 further text-presentation characters, plus pictographic and multi-codepoint cases. Stable across extension upgrades. |
+| 8 | HTML paste re-creating `emoji` nodes | **Neutralize `parseHTML`** | Closing paths 1–4 alone still lets copy-paste between fields mint new nodes, defeating the fix's one guarantee. Stored JSON parsing is unaffected (`Node.fromJSON` ignores `parseHTML`). AC-012, AC-013. |
+| 9 | `emoji` in Allowed Blocks | **Gates removed** | `emoji` is not selectable in Allowed Blocks (`getEditorBlockOptions()` offers block nodes only, #37175), so `has('emoji')` only ever fires on fields that restrict something else — silently removing the picker and `:)` from them. AC-008, AC-009. |
+| 10 | Finding content that needs re-entry | **No longer needed** | Superseded by Decision 2 — content repairs itself as fields are opened, so a locating query stopped being the remedy's backbone. A report feature stays out of scope. |
+| 11 | Test types skipped | **Jest only, justified in writing** | No Java, DB, REST, renderer or build artifact is touched, so integration/Postman/Karate/e2e have nothing to assert. Accessibility is manual. Recorded rather than left silent, per Principle V. |
+| 12 | Keep the node and let it carry marks instead? | **Rejected** | Fixing mark inheritance makes rendering *worse* — `text(link) + emoji(link) + text(link)` is three anchors, not one; today it is two. The node still stores a shortcode, so a ~1949-entry table is needed in Java plus four JS renderers. It is also the only option where the affected set **grows**. |
 
-**Still to confirm outside this spec** — not a clarification, an action:
+**Still to confirm outside this spec** — actions, not clarifications:
 
-- Amend the acceptance criterion on issue [#37340](https://github.com/dotCMS/core/issues/37340)
-  that requires pictographic emoji to keep producing `emoji` nodes. This spec deliberately stops
-  producing them for all newly authored content. See Assumptions.
-- Confirm from helpdesk ticket 39197 that the customer authored the affected content in the
-  **new** Block Editor. This is the triage precondition already recorded on #37340.
+- Amend the pictographic-emoji AC on [#37340](https://github.com/dotCMS/core/issues/37340), and
+  record that the two renderer gaps are now non-goals with the reasoning above.
+- Confirm from helpdesk ticket 39197 that the customer authored in the **new** Block Editor.
+
+## Revision History
+
+| Version | Date | Change |
+| --- | --- | --- |
+| v1 | 2026-09-03 | Original spec. Editor fix **plus** renderer Gap A (`emoji` branch in VTL + four JS renderers), Gap B (link coalescing in five renderers + `StoryBlockRenderHelper`), a build-generated shortcode map crossing the JS → Java boundary, and a coordinated SDK release. Implemented on `…-37340-…-impl`: 33 files, ~2.4k lines, two ACs withdrawn mid-implementation (v1 AC-012 map, v1 AC-022 version bump vs ADR-0019). |
+| v2 | 2026-09-07 | **Scope reduced to the editor.** Every renderer, SDK, Java and release criterion becomes a non-goal with its consequence stated. Clarify added the `parseHTML` paste path, removed the Allowed Blocks gates, and recorded the skipped test types. An options review then settled the treatment of stored nodes: they are **healed into text on load**, by a transform that preserves marks exactly and infers nothing — restoring the character everywhere without guessing at the link. |
