@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.weld.junit5.EnableWeld;
@@ -437,5 +438,75 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
         assertEquals(BatchFailureReason.OVER_SIZE_LIMIT,
                 reasonFor(outcome, "over-the-fallback.bin"));
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#process} — reclaim at the terminal state
+     * <p>
+     * Given scenario: A batch completes successfully.
+     * <p>
+     * Expected result: The staged content is gone (FR-033). <b>This is the happy path, which is
+     * exactly why it went unchecked:</b> the reclaim was written for the two failure routes — a
+     * refusal and a read that dies — and both were tested carefully. A run that succeeds reaches a
+     * terminal state too, and nothing purges staged content on a schedule, so every completed batch
+     * was leaking its own bytes permanently: invisible to the author, uncollected by any run, and
+     * growing with every upload.
+     */
+    @Test
+    public void test_run_reclaimsStagedContentWhenItReachesATerminalState() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 3);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+        final List<String> tempFileIds = new ArrayList<>();
+        staged.forEach(file -> tempFileIds.add(String.valueOf(file.get("tempFileId"))));
+
+        new BulkUploadProcessor().process(job);
+
+        assertEquals(3, APILocator.getFolderAPI().getWorkingContent(folder, admin(), false).size(),
+                "the run succeeded, so the assets exist");
+
+        for (final String tempFileId : tempFileIds) {
+            final Optional<DotTempFile> leftBehind = APILocator.getTempFileAPI()
+                    .getTempFile(List.of(admin().getUserId()), tempFileId);
+
+            assertTrue(leftBehind.isEmpty() || !leftBehind.get().file.exists(), String.format(
+                    "staged content '%s' survived a completed run; nothing purges it on a "
+                            + "schedule, so this leaks permanently and grows with every batch",
+                    tempFileId));
+        }
+    }
+
+    /**
+     * Method to test: {@link BulkUploadProcessor#process} — reclaim after cancellation
+     * <p>
+     * Given scenario: A run is cancelled, so some of its files were never reached.
+     * <p>
+     * Expected result: Their content is reclaimed too (FR-033, explicitly "including for files the
+     * run never reached"). Those are the files most likely to be forgotten, because no per-item
+     * outcome was ever written for them — there is no row pointing at what to clean up.
+     */
+    @Test
+    public void test_run_reclaimsContentOfFilesItNeverReached() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 5);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+        final String lastTempFileId = String.valueOf(staged.get(4).get("tempFileId"));
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.cancel(job);
+        processor.process(job);
+
+        final Optional<DotTempFile> leftBehind = APILocator.getTempFileAPI()
+                .getTempFile(List.of(admin().getUserId()), lastTempFileId);
+
+        assertTrue(leftBehind.isEmpty() || !leftBehind.get().file.exists(),
+                "a file the run never reached still had content staged for it, and a cancelled "
+                        + "run is a terminal state like any other");
     }
 }
