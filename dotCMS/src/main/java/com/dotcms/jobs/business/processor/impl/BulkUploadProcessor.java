@@ -117,6 +117,44 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         resolveIndexVisibility(job, createdInodes);
 
         progressTracker.updateProgress(1.0f);
+
+        // FR-019 — say how the run ended, not only that it began. Without this an operator reading
+        // logs sees a batch start and nothing after it, and cannot tell a run that finished from
+        // one that stalled: both look identical. Read from the durable rows rather than from
+        // counters held in memory, so the line is true across a resume as well.
+        logTerminalState(job, stagedFiles.size());
+    }
+
+    /**
+     * Reports the run's terminal state and its counts, once, at the end (FR-019).
+     * <p>
+     * Best-effort like the author-facing notification: a batch that created its files must not be
+     * failed by the log line that describes it.
+     */
+    private void logTerminalState(final Job job, final int submitted) {
+        try {
+            final List<BatchItemResult> results = itemResults.findByJobId(job.id());
+            final long success = countOf(results, BatchItemStatus.SUCCESS);
+            final long failed = countOf(results, BatchItemStatus.FAILED);
+            final long skipped = countOf(results, BatchItemStatus.SKIPPED);
+
+            // Cancellation is the author's own choice, so it is reported as a distinct ending
+            // rather than folded into "finished" — the two mean different things to whoever is
+            // reading the log to find out why a batch is short.
+            final String ending = cancellationRequested.get() ? "CANCELED" : "COMPLETED";
+
+            Logger.info(this, String.format(
+                    "Bulk upload job [%s]: %s - %d submitted, %d created, %d failed, %d skipped",
+                    job.id(), ending, submitted, success, failed, skipped));
+        } catch (final DotDataException e) {
+            Logger.warn(this, String.format(
+                    "Bulk upload job [%s]: could not read the run's outcome to log it: %s",
+                    job.id(), e.getMessage()));
+        }
+    }
+
+    private long countOf(final List<BatchItemResult> results, final BatchItemStatus status) {
+        return results.stream().filter(r -> r.status() == status).count();
     }
 
     /**
@@ -433,12 +471,9 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         final Map<String, Object> metadata = new HashMap<>();
         try {
             final List<BatchItemResult> results = itemResults.findByJobId(job.id());
-            long success = results.stream()
-                    .filter(r -> r.status() == BatchItemStatus.SUCCESS).count();
-            long failed = results.stream()
-                    .filter(r -> r.status() == BatchItemStatus.FAILED).count();
-            long skipped = results.stream()
-                    .filter(r -> r.status() == BatchItemStatus.SKIPPED).count();
+            final long success = countOf(results, BatchItemStatus.SUCCESS);
+            final long failed = countOf(results, BatchItemStatus.FAILED);
+            final long skipped = countOf(results, BatchItemStatus.SKIPPED);
 
             metadata.put("total", results.size());
             metadata.put("processed", success + failed);
