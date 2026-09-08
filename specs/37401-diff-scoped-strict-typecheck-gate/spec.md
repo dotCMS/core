@@ -15,7 +15,8 @@
 ## Problem Statement *(mandatory)*
 
 The `core-web` workspace is only partly strict: the shared TypeScript baseline turns strict
-mode **off**, and 22 of 55 project configs opt back in locally. The workspace-wide migration
+mode **off**, and 22 of 55 TypeScript project configs opt back in locally (the workspace has
+56 Nx projects; one of them ships no `tsconfig.json`). The workspace-wide migration
 (PR #37198, 1455 files) is waiting on full-team QA and is not imminent.
 
 While it waits, **new non-strict code keeps landing on `main`**. Every sync from `main` into

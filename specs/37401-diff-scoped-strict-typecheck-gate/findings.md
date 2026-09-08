@@ -1,7 +1,9 @@
 # Findings: diff-scoped strict typecheck gate
 
 **Issue**: dotCMS/core#37401 · **Spec**: [spec.md](./spec.md) · **Date**: 2026-09-07
-**Status**: in progress — User Stories 1 and 2 complete; US3 (decision matrix) and US4 (templates) pending.
+**Status**: complete — all four user stories reported. US1/US2 (mechanism, corpus, adjudication),
+US3 (decision matrix, §6), US4 (template arm, §7). SC-005's runtime budget is the one criterion
+not met, accepted as a deviation and deferred to #37448 (§13).
 
 Every number below was produced by `core-web/tools/scripts/strict-gate/`, replaying real merged
 pull requests. Nothing here is estimated.
@@ -460,9 +462,16 @@ and the validation guide did not name.
 
 ## 14. Still open
 
-- **US3** — full flag-set × granularity matrix, and the whole-file adoption cost.
-- **US4** — Angular template strictness: cost, and go/no-go.
-- **SC-008** — the day-one blocking recommendation. Detection and precision now support it;
-  runtime does not yet.
+Every user story in the spec is reported. What remains is work this spike deliberately did not do,
+carried into the follow-up (§12) rather than left unanswered here.
+
+- **SC-005 — the runtime budget.** 11.4s and 12.0s at the tail against a 10s budget. The three
+  untried optimisations are named in §5 and §10; deferred to #37448, which gates the blocking flip
+  on a measured tail. Accepted as a deviation in §13, not an open question.
+- **SC-008 — the blocking flip, not the recommendation.** The recommendation is settled in §10:
+  **GO for the TypeScript arm, non-blocking first.** Detection and precision support day-one
+  blocking; runtime does not, so the flip waits on the line above.
+- **Templates — advisory or deferred.** §7 measures the cost and recommends NO-GO for day-one
+  blocking; which of the two postures ships is a call for the follow-up.
 - **#37086** (`libs/sdk/angular`: `strict: true`, none of the extras) — the intermediate tier,
   deliberately excluded from the corpus so it could not contaminate the false-positive denominator.
