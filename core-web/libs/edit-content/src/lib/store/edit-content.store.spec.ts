@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -43,13 +44,13 @@ describe('DotEditContentStore', () => {
     // drive `initialize()` (route params in prod are the host's concern, not the
     // store's).
     const mockHost = {
-        resolveIdentity: jest.fn().mockReturnValue({}),
-        reportSaved: jest.fn(),
-        reloadContent: jest.fn(),
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        resolveIdentity: vi.fn().mockReturnValue({}),
+        reportSaved: vi.fn(),
+        reloadContent: vi.fn(),
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const createService = createServiceFactory({
@@ -70,7 +71,7 @@ describe('DotEditContentStore', () => {
             mockProvider(DotVersionableService),
             mockProvider(ConfirmationService),
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),

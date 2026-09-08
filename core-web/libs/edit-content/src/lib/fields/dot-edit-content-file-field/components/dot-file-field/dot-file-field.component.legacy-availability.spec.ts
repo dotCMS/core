@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -60,7 +61,7 @@ describe('DotFileFieldComponent — legacy host availability (no Angular launche
             // Deliberately NO Router and NO GlobalStore: the legacy Dojo host is a custom element
             // bootstrapped without a router, so anything the component pulls in has to survive that.
             mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(SITE_MOCK))
+                getCurrentSite: vi.fn().mockReturnValue(of(SITE_MOCK))
             }),
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
@@ -68,9 +69,9 @@ describe('DotFileFieldComponent — legacy host availability (no Angular launche
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
             mockProvider(DotWorkflowActionsFireService),
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('Test Message') }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('Test Message') }),
             mockProvider(DotAiService, {
-                checkPluginInstallation: jest.fn().mockReturnValue(of(false))
+                checkPluginInstallation: vi.fn().mockReturnValue(of(false))
             }),
             provideHttpClient(),
             provideHttpClientTesting()

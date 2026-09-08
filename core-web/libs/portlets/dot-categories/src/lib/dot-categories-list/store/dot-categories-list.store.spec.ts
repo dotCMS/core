@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Subject, of, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { MessageService } from 'primeng/api';
 
@@ -54,25 +55,25 @@ const MOCK_PAGINATED_RESPONSE = {
 describe('DotCategoriesListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotCategoriesListStore>>;
     let store: InstanceType<typeof DotCategoriesListStore>;
-    let categoriesService: jest.Mocked<DotCategoriesService>;
+    let categoriesService: Mocked<DotCategoriesService>;
 
     const createService = createServiceFactory({
         service: DotCategoriesListStore,
         providers: [
             mockProvider(DotCategoriesService, {
-                getCategoriesPaginated: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
-                getChildrenPaginated: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
-                createCategory: jest.fn().mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
-                updateCategory: jest.fn().mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
-                deleteCategories: jest
+                getCategoriesPaginated: vi.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
+                getChildrenPaginated: vi.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
+                createCategory: vi.fn().mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
+                updateCategory: vi.fn().mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
+                deleteCategories: vi
                     .fn()
                     .mockReturnValue(of({ entity: { successCount: 2, fails: [] } })),
-                exportCategories: jest.fn().mockReturnValue(of(undefined)),
-                importCategories: jest.fn().mockReturnValue(of({ entity: {} })),
-                updateSortOrder: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE))
+                exportCategories: vi.fn().mockReturnValue(of(undefined)),
+                importCategories: vi.fn().mockReturnValue(of({ entity: {} })),
+                updateSortOrder: vi.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(MessageService, { add: vi.fn() }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
@@ -83,9 +84,7 @@ describe('DotCategoriesListStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        categoriesService = spectator.inject(
-            DotCategoriesService
-        ) as jest.Mocked<DotCategoriesService>;
+        categoriesService = spectator.inject(DotCategoriesService) as Mocked<DotCategoriesService>;
         spectator.flushEffects();
     });
 

@@ -1,13 +1,20 @@
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import '@analogjs/vitest-angular/setup-zone';
+
+import { getTestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-setupZoneTestEnv({
+// Replaces jest-preset-angular's `getTestBed().initTestEnvironment`. Nothing initialises the TestBed
+// for us here, so this file does it — and the two strictness flags are carried across
+// deliberately: they turn an unknown element or property into a failure rather than a
+// silent no-op, so dropping them would quietly weaken every spec in the project.
+getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting(), {
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true
 });
 
-// Polyfill structuredClone for Jest environment
+// Polyfill structuredClone (the DOM environment does not provide it)
 globalThis.structuredClone ??= <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
 const originalConsoleError = console.error;

@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -113,14 +114,14 @@ describe('DotToolbarUserStore', () => {
     });
 
     it('should trigger loginService logoutAs, navigate to first portlet and reload the page when logoutAs is called', fakeAsync(() => {
-        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
+        vi.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
 
-        jest.spyOn(loginService, 'logoutAs');
-        jest.spyOn(locationService, 'reload');
+        vi.spyOn(loginService, 'logoutAs');
+        vi.spyOn(locationService, 'reload');
 
         store.logoutAs();
 

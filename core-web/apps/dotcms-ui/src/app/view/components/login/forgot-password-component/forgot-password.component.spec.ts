@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -45,18 +46,19 @@ describe('ForgotPasswordComponent', () => {
         dotRouterService = spectator.inject(DotRouterService);
     });
 
-    it('should load form labels correctly', (done) => {
-        const loginPageState = spectator.inject(
-            DotLoginPageStateService
-        ) as unknown as MockDotLoginPageStateService;
-        loginPageState.get().subscribe((loginInfo) => {
-            expect(loginInfo.i18nMessagesMap['forgot-password']).toEqual('Forgot Password');
-            expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toContain('Email Address');
-            expect(loginInfo.i18nMessagesMap['cancel']).toContain('Cancel');
-            expect(loginInfo.i18nMessagesMap['get-new-password']).toContain('Recover Password');
-            done();
-        });
-    });
+    it('should load form labels correctly', () =>
+        new Promise<void>((done) => {
+            const loginPageState = spectator.inject(
+                DotLoginPageStateService
+            ) as unknown as MockDotLoginPageStateService;
+            loginPageState.get().subscribe((loginInfo) => {
+                expect(loginInfo.i18nMessagesMap['forgot-password']).toEqual('Forgot Password');
+                expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toContain('Email Address');
+                expect(loginInfo.i18nMessagesMap['cancel']).toContain('Cancel');
+                expect(loginInfo.i18nMessagesMap['get-new-password']).toContain('Recover Password');
+                done();
+            });
+        }));
 
     it('should keep recover password button disabled until the form is valid', fakeAsync(() => {
         tick();
@@ -77,8 +79,8 @@ describe('ForgotPasswordComponent', () => {
         control.markAsDirty();
         spectator.detectChanges();
 
-        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
-        jest.spyOn(window, 'confirm').mockReturnValue(true);
+        vi.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
         spectator.detectChanges();
 
         const requestPasswordButton = spectator.debugElement.query(
@@ -118,8 +120,8 @@ describe('ForgotPasswordComponent', () => {
     it('should show error message', fakeAsync(() => {
         tick();
         spectator.detectChanges();
-        jest.spyOn(window, 'confirm').mockReturnValue(true);
-        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        vi.spyOn(loginService, 'recoverPassword').mockReturnValue(
             throwError(() => ({ error: { errors: [{ message: 'error message' }] } }))
         );
         spectator.component.forgotPasswordForm.setValue({ login: 'test' });
@@ -138,8 +140,8 @@ describe('ForgotPasswordComponent', () => {
         tick();
         spectator.detectChanges();
 
-        jest.spyOn(window, 'confirm').mockReturnValue(true);
-        jest.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        vi.spyOn(loginService, 'recoverPassword').mockReturnValue(of(null));
         spectator.component.forgotPasswordForm.setValue({ login: 'test@test.com' });
         spectator.detectChanges();
         spectator.click('[data-testid="submitButton"]');

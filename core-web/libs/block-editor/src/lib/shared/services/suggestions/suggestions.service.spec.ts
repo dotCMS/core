@@ -191,23 +191,24 @@ describe('SuggestionsService', () => {
             flushEmpty(req);
         });
 
-        it('maps the response to entity.jsonObjectView.contentlets', (done) => {
-            const contentlets = [{ identifier: '1' }, { identifier: '2' }];
+        it('maps the response to entity.jsonObjectView.contentlets', () =>
+            new Promise<void>((done) => {
+                const contentlets = [{ identifier: '1' }, { identifier: '2' }];
 
-            service
-                .getContentlets({
-                    contentType: 'Blog',
-                    filter: 'foo',
-                    currentLanguage: 1,
-                    contentletIdentifier: undefined
-                })
-                .subscribe((result) => {
-                    expect(result).toEqual(contentlets);
-                    done();
-                });
+                service
+                    .getContentlets({
+                        contentType: 'Blog',
+                        filter: 'foo',
+                        currentLanguage: 1,
+                        contentletIdentifier: undefined
+                    })
+                    .subscribe((result) => {
+                        expect(result).toEqual(contentlets);
+                        done();
+                    });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush({ entity: { jsonObjectView: { contentlets } } });
-        });
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush({ entity: { jsonObjectView: { contentlets } } });
+            }));
     });
 });

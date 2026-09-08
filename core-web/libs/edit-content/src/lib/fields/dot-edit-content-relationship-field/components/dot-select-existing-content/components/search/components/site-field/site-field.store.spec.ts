@@ -1,8 +1,9 @@
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
 import { createFakeEvent } from '@openng/spectator';
-import { mockProvider, SpyObject } from '@openng/spectator/jest';
+import { mockProvider, SpyObject } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
@@ -60,8 +61,8 @@ describe('SiteFieldStore', () => {
             providers: [
                 SiteFieldStore,
                 mockProvider(DotBrowsingService, {
-                    getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
-                    getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+                    getSitesTreePath: vi.fn().mockReturnValue(of(mockSites)),
+                    getFoldersTreeNode: vi.fn().mockReturnValue(of(mockFolders))
                 })
             ]
         });

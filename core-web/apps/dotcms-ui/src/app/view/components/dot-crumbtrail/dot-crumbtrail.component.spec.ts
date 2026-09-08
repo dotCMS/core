@@ -1,6 +1,11 @@
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    byTestId
+} from '@openng/spectator/vitest';
 
 import { MenuItem } from 'primeng/api';
 

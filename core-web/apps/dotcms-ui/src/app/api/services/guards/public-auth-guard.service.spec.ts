@@ -1,4 +1,5 @@
 import { Observable, of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -37,8 +38,8 @@ describe('ValidPublicAuthGuardService', () => {
         publicAuthGuardService = TestBed.inject(PublicAuthGuardService);
         dotRouterService = TestBed.inject(DotRouterService);
         loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
+        mockRouterStateSnapshot = vi.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
+        mockActivatedRouteSnapshot = vi.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
             'toString'
         ]);
     });

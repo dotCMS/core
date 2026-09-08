@@ -1,5 +1,7 @@
 /// <reference types="jest" />
 
+import { MockedClass, vi } from 'vitest';
+
 import {
     DotCMSClientConfig,
     DotErrorContent,
@@ -13,11 +15,11 @@ import { Content } from './content-api';
 
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
-jest.mock('../adapters/fetch-http-client');
+vi.mock('../adapters/fetch-http-client');
 
 describe('Content', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const config: DotCMSClientConfig = {
         dotcmsUrl: 'http://localhost:8080',

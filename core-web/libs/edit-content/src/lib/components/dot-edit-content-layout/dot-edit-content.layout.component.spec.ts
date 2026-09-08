@@ -5,9 +5,10 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -81,16 +82,16 @@ const mockEditContentHost = {
     inPlaceNavigation: false,
     inPlaceNavigation$: undefined,
     trail: relatedTrailSignal,
-    setTrail: jest.fn(),
-    resolveIdentity: jest.fn().mockReturnValue({}),
-    reportSaved: jest.fn(),
-    reloadContent: jest.fn(),
-    setContentTitle: jest.fn(),
-    addBreadcrumb: jest.fn(),
-    goToSavedContent: jest.fn(),
-    goToRestoredVersion: jest.fn(),
-    goToRelatedContent: jest.fn(),
-    goToCrumb: jest.fn()
+    setTrail: vi.fn(),
+    resolveIdentity: vi.fn().mockReturnValue({}),
+    reportSaved: vi.fn(),
+    reloadContent: vi.fn(),
+    setContentTitle: vi.fn(),
+    addBreadcrumb: vi.fn(),
+    goToSavedContent: vi.fn(),
+    goToRestoredVersion: vi.fn(),
+    goToRelatedContent: vi.fn(),
+    goToCrumb: vi.fn()
 };
 
 describe('EditContentLayoutComponent', () => {
@@ -129,12 +130,12 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DialogService),
             mockProvider(DotLanguagesService),
             mockProvider(DotSiteService, {
-                getCurrentSite: jest
+                getCurrentSite: vi
                     .fn()
                     .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
             }),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(of({}))
+                getSystemConfig: vi.fn().mockReturnValue(of({}))
             }),
             GlobalStore,
             {
@@ -156,21 +157,21 @@ describe('EditContentLayoutComponent', () => {
                 }
             },
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: jest.fn((key: string, ...args: unknown[]) =>
+                get: vi.fn((key: string, ...args: unknown[]) =>
                     key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
                 )
             }),
             mockProvider(DotRelatedContentNavigationStore, {
                 trail: relatedTrailSignal,
-                registerTitle: jest.fn(),
-                buildTrailForSavedInode: jest.fn().mockReturnValue(null)
+                registerTitle: vi.fn(),
+                buildTrailForSavedInode: vi.fn().mockReturnValue(null)
             })
         ]
     });
@@ -190,10 +191,10 @@ describe('EditContentLayoutComponent', () => {
         dotEditContentService = spectator.inject(DotEditContentService, true);
         dotLanguagesService = spectator.inject(DotLanguagesService, true);
 
-        jest.spyOn(dotLanguagesService, 'get').mockReturnValue(of(MOCK_LANGUAGES));
+        vi.spyOn(dotLanguagesService, 'get').mockReturnValue(of(MOCK_LANGUAGES));
 
         // Mock the initial UI state
-        jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+        vi.spyOn(utils, 'getStoredUIState').mockReturnValue({
             view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
@@ -228,9 +229,9 @@ describe('EditContentLayoutComponent', () => {
             const freshStore = freshSpectator.inject(DotEditContentStore, true);
             const host = freshSpectator.inject(EDIT_CONTENT_HOST, true);
 
-            const markFormPristineSpy = jest.spyOn(freshSpectator.component, 'markFormPristine');
-            jest.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-            jest.spyOn(freshStore, 'clearWorkflowActionSuccess');
+            const markFormPristineSpy = vi.spyOn(freshSpectator.component, 'markFormPristine');
+            vi.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+            vi.spyOn(freshStore, 'clearWorkflowActionSuccess');
 
             freshSpectator.detectChanges();
 
@@ -244,9 +245,9 @@ describe('EditContentLayoutComponent', () => {
             const freshStore = freshSpectator.inject(DotEditContentStore, true);
             const host = freshSpectator.inject(EDIT_CONTENT_HOST, true);
 
-            const markFormPristineSpy = jest.spyOn(freshSpectator.component, 'markFormPristine');
-            jest.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(null);
-            jest.spyOn(freshStore, 'clearWorkflowActionSuccess');
+            const markFormPristineSpy = vi.spyOn(freshSpectator.component, 'markFormPristine');
+            vi.spyOn(freshStore, 'workflowActionSuccess').mockReturnValue(null);
+            vi.spyOn(freshStore, 'clearWorkflowActionSuccess');
 
             freshSpectator.detectChanges();
 
@@ -269,7 +270,7 @@ describe('EditContentLayoutComponent', () => {
 
         describe('onFormChange()', () => {
             it('should call store.onFormChange with provided form values', () => {
-                const onFormChangeSpy = jest.spyOn(store, 'onFormChange');
+                const onFormChangeSpy = vi.spyOn(store, 'onFormChange');
 
                 spectator.component.onFormChange(MOCK_FORM_VALUES);
 
@@ -279,15 +280,15 @@ describe('EditContentLayoutComponent', () => {
 
         describe('onWorkflowActionFired()', () => {
             it('should delegate to the form with params built from the store', () => {
-                const fireWorkflowActionSpy = jest.fn();
-                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+                const fireWorkflowActionSpy = vi.fn();
+                vi.spyOn(spectator.component, '$editContentForm').mockReturnValue({
                     fireWorkflowAction: fireWorkflowActionSpy
                 } as unknown as DotEditContentFormComponent);
 
-                jest.spyOn(store, 'currentLocale').mockReturnValue(MOCK_LANGUAGES[0]);
-                jest.spyOn(store, 'contentlet').mockReturnValue(MOCK_CONTENTLET_1_TAB);
-                jest.spyOn(store, 'contentType').mockReturnValue(CONTENT_TYPE_MOCK);
-                jest.spyOn(store, 'currentIdentifier').mockReturnValue(
+                vi.spyOn(store, 'currentLocale').mockReturnValue(MOCK_LANGUAGES[0]);
+                vi.spyOn(store, 'contentlet').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+                vi.spyOn(store, 'contentType').mockReturnValue(CONTENT_TYPE_MOCK);
+                vi.spyOn(store, 'currentIdentifier').mockReturnValue(
                     MOCK_CONTENTLET_1_TAB.identifier
                 );
 
@@ -304,7 +305,7 @@ describe('EditContentLayoutComponent', () => {
             });
 
             it('should not throw when the form ref is undefined (compare view)', () => {
-                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue(undefined);
+                vi.spyOn(spectator.component, '$editContentForm').mockReturnValue(undefined);
 
                 const workflow = { id: 'action-id' } as DotCMSWorkflowAction;
 
@@ -314,7 +315,7 @@ describe('EditContentLayoutComponent', () => {
 
         describe('closeMessage()', () => {
             it('should call store.toggleBetaMessage when closing beta message', () => {
-                const toggleBetaMessageSpy = jest.spyOn(store, 'toggleBetaMessage');
+                const toggleBetaMessageSpy = vi.spyOn(store, 'toggleBetaMessage');
 
                 spectator.component.closeMessage('betaMessage');
 
@@ -347,8 +348,8 @@ describe('EditContentLayoutComponent', () => {
         });
 
         it('should return true from hasUnsavedChanges when the form is dirty', () => {
-            const fakeForm = { dirty: true, markAsPristine: jest.fn() };
-            jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+            const fakeForm = { dirty: true, markAsPristine: vi.fn() };
+            vi.spyOn(spectator.component, '$editContentForm').mockReturnValue({
                 form: fakeForm
             } as unknown as DotEditContentFormComponent);
 
@@ -363,10 +364,10 @@ describe('EditContentLayoutComponent', () => {
 
     describe('confirmClose (chrome-agnostic close guard)', () => {
         it('bypasses the prompt while the editor is loading/saving (form disabled, nothing to discard)', () => {
-            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
-            jest.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
-            jest.spyOn(store, 'isLoading').mockReturnValue(true);
-            const onProceed = jest.fn();
+            vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
+            vi.spyOn(store, 'isLoading').mockReturnValue(true);
+            const onProceed = vi.fn();
 
             spectator.component.confirmClose(onProceed);
 
@@ -375,15 +376,15 @@ describe('EditContentLayoutComponent', () => {
 
         it('does NOT bypass the prompt once loading has settled, even if the sidebar has not (isFullyLoaded no longer gates this)', () => {
             const confirmationService = spectator.inject(ConfirmationService, true);
-            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
-            jest.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
-            jest.spyOn(store, 'isLoading').mockReturnValue(false);
+            vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(store, 'workflowActionSuccess').mockReturnValue(null);
+            vi.spyOn(store, 'isLoading').mockReturnValue(false);
             // A real edit made while `isFullyLoaded()` was still false (sidebar still settling)
             // must still prompt once loading has finished — the previous `!isFullyLoaded()` bypass
             // would have discarded it silently instead.
-            jest.spyOn(store, 'isFullyLoaded').mockReturnValue(false);
-            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
-            const onProceed = jest.fn();
+            vi.spyOn(store, 'isFullyLoaded').mockReturnValue(false);
+            const confirmSpy = vi.spyOn(confirmationService, 'confirm');
+            const onProceed = vi.fn();
 
             spectator.component.confirmClose(onProceed);
 
@@ -405,9 +406,9 @@ describe('EditContentLayoutComponent', () => {
         });
 
         it('should preventDefault on window beforeunload when the form is dirty', () => {
-            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
             const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
-            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+            const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
             window.dispatchEvent(event);
 
@@ -415,9 +416,9 @@ describe('EditContentLayoutComponent', () => {
         });
 
         it('should NOT preventDefault on window beforeunload when the form is pristine', () => {
-            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+            vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
             const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
-            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+            const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
             window.dispatchEvent(event);
 
@@ -427,7 +428,7 @@ describe('EditContentLayoutComponent', () => {
 
     describe('Component Host Classes', () => {
         it('should apply edit-content--with-sidebar class when sidebar is open', () => {
-            jest.spyOn(store, 'isSidebarOpen').mockImplementation(() => true);
+            vi.spyOn(store, 'isSidebarOpen').mockImplementation(() => true);
             spectator.detectChanges();
 
             expect(spectator.element).toHaveClass('edit-content--with-sidebar');
@@ -527,10 +528,10 @@ describe('EditContentLayoutComponent', () => {
 
                 // Create a fake event with preventDefault
                 const event = new MouseEvent('click');
-                Object.defineProperty(event, 'preventDefault', { value: jest.fn() });
+                Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
 
                 // Spy on the store method
-                const disableNewContentEditorSpy = jest.spyOn(store, 'disableNewContentEditor');
+                const disableNewContentEditorSpy = vi.spyOn(store, 'disableNewContentEditor');
 
                 const link = spectator.query(
                     byTestId('edit-content-layout__beta-message-link')
@@ -643,7 +644,7 @@ describe('EditContentLayoutComponent', () => {
                 // that the component renders the topBar when lockWarningMessage returns a value.
                 // The template condition is: topBarHasMessages = ... || lockWarningMessage || ...
                 const mockMessage = 'Content is locked by Other User';
-                jest.spyOn(store, 'lockWarningMessage').mockImplementation(() => mockMessage);
+                vi.spyOn(store, 'lockWarningMessage').mockImplementation(() => mockMessage);
                 spectator.detectChanges();
                 tick();
 
@@ -706,16 +707,16 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
         inPlaceNavigation: true,
         inPlaceNavigation$: undefined as unknown as Subject<InPlaceNavigationRequest>,
         trail: inPlaceTrail,
-        setTrail: jest.fn(),
-        resolveIdentity: jest.fn().mockReturnValue({}),
-        reportSaved: jest.fn(),
-        reloadContent: jest.fn(),
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn(),
-        goToRelatedContent: jest.fn(),
-        goToCrumb: jest.fn()
+        setTrail: vi.fn(),
+        resolveIdentity: vi.fn().mockReturnValue({}),
+        reportSaved: vi.fn(),
+        reloadContent: vi.fn(),
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn(),
+        goToRelatedContent: vi.fn(),
+        goToCrumb: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -745,12 +746,12 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
             mockProvider(DialogService),
             mockProvider(DotLanguagesService),
             mockProvider(DotSiteService, {
-                getCurrentSite: jest
+                getCurrentSite: vi
                     .fn()
                     .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
             }),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(of({}))
+                getSystemConfig: vi.fn().mockReturnValue(of({}))
             }),
             GlobalStore,
             {
@@ -758,13 +759,13 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
                 useValue: { getCurrentUser: () => of({ userId: '123', userName: 'John Doe' }) }
             },
             { provide: ActivatedRoute, useValue: { snapshot: { params: {} } } },
-            mockProvider(Router, { navigate: jest.fn(), url: '/test-url', events: of() }),
+            mockProvider(Router, { navigate: vi.fn(), url: '/test-url', events: of() }),
             provideHttpClient(),
             provideHttpClientTesting(),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
             mockProvider(DotRelatedContentNavigationStore, {
                 trail: inPlaceTrail,
-                registerTitle: jest.fn()
+                registerTitle: vi.fn()
             })
         ]
     });
@@ -776,13 +777,13 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
         navigation$ = new Subject<InPlaceNavigationRequest>();
         inPlaceHost.inPlaceNavigation$ = navigation$;
         inPlaceTrail.set([]);
-        Object.values(inPlaceHost).forEach((v) => (v as jest.Mock)?.mockClear?.());
+        Object.values(inPlaceHost).forEach((v) => (v as Mock)?.mockClear?.());
         inPlaceHost.resolveIdentity.mockReturnValue({});
 
         spectator = createComponent({ detectChanges: false });
         store = spectator.inject(DotEditContentStore, true);
-        jest.spyOn(store, 'initializeExistingContent').mockImplementation(() => undefined);
-        jest.spyOn(store, 'initialize').mockImplementation(() => undefined);
+        vi.spyOn(store, 'initializeExistingContent').mockImplementation(() => undefined);
+        vi.spyOn(store, 'initialize').mockImplementation(() => undefined);
         spectator.detectChanges();
     });
 
@@ -799,7 +800,7 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
     });
 
     it('reloads immediately (committing the trail) when the form is clean', () => {
-        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+        vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
 
         navigation$.next({ inode: 'iB', trail: ['iA', 'iB'] });
 
@@ -810,10 +811,10 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
     });
 
     it('does NOT commit the trail or reload when the user keeps editing (dirty)', () => {
-        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+        vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
         const confirm = spectator.inject(ConfirmationService, true);
         // "Keep editing" == accept → onCancel (no-op). Simulate by invoking accept.
-        jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+        vi.spyOn(confirm, 'confirm').mockImplementation((opts) => {
             opts.accept?.();
 
             return confirm;
@@ -826,10 +827,10 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
     });
 
     it('commits the trail and reloads when the user discards changes (dirty)', () => {
-        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+        vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
         const confirm = spectator.inject(ConfirmationService, true);
         // "Discard" == reject with REJECT type → onConfirm (reload).
-        jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+        vi.spyOn(confirm, 'confirm').mockImplementation((opts) => {
             (opts.reject as (t: ConfirmEventType) => void)?.(ConfirmEventType.REJECT);
 
             return confirm;
@@ -844,7 +845,7 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
     });
 
     it('reloads without touching the trail for a locale switch (request has no trail)', () => {
-        jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+        vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
 
         navigation$.next({ inode: 'iLocale' });
 
@@ -861,7 +862,7 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
 // TestBed is already instantiated throws "Cannot override provider when the test module
 // has already been instantiated".
 describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
-    let dialogCloseMock: jest.Mock;
+    let dialogCloseMock: Mock;
 
     const createDialogComponent = createComponentFactory({
         component: DotEditContentLayoutComponent,
@@ -890,12 +891,12 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             mockProvider(DialogService),
             mockProvider(DotLanguagesService),
             mockProvider(DotSiteService, {
-                getCurrentSite: jest
+                getCurrentSite: vi
                     .fn()
                     .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
             }),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(of({}))
+                getSystemConfig: vi.fn().mockReturnValue(of({}))
             }),
             GlobalStore,
             {
@@ -917,27 +918,27 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
                 }
             },
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: jest.fn((key: string, ...args: unknown[]) =>
+                get: vi.fn((key: string, ...args: unknown[]) =>
                     key === 'edit.content.locked.by.user' ? `Content is locked by ${args[0]}` : key
                 )
             }),
             mockProvider(DotRelatedContentNavigationStore, {
                 trail: relatedTrailSignal,
-                registerTitle: jest.fn(),
-                buildTrailForSavedInode: jest.fn().mockReturnValue(null)
+                registerTitle: vi.fn(),
+                buildTrailForSavedInode: vi.fn().mockReturnValue(null)
             })
         ]
     });
 
     beforeEach(() => {
-        dialogCloseMock = jest.fn();
+        dialogCloseMock = vi.fn();
     });
 
     const createWithDialogRef = (extraProviders: unknown[] = []) =>
@@ -967,9 +968,9 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             const dialogRef = ds.inject(DynamicDialogRef);
 
             ds.detectChanges();
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
-            const confirmSpy = jest.spyOn(dsConfirmService, 'confirm');
+            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+            const confirmSpy = vi.spyOn(dsConfirmService, 'confirm');
 
             dialogRef.close('result');
 
@@ -984,11 +985,11 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             const dialogRef = ds.inject(DynamicDialogRef);
 
             ds.detectChanges();
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
 
             let rejectFn: ((type?: ConfirmEventType) => void) | undefined;
-            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
+            vi.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
                 rejectFn = opts.reject as (type?: ConfirmEventType) => void;
             });
 
@@ -1005,11 +1006,11 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             const dialogRef = ds.inject(DynamicDialogRef);
 
             ds.detectChanges();
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
 
             let acceptFn: (() => void) | undefined;
-            jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
+            vi.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
                 acceptFn = opts.accept;
             });
 
@@ -1025,8 +1026,8 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             const dialogRef = ds.inject(DynamicDialogRef);
 
             ds.detectChanges();
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
 
             dialogRef.close('result');
 
@@ -1036,7 +1037,7 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
 
     describe('UI close (pDialog.close override)', () => {
         it('should pass through when the form is clean', () => {
-            const pDialogCloseMock = jest.fn();
+            const pDialogCloseMock = vi.fn();
             const mockDynamicDialog = { dialog: { close: pDialogCloseMock } };
 
             const ds = createWithDialogRef([
@@ -1044,14 +1045,14 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             ]);
             ds.detectChanges();
 
-            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+            const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
             mockDynamicDialog.dialog.close(mockEvent);
 
             expect(pDialogCloseMock).toHaveBeenCalledWith(mockEvent);
         });
 
         it('should call preventDefault and open confirm dialog when the form is dirty', () => {
-            const pDialogCloseMock = jest.fn();
+            const pDialogCloseMock = vi.fn();
             const mockDynamicDialog = { dialog: { close: pDialogCloseMock } };
 
             const ds = createWithDialogRef([
@@ -1061,14 +1062,14 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             const dsConfirmService = ds.inject(ConfirmationService, true);
 
             ds.detectChanges();
-            jest.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
-            jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
-            const confirmSpy = jest.spyOn(dsConfirmService, 'confirm');
+            vi.spyOn(ds.component, 'hasUnsavedChanges').mockReturnValue(true);
+            vi.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
+            const confirmSpy = vi.spyOn(dsConfirmService, 'confirm');
 
-            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+            const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
             mockDynamicDialog.dialog.close(mockEvent);
 
-            expect((mockEvent as { preventDefault: jest.Mock }).preventDefault).toHaveBeenCalled();
+            expect((mockEvent as { preventDefault: Mock }).preventDefault).toHaveBeenCalled();
             expect(confirmSpy).toHaveBeenCalledTimes(1);
             expect(pDialogCloseMock).not.toHaveBeenCalled();
         });
@@ -1109,16 +1110,16 @@ describe.each([
             inPlaceNavigation,
             inPlaceNavigation$: undefined,
             trail: hostTrail,
-            setTrail: jest.fn(),
-            resolveIdentity: jest.fn().mockReturnValue({}),
-            reportSaved: jest.fn(),
-            reloadContent: jest.fn(),
-            setContentTitle: jest.fn(),
-            addBreadcrumb: jest.fn(),
-            goToSavedContent: jest.fn(),
-            goToRestoredVersion: jest.fn(),
-            goToRelatedContent: jest.fn(),
-            goToCrumb: jest.fn()
+            setTrail: vi.fn(),
+            resolveIdentity: vi.fn().mockReturnValue({}),
+            reportSaved: vi.fn(),
+            reloadContent: vi.fn(),
+            setContentTitle: vi.fn(),
+            addBreadcrumb: vi.fn(),
+            goToSavedContent: vi.fn(),
+            goToRestoredVersion: vi.fn(),
+            goToRelatedContent: vi.fn(),
+            goToCrumb: vi.fn()
         };
 
         const emptyPage = {
@@ -1157,12 +1158,12 @@ describe.each([
                 mockProvider(DialogService),
                 mockProvider(DotLanguagesService),
                 mockProvider(DotSiteService, {
-                    getCurrentSite: jest
+                    getCurrentSite: vi
                         .fn()
                         .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
                 }),
                 mockProvider(DotSystemConfigService, {
-                    getSystemConfig: jest.fn().mockReturnValue(of({}))
+                    getSystemConfig: vi.fn().mockReturnValue(of({}))
                 }),
                 GlobalStore,
                 {
@@ -1178,17 +1179,17 @@ describe.each([
                     }
                 },
                 mockProvider(Router, {
-                    navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                    navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                     url: '/test-url',
                     events: of()
                 }),
                 provideHttpClient(),
                 provideHttpClientTesting(),
-                mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+                mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
                 mockProvider(DotRelatedContentNavigationStore, {
                     trail: hostTrail,
-                    registerTitle: jest.fn(),
-                    buildTrailForSavedInode: jest.fn().mockReturnValue(null)
+                    registerTitle: vi.fn(),
+                    buildTrailForSavedInode: vi.fn().mockReturnValue(null)
                 })
             ]
         });

@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { DotApiToken, DotUsersService } from './dot-users.service';
 
@@ -130,73 +130,80 @@ describe('DotUsersService', () => {
             req.flush({ entity: { tokens: [] } });
         });
 
-        it('should unwrap the tokens envelope', (done) => {
-            spectator.service.getApiTokens('user-1', false).subscribe((tokens) => {
-                expect(tokens).toEqual([MOCK_TOKEN]);
-                done();
-            });
+        it('should unwrap the tokens envelope', () =>
+            new Promise<void>((done) => {
+                spectator.service.getApiTokens('user-1', false).subscribe((tokens) => {
+                    expect(tokens).toEqual([MOCK_TOKEN]);
+                    done();
+                });
 
-            spectator
-                .expectOne('/api/v1/apitoken/user-1/tokens?showRevoked=false', HttpMethod.GET)
-                .flush({ entity: { tokens: [MOCK_TOKEN] } });
-        });
+                spectator
+                    .expectOne('/api/v1/apitoken/user-1/tokens?showRevoked=false', HttpMethod.GET)
+                    .flush({ entity: { tokens: [MOCK_TOKEN] } });
+            }));
 
-        it('should fall back to [] when the envelope has no tokens', (done) => {
-            spectator.service.getApiTokens('user-1', false).subscribe((tokens) => {
-                expect(tokens).toEqual([]);
-                done();
-            });
+        it('should fall back to [] when the envelope has no tokens', () =>
+            new Promise<void>((done) => {
+                spectator.service.getApiTokens('user-1', false).subscribe((tokens) => {
+                    expect(tokens).toEqual([]);
+                    done();
+                });
 
-            spectator
-                .expectOne('/api/v1/apitoken/user-1/tokens?showRevoked=false', HttpMethod.GET)
-                .flush({ entity: null });
-        });
+                spectator
+                    .expectOne('/api/v1/apitoken/user-1/tokens?showRevoked=false', HttpMethod.GET)
+                    .flush({ entity: null });
+            }));
 
-        it('should POST createApiToken and unwrap the { jwt, token } envelope', (done) => {
-            spectator.service
-                .createApiToken({
+        it('should POST createApiToken and unwrap the { jwt, token } envelope', () =>
+            new Promise<void>((done) => {
+                spectator.service
+                    .createApiToken({
+                        userId: 'user-1',
+                        expirationSeconds: 3600,
+                        network: '0.0.0.0/0',
+                        claims: { label: 'ci' }
+                    })
+                    .subscribe((result) => {
+                        expect(result).toEqual({ jwt: 'raw-jwt', token: MOCK_TOKEN });
+                        done();
+                    });
+
+                const req = spectator.expectOne('/api/v1/apitoken', HttpMethod.POST);
+                expect(req.request.body).toEqual({
                     userId: 'user-1',
                     expirationSeconds: 3600,
                     network: '0.0.0.0/0',
                     claims: { label: 'ci' }
-                })
-                .subscribe((result) => {
-                    expect(result).toEqual({ jwt: 'raw-jwt', token: MOCK_TOKEN });
+                });
+                req.flush({ entity: { jwt: 'raw-jwt', token: MOCK_TOKEN } });
+            }));
+
+        it('should GET a fresh JWT and unwrap it', () =>
+            new Promise<void>((done) => {
+                spectator.service.getApiTokenJwt('tok-1').subscribe((jwt) => {
+                    expect(jwt).toBe('fresh-jwt');
                     done();
                 });
 
-            const req = spectator.expectOne('/api/v1/apitoken', HttpMethod.POST);
-            expect(req.request.body).toEqual({
-                userId: 'user-1',
-                expirationSeconds: 3600,
-                network: '0.0.0.0/0',
-                claims: { label: 'ci' }
-            });
-            req.flush({ entity: { jwt: 'raw-jwt', token: MOCK_TOKEN } });
-        });
+                spectator
+                    .expectOne('/api/v1/apitoken/tok-1/jwt', HttpMethod.GET)
+                    .flush({ entity: { jwt: 'fresh-jwt' } });
+            }));
 
-        it('should GET a fresh JWT and unwrap it', (done) => {
-            spectator.service.getApiTokenJwt('tok-1').subscribe((jwt) => {
-                expect(jwt).toBe('fresh-jwt');
-                done();
-            });
+        it('should throw when the JWT envelope is malformed instead of returning ""', () =>
+            new Promise<void>((done) => {
+                spectator.service.getApiTokenJwt('tok-1').subscribe({
+                    next: () => done.fail('expected an error, got a value'),
+                    error: (error: Error) => {
+                        expect(error.message).toBe('Malformed JWT response');
+                        done();
+                    }
+                });
 
-            spectator
-                .expectOne('/api/v1/apitoken/tok-1/jwt', HttpMethod.GET)
-                .flush({ entity: { jwt: 'fresh-jwt' } });
-        });
-
-        it('should throw when the JWT envelope is malformed instead of returning ""', (done) => {
-            spectator.service.getApiTokenJwt('tok-1').subscribe({
-                next: () => done.fail('expected an error, got a value'),
-                error: (error: Error) => {
-                    expect(error.message).toBe('Malformed JWT response');
-                    done();
-                }
-            });
-
-            spectator.expectOne('/api/v1/apitoken/tok-1/jwt', HttpMethod.GET).flush({ entity: {} });
-        });
+                spectator
+                    .expectOne('/api/v1/apitoken/tok-1/jwt', HttpMethod.GET)
+                    .flush({ entity: {} });
+            }));
 
         it('should PUT to /revoke with a null body', () => {
             spectator.service.revokeApiToken('tok-1').subscribe();

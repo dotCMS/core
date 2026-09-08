@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -69,20 +70,20 @@ function getTemplate({ identifier, name, body }) {
     };
 }
 
-const cacheSetSpy = jest.fn();
+const cacheSetSpy = vi.fn();
 
 const BASIC_PROVIDERS = [
     DotTemplateStore,
     {
         provide: DotHttpErrorManagerService,
         useValue: {
-            handle: jest.fn().mockReturnValue(of({}))
+            handle: vi.fn().mockReturnValue(of({}))
         }
     },
     {
         provide: DotTemplatesService,
         useValue: {
-            create: jest.fn().mockReturnValue(
+            create: vi.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -91,7 +92,7 @@ const BASIC_PROVIDERS = [
                     })
                 )
             ),
-            update: jest.fn().mockReturnValue(
+            update: vi.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -100,7 +101,7 @@ const BASIC_PROVIDERS = [
                     })
                 )
             ),
-            saveAndPublish: jest.fn().mockReturnValue(
+            saveAndPublish: vi.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -128,9 +129,9 @@ const BASIC_PROVIDERS = [
     {
         provide: DotGlobalMessageService,
         useValue: {
-            loading: jest.fn(),
-            success: jest.fn(),
-            error: jest.fn()
+            loading: vi.fn(),
+            success: vi.fn(),
+            error: vi.fn()
         }
     }
 ];
@@ -171,7 +172,7 @@ describe('DotTemplateStore', () => {
             dotRouterService = TestBed.inject(DotRouterService);
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            dotTemplatesService.update = jest.fn().mockReturnValue(
+            dotTemplatesService.update = vi.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -182,38 +183,39 @@ describe('DotTemplateStore', () => {
             );
         });
 
-        it('should have basic state', (done) => {
-            const template: DotTemplateItem = {
-                containers: {},
-                identifier: '',
-                title: '',
-                friendlyName: '',
-                type: 'design',
-                layout: {
-                    header: true,
-                    footer: true,
-                    body: { rows: [] },
-                    sidebar: null,
+        it('should have basic state', () =>
+            new Promise<void>((done) => {
+                const template: DotTemplateItem = {
+                    containers: {},
+                    identifier: '',
                     title: '',
-                    width: null
-                },
-                theme: '',
-                drawed: true,
-                image: ''
-            };
+                    friendlyName: '',
+                    type: 'design',
+                    layout: {
+                        header: true,
+                        footer: true,
+                        body: { rows: [] },
+                        sidebar: null,
+                        title: '',
+                        width: null
+                    },
+                    theme: '',
+                    drawed: true,
+                    image: ''
+                };
 
-            const state = {
-                original: template,
-                working: template,
-                apiLink: '',
-                didTemplateChanged: false
-            };
+                const state = {
+                    original: template,
+                    working: template,
+                    apiLink: '',
+                    didTemplateChanged: false
+                };
 
-            service.vm$.subscribe((res) => {
-                expect(res).toEqual(state);
-                done();
-            });
-        });
+                service.vm$.subscribe((res) => {
+                    expect(res).toEqual(state);
+                    done();
+                });
+            }));
 
         it('should call set in DotTemplateContainersCacheService', () => {
             expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({});
@@ -274,7 +276,7 @@ describe('DotTemplateStore', () => {
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            dotTemplatesService.update = jest.fn().mockReturnValue(
+            dotTemplatesService.update = vi.fn().mockReturnValue(
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -285,29 +287,30 @@ describe('DotTemplateStore', () => {
             );
         });
 
-        it('should have basic state', (done) => {
-            const template: DotTemplateItem = {
-                identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
-                title: 'Advanced',
-                friendlyName: '',
-                type: 'advanced',
-                drawed: false,
-                body: '',
-                image: ''
-            };
+        it('should have basic state', () =>
+            new Promise<void>((done) => {
+                const template: DotTemplateItem = {
+                    identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
+                    title: 'Advanced',
+                    friendlyName: '',
+                    type: 'advanced',
+                    drawed: false,
+                    body: '',
+                    image: ''
+                };
 
-            const state = {
-                original: template,
-                working: template,
-                apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working',
-                didTemplateChanged: false
-            };
+                const state = {
+                    original: template,
+                    working: template,
+                    apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working',
+                    didTemplateChanged: false
+                };
 
-            service.vm$.subscribe((res) => {
-                expect(res).toEqual(state);
-                done();
-            });
-        });
+                service.vm$.subscribe((res) => {
+                    expect(res).toEqual(state);
+                    done();
+                });
+            }));
 
         it('should call set in DotTemplateContainersCacheService', () => {
             expect(dotTemplateContainersCacheService.set).not.toHaveBeenCalled();
@@ -612,8 +615,8 @@ describe('DotTemplateStore', () => {
             });
 
             it('should call updateWorkingTemplate and call saveTemplateDebounce when is a design template', () => {
-                jest.spyOn(service, 'updateWorkingTemplate');
-                jest.spyOn(service, 'saveTemplateDebounce');
+                vi.spyOn(service, 'updateWorkingTemplate');
+                vi.spyOn(service, 'saveTemplateDebounce');
                 service.saveWorkingTemplate({
                     type: 'design',
                     layout: {
@@ -634,8 +637,8 @@ describe('DotTemplateStore', () => {
                 expect(service.saveTemplateDebounce).toHaveBeenCalled();
             });
             it('should call updateWorkingTemplate and not call saveTemplateDebounce when is a advanced template', () => {
-                jest.spyOn(service, 'updateWorkingTemplate');
-                jest.spyOn(service, 'saveTemplateDebounce');
+                vi.spyOn(service, 'updateWorkingTemplate');
+                vi.spyOn(service, 'saveTemplateDebounce');
                 service.saveWorkingTemplate({
                     type: 'advanced',
                     body: '',
@@ -648,23 +651,24 @@ describe('DotTemplateStore', () => {
                 expect(service.saveTemplateDebounce).not.toHaveBeenCalled();
             });
 
-            it('should handle error on update template', (done) => {
-                const error = throwError(() => new HttpErrorResponse(mockResponseView(400)));
-                dotTemplatesService.update = jest.fn().mockReturnValue(error);
-                service.saveTemplate({
-                    body: 'string',
-                    friendlyName: 'string',
-                    identifier: 'string',
-                    title: 'string'
-                });
-                expect(dotGlobalMessageService.error).toHaveBeenCalledWith('Unknown Error');
-                expect(dotGlobalMessageService.error).toHaveBeenCalledTimes(1);
-                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-                dotRouterService.canDeactivateRoute$.subscribe((resp) => {
-                    expect(resp).toBeTruthy();
-                    done();
-                });
-            });
+            it('should handle error on update template', () =>
+                new Promise<void>((done) => {
+                    const error = throwError(() => new HttpErrorResponse(mockResponseView(400)));
+                    dotTemplatesService.update = vi.fn().mockReturnValue(error);
+                    service.saveTemplate({
+                        body: 'string',
+                        friendlyName: 'string',
+                        identifier: 'string',
+                        title: 'string'
+                    });
+                    expect(dotGlobalMessageService.error).toHaveBeenCalledWith('Unknown Error');
+                    expect(dotGlobalMessageService.error).toHaveBeenCalledTimes(1);
+                    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+                    dotRouterService.canDeactivateRoute$.subscribe((resp) => {
+                        expect(resp).toBeTruthy();
+                        done();
+                    });
+                }));
 
             it('should not update template body when updates props', () => {
                 service.saveProperties({

@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -16,7 +17,7 @@ const page = (options: DotLazyMultiselectOption[], hasMore = false) => of({ opti
 
 describe('DotContentDriveLazyMultiselectComponent', () => {
     let spectator: Spectator<DotContentDriveLazyMultiselectComponent>;
-    let loadPage: jest.Mock;
+    let loadPage: Mock;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveLazyMultiselectComponent,
@@ -30,32 +31,32 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
     });
 
     const build = (loader: DotLazyMultiselectLoader, selectedValues: string[] = []) => {
-        loadPage = loader as jest.Mock;
+        loadPage = loader as Mock;
         spectator = createComponent({
             props: { loadPage, selectedValues } as never
         });
         spectator.detectChanges();
     };
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should load the first page on init', () => {
-        build(jest.fn().mockReturnValue(page([{ label: 'A', value: 'a' }])));
+        build(vi.fn().mockReturnValue(page([{ label: 'A', value: 'a' }])));
 
         expect(loadPage).toHaveBeenCalledWith({ page: 1, perPage: 20, filter: '' });
     });
 
     describe('search', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should reload from the first page with the typed filter (debounced)', () => {
-            build(jest.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], true)));
+            build(vi.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], true)));
             loadPage.mockClear();
 
             const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
             spectator.typeInElement('ang', input);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            vi.advanceTimersByTime(DEBOUNCE_TIME);
 
             expect(loadPage).toHaveBeenCalledWith({ page: 1, perPage: 20, filter: 'ang' });
         });
@@ -63,7 +64,7 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
 
     describe('infinite scroll', () => {
         it('should prefetch the next page when the scroller reaches the current one', () => {
-            build(jest.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], true)));
+            build(vi.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], true)));
             loadPage.mockClear();
 
             spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 20 });
@@ -72,7 +73,7 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
         });
 
         it('should not load more once the loader reports no further pages', () => {
-            build(jest.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], false)));
+            build(vi.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], false)));
             loadPage.mockClear();
 
             spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 20 });
@@ -84,7 +85,7 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
     describe('selection', () => {
         it('should emit the chosen options (value + label) on change', () => {
             build(
-                jest.fn().mockReturnValue(
+                vi.fn().mockReturnValue(
                     page([
                         { label: 'Angular', value: 'a' },
                         { label: 'Backend', value: 'b' }
@@ -105,7 +106,7 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
         });
 
         it('should fall back to the raw value as label for an unknown value', () => {
-            build(jest.fn().mockReturnValue(page([{ label: 'Angular', value: 'a' }])));
+            build(vi.fn().mockReturnValue(page([{ label: 'Angular', value: 'a' }])));
             const emitted: DotLazyMultiselectOption[][] = [];
             spectator.component.selectionChange.subscribe((value) => emitted.push(value));
 
@@ -115,9 +116,9 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
         });
 
         it('should keep an earlier page label after a search reset', () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             build(
-                jest
+                vi
                     .fn()
                     .mockReturnValueOnce(page([{ label: 'Angular', value: 'a' }]))
                     .mockReturnValue(page([{ label: 'Backend', value: 'b' }]))
@@ -126,7 +127,7 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
             // Search resets the option list to a page that no longer contains 'a'.
             const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
             spectator.typeInElement('b', input);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            vi.advanceTimersByTime(DEBOUNCE_TIME);
 
             const emitted: DotLazyMultiselectOption[][] = [];
             spectator.component.selectionChange.subscribe((value) => emitted.push(value));
@@ -139,13 +140,13 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
                     { label: 'Backend', value: 'b' }
                 ]
             ]);
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 
     describe('error handling', () => {
         it('should stop loading (and paging) and flag a distinct error when a page request fails', () => {
-            build(jest.fn().mockReturnValue(throwError(() => new Error('boom'))));
+            build(vi.fn().mockReturnValue(throwError(() => new Error('boom'))));
 
             expect(spectator.component.$state.loading()).toBe(false);
             expect(spectator.component.$state.canLoadMore()).toBe(false);

@@ -1,4 +1,5 @@
 import { Observable, of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, Injectable, inject, forwardRef } from '@angular/core';
@@ -157,15 +158,15 @@ describe('DotPageSelectorComponent', () => {
         // Mock matchMedia for PrimeNG components - needs to be set before TestBed configuration
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
 
@@ -210,8 +211,8 @@ describe('DotPageSelectorComponent', () => {
         component = de.componentInstance;
         dotPageSelectorService = de.injector.get(DotPageSelectorService);
 
-        jest.spyOn(component.selected, 'emit');
-        jest.spyOn(component, 'writeValue');
+        vi.spyOn(component.selected, 'emit');
+        vi.spyOn(component, 'writeValue');
 
         hostFixture.detectChanges();
         await hostFixture.whenStable();
@@ -227,35 +228,35 @@ describe('DotPageSelectorComponent', () => {
 
     describe('Search Types', () => {
         it('should search for pages', () => {
-            jest.spyOn(dotPageSelectorService, 'getPages');
+            vi.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', searchPageObj);
             expect(dotPageSelectorService.getPages).toHaveBeenCalledWith(searchPageObj.query);
             expect(dotPageSelectorService.getPages).toHaveBeenCalledTimes(1);
         });
 
         it('should not search for pages if has less than 2 characters', () => {
-            jest.spyOn(dotPageSelectorService, 'getPages');
+            vi.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', invalidSearchPageObj);
             expect(dotPageSelectorService.getPages).not.toHaveBeenCalled();
         });
 
         it('should search for host', () => {
-            jest.spyOn(dotPageSelectorService, 'getSites');
+            vi.spyOn(dotPageSelectorService, 'getSites');
             autocomplete.triggerEventHandler('completeMethod', searchHostObj);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('');
             expect(dotPageSelectorService.getSites).toHaveBeenCalledTimes(1);
         });
 
         it('should allow white spaces in host', () => {
-            jest.spyOn(dotPageSelectorService, 'getSites');
+            vi.spyOn(dotPageSelectorService, 'getSites');
             autocomplete.triggerEventHandler('completeMethod', whiteSpaceHosts);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('new site');
             expect(dotPageSelectorService.getSites).toHaveBeenCalledTimes(1);
         });
 
         it('should search for pages when the host is complete', () => {
-            jest.spyOn(dotPageSelectorService, 'getSites');
-            jest.spyOn(dotPageSelectorService, 'getPages');
+            vi.spyOn(dotPageSelectorService, 'getSites');
+            vi.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', completeHostSearch);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('demo', true);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledTimes(1);
@@ -264,14 +265,14 @@ describe('DotPageSelectorComponent', () => {
         });
 
         it('should remove special characters when searching for pages', () => {
-            jest.spyOn(dotPageSelectorService, 'getPages');
+            vi.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', specialSearchObj);
             expect(dotPageSelectorService.getPages).toHaveBeenCalledWith('demo');
             expect(dotPageSelectorService.getPages).toHaveBeenCalledTimes(1);
         });
 
         it('should display error when no results in pages', () => {
-            jest.spyOn(dotPageSelectorService, 'getPages').mockReturnValue(observableOf([]));
+            vi.spyOn(dotPageSelectorService, 'getPages').mockReturnValue(observableOf([]));
             autocomplete.triggerEventHandler('completeMethod', {
                 originalEvent: { target: { value: 'invalidPage' } },
                 query: 'invalidPage'
@@ -283,7 +284,7 @@ describe('DotPageSelectorComponent', () => {
         });
 
         it('should display error when no results in hosts', () => {
-            jest.spyOn(dotPageSelectorService, 'getSites').mockReturnValue(observableOf([]));
+            vi.spyOn(dotPageSelectorService, 'getSites').mockReturnValue(observableOf([]));
             autocomplete.triggerEventHandler('completeMethod', {
                 originalEvent: { target: { value: '//invalid' } },
                 query: '//invalid'
@@ -301,7 +302,7 @@ describe('DotPageSelectorComponent', () => {
             });
 
             it('should search for folders', () => {
-                jest.spyOn(dotPageSelectorService, 'getFolders');
+                vi.spyOn(dotPageSelectorService, 'getFolders');
                 autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
                 expect(dotPageSelectorService.getFolders).toHaveBeenCalledWith(
                     searchFolderObj.query
@@ -309,8 +310,8 @@ describe('DotPageSelectorComponent', () => {
             });
 
             it('should show message new folder will be created', () => {
-                jest.spyOn(dotPageSelectorService, 'getSites');
-                jest.spyOn(dotPageSelectorService, 'getFolders').mockReturnValue(observableOf([]));
+                vi.spyOn(dotPageSelectorService, 'getSites');
+                vi.spyOn(dotPageSelectorService, 'getFolders').mockReturnValue(observableOf([]));
                 autocomplete.triggerEventHandler('completeMethod', fullSearchObj);
                 hostFixture.detectChanges();
                 const message = de.query(By.css('[data-testId="message"]'));
@@ -319,7 +320,7 @@ describe('DotPageSelectorComponent', () => {
             });
 
             it('should show message of permissions', () => {
-                jest.spyOn(dotPageSelectorService, 'getFolders');
+                vi.spyOn(dotPageSelectorService, 'getFolders');
                 autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
                 autocomplete.triggerEventHandler('onSelect', {
                     originalEvent: createFakeEvent('onSelect'),
@@ -332,7 +333,7 @@ describe('DotPageSelectorComponent', () => {
             });
 
             it('should display error when no results in folders', () => {
-                jest.spyOn(dotPageSelectorService, 'getFolders').mockReturnValue(observableOf([]));
+                vi.spyOn(dotPageSelectorService, 'getFolders').mockReturnValue(observableOf([]));
                 autocomplete.triggerEventHandler('completeMethod', {
                     originalEvent: { target: { value: 'invalid' } },
                     query: 'invalid'
@@ -349,11 +350,11 @@ describe('DotPageSelectorComponent', () => {
 
     describe('ControlValueAccessor', () => {
         beforeEach(() => {
-            jest.spyOn(component, 'propagateChange');
+            vi.spyOn(component, 'propagateChange');
         });
 
         it('should emit selected page and propagate changes', () => {
-            jest.spyOn(dotPageSelectorService, 'getPages');
+            vi.spyOn(dotPageSelectorService, 'getPages');
             autocomplete.triggerEventHandler('completeMethod', searchPageObj);
             autocomplete.triggerEventHandler('onSelect', {
                 originalEvent: createFakeEvent('onSelect'),
@@ -388,7 +389,7 @@ describe('DotPageSelectorComponent', () => {
         it('should emit selected folder and propagate changes', () => {
             component.folderSearch = true;
             const folder = <DotFolder>expectedFolderMap[0].payload;
-            jest.spyOn(dotPageSelectorService, 'getFolders');
+            vi.spyOn(dotPageSelectorService, 'getFolders');
             autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
             autocomplete.triggerEventHandler('onSelect', {
                 originalEvent: createFakeEvent('onSelect'),

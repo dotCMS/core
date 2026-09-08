@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { BehaviorSubject, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -41,8 +42,8 @@ const queryParamsSubject = new BehaviorSubject<Params>({});
 
 @Injectable()
 class MockDotLoginPageStateService {
-    update = jest.fn();
-    set = jest.fn().mockReturnValue(of(mockLoginInfo));
+    update = vi.fn();
+    set = vi.fn().mockReturnValue(of(mockLoginInfo));
     get = () => loginInfoSubject.asObservable();
 }
 
@@ -96,7 +97,7 @@ describe('DotLoginComponent', () => {
         ) as unknown as MockDotLoginPageStateService;
         dotMessageService = spectator.inject(DotMessageService);
         dotFormatDateService = spectator.inject(DotFormatDateService);
-        jest.spyOn(dotMessageService, 'init');
+        vi.spyOn(dotMessageService, 'init');
         spectator.detectChanges();
     });
 
@@ -153,9 +154,9 @@ describe('DotLoginComponent', () => {
 
         it('should make a login request correctly and redirect after login', () => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(dotFormatDateService, 'setLang');
-            jest.spyOn(dotRouterService, 'goToMain');
-            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
+            vi.spyOn(dotFormatDateService, 'setLang');
+            vi.spyOn(dotRouterService, 'goToMain');
+            vi.spyOn(loginService as any, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -176,8 +177,8 @@ describe('DotLoginComponent', () => {
 
         it('should set loading while waiting login response', fakeAsync(() => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(dotRouterService, 'goToMain').mockResolvedValue(true);
-            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
+            vi.spyOn(dotRouterService, 'goToMain').mockResolvedValue(true);
+            vi.spyOn(loginService as any, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -216,7 +217,7 @@ describe('DotLoginComponent', () => {
 
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
+            vi.spyOn(loginService as any, 'loginUser').mockReturnValue(
                 throwError(() => ({
                     status: 400,
                     error: { errors: [{ message: 'error message' }] }

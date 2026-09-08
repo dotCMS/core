@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
@@ -43,28 +43,29 @@ describe('DotPageContentTypeService', () => {
         const CONTENTTYPE_PAGE_API_URL = '/api/v1/contenttype/page';
 
         describe('Basic Functionality', () => {
-            it('should fetch content types with required parameters', (done) => {
-                const params: DotPageContentTypeQueryParams = {
-                    pagePathOrId: '/test-page'
-                };
+            it('should fetch content types with required parameters', () =>
+                new Promise<void>((done) => {
+                    const params: DotPageContentTypeQueryParams = {
+                        pagePathOrId: '/test-page'
+                    };
 
-                spectator.service.get(params).subscribe((response) => {
-                    expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
-                    expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
-                    done();
-                });
+                    spectator.service.get(params).subscribe((response) => {
+                        expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
+                        expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) => {
-                    return (
-                        request.url === CONTENTTYPE_PAGE_API_URL &&
-                        request.params.get('pagePathOrId') === '/test-page' &&
-                        request.params.get('per_page') === DEFAULT_PER_PAGE.toString()
-                    );
-                });
+                    const req = httpMock.expectOne((request) => {
+                        return (
+                            request.url === CONTENTTYPE_PAGE_API_URL &&
+                            request.params.get('pagePathOrId') === '/test-page' &&
+                            request.params.get('per_page') === DEFAULT_PER_PAGE.toString()
+                        );
+                    });
 
-                expect(req.request.method).toBe('GET');
-                req.flush(MOCK_API_RESPONSE);
-            });
+                    expect(req.request.method).toBe('GET');
+                    req.flush(MOCK_API_RESPONSE);
+                }));
 
             it('should make a GET request to the correct endpoint', () => {
                 const params: DotPageContentTypeQueryParams = {
@@ -80,28 +81,29 @@ describe('DotPageContentTypeService', () => {
                 req.flush(MOCK_API_RESPONSE);
             });
 
-            it('should complete the observable after one emission (take(1))', (done) => {
-                const params: DotPageContentTypeQueryParams = {
-                    pagePathOrId: '/test-page'
-                };
+            it('should complete the observable after one emission (take(1))', () =>
+                new Promise<void>((done) => {
+                    const params: DotPageContentTypeQueryParams = {
+                        pagePathOrId: '/test-page'
+                    };
 
-                let emissionCount = 0;
+                    let emissionCount = 0;
 
-                spectator.service.get(params).subscribe({
-                    next: () => {
-                        emissionCount++;
-                    },
-                    complete: () => {
-                        expect(emissionCount).toBe(1);
-                        done();
-                    }
-                });
+                    spectator.service.get(params).subscribe({
+                        next: () => {
+                            emissionCount++;
+                        },
+                        complete: () => {
+                            expect(emissionCount).toBe(1);
+                            done();
+                        }
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_PAGE_API_URL)
-                );
-                req.flush(MOCK_API_RESPONSE);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_PAGE_API_URL)
+                    );
+                    req.flush(MOCK_API_RESPONSE);
+                }));
         });
 
         describe('Query Parameters', () => {
@@ -350,133 +352,138 @@ describe('DotPageContentTypeService', () => {
         });
 
         describe('Response Mapping', () => {
-            it('should correctly map API response to return format', (done) => {
-                const params: DotPageContentTypeQueryParams = {
-                    pagePathOrId: '/test-page'
-                };
+            it('should correctly map API response to return format', () =>
+                new Promise<void>((done) => {
+                    const params: DotPageContentTypeQueryParams = {
+                        pagePathOrId: '/test-page'
+                    };
 
-                spectator.service.get(params).subscribe((response) => {
-                    expect(response).toHaveProperty('contenttypes');
-                    expect(response).toHaveProperty('pagination');
-                    expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
-                    expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
-                    done();
-                });
+                    spectator.service.get(params).subscribe((response) => {
+                        expect(response).toHaveProperty('contenttypes');
+                        expect(response).toHaveProperty('pagination');
+                        expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
+                        expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_PAGE_API_URL)
-                );
-                req.flush(MOCK_API_RESPONSE);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_PAGE_API_URL)
+                    );
+                    req.flush(MOCK_API_RESPONSE);
+                }));
 
-            it('should return empty array when API returns empty entity', (done) => {
-                const emptyResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
-                    entity: [],
-                    pagination: {
-                        currentPage: 1,
-                        perPage: DEFAULT_PER_PAGE,
-                        totalEntries: 0
-                    },
-                    errors: [],
-                    messages: [],
-                    permissions: [],
-                    i18nMessagesMap: {}
-                };
+            it('should return empty array when API returns empty entity', () =>
+                new Promise<void>((done) => {
+                    const emptyResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
+                        entity: [],
+                        pagination: {
+                            currentPage: 1,
+                            perPage: DEFAULT_PER_PAGE,
+                            totalEntries: 0
+                        },
+                        errors: [],
+                        messages: [],
+                        permissions: [],
+                        i18nMessagesMap: {}
+                    };
 
-                const params: DotPageContentTypeQueryParams = {
-                    pagePathOrId: '/test-page'
-                };
+                    const params: DotPageContentTypeQueryParams = {
+                        pagePathOrId: '/test-page'
+                    };
 
-                spectator.service.get(params).subscribe((response) => {
-                    expect(response.contenttypes).toEqual([]);
-                    expect(response.contenttypes).toHaveLength(0);
-                    expect(response.pagination.totalEntries).toBe(0);
-                    done();
-                });
+                    spectator.service.get(params).subscribe((response) => {
+                        expect(response.contenttypes).toEqual([]);
+                        expect(response.contenttypes).toHaveLength(0);
+                        expect(response.pagination.totalEntries).toBe(0);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_PAGE_API_URL)
-                );
-                req.flush(emptyResponse);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_PAGE_API_URL)
+                    );
+                    req.flush(emptyResponse);
+                }));
 
-            it('should preserve pagination metadata', (done) => {
-                const customPagination = {
-                    currentPage: 3,
-                    perPage: 25,
-                    totalEntries: 100
-                };
+            it('should preserve pagination metadata', () =>
+                new Promise<void>((done) => {
+                    const customPagination = {
+                        currentPage: 3,
+                        perPage: 25,
+                        totalEntries: 100
+                    };
 
-                const customResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
-                    entity: [MOCK_CONTENT_TYPE_1],
-                    pagination: customPagination,
-                    errors: [],
-                    messages: [],
-                    permissions: [],
-                    i18nMessagesMap: {}
-                };
+                    const customResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
+                        entity: [MOCK_CONTENT_TYPE_1],
+                        pagination: customPagination,
+                        errors: [],
+                        messages: [],
+                        permissions: [],
+                        i18nMessagesMap: {}
+                    };
 
-                const params: DotPageContentTypeQueryParams = {
-                    pagePathOrId: '/test-page'
-                };
+                    const params: DotPageContentTypeQueryParams = {
+                        pagePathOrId: '/test-page'
+                    };
 
-                spectator.service.get(params).subscribe((response) => {
-                    expect(response.pagination).toEqual(customPagination);
-                    expect(response.pagination.currentPage).toBe(3);
-                    expect(response.pagination.perPage).toBe(25);
-                    expect(response.pagination.totalEntries).toBe(100);
-                    done();
-                });
+                    spectator.service.get(params).subscribe((response) => {
+                        expect(response.pagination).toEqual(customPagination);
+                        expect(response.pagination.currentPage).toBe(3);
+                        expect(response.pagination.perPage).toBe(25);
+                        expect(response.pagination.totalEntries).toBe(100);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_PAGE_API_URL)
-                );
-                req.flush(customResponse);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_PAGE_API_URL)
+                    );
+                    req.flush(customResponse);
+                }));
         });
 
         describe('Error Handling', () => {
-            it('should handle HTTP error responses', (done) => {
-                const params: DotPageContentTypeQueryParams = {
-                    pagePathOrId: '/test-page'
-                };
+            it('should handle HTTP error responses', () =>
+                new Promise<void>((done) => {
+                    const params: DotPageContentTypeQueryParams = {
+                        pagePathOrId: '/test-page'
+                    };
 
-                spectator.service.get(params).subscribe({
-                    next: () => fail('should have failed with 404 error'),
-                    error: (error) => {
-                        expect(error.status).toBe(404);
-                        expect(error.statusText).toBe('Not Found');
-                        done();
-                    }
-                });
+                    spectator.service.get(params).subscribe({
+                        next: () => fail('should have failed with 404 error'),
+                        error: (error) => {
+                            expect(error.status).toBe(404);
+                            expect(error.statusText).toBe('Not Found');
+                            done();
+                        }
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_PAGE_API_URL)
-                );
-                req.flush('Not Found', { status: 404, statusText: 'Not Found' });
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_PAGE_API_URL)
+                    );
+                    req.flush('Not Found', { status: 404, statusText: 'Not Found' });
+                }));
 
-            it('should handle server errors (500)', (done) => {
-                const params: DotPageContentTypeQueryParams = {
-                    pagePathOrId: '/test-page'
-                };
+            it('should handle server errors (500)', () =>
+                new Promise<void>((done) => {
+                    const params: DotPageContentTypeQueryParams = {
+                        pagePathOrId: '/test-page'
+                    };
 
-                spectator.service.get(params).subscribe({
-                    next: () => fail('should have failed with 500 error'),
-                    error: (error) => {
-                        expect(error.status).toBe(500);
-                        done();
-                    }
-                });
+                    spectator.service.get(params).subscribe({
+                        next: () => fail('should have failed with 500 error'),
+                        error: (error) => {
+                            expect(error.status).toBe(500);
+                            done();
+                        }
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_PAGE_API_URL)
-                );
-                req.flush('Internal Server Error', {
-                    status: 500,
-                    statusText: 'Internal Server Error'
-                });
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_PAGE_API_URL)
+                    );
+                    req.flush('Internal Server Error', {
+                        status: 500,
+                        statusText: 'Internal Server Error'
+                    });
+                }));
         });
     });
 
@@ -484,20 +491,23 @@ describe('DotPageContentTypeService', () => {
         const CONTENTTYPE_API_URL = '/api/v1/contenttype';
 
         describe('Basic Functionality', () => {
-            it('should fetch all content types', (done) => {
-                const params: DotContentTypeQueryParams = {};
+            it('should fetch all content types', () =>
+                new Promise<void>((done) => {
+                    const params: DotContentTypeQueryParams = {};
 
-                spectator.service.getAllContentTypes(params).subscribe((response) => {
-                    expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
-                    expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
-                    done();
-                });
+                    spectator.service.getAllContentTypes(params).subscribe((response) => {
+                        expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
+                        expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) => request.url === CONTENTTYPE_API_URL);
+                    const req = httpMock.expectOne(
+                        (request) => request.url === CONTENTTYPE_API_URL
+                    );
 
-                expect(req.request.method).toBe('GET');
-                req.flush(MOCK_API_RESPONSE);
-            });
+                    expect(req.request.method).toBe('GET');
+                    req.flush(MOCK_API_RESPONSE);
+                }));
 
             it('should make a GET request to the correct endpoint', () => {
                 const params: DotContentTypeQueryParams = {};
@@ -511,41 +521,43 @@ describe('DotPageContentTypeService', () => {
                 req.flush(MOCK_API_RESPONSE);
             });
 
-            it('should complete the observable after one emission (take(1))', (done) => {
-                const params: DotContentTypeQueryParams = {};
+            it('should complete the observable after one emission (take(1))', () =>
+                new Promise<void>((done) => {
+                    const params: DotContentTypeQueryParams = {};
 
-                let emissionCount = 0;
+                    let emissionCount = 0;
 
-                spectator.service.getAllContentTypes(params).subscribe({
-                    next: () => {
-                        emissionCount++;
-                    },
-                    complete: () => {
-                        expect(emissionCount).toBe(1);
+                    spectator.service.getAllContentTypes(params).subscribe({
+                        next: () => {
+                            emissionCount++;
+                        },
+                        complete: () => {
+                            expect(emissionCount).toBe(1);
+                            done();
+                        }
+                    });
+
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_API_URL)
+                    );
+                    req.flush(MOCK_API_RESPONSE);
+                }));
+
+            it('should work with empty parameters object', () =>
+                new Promise<void>((done) => {
+                    const params: DotContentTypeQueryParams = {};
+
+                    spectator.service.getAllContentTypes(params).subscribe((response) => {
+                        expect(response.contenttypes).toBeDefined();
+                        expect(response.pagination).toBeDefined();
                         done();
-                    }
-                });
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_API_URL)
-                );
-                req.flush(MOCK_API_RESPONSE);
-            });
-
-            it('should work with empty parameters object', (done) => {
-                const params: DotContentTypeQueryParams = {};
-
-                spectator.service.getAllContentTypes(params).subscribe((response) => {
-                    expect(response.contenttypes).toBeDefined();
-                    expect(response.pagination).toBeDefined();
-                    done();
-                });
-
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_API_URL)
-                );
-                req.flush(MOCK_API_RESPONSE);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_API_URL)
+                    );
+                    req.flush(MOCK_API_RESPONSE);
+                }));
         });
 
         describe('Query Parameters', () => {
@@ -785,123 +797,128 @@ describe('DotPageContentTypeService', () => {
         });
 
         describe('Response Mapping', () => {
-            it('should correctly map API response to return format', (done) => {
-                const params: DotContentTypeQueryParams = {};
+            it('should correctly map API response to return format', () =>
+                new Promise<void>((done) => {
+                    const params: DotContentTypeQueryParams = {};
 
-                spectator.service.getAllContentTypes(params).subscribe((response) => {
-                    expect(response).toHaveProperty('contenttypes');
-                    expect(response).toHaveProperty('pagination');
-                    expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
-                    expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
-                    done();
-                });
+                    spectator.service.getAllContentTypes(params).subscribe((response) => {
+                        expect(response).toHaveProperty('contenttypes');
+                        expect(response).toHaveProperty('pagination');
+                        expect(response.contenttypes).toEqual(MOCK_API_RESPONSE.entity);
+                        expect(response.pagination).toEqual(MOCK_API_RESPONSE.pagination);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_API_URL)
-                );
-                req.flush(MOCK_API_RESPONSE);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_API_URL)
+                    );
+                    req.flush(MOCK_API_RESPONSE);
+                }));
 
-            it('should return empty array when API returns empty entity', (done) => {
-                const emptyResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
-                    entity: [],
-                    pagination: {
-                        currentPage: 1,
-                        perPage: DEFAULT_PER_PAGE,
-                        totalEntries: 0
-                    },
-                    errors: [],
-                    messages: [],
-                    permissions: [],
-                    i18nMessagesMap: {}
-                };
+            it('should return empty array when API returns empty entity', () =>
+                new Promise<void>((done) => {
+                    const emptyResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
+                        entity: [],
+                        pagination: {
+                            currentPage: 1,
+                            perPage: DEFAULT_PER_PAGE,
+                            totalEntries: 0
+                        },
+                        errors: [],
+                        messages: [],
+                        permissions: [],
+                        i18nMessagesMap: {}
+                    };
 
-                const params: DotContentTypeQueryParams = {};
+                    const params: DotContentTypeQueryParams = {};
 
-                spectator.service.getAllContentTypes(params).subscribe((response) => {
-                    expect(response.contenttypes).toEqual([]);
-                    expect(response.contenttypes).toHaveLength(0);
-                    expect(response.pagination.totalEntries).toBe(0);
-                    done();
-                });
+                    spectator.service.getAllContentTypes(params).subscribe((response) => {
+                        expect(response.contenttypes).toEqual([]);
+                        expect(response.contenttypes).toHaveLength(0);
+                        expect(response.pagination.totalEntries).toBe(0);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_API_URL)
-                );
-                req.flush(emptyResponse);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_API_URL)
+                    );
+                    req.flush(emptyResponse);
+                }));
 
-            it('should preserve pagination metadata', (done) => {
-                const customPagination = {
-                    currentPage: 5,
-                    perPage: 10,
-                    totalEntries: 150
-                };
+            it('should preserve pagination metadata', () =>
+                new Promise<void>((done) => {
+                    const customPagination = {
+                        currentPage: 5,
+                        perPage: 10,
+                        totalEntries: 150
+                    };
 
-                const customResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
-                    entity: [MOCK_CONTENT_TYPE_1, MOCK_CONTENT_TYPE_2],
-                    pagination: customPagination,
-                    errors: [],
-                    messages: [],
-                    permissions: [],
-                    i18nMessagesMap: {}
-                };
+                    const customResponse: DotCMSAPIResponse<DotCMSContentType[]> = {
+                        entity: [MOCK_CONTENT_TYPE_1, MOCK_CONTENT_TYPE_2],
+                        pagination: customPagination,
+                        errors: [],
+                        messages: [],
+                        permissions: [],
+                        i18nMessagesMap: {}
+                    };
 
-                const params: DotContentTypeQueryParams = {};
+                    const params: DotContentTypeQueryParams = {};
 
-                spectator.service.getAllContentTypes(params).subscribe((response) => {
-                    expect(response.pagination).toEqual(customPagination);
-                    expect(response.pagination.currentPage).toBe(5);
-                    expect(response.pagination.perPage).toBe(10);
-                    expect(response.pagination.totalEntries).toBe(150);
-                    done();
-                });
+                    spectator.service.getAllContentTypes(params).subscribe((response) => {
+                        expect(response.pagination).toEqual(customPagination);
+                        expect(response.pagination.currentPage).toBe(5);
+                        expect(response.pagination.perPage).toBe(10);
+                        expect(response.pagination.totalEntries).toBe(150);
+                        done();
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_API_URL)
-                );
-                req.flush(customResponse);
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_API_URL)
+                    );
+                    req.flush(customResponse);
+                }));
         });
 
         describe('Error Handling', () => {
-            it('should handle HTTP error responses', (done) => {
-                const params: DotContentTypeQueryParams = {};
+            it('should handle HTTP error responses', () =>
+                new Promise<void>((done) => {
+                    const params: DotContentTypeQueryParams = {};
 
-                spectator.service.getAllContentTypes(params).subscribe({
-                    next: () => fail('should have failed with 403 error'),
-                    error: (error) => {
-                        expect(error.status).toBe(403);
-                        expect(error.statusText).toBe('Forbidden');
-                        done();
-                    }
-                });
+                    spectator.service.getAllContentTypes(params).subscribe({
+                        next: () => fail('should have failed with 403 error'),
+                        error: (error) => {
+                            expect(error.status).toBe(403);
+                            expect(error.statusText).toBe('Forbidden');
+                            done();
+                        }
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_API_URL)
-                );
-                req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_API_URL)
+                    );
+                    req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+                }));
 
-            it('should handle server errors (500)', (done) => {
-                const params: DotContentTypeQueryParams = {};
+            it('should handle server errors (500)', () =>
+                new Promise<void>((done) => {
+                    const params: DotContentTypeQueryParams = {};
 
-                spectator.service.getAllContentTypes(params).subscribe({
-                    next: () => fail('should have failed with 500 error'),
-                    error: (error) => {
-                        expect(error.status).toBe(500);
-                        done();
-                    }
-                });
+                    spectator.service.getAllContentTypes(params).subscribe({
+                        next: () => fail('should have failed with 500 error'),
+                        error: (error) => {
+                            expect(error.status).toBe(500);
+                            done();
+                        }
+                    });
 
-                const req = httpMock.expectOne((request) =>
-                    request.url.includes(CONTENTTYPE_API_URL)
-                );
-                req.flush('Internal Server Error', {
-                    status: 500,
-                    statusText: 'Internal Server Error'
-                });
-            });
+                    const req = httpMock.expectOne((request) =>
+                        request.url.includes(CONTENTTYPE_API_URL)
+                    );
+                    req.flush('Internal Server Error', {
+                        status: 500,
+                        statusText: 'Internal Server Error'
+                    });
+                }));
         });
     });
 
@@ -971,42 +988,44 @@ describe('DotPageContentTypeService', () => {
     });
 
     describe('Edge Cases', () => {
-        it('should handle very long filter strings', (done) => {
-            const longFilter = 'a'.repeat(500);
-            const params: DotPageContentTypeQueryParams = {
-                pagePathOrId: '/test-page',
-                filter: longFilter
-            };
+        it('should handle very long filter strings', () =>
+            new Promise<void>((done) => {
+                const longFilter = 'a'.repeat(500);
+                const params: DotPageContentTypeQueryParams = {
+                    pagePathOrId: '/test-page',
+                    filter: longFilter
+                };
 
-            spectator.service.get(params).subscribe((response) => {
-                expect(response.contenttypes).toBeDefined();
-                done();
-            });
+                spectator.service.get(params).subscribe((response) => {
+                    expect(response.contenttypes).toBeDefined();
+                    done();
+                });
 
-            const req = httpMock.expectOne((request) =>
-                request.url.includes('/api/v1/contenttype/page')
-            );
-            expect(req.request.params.get('filter')).toBe(longFilter);
-            req.flush(MOCK_API_RESPONSE);
-        });
+                const req = httpMock.expectOne((request) =>
+                    request.url.includes('/api/v1/contenttype/page')
+                );
+                expect(req.request.params.get('filter')).toBe(longFilter);
+                req.flush(MOCK_API_RESPONSE);
+            }));
 
-        it('should handle special characters in pagePathOrId', (done) => {
-            const specialPath = '/test-page?query=value&foo=bar';
-            const params: DotPageContentTypeQueryParams = {
-                pagePathOrId: specialPath
-            };
+        it('should handle special characters in pagePathOrId', () =>
+            new Promise<void>((done) => {
+                const specialPath = '/test-page?query=value&foo=bar';
+                const params: DotPageContentTypeQueryParams = {
+                    pagePathOrId: specialPath
+                };
 
-            spectator.service.get(params).subscribe((response) => {
-                expect(response.contenttypes).toBeDefined();
-                done();
-            });
+                spectator.service.get(params).subscribe((response) => {
+                    expect(response.contenttypes).toBeDefined();
+                    done();
+                });
 
-            const req = httpMock.expectOne((request) =>
-                request.url.includes('/api/v1/contenttype/page')
-            );
-            expect(req.request.params.get('pagePathOrId')).toBe(specialPath);
-            req.flush(MOCK_API_RESPONSE);
-        });
+                const req = httpMock.expectOne((request) =>
+                    request.url.includes('/api/v1/contenttype/page')
+                );
+                expect(req.request.params.get('pagePathOrId')).toBe(specialPath);
+                req.flush(MOCK_API_RESPONSE);
+            }));
 
         it('should handle empty types array', () => {
             const params: DotPageContentTypeQueryParams = {
@@ -1041,24 +1060,25 @@ describe('DotPageContentTypeService', () => {
             req.flush(MOCK_API_RESPONSE);
         });
 
-        it('should handle special characters in host parameter', (done) => {
-            const specialHost = 'demo-site.dotcms.com';
-            const params: DotPageContentTypeQueryParams = {
-                pagePathOrId: '/test-page',
-                host: specialHost
-            };
+        it('should handle special characters in host parameter', () =>
+            new Promise<void>((done) => {
+                const specialHost = 'demo-site.dotcms.com';
+                const params: DotPageContentTypeQueryParams = {
+                    pagePathOrId: '/test-page',
+                    host: specialHost
+                };
 
-            spectator.service.get(params).subscribe((response) => {
-                expect(response.contenttypes).toBeDefined();
-                done();
-            });
+                spectator.service.get(params).subscribe((response) => {
+                    expect(response.contenttypes).toBeDefined();
+                    done();
+                });
 
-            const req = httpMock.expectOne((request) =>
-                request.url.includes('/api/v1/contenttype/page')
-            );
-            expect(req.request.params.get('host')).toBe(specialHost);
-            req.flush(MOCK_API_RESPONSE);
-        });
+                const req = httpMock.expectOne((request) =>
+                    request.url.includes('/api/v1/contenttype/page')
+                );
+                expect(req.request.params.get('host')).toBe(specialHost);
+                req.flush(MOCK_API_RESPONSE);
+            }));
 
         it('should not include host parameter when empty string', () => {
             const params: DotPageContentTypeQueryParams = {

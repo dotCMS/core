@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotDialogHeaderComponent } from './dot-dialog-header.component';
 
@@ -34,7 +35,7 @@ describe('DotDialogHeaderComponent', () => {
 
     describe('close button', () => {
         it('should emit close when clicked', () => {
-            const spy = jest.spyOn(spectator.component.close, 'emit');
+            const spy = vi.spyOn(spectator.component.close, 'emit');
 
             clickClose();
 

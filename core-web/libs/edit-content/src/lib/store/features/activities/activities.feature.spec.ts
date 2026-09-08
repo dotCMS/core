@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -125,7 +126,7 @@ describe('Activities Feature Store', () => {
 
     describe('loadActivities error handling', () => {
         it('should handle error when loading activities fails', fakeAsync(() => {
-            const handleErrorSpy = jest.spyOn(errorManager, 'handle');
+            const handleErrorSpy = vi.spyOn(errorManager, 'handle');
             // Arrange
             const httpError = new HttpErrorResponse({
                 status: HttpCode.SERVER_ERROR,
@@ -226,7 +227,7 @@ describe('Activities Feature Store', () => {
 
         it('should handle error when adding comment fails', fakeAsync(() => {
             // Arrange
-            const handleErrorSpy = jest.spyOn(errorManager, 'handle');
+            const handleErrorSpy = vi.spyOn(errorManager, 'handle');
             const httpError = new HttpErrorResponse({
                 status: HttpCode.SERVER_ERROR,
                 statusText: 'Server Error',

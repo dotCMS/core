@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -11,12 +13,12 @@ import {
 } from './dotcms-client.provider';
 
 // Mock the createDotCMSClient function since it's not available in test environment
-jest.mock('@dotcms/client', () => ({
-    createDotCMSClient: jest.fn()
+vi.mock('@dotcms/client', () => ({
+    createDotCMSClient: vi.fn()
 }));
 
 // Get the mocked function
-const mockedCreateDotCMSClient = jest.mocked(createDotCMSClient);
+const mockedCreateDotCMSClient = vi.mocked(createDotCMSClient);
 
 describe('provideDotCMSClient', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,15 +44,15 @@ describe('provideDotCMSClient', () => {
         // Create mock client with all expected methods
         mockClient = {
             page: {
-                get: jest.fn(),
-                getPageAsset: jest.fn()
+                get: vi.fn(),
+                getPageAsset: vi.fn()
             },
             content: {
-                get: jest.fn(),
-                getCollection: jest.fn()
+                get: vi.fn(),
+                getCollection: vi.fn()
             },
             nav: {
-                get: jest.fn()
+                get: vi.fn()
             }
         };
 
@@ -58,7 +60,7 @@ describe('provideDotCMSClient', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Success Scenarios', () => {
@@ -200,11 +202,11 @@ describe('provideDotCMSClient', () => {
 
         it('should call createDotCMSClient with custom httpClient when provided', () => {
             const mockHttpClient = {
-                get: jest.fn(),
-                post: jest.fn(),
-                put: jest.fn(),
-                delete: jest.fn(),
-                request: jest.fn()
+                get: vi.fn(),
+                post: vi.fn(),
+                put: vi.fn(),
+                delete: vi.fn(),
+                request: vi.fn()
             };
 
             const configWithHttpClient: DotCMSAngularProviderConfig = {

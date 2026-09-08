@@ -5,21 +5,5 @@
     "sourceRoot": "libs/portlets/dot-experiments/data-access/src",
     "prefix": "dotcms",
     "tags": ["type:data-access", "scope:dotcms-ui", "portlet:experiments"],
-    "targets": {
-        "test": {
-            "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}",
-                "{workspaceRoot}/target/core-web-reports"
-            ],
-            "options": {
-                "passWithNoTests": false
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        }
-    }
+    "targets": {}
 }

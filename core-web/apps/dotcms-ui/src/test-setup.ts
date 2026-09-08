@@ -4,11 +4,20 @@
 
 // This file is required by jest and is used for setup for each test file.
 import '@testing-library/jest-dom';
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import '@analogjs/vitest-angular/setup-zone';
+
+import { vi } from 'vitest';
+
+import { getTestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-setupZoneTestEnv();
+// Analog's setup-zone patches Vitest for zone.js. A hand-rolled
+// `import 'zone.js/testing'` is not enough: zone.js patches jasmine/mocha/jest,
+// knows nothing about Vitest, and every fakeAsync test then fails with
+// "Expected to be running in 'ProxyZone'".
+getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
 // Setup global mocks
 setupResizeObserverMock();
@@ -46,7 +55,7 @@ if (!global.Date) {
 
 // Add scrollIntoView polyfill for JSDOM
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
-    Element.prototype.scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = vi.fn();
 }
 
 // Add element.animate polyfill for Jest/JSDOM environment
@@ -141,12 +150,12 @@ console.warn = (...args: unknown[]) => {
 
 // Mock sessionStorage for JSDOM
 const mockSessionStorage = {
-    getItem: jest.fn().mockReturnValue(null),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
+    getItem: vi.fn().mockReturnValue(null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
     length: 0,
-    key: jest.fn()
+    key: vi.fn()
 };
 
 Object.defineProperty(window, 'sessionStorage', {

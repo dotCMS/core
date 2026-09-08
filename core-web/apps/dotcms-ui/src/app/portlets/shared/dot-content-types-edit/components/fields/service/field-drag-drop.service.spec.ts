@@ -2,6 +2,7 @@
 
 import { DragulaService } from 'ng2-dragula';
 import { Observable, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -65,7 +66,7 @@ describe('FieldDragDropService', () => {
                 {
                     provide: DotAlertConfirmService,
                     useValue: {
-                        alert: jest.fn()
+                        alert: vi.fn()
                     }
                 },
                 {
@@ -87,7 +88,7 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldBagOptions', () => {
         it('should set name', () => {
-            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
+            const findSpy = vi.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldBagOptions();
 
@@ -238,7 +239,7 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldRowBagOptions', () => {
         it('should set name', () => {
-            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
+            const findSpy = vi.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldRowBagOptions();
 
@@ -265,8 +266,8 @@ describe('FieldDragDropService', () => {
     });
 
     it('should set bag options for fields and rows', () => {
-        jest.spyOn(fieldDragDropService, 'setFieldRowBagOptions');
-        jest.spyOn(fieldDragDropService, 'setFieldBagOptions');
+        vi.spyOn(fieldDragDropService, 'setFieldRowBagOptions');
+        vi.spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         fieldDragDropService.setBagOptions();
 

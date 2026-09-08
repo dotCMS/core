@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
@@ -65,7 +66,7 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit selectTheme event when style button is clicked', () => {
-        const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
+        const spy = vi.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
 
         spectator.component.onThemeChange('test-theme-id');
@@ -87,7 +88,7 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit changes everytime the layout properties changes', () => {
-        const changesMock = jest.spyOn(store, 'updateLayoutProperties');
+        const changesMock = vi.spyOn(store, 'updateLayoutProperties');
         spectator.component.group.setValue({
             footer: true,
             header: false,

@@ -1,5 +1,6 @@
-import { mockProvider } from '@openng/spectator/jest';
+import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -112,13 +113,13 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
                     useValue: buildActivatedRouteMock(newContentEditorEnabled)
                 },
                 mockProvider(DotSiteService, {
-                    getSites: jest.fn().mockReturnValue(
+                    getSites: vi.fn().mockReturnValue(
                         of({
                             sites: [fakeSite],
                             pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
                         })
                     ),
-                    getSiteById: jest.fn().mockReturnValue(of(fakeSite))
+                    getSiteById: vi.fn().mockReturnValue(of(fakeSite))
                 }),
                 mockProvider(DotHttpErrorManagerService)
             ]
@@ -139,7 +140,7 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
         const dialog: Dialog = fixture.debugElement.query(By.directive(Dialog)).componentInstance;
         dialog.onAfterEnter();
 
-        jest.runOnlyPendingTimers();
+        vi.runOnlyPendingTimers();
     };
 
     beforeAll(() => {
@@ -163,11 +164,11 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
         cleanUpDialog(fixture);
     });
 

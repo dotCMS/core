@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -57,13 +58,13 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
         component: DotContentDriveFieldFilterMenuComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                getFilterValue: jest.fn().mockReturnValue(undefined),
+                getFilterValue: vi.fn().mockReturnValue(undefined),
                 userSearchableFields: signal<DotCMSContentTypeField[]>([]),
                 userSearchableActive: signal<string[]>([]),
-                addUserSearchableField: jest.fn(),
-                setUserSearchableFields: jest.fn(),
-                setShowInListFields: jest.fn(),
-                clearUserSearchableFilters: jest.fn()
+                addUserSearchableField: vi.fn(),
+                setUserSearchableFields: vi.fn(),
+                setShowInListFields: vi.fn(),
+                clearUserSearchableFilters: vi.fn()
             }),
             mockProvider(DotHttpErrorManagerService),
             {
@@ -73,7 +74,7 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
         ],
         componentProviders: [
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE))
+                getContentType: vi.fn().mockReturnValue(of(CONTENT_TYPE))
             })
         ],
         detectChanges: false
@@ -85,7 +86,7 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
         contentTypeService = spectator.inject(DotContentTypeService, true);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     const moreButton = () =>
         spectator.query(byTestId('field-filter-more-button'))?.querySelector('button');

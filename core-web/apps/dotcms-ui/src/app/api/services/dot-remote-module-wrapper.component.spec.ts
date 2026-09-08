@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
@@ -6,8 +8,8 @@ import { DotRemoteModuleWrapperComponent } from './dot-remote-module-wrapper.com
 describe('DotRemoteModuleWrapperComponent', () => {
     let fixture: ComponentFixture<DotRemoteModuleWrapperComponent>;
     let component: DotRemoteModuleWrapperComponent;
-    let mockCleanup: jest.Mock;
-    let mockMount: jest.Mock;
+    let mockCleanup: Mock;
+    let mockMount: Mock;
 
     function createComponent(mountFn?: unknown): void {
         TestBed.configureTestingModule({
@@ -29,8 +31,8 @@ describe('DotRemoteModuleWrapperComponent', () => {
     }
 
     beforeEach(() => {
-        mockCleanup = jest.fn();
-        mockMount = jest.fn().mockResolvedValue(mockCleanup);
+        mockCleanup = vi.fn();
+        mockMount = vi.fn().mockResolvedValue(mockCleanup);
     });
 
     it('should call mount with the container element', fakeAsync(() => {
@@ -61,8 +63,8 @@ describe('DotRemoteModuleWrapperComponent', () => {
     }));
 
     it('should handle mount error gracefully', fakeAsync(() => {
-        const errorMount = jest.fn().mockRejectedValue(new Error('mount failed'));
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const errorMount = vi.fn().mockRejectedValue(new Error('mount failed'));
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
         createComponent(errorMount);
         fixture.detectChanges();
@@ -79,11 +81,11 @@ describe('DotRemoteModuleWrapperComponent', () => {
     }));
 
     it('should handle cleanup error gracefully', fakeAsync(() => {
-        const throwingCleanup = jest.fn().mockImplementation(() => {
+        const throwingCleanup = vi.fn().mockImplementation(() => {
             throw new Error('cleanup failed');
         });
-        const errorMount = jest.fn().mockResolvedValue(throwingCleanup);
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const errorMount = vi.fn().mockResolvedValue(throwingCleanup);
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
         createComponent(errorMount);
         fixture.detectChanges();

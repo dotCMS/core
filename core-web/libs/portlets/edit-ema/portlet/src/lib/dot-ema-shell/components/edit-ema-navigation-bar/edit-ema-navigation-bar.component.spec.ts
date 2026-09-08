@@ -1,5 +1,5 @@
-import { describe, expect } from '@jest/globals';
-import { byTestId, createRoutingFactory, SpectatorRouting } from '@openng/spectator/jest';
+import { byTestId, createRoutingFactory, SpectatorRouting } from '@openng/spectator/vitest';
+import { describe, expect, vi } from 'vitest';
 
 import { Router } from '@angular/router';
 
@@ -22,7 +22,7 @@ const messages = {
 
 const store = {
     paletteOpen: () => false,
-    setPaletteOpen: jest.fn(),
+    setPaletteOpen: vi.fn(),
     pageParams: () => ({
         language_id: '3',
         personaId: '123'
@@ -103,7 +103,7 @@ describe('EditEmaNavigationBarComponent', () => {
         describe('Navigation', () => {
             it('should navigate with query params when clicking a link item', () => {
                 const router = spectator.inject(Router);
-                const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+                const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
                 const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
                 const innerButton = contentHost.querySelector('button');
@@ -117,7 +117,7 @@ describe('EditEmaNavigationBarComponent', () => {
 
             it('should not navigate when item is disabled', () => {
                 const router = spectator.inject(Router);
-                const navigateSpy = jest.spyOn(router, 'navigate');
+                const navigateSpy = vi.spyOn(router, 'navigate');
 
                 const layoutHost = spectator.queryAll(byTestId('nav-bar-item'))[1];
                 const innerButton = layoutHost.querySelector('button');
@@ -127,7 +127,7 @@ describe('EditEmaNavigationBarComponent', () => {
             });
 
             it('should emit action when clicking an action item (no href)', () => {
-                const emitSpy = jest.spyOn(spectator.component.action, 'emit');
+                const emitSpy = vi.spyOn(spectator.component.action, 'emit');
 
                 const actionHost = spectator.queryAll(byTestId('nav-bar-item'))[4];
                 const innerButton = actionHost.querySelector('button');

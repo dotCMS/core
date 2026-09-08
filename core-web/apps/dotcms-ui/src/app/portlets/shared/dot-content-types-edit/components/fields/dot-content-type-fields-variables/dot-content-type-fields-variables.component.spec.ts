@@ -1,4 +1,5 @@
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DebugElement } from '@angular/core';
@@ -77,7 +78,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should load the component with one empty row', () => {
-        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
+        vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
         fixtureHost.detectChanges();
         expect(comp.$fieldVariables().length).toBe(0);
     });
@@ -88,11 +89,11 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     describe('holding edits until Save (#37191)', () => {
         beforeEach(() => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
-            jest.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            vi.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
                 of(v as DotFieldVariable)
             );
-            jest.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
+            vi.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
                 of(v as DotFieldVariable)
             );
             fixtureHost.detectChanges();
@@ -133,7 +134,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should report back so the dialog can close', () => {
-            const saved = jest.fn();
+            const saved = vi.fn();
             comp.save.subscribe(saved);
 
             changeTo([...mockFieldVariables, { key: 'k', value: 'v' } as DotFieldVariable]);
@@ -143,7 +144,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should close without writing when nothing changed', () => {
-            const saved = jest.fn();
+            const saved = vi.fn();
             comp.save.subscribe(saved);
 
             comp.saveChanges();
@@ -164,7 +165,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     describe('the dialog footer', () => {
         beforeEach(() => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
         });
 
@@ -188,7 +189,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
              * variables instead of the field, and renaming a field wrote nothing
              * (`content-type-fields.spec.ts`, CI).
              */
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             const controls: DotDialogActions[] = [];
 
             fixtureHost.componentInstance.showTable = false;
@@ -208,16 +209,14 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         beforeEach(() => {
             httpErrorManager = de.injector.get(DotHttpErrorManagerService);
-            jest.spyOn(httpErrorManager, 'handle').mockReturnValue(of(null));
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            vi.spyOn(httpErrorManager, 'handle').mockReturnValue(of(null));
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
         });
 
         it('should surface a failed save and keep the dialog open', () => {
-            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(
-                throwError(() => httpError)
-            );
-            const saved = jest.fn();
+            vi.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError(() => httpError));
+            const saved = vi.fn();
             comp.save.subscribe(saved);
 
             changeTo([
@@ -239,7 +238,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
              * missing id (verified against the API), so the tab could never save again.
              */
             const [first, second] = mockFieldVariables;
-            jest.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
+            vi.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
                 v.key === first.key ? of(v as DotFieldVariable) : throwError(() => httpError)
             );
 
@@ -249,7 +248,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             );
             comp.saveChanges();
 
-            (dotFieldVariableService.delete as jest.Mock).mockClear();
+            (dotFieldVariableService.delete as Mock).mockClear();
             comp.saveChanges();
 
             // Only the one that failed is retried.
@@ -262,10 +261,10 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         it('should not re-send an add that already landed', () => {
             const [first] = mockFieldVariables;
-            jest.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
+            vi.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
                 of(v as DotFieldVariable)
             );
-            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
+            vi.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
                 throwError(() => httpError)
             );
 
@@ -276,7 +275,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             ]);
             comp.saveChanges();
 
-            (dotFieldVariableService.save as jest.Mock).mockClear();
+            (dotFieldVariableService.save as Mock).mockClear();
             comp.saveChanges();
 
             // Only the failed delete is outstanding; the add is already stored.
@@ -290,10 +289,10 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
              * and removing it after a partial failure went out as `.../variables/id/undefined`.
              */
             const [first] = mockFieldVariables;
-            jest.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
+            vi.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
                 of({ ...v, id: 'server-assigned-id' } as DotFieldVariable)
             );
-            jest.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
+            vi.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
                 v.key === first.key ? throwError(() => httpError) : of(v as DotFieldVariable)
             );
 
@@ -314,11 +313,11 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should surface a failed delete and keep the edits on screen', () => {
-            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
+            vi.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
                 throwError(() => httpError)
             );
             const pending = mockFieldVariables.slice(1);
-            const saved = jest.fn();
+            const saved = vi.fn();
             comp.save.subscribe(saved);
 
             changeTo(pending);
@@ -333,7 +332,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     describe('editor capabilities (FR-024, FR-030)', () => {
         beforeEach(() => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
         });
 
@@ -362,13 +361,13 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should set variable correctly', () => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
             expect(comp.$fieldVariables().length).toBe(mockFieldVariables.length);
         });
 
         it('should not set allowedBlocks variable', () => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
@@ -397,7 +396,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should filter out customFieldOptions variable', () => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
@@ -413,7 +412,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should NOT filter out newRenderMode variable', () => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
@@ -430,7 +429,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should display other variables while filtering customFieldOptions', () => {
-            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
+            vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',

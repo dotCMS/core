@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -59,50 +61,56 @@ describe('DotUsageService', () => {
         expect(service).toBeTruthy();
     });
 
-    it('should get summary successfully', (done) => {
-        const mockResponse: UsageApiResponse = { entity: mockSummary };
+    it('should get summary successfully', () =>
+        new Promise<void>((done) => {
+            const mockResponse: UsageApiResponse = { entity: mockSummary };
 
-        service.getSummary().subscribe((summary) => {
-            expect(summary).toEqual(mockSummary);
-            done();
-        });
-
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        expect(req.request.method).toBe('GET');
-        req.flush(mockResponse);
-    });
-
-    it('should handle HTTP errors', (done) => {
-        const errorSpy = jest.spyOn(console, 'error').mockImplementation();
-
-        service.getSummary().subscribe({
-            next: () => fail('Should have failed'),
-            error: (error) => {
-                expect(error.status).toBe(401);
-                errorSpy.mockRestore();
+            service.getSummary().subscribe((summary) => {
+                expect(summary).toEqual(mockSummary);
                 done();
-            }
-        });
+            });
 
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-    });
+            const req = httpMock.expectOne('/api/v1/usage/summary');
+            expect(req.request.method).toBe('GET');
+            req.flush(mockResponse);
+        }));
 
-    it('should handle server errors', (done) => {
-        const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+    it('should handle HTTP errors', () =>
+        new Promise<void>((done) => {
+            const errorSpy = vi.spyOn(console, 'error').mockImplementation();
 
-        service.getSummary().subscribe({
-            next: () => fail('Should have failed'),
-            error: (error) => {
-                expect(error.status).toBe(500);
-                errorSpy.mockRestore();
-                done();
-            }
-        });
+            service.getSummary().subscribe({
+                next: () => fail('Should have failed'),
+                error: (error) => {
+                    expect(error.status).toBe(401);
+                    errorSpy.mockRestore();
+                    done();
+                }
+            });
 
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush('Internal Server Error', { status: 500, statusText: 'Internal Server Error' });
-    });
+            const req = httpMock.expectOne('/api/v1/usage/summary');
+            req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+        }));
+
+    it('should handle server errors', () =>
+        new Promise<void>((done) => {
+            const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+
+            service.getSummary().subscribe({
+                next: () => fail('Should have failed'),
+                error: (error) => {
+                    expect(error.status).toBe(500);
+                    errorSpy.mockRestore();
+                    done();
+                }
+            });
+
+            const req = httpMock.expectOne('/api/v1/usage/summary');
+            req.flush('Internal Server Error', {
+                status: 500,
+                statusText: 'Internal Server Error'
+            });
+        }));
 
     it('should get error message for 401', () => {
         const error = { status: 401 } as HttpErrorResponse;
@@ -157,20 +165,21 @@ describe('DotUsageService', () => {
         expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.generic');
     });
 
-    it('should refresh data', (done) => {
-        const mockResponse: UsageApiResponse = { entity: mockSummary };
+    it('should refresh data', () =>
+        new Promise<void>((done) => {
+            const mockResponse: UsageApiResponse = { entity: mockSummary };
 
-        service.refresh().subscribe((summary) => {
-            expect(summary).toEqual(mockSummary);
-            done();
-        });
+            service.refresh().subscribe((summary) => {
+                expect(summary).toEqual(mockSummary);
+                done();
+            });
 
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush(mockResponse);
-    });
+            const req = httpMock.expectOne('/api/v1/usage/summary');
+            req.flush(mockResponse);
+        }));
 
     it('should handle concurrent requests properly', () => {
-        const spy = jest.spyOn(console, 'error').mockImplementation();
+        const spy = vi.spyOn(console, 'error').mockImplementation();
 
         // Start two requests simultaneously
         service.getSummary().subscribe();
@@ -186,18 +195,19 @@ describe('DotUsageService', () => {
         spy.mockRestore();
     });
 
-    it('should validate response structure', (done) => {
-        const invalidResponse = { invalidProperty: 'test' };
+    it('should validate response structure', () =>
+        new Promise<void>((done) => {
+            const invalidResponse = { invalidProperty: 'test' };
 
-        service.getSummary().subscribe({
-            next: (summary) => {
-                // Should handle invalid response gracefully
-                expect(summary).toBeDefined();
-                done();
-            }
-        });
+            service.getSummary().subscribe({
+                next: (summary) => {
+                    // Should handle invalid response gracefully
+                    expect(summary).toBeDefined();
+                    done();
+                }
+            });
 
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush({ entity: invalidResponse });
-    });
+            const req = httpMock.expectOne('/api/v1/usage/summary');
+            req.flush({ entity: invalidResponse });
+        }));
 });

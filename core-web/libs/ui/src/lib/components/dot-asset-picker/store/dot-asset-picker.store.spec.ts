@@ -5,8 +5,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -119,13 +120,13 @@ describe('DotAssetPickerStore', () => {
         service: DotAssetPickerStore,
         providers: [
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(EMPTY_RESPONSE))
+                search: vi.fn().mockReturnValue(of(EMPTY_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                searchFolders: jest.fn().mockReturnValue(of(EMPTY_FOLDERS))
+                searchFolders: vi.fn().mockReturnValue(of(EMPTY_FOLDERS))
             }),
             mockProvider(DotSiteService, {
-                getSites: jest.fn().mockReturnValue(of(SITES_RESPONSE))
+                getSites: vi.fn().mockReturnValue(of(SITES_RESPONSE))
             })
         ]
     });
@@ -145,7 +146,7 @@ describe('DotAssetPickerStore', () => {
         siteService.getSites.mockReturnValue(of(SITES_RESPONSE));
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     describe('File field entry point', () => {
         beforeEach(() => {

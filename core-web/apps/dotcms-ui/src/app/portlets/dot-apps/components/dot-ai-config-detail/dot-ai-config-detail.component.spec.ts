@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';

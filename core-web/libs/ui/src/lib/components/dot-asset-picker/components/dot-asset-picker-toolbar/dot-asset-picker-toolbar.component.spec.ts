@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -22,14 +23,14 @@ const SITE: DotSite = {
     archived: false
 };
 
-/** Only the slice of the store the toolbar reads. Signals, not `jest.fn()`s, so `computed` reacts. */
+/** Only the slice of the store the toolbar reads. Signals, not `vi.fn()`s, so `computed` reacts. */
 const createMockStore = (config: DotAssetPickerConfig) => ({
     config: signal(config),
     filters: signal({}),
     selectedNode: signal(undefined),
-    setSearch: jest.fn(),
-    patchFilters: jest.fn(),
-    removeFilter: jest.fn()
+    setSearch: vi.fn(),
+    patchFilters: vi.fn(),
+    removeFilter: vi.fn()
 });
 
 describe('DotAssetPickerToolbarComponent', () => {
@@ -39,13 +40,13 @@ describe('DotAssetPickerToolbarComponent', () => {
         component: DotAssetPickerToolbarComponent,
         providers: [
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of([])),
-                getContentTypesWithPagination: jest
+                getAllContentTypes: vi.fn().mockReturnValue(of([])),
+                getContentTypesWithPagination: vi
                     .fn()
                     .mockReturnValue(of({ contentTypes: [], pagination: {} }))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of([]))
+                get: vi.fn().mockReturnValue(of([]))
             }),
             {
                 provide: DotMessageService,

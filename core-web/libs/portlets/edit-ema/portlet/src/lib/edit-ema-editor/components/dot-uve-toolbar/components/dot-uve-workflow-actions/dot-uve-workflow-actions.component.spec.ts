@@ -1,6 +1,6 @@
-import { describe, it } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/vitest';
 import { Subject, of } from 'rxjs';
+import { describe, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -39,15 +39,15 @@ import { MOCK_RESPONSE_VTL } from '../../../../../shared/mocks';
 // Mock window.matchMedia for PrimeNG components
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query: string) => ({
+    value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 import { UVEStore } from '../../../../../store/dot-uve.store';
@@ -114,9 +114,9 @@ const uveStoreMock = {
     workflowIsLoading: signal(false),
     editorCanEditContent: () => canEditPageContentSignal(),
     pageParams: signal(pageParams),
-    pageLoad: jest.fn(),
-    pageReload: jest.fn(),
-    setWorkflowActionLoading: jest.fn()
+    pageLoad: vi.fn(),
+    pageReload: vi.fn(),
+    setWorkflowActionLoading: vi.fn()
 };
 
 describe('DotUveWorkflowActionsComponent', () => {
@@ -203,13 +203,13 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should fire workflow actions and pageLoads', () => {
-            const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyLoadPageAsset = jest.spyOn(store, 'pageLoad');
+            const spySetWorkflowActionLoading = vi.spyOn(store, 'setWorkflowActionLoading');
+            const spyLoadPageAsset = vi.spyOn(store, 'pageLoad');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
-            const spy = jest
+            const spy = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
-            const spyMessage = jest.spyOn(messageService, 'add');
+            const spyMessage = vi.spyOn(messageService, 'add');
 
             dotWorkflowActionsComponent.actionFired.emit({
                 ...mockWorkflowsActions[0],
@@ -246,10 +246,10 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should fire workflow actions and reloadPage', () => {
-            const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyReloadCurrentPage = jest.spyOn(store, 'pageReload');
+            const spySetWorkflowActionLoading = vi.spyOn(store, 'setWorkflowActionLoading');
+            const spyReloadCurrentPage = vi.spyOn(store, 'pageReload');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
-            const spy = jest
+            const spy = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of({ ...dotcmsContentletMock, ...pageParams }));
 
@@ -276,16 +276,16 @@ describe('DotUveWorkflowActionsComponent', () => {
                 title: 'title'
             };
 
-            jest.spyOn(dotWorkflowEventHandlerService, 'setWizardInput').mockReturnValue(
+            vi.spyOn(dotWorkflowEventHandlerService, 'setWizardInput').mockReturnValue(
                 wizardInputMock
             );
-            const spyProcessWorkflowPayload = jest
+            const spyProcessWorkflowPayload = vi
                 .spyOn(dotWorkflowEventHandlerService, 'processWorkflowPayload')
                 .mockReturnValue(DOT_PROCESSED_WORKFLOW_PAYLOAD_MOCK);
-            const spyWizard = jest.spyOn(dotWizardService, 'open').mockImplementation(() => {
+            const spyWizard = vi.spyOn(dotWizardService, 'open').mockImplementation(() => {
                 return output$.asObservable();
             });
-            const spyFireTo = jest
+            const spyFireTo = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
 
@@ -309,11 +309,11 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should check Publish Environments and open wizard component if it has Enviroments ', () => {
-            jest.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
-            const spyCheckPublishEnvironments = jest
+            vi.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
+            const spyCheckPublishEnvironments = vi
                 .spyOn(dotWorkflowEventHandlerService, 'checkPublishEnvironments')
                 .mockReturnValue(of(true));
-            const spyWizard = jest.spyOn(dotWizardService, 'open');
+            const spyWizard = vi.spyOn(dotWizardService, 'open');
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 
@@ -324,11 +324,11 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should check Publish Environments and do not open wizard component if it do not has Enviroments ', () => {
-            jest.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
-            const spyCheckPublishEnvironments = jest
+            vi.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
+            const spyCheckPublishEnvironments = vi
                 .spyOn(dotWorkflowEventHandlerService, 'checkPublishEnvironments')
                 .mockReturnValue(of(false));
-            const spyWizard = jest.spyOn(dotWizardService, 'open');
+            const spyWizard = vi.spyOn(dotWizardService, 'open');
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 

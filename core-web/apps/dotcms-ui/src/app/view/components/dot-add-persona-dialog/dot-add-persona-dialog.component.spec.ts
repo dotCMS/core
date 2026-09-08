@@ -1,5 +1,11 @@
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    Spectator,
+    byTestId,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -38,7 +44,7 @@ describe('DotAddPersonaDialogComponent', () => {
         providers: [
             DotWorkflowActionsFireService,
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn().mockReturnValue(of(undefined))
+                handle: vi.fn().mockReturnValue(of(undefined))
             }),
             {
                 provide: DotMessageDisplayService,
@@ -47,7 +53,7 @@ describe('DotAddPersonaDialogComponent', () => {
             { provide: DotMessageService, useValue: messageServiceMock },
             { provide: LoginService, useClass: LoginServiceMock },
             { provide: SiteService, useValue: new SiteServiceMock() },
-            mockProvider(GlobalStore, { currentSiteId: jest.fn().mockReturnValue('demo') })
+            mockProvider(GlobalStore, { currentSiteId: vi.fn().mockReturnValue('demo') })
         ]
     });
 
@@ -103,7 +109,7 @@ describe('DotAddPersonaDialogComponent', () => {
 
         it('should reset form, disable accept and set visible to false on closeDialog', () => {
             const formComponent = spectator.component.personaForm;
-            jest.spyOn(formComponent, 'resetForm');
+            vi.spyOn(formComponent, 'resetForm');
 
             spectator.component.closeDialog();
 
@@ -113,7 +119,7 @@ describe('DotAddPersonaDialogComponent', () => {
         });
 
         it('should call closeDialog when p-dialog visibleChange emits false', () => {
-            jest.spyOn(spectator.component, 'closeDialog');
+            vi.spyOn(spectator.component, 'closeDialog');
 
             spectator.triggerEventHandler('p-dialog', 'visibleChange', false);
 
@@ -147,7 +153,7 @@ describe('DotAddPersonaDialogComponent', () => {
             beforeEach(() => {
                 dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
                 dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-                jest.spyOn(spectator.component.createdPersona, 'emit');
+                vi.spyOn(spectator.component.createdPersona, 'emit');
                 Object.defineProperty(spectator.component.personaForm.form, 'valid', {
                     value: true,
                     writable: true
@@ -155,8 +161,8 @@ describe('DotAddPersonaDialogComponent', () => {
             });
 
             it('should create persona, emit createdPersona, close dialog and disable accept when form is valid', () => {
-                jest.spyOn(spectator.component, 'closeDialog');
-                jest.spyOn(
+                vi.spyOn(spectator.component, 'closeDialog');
+                vi.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
                 ).mockReturnValue(of(mockDotPersona));
@@ -183,7 +189,7 @@ describe('DotAddPersonaDialogComponent', () => {
             it('should call dotHttpErrorManagerService when endpoint fails and re-enable accept button', () => {
                 const fake500Response = mockResponseView(500);
                 spectator.component.dialogActions.accept.disabled = true;
-                jest.spyOn(
+                vi.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
                 ).mockReturnValue(throwError(() => fake500Response));

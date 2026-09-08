@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Observable, of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
@@ -26,7 +27,7 @@ class TestHostComponent {
     addToBundleIdentifier: string;
 }
 
-xdescribe('DotAddToBundleComponent', () => {
+describe.skip('DotAddToBundleComponent', () => {
     let comp: DotAddToBundleComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
@@ -50,8 +51,8 @@ xdescribe('DotAddToBundleComponent', () => {
         de = fixture.debugElement.query(By.css('dot-add-to-bundle'));
         comp = de.componentInstance;
 
-        jest.spyOn(addToBundleServiceMock, 'addToBundle');
-        jest.spyOn(comp, 'submitBundle');
+        vi.spyOn(addToBundleServiceMock, 'addToBundle');
+        vi.spyOn(comp, 'submitBundle');
     });
 
     it('should have a form', () => {
@@ -79,7 +80,7 @@ xdescribe('DotAddToBundleComponent', () => {
         );
         expect(cancelButton).toBeDefined();
 
-        jest.spyOn(comp, 'close');
+        vi.spyOn(comp, 'close');
 
         cancelButton.nativeElement.click();
         expect(comp.close).toHaveBeenCalledTimes(1);
@@ -150,7 +151,7 @@ xdescribe('DotAddToBundleComponent', () => {
     }));
 
     it('should set placeholder "Select or type bundle" if bundles exist', waitForAsync(() => {
-        jest.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
+        vi.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
             observableOf([
                 {
                     id: '1234',
@@ -165,7 +166,7 @@ xdescribe('DotAddToBundleComponent', () => {
     }));
 
     it('should set as default Bundle previously selected', () => {
-        jest.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
+        vi.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
             observableOf([
                 {
                     id: '1234',

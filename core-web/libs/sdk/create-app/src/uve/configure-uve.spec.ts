@@ -77,6 +77,8 @@
  * Data model: specs/37262-create-app-docker-uve/data-model.md — §3 `UVEAppConfig`.
  */
 
+import { Mock, MockInstance, vi } from 'vitest';
+
 import { configureUVE } from './configure-uve';
 
 import { getUVEConfigValue } from '../utils';
@@ -87,13 +89,13 @@ import { HttpError, httpGet, httpPost } from '../utils/http';
 // these cases stay about configureUVE's CONTRACT — probe once, retry 5xx only, mode-dependent
 // guidance — while http.spec.ts covers the transport. HttpError stays real, because the
 // outcome's `status` is derived from it.
-jest.mock('../utils/http', () => {
+vi.mock('../utils/http', () => {
     const actual = jest.requireActual('../utils/http');
 
-    return { ...actual, httpGet: jest.fn(), httpPost: jest.fn() };
+    return { ...actual, httpGet: vi.fn(), httpPost: vi.fn() };
 });
 
-const mockedHttp = { get: httpGet as jest.Mock, post: httpPost as jest.Mock };
+const mockedHttp = { get: httpGet as Mock, post: httpPost as Mock };
 
 const HOST = 'http://localhost:8082';
 const SITE_ID = '48190c8c-42c4-46af-8d1a-0cd5db894797';
@@ -156,10 +158,10 @@ function expectFailure(outcome: Outcome) {
 }
 
 describe('configureUVE', () => {
-    let exitSpy: jest.SpyInstance;
-    let logSpy: jest.SpyInstance;
-    let warnSpy: jest.SpyInstance;
-    let errorSpy: jest.SpyInstance;
+    let exitSpy: MockInstance;
+    let logSpy: MockInstance;
+    let warnSpy: MockInstance;
+    let errorSpy: MockInstance;
     let reported: string[];
     let printed: string[];
 
@@ -174,7 +176,7 @@ describe('configureUVE', () => {
         reported = [];
         printed = [];
 
-        exitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+        exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
             throw new Error(
                 `configureUVE called process.exit(${code}) — contract X2 forbids it on every path`
             );
@@ -184,9 +186,9 @@ describe('configureUVE', () => {
             printed.push(args.map(String).join(' '));
         };
 
-        logSpy = jest.spyOn(console, 'log').mockImplementation(capture);
-        warnSpy = jest.spyOn(console, 'warn').mockImplementation(capture);
-        errorSpy = jest.spyOn(console, 'error').mockImplementation(capture);
+        logSpy = vi.spyOn(console, 'log').mockImplementation(capture);
+        warnSpy = vi.spyOn(console, 'warn').mockImplementation(capture);
+        errorSpy = vi.spyOn(console, 'error').mockImplementation(capture);
     });
 
     afterEach(() => {

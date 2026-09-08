@@ -1,7 +1,8 @@
 import { Spectator, createComponentFactory } from '@openng/spectator';
-import { byTestId } from '@openng/spectator/jest';
+import { byTestId } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
-jest.mock('primeng/dynamicdialog', () => ({
+vi.mock('primeng/dynamicdialog', () => ({
     DynamicDialogRef: class DynamicDialogRef {},
     DynamicDialogConfig: class DynamicDialogConfig {}
 }));
@@ -20,7 +21,7 @@ const messageServiceMock = new MockDotMessageService({
 
 /** Mock ref for assertions; component injects DynamicDialogRef from primeng */
 interface DialogRefMock {
-    close: jest.Mock;
+    close: Mock;
 }
 
 describe('DotLocaleConfirmationDialogComponent', () => {
@@ -31,7 +32,7 @@ describe('DotLocaleConfirmationDialogComponent', () => {
         providers: [
             {
                 provide: DynamicDialogRef,
-                useValue: { close: jest.fn() }
+                useValue: { close: vi.fn() }
             },
             {
                 provide: DynamicDialogConfig,
@@ -67,7 +68,7 @@ describe('DotLocaleConfirmationDialogComponent', () => {
 
     it('should enable the confirm button if input value is same as ISOCode', () => {
         const ref = spectator.component.ref as DialogRefMock;
-        jest.spyOn(ref, 'close');
+        vi.spyOn(ref, 'close');
         spectator.component.data.ISOCode = 'en-us';
         spectator.detectChanges();
 
@@ -84,7 +85,7 @@ describe('DotLocaleConfirmationDialogComponent', () => {
 
     it('should close the dialog without confirmation when cancel button is clicked', () => {
         const ref = spectator.component.ref as DialogRefMock;
-        jest.spyOn(ref, 'close');
+        vi.spyOn(ref, 'close');
         spectator.detectChanges();
 
         const cancelButton = spectator.query<HTMLButtonElement>(byTestId('cancel-button'));

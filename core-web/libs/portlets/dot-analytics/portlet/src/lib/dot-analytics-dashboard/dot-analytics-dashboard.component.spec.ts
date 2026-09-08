@@ -3,8 +3,9 @@ import {
     createRoutingFactory,
     mockProvider,
     SpectatorRouting
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlSegment } from '@angular/router';
@@ -43,8 +44,8 @@ describe('DotAnalyticsDashboardComponent', () => {
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
 
     const defaultLocalStorageMock = {
-        getItem: jest.fn().mockReturnValue(true),
-        setItem: jest.fn()
+        getItem: vi.fn().mockReturnValue(true),
+        setItem: vi.fn()
     };
 
     const createComponent = createRoutingFactory({
@@ -64,8 +65,8 @@ describe('DotAnalyticsDashboardComponent', () => {
                 useValue: messageServiceMock
             },
             mockProvider(GlobalStore, {
-                currentSiteId: jest.fn().mockReturnValue('test-site-123'),
-                addNewBreadcrumb: jest.fn()
+                currentSiteId: vi.fn().mockReturnValue('test-site-123'),
+                addNewBreadcrumb: vi.fn()
             }),
             {
                 provide: DotLocalstorageService,
@@ -103,7 +104,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         describe('User Interactions', () => {
             it('should call onRefresh when refresh button is clicked', () => {
-                const spy = jest.spyOn(spectator.component, 'onRefresh');
+                const spy = vi.spyOn(spectator.component, 'onRefresh');
 
                 const refreshButton = spectator.query(byTestId('refresh-button'));
                 expect(refreshButton).toExist();
@@ -250,7 +251,7 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         it('should call addNewBreadcrumb with the new tab when tab changes', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             store.setCurrentTab('conversions');
             TestBed.flushEffects();
 
@@ -260,7 +261,7 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         it('should call addNewBreadcrumb with pageview tab when switched', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             store.setCurrentTab('pageview');
             TestBed.flushEffects();
 
@@ -272,7 +273,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
     describe('Development Status Banner', () => {
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should show the message banner', () => {

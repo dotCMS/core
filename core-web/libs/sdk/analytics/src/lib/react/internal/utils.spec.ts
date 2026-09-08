@@ -1,16 +1,16 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotCMSAnalytics } from '../../core/shared/models';
 
 // Mock initializeContentAnalytics to avoid real initialization
 const mockAnalyticsInstance = {
-    pageView: jest.fn(),
-    track: jest.fn()
+    pageView: vi.fn(),
+    track: vi.fn()
 } as unknown as DotCMSAnalytics;
 
-const mockInitialize = jest.fn(() => mockAnalyticsInstance);
+const mockInitialize = vi.fn(() => mockAnalyticsInstance);
 
-jest.mock('../../core/dot-analytics.content', () => ({
+vi.mock('../../core/dot-analytics.content', () => ({
     initializeContentAnalytics: mockInitialize
 }));
 
@@ -28,8 +28,8 @@ describe('react/internal/utils', () => {
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        jest.resetModules();
+        vi.clearAllMocks();
+        vi.resetModules();
     });
 
     describe('initializeAnalytics', () => {

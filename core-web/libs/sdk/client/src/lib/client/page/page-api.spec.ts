@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-jest.mock('consola');
+vi.mock('consola');
 
 import { consola } from 'consola';
+import { MockedClass, vi } from 'vitest';
 
 import {
     DotCMSClientConfig,
@@ -16,11 +17,11 @@ import { PageClient } from './page-api';
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
 // Mock the FetchHttpClient
-jest.mock('../adapters/fetch-http-client');
+vi.mock('../adapters/fetch-http-client');
 
 describe('PageClient', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const validConfig: DotCMSClientConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
@@ -74,7 +75,7 @@ describe('PageClient', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        global.console.error = jest.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
+        global.console.error = vi.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
 
         MockedFetchHttpClient.mockImplementation(
             () =>
@@ -87,7 +88,7 @@ describe('PageClient', () => {
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('GraphQL API', () => {
@@ -200,7 +201,7 @@ describe('PageClient', () => {
         });
 
         it('should print graphql errors', async () => {
-            const consolaSpy = jest.spyOn(consola, 'error');
+            const consolaSpy = vi.spyOn(consola, 'error');
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             mockRequest.mockResolvedValue({
@@ -698,7 +699,7 @@ describe('PageClient', () => {
             };
 
             it('should call logVerboseError with status/code for structured errors', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error');
+                const consolaSpy = vi.spyOn(consola, 'error');
                 const pageClient = new PageClient(
                     verboseConfig,
                     requestOptions,
@@ -726,7 +727,7 @@ describe('PageClient', () => {
             });
 
             it('should call logVerboseError for unstructured errors (no extensions.code)', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error');
+                const consolaSpy = vi.spyOn(consola, 'error');
                 const pageClient = new PageClient(
                     verboseConfig,
                     requestOptions,
@@ -755,7 +756,7 @@ describe('PageClient', () => {
             });
 
             it('should include variables in the verbose log output', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error');
+                const consolaSpy = vi.spyOn(consola, 'error');
                 const pageClient = new PageClient(
                     verboseConfig,
                     requestOptions,
@@ -775,7 +776,7 @@ describe('PageClient', () => {
             });
 
             it('should use consola.error (non-verbose) for structured errors when logLevel is default', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error').mockClear();
+                const consolaSpy = vi.spyOn(consola, 'error').mockClear();
                 const pageClient = new PageClient(
                     validConfig,
                     requestOptions,

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Analytics } from 'analytics';
+import { Mock, MockedFunction, vi } from 'vitest';
 
 import { getUVEState } from '@dotcms/uve';
 
@@ -13,34 +14,34 @@ import { ANALYTICS_WINDOWS_ACTIVE_KEY } from './shared/constants/dot-analytics.c
 import { DotCMSAnalyticsConfig } from './shared/models';
 
 // Mock dependencies
-jest.mock('analytics');
-jest.mock('@dotcms/uve');
-jest.mock('./plugin/main/dot-analytics.plugin');
-jest.mock('./plugin/enricher/dot-analytics.enricher.plugin');
-jest.mock('./plugin/identity/dot-analytics.identity.plugin');
-jest.mock('./plugin/impression/dot-analytics.impression.plugin');
+vi.mock('analytics');
+vi.mock('@dotcms/uve');
+vi.mock('./plugin/main/dot-analytics.plugin');
+vi.mock('./plugin/enricher/dot-analytics.enricher.plugin');
+vi.mock('./plugin/identity/dot-analytics.identity.plugin');
+vi.mock('./plugin/impression/dot-analytics.impression.plugin');
 
 // Partially mock utils - keep validateAnalyticsConfig but mock cleanupActivityTracking
-jest.mock('./shared/utils/dot-analytics.utils', () => {
+vi.mock('./shared/utils/dot-analytics.utils', () => {
     const actual = jest.requireActual('./shared/utils/dot-analytics.utils') as Record<
         string,
         unknown
     >;
     return {
         ...actual,
-        cleanupActivityTracking: jest.fn()
+        cleanupActivityTracking: vi.fn()
     };
 });
 
-const mockAnalytics = Analytics as jest.MockedFunction<typeof Analytics>;
-const mockDotAnalytics = dotAnalytics as jest.MockedFunction<typeof dotAnalytics>;
-const mockDotAnalyticsEnricherPlugin = dotAnalyticsEnricherPlugin as jest.MockedFunction<
+const mockAnalytics = Analytics as MockedFunction<typeof Analytics>;
+const mockDotAnalytics = dotAnalytics as MockedFunction<typeof dotAnalytics>;
+const mockDotAnalyticsEnricherPlugin = dotAnalyticsEnricherPlugin as MockedFunction<
     typeof dotAnalyticsEnricherPlugin
 >;
-const mockDotAnalyticsIdentityPlugin = dotAnalyticsIdentityPlugin as jest.MockedFunction<
+const mockDotAnalyticsIdentityPlugin = dotAnalyticsIdentityPlugin as MockedFunction<
     typeof dotAnalyticsIdentityPlugin
 >;
-const mockDotAnalyticsImpressionPlugin = dotAnalyticsImpressionPlugin as jest.MockedFunction<
+const mockDotAnalyticsImpressionPlugin = dotAnalyticsImpressionPlugin as MockedFunction<
     typeof dotAnalyticsImpressionPlugin
 >;
 
@@ -53,15 +54,15 @@ describe('initializeContentAnalytics', () => {
     };
 
     const mockAnalyticsInstance = {
-        page: jest.fn(),
-        track: jest.fn()
+        page: vi.fn(),
+        track: vi.fn()
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Mock getUVEState (not in editor by default)
-        (getUVEState as jest.Mock).mockReturnValue(undefined);
+        (getUVEState as Mock).mockReturnValue(undefined);
 
         // Setup mocks
         mockAnalytics.mockReturnValue(mockAnalyticsInstance as any);
@@ -89,8 +90,8 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should setup window event listeners for cleanup', () => {
-        const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-        const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
+        const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+        const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
 
         initializeContentAnalytics(mockConfig);
 
@@ -102,7 +103,7 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should return null when siteAuth is missing', () => {
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
         const configWithoutSiteKey = { ...mockConfig, siteAuth: '' };
 
         const analytics = initializeContentAnalytics(configWithoutSiteKey);
@@ -116,7 +117,7 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should return null when server is missing', () => {
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
         const configWithoutServer = { ...mockConfig, server: '' };
 
         const analytics = initializeContentAnalytics(configWithoutServer);
@@ -130,8 +131,8 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should return null and not initialize plugins when inside UVE editor', () => {
-        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-        (getUVEState as jest.Mock).mockReturnValue({ mode: 'edit' });
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
+        (getUVEState as Mock).mockReturnValue({ mode: 'edit' });
 
         const analytics = initializeContentAnalytics(mockConfig);
 
@@ -173,7 +174,7 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 
@@ -211,7 +212,7 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 
@@ -303,7 +304,7 @@ describe('initializeContentAnalytics', () => {
         });
 
         it('should handle case when analytics instance is null', () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
             mockAnalytics.mockReturnValue(null as any);
             const analytics = initializeContentAnalytics(mockConfig);
 

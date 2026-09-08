@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -104,7 +105,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             detectChanges: false
         });
 
-        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+        vi.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(vi.fn());
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         router = spectator.inject(Router);
@@ -241,7 +242,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     url: 'link1'
                 }
             ]);
-            jest.spyOn(store, 'openSidebar');
+            vi.spyOn(store, 'openSidebar');
 
             const addButtonWrapper = spectator.query(byTestId('variant-add-button'));
             const addButton = addButtonWrapper.querySelector('button') || addButtonWrapper;
@@ -251,7 +252,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should open sideBar to edit the variant weight ', () => {
-            jest.spyOn(store, 'openSidebar');
+            vi.spyOn(store, 'openSidebar');
 
             const variantWeightWrapper = spectator.query(byTestId('variant-weight'));
             const variantWeightButton =
@@ -297,8 +298,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should confirm before delete a variant', () => {
-            jest.spyOn(store, 'deleteVariant');
-            jest.spyOn(confirmationService, 'confirm');
+            vi.spyOn(store, 'deleteVariant');
+            vi.spyOn(confirmationService, 'confirm');
 
             const buttonWrapper = spectator.queryLast(byTestId('variant-delete-button'));
             const button = buttonWrapper.querySelector('button') || buttonWrapper;

@@ -1,6 +1,6 @@
-import { describe, expect, it } from '@jest/globals';
 import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { AsyncPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -110,7 +110,7 @@ describe('DotEmaBookmarksComponent', () => {
 
     it('should open a dynamic dialog when toggleBookmark is called', () => {
         const dialogService = spectator.inject(DialogService);
-        const dialogServiceOpenSpy = jest.spyOn(dialogService, 'open');
+        const dialogServiceOpenSpy = vi.spyOn(dialogService, 'open');
 
         const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
 

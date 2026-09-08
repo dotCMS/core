@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
+import { MockInstance, vi } from 'vitest';
 
 import { UVE_MODE } from '@dotcms/types';
 import * as dotcmsUVE from '@dotcms/uve';
@@ -8,11 +9,11 @@ import * as dotcmsUVE from '@dotcms/uve';
 import { DotCMSLayoutBody } from '../../components/DotCMSLayoutBody/DotCMSLayoutBody';
 import { MOCK_PAGE_ASSET } from '../mock';
 
-jest.mock('../../components/Row/Row', () => ({
+vi.mock('../../components/Row/Row', () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 
-jest.mock('@dotcms/uve/internal', () => ({
+vi.mock('@dotcms/uve/internal', () => ({
     ...jest.requireActual('@dotcms/uve/internal'),
     DEVELOPMENT_MODE: 'development',
     PRODUCTION_MODE: 'production'
@@ -33,14 +34,14 @@ describe('DotCMSLayoutBody', () => {
     describe('With missing layout.body', () => {
         const MOCK_INVALID_PAGE = {} as any;
         const MESSAGE_WARNING = 'Missing required layout.body property in page';
-        let consoleSpy: jest.SpyInstance;
-        let getUVEStateSpy: jest.SpyInstance;
+        let consoleSpy: MockInstance;
+        let getUVEStateSpy: MockInstance;
         beforeEach(() => {
-            consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => MESSAGE_WARNING);
-            getUVEStateSpy = jest.spyOn(dotcmsUVE, 'getUVEState');
+            consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => MESSAGE_WARNING);
+            getUVEStateSpy = vi.spyOn(dotcmsUVE, 'getUVEState');
         });
 
-        afterEach(() => jest.restoreAllMocks());
+        afterEach(() => vi.restoreAllMocks());
 
         test('should log a warning if the page is missing layout.body', () => {
             render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} components={{}} mode="production" />);

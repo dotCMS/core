@@ -1,8 +1,8 @@
-import { expect, describe } from '@jest/globals';
 import { SpyObject } from '@openng/spectator';
-import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/vitest';
 import { MockComponent, MockProvider } from 'ng-mocks';
 import { Subject, of, throwError } from 'rxjs';
+import { Mock, describe, expect, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -75,9 +75,9 @@ const PAGE_RESPONSE = {
 
 // Gridstack has some issues with importing (esm/cjs), Jest need to process it to work using the transformIgnorePatterns, but that takes a lot of time
 // So we mock it to avoid that
-jest.mock('gridstack', () => ({
+vi.mock('gridstack', () => ({
     __esModule: true,
-    default: jest.fn()
+    default: vi.fn()
 }));
 
 describe('EditEmaLayoutComponent', () => {
@@ -89,7 +89,7 @@ describe('EditEmaLayoutComponent', () => {
     let dotPageLayoutService: DotPageLayoutService;
     let messageService: MessageService;
 
-    globalThis.structuredClone = jest.fn().mockImplementation((obj) => obj);
+    globalThis.structuredClone = vi.fn().mockImplementation((obj) => obj);
 
     const createComponent = createComponentFactory({
         component: EditEmaLayoutComponent,
@@ -108,17 +108,17 @@ describe('EditEmaLayoutComponent', () => {
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             mockProvider(DotPageLayoutService, {
-                save: jest.fn(() => of(PAGE_RESPONSE))
+                save: vi.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotPageApiService, {
-                get: jest.fn(() => of(PAGE_RESPONSE))
+                get: vi.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotWorkflowsActionsService, {
-                getByInode: jest.fn(() => of([]))
+                getByInode: vi.fn(() => of([]))
             }),
             mockProvider(DotWorkflowActionsFireService),
             {
@@ -127,7 +127,7 @@ describe('EditEmaLayoutComponent', () => {
             },
             mockProvider(ConfirmationService),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
-            MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
+            MockProvider(DotRouterService, new MockDotRouterJestService(vi), 'useValue'),
             MockProvider(DotLanguagesService, new DotLanguagesServiceMock(), 'useValue'),
             MockProvider(
                 DotLicenseService,
@@ -158,7 +158,7 @@ describe('EditEmaLayoutComponent', () => {
     });
 
     beforeEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         spectator = createComponent();
         component = spectator.component;
@@ -167,10 +167,10 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        // Reset save mock to default — jest.clearAllMocks() does not reset mockReturnValue/
+        // Reset save mock to default — vi.clearAllMocks() does not reset mockReturnValue/
         // mockImplementation overrides, so tests that call mockReturnValue(throwError(...))
         // would contaminate subsequent tests that rely on the default of(PAGE_RESPONSE) behavior.
-        (dotPageLayoutService.save as jest.Mock).mockImplementation(() => of(PAGE_RESPONSE));
+        (dotPageLayoutService.save as Mock).mockImplementation(() => of(PAGE_RESPONSE));
 
         store.pageLoad({
             clientHost: 'http://localhost:3000',
@@ -193,7 +193,7 @@ describe('EditEmaLayoutComponent', () => {
         });
 
         it('should set uveStatus to LOADING immediately when templateChange is emitted', fakeAsync(() => {
-            const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
+            const setUveStatusSpy = vi.spyOn(store, 'setUveStatus');
 
             templateBuilder.templateChange.emit();
 
@@ -204,7 +204,7 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
-            const reloadSpy = jest.spyOn(store, 'pageReload');
+            const reloadSpy = vi.spyOn(store, 'pageReload');
 
             templateBuilder.templateChange.emit();
             tick(5000);
@@ -241,7 +241,7 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should save right away if we request page leave before the 5 secs', () => {
-            const saveTemplate = jest.spyOn(component, 'saveTemplate');
+            const saveTemplate = vi.spyOn(component, 'saveTemplate');
 
             templateBuilder.templateChange.emit();
 
@@ -267,7 +267,7 @@ describe('EditEmaLayoutComponent', () => {
     describe('Canvas lock (#layoutSaveInFlight)', () => {
         it('should drop templateChange events and not forbid navigation while save is in-flight', fakeAsync(() => {
             const saveSubject = new Subject();
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+            (dotPageLayoutService.save as Mock).mockReturnValue(saveSubject.asObservable());
 
             // First emit starts the debounce; forbidRouteDeactivation called once
             templateBuilder.templateChange.emit();
@@ -289,7 +289,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should pass disabled=true to the template builder while save is in-flight', fakeAsync(() => {
             const saveSubject = new Subject();
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+            (dotPageLayoutService.save as Mock).mockReturnValue(saveSubject.asObservable());
 
             templateBuilder.templateChange.emit();
             tick(DEBOUNCE_TIME);
@@ -308,7 +308,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should unlock canvas (disabled=false) after save completes', fakeAsync(() => {
             const saveSubject = new Subject();
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+            (dotPageLayoutService.save as Mock).mockReturnValue(saveSubject.asObservable());
 
             templateBuilder.templateChange.emit();
             tick(DEBOUNCE_TIME);
@@ -321,7 +321,7 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should unlock canvas (disabled=false) on save error', fakeAsync(() => {
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(
+            (dotPageLayoutService.save as Mock).mockReturnValue(
                 throwError(() => new HttpErrorResponse({ status: 400 }))
             );
 
@@ -333,7 +333,7 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should unlock canvas when pageReload fails (uveStatus = ERROR) to avoid a permanent lock', fakeAsync(() => {
-            const pageReloadSpy = jest.spyOn(store, 'pageReload').mockImplementation(jest.fn());
+            const pageReloadSpy = vi.spyOn(store, 'pageReload').mockImplementation(vi.fn());
 
             templateBuilder.templateChange.emit();
             tick(DEBOUNCE_TIME);
@@ -351,7 +351,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should keep canvas locked through the pageReload window and unlock only when reload completes', fakeAsync(() => {
             // Prevent the real pageReload from running so we can control when it "finishes"
-            const pageReloadSpy = jest.spyOn(store, 'pageReload').mockImplementation(jest.fn());
+            const pageReloadSpy = vi.spyOn(store, 'pageReload').mockImplementation(vi.fn());
 
             templateBuilder.templateChange.emit();
             tick(DEBOUNCE_TIME); // POST fires and succeeds synchronously (default mock)

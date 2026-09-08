@@ -1,4 +1,10 @@
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    Spectator,
+    byTestId,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DatePipe } from '@angular/common';
 
@@ -102,8 +108,8 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotFormatDateService),
             mockProvider(DotLocalstorageService, {
-                getItem: jest.fn().mockReturnValue(false),
-                setItem: jest.fn()
+                getItem: vi.fn().mockReturnValue(false),
+                setItem: vi.fn()
             })
         ],
         imports: [
@@ -116,10 +122,10 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
     beforeEach(() => {
         // jsdom lacks IntersectionObserver — the timeline list observes a sentinel.
-        global.IntersectionObserver = jest.fn().mockImplementation(() => ({
-            observe: jest.fn(),
-            unobserve: jest.fn(),
-            disconnect: jest.fn()
+        global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+            observe: vi.fn(),
+            unobserve: vi.fn(),
+            disconnect: vi.fn()
         })) as unknown as typeof IntersectionObserver;
 
         spectator = createComponent({
@@ -291,7 +297,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should emit historyPageChange when the timeline reaches its end', () => {
-            const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
+            const spy = vi.spyOn(spectator.component.historyPageChange, 'emit');
 
             spectator.component.onTimelineReachedEnd();
 
@@ -300,7 +306,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
         it('should not emit historyPageChange when already loading', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
-            const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
+            const spy = vi.spyOn(spectator.component.historyPageChange, 'emit');
 
             spectator.component.onTimelineReachedEnd();
 
@@ -343,7 +349,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should emit timelineItemAction through template click binding', () => {
-            const actionSpy = jest.spyOn(spectator.component.timelineItemAction, 'emit');
+            const actionSpy = vi.spyOn(spectator.component.timelineItemAction, 'emit');
 
             // Test the output emission directly by simulating what the template would do
             spectator.component.timelineItemAction.emit({
@@ -358,7 +364,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should emit timelineItemAction through template actionTriggered binding', () => {
-            const actionSpy = jest.spyOn(spectator.component.timelineItemAction, 'emit');
+            const actionSpy = vi.spyOn(spectator.component.timelineItemAction, 'emit');
 
             const testAction = {
                 type: DotHistoryTimelineItemActionType.RESTORE,
@@ -489,7 +495,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             });
 
             it('should emit pushPublishPageChange when the timeline reaches its end', () => {
-                const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
+                const spy = vi.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
                 spectator.component.onPushPublishTimelineReachedEnd();
 
@@ -498,7 +504,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
             it('should not emit pushPublishPageChange when already loading', () => {
                 spectator.setInput('pushPublishStatus', ComponentStatus.LOADING);
-                const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
+                const spy = vi.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
                 spectator.component.onPushPublishTimelineReachedEnd();
 
@@ -513,7 +519,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 };
                 spectator.setInput('pushPublishHistoryPagination', completePagination);
 
-                const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
+                const spy = vi.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
                 spectator.component.onPushPublishTimelineReachedEnd();
 
@@ -539,7 +545,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             });
 
             it('should emit deletePushPublishHistory when menu delete action is triggered', () => {
-                const spy = jest.spyOn(spectator.component.deletePushPublishHistory, 'emit');
+                const spy = vi.spyOn(spectator.component.deletePushPublishHistory, 'emit');
                 const menuItems = spectator.component.$menuItems();
 
                 menuItems[0].command();

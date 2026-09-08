@@ -1,6 +1,7 @@
 import { Dispatcher, EventCreator, provideDispatcher } from '@ngrx/signals/events';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -131,18 +132,18 @@ describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotExperimentsListStore>>;
     let store: InstanceType<typeof DotExperimentsListStore>;
     let dispatcher: Dispatcher;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
 
-    const healthCheck = jest.fn();
-    const getAllUnfiltered = jest.fn();
-    const archive = jest.fn();
-    const remove = jest.fn();
-    const stop = jest.fn();
-    const cancelSchedule = jest.fn();
-    const contentSearchGet = jest.fn();
-    const locationSubscribe = jest.fn();
-    const locationGo = jest.fn();
-    const locationPath = jest.fn();
+    const healthCheck = vi.fn();
+    const getAllUnfiltered = vi.fn();
+    const archive = vi.fn();
+    const remove = vi.fn();
+    const stop = vi.fn();
+    const cancelSchedule = vi.fn();
+    const contentSearchGet = vi.fn();
+    const locationSubscribe = vi.fn();
+    const locationGo = vi.fn();
+    const locationPath = vi.fn();
 
     let currentSiteId: WritableSignal<string | null>;
     let queryParams: Params;
@@ -200,14 +201,14 @@ describe('DotExperimentsListStore', () => {
         dispatcher = spectator.inject(Dispatcher);
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
         spectator.flushEffects();
     };
 
     const httpError = (status: number) => new HttpErrorResponse({ status });
 
     beforeEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
 
         healthCheck.mockReturnValue(of(HealthStatusTypes.OK));
         getAllUnfiltered.mockReturnValue(of(EXPERIMENTS));
@@ -216,7 +217,7 @@ describe('DotExperimentsListStore', () => {
         remove.mockReturnValue(of({}));
         stop.mockReturnValue(of({}));
         cancelSchedule.mockReturnValue(of({}));
-        locationSubscribe.mockReturnValue({ unsubscribe: jest.fn() });
+        locationSubscribe.mockReturnValue({ unsubscribe: vi.fn() });
         // Whatever the effect computes will differ from this, so a write always happens unless
         // a test says otherwise.
         locationPath.mockReturnValue('/stale');
@@ -244,7 +245,7 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should warn when the lookup does not cover every page asked for', () => {
-            const warn = jest.spyOn(console, 'warn').mockImplementation();
+            const warn = vi.spyOn(console, 'warn').mockImplementation();
             // page-2, page-3 and page-orphan are requested but absent from the response.
             contentSearchGet.mockReturnValue(
                 of({
@@ -309,7 +310,7 @@ describe('DotExperimentsListStore', () => {
 
     describe('analytics health gate', () => {
         it('should check the analytics health before requesting the list', () => {
-            const dispatchSpy = jest.spyOn(Dispatcher.prototype, 'dispatch');
+            const dispatchSpy = vi.spyOn(Dispatcher.prototype, 'dispatch');
 
             initStore();
 
@@ -401,7 +402,7 @@ describe('DotExperimentsListStore', () => {
         interface CrudCase {
             action: string;
             requested: EventCreator<string, DotExperiment>;
-            serviceCall: jest.Mock;
+            serviceCall: Mock;
         }
 
         const CRUD_CASES: CrudCase[] = [
@@ -749,7 +750,7 @@ describe('DotExperimentsListStore', () => {
 
         it('should hydrate before the first fetch is requested', () => {
             queryParams = { page: '3' };
-            const dispatchSpy = jest.spyOn(Dispatcher.prototype, 'dispatch');
+            const dispatchSpy = vi.spyOn(Dispatcher.prototype, 'dispatch');
 
             initStore();
 

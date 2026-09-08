@@ -1,4 +1,5 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -37,7 +38,7 @@ describe('DotSubNavComponent', () => {
         providers: [
             {
                 provide: DotSystemConfigService,
-                useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                useValue: { getSystemConfig: () => ({ of: vi.fn() }) }
             },
             mockProvider(GlobalStore),
             provideHttpClient(),

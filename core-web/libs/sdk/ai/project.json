@@ -39,18 +39,6 @@
             "options": {
                 "args": ["src/**/*.ts", "scripts/**/*.ts"]
             }
-        },
-        "test": {
-            "dependsOn": ["generate-spec"],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
         }
     }
 }

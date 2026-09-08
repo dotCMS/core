@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -102,7 +103,7 @@ const mockPushActions: SelectItem[] = [
 
 const mockDate = new Date('2020, 8, 14');
 
-xdescribe('DotPushPublishFormComponent', () => {
+describe.skip('DotPushPublishFormComponent', () => {
     let hostComponent: TestHostComponent;
     let pushPublishForm: DotPushPublishFormComponent;
     let fixture: ComponentFixture<TestHostComponent>;
@@ -156,17 +157,17 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
+        vi.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
             resolvedOptions: () => ({ timeZone: localTZ })
         });
-        jest.useFakeTimers();
-        jest.setSystemTime(mockDate);
+        vi.useFakeTimers();
+        vi.setSystemTime(mockDate);
         fixture = TestBed.createComponent(TestHostComponent);
         dotPushPublishFiltersService = fixture.debugElement.injector.get(
             DotPushPublishFiltersService
         );
         hostComponent = fixture.componentInstance;
-        jest.spyOn(dotPushPublishFiltersService, 'get').mockReturnValue(of(mockFilters));
+        vi.spyOn(dotPushPublishFiltersService, 'get').mockReturnValue(of(mockFilters));
         hostComponent.data = mockPublishFormData;
         fixture.detectChanges();
         pushPublishForm = fixture.debugElement.query(
@@ -176,7 +177,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('should load filters on load', () => {
@@ -326,7 +327,7 @@ xdescribe('DotPushPublishFormComponent', () => {
 
     it('should load custom code', () => {
         const dotParseHtmlService = fixture.debugElement.injector.get(DotParseHtmlService);
-        jest.spyOn(dotParseHtmlService, 'parse');
+        vi.spyOn(dotParseHtmlService, 'parse');
         const mockCustomCode: DotPushPublishDialogData = {
             customCode: '<h1>Code</h1>',
             ...mockPublishFormData

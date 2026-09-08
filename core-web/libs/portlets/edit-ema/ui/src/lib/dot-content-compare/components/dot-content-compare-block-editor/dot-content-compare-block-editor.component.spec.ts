@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -238,12 +244,12 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
 
 // Mock ClipboardEvent and DragEvent to avoid tiptap implementation errors.
 class ClipboardDataMock {
-    getData: jest.Mock<string, [string]>;
-    setData: jest.Mock<void, [string, string]>;
+    getData: Mock<string, [string]>;
+    setData: Mock<void, [string, string]>;
 
     constructor() {
-        this.getData = jest.fn();
-        this.setData = jest.fn();
+        this.getData = vi.fn();
+        this.setData = vi.fn();
     }
 }
 
@@ -309,7 +315,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotPropertiesService, {
-                    getFeatureFlag: jest.fn().mockReturnValue(of(newBlockEditorEnabled))
+                    getFeatureFlag: vi.fn().mockReturnValue(of(newBlockEditorEnabled))
                 })
             ],
             overrideComponents: [

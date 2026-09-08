@@ -1,6 +1,7 @@
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
 import { MockComponent, MockPipe } from 'ng-mocks';
 import { Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
@@ -67,9 +68,9 @@ describe('DotEditContentSidePanelComponent', () => {
                 {
                     provide: DotSidePanelNavController,
                     useValue: {
-                        acquire: jest.fn(),
-                        release: jest.fn(),
-                        isTop: jest.fn().mockReturnValue(true)
+                        acquire: vi.fn(),
+                        release: vi.fn(),
+                        isTop: vi.fn().mockReturnValue(true)
                     }
                 }
             ],
@@ -173,11 +174,11 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest
+        const confirmClose = vi
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
 
-        const closedSpy = jest.fn();
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         clickButton('side-panel-close');
@@ -191,11 +192,11 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest
+        const confirmClose = vi
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
 
-        const closedSpy = jest.fn();
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
@@ -209,8 +210,8 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest.spyOn(layout, 'confirmClose');
-        const closedSpy = jest.fn();
+        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         // Stand in for the image editor dialog / a confirm popup opened from inside the panel:
@@ -229,13 +230,13 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     it('should ignore Escape when not the frontmost stacked panel (isTop === false)', () => {
-        (spectator.inject(DotSidePanelNavController).isTop as jest.Mock).mockReturnValue(false);
+        (spectator.inject(DotSidePanelNavController).isTop as Mock).mockReturnValue(false);
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest.spyOn(layout, 'confirmClose');
-        const closedSpy = jest.fn();
+        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
@@ -272,11 +273,11 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest
+        const confirmClose = vi
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
 
-        const closedSpy = jest.fn();
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         clickMask({ ownedByPanel: true });
@@ -291,11 +292,11 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        jest.spyOn(layout, 'confirmClose').mockImplementation(() => {
+        vi.spyOn(layout, 'confirmClose').mockImplementation(() => {
             /* user chose "Keep editing" → never calls onProceed */
         });
 
-        const closedSpy = jest.fn();
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         clickMask({ ownedByPanel: true });
@@ -304,13 +305,13 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     it('should ignore a click outside when not the frontmost stacked panel (isTop === false)', () => {
-        (spectator.inject(DotSidePanelNavController).isTop as jest.Mock).mockReturnValue(false);
+        (spectator.inject(DotSidePanelNavController).isTop as Mock).mockReturnValue(false);
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest.spyOn(layout, 'confirmClose');
-        const closedSpy = jest.fn();
+        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         clickMask({ ownedByPanel: true });
@@ -325,8 +326,8 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest.spyOn(layout, 'confirmClose');
-        const closedSpy = jest.fn();
+        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         // Asserted before dispatching on purpose: with an optional chain, a markup rename would
@@ -346,8 +347,8 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        const confirmClose = jest.spyOn(layout, 'confirmClose');
-        const closedSpy = jest.fn();
+        const confirmClose = vi.spyOn(layout, 'confirmClose');
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         // `p-drawer-mask` is shared by every modal drawer in the app (the UVE block editor sidebar
@@ -364,11 +365,11 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        jest.spyOn(layout, 'confirmClose').mockImplementation(() => {
+        vi.spyOn(layout, 'confirmClose').mockImplementation(() => {
             /* user chose "Keep editing" → never calls onProceed */
         });
 
-        const closedSpy = jest.fn();
+        const closedSpy = vi.fn();
         spectator.output('closed').subscribe(closedSpy);
 
         clickButton('side-panel-close');
@@ -382,7 +383,7 @@ describe('DotEditContentSidePanelComponent', () => {
         // `saved$` is subscribed in afterNextRender — wait for it to run.
         await spectator.fixture.whenStable();
 
-        const savedSpy = jest.fn();
+        const savedSpy = vi.fn();
         spectator.output('saved').subscribe(savedSpy);
 
         const contentlet = { inode: 'inode-1' } as DotCMSContentlet;
@@ -392,8 +393,8 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     it('should fire data.onContentSaved (last save) and data.onCancel on close', async () => {
-        const onContentSaved = jest.fn();
-        const onCancel = jest.fn();
+        const onContentSaved = vi.fn();
+        const onCancel = vi.fn();
         spectator.setInput('data', { ...EDIT_DATA, onContentSaved, onCancel });
         spectator.detectChanges();
         await spectator.fixture.whenStable();
@@ -402,9 +403,7 @@ describe('DotEditContentSidePanelComponent', () => {
         saved$.next(contentlet);
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        jest.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) =>
-            onProceed()
-        );
+        vi.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) => onProceed());
 
         clickButton('side-panel-close');
 
@@ -413,15 +412,13 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     it('should not fire data.onContentSaved on close when nothing was saved', () => {
-        const onContentSaved = jest.fn();
-        const onCancel = jest.fn();
+        const onContentSaved = vi.fn();
+        const onCancel = vi.fn();
         spectator.setInput('data', { ...EDIT_DATA, onContentSaved, onCancel });
         spectator.detectChanges();
 
         const layout = spectator.query(DotEditContentLayoutComponent);
-        jest.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) =>
-            onProceed()
-        );
+        vi.spyOn(layout, 'confirmClose').mockImplementation((onProceed: () => void) => onProceed());
 
         clickButton('side-panel-close');
 
@@ -483,9 +480,9 @@ describe('DotEditContentSidePanelComponent — persisted expanded preference', (
                 {
                     provide: DotSidePanelNavController,
                     useValue: {
-                        acquire: jest.fn(),
-                        release: jest.fn(),
-                        isTop: jest.fn().mockReturnValue(true)
+                        acquire: vi.fn(),
+                        release: vi.fn(),
+                        isTop: vi.fn().mockReturnValue(true)
                     }
                 }
             ],
@@ -575,9 +572,9 @@ describe('DotEditContentSidePanelComponent — image editor host capability', ()
                 {
                     provide: DotSidePanelNavController,
                     useValue: {
-                        acquire: jest.fn(),
-                        release: jest.fn(),
-                        isTop: jest.fn().mockReturnValue(true)
+                        acquire: vi.fn(),
+                        release: vi.fn(),
+                        isTop: vi.fn().mockReturnValue(true)
                     }
                 }
             ],

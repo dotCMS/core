@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mocked, vi } from 'vitest';
 
 import { ContainerNotFoundComponent } from './container-not-found.component';
 
@@ -6,7 +7,7 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
 
 describe('ContainerNotFoundComponent', () => {
     let spectator: Spectator<ContainerNotFoundComponent>;
-    let dotcmsContextService: jest.Mocked<DotCMSStore>;
+    let dotcmsContextService: Mocked<DotCMSStore>;
 
     const createComponent = createComponentFactory({
         component: ContainerNotFoundComponent,
@@ -15,7 +16,7 @@ describe('ContainerNotFoundComponent', () => {
             {
                 provide: DotCMSStore,
                 useValue: {
-                    $isDevMode: jest.fn().mockReturnValue(true)
+                    $isDevMode: vi.fn().mockReturnValue(true)
                 }
             }
         ]
@@ -23,12 +24,12 @@ describe('ContainerNotFoundComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        dotcmsContextService = spectator.inject(DotCMSStore) as jest.Mocked<DotCMSStore>;
-        jest.clearAllMocks();
+        dotcmsContextService = spectator.inject(DotCMSStore) as Mocked<DotCMSStore>;
+        vi.clearAllMocks();
     });
 
     it('should display error message in dev mode', () => {
-        jest.spyOn(console, 'error').mockImplementation();
+        vi.spyOn(console, 'error').mockImplementation();
         spectator.setInput('identifier', 'test-123');
         spectator.detectChanges();
         const element = spectator.query(byTestId('container-not-found'));
@@ -38,7 +39,7 @@ describe('ContainerNotFoundComponent', () => {
 
     it('should log error to console in dev mode', () => {
         spectator.setInput('identifier', 'test-123');
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
         spectator.component.ngOnInit();
         expect(consoleSpy).toHaveBeenCalledWith('Container with identifier test-123 not found');
     });
@@ -52,7 +53,7 @@ describe('ContainerNotFoundComponent', () => {
 
     it('should not log error in production mode', () => {
         dotcmsContextService.$isDevMode.mockReturnValue(false);
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
         spectator.component.ngOnInit();
         expect(consoleSpy).not.toHaveBeenCalled();
     });

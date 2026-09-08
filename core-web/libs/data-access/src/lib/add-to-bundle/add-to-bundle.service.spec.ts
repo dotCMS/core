@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpectatorHttp,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 
 import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/dotcms-models';
 

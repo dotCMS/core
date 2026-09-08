@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ConfirmationService, MenuItemCommandEvent } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -24,15 +30,15 @@ describe('DotTagsListComponent', () => {
     beforeAll(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -41,28 +47,28 @@ describe('DotTagsListComponent', () => {
         component: DotTagsListComponent,
         componentProviders: [
             mockProvider(DotTagsListStore, {
-                tags: jest.fn().mockReturnValue(MOCK_TAGS),
-                selectedTags: jest.fn().mockReturnValue(MOCK_TAGS),
-                showExportAll: jest.fn().mockReturnValue(false),
-                filter: jest.fn().mockReturnValue(''),
-                showGlobal: jest.fn().mockReturnValue(false),
-                page: jest.fn().mockReturnValue(1),
-                rows: jest.fn().mockReturnValue(25),
-                totalRecords: jest.fn().mockReturnValue(100),
-                status: jest.fn().mockReturnValue('loaded'),
-                sortField: jest.fn().mockReturnValue('tagname'),
-                sortOrder: jest.fn().mockReturnValue('ASC'),
-                setFilter: jest.fn(),
-                setShowGlobal: jest.fn(),
-                setPagination: jest.fn(),
-                setSort: jest.fn(),
-                setSelectedTags: jest.fn(),
-                createTag: jest.fn(),
-                updateTag: jest.fn(),
-                deleteTags: jest.fn(),
-                exportSelected: jest.fn(),
-                exportAll: jest.fn(),
-                loadTags: jest.fn()
+                tags: vi.fn().mockReturnValue(MOCK_TAGS),
+                selectedTags: vi.fn().mockReturnValue(MOCK_TAGS),
+                showExportAll: vi.fn().mockReturnValue(false),
+                filter: vi.fn().mockReturnValue(''),
+                showGlobal: vi.fn().mockReturnValue(false),
+                page: vi.fn().mockReturnValue(1),
+                rows: vi.fn().mockReturnValue(25),
+                totalRecords: vi.fn().mockReturnValue(100),
+                status: vi.fn().mockReturnValue('loaded'),
+                sortField: vi.fn().mockReturnValue('tagname'),
+                sortOrder: vi.fn().mockReturnValue('ASC'),
+                setFilter: vi.fn(),
+                setShowGlobal: vi.fn(),
+                setPagination: vi.fn(),
+                setSort: vi.fn(),
+                setSelectedTags: vi.fn(),
+                createTag: vi.fn(),
+                updateTag: vi.fn(),
+                deleteTags: vi.fn(),
+                exportSelected: vi.fn(),
+                exportAll: vi.fn(),
+                loadTags: vi.fn()
             }),
             mockProvider(DialogService),
             mockProvider(DotMessageDisplayService),
@@ -90,33 +96,33 @@ describe('DotTagsListComponent', () => {
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         spectator = createComponent();
         store = spectator.inject(DotTagsListStore, true);
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('Search', () => {
         it('should debounce search by 300ms', () => {
             spectator.component.onSearch('test');
-            jest.advanceTimersByTime(299);
+            vi.advanceTimersByTime(299);
             expect(store.setFilter).not.toHaveBeenCalled();
 
-            jest.advanceTimersByTime(1);
+            vi.advanceTimersByTime(1);
             expect(store.setFilter).toHaveBeenCalledWith('test');
         });
 
         it('should reset debounce timer on rapid typing', () => {
             spectator.component.onSearch('a');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('ab');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('abc');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(store.setFilter).toHaveBeenCalledTimes(1);
             expect(store.setFilter).toHaveBeenCalledWith('abc');
@@ -163,8 +169,8 @@ describe('DotTagsListComponent', () => {
 
     describe('Empty and loading state', () => {
         it('should show loading skeleton rows in body when status is loading and tags exist (e.g. pagination)', () => {
-            (store.status as jest.Mock).mockReturnValue('loading');
-            (store.tags as jest.Mock).mockReturnValue(MOCK_TAGS);
+            (store.status as Mock).mockReturnValue('loading');
+            (store.tags as Mock).mockReturnValue(MOCK_TAGS);
             spectator.detectChanges();
 
             const loadingRows = spectator.queryAll(byTestId('tags-loading-row'));
@@ -172,13 +178,13 @@ describe('DotTagsListComponent', () => {
             expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
 
             // Restore defaults for subsequent tests
-            (store.status as jest.Mock).mockReturnValue('loaded');
+            (store.status as Mock).mockReturnValue('loaded');
         });
 
         it('should show empty state when no tags (emptymessage)', () => {
-            (store.tags as jest.Mock).mockReturnValue([]);
-            (store.selectedTags as jest.Mock).mockReturnValue([]);
-            (store.status as jest.Mock).mockReturnValue('loaded');
+            (store.tags as Mock).mockReturnValue([]);
+            (store.selectedTags as Mock).mockReturnValue([]);
+            (store.status as Mock).mockReturnValue('loaded');
             spectator.detectChanges();
 
             const emptyState = spectator.query(byTestId('tags-empty-state'));
@@ -187,15 +193,15 @@ describe('DotTagsListComponent', () => {
             expect(emptyState?.textContent).toContain('Create a tag to get started.');
 
             // Restore defaults for subsequent tests
-            (store.tags as jest.Mock).mockReturnValue(MOCK_TAGS);
-            (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+            (store.tags as Mock).mockReturnValue(MOCK_TAGS);
+            (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
         });
     });
 
     describe('Button Interactions', () => {
         describe('Split Button', () => {
             it('should render split button with Add Tag label', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue([]);
+                (store.selectedTags as Mock).mockReturnValue([]);
                 spectator.detectChanges();
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
                 expect(btnHost).toBeTruthy();
@@ -211,9 +217,9 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should call openCreateDialog when split button main action clicked', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue([]);
+                (store.selectedTags as Mock).mockReturnValue([]);
                 spectator.detectChanges();
-                const spy = jest.spyOn(spectator.component, 'openCreateDialog');
+                const spy = vi.spyOn(spectator.component, 'openCreateDialog');
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
                 const button = btnHost?.querySelector('button');
                 spectator.click(button!);
@@ -221,7 +227,7 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should call openImportDialog when Import menu item is clicked', () => {
-                const spy = jest.spyOn(spectator.component, 'openImportDialog');
+                const spy = vi.spyOn(spectator.component, 'openImportDialog');
                 const menuItem = spectator.component.addTagMenuItems[0];
                 menuItem.command?.({} as unknown as MenuItemCommandEvent);
                 expect(spy).toHaveBeenCalled();
@@ -230,7 +236,7 @@ describe('DotTagsListComponent', () => {
 
         describe('Conditional Buttons Visibility', () => {
             it('should hide Delete and Export split-button when nothing is selected', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue([]);
+                (store.selectedTags as Mock).mockReturnValue([]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -239,7 +245,7 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should show Delete and Export split-button when tags are selected', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue([MOCK_TAGS[0]]);
+                (store.selectedTags as Mock).mockReturnValue([MOCK_TAGS[0]]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -248,13 +254,13 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should show the Add split button regardless of selection', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue([]);
+                (store.selectedTags as Mock).mockReturnValue([]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('tag-add-split-btn'))).toBeTruthy();
 
-                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+                (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -264,11 +270,11 @@ describe('DotTagsListComponent', () => {
 
         describe('Button Actions', () => {
             it('should call confirmDelete when Delete button clicked', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+                (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
-                const spy = jest.spyOn(spectator.component, 'confirmDelete');
+                const spy = vi.spyOn(spectator.component, 'confirmDelete');
                 const btnHost = spectator.query(byTestId('tag-delete-btn'));
                 expect(btnHost).toBeTruthy();
                 const button = btnHost?.querySelector('button');
@@ -278,7 +284,7 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should call store.exportSelected when Export split-button main action clicked', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+                (store.selectedTags as Mock).mockReturnValue(MOCK_TAGS);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
@@ -299,13 +305,13 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should disable Export All when showExportAll is false', () => {
-                (store.showExportAll as jest.Mock).mockReturnValue(false);
+                (store.showExportAll as Mock).mockReturnValue(false);
                 spectator = createComponent();
                 expect(spectator.component.$exportMenuItems()[1].disabled).toBe(true);
             });
 
             it('should enable Export All when showExportAll is true', () => {
-                (store.showExportAll as jest.Mock).mockReturnValue(true);
+                (store.showExportAll as Mock).mockReturnValue(true);
                 spectator = createComponent();
                 expect(spectator.component.$exportMenuItems()[1].disabled).toBe(false);
             });
@@ -349,7 +355,7 @@ describe('DotTagsListComponent', () => {
 
     describe('Row Click', () => {
         it('should call openEditDialog when tag row clicked', () => {
-            const spy = jest.spyOn(spectator.component, 'openEditDialog');
+            const spy = vi.spyOn(spectator.component, 'openEditDialog');
             spectator.detectChanges();
             const row = spectator.query(byTestId('tag-row'));
             spectator.click(row!);
@@ -361,7 +367,7 @@ describe('DotTagsListComponent', () => {
         it('should open dialog with closable and closeOnEscape options', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -383,7 +389,7 @@ describe('DotTagsListComponent', () => {
         it('should open dialog and call store.createTag on close', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -397,7 +403,7 @@ describe('DotTagsListComponent', () => {
         it('should not call store.createTag when dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -413,7 +419,7 @@ describe('DotTagsListComponent', () => {
         it('should open dialog with closable and closeOnEscape options', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -437,7 +443,7 @@ describe('DotTagsListComponent', () => {
         it('should open dialog with tag data and call store.updateTag on close', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -464,7 +470,7 @@ describe('DotTagsListComponent', () => {
         it('should not call store.updateTag when dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -479,7 +485,7 @@ describe('DotTagsListComponent', () => {
     describe('confirmDelete', () => {
         it('should show confirmation dialog with closable and closeOnEscape options', () => {
             const confirmationService = spectator.inject(ConfirmationService, true);
-            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+            const confirmSpy = vi.spyOn(confirmationService, 'confirm');
 
             spectator.component.confirmDelete();
 
@@ -499,7 +505,7 @@ describe('DotTagsListComponent', () => {
 
         it('should show confirmation dialog and call store.deleteTags on accept', () => {
             const confirmationService = spectator.inject(ConfirmationService, true);
-            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+            const confirmSpy = vi.spyOn(confirmationService, 'confirm');
 
             spectator.component.confirmDelete();
 
@@ -522,7 +528,7 @@ describe('DotTagsListComponent', () => {
         it('should open import dialog with closable and closeOnEscape options', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -544,7 +550,7 @@ describe('DotTagsListComponent', () => {
         it('should open import dialog and call store.loadTags on close', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -558,7 +564,7 @@ describe('DotTagsListComponent', () => {
         it('should not call store.loadTags when import dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
 
@@ -572,7 +578,7 @@ describe('DotTagsListComponent', () => {
         it('should push a SUCCESS message when all tags imported successfully', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
             const displayService = spectator.inject(DotMessageDisplayService, true);
@@ -593,7 +599,7 @@ describe('DotTagsListComponent', () => {
         it('should push a WARNING message when import has failures', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
             const displayService = spectator.inject(DotMessageDisplayService, true);
@@ -614,7 +620,7 @@ describe('DotTagsListComponent', () => {
         it('should not push a message when import dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
             } as unknown as DynamicDialogRef);
             const displayService = spectator.inject(DotMessageDisplayService, true);

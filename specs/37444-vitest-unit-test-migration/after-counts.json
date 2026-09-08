@@ -1,0 +1,126 @@
+{
+  "capturedAt": "2026-09-08T00:24:09.286Z",
+  "nodeVersion": "v22.22.3",
+  "projects": {
+    "ai-ui": {
+      "tests": 23,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 3
+    },
+    "content-drive-ui": {
+      "tests": 58,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 1
+    },
+    "dot-rules": {
+      "tests": 12,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 3
+    },
+    "dotcms-binary-field-builder": {
+      "tests": 1,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 1
+    },
+    "image-editor": {
+      "tests": 355,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 30
+    },
+    "mcp-server": {
+      "tests": 165,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 10
+    },
+    "new-block-editor": {
+      "tests": 158,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 16
+    },
+    "portlets-dot-analytics-data-access": {
+      "tests": 217,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 8
+    },
+    "portlets-dot-categories-portlet": {
+      "tests": 109,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 4
+    },
+    "portlets-dot-experiments-data-access": {
+      "tests": 3,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 2
+    },
+    "portlets-dot-plugins-portlet": {
+      "tests": 81,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 4
+    },
+    "portlets-dot-roles-portlet": {
+      "tests": 174,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 10
+    },
+    "portlets-dot-usage": {
+      "tests": 21,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 1
+    },
+    "portlets-dot-velocity-playground-portlet": {
+      "tests": 119,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 6
+    },
+    "sdk-ai": {
+      "tests": 58,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 5
+    },
+    "sdk-vue": {
+      "tests": 0,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 0,
+      "note": "no specs"
+    },
+    "utils": {
+      "tests": 111,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 3
+    }
+  }
+}

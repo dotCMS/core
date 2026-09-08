@@ -1,4 +1,10 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -18,9 +24,9 @@ describe('DotContentDriveSearchInputComponent', () => {
         component: DotContentDriveSearchInputComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                getFilterValue: jest.fn().mockReturnValue(undefined),
-                setGlobalSearch: jest.fn(),
-                selectRootNode: jest.fn()
+                getFilterValue: vi.fn().mockReturnValue(undefined),
+                setGlobalSearch: vi.fn(),
+                selectRootNode: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -39,7 +45,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         store.getFilterValue.mockReset().mockReturnValue(undefined);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should render the shared search input', () => {
         spectator.detectChanges();

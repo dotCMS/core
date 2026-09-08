@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 
@@ -17,15 +22,15 @@ describe('DotContentDriveActionMoveTargetComponent', () => {
         providers: [
             provideHttpClient(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotHttpErrorManagerService),
             // Backs the picker's own store. The picker renders for real: this component exists only to
             // host it, so stubbing it out would leave nothing under test.
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn(() => of([])),
-                getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
-                getCurrentSiteAsTreeNodeItem: jest.fn(() => of(null))
+                getSitesTreePath: vi.fn(() => of([])),
+                getSitesPage: vi.fn(() => of({ sites: [], total: 0 })),
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => of(null))
             })
         ],
         detectChanges: false

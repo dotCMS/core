@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
@@ -10,7 +11,7 @@ import { DotCreateContentletResolver } from './dot-create-contentlet.resolver.se
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
-const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
+const activatedRouteSnapshotMock: any = vi.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
 ]);
 activatedRouteSnapshotMock.paramMap = {};
@@ -43,7 +44,7 @@ describe('DotCreateContentletResolver', () => {
     }));
 
     it('should get and return the action url', () => {
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        vi.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
         dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
             expect(url).toEqual('urlTest');
@@ -52,7 +53,7 @@ describe('DotCreateContentletResolver', () => {
 
     it('should append the folder inode with `?` when the action url has no query string', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'inode-1';
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        vi.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
         dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
             expect(url).toEqual('urlTest?folder=inode-1');
@@ -61,7 +62,7 @@ describe('DotCreateContentletResolver', () => {
 
     it('should append the folder inode with `&` when the action url already has a query string', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'inode-1';
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(
+        vi.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(
             of('urlTest?foo=bar')
         );
 
@@ -72,7 +73,7 @@ describe('DotCreateContentletResolver', () => {
 
     it('should encode the folder inode', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'a b/c';
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        vi.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
         dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
             expect(url).toEqual('urlTest?folder=a%20b%2Fc');
@@ -80,7 +81,7 @@ describe('DotCreateContentletResolver', () => {
     });
 
     it('should not append anything when there is no folder query param', () => {
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        vi.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
         dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
             expect(url).toEqual('urlTest');

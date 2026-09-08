@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { AnalyticsInstance } from 'analytics';
+import { Mock, Mocked, vi } from 'vitest';
 
 import {
     DotCMSImpressionTracker,
@@ -12,16 +13,16 @@ import { IMPRESSION_EVENT_TYPE } from '../../shared/constants/dot-analytics.cons
 import { DotCMSAnalyticsConfig } from '../../shared/models';
 
 // Mock the tracker
-jest.mock('./dot-analytics.impression-tracker');
+vi.mock('./dot-analytics.impression-tracker');
 
 describe('dotAnalyticsImpressionPlugin', () => {
     let mockConfig: DotCMSAnalyticsConfig;
     let mockAnalyticsInstance: AnalyticsInstance;
-    let mockTracker: jest.Mocked<DotCMSImpressionTracker>;
-    let mockSubscription: jest.Mocked<ImpressionSubscription>;
+    let mockTracker: Mocked<DotCMSImpressionTracker>;
+    let mockSubscription: Mocked<ImpressionSubscription>;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Mock config
         mockConfig = {
@@ -33,23 +34,23 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
         // Mock analytics instance
         mockAnalyticsInstance = {
-            track: jest.fn()
+            track: vi.fn()
         } as any;
 
         // Mock subscription
         mockSubscription = {
-            unsubscribe: jest.fn()
+            unsubscribe: vi.fn()
         };
 
         // Mock tracker instance
         mockTracker = {
-            initialize: jest.fn(),
-            cleanup: jest.fn(),
-            onImpression: jest.fn().mockReturnValue(mockSubscription)
+            initialize: vi.fn(),
+            cleanup: vi.fn(),
+            onImpression: vi.fn().mockReturnValue(mockSubscription)
         } as any;
 
         // Mock tracker constructor
-        (DotCMSImpressionTracker as jest.Mock).mockImplementation(() => mockTracker);
+        (DotCMSImpressionTracker as Mock).mockImplementation(() => mockTracker);
     });
 
     describe('Plugin Configuration', () => {
@@ -156,7 +157,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
         });
 
         it('should log debug message when impressions enabled in debug mode', async () => {
-            const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
+            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation();
             mockConfig.debug = true;
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);
@@ -172,7 +173,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
         });
 
         it('should log debug message when impressions disabled in debug mode', async () => {
-            const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
+            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation();
             mockConfig.debug = true;
             mockConfig.impressions = false;
 
@@ -199,7 +200,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
     describe('Loaded Hook', () => {
         it('should setup cleanup handlers on beforeunload', async () => {
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+            const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);
             await plugin.initialize({ instance: mockAnalyticsInstance }); // Initialize first
@@ -211,7 +212,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
         });
 
         it('should setup cleanup handlers on pagehide', async () => {
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+            const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);
             await plugin.initialize({ instance: mockAnalyticsInstance }); // Initialize first
@@ -247,7 +248,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
     describe('Cleanup', () => {
         it('should unsubscribe and cleanup tracker on page unload', async () => {
             let unloadCallback: (() => void) | undefined;
-            const addEventListenerSpy = jest
+            const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
                     if (event === 'beforeunload') {
@@ -277,7 +278,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
         it('should handle cleanup when tracker is not initialized', async () => {
             let unloadCallback: (() => void) | undefined;
-            const addEventListenerSpy = jest
+            const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
                     if (event === 'beforeunload') {
@@ -303,7 +304,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
         it('should log debug message on cleanup in debug mode', async () => {
             let unloadCallback: (() => void) | undefined;
-            const addEventListenerSpy = jest
+            const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
                     if (event === 'beforeunload') {
@@ -311,7 +312,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
                     }
                 });
 
-            const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
+            const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation();
             mockConfig.debug = true;
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);
@@ -334,7 +335,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
         it('should register cleanup handlers for both beforeunload and pagehide events', async () => {
             const eventHandlers: { [key: string]: (() => void)[] } = {};
-            const addEventListenerSpy = jest
+            const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event: string, handler) => {
                     const eventName = event as string;
@@ -374,7 +375,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
     describe('Integration Flow', () => {
         it('should complete full lifecycle: initialize -> impression -> cleanup', async () => {
             let unloadCallback: (() => void) | undefined;
-            const addEventListenerSpy = jest
+            const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
                     if (event === 'beforeunload') {

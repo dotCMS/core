@@ -1,5 +1,5 @@
-import { expect, it, describe } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HttpClient, HttpHandler } from '@angular/common/http';
 
@@ -39,7 +39,7 @@ describe('DotAnalyticsTrackerService', () => {
 
     it('should track event', () => {
         const httpClient = spectator.inject(HttpClient);
-        const spy = jest.spyOn(httpClient, 'post');
+        const spy = vi.spyOn(httpClient, 'post');
 
         const event = {
             test: 'Some test data',

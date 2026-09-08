@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { vi } from 'vitest';
+
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import {
@@ -32,7 +34,7 @@ describe('getDotCMSContentletsBound', () => {
         dataset: { [key: string]: string };
     }): HTMLDivElement => {
         const contentlet = document.createElement('div');
-        const mockGetBoundingClientRect = jest.fn(() => ({
+        const mockGetBoundingClientRect = vi.fn(() => ({
             x,
             y,
             width,

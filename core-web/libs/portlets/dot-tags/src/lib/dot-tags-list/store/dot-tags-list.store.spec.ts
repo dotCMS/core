@@ -1,11 +1,12 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
-jest.mock('@dotcms/utils', () => ({
+vi.mock('@dotcms/utils', () => ({
     ...jest.requireActual('@dotcms/utils'),
-    getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
+    getDownloadLink: vi.fn().mockReturnValue({ click: vi.fn() })
 }));
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
@@ -36,20 +37,20 @@ const MOCK_PAGINATED_RESPONSE = {
 describe('DotTagsListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotTagsListStore>>;
     let store: InstanceType<typeof DotTagsListStore>;
-    let tagsService: jest.Mocked<DotTagsService>;
+    let tagsService: Mocked<DotTagsService>;
 
     const createService = createServiceFactory({
         service: DotTagsListStore,
         providers: [
             mockProvider(DotTagsService, {
-                getTagsPaginated: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
-                createTag: jest
+                getTagsPaginated: vi.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
+                createTag: vi
                     .fn()
                     .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS })),
-                updateTag: jest
+                updateTag: vi
                     .fn()
                     .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS[0] })),
-                deleteTags: jest.fn().mockReturnValue(
+                deleteTags: vi.fn().mockReturnValue(
                     of({
                         ...MOCK_API_RESPONSE_BASE,
                         entity: { successCount: 2, fails: [] }
@@ -71,7 +72,7 @@ describe('DotTagsListStore', () => {
         currentSiteIdSignal = signal('site-1');
         spectator = createService();
         store = spectator.service;
-        tagsService = spectator.inject(DotTagsService) as jest.Mocked<DotTagsService>;
+        tagsService = spectator.inject(DotTagsService) as Mocked<DotTagsService>;
         // The effect in onInit triggers loadTags automatically
         spectator.flushEffects();
     });
@@ -302,7 +303,7 @@ describe('DotTagsListStore', () => {
 
     describe('exportSelected', () => {
         it('should dump the selection to CSV without calling the backend', async () => {
-            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            const mockGetDownloadLink = getDownloadLink as Mock;
             mockGetDownloadLink.mockClear();
             tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
             store.loadTags();
@@ -320,7 +321,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should escape quotes in tag names', async () => {
-            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            const mockGetDownloadLink = getDownloadLink as Mock;
             mockGetDownloadLink.mockClear();
 
             const tagsWithQuotes: DotTag[] = [
@@ -342,7 +343,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should sanitize formula injection characters in tag names', async () => {
-            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            const mockGetDownloadLink = getDownloadLink as Mock;
             mockGetDownloadLink.mockClear();
 
             const dangerousTags: DotTag[] = [
@@ -372,7 +373,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should be a no-op when nothing is selected', () => {
-            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            const mockGetDownloadLink = getDownloadLink as Mock;
             mockGetDownloadLink.mockClear();
             tagsService.getTagsPaginated.mockClear();
 
@@ -386,7 +387,7 @@ describe('DotTagsListStore', () => {
 
     describe('exportAll', () => {
         it('should fetch the entire filtered set in one request sized by totalRecords', async () => {
-            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            const mockGetDownloadLink = getDownloadLink as Mock;
             mockGetDownloadLink.mockClear();
             tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
             store.loadTags();
@@ -406,7 +407,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should be a no-op when totalRecords is 0', () => {
-            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            const mockGetDownloadLink = getDownloadLink as Mock;
             mockGetDownloadLink.mockClear();
             tagsService.getTagsPaginated.mockReturnValue(
                 of({

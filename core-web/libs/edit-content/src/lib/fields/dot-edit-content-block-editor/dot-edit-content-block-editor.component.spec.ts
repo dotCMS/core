@@ -1,6 +1,7 @@
-import { SpectatorHost, createHostFactory, mockProvider } from '@openng/spectator/jest';
+import { SpectatorHost, createHostFactory, mockProvider } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -75,7 +76,7 @@ describe('DotEditContentBlockEditorComponent', () => {
                 }
             },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true))
+                getFeatureFlag: vi.fn().mockReturnValue(of(true))
             })
         ],
         detectChanges: false

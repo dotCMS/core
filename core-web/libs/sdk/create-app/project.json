@@ -74,18 +74,6 @@
                 "packageRoot": "dist/{projectRoot}"
             }
         },
-        "test": {
-            "dependsOn": ["verify-package", "verify-compose-static"],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        },
         "verify-package": {
             "executor": "nx:run-commands",
             "dependsOn": ["build"],

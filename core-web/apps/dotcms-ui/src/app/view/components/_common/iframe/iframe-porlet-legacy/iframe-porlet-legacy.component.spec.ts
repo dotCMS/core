@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { EMPTY, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -72,7 +73,7 @@ class ActivatedRouteMock {
     }
 }
 
-xdescribe('IframePortletLegacyComponent', () => {
+describe.skip('IframePortletLegacyComponent', () => {
     let comp: IframePortletLegacyComponent;
     let fixture: ComponentFixture<IframePortletLegacyComponent>;
     let de: DebugElement;
@@ -116,7 +117,7 @@ xdescribe('IframePortletLegacyComponent', () => {
                 DotMessageDisplayService,
                 {
                     provide: DotEventsSocketDataAccess,
-                    useValue: { on: jest.fn().mockReturnValue(EMPTY) }
+                    useValue: { on: vi.fn().mockReturnValue(EMPTY) }
                 },
                 DotcmsConfigService,
                 DotFormatDateService,
@@ -157,7 +158,7 @@ xdescribe('IframePortletLegacyComponent', () => {
         route.queryParams = of({});
         route.params = of({ id: 'portlet-id' });
 
-        jest.spyOn(dotMenuService, 'getUrlById').mockReturnValue(of('fake-url'));
+        vi.spyOn(dotMenuService, 'getUrlById').mockReturnValue(of('fake-url'));
 
         let src: string;
 
@@ -175,7 +176,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     it('should handle custom events', () => {
         route.queryParams = of({ url: 'hello/world' });
         route.params = of({ id: 'portlet-id' });
-        jest.spyOn(dotCustomEventHandlerService, 'handle');
+        vi.spyOn(dotCustomEventHandlerService, 'handle');
         fixture.detectChanges();
 
         dotIframe = de.query(By.css('dot-iframe'));
@@ -202,7 +203,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     it('should call reloadIframePortlet once', () => {
         fixture.detectChanges();
         comp.url.next('test');
-        jest.spyOn(comp, 'reloadIframePortlet');
+        vi.spyOn(comp, 'reloadIframePortlet');
         siteServiceMock.setFakeCurrentSite({
             identifier: '1',
             hostname: 'Site 1',

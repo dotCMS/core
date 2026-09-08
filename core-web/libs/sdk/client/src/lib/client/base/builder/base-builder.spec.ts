@@ -1,5 +1,7 @@
 /// <reference types="jest" />
 
+import { Mock, vi } from 'vitest';
+
 import {
     DotCMSClientConfig,
     DotErrorContent,
@@ -29,7 +31,7 @@ class TestBuilder<T = unknown> extends BaseBuilder<T> {
     constructor(params: {
         requestOptions: DotRequestOptions;
         config: DotCMSClientConfig;
-        httpClient: { request: jest.Mock };
+        httpClient: { request: Mock };
         query?: string;
         languageId?: number | string;
     }) {
@@ -73,7 +75,7 @@ class TestBuilder<T = unknown> extends BaseBuilder<T> {
 }
 
 describe('BaseBuilder', () => {
-    const mockRequest = jest.fn();
+    const mockRequest = vi.fn();
 
     const requestOptions: DotRequestOptions = {
         cache: 'no-cache'
@@ -235,7 +237,7 @@ describe('BaseBuilder', () => {
     describe('then() behavior', () => {
         it('should pass formatted response to onfulfilled and return the callback result when defined', async () => {
             const builder = createBuilder();
-            const onfulfilled = jest.fn((_data) => ({
+            const onfulfilled = vi.fn((_data) => ({
                 contentlets: [],
                 total: 0,
                 page: 1,
@@ -255,7 +257,7 @@ describe('BaseBuilder', () => {
 
         it('should return formatted response when onfulfilled returns undefined', async () => {
             const builder = createBuilder();
-            const onfulfilled = jest.fn((_data) => undefined);
+            const onfulfilled = vi.fn((_data) => undefined);
 
             const result = await builder.then(onfulfilled);
 
@@ -277,7 +279,7 @@ describe('BaseBuilder', () => {
         it('should pass wrapped error to onrejected and return callback result when defined', async () => {
             const builder = createBuilder();
             mockRequest.mockRejectedValue(new Error('Boom'));
-            const onrejected = jest.fn((err) => err);
+            const onrejected = vi.fn((err) => err);
 
             const result = await builder.then(undefined, onrejected);
 
@@ -288,7 +290,7 @@ describe('BaseBuilder', () => {
         it('should return wrapped error when onrejected returns undefined', async () => {
             const builder = createBuilder();
             mockRequest.mockRejectedValue(new Error('Boom'));
-            const onrejected = jest.fn((_err) => undefined);
+            const onrejected = vi.fn((_err) => undefined);
 
             const result = await builder.then(undefined, onrejected);
 

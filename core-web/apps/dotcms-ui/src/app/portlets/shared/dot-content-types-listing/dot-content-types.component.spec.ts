@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Observable, throwError as observableThrowError, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -130,15 +131,15 @@ class MockDotAddToMenuComponent {
 
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
@@ -228,7 +229,7 @@ describe('DotContentTypesPortletComponent', () => {
             DotPushPublishDialogService
         );
 
-        jest.spyOn(dotContentletService, 'getAllContentTypes').mockReturnValue(
+        vi.spyOn(dotContentletService, 'getAllContentTypes').mockReturnValue(
             of([
                 { name: 'CONTENT', label: 'Content', types: [] },
                 { name: 'WIDGET', label: 'Widget', types: [] },
@@ -286,11 +287,11 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        jest.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
+        vi.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
@@ -312,7 +313,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have ONLY remove action because is community license', () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
         fixture.detectChanges();
         expect(
@@ -331,7 +332,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
-        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+        vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         fixture.detectChanges();
 
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
@@ -344,7 +345,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should open push publish dialog', () => {
         fixture.detectChanges();
-        jest.spyOn(dotPushPublishDialogService, 'open');
+        vi.spyOn(dotPushPublishDialogService, 'open');
         const mockContentType: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -436,7 +437,7 @@ describe('DotContentTypesPortletComponent', () => {
         tick(1);
         fixture.detectChanges();
         baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
-        jest.spyOn(comp, 'changeBaseTypeSelector');
+        vi.spyOn(comp, 'changeBaseTypeSelector');
         baseTypesSelector.selected.emit('test');
 
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
@@ -470,12 +471,12 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
-        jest.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
+        vi.spyOn(dotHttpErrorManagerService, 'handle');
+        vi.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();

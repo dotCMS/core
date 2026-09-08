@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { vi } from 'vitest';
+
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -299,7 +301,7 @@ describe('SearchableDropdownComponent', () => {
         beforeEach(() => {
             hostComp.data = data;
             hostComp.labelPropertyName = 'name';
-            jest.spyOn(comp.switch, 'emit');
+            vi.spyOn(comp.switch, 'emit');
 
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
@@ -549,7 +551,7 @@ describe('SearchableDropdownComponent', () => {
 
     it('should allow keyboad nav on filter Input - Enter', () => {
         comp.selectedOptionIndex = 3;
-        jest.spyOn(comp, 'handleClick');
+        vi.spyOn(comp, 'handleClick');
 
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));

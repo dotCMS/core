@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react-hooks';
 import React from 'react';
+import { vi } from 'vitest';
 
 import { DotCMSPageAsset, UVE_MODE, UVEState } from '@dotcms/types';
 import * as uve from '@dotcms/uve';
@@ -14,14 +15,14 @@ interface WrapperProps {
 }
 
 const createMockDotExperimentsContext = (variantResponse: unknown) => {
-    const mockGetVariantFromHref = jest.fn().mockImplementation(() => variantResponse);
+    const mockGetVariantFromHref = vi.fn().mockImplementation(() => variantResponse);
 
     return React.createContext({
         getVariantFromHref: mockGetVariantFromHref
     });
 };
 
-jest.mock('../contexts/DotExperimentsContext', () => ({
+vi.mock('../contexts/DotExperimentsContext', () => ({
     __esModule: true,
     default: createMockDotExperimentsContext({ name: 'variant-1' })
 }));
@@ -41,7 +42,7 @@ describe('useExperimentVariant', () => {
                 viewAs: { variantId: '1' }
             } as DotCMSPageAsset;
 
-            jest.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.EDIT } as UVEState);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.EDIT } as UVEState);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -56,7 +57,7 @@ describe('useExperimentVariant', () => {
                 viewAs: { variantId: '1' }
             } as DotCMSPageAsset;
 
-            jest.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.PREVIEW } as UVEState);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.PREVIEW } as UVEState);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -66,7 +67,7 @@ describe('useExperimentVariant', () => {
         });
 
         it(' if data is undefined (e.g. waiting on the UVE editor to resolve a draft page)', () => {
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(() => useExperimentVariant(undefined));
 
@@ -78,7 +79,7 @@ describe('useExperimentVariant', () => {
                 viewAs: { variantId: EXPERIMENT_DEFAULT_VARIANT_NAME }
             } as DotCMSPageAsset;
 
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -88,7 +89,7 @@ describe('useExperimentVariant', () => {
         });
 
         it(' if VariantId get from `PageApi` is same of VariantAssigned', () => {
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(
                 () =>
@@ -104,7 +105,7 @@ describe('useExperimentVariant', () => {
 
         describe('shouldWaitForVariant `true`', () => {
             it(' if VariantId get from `PageApi` is different of VariantAssigned', () => {
-                jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+                vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
                 const { result } = renderHook(
                     () =>

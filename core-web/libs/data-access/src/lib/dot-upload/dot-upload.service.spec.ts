@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { vi } from 'vitest';
+
 import { DotUploadService } from './dot-upload.service';
 
-xdescribe('DotUploadService', () => {
+describe.skip('DotUploadService', () => {
     function FormDataMock() {
-        this.append = jest.fn();
+        this.append = vi.fn();
     }
 
     const globalAny: any = global;
     globalAny.FormData = FormDataMock;
 
-    const fetchMock = jest.fn();
+    const fetchMock = vi.fn();
     window.fetch = fetchMock;
 
     const uploadService = new DotUploadService();

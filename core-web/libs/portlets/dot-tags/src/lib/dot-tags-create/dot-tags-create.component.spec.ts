@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, Component } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -28,7 +29,7 @@ class MockDotSiteComponent implements ControlValueAccessor {
     }
 }
 
-jest.mock('@dotcms/ui', () => ({
+vi.mock('@dotcms/ui', () => ({
     ...jest.requireActual('@dotcms/ui'),
     DotSiteComponent: MockDotSiteComponent
 }));
@@ -46,7 +47,7 @@ const MOCK_TAG: DotTag = {
 describe('DotTagsCreateComponent', () => {
     describe('create mode', () => {
         let spectator: Spectator<DotTagsCreateComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotTagsCreateComponent,
@@ -101,7 +102,7 @@ describe('DotTagsCreateComponent', () => {
             component: DotTagsCreateComponent,
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
-                { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+                { provide: DynamicDialogRef, useValue: { close: vi.fn() } },
                 { provide: DynamicDialogConfig, useValue: { data: {} } },
                 {
                     provide: DotMessageService,
@@ -123,7 +124,7 @@ describe('DotTagsCreateComponent', () => {
 
     describe('edit mode', () => {
         let spectator: Spectator<DotTagsCreateComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotTagsCreateComponent,

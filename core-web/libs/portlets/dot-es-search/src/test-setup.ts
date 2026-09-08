@@ -1,15 +1,24 @@
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import '@analogjs/vitest-angular/setup-zone';
 
-setupZoneTestEnv({
+import { vi } from 'vitest';
+
+import { getTestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+
+// Analog's setup-zone patches Vitest for zone.js. A hand-rolled
+// `import 'zone.js/testing'` is not enough: zone.js patches jasmine/mocha/jest,
+// knows nothing about Vitest, and every fakeAsync test then fails with
+// "Expected to be running in 'ProxyZone'".
+getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting(), {
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true
 });
 
 // PrimeNG TabList requires ResizeObserver which is not available in jsdom
 class MockResizeObserver {
-    observe = jest.fn();
-    unobserve = jest.fn();
-    disconnect = jest.fn();
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
 }
 
 Object.defineProperty(window, 'ResizeObserver', {

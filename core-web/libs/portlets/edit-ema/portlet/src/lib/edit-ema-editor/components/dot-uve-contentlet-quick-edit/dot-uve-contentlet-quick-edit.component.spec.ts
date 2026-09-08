@@ -1,6 +1,6 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -29,9 +29,9 @@ const makeData = (overrides: Partial<DotCMSContentlet> = {}): ContentletEditData
 describe('DotUveContentletQuickEditComponent', () => {
     let spectator: Spectator<DotUveContentletQuickEditComponent>;
     let contentTypeCache: ReturnType<typeof signal<Record<string, unknown>>>;
-    let loadContentType: jest.Mock;
-    let resetSelected: jest.Mock;
-    let setEditPanelOpen: jest.Mock;
+    let loadContentType: Mock;
+    let resetSelected: Mock;
+    let setEditPanelOpen: Mock;
 
     const createComponent = createComponentFactory({
         component: DotUveContentletQuickEditComponent,
@@ -67,9 +67,9 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     beforeEach(() => {
         contentTypeCache = signal<Record<string, unknown>>({});
-        loadContentType = jest.fn();
-        resetSelected = jest.fn();
-        setEditPanelOpen = jest.fn();
+        loadContentType = vi.fn();
+        resetSelected = vi.fn();
+        setEditPanelOpen = vi.fn();
     });
 
     describe('$mode', () => {
@@ -214,7 +214,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             });
             spectator.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.openFullEditor.subscribe(emitSpy);
 
             const button = spectator

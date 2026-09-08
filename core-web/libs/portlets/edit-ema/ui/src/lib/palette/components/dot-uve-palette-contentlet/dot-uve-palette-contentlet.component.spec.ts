@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { By } from '@angular/platform-browser';

@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -58,45 +59,48 @@ describe('DotCopyContentModalService', () => {
         dialogService = TestBed.inject(DialogService);
     });
 
-    it('should not return anything if the user close the modal without select an option', (done) => {
-        jest.spyOn(dialogService, 'open').mockReturnValue({
-            onClose: of('')
-        } as DynamicDialogRef);
+    it('should not return anything if the user close the modal without select an option', () =>
+        new Promise<void>((done) => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of('')
+            } as DynamicDialogRef);
 
-        service.open().subscribe(
-            (res) => fail('This should not be called. Response: ' + res),
-            (err) => fail('This should not be called. Error: ' + err),
-            () => {
-                expect(true).toBe(true);
+            service.open().subscribe(
+                (res) => fail('This should not be called. Response: ' + res),
+                (err) => fail('This should not be called. Error: ' + err),
+                () => {
+                    expect(true).toBe(true);
+                    done();
+                }
+            );
+        }));
+
+    it('should return false if the user select the first option', () =>
+        new Promise<void>((done) => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option1.value)
+            } as DynamicDialogRef);
+
+            service.open().subscribe((res) => {
+                expect(res.shouldCopy).toBe(false);
                 done();
-            }
-        );
-    });
+            });
+        }));
 
-    it('should return false if the user select the first option', (done) => {
-        jest.spyOn(dialogService, 'open').mockReturnValue({
-            onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option1.value)
-        } as DynamicDialogRef);
+    it('should return true if the user select the second option', () =>
+        new Promise<void>((done) => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option2.value)
+            } as DynamicDialogRef);
 
-        service.open().subscribe((res) => {
-            expect(res.shouldCopy).toBe(false);
-            done();
-        });
-    });
-
-    it('should return true if the user select the second option', (done) => {
-        jest.spyOn(dialogService, 'open').mockReturnValue({
-            onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option2.value)
-        } as DynamicDialogRef);
-
-        service.open().subscribe((res) => {
-            expect(res.shouldCopy).toBe(true);
-            done();
-        });
-    });
+            service.open().subscribe((res) => {
+                expect(res.shouldCopy).toBe(true);
+                done();
+            });
+        }));
 
     it('should have been called one time with the correct data', () => {
-        jest.spyOn(dialogService, 'open').mockReturnValue({
+        vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of('')
         } as DynamicDialogRef);
 

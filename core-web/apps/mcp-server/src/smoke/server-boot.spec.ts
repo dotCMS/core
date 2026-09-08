@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { execSync, spawn } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { basename, join, sep } from 'node:path';
@@ -89,7 +91,7 @@ const speak = (
 
 describe('mcp-server boot smoke test', () => {
     // Spawning node and loading the bundle is slower than the 5s jest default.
-    jest.setTimeout(30_000);
+    vi.setConfig({ testTimeout: 30_000 });
 
     it('has a built artifact to test', () => {
         expect(existsSync(SERVER)).toBe(true);

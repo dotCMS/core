@@ -1,6 +1,12 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
@@ -29,53 +35,53 @@ const SAMPLE_CONTENTLET = {
     contentType: 'htmlpageasset'
 };
 
-const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => ({
-    query: jest.fn().mockReturnValue(''),
-    sort: jest.fn().mockReturnValue(''),
-    offset: jest.fn().mockReturnValue(0),
-    limit: jest.fn().mockReturnValue(DEFAULT_LIMIT),
-    userId: jest.fn().mockReturnValue(''),
-    isAdmin: jest.fn().mockReturnValue(false),
-    status: jest.fn().mockReturnValue(ComponentStatus.INIT),
-    response: jest.fn().mockReturnValue(null),
-    contentlets: jest.fn().mockReturnValue([]),
-    resultsSize: jest.fn().mockReturnValue(0),
-    queryTook: jest.fn().mockReturnValue(0),
-    contentTook: jest.fn().mockReturnValue(0),
-    rawJson: jest.fn().mockReturnValue(''),
-    queryTimeMs: jest.fn().mockReturnValue(null),
-    activeTab: jest.fn().mockReturnValue('results'),
-    isLoading: jest.fn().mockReturnValue(false),
-    hasLoadedResults: jest.fn().mockReturnValue(false),
-    showingFrom: jest.fn().mockReturnValue(0),
-    showingTo: jest.fn().mockReturnValue(0),
-    apiRequestBody: jest
+const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
+    query: vi.fn().mockReturnValue(''),
+    sort: vi.fn().mockReturnValue(''),
+    offset: vi.fn().mockReturnValue(0),
+    limit: vi.fn().mockReturnValue(DEFAULT_LIMIT),
+    userId: vi.fn().mockReturnValue(''),
+    isAdmin: vi.fn().mockReturnValue(false),
+    status: vi.fn().mockReturnValue(ComponentStatus.INIT),
+    response: vi.fn().mockReturnValue(null),
+    contentlets: vi.fn().mockReturnValue([]),
+    resultsSize: vi.fn().mockReturnValue(0),
+    queryTook: vi.fn().mockReturnValue(0),
+    contentTook: vi.fn().mockReturnValue(0),
+    rawJson: vi.fn().mockReturnValue(''),
+    queryTimeMs: vi.fn().mockReturnValue(null),
+    activeTab: vi.fn().mockReturnValue('results'),
+    isLoading: vi.fn().mockReturnValue(false),
+    hasLoadedResults: vi.fn().mockReturnValue(false),
+    showingFrom: vi.fn().mockReturnValue(0),
+    showingTo: vi.fn().mockReturnValue(0),
+    apiRequestBody: vi
         .fn()
         .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
-    limitWasCapped: jest.fn().mockReturnValue(false),
+    limitWasCapped: vi.fn().mockReturnValue(false),
     // `withFlags` slice — side panel off by default (empty map ⇒ `flags()[FLAG] ?? false` is false).
-    flags: jest.fn().mockReturnValue({}),
-    emptyStateConfig: jest.fn().mockReturnValue({
+    flags: vi.fn().mockReturnValue({}),
+    emptyStateConfig: vi.fn().mockReturnValue({
         title: 'Empty',
         icon: 'search',
         iconStyle: 'material-symbols-rounded',
         subtitle: ''
     }),
-    setQuery: jest.fn(),
-    setSort: jest.fn(),
-    setOffset: jest.fn(),
-    setLimit: jest.fn(),
-    setUserId: jest.fn(),
-    setActiveTab: jest.fn(),
-    resetOffset: jest.fn(),
-    runSearch: jest.fn(),
+    setQuery: vi.fn(),
+    setSort: vi.fn(),
+    setOffset: vi.fn(),
+    setLimit: vi.fn(),
+    setUserId: vi.fn(),
+    setActiveTab: vi.fn(),
+    resetOffset: vi.fn(),
+    runSearch: vi.fn(),
     ...overrides
 });
 
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
-    let locationReplaceStateSpy: jest.Mock;
-    let pendingStoreOverrides: Partial<Record<string, jest.Mock>> = {};
+    let locationReplaceStateSpy: Mock;
+    let pendingStoreOverrides: Partial<Record<string, Mock>> = {};
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -89,16 +95,16 @@ describe('DotQueryToolPageComponent', () => {
             ]
         ],
         providers: [
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotQueryToolService),
             mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: jest.fn()
+                resolveEditUrl: vi.fn()
             }),
             // Deep-link resolve for `?editContent=`; empty by default (no panel opens on load).
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
+                get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
             })
         ],
         componentProviders: [
@@ -110,9 +116,9 @@ describe('DotQueryToolPageComponent', () => {
 
     const setup = (
         params: Record<string, string> = {},
-        storeOverrides: Partial<Record<string, jest.Mock>> = {}
+        storeOverrides: Partial<Record<string, Mock>> = {}
     ) => {
-        locationReplaceStateSpy = jest.fn();
+        locationReplaceStateSpy = vi.fn();
         pendingStoreOverrides = storeOverrides;
         spectator = createComponent({
             providers: [
@@ -124,9 +130,9 @@ describe('DotQueryToolPageComponent', () => {
                     provide: Location,
                     useValue: {
                         replaceState: locationReplaceStateSpy,
-                        go: jest.fn(),
-                        path: jest.fn().mockReturnValue(''),
-                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
                     }
                 }
             ]
@@ -178,7 +184,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('resets offset and triggers runSearch when clicked', () => {
             const store = setup();
-            store.query = jest.fn().mockReturnValue('+live:true');
+            store.query = vi.fn().mockReturnValue('+live:true');
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
             const btn = spectator.query(byTestId('query-tool-run-btn'))?.querySelector('button');
@@ -194,8 +200,8 @@ describe('DotQueryToolPageComponent', () => {
             setup(
                 {},
                 {
-                    query: jest.fn().mockReturnValue('+live:true'),
-                    status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                    query: vi.fn().mockReturnValue('+live:true'),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
                 }
             );
             expect(locationReplaceStateSpy).toHaveBeenCalled();
@@ -205,8 +211,8 @@ describe('DotQueryToolPageComponent', () => {
             setup(
                 {},
                 {
-                    query: jest.fn().mockReturnValue('+broken:('),
-                    status: jest.fn().mockReturnValue(ComponentStatus.ERROR)
+                    query: vi.fn().mockReturnValue('+broken:('),
+                    status: vi.fn().mockReturnValue(ComponentStatus.ERROR)
                 }
             );
             expect(locationReplaceStateSpy).toHaveBeenCalled();
@@ -216,8 +222,8 @@ describe('DotQueryToolPageComponent', () => {
             setup(
                 {},
                 {
-                    query: jest.fn().mockReturnValue('+live:true'),
-                    status: jest.fn().mockReturnValue(ComponentStatus.LOADING)
+                    query: vi.fn().mockReturnValue('+live:true'),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADING)
                 }
             );
             expect(locationReplaceStateSpy).not.toHaveBeenCalled();
@@ -230,12 +236,12 @@ describe('DotQueryToolPageComponent', () => {
     });
 
     describe('Result title click', () => {
-        let windowOpenSpy: jest.SpyInstance;
-        let placeholderWindow: { location: { href: string }; close: jest.Mock };
+        let windowOpenSpy: MockInstance;
+        let placeholderWindow: { location: { href: string }; close: Mock };
 
         beforeEach(() => {
-            placeholderWindow = { location: { href: '' }, close: jest.fn() };
-            windowOpenSpy = jest
+            placeholderWindow = { location: { href: '' }, close: vi.fn() };
+            windowOpenSpy = vi
                 .spyOn(window, 'open')
                 .mockReturnValue(placeholderWindow as unknown as Window);
         });
@@ -247,7 +253,7 @@ describe('DotQueryToolPageComponent', () => {
         it('opens a placeholder tab synchronously, then assigns the resolved URL', () => {
             setup();
             const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
+            (resolver.resolveEditUrl as Mock).mockReturnValue(
                 of('/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit')
             );
 
@@ -263,9 +269,7 @@ describe('DotQueryToolPageComponent', () => {
         it('forwards the contentlet to the resolver and assigns the new-editor URL', () => {
             setup();
             const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
-                of('/dotAdmin/#/content/inode-1')
-            );
+            (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
 
             spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
 
@@ -275,9 +279,7 @@ describe('DotQueryToolPageComponent', () => {
         it('assigns the legacy-editor URL when the resolver returns the legacy path', () => {
             setup();
             const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
-                of('/dotAdmin/#/c/content/inode-1')
-            );
+            (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
 
             spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
 
@@ -311,7 +313,7 @@ describe('DotQueryToolPageComponent', () => {
     describe('Share menu', () => {
         const setupClipboardSpy = () => {
             const clipboard = spectator.inject(DotClipboardUtil, true);
-            return jest.spyOn(clipboard, 'copy').mockResolvedValue(true);
+            return vi.spyOn(clipboard, 'copy').mockResolvedValue(true);
         };
 
         it('exposes three items (URL, cURL, fetch) with no icons, each command bound', () => {
@@ -332,7 +334,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as cURL targets the _search endpoint with the store request body', () => {
             const store = setup();
-            store.apiRequestBody = jest.fn().mockReturnValue({
+            store.apiRequestBody = vi.fn().mockReturnValue({
                 query: '+live:true',
                 sort: 'modDate desc',
                 limit: 50,
@@ -354,7 +356,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as fetch emits a fetch() call against the _search endpoint', () => {
             const store = setup();
-            store.apiRequestBody = jest
+            store.apiRequestBody = vi
                 .fn()
                 .mockReturnValue({ query: '+live:true', sort: '', limit: 20, offset: 0 });
             const copySpy = setupClipboardSpy();
@@ -372,7 +374,7 @@ describe('DotQueryToolPageComponent', () => {
 // open in the in-page panel instead of a new tab; legacy/page results still open in a new tab.
 describe('DotQueryToolPageComponent (side panel enabled)', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
-    let windowOpenSpy: jest.SpyInstance;
+    let windowOpenSpy: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -391,13 +393,13 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
             ]
         ],
         providers: [
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotQueryToolService),
-            mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() }),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() }),
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
+                get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
             })
         ],
         componentProviders: [
@@ -407,7 +409,7 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
                 provide: DotQueryToolStore,
                 useFactory: () =>
                     buildStoreMock({
-                        flags: jest.fn().mockReturnValue({
+                        flags: vi.fn().mockReturnValue({
                             [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
                         })
                     })
@@ -417,7 +419,7 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
     });
 
     beforeEach(() => {
-        windowOpenSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+        windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
         spectator = createComponent({
             providers: [
                 {
@@ -427,10 +429,10 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
                 {
                     provide: Location,
                     useValue: {
-                        replaceState: jest.fn(),
-                        go: jest.fn(),
-                        path: jest.fn().mockReturnValue(''),
-                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                        replaceState: vi.fn(),
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
                     }
                 }
             ]
@@ -441,7 +443,7 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
 
     it('opens the new-editor result in the side panel (no new tab)', () => {
         const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
 
         spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
 
@@ -456,7 +458,7 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
 
     it('reflects the open panel in the URL via editContent (history push, so Back can pop it)', () => {
         const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
         const location = spectator.inject(Location);
 
         spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
@@ -467,13 +469,13 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
 
     it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
         const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
         const location = spectator.inject(Location);
 
         spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
         spectator.flushEffects();
-        (location.go as jest.Mock).mockClear();
-        (location.replaceState as jest.Mock).mockClear();
+        (location.go as Mock).mockClear();
+        (location.replaceState as Mock).mockClear();
 
         spectator.component.$editPanelRequest.set(null);
         spectator.flushEffects();
@@ -483,8 +485,8 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
     });
 
     it('routes browser Back through the panel close guard (does not clear silently)', () => {
-        const requestClose = jest.fn();
-        jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
+        const requestClose = vi.fn();
+        vi.spyOn(spectator.component, '$sidePanel').mockReturnValue({
             requestClose
         } as unknown as DotEditContentSidePanelComponent);
         spectator.component.$editPanelRequest.set({
@@ -493,7 +495,7 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
             identifier: 'id-1'
         });
         const location = spectator.inject(Location);
-        const popstate = (location.subscribe as jest.Mock).mock.calls[0][0] as (event: {
+        const popstate = (location.subscribe as Mock).mock.calls[0][0] as (event: {
             url: string;
         }) => void;
 
@@ -505,7 +507,7 @@ describe('DotQueryToolPageComponent (side panel enabled)', () => {
 
     it('opens legacy-editor results in a new tab (not the panel)', () => {
         const resolver = spectator.inject(DotContentletEditUrlService);
-        (resolver.resolveEditUrl as jest.Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
 
         spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
 
@@ -555,16 +557,16 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
             ]
         ],
         providers: [
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotQueryToolService),
-            mockProvider(DotContentletEditUrlService, { resolveEditUrl: jest.fn() })
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() })
         ],
         componentProviders: [
             {
                 provide: DotQueryToolStore,
-                useFactory: () => buildStoreMock({ flags: jest.fn(() => flagsValue) })
+                useFactory: () => buildStoreMock({ flags: vi.fn(() => flagsValue) })
             },
             DotClipboardUtil
         ]
@@ -584,14 +586,14 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
                 {
                     provide: Location,
                     useValue: {
-                        replaceState: jest.fn(),
-                        go: jest.fn(),
-                        path: jest.fn().mockReturnValue(''),
-                        subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                        replaceState: vi.fn(),
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
                     }
                 },
                 mockProvider(DotContentSearchService, {
-                    get: jest
+                    get: vi
                         .fn()
                         .mockReturnValue(
                             of({ jsonObjectView: { contentlets: [SAMPLE_CONTENTLET] } })

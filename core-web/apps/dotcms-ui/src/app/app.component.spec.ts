@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of, throwError } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -31,7 +32,7 @@ describe('AppComponent', () => {
     let dotMessageService: DotMessageService;
     let dotLicenseService: DotLicenseService;
     let dotNavLogoService: DotNavLogoService;
-    let consoleWarnSpy: jest.SpyInstance;
+    let consoleWarnSpy: MockInstance;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -57,11 +58,11 @@ describe('AppComponent', () => {
         dotLicenseService = TestBed.inject(DotLicenseService);
         dotNavLogoService = TestBed.inject(DotNavLogoService);
 
-        jest.spyOn(dotUiColorsService, 'setColors');
-        jest.spyOn(dotMessageService, 'init');
-        jest.spyOn(dotLicenseService, 'setLicense');
-        jest.spyOn(dotNavLogoService, 'setLogo');
-        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        vi.spyOn(dotUiColorsService, 'setColors');
+        vi.spyOn(dotMessageService, 'init');
+        vi.spyOn(dotLicenseService, 'setLicense');
+        vi.spyOn(dotNavLogoService, 'setLogo');
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
 
         fixture = TestBed.createComponent(AppComponent);
         de = fixture.debugElement;
@@ -85,7 +86,7 @@ describe('AppComponent', () => {
 
     describe('Configuration loading', () => {
         it('should load and apply configuration successfully', () => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 of({
                     colors: {
                         primary: '#123',
@@ -121,7 +122,7 @@ describe('AppComponent', () => {
         });
 
         it('should handle partial configuration (missing optional fields)', () => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 of({
                     colors: {
                         primary: '#123',
@@ -155,7 +156,7 @@ describe('AppComponent', () => {
 
         it('should use default colors when configuration fails to load', () => {
             const error = new Error('Failed to load configuration');
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => error));
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => error));
 
             fixture.detectChanges();
 
@@ -178,9 +179,7 @@ describe('AppComponent', () => {
 
         it('should handle configuration error gracefully (unauthenticated user)', () => {
             const httpError = { status: 401, message: 'Unauthorized' };
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                throwError(() => httpError)
-            );
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => httpError));
 
             fixture.detectChanges();
 
@@ -200,13 +199,13 @@ describe('AppComponent', () => {
         });
 
         it('should always set colors even when configuration fails', () => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 throwError(() => new Error('Network error'))
             );
 
             // Mock querySelector to return null (edge case)
             const originalQuerySelector = document.querySelector;
-            jest.spyOn(document, 'querySelector').mockReturnValue(null);
+            vi.spyOn(document, 'querySelector').mockReturnValue(null);
 
             fixture.detectChanges();
 
@@ -220,7 +219,7 @@ describe('AppComponent', () => {
 
     describe('Service initialization', () => {
         beforeEach(() => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 of({
                     colors: {
                         primary: '#123',

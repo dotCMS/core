@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -79,7 +80,7 @@ describe('DotAppsService', () => {
 
         it('should handle error and return null', () => {
             const errorManagerService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
+            vi.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
 
             spectator.service.get().subscribe((result) => {
                 expect(result).toBeNull();
@@ -107,7 +108,7 @@ describe('DotAppsService', () => {
 
         it('should handle error and return null', () => {
             const errorManagerService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
+            vi.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
 
             spectator.service.getConfigurationList('test').subscribe((result) => {
                 expect(result).toBeNull();
@@ -136,7 +137,7 @@ describe('DotAppsService', () => {
 
         it('should handle error and return null', () => {
             const errorManagerService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
+            vi.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
 
             spectator.service.getConfiguration('test', '1').subscribe((result) => {
                 expect(result).toBeNull();
@@ -171,7 +172,7 @@ describe('DotAppsService', () => {
 
         it('should handle error and return null', () => {
             const errorManagerService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
+            vi.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
 
             const params: DotAppsSaveData = { name: { hidden: false, value: 'test' } };
 
@@ -204,7 +205,7 @@ describe('DotAppsService', () => {
 
         it('should handle error and return status string', () => {
             const errorManagerService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
+            vi.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
 
             const conf: DotAppsImportConfiguration = {
                 file: new File([], 'test.json'),
@@ -240,9 +241,9 @@ describe('DotAppsService', () => {
             };
 
             const anchor = document.createElement('a');
-            (window as any).fetch = jest.fn().mockReturnValue(Promise.resolve(mockResponse));
-            jest.spyOn(anchor, 'click');
-            jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
+            (window as any).fetch = vi.fn().mockReturnValue(Promise.resolve(mockResponse));
+            vi.spyOn(anchor, 'click');
+            vi.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
 
             const conf = {
                 appKeysBySite: {},
@@ -264,7 +265,7 @@ describe('DotAppsService', () => {
         }));
 
         it('should handle export error', fakeAsync(() => {
-            (window as any).fetch = jest
+            (window as any).fetch = vi
                 .fn()
                 .mockReturnValue(Promise.reject(new Error('export failed')));
 
@@ -298,7 +299,7 @@ describe('DotAppsService', () => {
 
         it('should handle error and return null', () => {
             const errorManagerService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
+            vi.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
 
             spectator.service.deleteConfiguration('test', '123').subscribe((result) => {
                 expect(result).toBeNull();
@@ -326,7 +327,7 @@ describe('DotAppsService', () => {
 
         it('should handle error and return null', () => {
             const errorManagerService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
+            vi.spyOn(errorManagerService, 'handle').mockReturnValue(of({ status: 400 } as any));
 
             spectator.service.deleteAllConfigurations('test').subscribe((result) => {
                 expect(result).toBeNull();

@@ -1,12 +1,13 @@
 // Mocked so the same-origin guard's rejection branch is reachable: the
 // component builds its URL from a hard-coded prefix, so no `userId` can
 // make the real predicate return false. Must precede the import.
-jest.mock('@dotcms/utils', () => ({
+vi.mock('@dotcms/utils', () => ({
     ...jest.requireActual('@dotcms/utils'),
-    isSameOriginRelativeUrl: jest.fn()
+    isSameOriginRelativeUrl: vi.fn()
 }));
 
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -18,7 +19,7 @@ import { DotUsersPermissionsTabComponent } from './dot-users-permissions-tab.com
 
 const WRAPPER_JSP = '/html/portlet/ext/useradmin/view_users_permissions_wrapper.jsp';
 
-const mockIsSameOriginRelativeUrl = isSameOriginRelativeUrl as unknown as jest.Mock;
+const mockIsSameOriginRelativeUrl = isSameOriginRelativeUrl as unknown as Mock;
 
 const MESSAGES = {
     'users.dialog.permissions.create-mode':
@@ -226,16 +227,16 @@ describe('DotUsersPermissionsTabComponent', () => {
 
     describe('load timeout', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             spectator = createComponent({ props: { userId: 'user-42' } });
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should stay on the skeleton until the timeout elapses', () => {
-            jest.advanceTimersByTime(19_000);
+            vi.advanceTimersByTime(19_000);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('permissions-loading'))).toBeTruthy();
@@ -243,7 +244,7 @@ describe('DotUsersPermissionsTabComponent', () => {
         });
 
         it('should surface the timeout message when load never fires', () => {
-            jest.advanceTimersByTime(20_000);
+            vi.advanceTimersByTime(20_000);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('permissions-timeout'))).toBeTruthy();
@@ -255,7 +256,7 @@ describe('DotUsersPermissionsTabComponent', () => {
             stubJspResponse(iframe, { marker: true });
             spectator.dispatchFakeEvent(iframe, 'load');
 
-            jest.advanceTimersByTime(60_000);
+            vi.advanceTimersByTime(60_000);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('permissions-timeout'))).toBeFalsy();
@@ -263,7 +264,7 @@ describe('DotUsersPermissionsTabComponent', () => {
         });
 
         it('should re-navigate and re-arm the watchdog on retry', () => {
-            jest.advanceTimersByTime(20_000);
+            vi.advanceTimersByTime(20_000);
             spectator.detectChanges();
 
             const before = spectator.component.$permissionsUrl();
@@ -281,7 +282,7 @@ describe('DotUsersPermissionsTabComponent', () => {
             expect(spectator.query(byTestId('permissions-loading'))).toBeTruthy();
 
             // And the fresh navigation can time out again.
-            jest.advanceTimersByTime(20_000);
+            vi.advanceTimersByTime(20_000);
             spectator.detectChanges();
             expect(spectator.query(byTestId('permissions-timeout'))).toBeTruthy();
         });

@@ -1,5 +1,6 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { signal, WritableSignal } from '@angular/core';
 
@@ -47,8 +48,8 @@ const VARIANT_B: DotExperimentsChangePageDialogVariant = {
 
 describe('DotExperimentsChangePageDialogComponent', () => {
     let spectator: Spectator<DotExperimentsChangePageDialogComponent>;
-    let dialogRef: { close: jest.Mock };
-    let dispatch: jest.SpyInstance;
+    let dialogRef: { close: Mock };
+    let dispatch: MockInstance;
 
     /** The store slices the card hands over, as the signals they are on its side. */
     let variants: WritableSignal<DotExperimentsChangePageDialogVariant[]>;
@@ -72,7 +73,7 @@ describe('DotExperimentsChangePageDialogComponent', () => {
             providers: [{ provide: DynamicDialogRef, useValue: dialogRef }]
         });
         spectator.setInput({ pageTitle: PAGE_TITLE, variants, deleting, failed });
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
         spectator.detectChanges();
     };
 
@@ -90,13 +91,13 @@ describe('DotExperimentsChangePageDialogComponent', () => {
             ?.querySelector('button') as HTMLButtonElement;
 
     beforeEach(() => {
-        dialogRef = { close: jest.fn() };
+        dialogRef = { close: vi.fn() };
         variants = signal<DotExperimentsChangePageDialogVariant[]>([]);
         deleting = signal(false);
         failed = signal(false);
     });
 
-    afterEach(() => jest.restoreAllMocks());
+    afterEach(() => vi.restoreAllMocks());
 
     describe('what it warns about', () => {
         it('should name every variant the change would delete', () => {

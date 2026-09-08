@@ -1,5 +1,11 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -19,13 +25,13 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         component: DotContentDriveLanguageFieldComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                defaultLanguageId: jest.fn().mockReturnValue(1),
-                getFilterValue: jest.fn().mockReturnValue(undefined),
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn()
+                defaultLanguageId: vi.fn().mockReturnValue(1),
+                getFilterValue: vi.fn().mockReturnValue(undefined),
+                patchFilters: vi.fn(),
+                removeFilter: vi.fn()
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of([createFakeLanguage({ id: 1 })]))
+                get: vi.fn().mockReturnValue(of([createFakeLanguage({ id: 1 })]))
             }),
             {
                 provide: DotMessageService,
@@ -47,7 +53,7 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         store.getFilterValue.mockReset().mockReturnValue(undefined);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should render the shared language filter', () => {
         spectator.detectChanges();

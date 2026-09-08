@@ -3,8 +3,18 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import '@testing-library/jest-dom';
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
-setupZoneTestEnv();
+import '@analogjs/vitest-angular/setup-zone';
+
+import { vi } from 'vitest';
+
+import { getTestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+
+// Analog's setup-zone patches Vitest for zone.js. A hand-rolled
+// `import 'zone.js/testing'` is not enough: zone.js patches jasmine/mocha/jest,
+// knows nothing about Vitest, and every fakeAsync test then fails with
+// "Expected to be running in 'ProxyZone'".
+getTestBed().initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
 // Mock PointerEvent
 class MockPointerEvent implements Partial<PointerEvent> {
@@ -58,15 +68,15 @@ Object.defineProperty(document.body.style, 'transform', {
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 

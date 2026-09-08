@@ -1,4 +1,3 @@
-import { describe, expect } from '@jest/globals';
 import { patchState } from '@ngrx/signals';
 import {
     SpyObject,
@@ -6,9 +5,10 @@ import {
     Spectator,
     byTestId,
     mockProvider
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { Subject, of } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -156,7 +156,7 @@ const createRouteSnapshot = ({ queryParams, data }: { queryParams: object; data:
 });
 
 const mockGlobalStore = {
-    addNewBreadcrumb: jest.fn(),
+    addNewBreadcrumb: vi.fn(),
     loggedUser: signal(CurrentUserDataMock)
 };
 
@@ -214,10 +214,10 @@ describe('DotEmaShellComponent', () => {
                 }
             },
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of(),
-                createUrlTree: jest.fn((commands, extras) => {
+                createUrlTree: vi.fn((commands, extras) => {
                     const queryParams = extras?.queryParams ?? {};
                     const queryString = new URLSearchParams(
                         Object.fromEntries(
@@ -322,13 +322,13 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             {
                 provide: DotPageLayoutService,
                 useValue: {
-                    save: jest.fn().mockReturnValue(of({}))
+                    save: vi.fn().mockReturnValue(of({}))
                 }
             },
             {
@@ -338,8 +338,8 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn().mockReturnValue('Mock Message'),
-                    init: jest.fn()
+                    get: vi.fn().mockReturnValue('Mock Message'),
+                    init: vi.fn()
                 }
             },
             {
@@ -361,15 +361,15 @@ describe('DotEmaShellComponent', () => {
 
     describe('with queryParams', () => {
         it('should trigger an store load with default values', () => {
-            const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+            const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
             spectator.detectChanges();
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
         describe('Sanitize url when called pageLoad', () => {
             it('should sanitize when url is index', () => {
-                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
-                const spyLocation = jest.spyOn(location, 'go');
+                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const spyLocation = vi.spyOn(location, 'go');
 
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
@@ -392,9 +392,9 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should sanitize when url is nested', () => {
-                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
 
-                const spyLocation = jest.spyOn(location, 'go');
+                const spyLocation = vi.spyOn(location, 'go');
 
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
@@ -420,8 +420,8 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should sanitize when url is nested and ends in index', () => {
-                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
-                const spyLocation = jest.spyOn(location, 'go');
+                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const spyLocation = vi.spyOn(location, 'go');
 
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
@@ -447,8 +447,8 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should receive `personaId` query param', () => {
-                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
-                const spyLocation = jest.spyOn(location, 'go');
+                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+                const spyLocation = vi.spyOn(location, 'go');
 
                 const queryParams = {
                     url: '/some-url/index',
@@ -569,8 +569,8 @@ describe('DotEmaShellComponent', () => {
         });
 
         it('should call store.pageLoad and update location when page loads', () => {
-            const pageLoadSpy = jest.spyOn(store, 'pageLoad');
-            const locationSpy = jest.spyOn(location, 'go');
+            const pageLoadSpy = vi.spyOn(store, 'pageLoad');
+            const locationSpy = vi.spyOn(location, 'go');
 
             spectator.detectChanges();
 
@@ -599,7 +599,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger action when the page-tool item is clicked', () => {
-                const pageToolsSpy = jest.spyOn(spectator.component.pageTools, 'toggleDialog');
+                const pageToolsSpy = vi.spyOn(spectator.component.pageTools, 'toggleDialog');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
 
@@ -609,7 +609,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger action when the properties item is clicked', () => {
-                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
 
@@ -625,9 +625,9 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('routes the properties click through the active editor (new editor/side panel) when the content route is mounted, instead of the legacy dialog', () => {
-                const openContentForEdit = jest.fn();
+                const openContentForEdit = vi.fn();
                 spectator.component.onRouteActivate({ openContentForEdit });
-                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
                 spectator.triggerEventHandler(navBar, 'action', 'properties');
@@ -639,9 +639,9 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('falls back to the legacy dialog when a sibling route (layout/rules/experiments) is active', () => {
-                spectator.component.onRouteActivate({ openContentForEdit: jest.fn() });
+                spectator.component.onRouteActivate({ openContentForEdit: vi.fn() });
                 spectator.component.onRouteDeactivate();
-                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
                 spectator.triggerEventHandler(navBar, 'action', 'properties');
@@ -650,8 +650,8 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('ignores an activated component that does not expose openContentForEdit (a sibling route)', () => {
-                spectator.component.onRouteActivate({ someOtherMethod: jest.fn() });
-                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                spectator.component.onRouteActivate({ someOtherMethod: vi.fn() });
+                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
                 spectator.triggerEventHandler(navBar, 'action', 'properties');
@@ -681,9 +681,9 @@ describe('DotEmaShellComponent', () => {
                 };
 
                 const expectURL = router.createUrlTree([], { queryParams: userParams });
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
-                const spyUrlTree = jest.spyOn(router, 'createUrlTree');
-                const spyLocation = jest.spyOn(location, 'go');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
+                const spyUrlTree = vi.spyOn(router, 'createUrlTree');
+                const spyLocation = vi.spyOn(location, 'go');
 
                 store.pageLoad(pageParams);
                 spectator.detectChanges();
@@ -694,7 +694,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should not include clientHost in location when it matches base client host', () => {
-                const spyLocation = jest.spyOn(location, 'go');
+                const spyLocation = vi.spyOn(location, 'go');
                 const baseClientHost = 'http://localhost:3000';
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
@@ -724,7 +724,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should include clientHost in location when it differs from base client host', () => {
-                const spyLocation = jest.spyOn(location, 'go');
+                const spyLocation = vi.spyOn(location, 'go');
                 const baseClientHost = 'http://localhost:3000';
                 const differentClientHost = 'http://localhost:4000';
                 const params = {
@@ -757,7 +757,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should handle sanitized URLs in clientHost comparison', () => {
-                const spyLocation = jest.spyOn(location, 'go');
+                const spyLocation = vi.spyOn(location, 'go');
                 const baseClientHost = 'http://localhost:3000/';
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
@@ -790,7 +790,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('ClientHost', () => {
             it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:4200'
@@ -811,7 +811,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const paramsWithAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -829,7 +829,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -847,7 +847,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when allowedDevURLs has wrong data type', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -866,7 +866,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when allowedDevURLs is not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -885,7 +885,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when uveConfig options are not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -906,7 +906,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit clientHost when uveConfig is not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -927,7 +927,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('Editor Mode', () => {
             it('should set mode to EDIT when wrong mode is passed', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
                     mode: 'WRONG'
@@ -947,7 +947,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should set mode to EDIT when mode is undefined', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyStoreLoadPage = vi.spyOn(store, 'pageLoad');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
                     mode: undefined
@@ -969,7 +969,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('Site Changes', () => {
             it('should trigger a navigate to /pages when switching to a different site', async () => {
-                const navigate = jest.spyOn(router, 'navigate');
+                const navigate = vi.spyOn(router, 'navigate');
 
                 spectator.detectChanges();
                 siteService.setFakeCurrentSite(); // We have to trigger the first set as dotcms on init
@@ -981,7 +981,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should NOT navigate to /pages when the switched site matches the current page site', async () => {
-                const navigate = jest.spyOn(router, 'navigate');
+                const navigate = vi.spyOn(router, 'navigate');
 
                 spectator.detectChanges();
                 siteService.setFakeCurrentSite(); // trigger init emission
@@ -999,7 +999,7 @@ describe('DotEmaShellComponent', () => {
             beforeEach(() => spectator.detectChanges());
 
             it('should update page params when saving and the url changed', () => {
-                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(store, 'pageLoad');
 
                 spectator.detectChanges();
 
@@ -1019,7 +1019,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should get the workflow action when an `UPDATE_WORKFLOW_ACTION` event is received', () => {
-                const spyGetWorkflowActions = jest.spyOn(store, 'workflowFetch');
+                const spyGetWorkflowActions = vi.spyOn(store, 'workflowFetch');
 
                 spectator.detectChanges();
 
@@ -1037,7 +1037,7 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
                 spectator.detectChanges();
-                const spyReload = jest.spyOn(store, 'pageReload');
+                const spyReload = vi.spyOn(store, 'pageReload');
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,
@@ -1055,8 +1055,8 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload if the url is the same', () => {
                 spectator.detectChanges();
-                const spyReload = jest.spyOn(store, 'pageReload');
-                const spyLocation = jest.spyOn(location, 'go');
+                const spyReload = vi.spyOn(store, 'pageReload');
+                const spyLocation = vi.spyOn(location, 'go');
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,
@@ -1076,7 +1076,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should reload content from dialog', () => {
-                const reloadSpy = jest.spyOn(store, 'pageReload');
+                const reloadSpy = vi.spyOn(store, 'pageReload');
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
 
@@ -1084,7 +1084,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should reload page when LANGUAGE_IS_CHANGED fires from the properties dialog', () => {
-                const reloadSpy = jest.spyOn(store, 'pageReload');
+                const reloadSpy = vi.spyOn(store, 'pageReload');
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,
@@ -1100,8 +1100,8 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', async () => {
-                const reloadSpy = jest.spyOn(store, 'pageReload');
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                const reloadSpy = vi.spyOn(store, 'pageReload');
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...PAGE_RESPONSE_URL_CONTENT_MAP,
                         clientResponse: PAGE_RESPONSE_URL_CONTENT_MAP
@@ -1171,7 +1171,7 @@ describe('DotEmaShellComponent', () => {
                         identifier: '456'
                     }
                 };
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(differentPageResponse));
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(of(differentPageResponse));
                 mockGlobalStore.addNewBreadcrumb.mockClear();
 
                 store.pageLoad({
@@ -1229,7 +1229,7 @@ describe('DotEmaShellComponent', () => {
 
                 // Hold the response to inspect the LOADING window
                 const pendingRequest$ = new Subject<typeof MOCK_RESPONSE_HEADLESS>();
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
 
                 store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
                 spectator.detectChanges();
@@ -1260,7 +1260,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should use urlContentMap title and identifier when present', async () => {
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...MOCK_RESPONSE_HEADLESS,
                         page: {
@@ -1292,7 +1292,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should fall back to page title and identifier when urlContentMap is absent', async () => {
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...MOCK_RESPONSE_HEADLESS,
                         page: {
@@ -1323,7 +1323,7 @@ describe('DotEmaShellComponent', () => {
 
     describe('without read permission', () => {
         beforeEach(() => {
-            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+            vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                 of({
                     ...MOCK_RESPONSE_HEADLESS,
                     page: {
@@ -1349,7 +1349,7 @@ describe('DotEmaShellComponent', () => {
     describe('Lock banner', () => {
         /** Mocks the page load response as locked, defaulting to "locked by another user". */
         const mockLockedPage = (overrides: Record<string, unknown> = {}) => {
-            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+            vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                 of({
                     ...MOCK_RESPONSE_HEADLESS,
                     page: {
@@ -1451,7 +1451,7 @@ describe('DotEmaShellComponent', () => {
         });
 
         it('should render the lock banner outside the body wrapper, so it does not get squeezed into the content grid column', async () => {
-            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+            vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                 of({
                     ...MOCK_RESPONSE_HEADLESS,
                     page: {
@@ -1496,7 +1496,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should disable layout when page cannot be edited', () => {
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...MOCK_RESPONSE_HEADLESS,
                         page: {
@@ -1518,7 +1518,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should show tooltip for advanced templates', () => {
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...MOCK_RESPONSE_HEADLESS,
                         template: {
@@ -1578,13 +1578,13 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should return error payload when error code exists', () => {
-                spectator.component['uveStore'].setUveStatus = jest.fn();
+                spectator.component['uveStore'].setUveStatus = vi.fn();
                 const uveStore = spectator.component['uveStore'] as InstanceType<
                     typeof UVEStore
                 > & {
                     pageErrorCode: () => number;
                 };
-                jest.spyOn(uveStore, 'pageErrorCode').mockReturnValue(401);
+                vi.spyOn(uveStore, 'pageErrorCode').mockReturnValue(401);
 
                 spectator.detectChanges();
 
@@ -1604,7 +1604,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should return false when page cannot be read', () => {
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...MOCK_RESPONSE_HEADLESS,
                         page: {
@@ -1621,7 +1621,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should return false when page is undefined', () => {
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
                     of({
                         ...MOCK_RESPONSE_HEADLESS,
                         page: undefined
@@ -1661,7 +1661,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('handleScannerToolClick', () => {
             it('should open the page scanner with the correct url and type', () => {
-                const openSpy = jest.fn();
+                const openSpy = vi.fn();
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
@@ -1685,7 +1685,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should scan the authoring instance origin, not the page content host', () => {
-                const openSpy = jest.fn();
+                const openSpy = vi.fn();
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
@@ -1697,11 +1697,11 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should append the page site host_id so the scanner resolves the correct site on multisite', () => {
-                const openSpy = jest.fn();
+                const openSpy = vi.fn();
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
-                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                vi.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
                     currentUrl: '/my-page',
                     requestHostName: 'https://content-site.example.com',
                     siteId: 'site-b-identifier',
@@ -1715,11 +1715,11 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit host_id when the page has no site identifier', () => {
-                const openSpy = jest.fn();
+                const openSpy = vi.fn();
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
-                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                vi.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
                     currentUrl: '/my-page',
                     requestHostName: 'https://content-site.example.com',
                     siteId: undefined,
@@ -1733,7 +1733,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should forward all page-resolving params (language, persona, variant, mode, time machine) so the scanner re-renders the same page', () => {
-                const openSpy = jest.fn();
+                const openSpy = vi.fn();
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
@@ -1772,7 +1772,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should omit the default variant from the scanned URL', () => {
-                const openSpy = jest.fn();
+                const openSpy = vi.fn();
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
@@ -1799,7 +1799,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should pass geo type to the page scanner', () => {
-                const openSpy = jest.fn();
+                const openSpy = vi.fn();
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
@@ -1817,7 +1817,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should call handleScannerToolClick when scannerToolClick event is emitted', () => {
-                const handleSpy = jest.spyOn(spectator.component, 'handleScannerToolClick');
+                const handleSpy = vi.spyOn(spectator.component, 'handleScannerToolClick');
                 const pageTools = spectator.query(MockComponent(DotPageToolsSeoComponent));
 
                 (
@@ -1843,6 +1843,6 @@ describe('DotEmaShellComponent', () => {
                 })
             );
         }
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 });

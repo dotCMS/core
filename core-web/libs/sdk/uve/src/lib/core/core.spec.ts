@@ -1,4 +1,14 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import {
+    Mock,
+    MockInstance,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi
+} from 'vitest';
 
 import { UVE_MODE, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
@@ -7,7 +17,7 @@ import { createUVESubscription, getUVEState, isRequestFromUVE } from './core.uti
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
-        jest.spyOn(global, 'window', 'get').mockReset();
+        vi.spyOn(global, 'window', 'get').mockReset();
     });
 
     it('should return undefined when not in editor', () => {
@@ -16,14 +26,14 @@ describe('getUVEStatus', () => {
             parent: window
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toBe(undefined);
     });
 
     it('should return undefined when window is undefined', () => {
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(undefined as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toBe(undefined);
@@ -40,7 +50,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -65,7 +75,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -90,7 +100,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -115,7 +125,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -140,7 +150,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         getUVEState();
@@ -167,7 +177,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -192,7 +202,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -217,7 +227,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -242,7 +252,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -267,7 +277,7 @@ describe('getUVEStatus', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         expect(getUVEState()).toEqual({
@@ -284,16 +294,16 @@ describe('getUVEStatus', () => {
 
 describe('createUVESubscription', () => {
     let mockWindow: unknown;
-    let consoleWarnSpy: jest.SpyInstance;
-    let consoleErrorSpy: jest.SpyInstance;
+    let consoleWarnSpy: MockInstance;
+    let consoleErrorSpy: MockInstance;
 
     beforeAll(() => {
-        jest.spyOn(global, 'window', 'get').mockReset();
+        vi.spyOn(global, 'window', 'get').mockReset();
     });
 
     beforeEach(() => {
-        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
+        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
     });
 
     afterEach(() => {
@@ -311,7 +321,7 @@ describe('createUVESubscription', () => {
             parent: window
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, noop);
@@ -334,7 +344,7 @@ describe('createUVESubscription', () => {
             }
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
         const subscription = createUVESubscription('non-existent-event' as UVEEventType, noop);
@@ -357,15 +367,15 @@ describe('createUVESubscription', () => {
             location: {
                 href: 'https://test.com/hello?mode=EDIT_MODE'
             },
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn(),
-            postMessage: jest.fn()
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            postMessage: vi.fn()
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
-        const callback = jest.fn();
+        const callback = vi.fn();
         const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, callback);
 
         expect(subscription).toBeDefined();
@@ -386,19 +396,18 @@ describe('createUVESubscription', () => {
             location: {
                 href: 'https://test.com/hello?mode=EDIT_MODE'
             },
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
-        const callback = jest.fn();
+        const callback = vi.fn();
         createUVESubscription(UVEEventType.CONTENT_CHANGES, callback);
 
         // Get the message event listener that was registered
-        const messageCallback = ((mockWindow as Window).addEventListener as jest.Mock).mock
-            .calls[0][1];
+        const messageCallback = ((mockWindow as Window).addEventListener as Mock).mock.calls[0][1];
 
         // Create and dispatch a message event
         const messageEvent = new MessageEvent('message', {
@@ -422,18 +431,17 @@ describe('createUVESubscription', () => {
             location: {
                 href: 'https://test.com/hello?mode=EDIT_MODE'
             },
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
         };
 
-        const spy = jest.spyOn(global, 'window', 'get');
+        const spy = vi.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
-        const callback = jest.fn();
+        const callback = vi.fn();
         const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, callback);
 
-        const messageCallback = ((mockWindow as Window).addEventListener as jest.Mock).mock
-            .calls[0][1]; // Get the second argument (1) of the first call (0)
+        const messageCallback = ((mockWindow as Window).addEventListener as Mock).mock.calls[0][1]; // Get the second argument (1) of the first call (0)
         subscription.unsubscribe?.();
         expect((mockWindow as Window).removeEventListener).toHaveBeenCalledWith(
             'message',

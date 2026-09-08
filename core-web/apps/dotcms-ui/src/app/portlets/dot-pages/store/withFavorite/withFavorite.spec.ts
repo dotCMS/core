@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -66,13 +66,11 @@ export const pagesStoreWithFavoritesMock = signalStore(
 describe('withFavorites', () => {
     let spectator: SpectatorService<InstanceType<typeof pagesStoreWithFavoritesMock>>;
     let store: InstanceType<typeof pagesStoreWithFavoritesMock>;
-    let dotPageListService: jest.Mocked<
-        Pick<DotPageListService, 'getFavoritePages' | 'getSinglePage'>
-    >;
-    let httpErrorManagerService: jest.Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
+    let dotPageListService: Mocked<Pick<DotPageListService, 'getFavoritePages' | 'getSinglePage'>>;
+    let httpErrorManagerService: Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
 
     const siteDetailsSig = signal<DotSite | null>(null);
-    const loggedUserMock = jest.fn(() => ({ userId: 'user-1' }) as unknown);
+    const loggedUserMock = vi.fn(() => ({ userId: 'user-1' }) as unknown);
 
     const createService = createServiceFactory({
         service: pagesStoreWithFavoritesMock,
@@ -80,14 +78,14 @@ describe('withFavorites', () => {
             {
                 provide: DotPageListService,
                 useValue: {
-                    getFavoritePages: jest.fn().mockReturnValue(of(MOCK_ES_CONTENT)),
-                    getSinglePage: jest.fn().mockReturnValue(of(MOCK_FAVORITES[0]))
+                    getFavoritePages: vi.fn().mockReturnValue(of(MOCK_ES_CONTENT)),
+                    getSinglePage: vi.fn().mockReturnValue(of(MOCK_FAVORITES[0]))
                 }
             },
             {
                 provide: DotHttpErrorManagerService,
                 useValue: {
-                    handle: jest.fn()
+                    handle: vi.fn()
                 }
             },
             {
@@ -104,12 +102,12 @@ describe('withFavorites', () => {
         spectator = createService();
         store = spectator.service;
 
-        dotPageListService = spectator.inject(DotPageListService) as unknown as jest.Mocked<
+        dotPageListService = spectator.inject(DotPageListService) as unknown as Mocked<
             Pick<DotPageListService, 'getFavoritePages' | 'getSinglePage'>
         >;
-        httpErrorManagerService = spectator.inject(
-            DotHttpErrorManagerService
-        ) as unknown as jest.Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
+        httpErrorManagerService = spectator.inject(DotHttpErrorManagerService) as unknown as Mocked<
+            Pick<DotHttpErrorManagerService, 'handle'>
+        >;
 
         // Reset base state between tests; keep the feature defaults.
         patchState(store, initialState);
@@ -117,9 +115,9 @@ describe('withFavorites', () => {
 
         siteDetailsSig.set(null);
         loggedUserMock.mockClear();
-        (dotPageListService.getFavoritePages as jest.Mock).mockClear();
-        (dotPageListService.getSinglePage as jest.Mock).mockClear();
-        (httpErrorManagerService.handle as jest.Mock).mockClear();
+        (dotPageListService.getFavoritePages as Mock).mockClear();
+        (dotPageListService.getSinglePage as Mock).mockClear();
+        (httpErrorManagerService.handle as Mock).mockClear();
     });
 
     it('should initialize favorite state', () => {

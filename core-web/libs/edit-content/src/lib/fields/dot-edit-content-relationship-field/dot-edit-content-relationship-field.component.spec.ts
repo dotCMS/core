@@ -1,5 +1,6 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -114,50 +115,50 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             mockProvider(DotMessageService, {
                 // The create-new title is now i18n: `get('contenttypes.content.create.contenttype', name)`.
                 // Resolve that key to keep the header assertion meaningful; other keys stay generic.
-                get: jest.fn((key: string, ...args: string[]) =>
+                get: vi.fn((key: string, ...args: string[]) =>
                     key === 'contenttypes.content.create.contenttype'
                         ? `Create ${args[0] ?? ''}`
                         : 'Mock Message'
                 )
             }),
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of(mockContentType))
+                getContentType: vi.fn().mockReturnValue(of(mockContentType))
             }),
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn()
+                handle: vi.fn()
             }),
             mockProvider(DotCurrentUserService),
             // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
             // must be mocked (not just `getFeatureFlag`) or the real store throws on construction.
             // Side panel off by default → showCreateNewContentDialog uses the centered dialog.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest
+                getFeatureFlags: vi
                     .fn()
                     .mockReturnValue(
                         of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
                     )
             }),
             mockProvider(DotEditContentStore, {
-                contentType: jest.fn().mockReturnValue(null),
-                currentLocale: jest.fn().mockReturnValue(null),
-                isCopyingLocale: jest.fn().mockReturnValue(false),
-                isDialogMode: jest.fn().mockReturnValue(false),
-                contentlet: jest.fn().mockReturnValue(null)
+                contentType: vi.fn().mockReturnValue(null),
+                currentLocale: vi.fn().mockReturnValue(null),
+                isCopyingLocale: vi.fn().mockReturnValue(false),
+                isDialogMode: vi.fn().mockReturnValue(false),
+                contentlet: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotEditContentService, {
-                getContentById: jest.fn().mockReturnValue(of({}))
+                getContentById: vi.fn().mockReturnValue(of({}))
             }),
             DialogService,
             {
                 provide: EDIT_CONTENT_HOST,
                 useValue: {
                     inPlaceNavigation: false,
-                    setContentTitle: jest.fn(),
-                    addBreadcrumb: jest.fn(),
-                    goToSavedContent: jest.fn(),
-                    goToRestoredVersion: jest.fn(),
-                    goToRelatedContent: jest.fn(),
-                    goToCrumb: jest.fn()
+                    setContentTitle: vi.fn(),
+                    addBreadcrumb: vi.fn(),
+                    goToSavedContent: vi.fn(),
+                    goToRestoredVersion: vi.fn(),
+                    goToRelatedContent: vi.fn(),
+                    goToCrumb: vi.fn()
                 }
             }
         ]
@@ -219,7 +220,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not delete item when disabled', () => {
-                const deleteSpy = jest.spyOn(store, 'deleteItem');
+                const deleteSpy = vi.spyOn(store, 'deleteItem');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
@@ -230,7 +231,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not reorder items when disabled', () => {
-                const reorderDataSpy = jest.spyOn(store, 'reorderData');
+                const reorderDataSpy = vi.spyOn(store, 'reorderData');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
@@ -241,7 +242,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not show existing content dialog when disabled', () => {
-                const openSpy = jest.spyOn(dialogService, 'open');
+                const openSpy = vi.spyOn(dialogService, 'open');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
@@ -252,7 +253,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not show create content dialog when disabled', () => {
-                const openSpy = jest.spyOn(dialogService, 'open');
+                const openSpy = vi.spyOn(dialogService, 'open');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
@@ -269,7 +270,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should delete item when not disabled', () => {
-                const deleteSpy = jest.spyOn(store, 'deleteItem');
+                const deleteSpy = vi.spyOn(store, 'deleteItem');
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
 
                 fieldComponent.deleteItem('1');
@@ -277,14 +278,14 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should reorder items when not disabled', () => {
-                const reorderDataSpy = jest.spyOn(store, 'reorderData');
+                const reorderDataSpy = vi.spyOn(store, 'reorderData');
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
                 expect(reorderDataSpy).toHaveBeenCalledWith(store.data());
             });
 
             it('should not reorder items with invalid indices', () => {
-                const reorderDataSpy = jest.spyOn(store, 'reorderData');
+                const reorderDataSpy = vi.spyOn(store, 'reorderData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: null, dropIndex: 1 });
@@ -315,10 +316,10 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should call showExistingContentDialog without errors', () => {
-                const openSpy = jest.spyOn(dialogService, 'open');
+                const openSpy = vi.spyOn(dialogService, 'open');
                 const mockDialogRef = {
                     onClose: of([]),
-                    close: jest.fn()
+                    close: vi.fn()
                 };
                 openSpy.mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
@@ -332,10 +333,10 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
                 const mockDialogRef = {
                     onClose: of([newContentlet]),
-                    close: jest.fn()
+                    close: vi.fn()
                 };
 
-                jest.spyOn(dialogService, 'open').mockReturnValue(
+                vi.spyOn(dialogService, 'open').mockReturnValue(
                     mockDialogRef as unknown as DynamicDialogRef
                 );
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
@@ -349,13 +350,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             it('should handle dialog close with no selection', () => {
                 const mockDialogRef = {
                     onClose: of(null),
-                    close: jest.fn()
+                    close: vi.fn()
                 };
 
-                jest.spyOn(dialogService, 'open').mockReturnValue(
+                vi.spyOn(dialogService, 'open').mockReturnValue(
                     mockDialogRef as unknown as DynamicDialogRef
                 );
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const setDataSpy = vi.spyOn(store, 'setData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
 
@@ -367,7 +368,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         });
 
         describe('Create New Content Dialog', () => {
-            let openSpy: jest.SpyInstance;
+            let openSpy: MockInstance;
             let mockDialogRef: DynamicDialogRef;
 
             beforeEach(async () => {
@@ -398,11 +399,11 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 // Set up spy and mock dialog ref
                 mockDialogRef = {
                     onClose: of(null),
-                    close: jest.fn()
+                    close: vi.fn()
                 } as unknown as DynamicDialogRef;
 
                 // Set up spy on the service instance
-                openSpy = jest
+                openSpy = vi
                     .spyOn(dialogService, 'open')
                     .mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
             });
@@ -434,7 +435,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not open dialog when disabled', () => {
-                const openSpy = jest.spyOn(dialogService, 'open');
+                const openSpy = vi.spyOn(dialogService, 'open');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
@@ -448,7 +449,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should not open dialog when content type is not available', () => {
                 // Mock the store's contentType method to return null
-                jest.spyOn(store, 'contentType').mockReturnValue(null);
+                vi.spyOn(store, 'contentType').mockReturnValue(null);
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
 
@@ -460,7 +461,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should handle content creation callback', async () => {
                 const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const setDataSpy = vi.spyOn(store, 'setData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 await fieldComponent.showCreateNewContentDialog();
@@ -624,33 +625,33 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         mockProvider(DotMessageService, {
-            get: jest.fn().mockReturnValue('Mock Message')
+            get: vi.fn().mockReturnValue('Mock Message')
         }),
         mockProvider(DotContentTypeService, {
-            getContentType: jest.fn().mockReturnValue(of(mockContentType))
+            getContentType: vi.fn().mockReturnValue(of(mockContentType))
         }),
         mockProvider(DotHttpErrorManagerService, {
-            handle: jest.fn()
+            handle: vi.fn()
         }),
         mockProvider(DotCurrentUserService),
         // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
         // must be mocked or the real store throws on construction.
         mockProvider(DotPropertiesService, {
-            getFeatureFlags: jest
+            getFeatureFlags: vi
                 .fn()
                 .mockReturnValue(
                     of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
                 )
         }),
         mockProvider(DotEditContentStore, {
-            contentType: jest.fn().mockReturnValue(null),
-            currentLocale: jest.fn().mockReturnValue(null),
-            isCopyingLocale: jest.fn().mockReturnValue(false),
-            isDialogMode: jest.fn().mockReturnValue(false),
-            contentlet: jest.fn().mockReturnValue(null)
+            contentType: vi.fn().mockReturnValue(null),
+            currentLocale: vi.fn().mockReturnValue(null),
+            isCopyingLocale: vi.fn().mockReturnValue(false),
+            isDialogMode: vi.fn().mockReturnValue(false),
+            contentlet: vi.fn().mockReturnValue(null)
         }),
         mockProvider(DotEditContentService, {
-            getContentById: jest.fn().mockReturnValue(of({}))
+            getContentById: vi.fn().mockReturnValue(of({}))
         }),
         DialogService
     ];

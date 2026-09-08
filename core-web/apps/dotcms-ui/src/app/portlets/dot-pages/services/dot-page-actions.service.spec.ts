@@ -1,5 +1,6 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -33,7 +34,7 @@ import { DotPageListService } from './dot-page-list.service';
 import { DotCMSPagesStore } from '../store/store';
 
 type PagesStoreMock = {
-    getFavoritePages: jest.Mock;
+    getFavoritePages: Mock;
 };
 
 const MOCK_USER = {
@@ -137,19 +138,19 @@ const MOCK_ENVIRONMENTS: DotEnvironment[] = [
 
 describe('DotPageActionsService', () => {
     let spectator: SpectatorService<DotPageActionsService>;
-    let mockMessageService: jest.Mocked<DotMessageService>;
-    let mockActionsService: jest.Mocked<DotWorkflowsActionsService>;
-    let mockRouterService: jest.Mocked<DotRouterService>;
-    let mockEventsService: jest.Mocked<DotEventsService>;
-    let mockDialogService: jest.Mocked<DialogService>;
-    let mockWorkflowEventHandlerService: jest.Mocked<DotWorkflowEventHandlerService>;
-    let mockWorkflowActionsFireService: jest.Mocked<DotWorkflowActionsFireService>;
-    let mockHttpErrorManagerService: jest.Mocked<DotHttpErrorManagerService>;
-    let mockPushPublishDialogService: jest.Mocked<DotPushPublishDialogService>;
-    let mockCurrentUserService: jest.Mocked<DotCurrentUserService>;
-    let mockPushPublishService: jest.Mocked<PushPublishService>;
+    let mockMessageService: Mocked<DotMessageService>;
+    let mockActionsService: Mocked<DotWorkflowsActionsService>;
+    let mockRouterService: Mocked<DotRouterService>;
+    let mockEventsService: Mocked<DotEventsService>;
+    let mockDialogService: Mocked<DialogService>;
+    let mockWorkflowEventHandlerService: Mocked<DotWorkflowEventHandlerService>;
+    let mockWorkflowActionsFireService: Mocked<DotWorkflowActionsFireService>;
+    let mockHttpErrorManagerService: Mocked<DotHttpErrorManagerService>;
+    let mockPushPublishDialogService: Mocked<DotPushPublishDialogService>;
+    let mockCurrentUserService: Mocked<DotCurrentUserService>;
+    let mockPushPublishService: Mocked<PushPublishService>;
     let mockPagesStore: PagesStoreMock;
-    let mockDotPageListService: jest.Mocked<Pick<DotPageListService, 'getFavoritePageByURL'>>;
+    let mockDotPageListService: Mocked<Pick<DotPageListService, 'getFavoritePageByURL'>>;
 
     const createService = createServiceFactory({
         service: DotPageActionsService,
@@ -159,58 +160,58 @@ describe('DotPageActionsService', () => {
     beforeEach(() => {
         // Setup all mocks before creating service
         mockMessageService = {
-            get: jest.fn((key: string) => key)
-        } as unknown as jest.Mocked<DotMessageService>;
+            get: vi.fn((key: string) => key)
+        } as unknown as Mocked<DotMessageService>;
 
         mockActionsService = {
-            getByInode: jest.fn().mockReturnValue(of([MOCK_WORKFLOW_ACTION_NO_INPUTS]))
-        } as unknown as jest.Mocked<DotWorkflowsActionsService>;
+            getByInode: vi.fn().mockReturnValue(of([MOCK_WORKFLOW_ACTION_NO_INPUTS]))
+        } as unknown as Mocked<DotWorkflowsActionsService>;
 
         mockRouterService = {
-            goToEditContentlet: jest.fn()
-        } as unknown as jest.Mocked<DotRouterService>;
+            goToEditContentlet: vi.fn()
+        } as unknown as Mocked<DotRouterService>;
 
         mockEventsService = {
-            notify: jest.fn()
-        } as unknown as jest.Mocked<DotEventsService>;
+            notify: vi.fn()
+        } as unknown as Mocked<DotEventsService>;
 
         mockDialogService = {
-            open: jest.fn()
-        } as unknown as jest.Mocked<DialogService>;
+            open: vi.fn()
+        } as unknown as Mocked<DialogService>;
 
         mockWorkflowEventHandlerService = {
-            open: jest.fn()
-        } as unknown as jest.Mocked<DotWorkflowEventHandlerService>;
+            open: vi.fn()
+        } as unknown as Mocked<DotWorkflowEventHandlerService>;
 
         mockWorkflowActionsFireService = {
-            fireTo: jest.fn().mockReturnValue(of({ success: true })),
-            deleteContentlet: jest.fn().mockReturnValue(of({ success: true }))
-        } as unknown as jest.Mocked<DotWorkflowActionsFireService>;
+            fireTo: vi.fn().mockReturnValue(of({ success: true })),
+            deleteContentlet: vi.fn().mockReturnValue(of({ success: true }))
+        } as unknown as Mocked<DotWorkflowActionsFireService>;
 
         mockHttpErrorManagerService = {
-            handle: jest.fn()
-        } as unknown as jest.Mocked<DotHttpErrorManagerService>;
+            handle: vi.fn()
+        } as unknown as Mocked<DotHttpErrorManagerService>;
 
         mockPushPublishDialogService = {
-            open: jest.fn()
-        } as unknown as jest.Mocked<DotPushPublishDialogService>;
+            open: vi.fn()
+        } as unknown as Mocked<DotPushPublishDialogService>;
 
         mockCurrentUserService = {
-            getCurrentUser: jest.fn().mockReturnValue(of(MOCK_USER)),
-            getUserPermissions: jest.fn().mockReturnValue(of(MOCK_PERMISSIONS))
-        } as unknown as jest.Mocked<DotCurrentUserService>;
+            getCurrentUser: vi.fn().mockReturnValue(of(MOCK_USER)),
+            getUserPermissions: vi.fn().mockReturnValue(of(MOCK_PERMISSIONS))
+        } as unknown as Mocked<DotCurrentUserService>;
 
         mockPushPublishService = {
-            getEnvironments: jest.fn().mockReturnValue(of(MOCK_ENVIRONMENTS))
-        } as unknown as jest.Mocked<PushPublishService>;
+            getEnvironments: vi.fn().mockReturnValue(of(MOCK_ENVIRONMENTS))
+        } as unknown as Mocked<PushPublishService>;
 
         mockPagesStore = {
-            getFavoritePages: jest.fn()
+            getFavoritePages: vi.fn()
         };
 
         mockDotPageListService = {
             // For non-favorite pages the service queries by URL; returning `undefined` means "not found".
-            getFavoritePageByURL: jest
+            getFavoritePageByURL: vi
                 .fn()
                 .mockReturnValue(of(undefined as unknown as DotCMSContentlet))
         };
@@ -241,7 +242,7 @@ describe('DotPageActionsService', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create', () => {
@@ -263,98 +264,106 @@ describe('DotPageActionsService', () => {
     });
 
     describe('getItems', () => {
-        it('should fetch workflow actions for contentlet', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                expect(mockActionsService.getByInode).toHaveBeenCalledWith(
-                    MOCK_HTMLPAGE_CONTENTLET.inode,
-                    DotRenderMode.LISTING
-                );
-                expect(items.length).toBeGreaterThan(0);
-                done();
-            });
-        });
+        it('should fetch workflow actions for contentlet', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    expect(mockActionsService.getByInode).toHaveBeenCalledWith(
+                        MOCK_HTMLPAGE_CONTENTLET.inode,
+                        DotRenderMode.LISTING
+                    );
+                    expect(items.length).toBeGreaterThan(0);
+                    done();
+                });
+            }));
 
-        it('should return menu items with workflow actions', (done) => {
-            mockActionsService.getByInode.mockReturnValue(
-                of([MOCK_WORKFLOW_ACTION_NO_INPUTS, MOCK_WORKFLOW_ACTION_WITH_INPUTS])
-            );
-
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const workflowItems = items.filter((item) => !item.separator);
-                const hasPublishAction = workflowItems.some(
-                    (item) => item.label === MOCK_WORKFLOW_ACTION_NO_INPUTS.name
-                );
-                const hasApproveAction = workflowItems.some(
-                    (item) => item.label === MOCK_WORKFLOW_ACTION_WITH_INPUTS.name
+        it('should return menu items with workflow actions', () =>
+            new Promise<void>((done) => {
+                mockActionsService.getByInode.mockReturnValue(
+                    of([MOCK_WORKFLOW_ACTION_NO_INPUTS, MOCK_WORKFLOW_ACTION_WITH_INPUTS])
                 );
 
-                expect(hasPublishAction).toBe(true);
-                expect(hasApproveAction).toBe(true);
-                done();
-            });
-        });
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const workflowItems = items.filter((item) => !item.separator);
+                    const hasPublishAction = workflowItems.some(
+                        (item) => item.label === MOCK_WORKFLOW_ACTION_NO_INPUTS.name
+                    );
+                    const hasApproveAction = workflowItems.some(
+                        (item) => item.label === MOCK_WORKFLOW_ACTION_WITH_INPUTS.name
+                    );
 
-        it('should include separator in menu items', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const hasSeparator = items.some((item) => item.separator === true);
-                expect(hasSeparator).toBe(true);
-                done();
-            });
-        });
+                    expect(hasPublishAction).toBe(true);
+                    expect(hasApproveAction).toBe(true);
+                    done();
+                });
+            }));
+
+        it('should include separator in menu items', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const hasSeparator = items.some((item) => item.separator === true);
+                    expect(hasSeparator).toBe(true);
+                    done();
+                });
+            }));
     });
 
     describe('Menu Items for HTML Pages with Edit Permission', () => {
-        it('should include favorite page action for non-archived pages', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const favoriteAction = items.find((item) =>
-                    item.label?.includes('favoritePage.contextMenu.action')
-                );
-                expect(favoriteAction).toBeTruthy();
-                done();
-            });
-        });
-
-        it('should not include favorite page action for archived pages', (done) => {
-            spectator.service.getItems(MOCK_ARCHIVED_PAGE).subscribe((items) => {
-                const favoriteAction = items.find((item) =>
-                    item.label?.includes('favoritePage.contextMenu.action')
-                );
-                expect(favoriteAction).toBeFalsy();
-                done();
-            });
-        });
-
-        it('should include edit action for HTML pages when user has write permission', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const editAction = items.find((item) => item.label === 'Edit');
-                expect(editAction).toBeTruthy();
-                done();
-            });
-        });
-
-        it('should include add to bundle action (disabled)', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe({
-                next: (items) => {
-                    const bundleAction = items.find((item) =>
-                        item.label?.includes('add_to_bundle')
+        it('should include favorite page action for non-archived pages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const favoriteAction = items.find((item) =>
+                        item.label?.includes('favoritePage.contextMenu.action')
                     );
-                    expect(bundleAction).toBeTruthy();
-                    expect(bundleAction?.disabled).toBe(true);
+                    expect(favoriteAction).toBeTruthy();
                     done();
-                },
-                error: (err) => done(err)
-            });
-        });
+                });
+            }));
 
-        it('should include push publish action when environments exist', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const pushPublishAction = items.find((item) =>
-                    item.label?.includes('push_publish')
-                );
-                expect(pushPublishAction).toBeTruthy();
-                done();
-            });
-        });
+        it('should not include favorite page action for archived pages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_ARCHIVED_PAGE).subscribe((items) => {
+                    const favoriteAction = items.find((item) =>
+                        item.label?.includes('favoritePage.contextMenu.action')
+                    );
+                    expect(favoriteAction).toBeFalsy();
+                    done();
+                });
+            }));
+
+        it('should include edit action for HTML pages when user has write permission', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const editAction = items.find((item) => item.label === 'Edit');
+                    expect(editAction).toBeTruthy();
+                    done();
+                });
+            }));
+
+        it('should include add to bundle action (disabled)', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe({
+                    next: (items) => {
+                        const bundleAction = items.find((item) =>
+                            item.label?.includes('add_to_bundle')
+                        );
+                        expect(bundleAction).toBeTruthy();
+                        expect(bundleAction?.disabled).toBe(true);
+                        done();
+                    },
+                    error: (err) => done(err)
+                });
+            }));
+
+        it('should include push publish action when environments exist', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const pushPublishAction = items.find((item) =>
+                        item.label?.includes('push_publish')
+                    );
+                    expect(pushPublishAction).toBeTruthy();
+                    done();
+                });
+            }));
 
         // Note: Testing without push publish environments requires a separate test suite
         // with different service initialization. The presence of environments is tested
@@ -362,13 +371,14 @@ describe('DotPageActionsService', () => {
     });
 
     describe('Menu Items for Content with Edit Permission', () => {
-        it('should include edit action for contentlets when user has write permission', (done) => {
-            spectator.service.getItems(MOCK_CONTENT_CONTENTLET).subscribe((items) => {
-                const editAction = items.find((item) => item.label === 'Edit');
-                expect(editAction).toBeTruthy();
-                done();
-            });
-        });
+        it('should include edit action for contentlets when user has write permission', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_CONTENT_CONTENTLET).subscribe((items) => {
+                    const editAction = items.find((item) => item.label === 'Edit');
+                    expect(editAction).toBeTruthy();
+                    done();
+                });
+            }));
     });
 
     describe('Menu Items Without Edit Permission', () => {
@@ -378,58 +388,63 @@ describe('DotPageActionsService', () => {
     });
 
     describe('Favorite Page Actions', () => {
-        it('should show "add" label for non-favorite pages', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const favoriteAction = items.find((item) =>
-                    item.label?.includes('favoritePage.contextMenu.action.add')
-                );
-                expect(favoriteAction).toBeTruthy();
-                done();
-            });
-        });
+        it('should show "add" label for non-favorite pages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const favoriteAction = items.find((item) =>
+                        item.label?.includes('favoritePage.contextMenu.action.add')
+                    );
+                    expect(favoriteAction).toBeTruthy();
+                    done();
+                });
+            }));
 
-        it('should show "edit" label for favorite pages', (done) => {
-            spectator.service.getItems(MOCK_FAVORITE_PAGE).subscribe((items) => {
-                const favoriteAction = items.find((item) =>
-                    item.label?.includes('favoritePage.contextMenu.action.edit')
-                );
-                expect(favoriteAction).toBeTruthy();
-                done();
-            });
-        });
+        it('should show "edit" label for favorite pages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_FAVORITE_PAGE).subscribe((items) => {
+                    const favoriteAction = items.find((item) =>
+                        item.label?.includes('favoritePage.contextMenu.action.edit')
+                    );
+                    expect(favoriteAction).toBeTruthy();
+                    done();
+                });
+            }));
 
-        it('should include delete favorite action for favorite pages', (done) => {
-            spectator.service.getItems(MOCK_FAVORITE_PAGE).subscribe((items) => {
-                const deleteAction = items.find((item) =>
-                    item.label?.includes('favoritePage.dialog.delete.button')
-                );
-                expect(deleteAction).toBeTruthy();
-                done();
-            });
-        });
+        it('should include delete favorite action for favorite pages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_FAVORITE_PAGE).subscribe((items) => {
+                    const deleteAction = items.find((item) =>
+                        item.label?.includes('favoritePage.dialog.delete.button')
+                    );
+                    expect(deleteAction).toBeTruthy();
+                    done();
+                });
+            }));
 
-        it('should not include delete favorite action for non-favorite pages', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const deleteAction = items.find((item) =>
-                    item.label?.includes('favoritePage.dialog.delete.button')
-                );
-                expect(deleteAction).toBeFalsy();
-                done();
-            });
-        });
+        it('should not include delete favorite action for non-favorite pages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const deleteAction = items.find((item) =>
+                        item.label?.includes('favoritePage.dialog.delete.button')
+                    );
+                    expect(deleteAction).toBeFalsy();
+                    done();
+                });
+            }));
 
-        it('should open favorite page dialog when add favorite is clicked', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const favoriteAction = items.find((item) =>
-                    item.label?.includes('favoritePage.contextMenu.action.add')
-                );
+        it('should open favorite page dialog when add favorite is clicked', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const favoriteAction = items.find((item) =>
+                        item.label?.includes('favoritePage.contextMenu.action.add')
+                    );
 
-                favoriteAction?.command?.({} as unknown);
+                    favoriteAction?.command?.({} as unknown);
 
-                expect(mockDialogService.open).toHaveBeenCalled();
-                done();
-            });
-        });
+                    expect(mockDialogService.open).toHaveBeenCalled();
+                    done();
+                });
+            }));
 
         it('should delete favorite page when delete is clicked', fakeAsync(() => {
             spectator.service.getItems(MOCK_FAVORITE_PAGE).subscribe((items) => {
@@ -470,36 +485,38 @@ describe('DotPageActionsService', () => {
     });
 
     describe('Edit Action', () => {
-        it('should navigate to edit contentlet when edit is clicked', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const editAction = items.find((item) => item.label === 'Edit');
+        it('should navigate to edit contentlet when edit is clicked', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const editAction = items.find((item) => item.label === 'Edit');
 
-                editAction?.command?.({} as unknown);
+                    editAction?.command?.({} as unknown);
 
-                expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
-                    MOCK_HTMLPAGE_CONTENTLET.inode
-                );
-                done();
-            });
-        });
+                    expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
+                        MOCK_HTMLPAGE_CONTENTLET.inode
+                    );
+                    done();
+                });
+            }));
     });
 
     describe('Push Publish Action', () => {
-        it('should open push publish dialog when clicked', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const pushPublishAction = items.find((item) =>
-                    item.label?.includes('push_publish')
-                );
+        it('should open push publish dialog when clicked', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const pushPublishAction = items.find((item) =>
+                        item.label?.includes('push_publish')
+                    );
 
-                pushPublishAction?.command?.({} as unknown);
+                    pushPublishAction?.command?.({} as unknown);
 
-                expect(mockPushPublishDialogService.open).toHaveBeenCalledWith({
-                    assetIdentifier: MOCK_HTMLPAGE_CONTENTLET.identifier,
-                    title: 'contenttypes.content.push_publish'
+                    expect(mockPushPublishDialogService.open).toHaveBeenCalledWith({
+                        assetIdentifier: MOCK_HTMLPAGE_CONTENTLET.identifier,
+                        title: 'contenttypes.content.push_publish'
+                    });
+                    done();
                 });
-                done();
-            });
-        });
+            }));
     });
 
     describe('Workflow Actions', () => {
@@ -525,25 +542,28 @@ describe('DotPageActionsService', () => {
             });
         }));
 
-        it('should open workflow wizard when inputs are required', (done) => {
-            mockActionsService.getByInode.mockReturnValue(of([MOCK_WORKFLOW_ACTION_WITH_INPUTS]));
-
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const workflowAction = items.find(
-                    (item) => item.label === MOCK_WORKFLOW_ACTION_WITH_INPUTS.name
+        it('should open workflow wizard when inputs are required', () =>
+            new Promise<void>((done) => {
+                mockActionsService.getByInode.mockReturnValue(
+                    of([MOCK_WORKFLOW_ACTION_WITH_INPUTS])
                 );
 
-                workflowAction?.command?.({} as unknown);
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const workflowAction = items.find(
+                        (item) => item.label === MOCK_WORKFLOW_ACTION_WITH_INPUTS.name
+                    );
 
-                expect(mockWorkflowEventHandlerService.open).toHaveBeenCalledWith({
-                    workflow: MOCK_WORKFLOW_ACTION_WITH_INPUTS,
-                    callback: 'ngWorkflowEventCallback',
-                    inode: MOCK_HTMLPAGE_CONTENTLET.inode
+                    workflowAction?.command?.({} as unknown);
+
+                    expect(mockWorkflowEventHandlerService.open).toHaveBeenCalledWith({
+                        workflow: MOCK_WORKFLOW_ACTION_WITH_INPUTS,
+                        callback: 'ngWorkflowEventCallback',
+                        inode: MOCK_HTMLPAGE_CONTENTLET.inode
+                    });
+                    expect(mockWorkflowActionsFireService.fireTo).not.toHaveBeenCalled();
+                    done();
                 });
-                expect(mockWorkflowActionsFireService.fireTo).not.toHaveBeenCalled();
-                done();
-            });
-        });
+            }));
 
         it('should handle workflow action error', fakeAsync(() => {
             const error = new Error('Workflow error');
@@ -567,92 +587,100 @@ describe('DotPageActionsService', () => {
     });
 
     describe('Menu Item Ordering', () => {
-        it('should have favorite action at the beginning for non-archived pages', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const firstNonSeparatorItem = items.find((item) => !item.separator);
-                expect(firstNonSeparatorItem?.label).toContain('favoritePage.contextMenu.action');
-                done();
-            });
-        });
+        it('should have favorite action at the beginning for non-archived pages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const firstNonSeparatorItem = items.find((item) => !item.separator);
+                    expect(firstNonSeparatorItem?.label).toContain(
+                        'favoritePage.contextMenu.action'
+                    );
+                    done();
+                });
+            }));
 
-        it('should have separator after favorite actions', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const favoriteActionIndex = items.findIndex((item) =>
-                    item.label?.includes('favoritePage.contextMenu.action')
-                );
-                const nextSeparatorIndex = items.findIndex(
-                    (item, index) => index > favoriteActionIndex && item.separator
-                );
+        it('should have separator after favorite actions', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const favoriteActionIndex = items.findIndex((item) =>
+                        item.label?.includes('favoritePage.contextMenu.action')
+                    );
+                    const nextSeparatorIndex = items.findIndex(
+                        (item, index) => index > favoriteActionIndex && item.separator
+                    );
 
-                expect(nextSeparatorIndex).toBeGreaterThan(favoriteActionIndex);
-                done();
-            });
-        });
+                    expect(nextSeparatorIndex).toBeGreaterThan(favoriteActionIndex);
+                    done();
+                });
+            }));
 
-        it('should have workflow actions after separator', (done) => {
-            mockActionsService.getByInode.mockReturnValue(of([MOCK_WORKFLOW_ACTION_NO_INPUTS]));
+        it('should have workflow actions after separator', () =>
+            new Promise<void>((done) => {
+                mockActionsService.getByInode.mockReturnValue(of([MOCK_WORKFLOW_ACTION_NO_INPUTS]));
 
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const separatorIndex = items.findIndex((item) => item.separator);
-                const workflowActionIndex = items.findIndex(
-                    (item) => item.label === MOCK_WORKFLOW_ACTION_NO_INPUTS.name
-                );
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const separatorIndex = items.findIndex((item) => item.separator);
+                    const workflowActionIndex = items.findIndex(
+                        (item) => item.label === MOCK_WORKFLOW_ACTION_NO_INPUTS.name
+                    );
 
-                expect(workflowActionIndex).toBeGreaterThan(separatorIndex);
-                done();
-            });
-        });
+                    expect(workflowActionIndex).toBeGreaterThan(separatorIndex);
+                    done();
+                });
+            }));
     });
 
     describe('Edge Cases', () => {
-        it('should handle contentlet without baseType', (done) => {
-            const contentletWithoutBaseType = {
-                ...MOCK_HTMLPAGE_CONTENTLET,
-                baseType: undefined
-            } as DotCMSContentlet;
+        it('should handle contentlet without baseType', () =>
+            new Promise<void>((done) => {
+                const contentletWithoutBaseType = {
+                    ...MOCK_HTMLPAGE_CONTENTLET,
+                    baseType: undefined
+                } as DotCMSContentlet;
 
-            spectator.service.getItems(contentletWithoutBaseType).subscribe((items) => {
-                const editAction = items.find((item) => item.label === 'Edit');
-                expect(editAction).toBeFalsy();
-                done();
-            });
-        });
+                spectator.service.getItems(contentletWithoutBaseType).subscribe((items) => {
+                    const editAction = items.find((item) => item.label === 'Edit');
+                    expect(editAction).toBeFalsy();
+                    done();
+                });
+            }));
 
-        it('should handle empty workflow actions array', (done) => {
-            mockActionsService.getByInode.mockReturnValue(of([]));
+        it('should handle empty workflow actions array', () =>
+            new Promise<void>((done) => {
+                mockActionsService.getByInode.mockReturnValue(of([]));
 
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const workflowItems = items.filter(
-                    (item) =>
-                        !item.separator &&
-                        item.label !== 'Edit' &&
-                        !item.label?.includes('favorite') &&
-                        !item.label?.includes('bundle') &&
-                        !item.label?.includes('push')
-                );
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const workflowItems = items.filter(
+                        (item) =>
+                            !item.separator &&
+                            item.label !== 'Edit' &&
+                            !item.label?.includes('favorite') &&
+                            !item.label?.includes('bundle') &&
+                            !item.label?.includes('push')
+                    );
 
-                expect(workflowItems).toHaveLength(0);
-                done();
-            });
-        });
+                    expect(workflowItems).toHaveLength(0);
+                    done();
+                });
+            }));
 
-        it('should handle workflow action with empty actionInputs array', (done) => {
-            const actionWithEmptyInputs = {
-                ...MOCK_WORKFLOW_ACTION_NO_INPUTS,
-                actionInputs: []
-            };
-            mockActionsService.getByInode.mockReturnValue(of([actionWithEmptyInputs]));
+        it('should handle workflow action with empty actionInputs array', () =>
+            new Promise<void>((done) => {
+                const actionWithEmptyInputs = {
+                    ...MOCK_WORKFLOW_ACTION_NO_INPUTS,
+                    actionInputs: []
+                };
+                mockActionsService.getByInode.mockReturnValue(of([actionWithEmptyInputs]));
 
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const workflowAction = items.find(
-                    (item) => item.label === actionWithEmptyInputs.name
-                );
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    const workflowAction = items.find(
+                        (item) => item.label === actionWithEmptyInputs.name
+                    );
 
-                expect(workflowAction).toBeTruthy();
-                expect(workflowAction?.command).toBeDefined();
-                done();
-            });
-        });
+                    expect(workflowAction).toBeTruthy();
+                    expect(workflowAction?.command).toBeDefined();
+                    done();
+                });
+            }));
     });
 
     describe('Integration Workflows', () => {
@@ -717,39 +745,41 @@ describe('DotPageActionsService', () => {
             });
         }));
 
-        it('should handle complete edit workflow', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                // Step 1: User clicks edit
-                const editAction = items.find((item) => item.label === 'Edit');
-                expect(editAction).toBeTruthy();
+        it('should handle complete edit workflow', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    // Step 1: User clicks edit
+                    const editAction = items.find((item) => item.label === 'Edit');
+                    expect(editAction).toBeTruthy();
 
-                // Step 2: Router navigates to edit page
-                editAction?.command?.({} as unknown);
+                    // Step 2: Router navigates to edit page
+                    editAction?.command?.({} as unknown);
 
-                expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
-                    MOCK_HTMLPAGE_CONTENTLET.inode
-                );
-                done();
-            });
-        });
-
-        it('should handle complete push publish workflow', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                // Step 1: User clicks push publish
-                const pushPublishAction = items.find((item) =>
-                    item.label?.includes('push_publish')
-                );
-                expect(pushPublishAction).toBeTruthy();
-
-                // Step 2: Push publish dialog opens
-                pushPublishAction?.command?.({} as unknown);
-
-                expect(mockPushPublishDialogService.open).toHaveBeenCalledWith({
-                    assetIdentifier: MOCK_HTMLPAGE_CONTENTLET.identifier,
-                    title: 'contenttypes.content.push_publish'
+                    expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
+                        MOCK_HTMLPAGE_CONTENTLET.inode
+                    );
+                    done();
                 });
-                done();
-            });
-        });
+            }));
+
+        it('should handle complete push publish workflow', () =>
+            new Promise<void>((done) => {
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
+                    // Step 1: User clicks push publish
+                    const pushPublishAction = items.find((item) =>
+                        item.label?.includes('push_publish')
+                    );
+                    expect(pushPublishAction).toBeTruthy();
+
+                    // Step 2: Push publish dialog opens
+                    pushPublishAction?.command?.({} as unknown);
+
+                    expect(mockPushPublishDialogService.open).toHaveBeenCalledWith({
+                        assetIdentifier: MOCK_HTMLPAGE_CONTENTLET.identifier,
+                        title: 'contenttypes.content.push_publish'
+                    });
+                    done();
+                });
+            }));
     });
 });

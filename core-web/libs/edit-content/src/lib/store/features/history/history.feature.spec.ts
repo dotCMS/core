@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -190,10 +191,10 @@ describe('HistoryFeature', () => {
 
     // Restore navigation is delegated to the EditContentHost port.
     const mockHost = {
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const withTest = () =>

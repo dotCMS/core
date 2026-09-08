@@ -1,5 +1,10 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
@@ -35,14 +40,14 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 selectedItems: mockSelectedItems
             }),
             mockProvider(MessageService, {
-                add: jest.fn()
+                add: vi.fn()
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn(),
-                editPage: jest.fn()
+                editContent: vi.fn(),
+                editPage: vi.fn()
             })
         ],
         detectChanges: false
@@ -53,7 +58,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
         messageService = spectator.inject(MessageService, true);
         navigationService = spectator.inject(DotContentDriveNavigationService, true);
 
-        jest.spyOn(messageService, 'add');
+        vi.spyOn(messageService, 'add');
 
         mockSelectedItems.set([]);
 
@@ -61,7 +66,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Component Rendering', () => {
@@ -289,7 +294,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
 
-            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+            const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
             const downloadButton = spectator.query(
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
@@ -323,7 +328,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
 
-            jest.spyOn(window, 'open').mockImplementation(() => null);
+            vi.spyOn(window, 'open').mockImplementation(() => null);
 
             const downloadButton = spectator.query(
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
@@ -343,7 +348,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             mockSelectedItems.set([]);
             spectator.detectChanges();
 
-            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+            const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
             spectator.component['download']();
 
@@ -367,7 +372,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
 
-            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+            const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
             const downloadButton = spectator.query(
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
@@ -398,7 +403,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
 
-            const windowSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+            const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
             const downloadButton = spectator.query(
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`

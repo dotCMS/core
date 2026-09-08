@@ -3,12 +3,12 @@
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
         "module": "preserve",
-        "types": ["jest", "node"],
+        "types": ["vitest/globals", "node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
         "esModuleInterop": true,
         "moduleResolution": "bundler",
         "isolatedModules": true
     },
-    "include": ["**/*.spec.ts", "**/*.test.ts", "**/*.d.ts"]
+    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "vite.config.mts"]
 }

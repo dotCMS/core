@@ -1,5 +1,11 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
@@ -20,13 +26,13 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
         component: DotContentDriveContentTypeFilterComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                getFilterValue: jest.fn().mockReturnValue(undefined),
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn()
+                getFilterValue: vi.fn().mockReturnValue(undefined),
+                patchFilters: vi.fn(),
+                removeFilter: vi.fn()
             }),
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of([])),
-                getContentTypesWithPagination: jest.fn().mockReturnValue(
+                getAllContentTypes: vi.fn().mockReturnValue(of([])),
+                getContentTypesWithPagination: vi.fn().mockReturnValue(
                     of({
                         contentTypes: [],
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
@@ -55,7 +61,7 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
         store.getFilterValue.mockReset().mockReturnValue(undefined);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should render the shared content-type filter', () => {
         spectator.detectChanges();

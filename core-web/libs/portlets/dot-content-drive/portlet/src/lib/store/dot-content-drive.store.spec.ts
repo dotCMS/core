@@ -1,11 +1,11 @@
-import { describe, expect } from '@jest/globals';
 import {
     createServiceFactory,
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { NEVER, of, Subject, throwError } from 'rxjs';
+import { Mock, Mocked, describe, expect, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
@@ -84,17 +84,17 @@ describe('DotContentDriveStore', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
+                siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST)
             }),
             mockProvider(DotContentDriveService),
             // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
             // rather than a fixed `of(...)` so a test can control *when* — the store subscribes
             // during construction, and "hasn't answered yet" is a case the flag has to get right.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn(() => currentUser$)
+                getCurrentUser: vi.fn(() => currentUser$)
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -102,23 +102,23 @@ describe('DotContentDriveStore', () => {
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1039,17 +1039,17 @@ describe('DotContentDriveStore - onInit', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -1057,23 +1057,23 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1108,20 +1108,20 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
         providers: [
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -1129,19 +1129,19 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1149,7 +1149,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
 
     /** Invokes the popstate handler the store registered in onInit with the given restored URL. */
     const popstate = (url: string) => {
-        const subscribe = spectator.inject(Location).subscribe as jest.Mock;
+        const subscribe = spectator.inject(Location).subscribe as Mock;
         const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
         handler({ url });
     };
@@ -1194,7 +1194,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             filters: { contentType: ['Blog'] },
             isTreeExpanded: true
         });
-        const initSpy = jest.spyOn(store, 'initContentDrive');
+        const initSpy = vi.spyOn(store, 'initContentDrive');
 
         // Same browsing params — only editContent differs (here, absent). Must be a no-op so the
         // list isn't reset/reloaded just because the side panel closed.
@@ -1215,7 +1215,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             filters: {},
             isTreeExpanded: true
         });
-        const initSpy = jest.spyOn(store, 'initContentDrive');
+        const initSpy = vi.spyOn(store, 'initContentDrive');
 
         popstate('/c/content-drive?path=/keep&isTreeExpanded=true');
 
@@ -1232,7 +1232,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             filters: { title: 'Blog', languageId: ['2'] },
             isTreeExpanded: true
         });
-        const initSpy = jest.spyOn(store, 'initContentDrive');
+        const initSpy = vi.spyOn(store, 'initContentDrive');
 
         popstate('/c/content-drive?path=/keep&filters=languageId:2;title:Blog&isTreeExpanded=true');
 
@@ -1256,29 +1256,29 @@ describe('DotContentDriveStore - default language resolution', () => {
         providers: [
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn(() => languages$)
+                get: vi.fn(() => languages$)
             }),
             provideHttpClient()
         ]
@@ -1293,7 +1293,7 @@ describe('DotContentDriveStore - default language resolution', () => {
         // The factory's spies are shared across the tests in this block, so call counts would
         // otherwise carry over. Cleared after construction but before any effect is flushed, so no
         // search has been recorded yet. (Clear, not reset: the mock implementations must survive.)
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should hold the first search until the default language resolves', () => {
@@ -1349,7 +1349,7 @@ describe('DotContentDriveStore - default language resolution', () => {
 describe('DotContentDriveStore - Content Loading Effect', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
-    let contentDriveService: jest.Mocked<DotContentDriveService>;
+    let contentDriveService: Mocked<DotContentDriveService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -1360,17 +1360,17 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -1378,23 +1378,23 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1412,7 +1412,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should fetch content when store has a non-SYSTEM_HOST site', () => {
@@ -1648,9 +1648,9 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 describe('DotContentDriveStore - withActionExecution', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
-    let fireService: jest.Mocked<DotWorkflowActionsFireService>;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
-    let bulkRefreshService: jest.Mocked<DotBulkRefreshService>;
+    let fireService: Mocked<DotWorkflowActionsFireService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
+    let bulkRefreshService: Mocked<DotBulkRefreshService>;
     /** Declared outside the factory so a test can push into the hook's subscription. */
     const bulkRefreshEvents$ = new Subject<DotBulkRefreshCompletedEvent>();
 
@@ -1659,52 +1659,52 @@ describe('DotContentDriveStore - withActionExecution', () => {
         providers: [
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotWorkflowActionsFireService, {
-                fireDefaultAction: jest.fn(),
-                bulkFire: jest.fn()
+                fireDefaultAction: vi.fn(),
+                bulkFire: vi.fn()
             }),
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
-            mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
+            mockProvider(AddToBundleService, { addToBundle: vi.fn() }),
             // `getEnvironments` on top of main's stub: `withPushPublishEnvironments` looks the
             // environments up on init, so an unstubbed one returns undefined for the observable.
             mockProvider(PushPublishService, {
-                pushPublishAssets: jest.fn(),
-                getEnvironments: jest.fn(() => of([]))
+                pushPublishAssets: vi.fn(),
+                getEnvironments: vi.fn(() => of([]))
             }),
             // Refresh is the one quick action that is job-backed: the service submits and returns, so
             // the store only ever sees a single-emission observable.
-            mockProvider(DotBulkRefreshService, { refresh: jest.fn() }),
+            mockProvider(DotBulkRefreshService, { refresh: vi.fn() }),
             // The completion event is pushed, so the socket is the seam the run settles through.
             // A Subject lets the tests below emit one without a server.
-            mockProvider(DotEventsSocket, { on: jest.fn(() => bulkRefreshEvents$) }),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotEventsSocket, { on: vi.fn(() => bulkRefreshEvents$) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1713,16 +1713,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
     beforeEach(() => {
         // The provider mocks live in the factory closure, so call counts would otherwise accumulate
         // across tests in this block.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         spectator = createService();
         store = spectator.service;
         fireService = spectator.inject(
             DotWorkflowActionsFireService
-        ) as jest.Mocked<DotWorkflowActionsFireService>;
+        ) as Mocked<DotWorkflowActionsFireService>;
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
 
         fireService.fireDefaultAction.mockReturnValue(
             of({ results: [], summary: { affected: 2, successCount: 2, failCount: 0, time: 1 } })
@@ -1731,7 +1731,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
         bulkRefreshService = spectator.inject(
             DotBulkRefreshService
-        ) as jest.Mocked<DotBulkRefreshService>;
+        ) as Mocked<DotBulkRefreshService>;
         bulkRefreshService.refresh.mockReturnValue(of({ jobId: 'job-1', submitted: 1 }));
     });
 

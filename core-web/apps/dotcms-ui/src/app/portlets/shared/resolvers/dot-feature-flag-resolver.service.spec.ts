@@ -1,4 +1,5 @@
 import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClientModule } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -23,50 +24,51 @@ describe('DotFeatureFlagResolver', () => {
         dotConfigurationService = TestBed.inject(DotPropertiesService);
     });
 
-    it('should return an observable of boolean values', (done) => {
-        const route: ActivatedRouteSnapshot = {
-            data: {
-                featuredFlagsToCheck: [
-                    FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
-                    FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
-                ]
-            },
-            url: [],
-            params: {},
-            queryParams: {},
-            fragment: '',
-            outlet: '',
-            component: undefined,
-            routeConfig: undefined,
-            title: '',
-            root: new ActivatedRouteSnapshot(),
-            parent: new ActivatedRouteSnapshot(),
-            firstChild: new ActivatedRouteSnapshot(),
-            children: [],
-            pathFromRoot: [],
-            paramMap: undefined,
-            queryParamMap: undefined
-        };
+    it('should return an observable of boolean values', () =>
+        new Promise<void>((done) => {
+            const route: ActivatedRouteSnapshot = {
+                data: {
+                    featuredFlagsToCheck: [
+                        FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
+                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
+                    ]
+                },
+                url: [],
+                params: {},
+                queryParams: {},
+                fragment: '',
+                outlet: '',
+                component: undefined,
+                routeConfig: undefined,
+                title: '',
+                root: new ActivatedRouteSnapshot(),
+                parent: new ActivatedRouteSnapshot(),
+                firstChild: new ActivatedRouteSnapshot(),
+                children: [],
+                pathFromRoot: [],
+                paramMap: undefined,
+                queryParamMap: undefined
+            };
 
-        const expectedFlagsResult: Record<string, boolean> = {
-            [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: true,
-            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: false
-        };
+            const expectedFlagsResult: Record<string, boolean> = {
+                [FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS]: true,
+                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE]: false
+            };
 
-        jest.spyOn(dotConfigurationService, 'getFeatureFlags').mockReturnValue(
-            of(expectedFlagsResult)
-        );
+            vi.spyOn(dotConfigurationService, 'getFeatureFlags').mockReturnValue(
+                of(expectedFlagsResult)
+            );
 
-        (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
-            (result: Record<string, boolean>) => {
-                expect(dotConfigurationService.getFeatureFlags).toHaveBeenCalledWith([
-                    FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
-                    FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
-                ]);
+            (resolver.resolve(route) as Observable<Record<string, boolean>>).subscribe(
+                (result: Record<string, boolean>) => {
+                    expect(dotConfigurationService.getFeatureFlags).toHaveBeenCalledWith([
+                        FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS,
+                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE
+                    ]);
 
-                expect(result).toEqual(expectedFlagsResult);
-                done();
-            }
-        );
-    });
+                    expect(result).toEqual(expectedFlagsResult);
+                    done();
+                }
+            );
+        }));
 });

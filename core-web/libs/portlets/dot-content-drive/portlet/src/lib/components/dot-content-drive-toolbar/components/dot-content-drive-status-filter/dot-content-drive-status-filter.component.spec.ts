@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -53,9 +54,9 @@ describe('DotContentDriveStatusFilterComponent', () => {
         component: DotContentDriveStatusFilterComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                getFilterValue: jest.fn(() => storedValue())
+                patchFilters: vi.fn(),
+                removeFilter: vi.fn(),
+                getFilterValue: vi.fn(() => storedValue())
             }),
             {
                 provide: DotMessageService,
@@ -84,7 +85,7 @@ describe('DotContentDriveStatusFilterComponent', () => {
         // that has flushed. Without this it starts empty and the next click looks like a replace.
         await spectator.fixture.whenStable();
         spectator.detectChanges();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     };
 
     /**
@@ -119,9 +120,9 @@ describe('DotContentDriveStatusFilterComponent', () => {
         spectator = createComponent();
         store = spectator.inject(DotContentDriveStore, true);
         spectator.detectChanges();
-        // The mockProvider's jest.fn()s are built once at factory definition, so calls leak
+        // The mockProvider's vi.fn()s are built once at factory definition, so calls leak
         // between tests. Clear recorded calls (implementations survive) so each test starts clean.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render the chip', () => {
@@ -219,17 +220,17 @@ describe('DotContentDriveStatusFilterComponent with the real store', () => {
             DotContentDriveStore,
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
-            mockProvider(DotFolderService, { getFolders: jest.fn().mockReturnValue(of([])) }),
+            mockProvider(DotFolderService, { getFolders: vi.fn().mockReturnValue(of([])) }),
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(AddToBundleService),
@@ -237,10 +238,10 @@ describe('DotContentDriveStatusFilterComponent with the real store', () => {
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             {
                 provide: DotMessageService,

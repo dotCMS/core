@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { vi } from 'vitest';
+
 import {
     cleanupActivityTracking,
     initializeActivityTracking,
@@ -19,13 +21,13 @@ describe('DotCMS Activity Tracker', () => {
     let currentTime: number;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         currentTime = BASE_TIME;
 
-        // Use jest.spyOn to properly mock Date.now()
-        jest.spyOn(Date, 'now').mockImplementation(() => currentTime);
+        // Use vi.spyOn to properly mock Date.now()
+        vi.spyOn(Date, 'now').mockImplementation(() => currentTime);
 
-        jest.useFakeTimers();
+        vi.useFakeTimers();
 
         mockConfig = {
             server: 'https://test.com',
@@ -38,15 +40,15 @@ describe('DotCMS Activity Tracker', () => {
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
-        jest.useRealTimers();
+        vi.restoreAllMocks();
+        vi.useRealTimers();
         cleanupActivityTracking();
     });
 
     describe('Initialization', () => {
         it('should initialize activity tracking and set up event listeners', () => {
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-            const documentAddEventListenerSpy = jest.spyOn(document, 'addEventListener');
+            const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+            const documentAddEventListenerSpy = vi.spyOn(document, 'addEventListener');
 
             initializeActivityTracking(mockConfig);
 
@@ -80,7 +82,7 @@ describe('DotCMS Activity Tracker', () => {
         });
 
         it('should log debug message when debug is enabled', () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
             mockConfig.debug = true;
 
             initializeActivityTracking(mockConfig);
@@ -93,7 +95,7 @@ describe('DotCMS Activity Tracker', () => {
         });
 
         it('should cleanup previous listeners before re-initializing', () => {
-            const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+            const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
 
             // Initialize twice
             initializeActivityTracking(mockConfig);
@@ -108,7 +110,7 @@ describe('DotCMS Activity Tracker', () => {
 
     describe('Visibility Change Handling', () => {
         it('should log debug message when user returns to tab', () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation();
             mockConfig.debug = true;
 
             initializeActivityTracking(mockConfig);
@@ -131,8 +133,8 @@ describe('DotCMS Activity Tracker', () => {
 
     describe('Cleanup', () => {
         it('should remove all event listeners on cleanup', () => {
-            const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
-            const documentRemoveEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+            const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+            const documentRemoveEventListenerSpy = vi.spyOn(document, 'removeEventListener');
 
             initializeActivityTracking(mockConfig);
             cleanupActivityTracking();
@@ -160,19 +162,19 @@ describe('DotCMS Activity Tracker', () => {
             initializeActivityTracking(mockConfig);
             updateSessionActivity();
 
-            const timerCount = jest.getTimerCount();
+            const timerCount = vi.getTimerCount();
             expect(timerCount).toBeGreaterThan(0);
 
             cleanupActivityTracking();
 
             // Inactivity timer should be cleared
-            expect(jest.getTimerCount()).toBe(0);
+            expect(vi.getTimerCount()).toBe(0);
         });
 
         it('should reset window analytics properties', () => {
             initializeActivityTracking(mockConfig);
             window[ANALYTICS_WINDOWS_ACTIVE_KEY] = true;
-            window[ANALYTICS_WINDOWS_CLEANUP_KEY] = jest.fn();
+            window[ANALYTICS_WINDOWS_CLEANUP_KEY] = vi.fn();
 
             cleanupActivityTracking();
 
@@ -181,7 +183,7 @@ describe('DotCMS Activity Tracker', () => {
         });
 
         it('should dispatch cleanup event', () => {
-            const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
+            const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
 
             initializeActivityTracking(mockConfig);
             cleanupActivityTracking();
@@ -218,11 +220,11 @@ describe('DotCMS Activity Tracker', () => {
 
             // Navigate to new page (cleanup + re-init)
             cleanupActivityTracking();
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
             initializeActivityTracking(mockConfig);
 
             // Old listeners should not respond
-            expect(jest.getTimerCount()).toBeGreaterThan(0);
+            expect(vi.getTimerCount()).toBeGreaterThan(0);
         });
     });
 });

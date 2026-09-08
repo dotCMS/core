@@ -4,7 +4,8 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -36,9 +37,9 @@ describe('DotContentDriveSharedAssetsFilterComponent', () => {
         component: DotContentDriveSharedAssetsFilterComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                getFilterValue: jest.fn(() => storedValue())
+                patchFilters: vi.fn(),
+                removeFilter: vi.fn(),
+                getFilterValue: vi.fn(() => storedValue())
             }),
             {
                 provide: DotMessageService,

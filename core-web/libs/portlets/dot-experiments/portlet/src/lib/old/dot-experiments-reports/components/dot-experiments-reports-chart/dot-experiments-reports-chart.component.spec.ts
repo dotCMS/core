@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockModule } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { ChartModule, UIChart } from 'primeng/chart';
 
@@ -21,7 +22,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 // spyOn an exported function with Jest
-jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1-2-3-4-5');
+vi.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1-2-3-4-5');
 
 describe('DotExperimentsReportsChartComponent', () => {
     let spectator: Spectator<DotExperimentsReportsChartComponent>;

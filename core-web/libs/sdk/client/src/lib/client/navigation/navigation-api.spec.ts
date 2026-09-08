@@ -1,3 +1,5 @@
+import { MockedClass, vi } from 'vitest';
+
 import {
     DotCMSClientConfig,
     DotRequestOptions,
@@ -10,11 +12,11 @@ import { NavigationClient } from './navigation-api';
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
 // Mock the FetchHttpClient
-jest.mock('../adapters/fetch-http-client');
+vi.mock('../adapters/fetch-http-client');
 
 describe('NavigationClient', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const validConfig: DotCMSClientConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',

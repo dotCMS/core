@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { vi } from 'vitest';
+
 import { Component, DebugElement, Directive, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
@@ -169,7 +171,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(() => {
             // Spy BEFORE creating component
             const service = TestBed.inject(FieldPropertyService);
-            jest.spyOn(service, 'getProperties').mockReturnValue([
+            vi.spyOn(service, 'getProperties').mockReturnValue([
                 'property1',
                 'property2',
                 'property3',
@@ -194,7 +196,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
 
         it('should emit false to valid when saveFieldProperties is called', () => {
-            jest.spyOn(comp.valid, 'emit');
+            vi.spyOn(comp.valid, 'emit');
             comp.saveFieldProperties();
 
             expect(comp.valid.emit).toHaveBeenCalledWith(false);
@@ -206,14 +208,14 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(() => {
             // Spy BEFORE creating component
             const service = TestBed.inject(FieldPropertyService);
-            jest.spyOn(service, 'getProperties').mockReturnValue([
+            vi.spyOn(service, 'getProperties').mockReturnValue([
                 'searchable',
                 'required',
                 'unique',
                 'indexed',
                 'listed'
             ]);
-            jest.spyOn(service, 'existsComponent').mockReturnValue(true);
+            vi.spyOn(service, 'existsComponent').mockReturnValue(true);
             createHostComponent();
         });
 
@@ -234,7 +236,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
 
         // TODO: fix because is failing intermittently
-        xit('should set system indexed and required true when you select unique', () => {
+        it.skip('should set system indexed and required true when you select unique', () => {
             comp.form.get('indexed').setValue(false);
             comp.form.get('required').setValue(false);
 
@@ -252,12 +254,8 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(() => {
             // Spy BEFORE creating component
             const service = TestBed.inject(FieldPropertyService);
-            jest.spyOn(service, 'getProperties').mockReturnValue([
-                'searchable',
-                'unique',
-                'listed'
-            ]);
-            jest.spyOn(service, 'existsComponent').mockReturnValue(true);
+            vi.spyOn(service, 'getProperties').mockReturnValue(['searchable', 'unique', 'listed']);
+            vi.spyOn(service, 'existsComponent').mockReturnValue(true);
             createHostComponent();
         });
 
@@ -273,13 +271,13 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(() => {
             // Spy BEFORE creating component
             const service = TestBed.inject(FieldPropertyService);
-            jest.spyOn(service, 'getProperties').mockReturnValue([
+            vi.spyOn(service, 'getProperties').mockReturnValue([
                 'property1',
                 'searchable',
                 'unique',
                 'listed'
             ]);
-            jest.spyOn(service, 'existsComponent').mockReturnValue(true);
+            vi.spyOn(service, 'existsComponent').mockReturnValue(true);
             createHostComponent();
         });
 
@@ -298,7 +296,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
 
     describe('transformFormValue', () => {
         beforeEach(() => {
-            jest.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
+            vi.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
                 'property1',
                 'property2'
             ]);
@@ -308,7 +306,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
             beforeEach(() => {
                 // Spy BEFORE creating component
                 const service = TestBed.inject(FieldPropertyService);
-                jest.spyOn(service, 'getProperties').mockReturnValue(['property1', 'property2']);
+                vi.spyOn(service, 'getProperties').mockReturnValue(['property1', 'property2']);
                 createHostComponent();
             });
 

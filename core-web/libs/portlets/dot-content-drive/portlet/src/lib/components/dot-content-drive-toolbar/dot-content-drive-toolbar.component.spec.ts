@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import {
     Spectator,
     SpyObject,
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
@@ -71,21 +71,21 @@ describe('DotContentDriveToolbarComponent', () => {
                 // the real preference from a panel-forced override.
                 isTreeVisuallyExpanded: isTreeExpandedSignal,
                 // The toggler disables itself while the side panel holds the tree collapsed.
-                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
-                setIsTreeExpanded: jest.fn(),
-                getFilterValue: jest.fn().mockReturnValue(undefined),
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                clearFilters: jest.fn(),
+                isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                setIsTreeExpanded: vi.fn(),
+                getFilterValue: vi.fn().mockReturnValue(undefined),
+                patchFilters: vi.fn(),
+                removeFilter: vi.fn(),
+                clearFilters: vi.fn(),
                 filters: filtersSignal,
-                setDialog: jest.fn(),
+                setDialog: vi.fn(),
                 selectedItems: selectedItemsSignal,
                 selectedNode: selectedNodeSignal,
                 userSearchableFields: signal([]),
                 userSearchableActive: signal<string[]>([]),
-                setUserSearchableFields: jest.fn(),
-                addUserSearchableField: jest.fn(),
-                clearUserSearchableFilters: jest.fn(),
+                setUserSearchableFields: vi.fn(),
+                addUserSearchableField: vi.fn(),
+                clearUserSearchableFilters: vi.fn(),
                 actionExecution: actionExecutionSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
@@ -102,11 +102,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 // Read by the Locale chip this toolbar renders: the store resolves the languages
                 // once and seeds the environment default into the `languageId` filter.
                 languages: signal(mockLocales),
-                defaultLanguageId: jest.fn().mockReturnValue(1)
+                defaultLanguageId: vi.fn().mockReturnValue(1)
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
-                getContentTypesWithPagination: jest.fn().mockReturnValue(
+                getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
+                getContentTypesWithPagination: vi.fn().mockReturnValue(
                     of({
                         contentTypes: MOCK_CONTENT_TYPES,
                         pagination: {
@@ -116,26 +116,26 @@ describe('DotContentDriveToolbarComponent', () => {
                         }
                     })
                 ),
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
             // The shared DotLanguageFilterComponent fetches the language list on init, so without
             // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
             // NetworkError rather than on anything it is testing.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.
             mockProvider(DotTagsService, {
-                getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [] }))
+                getTagsPaginated: vi.fn().mockReturnValue(of({ entity: [] }))
             }),
             mockProvider(DotCategoriesService, {
-                getChildrenPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getCategory: jest.fn().mockReturnValue(of(null))
+                getChildrenPaginated: vi.fn().mockReturnValue(of({ entity: [] })),
+                getCategoriesPaginated: vi.fn().mockReturnValue(of({ entity: [] })),
+                getCategory: vi.fn().mockReturnValue(of(null))
             }),
             mockProvider(DotContentletService, {
-                getContentletByInode: jest.fn().mockReturnValue(of(null))
+                getContentletByInode: vi.fn().mockReturnValue(of(null))
             }),
             {
                 provide: DotMessageService,
@@ -143,10 +143,10 @@ describe('DotContentDriveToolbarComponent', () => {
             },
             // Needed once a selection exists: that mounts the workflow-actions child, which injects
             // both of these.
-            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(MessageService, { add: vi.fn() }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn(),
-                editPage: jest.fn()
+                editContent: vi.fn(),
+                editPage: vi.fn()
             }),
             provideHttpClient()
         ],
@@ -160,7 +160,7 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
         selectedItemsSignal.set([]);
@@ -415,7 +415,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should emit upload when the upload button is clicked', async () => {
             await settleToolbarAnimation(spectator);
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.$upload.subscribe(emitSpy);
 
             const uploadButton = spectator
@@ -616,11 +616,10 @@ describe('DotContentDriveToolbarComponent', () => {
             // anything; the real message has to be in play for the assertion to mean something.
             const messageService = spectator.inject(DotMessageService);
 
-            jest.spyOn(messageService, 'get').mockImplementation(
-                (key: string, ...args: string[]) =>
-                    key === 'content-drive.action-center.applying'
-                        ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
-                        : key
+            vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
+                key === 'content-drive.action-center.applying'
+                    ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                    : key
             );
 
             actionExecutionSignal.set({

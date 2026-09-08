@@ -4,10 +4,10 @@
         "outDir": "../../dist/out-tsc",
         "module": "preserve",
         "target": "es2016",
-        "types": ["jest", "node"],
+        "types": ["vitest/globals", "node"],
         "moduleResolution": "bundler",
         "isolatedModules": true
     },
     "files": ["src/test-setup.ts"],
-    "include": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.d.ts"]
+    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "vite.config.mts"]
 }

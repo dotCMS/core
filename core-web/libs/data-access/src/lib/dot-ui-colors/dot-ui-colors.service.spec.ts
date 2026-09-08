@@ -1,4 +1,5 @@
 import { updatePrimaryPalette } from '@primeuix/themes';
+import { Mock, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -6,15 +7,15 @@ import { DEFAULT_COLORS, DotUiColorsService } from './dot-ui-colors.service';
 
 // Spy on updatePrimaryPalette, but keep the real palette() generator so the service
 // produces actual shades (palette() is the single source of truth under test).
-jest.mock('@primeuix/themes', () => ({
+vi.mock('@primeuix/themes', () => ({
     ...jest.requireActual('@primeuix/themes'),
-    updatePrimaryPalette: jest.fn()
+    updatePrimaryPalette: vi.fn()
 }));
 
 describe('DotUiColorsService', () => {
     let service: DotUiColorsService;
     let mockElement: HTMLElement;
-    let setPropertySpy: jest.Mock;
+    let setPropertySpy: Mock;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -23,14 +24,14 @@ describe('DotUiColorsService', () => {
 
         service = TestBed.inject(DotUiColorsService);
 
-        setPropertySpy = jest.fn();
+        setPropertySpy = vi.fn();
         mockElement = {
             style: {
                 setProperty: setPropertySpy
             }
         } as unknown as HTMLElement;
 
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('setColors', () => {
@@ -116,7 +117,7 @@ describe('DotUiColorsService', () => {
             // Set initial colors
             service.setColors(mockElement, initialColors);
             setPropertySpy.mockClear();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Call without colors parameter
             service.setColors(mockElement);
@@ -212,7 +213,7 @@ describe('DotUiColorsService', () => {
             service.setColors(mockElement, colors);
 
             expect(updatePrimaryPalette).toHaveBeenCalledTimes(1);
-            const palette = (updatePrimaryPalette as jest.Mock).mock.calls[0][0];
+            const palette = (updatePrimaryPalette as Mock).mock.calls[0][0];
 
             // Verify palette structure
             expect(palette).toHaveProperty('50');
@@ -222,11 +223,11 @@ describe('DotUiColorsService', () => {
         });
 
         it('should handle PrimeNG updatePrimaryPalette errors gracefully', () => {
-            (updatePrimaryPalette as jest.Mock).mockImplementation(() => {
+            (updatePrimaryPalette as Mock).mockImplementation(() => {
                 throw new Error('PrimeNG not initialized');
             });
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
 
             expect(() => {
                 service.setColors(mockElement, {

@@ -1,5 +1,6 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotContainer, DotConfigurationVariables, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 
@@ -42,7 +43,7 @@ describe('DotContainersService', () => {
             {
                 provide: DotPropertiesService,
                 useValue: {
-                    getKey: jest.fn().mockReturnValue(of('null'))
+                    getKey: vi.fn().mockReturnValue(of('null'))
                 }
             }
         ]
@@ -52,11 +53,11 @@ describe('DotContainersService', () => {
         spectator = createHttp();
         dotPropertiesService = spectator.inject(DotPropertiesService);
         // Reset the mock to return null by default
-        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('null'));
+        vi.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('null'));
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Constructor and Initialization', () => {
@@ -79,7 +80,7 @@ describe('DotContainersService', () => {
         });
 
         it('should filter out initial values', () => {
-            const spy = jest.fn();
+            const spy = vi.fn();
             spectator.service.defaultContainer$.subscribe(spy);
 
             // The observable filters out the initial state (initialized: false)

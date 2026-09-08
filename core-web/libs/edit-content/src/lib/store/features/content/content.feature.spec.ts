@@ -6,8 +6,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -55,10 +56,10 @@ describe('ContentFeature', () => {
     // In full-screen the RouterEditContentHost fulfils these; here we assert
     // the feature states the intent (title/breadcrumb) against the port.
     const mockHost = {
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const createStore = createServiceFactory({
@@ -76,7 +77,7 @@ describe('ContentFeature', () => {
         ],
         providers: [
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),

@@ -1,6 +1,6 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { computed, signal } from '@angular/core';
 
@@ -40,10 +40,10 @@ const makeContainer = (
 // Module-scope signals so the test store and the test bodies share state.
 // Resetting them in beforeEach makes each `it` start from a clean slate.
 const iframeLayoutLockedSignal = signal(false);
-const setEditorBoundsSpy = jest.fn();
-const setSelectedSpy = jest.fn();
-const setEditorStateSpy = jest.fn();
-const getPageSavePayloadSpy = jest.fn(
+const setEditorBoundsSpy = vi.fn();
+const setSelectedSpy = vi.fn();
+const setEditorStateSpy = vi.fn();
+const getPageSavePayloadSpy = vi.fn(
     (positionPayload: PositionPayload) => positionPayload as unknown as ActionPayload
 );
 

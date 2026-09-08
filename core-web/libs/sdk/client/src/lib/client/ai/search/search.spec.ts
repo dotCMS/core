@@ -1,5 +1,7 @@
 /// <reference types="jest" />
 
+import { MockedClass, vi } from 'vitest';
+
 import {
     DotRequestOptions,
     DotCMSClientConfig,
@@ -17,11 +19,11 @@ import { AISearch } from './search';
 import { FetchHttpClient } from '../../adapters/fetch-http-client';
 
 // Mock the FetchHttpClient
-jest.mock('../../adapters/fetch-http-client');
+vi.mock('../../adapters/fetch-http-client');
 
 describe('AISearch', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const requestOptions: DotRequestOptions = {
         cache: 'no-cache' // To simulate a valid request
@@ -351,7 +353,7 @@ describe('AISearch', () => {
                 params
             );
 
-            const onfulfilledCallback = jest.fn((data) => {
+            const onfulfilledCallback = vi.fn((data) => {
                 expect(data).toEqual(mockResponseData);
                 return data;
             });
@@ -374,7 +376,7 @@ describe('AISearch', () => {
                 params
             );
 
-            const onfulfilledCallback = jest.fn((_data) => {
+            const onfulfilledCallback = vi.fn((_data) => {
                 return undefined as unknown as DotCMSAISearchResponse<DotCMSBasicContentlet>;
             });
 
@@ -397,7 +399,7 @@ describe('AISearch', () => {
                 params
             );
 
-            const onfulfilledCallback = jest.fn((_data) => {
+            const onfulfilledCallback = vi.fn((_data) => {
                 // Callback with no return statement (returns void)
             });
 
@@ -431,71 +433,73 @@ describe('AISearch', () => {
     });
 
     describe('fetch is rejected', () => {
-        it('should trigger onrejected callback with generic error', (done) => {
-            const prompt = 'error test';
-            const indexName = 'default';
-            const params: DotCMSAISearchParams = {};
-            const aiSearch = new AISearch(
-                config,
-                requestOptions,
-                new FetchHttpClient(),
-                prompt,
-                indexName,
-                params
-            );
+        it('should trigger onrejected callback with generic error', () =>
+            new Promise<void>((done) => {
+                const prompt = 'error test';
+                const indexName = 'default';
+                const params: DotCMSAISearchParams = {};
+                const aiSearch = new AISearch(
+                    config,
+                    requestOptions,
+                    new FetchHttpClient(),
+                    prompt,
+                    indexName,
+                    params
+                );
 
-            // Mock the request to return a rejected promise
-            mockRequest.mockRejectedValue(new Error('Network connection failed'));
+                // Mock the request to return a rejected promise
+                mockRequest.mockRejectedValue(new Error('Network connection failed'));
 
-            aiSearch.then(
-                () => {
-                    fail('Expected onrejected callback to be called');
-                },
-                (error) => {
+                aiSearch.then(
+                    () => {
+                        fail('Expected onrejected callback to be called');
+                    },
+                    (error) => {
+                        expect(error).toBeInstanceOf(DotErrorAISearch);
+                        if (error instanceof DotErrorAISearch) {
+                            expect(error.params).toEqual(params);
+                            expect(error.message).toBe(
+                                'AI Search failed (fetch): Network connection failed'
+                            );
+                            expect(error.httpError).toBeUndefined();
+                        }
+                        done();
+                        return error;
+                    }
+                );
+            }));
+
+        it('should trigger catch method with generic error', () =>
+            new Promise<void>((done) => {
+                const prompt = 'catch test';
+                const indexName = 'default';
+                const params: DotCMSAISearchParams = {
+                    query: {
+                        contentType: 'Article'
+                    }
+                };
+                const aiSearch = new AISearch(
+                    config,
+                    requestOptions,
+                    new FetchHttpClient(),
+                    prompt,
+                    indexName,
+                    params
+                );
+
+                // Mock the request to return a rejected promise
+                mockRequest.mockRejectedValue(new Error('Request timeout'));
+
+                aiSearch.then().catch((error) => {
                     expect(error).toBeInstanceOf(DotErrorAISearch);
                     if (error instanceof DotErrorAISearch) {
                         expect(error.params).toEqual(params);
-                        expect(error.message).toBe(
-                            'AI Search failed (fetch): Network connection failed'
-                        );
+                        expect(error.message).toBe('AI Search failed (fetch): Request timeout');
                         expect(error.httpError).toBeUndefined();
                     }
                     done();
-                    return error;
-                }
-            );
-        });
-
-        it('should trigger catch method with generic error', (done) => {
-            const prompt = 'catch test';
-            const indexName = 'default';
-            const params: DotCMSAISearchParams = {
-                query: {
-                    contentType: 'Article'
-                }
-            };
-            const aiSearch = new AISearch(
-                config,
-                requestOptions,
-                new FetchHttpClient(),
-                prompt,
-                indexName,
-                params
-            );
-
-            // Mock the request to return a rejected promise
-            mockRequest.mockRejectedValue(new Error('Request timeout'));
-
-            aiSearch.then().catch((error) => {
-                expect(error).toBeInstanceOf(DotErrorAISearch);
-                if (error instanceof DotErrorAISearch) {
-                    expect(error.params).toEqual(params);
-                    expect(error.message).toBe('AI Search failed (fetch): Request timeout');
-                    expect(error.httpError).toBeUndefined();
-                }
-                done();
-            });
-        });
+                });
+            }));
 
         it('should trigger catch of try catch block with generic error', async () => {
             const prompt = 'try catch test';
@@ -604,52 +608,53 @@ describe('AISearch', () => {
             }
         });
 
-        it('should handle HttpError in onrejected callback', (done) => {
-            const prompt = 'onrejected http error test';
-            const indexName = 'default';
-            const params: DotCMSAISearchParams = {
-                query: {
-                    languageId: 2
-                }
-            };
-            const aiSearch = new AISearch(
-                config,
-                requestOptions,
-                new FetchHttpClient(),
-                prompt,
-                indexName,
-                params
-            );
-
-            const httpError = new DotHttpError({
-                status: 403,
-                statusText: 'Forbidden',
-                message: 'Access denied to AI search',
-                data: { error: 'Insufficient permissions' }
-            });
-
-            // Mock the request to throw an HttpError
-            mockRequest.mockRejectedValue(httpError);
-
-            aiSearch.then(
-                (response) => {
-                    fail('Expected onrejected callback to be called');
-                    return response;
-                },
-                (error) => {
-                    expect(error).toBeInstanceOf(DotErrorAISearch);
-                    if (error instanceof DotErrorAISearch) {
-                        expect(error.params).toEqual(params);
-                        expect(error.httpError).toBe(httpError);
-                        expect(error.message).toBe(
-                            'AI Search failed (fetch): Access denied to AI search'
-                        );
+        it('should handle HttpError in onrejected callback', () =>
+            new Promise<void>((done) => {
+                const prompt = 'onrejected http error test';
+                const indexName = 'default';
+                const params: DotCMSAISearchParams = {
+                    query: {
+                        languageId: 2
                     }
-                    done();
-                    return error;
-                }
-            );
-        });
+                };
+                const aiSearch = new AISearch(
+                    config,
+                    requestOptions,
+                    new FetchHttpClient(),
+                    prompt,
+                    indexName,
+                    params
+                );
+
+                const httpError = new DotHttpError({
+                    status: 403,
+                    statusText: 'Forbidden',
+                    message: 'Access denied to AI search',
+                    data: { error: 'Insufficient permissions' }
+                });
+
+                // Mock the request to throw an HttpError
+                mockRequest.mockRejectedValue(httpError);
+
+                aiSearch.then(
+                    (response) => {
+                        fail('Expected onrejected callback to be called');
+                        return response;
+                    },
+                    (error) => {
+                        expect(error).toBeInstanceOf(DotErrorAISearch);
+                        if (error instanceof DotErrorAISearch) {
+                            expect(error.params).toEqual(params);
+                            expect(error.httpError).toBe(httpError);
+                            expect(error.message).toBe(
+                                'AI Search failed (fetch): Access denied to AI search'
+                            );
+                        }
+                        done();
+                        return error;
+                    }
+                );
+            }));
 
         it('should return original error when onrejected callback returns undefined', async () => {
             const prompt = 'undefined error callback test';
@@ -666,7 +671,7 @@ describe('AISearch', () => {
 
             mockRequest.mockRejectedValue(new Error('Test error'));
 
-            const onrejectedCallback = jest.fn((_error) => {
+            const onrejectedCallback = vi.fn((_error) => {
                 return undefined as unknown as DotErrorAISearch;
             });
 

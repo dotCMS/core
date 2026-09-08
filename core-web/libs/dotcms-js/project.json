@@ -5,15 +5,5 @@
     "sourceRoot": "libs/dotcms-js/src",
     "prefix": "",
     "tags": ["skip:test", "skip:lint"],
-    "targets": {
-        "test": {
-            "executor": "@angular/build:karma",
-            "outputs": ["{workspaceRoot}/coverage/libs/dotcms-js"],
-            "options": {
-                "main": "libs/dotcms-js/src/test.ts",
-                "karmaConfig": "libs/dotcms-js/karma.conf.js",
-                "tsConfig": "libs/dotcms-js/tsconfig.spec.json"
-            }
-        }
-    }
+    "targets": {}
 }

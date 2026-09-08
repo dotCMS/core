@@ -3,12 +3,12 @@
     "compilerOptions": {
         "module": "preserve",
         "outDir": "../out-tsc/spec",
-        "types": ["jest", "node"],
+        "types": ["vitest/globals", "node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
         "isolatedModules": true,
         "moduleResolution": "bundler"
     },
     "files": ["src/test-setup.ts", "src/polyfills.ts"],
-    "include": ["**/*.spec.ts", "**/*.d.ts"]
+    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "vite.config.mts"]
 }
