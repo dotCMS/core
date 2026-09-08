@@ -53,6 +53,14 @@ const DENY = [
  */
 const PRODUCT_EXCEPTIONS = [
     {
+        path: 'core-web/libs/sdk/client/src/virtual-modules.d.ts',
+        why:
+            'a comment, and nothing else. The file documents how `virtual:sdk-version` is ' +
+            'resolved in unit tests, and it named jest.config.ts — which this branch deletes. ' +
+            'Leaving it would point a reader at a file that no longer exists. The declaration ' +
+            'itself is untouched: no type, no export, no runtime behaviour changes.'
+    },
+    {
         path: 'core-web/libs/sdk/create-app/scripts/verify-package.sh',
         why:
             'the migration dropped sdk-create-app\'s `test` target, and with it the ' +

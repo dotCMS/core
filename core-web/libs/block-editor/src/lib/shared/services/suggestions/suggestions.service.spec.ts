@@ -35,7 +35,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'White Water',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -53,7 +53,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'Water',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -71,7 +71,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: '',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -89,7 +89,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: '   ',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -106,7 +106,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: '550e8400-e29b-41d4-a716-446655440000',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -124,7 +124,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'dead-beef',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -141,7 +141,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'White-Water Falls',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -158,7 +158,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'foo) +(contentType:UserContent',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -200,7 +200,7 @@ describe('SuggestionsService', () => {
                         contentType: 'Blog',
                         filter: 'foo',
                         currentLanguage: 1,
-                        contentletIdentifier: undefined
+                        contentletIdentifier: ''
                     })
                     .subscribe((result) => {
                         expect(result).toEqual(contentlets);

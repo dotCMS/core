@@ -79,7 +79,12 @@ for p in "${PROJECTS[@]}"; do
     # already migrated and out of scope — but AFTER the migration every project
     # emits the Vitest format, so a Jest-only pattern would report the entire
     # workspace as empty and call it parity. Same false-zero class as the utils bug.
-    REPORTED=$(grep -aoE 'Tests[:[:space:]]+[0-9]+ (passed|total)' "$LOG" | grep -aoE '[0-9]+' | tail -1)
+    # ANSI codes stripped FIRST. Vitest colours the count, so the raw line reads
+    # "Tests  <ESC>[1m<ESC>[32m55 passed" and a pattern expecting digits right after
+    # "Tests " matches nothing. That turned the cross-check into the exact false zero
+    # it exists to prevent: sdk-vue ran 55 tests and was recorded as "genuinely empty",
+    # silently, because no report was found AND the runner appeared to report nothing.
+    REPORTED=$(sed -E $'s/\x1b\[[0-9;]*m//g' "$LOG" | grep -aoE 'Tests[:[:space:]]+[0-9]+ (passed|total)' | grep -aoE '[0-9]+' | tail -1)
     REPORTED="${REPORTED:-}"
 
     # Migrated projects write their JUnit report where their vite config says, not
