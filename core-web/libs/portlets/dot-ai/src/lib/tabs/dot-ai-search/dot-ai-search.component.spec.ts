@@ -252,4 +252,29 @@ describe('DotAiSearchComponent', () => {
             expect(format(Number.NaN)).toBe('');
         });
     });
+
+    describe('the container column', () => {
+        it('should share one set of edges between the field and the results', () => {
+            // Chat and Image both centre their content in a `container mx-auto` column;
+            // without it Search spanned the full pane and its field did not line up with
+            // the results underneath.
+            const field = spectator.query(byTestId('dotai-search-input'))?.closest('.container');
+            const results = spectator
+                .query(byTestId('dotai-search-scroll'))
+                ?.querySelector('.container');
+
+            expect(field?.className).toContain('mx-auto');
+            expect(results?.className).toContain('mx-auto');
+        });
+
+        it('should keep the meta line in the same column as the field', () => {
+            storeMock.searchResponse.mockReturnValue(response({ count: 1 }));
+            spectator = createComponent();
+
+            const field = spectator.query(byTestId('dotai-search-input'))?.closest('.container');
+            const meta = spectator.query(byTestId('dotai-search-meta'));
+
+            expect(field?.contains(meta as Node)).toBe(true);
+        });
+    });
 });
