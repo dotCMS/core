@@ -8,6 +8,7 @@ import {
 import { of, Subject, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { Listbox } from 'primeng/listbox';
@@ -18,11 +19,10 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotCMSWorkflow, WorkflowStep } from '@dotcms/dotcms-models';
+import { DOT_FILTER_FACADE, DotFilterFacade } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveWorkflowFilterComponent } from './dot-content-drive-workflow-filter.component';
-
-import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 const SCHEME_A = { id: 'a', name: 'Blogs' } as DotCMSWorkflow;
 const SCHEME_B = { id: 'b', name: 'System Workflow' } as DotCMSWorkflow;
@@ -48,19 +48,25 @@ const messageServiceMock = new MockDotMessageService({
     'content-drive.chip-filter.overflow-label': '{0} and {1} more'
 });
 
+/** Drives the component the way the store mock used to; assertions target it directly. */
+const filterFacade = {
+    getFilterValue: vi.fn(),
+    patchFilters: vi.fn(),
+    removeFilter: vi.fn(),
+    clearFilters: vi.fn(),
+    $hasNonDefaultFilters: signal(false)
+} satisfies DotFilterFacade;
+
 describe('DotContentDriveWorkflowFilterComponent', () => {
     let spectator: Spectator<DotContentDriveWorkflowFilterComponent>;
-    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
     let workflowService: SpyObject<DotWorkflowService>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveWorkflowFilterComponent,
         providers: [
-            mockProvider(DotContentDriveStore, {
-                patchFilters: vi.fn(),
-                removeFilter: vi.fn(),
-                getFilterValue: vi.fn()
-            }),
+            // The component reads and writes filters through the facade now, so the behaviour this
+            // suite used to drive through the store mock lives here instead.
+            { provide: DOT_FILTER_FACADE, useValue: filterFacade },
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotHttpErrorManagerService)
         ],
@@ -82,7 +88,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
     /** Default store: no active filters. Override `workflow`/`contentType` per test. */
     const stubFilters = (values: Record<string, string[]> = {}) =>
-        (store.getFilterValue as Mock).mockImplementation((key: string) => values[key]);
+        filterFacade.getFilterValue.mockImplementation((key: string) => values[key]);
 
     const openPanel = () => {
         spectator.click(byTestId('workflow-filter-chip'));
@@ -109,13 +115,12 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
     };
 
     const resetStoreWriteSpies = () => {
-        store.patchFilters.mockClear();
-        store.removeFilter.mockClear();
+        filterFacade.patchFilters.mockClear();
+        filterFacade.removeFilter.mockClear();
     };
 
     beforeEach(() => {
         spectator = createComponent();
-        store = spectator.inject(DotContentDriveStore, true);
         workflowService = spectator.inject(DotWorkflowService, true);
         // Re-establish defaults each test — vi.clearAllMocks() clears call history
         // but not return values, so a per-test of([]) override would otherwise leak.
@@ -153,7 +158,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$selection()).toEqual([]);
-            expect(store.removeFilter).toHaveBeenCalledWith('workflow');
+            expect(filterFacade.removeFilter).toHaveBeenCalledWith('workflow');
         });
 
         it('should keep the workflow selection when a content-type filter coexists and the scheme still exists', () => {
@@ -165,7 +170,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             expect(workflowService.getSchemesByContentTypes).toHaveBeenCalledWith(['ct1']);
             expect(spectator.component.$selection()).toEqual([{ scheme: 'a' }]);
-            expect(store.removeFilter).not.toHaveBeenCalled();
+            expect(filterFacade.removeFilter).not.toHaveBeenCalled();
         });
 
         it('should keep the persisted filter and surface the error when schemes fail to load', () => {
@@ -179,7 +184,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             expect(httpErrorManager.handle).toHaveBeenCalled();
             // A transient backend failure must NOT drop the persisted/URL-restored
             // selection (no reconcile against an empty list).
-            expect(store.removeFilter).not.toHaveBeenCalled();
+            expect(filterFacade.removeFilter).not.toHaveBeenCalled();
             expect(spectator.component.$selection()).toEqual([{ scheme: 'a' }]);
             expect(spectator.component.$state().loadingSchemes).toBe(false);
         });
@@ -214,7 +219,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             spectator.triggerEventHandler(testId('workflow-filter-chip'), 'removed', undefined);
 
             expect(spectator.component.$selection()).toEqual([]);
-            expect(store.removeFilter).toHaveBeenCalledWith('workflow');
+            expect(filterFacade.removeFilter).toHaveBeenCalledWith('workflow');
         });
     });
 
@@ -226,7 +231,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             toggleScheme('a');
 
-            expect(store.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
+            expect(filterFacade.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
         });
 
         it('should remove the filter when the only selected scheme is toggled off', () => {
@@ -237,7 +242,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             toggleScheme('a');
 
-            expect(store.removeFilter).toHaveBeenCalledWith('workflow');
+            expect(filterFacade.removeFilter).toHaveBeenCalledWith('workflow');
         });
 
         it('should load the steps of a focused scheme', () => {
@@ -291,7 +296,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             pinStep('a2');
 
-            expect(store.patchFilters).toHaveBeenCalledWith({ workflow: ['a:a2'] });
+            expect(filterFacade.patchFilters).toHaveBeenCalledWith({ workflow: ['a:a2'] });
         });
 
         it('should keep step selection per scheme (switching focus does not lose the other pin)', () => {
@@ -316,7 +321,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             // PrimeNG single-select listbox emits null when the selected item is re-clicked.
             pinStep(null);
 
-            expect(store.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
+            expect(filterFacade.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
         });
 
         it('should not overwrite the step column with a late response after focus changed', () => {
@@ -375,7 +380,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             expect(spectator.component.$focusedScheme()).toBe('a');
             expect(spectator.component.$state().steps).toEqual(STEPS_A);
-            expect(store.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
+            expect(filterFacade.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
         });
 
         it('stops mousedown propagation on the checkbox so a sibling popover stays dismissable', () => {

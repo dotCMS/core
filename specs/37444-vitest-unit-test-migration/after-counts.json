@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-08T11:22:06.954Z",
+  "capturedAt": "2026-09-08T11:50:16.613Z",
   "nodeVersion": "v22.22.3",
   "projects": {
     "ai-ui": {
@@ -31,7 +31,7 @@
       "suites": 1
     },
     "edit-content-bridge": {
-      "tests": 124,
+      "tests": 130,
       "skipped": 0,
       "failures": 0,
       "errors": 0,
@@ -50,6 +50,13 @@
       "failures": 0,
       "errors": 0,
       "suites": 10
+    },
+    "new-block-editor": {
+      "tests": 158,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 16
     },
     "portlets-dot-analytics-data-access": {
       "tests": 217,

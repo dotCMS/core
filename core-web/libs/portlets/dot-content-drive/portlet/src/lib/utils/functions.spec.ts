@@ -359,6 +359,33 @@ describe('Utility Functions', () => {
         });
     });
 
+    // FR-004 / SC-004: the chips moved to `@dotcms/ui`, and this encoding did not. A deep link
+    // written before the move has to resolve to the same filter set afterwards, so the whole bag —
+    // one entry per chip, including a `us.*` field filter — is round-tripped in one assertion
+    // rather than one per key.
+    describe('the whole filter bag survives the chips moving out of the portlet', () => {
+        const EVERY_FILTER = {
+            title: 'hello world',
+            baseType: ['1', '4'],
+            contentType: ['Blog', 'News'],
+            languageId: ['1', '2'],
+            workflow: ['schemeA:stepX'],
+            status: ['ARCHIVED', 'LOCKED'],
+            sharedAssets: 'false',
+            'us.body': 'a,b'
+        };
+
+        it('should survive encode → decode unchanged', () => {
+            expect(decodeFilters(encodeFilters(EVERY_FILTER))).toEqual(EVERY_FILTER);
+        });
+
+        it('should encode to the same string twice, so a shared link stays stable', () => {
+            expect(encodeFilters(decodeFilters(encodeFilters(EVERY_FILTER)))).toBe(
+                encodeFilters(EVERY_FILTER)
+            );
+        });
+    });
+
     describe('workflow token (de)serialization', () => {
         describe('parseWorkflowToken', () => {
             it('should parse a scheme-only token', () => {
