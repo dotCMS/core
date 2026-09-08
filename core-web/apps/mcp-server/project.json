@@ -39,6 +39,15 @@
                 "cwd": "apps/mcp-server"
             }
         },
+        "test": {
+            "dependsOn": [
+                "build",
+                {
+                    "target": "generate-spec",
+                    "projects": ["sdk-ai"]
+                }
+            ]
+        },
         "lint": {
             "options": {
                 "args": ["src/**/*.ts"]

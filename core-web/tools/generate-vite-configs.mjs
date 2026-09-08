@@ -317,6 +317,34 @@ function frameworkFor(dir) {
     return tsx ? 'react' : 'angular';
 }
 
+/**
+ * Top-level directories the include glob has to cover.
+ *
+ * Jest's testMatch was rooted at the project, not at src, so a spec anywhere in the project
+ * ran. A fixed `{src,tests}` glob silently drops the ones that live elsewhere, and the
+ * project still reports green on the files it did find — sdk-ai's
+ * `scripts/spec-transform.spec.ts` (10 tests) vanished exactly that way. `src` and
+ * `tests` stay in unconditionally so the 45 projects that keep their specs there
+ * generate byte-identical configs; anything else is added only where specs are.
+ */
+function includeRootsFor(dir) {
+    const roots = new Set(['src', 'tests']);
+    const walk = (rel, top) => {
+        for (const e of readdirSync(join(CW, rel), { withFileTypes: true })) {
+            if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue;
+            if (e.isDirectory()) walk(`${rel}/${e.name}`, top ?? e.name);
+            else if (/\.(spec|test)\.[cm]?[jt]sx?$/.test(e.name) && top) roots.add(top);
+        }
+    };
+    try {
+        walk(dir, null);
+    } catch {
+        /* nothing to walk */
+    }
+
+    return [...roots].sort();
+}
+
 function nameOf(dir) {
     const p = join(CW, dir, 'project.json');
     return existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).name ?? dir) : dir;
@@ -435,7 +463,7 @@ export default defineConfig(() => ({
         // file unprocessed while the module-name strategy still applies.
         css: { include: [], modules: { classNameStrategy: 'non-scoped' } },
         environment: '${env}',${environmentOptionsFor(env)}
-        include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
+        include: ['{${includeRootsFor(dir).join(',')}}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {
             deps: {
                 inline: [${inline.join(', ')}]

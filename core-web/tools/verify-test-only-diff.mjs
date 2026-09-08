@@ -53,6 +53,18 @@ const DENY = [
  */
 const PRODUCT_EXCEPTIONS = [
     {
+        path: 'core-web/libs/sdk/create-app/scripts/verify-package.sh',
+        why:
+            'the migration dropped sdk-create-app\'s `test` target, and with it the ' +
+            '`dependsOn: ["verify-package", "verify-compose-static"]` that was the only thing ' +
+            'invoking these two scripts — 11 assertions stopped running and nothing went red. ' +
+            'Restoring the dependency re-runs this script, which called `npm pack --dry-run` ' +
+            'in a pnpm-only workspace where npm is not on PATH: it produced no file list and ' +
+            'the check reported a false failure locally. The edit is one word, `npm` -> `pnpm`, ' +
+            'on a command whose output this script only greps for `"path": "..."` — a shape ' +
+            'both package managers emit. No assertion, no shipped file, no product behaviour.'
+    },
+    {
         path: 'core-web/libs/portlets/dot-content-drive/portlet/src/lib/components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component.ts',
         why:
             'escaped backticks inside a CSS comment in the inline `styles` array break ' +

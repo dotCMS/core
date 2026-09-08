@@ -39,6 +39,9 @@
             "options": {
                 "args": ["src/**/*.ts", "scripts/**/*.ts"]
             }
+        },
+        "test": {
+            "dependsOn": ["generate-spec"]
         }
     }
 }

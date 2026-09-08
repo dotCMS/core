@@ -12,7 +12,7 @@
 #   first step, which is exactly what AC-013 exists to prevent.
 #
 #   So this asserts the artifact: the file is in dist at the path the CLI resolves at runtime,
-#   and npm would actually put it in the tarball.
+#   and the packer would actually put it in the tarball.
 #
 # Usage:  ./verify-package.sh [dist-dir]      (defaults to the nx output path)
 # Exit 0 = the asset ships.
@@ -44,16 +44,18 @@ else
     bad "$ASSET_REL is MISSING from the build output — check project.json's esbuild \`assets\` (input/glob/output)"
 fi
 
-# 2. npm would actually pack it. This is the half that `files` in package.json controls, and it
+# 2. the packer would actually pack it (pnpm, not npm: this workspace is pnpm-only and
+#    npm is not on PATH — `npm pack` produced no list at all and this check reported a
+#    false failure). This is the half that `files` in package.json controls, and it
 #    is a separate failure from the esbuild copy above: either alone ships a broken package.
-PACKED="$(cd "$DIST" && npm pack --dry-run --json 2>/dev/null | grep -o "\"path\": *\"[^\"]*\"" | sed 's/.*: *"//; s/"$//')"
+PACKED="$(cd "$DIST" && pnpm pack --dry-run --json 2>/dev/null | grep -o "\"path\": *\"[^\"]*\"" | sed 's/.*: *"//; s/"$//')"
 
 if [ -z "$PACKED" ]; then
-    bad "npm pack --dry-run produced no file list — cannot confirm the tarball contents"
+    bad "pnpm pack --dry-run produced no file list — cannot confirm the tarball contents"
 elif printf '%s\n' "$PACKED" | grep -qx "$ASSET_REL"; then
-    ok "npm pack includes $ASSET_REL in the tarball"
+    ok "pnpm pack includes $ASSET_REL in the tarball"
 else
-    bad "npm pack does NOT include $ASSET_REL — check \`files\` in package.json"
+    bad "pnpm pack does NOT include $ASSET_REL — check \`files\` in package.json"
     printf '        tarball contains: %s\n' "$(printf '%s ' $PACKED)"
 fi
 

@@ -150,10 +150,13 @@ describe('mcp-server boot smoke test', () => {
     // glob silently drops it.
     it('packs every file the bundle needs', () => {
         // --dry-run --json reports the tarball manifest without writing one, so this needs no
-        // temp directory and no tar — it runs the same everywhere the build does.
-        const [manifest] = JSON.parse(
-            execSync('npm pack --dry-run --json', { cwd: DIST, encoding: 'utf-8' })
-        ) as { files: { path: string }[] }[];
+        // temp directory and no tar — it runs the same everywhere the build does. pnpm, not
+        // npm: this workspace is pnpm-only and npm is not on PATH, so `npm pack` died with
+        // "command not found" before reading anything. pnpm honours the same `files`
+        // allowlist and reports one manifest object where npm reports an array of them.
+        const manifest = JSON.parse(
+            execSync('pnpm pack --dry-run --json', { cwd: DIST, encoding: 'utf-8' })
+        ) as { files: { path: string }[] };
 
         const packed = new Set(manifest.files.map((file) => file.path));
 

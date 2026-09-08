@@ -60,7 +60,7 @@ export default defineConfig(() => ({
         // file unprocessed while the module-name strategy still applies.
         css: { include: [], modules: { classNameStrategy: 'non-scoped' } },
         environment: 'node',
-        include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+        include: ['{scripts,src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         server: {
             deps: {
                 inline: [
