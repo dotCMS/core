@@ -575,6 +575,116 @@ describe('DotKeyboardShortcutService', () => {
      *
      * Command and Control are never layout mechanics, so they are still required to match.
      */
+    /**
+     * `normalize()` is what keys the claim map, so if two spellings of the same combination stopped
+     * resolving to one string the claims would silently split into separate stacks and last-in-wins
+     * would stop working — with nothing else here to catch it. This registry is shared
+     * infrastructure other surfaces register against, so the invariant is worth pinning directly.
+     */
+    /**
+     * This is the single root service arbitrating every shortcut in the application, so one
+     * consumer's bug must not take the key down for everyone. Left to propagate, a throwing handler
+     * skipped `preventDefault`, denied every claim stacked beneath it a turn, and logged nothing —
+     * the user saw a dead key with no diagnostic anywhere.
+     *
+     * A throw is treated as a decline: the handler did not successfully handle the key, so the next
+     * claimant gets it. The error is still surfaced, so the bug does not go quiet.
+     */
+    describe('a handler that throws', () => {
+        const boom = () => {
+            throw new Error('handler exploded');
+        };
+
+        it('should pass the key to the claim underneath', () => {
+            const underneath = handlerMock();
+            register({ combination: 'mod+k', label: 'underneath', handler: underneath });
+            register({ combination: 'mod+k', label: 'broken', handler: boom });
+
+            pressModK();
+
+            expect(underneath).toHaveBeenCalledTimes(1);
+        });
+
+        it('should report the failure with the shortcut that caused it', () => {
+            const reported = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            register({ combination: 'mod+k', label: 'broken', handler: boom });
+
+            pressModK();
+
+            expect(reported).toHaveBeenCalledWith(
+                expect.stringContaining('broken'),
+                expect.any(Error)
+            );
+            reported.mockRestore();
+        });
+
+        it('should leave the browser default alone when every claimant throws', () => {
+            jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            register({ combination: 'mod+k', label: 'broken', handler: boom });
+
+            const event = pressModK();
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should not break the next press', () => {
+            jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            const withdraw = service.register({
+                combination: 'mod+k',
+                label: 'broken',
+                handler: boom
+            });
+            pressModK();
+            withdraw();
+
+            const healthy = handlerMock();
+            register({ combination: 'mod+k', label: 'healthy', handler: healthy });
+            pressModK();
+
+            expect(healthy).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('combination normalisation', () => {
+        it('should treat modifier orderings as one claim', () => {
+            const first = handlerMock();
+            const second = handlerMock();
+            register({ combination: 'shift+mod+k', label: 'first', handler: first });
+            register({ combination: 'mod+shift+k', label: 'second', handler: second });
+
+            press({ key: 'k', metaKey: true, shiftKey: true });
+
+            // One stack, so the newer claim shadows the older rather than both being live.
+            expect(second).toHaveBeenCalledTimes(1);
+            expect(first).not.toHaveBeenCalled();
+        });
+
+        it('should hand the combination back to the first ordering when the second withdraws', () => {
+            const first = handlerMock();
+            const second = handlerMock();
+            register({ combination: 'shift+mod+k', label: 'first', handler: first });
+            const withdraw = service.register({
+                combination: 'mod+shift+k',
+                label: 'second',
+                handler: second
+            });
+
+            withdraw();
+            press({ key: 'k', metaKey: true, shiftKey: true });
+
+            expect(first).toHaveBeenCalledTimes(1);
+        });
+
+        it('should ignore surrounding whitespace and case', () => {
+            const handler = handlerMock();
+            register({ combination: '  MOD + Shift + K  ', label: 'spaced', handler });
+
+            press({ key: 'k', metaKey: true, shiftKey: true });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('keyboard layouts', () => {
         it('should fire a bare character claim when the layout needs shift to type it', () => {
             const handler = handlerMock();

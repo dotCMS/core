@@ -305,6 +305,31 @@ export class DotKeyboardShortcutService {
         }));
     }
 
+    /**
+     * Runs one claimant's handler, containing a throw rather than letting it escape.
+     *
+     * This is the single root service arbitrating every shortcut in the application, so one
+     * consumer's bug must not take the key down for everyone. Left to propagate, a throw skipped
+     * `preventDefault` *and* denied every claim beneath it a turn *and* logged nothing, which
+     * presents to the user as a dead key with no diagnostic anywhere.
+     *
+     * A throw counts as a decline: the handler did not successfully handle the key, so the next
+     * claimant should get it. The error is reported rather than swallowed, so the bug stays visible
+     * to whoever introduced it.
+     */
+    #runHandler(shortcut: DotKeyboardShortcut, event: KeyboardEvent): boolean | void {
+        try {
+            return shortcut.handler(event);
+        } catch (error) {
+            console.error(
+                `DotKeyboardShortcutService: the handler for "${shortcut.label}" (${shortcut.combination}) threw. Treating it as declined so the key falls through.`,
+                error
+            );
+
+            return false;
+        }
+    }
+
     #dispatch(event: KeyboardEvent): void {
         // Already handled by something closer to the event target.
         if (event.defaultPrevented) {
@@ -331,7 +356,7 @@ export class DotKeyboardShortcutService {
             // Newest first. A handler returning `false` declines and the key falls through; if every
             // claimant declines, the browser default stands untouched.
             for (let index = stack.length - 1; index >= 0; index--) {
-                if (stack[index].handler(event) !== false) {
+                if (this.#runHandler(stack[index], event) !== false) {
                     event.preventDefault();
 
                     return;

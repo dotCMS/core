@@ -117,7 +117,10 @@ const TYPE_COLUMN_ORDER =
 })
 export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly renderer = inject(Renderer2);
-    readonly #hostElement = inject(ElementRef);
+    // Typed at the injection point rather than cast at each use. `inject(ElementRef)` alone infers
+    // `ElementRef<any>`, which is what forced a cast on the host element below. PrimeNG's `Table.el`
+    // still needs one — that type is not ours to fix.
+    readonly #hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
     readonly #zone = inject(NgZone);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
@@ -855,7 +858,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         // (`#focusIntent`, `#rangeBase`), so not one of those passes would be needed — and each would
         // re-run the roving tab-stop write below it. The `(focusin)` template binding stays in the
         // zone, which is correct: that one does write a signal.
-        const host = this.#hostElement.nativeElement as HTMLElement;
+        const host = this.#hostElement.nativeElement;
 
         this.#zone.runOutsideAngular(() => {
             host.addEventListener('keydown', this.#onKeydownCapture, true);

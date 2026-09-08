@@ -3214,16 +3214,41 @@ describe('DotFolderListViewComponent', () => {
     describe('Keyboard range selection round trip (T003 probe)', () => {
         const getTable = () => spectator.query(Table);
 
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
         /**
-         * Drives a range the way the Shift+Arrow handler is planned to: point the table's anchor at
-         * the starting row, then ask it to extend to the target row. Deliberately exercises the
-         * library call the handler will make, rather than a handler that does not exist yet.
+         * Extends a range the way a user does: focus the anchor row, hold Shift, step with the
+         * arrow keys. This drives the shipped `#extendSelectionTo`.
+         *
+         * It used to call PrimeNG's `table.selectRange()` directly, which was right when written —
+         * the probe deliberately predates the handler — but stopped testing this feature the moment
+         * the handler landed, because the shipped path never calls `selectRange`. The round-trip
+         * assertions below would have passed with the range logic wholly regressed.
          */
         const extendRange = (anchorIndex: number, toIndex: number) => {
-            const table = getTable();
-            table.anchorRowIndex = anchorIndex;
-            table.selectRange(new KeyboardEvent('keydown', { shiftKey: true }), toIndex);
+            const direction = toIndex > anchorIndex ? 'ArrowDown' : 'ArrowUp';
+            const step = toIndex > anchorIndex ? 1 : -1;
+
+            rowsOf()[anchorIndex].focus();
             spectator.detectChanges();
+
+            // A browser sends a keydown for Shift itself before the first arrow, and the component
+            // sees every keydown. Omitting it hid a real bug once already.
+            rowsOf()[anchorIndex].dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    code: 'ShiftLeft',
+                    key: 'Shift',
+                    shiftKey: true,
+                    bubbles: true
+                })
+            );
+
+            for (let index = anchorIndex; index !== toIndex; index += step) {
+                rowsOf()[index].dispatchEvent(
+                    new KeyboardEvent('keydown', { code: direction, shiftKey: true, bubbles: true })
+                );
+                spectator.detectChanges();
+            }
         };
 
         it('should emit the whole range through selectionChange when a range is extended', () => {

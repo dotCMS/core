@@ -171,9 +171,12 @@ describe('DotContentDriveSearchInputComponent', () => {
             jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
             spectator.detectChanges();
 
-            pressModK();
+            const event = pressModK();
 
             expect(document.activeElement).not.toBe(input());
+            // Both halves of standing down: the focus stays put *and* the key is left for whatever
+            // is above to use. Asserting only the first would pass while the key was swallowed.
+            expect(event.defaultPrevented).toBe(false);
         });
 
         it('should resume once the overlay closes', () => {
