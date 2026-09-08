@@ -69,7 +69,6 @@
                             <p-button
                                 [text]="true"
                                 [rounded]="true"
-                                size="small"
                                 severity="secondary"
                                 [disabled]="image.published || store.imageSaving()"
                                 [attr.aria-label]="'dotai.image.save' | dm"
@@ -83,15 +82,15 @@
                             </p-button>
 
                             <!-- Same-origin anchor, not a p-button: it needs `download` and an
-                                 `href`, so it borrows the button classes instead. `p-button-sm`
-                                 and the rest are what `size`/`text`/`rounded`/`severity`
-                                 generate on the real component.
+                                 `href`, so it borrows the button classes instead — the same
+                                 set `text`/`rounded`/`severity` generate on the real
+                                 component, at its default size.
 
                                  `no-underline!` needs the bang: style.css's `a { @apply
                                  underline }` is unlayered, and an unlayered declaration beats
                                  anything in @layer utilities whatever the specificity. -->
                             <a
-                                class="p-button p-button-icon-only p-button-text p-button-rounded p-button-secondary p-button-sm no-underline!"
+                                class="p-button p-button-icon-only p-button-text p-button-rounded p-button-secondary no-underline!"
                                 [href]="store.imageUrl()"
                                 [download]="image.tempFileName"
                                 [attr.aria-label]="'dotai.image.download' | dm"
