@@ -636,6 +636,9 @@ export class DotContentDriveShellComponent {
      */
     readonly #uploadsInFlight = signal(0);
 
+    /** Distinguishes overlapping upload runs, which share an operation and have no targets. */
+    #uploadSequence = 0;
+
     readonly #routerService = inject(DotRouterService);
 
     /**
@@ -1236,13 +1239,20 @@ export class DotContentDriveShellComponent {
         // Until the handle comes back the author has no sign anything is happening, and a thirty-file
         // batch can spend a long while in exactly that state.
         const runId = this.#store.startExternalRun({
-            operation: UPLOAD_BATCH_OPERATION,
+            // Unique per batch, because the run key is `operation:targets` and the targets below
+            // are deliberately empty — every upload would otherwise share one key, the second
+            // overwriting the first and the first to finish deregistering both. Unlike a workflow
+            // action there is nothing to guard against here: each submission carries its own
+            // freshly chosen files, so two uploads at once is legitimate rather than a double-fire.
+            operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
             actionName: this.#dotMessageService.get('content-drive.upload'),
             total: files.length,
             targetLabel: hostFolder?.path ?? this.#store.currentSite()?.hostname,
-            // File names, not inodes: nothing exists to mark yet. They key the repeat-fire guard,
-            // so double-firing the same batch at the same folder is refused, which is right.
-            targets: files.map((file) => file.name)
+            // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
+            // run over rows is already reported by those rows dimming. An upload's content does not
+            // exist until the run creates it, so the indicator is its only surface — naming the
+            // files here is what excluded it from the one place it can be seen.
+            targets: []
         });
 
         this.#uploadsInFlight.update((count) => count + 1);

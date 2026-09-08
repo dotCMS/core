@@ -1539,14 +1539,50 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
+            // `targets: []` is the contract, not an omission: the indicator speaks only for runs
+            // with nothing to mark, because a run over rows is already reported by those rows
+            // dimming. An upload has no rows — its content does not exist yet — so passing file
+            // names here excludes it from the one surface that can show it.
             expect(store.startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({ total: 2 })
+                expect.objectContaining({ total: 2, targets: [] })
             );
+        });
+
+        it('should key each batch separately so two uploads can run at once', () => {
+            // The run key is `operation:targets`, so with no targets every upload would share one
+            // key: the second would overwrite the first, and the first to finish would deregister
+            // both. Unlike a workflow action there is no repeat-fire hazard to guard — each
+            // submission carries its own freshly chosen files.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            const operations = store.startExternalRun.mock.calls.map(
+                ([run]: [{ operation: string }]) => run.operation
+            );
+
+            expect(new Set(operations).size).toBe(2);
         });
 
         it('should hand the run off to the server once the batch is accepted', () => {
             // The upload phase ends at the handle. Leaving its run registered would leave the
             // indicator spinning for a run that is now the server's to report.
+            //
+            // Set explicitly: `clearAllMocks` clears calls but not return values, so a `NEVER` from
+            // an earlier test would otherwise still be in place and the batch would never settle.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' })
+            );
+
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([createFile('a.png')]),
