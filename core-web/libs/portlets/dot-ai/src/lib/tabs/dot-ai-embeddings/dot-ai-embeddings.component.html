@@ -123,27 +123,32 @@
                             }
                         </td>
                         <td class="text-right">
-                            <!-- Secondary, not danger: a red control on every row reads as a
+                            <!-- Same shape as the row-action buttons in dot-plugins and
+                                 dot-locales: text + rounded + secondary, with the square
+                                 forced by `styleClass` and the glyph's line box collapsed.
+                                 Both parts are load-bearing — `w-8 h-8 p-0` because
+                                 PrimeNG's icon-only token sets a width but leaves the height
+                                 to padding plus content, and `leading-none` because the
+                                 glyph's own line-height is what was inflating that content.
+                                 Without them this measured 28x37.
+
+                                 Secondary, not danger: a red control on every row reads as a
                                  warning about the row itself. The destructive step is the
                                  confirm dialog, whose accept button is `p-button-danger`. -->
                             <p-button
+                                [text]="true"
+                                [rounded]="true"
                                 severity="secondary"
-                                [outlined]="true"
                                 size="small"
+                                styleClass="w-8 h-8 p-0"
                                 [ariaLabel]="'dotai.embeddings.delete' | dm"
                                 (onClick)="confirmDeleteIndex(index)"
                                 data-testid="dotai-embeddings-delete">
-                                <!-- Through #icon, not projected as default content: that is
-                                     what tells PrimeNG the button is icon-only, so it drops
-                                     the label padding and takes the token width for its size
-                                     (2rem at sm) instead of rendering label-wide. `size` was
-                                     already `small`; the padding was the reason it did not
-                                     look it. -->
-                                <ng-template #icon>
-                                    <span class="material-symbols-outlined" aria-hidden="true">
-                                        delete
-                                    </span>
-                                </ng-template>
+                                <span
+                                    class="material-symbols-outlined text-lg! leading-none!"
+                                    aria-hidden="true">
+                                    delete
+                                </span>
                             </p-button>
                         </td>
                     </tr>

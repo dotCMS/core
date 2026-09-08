@@ -207,19 +207,32 @@ describe('DotAiEmbeddingsComponent', () => {
             expect(deleteButton()?.className).not.toContain('p-button-danger');
         });
 
-        it('should render as an icon-only button, so `small` actually shows', () => {
-            // Projecting the glyph as default content left PrimeNG unaware the button had no
-            // label, so it kept label padding and rendered label-wide despite size="small".
-            // `p-button-icon-only` is what swaps that for the token width (2rem at sm).
-            expect(deleteButton()?.className).toContain('p-button-icon-only');
-            expect(deleteButton()?.className).toContain('p-button-sm');
+        it('should force its own square rather than rely on the icon-only token', () => {
+            // PrimeNG's icon-only width sets a width and leaves the height to padding plus
+            // content, so with a full-size glyph the button came out 28x37 — the distortion.
+            // dot-plugins and dot-locales both pin the box in `styleClass` for this reason.
+            const classes = deleteButton()?.className.split(/\s+/) ?? [];
+
+            expect(classes).toContain('w-8');
+            expect(classes).toContain('h-8');
+            expect(classes).toContain('p-0');
         });
 
-        it('should leave the glyph unsized', () => {
+        it('should collapse the glyph line box, which is what inflated the height', () => {
+            // `leading-none` is the other half: without it the glyph's own line-height sets
+            // the button's content height and no width class can square it up.
             const glyph = deleteButton()?.querySelector('.material-symbols-outlined');
 
-            expect(glyph).toBeTruthy();
-            expect(glyph?.className.split(/\s+/)).toEqual(['material-symbols-outlined']);
+            expect(glyph?.className).toContain('leading-none!');
+            expect(glyph?.className).toContain('text-lg!');
+        });
+
+        it('should be a borderless round action, like the other tables row actions', () => {
+            const classes = deleteButton()?.className.split(/\s+/) ?? [];
+
+            expect(classes).toContain('p-button-text');
+            expect(classes).toContain('p-button-rounded');
+            expect(classes).not.toContain('p-button-outlined');
         });
 
         it('should keep Rebuild DB red, since that one drops every embedding', () => {
