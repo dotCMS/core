@@ -39,6 +39,7 @@ import { dotExperimentsConfigurePageEvents } from './dot-experiments-configure-p
 import { DotExperimentsConfigureStore } from './dot-experiments-configure.store';
 
 import {
+    PAGE_LOOKUP_LIMIT,
     DEFAULT_TRAFFIC_ALLOCATION,
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
@@ -62,6 +63,7 @@ const pageEvents = dotExperimentsConfigurePageEvents;
 const apiEvents = dotExperimentsConfigureApiEvents;
 
 const SITE_HOSTNAME = 'demo.dotcms.com';
+const SITE_ID = '48190c8c-42c4-46af-8d1a-0cd5db894797';
 const CURRENT_USER_ID = 'user-me';
 const EXPERIMENT_ID = 'exp-1';
 
@@ -173,7 +175,10 @@ describe('DotExperimentsConfigureStore', () => {
     /** `GlobalStore` is root-provided; only the two signals this store reads are stubbed. */
     const globalStoreMock = {
         loggedUser: signal<DotCurrentUser | null>(null),
-        siteDetails: signal<DotSite | null>(null)
+        siteDetails: signal<DotSite | null>(null),
+        // `?url=` is a path, and a path is not unique across sites: the lookup is scoped to the
+        // site the portlet is on (#37003 AC-3, "on the current site").
+        currentSiteId: signal<string | null>(SITE_ID)
     };
 
     let routeParams: Params;
@@ -1518,7 +1523,7 @@ describe('DotExperimentsConfigureStore', () => {
 
             expect(contentSearchGet).toHaveBeenCalledWith({
                 query: `+working:true +identifier:${PAGE.pageId}`,
-                limit: 1
+                limit: PAGE_LOOKUP_LIMIT
             });
             expect(store.selectedPage()).toEqual(PAGE);
             expect(store.pagePrefillError()).toBeNull();
@@ -1555,17 +1560,87 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.pagePrefillError()).toBeNull();
         });
 
-        it('should prefill the page from ?url= through the page search', () => {
+        /**
+         * TC-005 (#37003 AC-3). `?url=` used the page-browser endpoint, which matches a path
+         * SUBSTRING and returns at most ten rows; the exact page was then picked out client-side.
+         * On demo, twelve pages contain "index" and the endpoint answers with ten, so whether
+         * `/index` survived the cap was down to the dataset — it worked here and failed on the QA
+         * build. Both params now go through one content search, filtered server-side.
+         */
+        it('should prefill the page from ?url= with a site-scoped exact path search', () => {
             // Trailing slash and casing are not part of the identity of a path.
             initNew({ url: '/Home/' });
 
-            expect(searchPages).toHaveBeenCalledWith({ hostname: SITE_HOSTNAME, path: '/Home/' });
+            expect(searchPages).not.toHaveBeenCalled();
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +conHost:${SITE_ID} +path:"/home"`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
             expect(store.selectedPage()).toEqual(PAGE);
             expect(store.pagePrefillError()).toBeNull();
         });
 
+        // The user types what UVE shows, which has no leading slash on a nested path.
+        it('should resolve ?url= without a leading slash', () => {
+            initNew({ url: 'destinations/colorado' });
+
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +conHost:${SITE_ID} +path:"/destinations/colorado"`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
+        });
+
+        /**
+         * The same symmetry the identifier branch already has: no content-type filter, because a
+         * `Destination` with a URL map renders as a page and can carry an experiment. Filtering to
+         * `htmlpageasset` is what made `?url=destinations/colorado` unresolvable.
+         */
+        it('should resolve a URL-mapped page, not only an htmlpageasset', () => {
+            const urlMapped = {
+                identifier: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                contentType: 'Destination',
+                url: '/destinations/colorado',
+                title: 'Colorado & The Rockies',
+                languageId: 1
+            };
+            contentSearchGet.mockReturnValue(of({ jsonObjectView: { contentlets: [urlMapped] } }));
+
+            initNew({ url: '/destinations/colorado' });
+
+            expect(store.selectedPage()).toEqual({
+                pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                title: 'Colorado & The Rockies',
+                path: '/destinations/colorado',
+                languageId: 1
+            });
+        });
+
+        /**
+         * One path answers once per language, and `limit: 1` left it to the search which row came
+         * back. `language_id` is invisible until the wrong content loads, so an arbitrary pick is
+         * the worst kind of bug — it is picked deterministically instead. The lowest id is a
+         * stand-in for the site's default language, which the search itself cannot report.
+         */
+        it('should pick the same language every time a path answers in several', () => {
+            contentSearchGet.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            buildPageContentlet({ languageId: 2, title: 'Inicio' }),
+                            buildPageContentlet({ languageId: 1, title: 'Home' })
+                        ]
+                    }
+                })
+            );
+
+            initNew({ url: '/index' });
+
+            expect(store.selectedPage()?.languageId).toBe(1);
+            expect(store.selectedPage()?.title).toBe('Home');
+        });
+
         it('should show an inline error when ?url= matches no page', () => {
-            searchPages.mockReturnValue(of([buildBrowserPage({ path: '/other', url: '/other' })]));
+            contentSearchGet.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
 
             initNew({ url: '/home' });
 

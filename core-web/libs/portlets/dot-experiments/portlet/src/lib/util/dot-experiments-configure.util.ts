@@ -227,6 +227,33 @@ export function isSameFormValue(
  * action can be refused (FR-004). Defaulting to 1 here would open the wrong language's content
  * with nothing reporting an error.
  */
+/**
+ * The one version of a page to prefill the card with, out of everything a lookup answered.
+ *
+ * A page answers once per language, so a lookup by path — or by identifier — can return several
+ * rows for the same page. Taking whichever came first made the prefilled language a property of
+ * the search's ordering, and `language_id` is invisible until the editor loads the wrong content.
+ *
+ * The lowest language id wins. It is a deterministic stand-in for the site's **default** language,
+ * which the search cannot report: a contentlet row carries `languageId` and nothing that says
+ * whether it is the default. On a site whose default is not its lowest id this picks the wrong
+ * one, which is why it is a stand-in and not the answer.
+ *
+ * @param contentlets rows as the lookup returned them, in any order
+ * @returns the row to use, or `undefined` when there were none
+ */
+export function pickPageVersion(
+    contentlets: DotCMSContentlet[] | undefined
+): DotCMSContentlet | undefined {
+    if (!contentlets?.length) {
+        return undefined;
+    }
+
+    return [...contentlets].sort(
+        (a, b) => Number(a.languageId ?? 0) - Number(b.languageId ?? 0)
+    )[0];
+}
+
 export function toConfigurePage(contentlet: DotCMSContentlet): DotExperimentConfigurePage {
     const path = contentlet.url ?? '';
 

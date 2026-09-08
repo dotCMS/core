@@ -171,6 +171,15 @@ export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
 export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
 
 /** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
+/**
+ * How many rows a page lookup asks for.
+ *
+ * More than one because a path — and an identifier — answers once per language, and `limit: 1`
+ * left it to the search which of them came back. The rows are narrowed to one deterministically
+ * after they arrive; ten is room for any realistic set of site languages.
+ */
+export const PAGE_LOOKUP_LIMIT = 10;
+
 export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
 
 /**

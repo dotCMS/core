@@ -23,8 +23,7 @@ import {
     DotContentSearchService,
     DotExperimentsService,
     DotHttpErrorManagerService,
-    DotMessageService,
-    DotPagesBrowserService
+    DotMessageService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -44,6 +43,7 @@ import {
 } from './dot-experiments-configure-page.events';
 
 import {
+    PAGE_LOOKUP_LIMIT,
     CONFIGURATION_SEGMENT,
     DEFAULT_TRAFFIC_ALLOCATION,
     LOCKED_BANNER_KEY_READ_ONLY,
@@ -66,9 +66,9 @@ import {
 import {
     canChangePage,
     deletableVariants,
-    fromBrowserPage,
     isSameFormValue,
     normalizePath,
+    pickPageVersion,
     toConfigurePage,
     validateConfigure
 } from '../util/dot-experiments-configure.util';
@@ -127,7 +127,7 @@ interface PageLookupEntity {
  * mutating methods and never opens UI — confirmations and toasts belong to the shell.
  *
  * Not provided in root: supply it in the Configure shell's `providers` together with
- * `DotExperimentsService` and `DotPagesBrowserService`.
+ * `DotExperimentsService`.
  */
 
 /**
@@ -629,7 +629,6 @@ export const DotExperimentsConfigureStore = signalStore(
             store,
             events = inject(Events),
             experimentsService = inject(DotExperimentsService),
-            pagesBrowserService = inject(DotPagesBrowserService),
             contentSearchService = inject(DotContentSearchService),
             httpErrorManager = inject(DotHttpErrorManagerService),
             dotMessageService = inject(DotMessageService),
@@ -696,6 +695,31 @@ export const DotExperimentsConfigureStore = signalStore(
                     })
                 );
 
+            /**
+             * Runs a page lookup and reports the one page it resolved, or why it did not.
+             *
+             * Shared by both prefill params so they cannot drift: one request shape, one mapping,
+             * one failure event. More than one row is asked for because a page answers once per
+             * language, and the narrowing below is deterministic rather than "whatever came first".
+             *
+             * @param query the Lucene narrowing — by identifier or by path
+             * @param reported what to name in the failure event, as the user wrote it
+             */
+            const lookupPage = (query: string, reported: string) =>
+                contentSearchService
+                    .get<PageLookupEntity>({ query, limit: PAGE_LOOKUP_LIMIT })
+                    .pipe(
+                        map((entity) => pickPageVersion(entity?.jsonObjectView?.contentlets)),
+                        map((contentlet) =>
+                            contentlet
+                                ? apiEvents.pagePrefillResolved(toConfigurePage(contentlet))
+                                : apiEvents.pagePrefillFailed(reported)
+                        ),
+                        catchError((error: HttpErrorResponse) =>
+                            of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
+                        )
+                    );
+
             /** Resolves `?pageId=` / `?url=` to the page the Page card shows. */
             const resolvePrefill = ({ pageId, url }: ConfigurePagePrefill) => {
                 if (pageId) {
@@ -708,9 +732,6 @@ export const DotExperimentsConfigureStore = signalStore(
                         return of(apiEvents.pagePrefillFailed(pageId));
                     }
 
-                    // The page-search endpoint filters by path only, so an identifier is
-                    // resolved with the same content search the list uses for its Page column.
-                    //
                     // No content-type filter. The page picker offers URL-mapped content — a
                     // `Destination` with a URL map renders as a page and can carry an experiment —
                     // and filtering to `htmlpageasset` meant this lookup could never read one
@@ -718,52 +739,33 @@ export const DotExperimentsConfigureStore = signalStore(
                     // missing on the next entry, on a page that was live the whole time (#37005).
                     // Narrowing by identifier is enough; whatever the contentlet is, it is the page
                     // the experiment stores.
-                    return contentSearchService
-                        .get<PageLookupEntity>({
-                            query: `+working:true +identifier:${pageId}`,
-                            limit: 1
-                        })
-                        .pipe(
-                            map((entity) => entity?.jsonObjectView?.contentlets?.[0]),
-                            map((contentlet) =>
-                                contentlet
-                                    ? apiEvents.pagePrefillResolved(toConfigurePage(contentlet))
-                                    : apiEvents.pagePrefillFailed(pageId)
-                            ),
-                            catchError((error: HttpErrorResponse) =>
-                                of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
-                            )
-                        );
+                    return lookupPage(`+working:true +identifier:${pageId}`, pageId);
                 }
 
                 if (!url) {
                     return of(apiEvents.pagePrefillFailed(null));
                 }
 
-                const wanted = normalizePath(url);
+                /**
+                 * `?url=` resolves through the same content search as `?pageId=`, filtered by path
+                 * instead of identifier — which is what #37003 AC-3 asks for ("path resolved by
+                 * HTMLPAGE search on the current site") and what makes the two params behave alike.
+                 *
+                 * It used to go through `GET /api/v1/page/search`, and that is why it did not work
+                 * (TC-005). That endpoint matches a path **substring** and answers with at most ten
+                 * rows; the exact page was then picked out client-side. Twelve of demo's pages
+                 * contain "index", so whether `/index` survived the cap was down to the dataset and
+                 * the endpoint's ordering — it happened to work locally and failed on the QA build.
+                 * Filtering server-side removes both the cap and the guesswork.
+                 *
+                 * Site-scoped because a path, unlike an identifier, is not unique: every site has
+                 * an `/index`. Quoted because a path carries slashes, which Lucene would otherwise
+                 * read as syntax.
+                 */
+                const path = normalizePath(url.startsWith('/') ? url : `/${url}`);
+                const site = globalStore.currentSiteId();
 
-                return pagesBrowserService
-                    .searchPages({
-                        hostname: globalStore.siteDetails()?.hostname,
-                        path: url
-                    })
-                    .pipe(
-                        map((pages) =>
-                            pages.find(
-                                (page) =>
-                                    normalizePath(page.path) === wanted ||
-                                    normalizePath(page.url) === wanted
-                            )
-                        ),
-                        map((page) =>
-                            page
-                                ? apiEvents.pagePrefillResolved(fromBrowserPage(page))
-                                : apiEvents.pagePrefillFailed(url)
-                        ),
-                        catchError((error: HttpErrorResponse) =>
-                            of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
-                        )
-                    );
+                return lookupPage(`+working:true +conHost:${site} +path:"${path}"`, url);
             };
 
             return {
