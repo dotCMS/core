@@ -2,6 +2,7 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/
 
 import { DotCMSContentletWorkflowActions, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import {
+    createFakeWorkflowAction,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockWorkflows,
     mockWorkflowsActions
@@ -119,23 +120,12 @@ describe('DotWorkflowsActionsService', () => {
         // gates its input wizard on `actionInputs.length`, so without derivation a commentable
         // action fires with no dialog. Fixtures below deliberately omit the key, the way the real
         // payload does.
-        const rawCommentableAction = {
-            assignable: false,
+        const rawCommentableAction = createFakeWorkflowAction({
             commentable: true,
-            condition: '',
-            icon: 'workflowIcon',
-            id: 'publish-action-id',
-            name: 'Publish',
-            nextAssign: 'role-id',
-            nextStep: 'step-id',
-            nextStepCurrentStep: false,
-            order: 0,
-            roleHierarchyForAssign: false,
-            schemeId: 'scheme-id',
-            showOn: ['NEW', 'EDITING']
-        };
+            id: 'publish-action-id'
+        });
 
-        const wrap = (action: object) => [
+        const wrap = (action: Partial<DotCMSWorkflowAction>) => [
             { scheme: mockWorkflows[0], action, firstStep: { id: 'first-step' } }
         ];
 

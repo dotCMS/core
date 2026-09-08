@@ -1,6 +1,6 @@
 # Phase 1 Data Model: Workflow action inputs (#36883)
 
-**Plan**: [plan.md](./plan.md) · **Contract**: [contracts/derive-action-inputs.md](./contracts/derive-action-inputs.md)
+**Contract**: [contracts/derive-action-inputs.md](./contracts/derive-action-inputs.md) · **Spec**: [spec.md](./spec.md)
 
 No persisted entities are introduced or changed. The "model" here is the in-flight shape of a
 workflow action as it crosses from REST into the edit-content store, and the derivation that

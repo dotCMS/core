@@ -1,4 +1,8 @@
-import { DotCMSWorkflowAction, DotCMSWorkflowInput } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentletWorkflowActions,
+    DotCMSWorkflowAction,
+    DotCMSWorkflowInput
+} from '@dotcms/dotcms-models';
 
 /**
  * Derives the `actionInputs` a workflow action needs, from the raw action flags.
@@ -52,12 +56,26 @@ export const deriveActionInputs = (action: DotCMSWorkflowAction): DotCMSWorkflow
  * @returns a new action; the argument is never mutated
  */
 export const withDerivedActionInputs = (action: DotCMSWorkflowAction): DotCMSWorkflowAction => {
-    // No optional chaining on `action` itself: `deriveActionInputs` dereferences it anyway, so a
-    // `?.` here would only move the TypeError one line down while reading as if it were handled.
-    // A missing action is a malformed payload — let it fail loudly rather than half-guard it.
-    if (action.actionInputs?.length) {
+    // Presence, not length: a server-sent empty array is a legitimate "no inputs" answer and must
+    // survive, otherwise the one regression this guard exists to surface — an endpoint starting to
+    // emit WorkflowActionView with an empty actionInputs — would be silently re-derived over.
+    if (Array.isArray(action.actionInputs)) {
         return action;
     }
 
     return { ...action, actionInputs: deriveActionInputs(action) };
 };
+
+/**
+ * Applies {@link withDerivedActionInputs} to every action in a default/initial-action response.
+ *
+ * See `contracts/derive-action-inputs.md` in the #36883 spec for which endpoints get this and
+ * which are deliberately left alone.
+ */
+export const deriveInputsOnEach = (
+    schemeActions: DotCMSContentletWorkflowActions[]
+): DotCMSContentletWorkflowActions[] =>
+    schemeActions.map((schemeAction) => ({
+        ...schemeAction,
+        action: withDerivedActionInputs(schemeAction.action)
+    }));

@@ -1,6 +1,6 @@
 # Internal Contract: `deriveActionInputs()`
 
-**Plan**: [plan.md](./plan.md) · **Data model**: [data-model.md](./data-model.md)
+**Data model**: [../data-model.md](../data-model.md) · **Spec**: [../spec.md](../spec.md)
 
 This feature exposes no external interface — no REST endpoint, no CLI, no public SDK surface. The
 only contract worth pinning is the internal one between the new helper and its callers, because it
@@ -40,6 +40,7 @@ Evaluated in order; see [data-model.md](./data-model.md#derivation-rules) for th
 | Guarantee | Why it matters |
 |---|---|
 | Never returns `undefined`; empty means `[]` | `fireWorkflowAction` branches on `.length`; `undefined` is what caused the bug |
+| A server-provided array is preserved — **including an empty one** | Presence, not length. Re-deriving over a legitimately empty `actionInputs` would hide the exact backend regression this guard exists to surface |
 | Pure — no mutation of `action`, no I/O | Safe inside an RxJS `map` over a shared response |
 | Order is stable and matches the Java rule order | `mergeCommentAndAssign` filters while preserving order; `setWizardInput` builds steps in sequence |
 | Idempotent | Re-deriving an already-derived action yields an equal array |
@@ -63,5 +64,11 @@ in the endpoints that are supposed to populate the field themselves.
 ## Sync obligation
 
 If `createActionInputViews` gains an input type in Java, this helper and its spec must be updated
-in the same PR. Each side carries a comment naming the other. This duplication is the accepted
-trade-off recorded in the plan's Complexity Tracking.
+too. The TypeScript side names its Java counterpart in the `deriveActionInputs` doc comment.
+
+**The Java side does not point back**, and this PR does not add that pointer: a comment-only
+`.java` change would put a Java file in the diff and, per
+[ADR-0013](https://github.com/dotCMS/platform-adrs/blob/main/decisions/0013-skip-integration-and-postman-tests-for-frontend-only-changes-in-merge-queue-to-increase-flow.md),
+move the PR off the frontend-only CI path for no behavioral gain. So the drift risk is one-way:
+a Java dev adding a fifth input type has nothing pointing them here. Worth a follow-up issue
+rather than a sentence claiming a symmetry that does not exist.

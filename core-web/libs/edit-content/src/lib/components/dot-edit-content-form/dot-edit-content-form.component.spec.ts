@@ -185,6 +185,17 @@ describe('DotFormComponent', () => {
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
         dotContentletService = spectator.inject(DotContentletService);
+
+        // `mockProvider` registers its jest.fn()s at factory level, so any test that swaps an
+        // implementation keeps it for the rest of the file — `jest.clearAllMocks()` below clears
+        // call data but not implementations. Re-establishing the defaults here makes every test
+        // start from the same state regardless of declaration order.
+        (spectator.inject(DotWizardService).open as jest.Mock).mockReturnValue(of({}));
+
+        const workflowEventHandler = spectator.inject(DotWorkflowEventHandlerService);
+        (workflowEventHandler.containsPushPublish as jest.Mock).mockReturnValue(false);
+        (workflowEventHandler.checkPublishEnvironments as jest.Mock).mockReturnValue(of(true));
+        (workflowEventHandler.processWorkflowPayload as jest.Mock).mockReturnValue(undefined);
     });
 
     afterEach(() => {
@@ -731,15 +742,6 @@ describe('DotFormComponent', () => {
                         [key: string]: string | object | string[];
                     }>;
 
-                // `DotWizardService` is a factory-level mockProvider, so its `open` jest.fn is
-                // shared by every test in this file. The tests below swap in never-emitting
-                // Subjects, and `jest.clearAllMocks()` clears call data but NOT implementations —
-                // so without this restore the last Subject would leak into any later test that
-                // expects `open()` to emit, breaking it by declaration order alone.
-                afterEach(() => {
-                    (spectator.inject(DotWizardService).open as jest.Mock).mockReturnValue(of({}));
-                });
-
                 it('should not fire the action while the dialog is still open', () => {
                     const wizardService = spectator.inject(DotWizardService);
                     // A wizard that never emits models a dialog the author has not answered yet.
@@ -813,6 +815,24 @@ describe('DotFormComponent', () => {
                         expect.objectContaining({ text1: 'a value the author typed' })
                     );
                 });
+            });
+
+            // #36883: `moveable` is the second behavior change the derivation brings. A Move
+            // action with no preset path previously fired directly on unsaved content; it now
+            // folds into a `commentAndAssign` step and asks the author for a path — parity with
+            // saved content, which already gets `moveable` from getByInode.
+            it('should open the wizard for a moveable-only action', () => {
+                const wizardService = spectator.inject(DotWizardService);
+
+                component.fireWorkflowAction({
+                    workflow: {
+                        id: '1',
+                        actionInputs: [{ id: 'moveable', body: {} }]
+                    } as DotCMSWorkflowAction,
+                    ...baseParams
+                });
+
+                expect(wizardService.open).toHaveBeenCalled();
             });
 
             // #36883: the derivation emits `pushPublish` too, so a Push Publish action on content
