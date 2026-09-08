@@ -2,7 +2,7 @@
     <h3 class="m-0 text-base font-semibold">
         {{ 'users.dialog.roles.header' | dm }}
     </h3>
-    <p class="text-color-secondary m-0 text-sm">
+    <p class="m-0 text-sm text-slate-500">
         {{ 'users.dialog.roles.description' | dm }}
     </p>
 </header>
@@ -92,7 +92,7 @@
         <header
             class="flex items-center justify-between border-b border-surface-200 px-3 py-2 font-medium">
             <span>{{ 'users.dialog.roles.granted' | dm }}</span>
-            <span class="text-color-secondary text-xs" data-testid="users-roles-granted-count">
+            <span class="text-xs text-slate-500" data-testid="users-roles-granted-count">
                 {{ 'users.dialog.roles.granted.count' | dm: [$grantedCount().toString()] }}
             </span>
         </header>
@@ -107,44 +107,35 @@
                 data-testid="users-roles-granted-filter" />
         </div>
         <!--
-            `flex-1 min-h-0 overflow-auto` matches the tree column so
-            both sides scroll their own bodies as the roster grows.
-        -->
-        <div class="min-h-0 flex-1 overflow-auto p-2" data-testid="users-roles-granted-body">
-            @if ($grantedList().length === 0) {
-                <p class="text-color-secondary p-2 text-sm" data-testid="users-roles-granted-empty">
-                    {{ 'users.dialog.roles.granted.empty' | dm }}
-                </p>
-            } @else {
-                @for (role of $grantedList(); track role.id) {
-                    <!--
-                        `track role.id` because `role.id` is always
-                        unique across the tree. Since #37218 landed we
-                        key selection state and the outbound payload
-                        entirely by `role.id`, so keyless custom roles
-                        no longer need a fallback path.
+            Granted side mirrors the available side: same `<p-tree>` in
+            checkbox mode, flat forest (no parents), so the PrimeNG
+            theme paints identical row padding, hover and selection
+            colours on both panels. Selection funnels back to
+            `$selectedGranted` (id source of truth) so `revoke()` and
+            all existing tests keep working.
 
-                        Person icon removed per the design pass — the
-                        role name + description are enough to identify
-                        the row.
-                    -->
-                    <button
-                        type="button"
-                        class="flex w-full items-start gap-2 rounded-sm p-2 text-left hover:bg-surface-100"
-                        [class.bg-primary-50]="isSelectedGranted(role.id)"
-                        (click)="toggleGrantedSelection(role.id)"
-                        [attr.data-testid]="'users-roles-granted-item-' + role.id">
-                        <span class="flex flex-col">
-                            <span class="text-sm font-medium">{{ role.name }}</span>
-                            @if (role.description) {
-                                <span class="text-color-secondary text-xs">
-                                    {{ role.description }}
-                                </span>
-                            }
-                        </span>
-                    </button>
-                }
-            }
-        </div>
+            The truly-empty case swaps the tree for the app-wide
+            `<dot-empty-container>` instead of the tree's plain
+            `[emptyMessage]` string — same icon-plus-title empty pattern
+            the rest of the portlets use.
+        -->
+        @if ($grantedTreeNodes().length === 0) {
+            <div
+                class="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4"
+                data-testid="users-roles-granted-body">
+                <dot-empty-container
+                    [configuration]="grantedEmptyConfig"
+                    [hideContactUsLink]="true"
+                    data-testid="users-roles-granted-empty" />
+            </div>
+        } @else {
+            <p-tree
+                [value]="$grantedTreeNodes()"
+                selectionMode="checkbox"
+                [selection]="$selectedGrantedTreeNodes()"
+                (selectionChange)="onGrantedTreeSelectionChange($event)"
+                styleClass="border-0 p-2 min-h-0 flex-1 overflow-auto"
+                data-testid="users-roles-granted-body" />
+        }
     </section>
 </div>

@@ -1,45 +1,12 @@
 <div
     class="flex min-h-0 flex-1 flex-col border-t border-surface-200"
     data-testid="users-dialog-body">
-    <header class="flex items-center gap-4 px-7 py-4" data-testid="users-dialog-header">
-        <p-avatar
-            [label]="$initials()"
-            shape="circle"
-            size="large"
-            styleClass="bg-primary-100 text-primary"
-            data-testid="users-dialog-avatar" />
-        <!--
-            Name and status chips share one horizontal row now — the
-            chips are the primary status readouts for the record, so
-            they sit inline with the name instead of stacking below.
-            `flex-wrap` keeps the layout resilient at narrower widths.
-        -->
-        <div class="flex min-w-0 flex-wrap items-center gap-3">
-            <h2 class="m-0 truncate text-xl font-semibold" data-testid="users-dialog-title">
-                {{ $displayName() }}
-            </h2>
-            @if (isEdit) {
-                <p-tag
-                    [value]="
-                        ($isActive()
-                            ? 'users.dialog.status.active'
-                            : 'users.dialog.status.inactive'
-                        ) | dm
-                    "
-                    [severity]="$isActive() ? 'success' : 'secondary'"
-                    [rounded]="true"
-                    data-testid="users-dialog-header-status" />
-                @if ($canLoginToAdmin()) {
-                    <p-tag
-                        [value]="'users.dialog.header.can-login' | dm"
-                        severity="info"
-                        [rounded]="true"
-                        data-testid="users-dialog-header-can-login" />
-                }
-            }
-        </div>
-    </header>
-
+    <!--
+        No internal avatar/name/status header — design brief 2026-09-08.
+        The user's name is placed in the dialog title bar by
+        `openUserDialog` in the list component; the form + tabs claim
+        the whole tab body from the top border.
+    -->
     @if ($isLoading()) {
         <div
             class="flex min-h-0 flex-1 flex-col gap-4 px-7 py-6"
@@ -164,7 +131,7 @@
     }
     <p-button
         [label]="'users.cancel' | dm"
-        [outlined]="true"
+        [text]="true"
         (onClick)="close()"
         data-testid="users-dialog-cancel-btn" />
     <!--
@@ -218,7 +185,7 @@
                     {{ key | dm }}
                 </small>
             } @else {
-                <small class="text-color-secondary">
+                <small class="text-slate-500">
                     {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
                 </small>
             }
@@ -259,7 +226,7 @@
         }
         <p-button
             [label]="'users.cancel' | dm"
-            [outlined]="true"
+            [text]="true"
             (onClick)="closeDeleteConfirm()"
             data-testid="users-delete-confirm-cancel-btn" />
         <p-button

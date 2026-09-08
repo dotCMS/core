@@ -1,16 +1,42 @@
 @if (!$hasUser()) {
+    <!--
+        Create-mode hint matches the permissions tab: icon +
+        centred copy on the tab body, no border/background. Both
+        tabs are unusable until the user record exists, so the empty
+        state reads the same on both.
+
+        `text-5xl!` needed on the Material Symbols icon: Google's
+        `.material-symbols-rounded { font-size: 24px }` ties
+        tailwind's `text-*` classes on specificity, so we force with
+        `!important` (`!` suffix) to size the icon.
+    -->
     <div
-        class="text-color-secondary rounded-lg border border-surface-200 bg-surface-50 p-6 text-sm"
+        class="flex h-full min-h-96 flex-col items-center justify-center gap-2 py-8"
         data-testid="users-api-tokens-create-mode-hint">
-        {{ 'users.dialog.tokens.create-mode-hint' | dm }}
+        <span class="material-symbols-rounded text-5xl! text-surface-400" aria-hidden="true">
+            key
+        </span>
+        <p class="m-0 text-slate-500">
+            {{ 'users.dialog.tokens.create-mode-hint' | dm }}
+        </p>
     </div>
 } @else {
-    <header class="flex items-start justify-between gap-4" data-testid="users-api-tokens-header">
+    <!--
+        `mb-4` gives the space between header and table wrapper without
+        needing `gap-4` on the host. The old `gap-4` treated the empty
+        `<p-confirmdialog>` and `<p-dialog>` host tags below as flex
+        items too — each added its own `gap-4` slot and pushed the
+        table wrapper up. Applying the space here instead keeps the
+        dialogs' invisible presence layout-neutral.
+    -->
+    <header
+        class="mb-4 flex items-start justify-between gap-4"
+        data-testid="users-api-tokens-header">
         <div class="flex flex-col gap-1">
             <h3 class="m-0 text-base font-semibold">
                 {{ 'users.dialog.tokens.header' | dm }}
             </h3>
-            <p class="text-color-secondary m-0 text-sm">
+            <p class="m-0 text-sm text-slate-500">
                 {{ 'users.dialog.tokens.description' | dm }}
             </p>
         </div>
@@ -105,20 +131,21 @@
                         (click)="onRowClick(token)"
                         (keydown)="onRowKeydown(token, $event)"
                         [attr.data-testid]="'users-api-tokens-row-' + token.id">
-                        <td class="font-mono text-sm" [title]="token.id">
-                            {{ shortId(token.id) }}
-                        </td>
+                        <!--
+                            No per-column font overrides — every cell
+                            inherits PrimeNG's standard table typography
+                            from the theme so this table reads the same
+                            as the users list and every other portlet
+                            table. The `title` on the id cell keeps the
+                            full identifier accessible on hover since
+                            `shortId` truncates for display.
+                        -->
+                        <td [title]="token.id">{{ shortId(token.id) }}</td>
                         <td>{{ token.claims?.label || '—' }}</td>
-                        <td class="text-sm">
-                            {{ token.issueDate | date: 'MM/dd/yyyy, h:mm a' }}
-                        </td>
-                        <td class="text-sm">
-                            {{ token.expiresDate | date: 'MM/dd/yyyy, h:mm a' }}
-                        </td>
-                        <td class="font-mono text-xs">
-                            {{ token.requestingUserId }}
-                        </td>
-                        <td class="font-mono text-xs">
+                        <td>{{ token.issueDate | date: 'MM/dd/yyyy, h:mm a' }}</td>
+                        <td>{{ token.expiresDate | date: 'MM/dd/yyyy, h:mm a' }}</td>
+                        <td>{{ token.requestingUserId }}</td>
+                        <td>
                             {{ token.allowNetwork || ('users.dialog.tokens.network.any' | dm) }}
                         </td>
                         <td (click)="$event.stopPropagation()">
@@ -201,9 +228,21 @@
         </p-table>
     </div>
 
+    <!--
+        Both dialog hosts get `display: contents` via a scoped rule in
+        the component SCSS (PrimeNG binds `[class]` on these hosts,
+        which overrides an inline `class` attribute — so the utility
+        can't ride on the tag). Without it, `<p-confirmdialog>` and
+        `<p-dialog>` remain flex items on the parent (`flex flex-col
+        gap-4`), each claiming a `gap-4` slot even when idle, which
+        pushed the table wrapper up and left an empty stripe at the
+        bottom. `appendTo="body"` moves the modal chrome to <body>
+        when opened, keeping z-index and overlay masking sane.
+    -->
     <p-confirmDialog
         [style]="{ width: '500px' }"
         [draggable]="false"
+        appendTo="body"
         data-testid="users-api-tokens-confirm-dialog" />
 
     <p-dialog
@@ -215,10 +254,11 @@
         [draggable]="false"
         [style]="{ width: '600px' }"
         [header]="'users.dialog.tokens.reveal.title' | dm"
+        appendTo="body"
         (onHide)="closeReveal()"
         data-testid="users-api-tokens-reveal-dialog">
         <div class="flex flex-col gap-3">
-            <p class="text-color-secondary m-0 text-sm">
+            <p class="m-0 text-sm text-slate-500">
                 {{ 'users.dialog.tokens.reveal.description' | dm }}
             </p>
             @if ($revealJwt(); as jwt) {
@@ -230,20 +270,45 @@
                         [value]="jwt"
                         readonly
                         data-testid="users-api-tokens-reveal-input" />
+                    <!--
+                        Icon-only ghost button. `[text]="true"` strips
+                        both fill and border so the icon sits alone
+                        against the row. Icon is projected as a Material
+                        Symbol (`content_copy` → `check` on success) to
+                        match the rest of the portlet's iconography —
+                        PrimeNG's `[icon]` input only accepts a class,
+                        so the material span goes in via content
+                        projection. Tooltip + aria-label carry the
+                        "Copy" / "Copied!" label for hover + screen
+                        readers.
+                    -->
                     <p-button
-                        [label]="
+                        [text]="true"
+                        [rounded]="true"
+                        severity="secondary"
+                        [pTooltip]="
                             ($copied()
                                 ? 'users.dialog.tokens.reveal.copied'
                                 : 'users.dialog.tokens.reveal.copy'
                             ) | dm
                         "
-                        [outlined]="!$copied()"
+                        tooltipPosition="top"
+                        [attr.aria-label]="
+                            ($copied()
+                                ? 'users.dialog.tokens.reveal.copied'
+                                : 'users.dialog.tokens.reveal.copy'
+                            ) | dm
+                        "
                         (onClick)="copyJwt()"
-                        data-testid="users-api-tokens-reveal-copy" />
+                        data-testid="users-api-tokens-reveal-copy">
+                        <span class="material-symbols-rounded text-lg!" aria-hidden="true">
+                            {{ $copied() ? 'check' : 'content_copy' }}
+                        </span>
+                    </p-button>
                 </div>
             } @else {
                 <div
-                    class="text-color-secondary flex items-center gap-2 text-sm"
+                    class="flex items-center gap-2 text-sm text-slate-500"
                     data-testid="users-api-tokens-reveal-loading">
                     <!--
                         Portlet-wide icon font is Google Material Symbols
@@ -262,9 +327,16 @@
             }
         </div>
         <ng-template pTemplate="footer">
+            <!--
+                Accept (primary) instead of a text Close: once the admin
+                has the JWT, the expected action is to acknowledge and
+                move on rather than "cancel out" — a solid button reads
+                as the affirmative close for that flow. Still wired to
+                `closeReveal()` — the dialog's semantic action is the
+                same, only the affordance changes.
+            -->
             <p-button
-                [label]="'users.dialog.tokens.reveal.close' | dm"
-                [outlined]="true"
+                [label]="'users.dialog.tokens.reveal.accept' | dm"
                 (onClick)="closeReveal()"
                 data-testid="users-api-tokens-reveal-close" />
         </ng-template>

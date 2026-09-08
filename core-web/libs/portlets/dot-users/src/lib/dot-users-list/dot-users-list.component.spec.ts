@@ -71,7 +71,7 @@ const MESSAGES = {
     'users.filter.all-access': 'All access',
     'users.actions.more.aria': 'More actions',
     'users.actions.edit': 'Edit',
-    'users.actions.push-publish': 'Push to Publish',
+    'users.actions.push-publish': 'Push Publish',
     'users.actions.add-to-bundle': 'Add to Bundle',
     'contenttypes.content.push_publish': 'Remote Publish'
 };
@@ -179,22 +179,36 @@ describe('DotUsersListComponent', () => {
         expect(spectator.query(byTestId('users-search-input'))).toBeTruthy();
     });
 
-    it('should render the New button visible when nothing is selected', () => {
-        const wrapper = spectator.query(byTestId('users-new-btn-wrapper'));
+    it('should show the New button expanded and the selection actions collapsed when nothing is selected', () => {
+        const newWrapper = spectator.query(byTestId('users-new-btn-wrapper'));
+        const selectionWrapper = spectator.query(byTestId('users-selection-toolbar'));
 
-        expect(spectator.query(byTestId('users-new-btn'))).toBeTruthy();
-        expect(wrapper?.className).toContain('opacity-100');
+        expect(newWrapper?.className).toContain('opacity-100');
+        expect(newWrapper?.className).toContain('max-w-40');
+        expect(newWrapper?.className).toContain('max-h-12');
+
+        // Selection actions stay in the DOM for the exit animation but
+        // both `max-w` AND `max-h` collapse to zero so the invisible
+        // buttons don't inflate the row height like they did before.
+        expect(selectionWrapper?.className).toContain('opacity-0');
+        expect(selectionWrapper?.className).toContain('max-w-0');
+        expect(selectionWrapper?.className).toContain('max-h-0');
+        expect(selectionWrapper?.className).toContain('pointer-events-none');
     });
 
-    it('should fade the New button out while a selection is active', () => {
+    it('should flip the visible/hidden pair when a selection is active', () => {
         const store = spectator.inject(DotUsersListStore, true);
         (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
         spectator.detectChanges();
 
-        const wrapper = spectator.query(byTestId('users-new-btn-wrapper'));
+        const newWrapper = spectator.query(byTestId('users-new-btn-wrapper'));
+        const selectionWrapper = spectator.query(byTestId('users-selection-toolbar'));
 
-        expect(wrapper?.className).toContain('opacity-0');
-        expect(wrapper?.className).toContain('pointer-events-none');
+        expect(selectionWrapper?.className).toContain('opacity-100');
+        expect(selectionWrapper?.className).toContain('max-h-12');
+        expect(newWrapper?.className).toContain('opacity-0');
+        expect(newWrapper?.className).toContain('max-h-0');
+        expect(newWrapper?.className).toContain('pointer-events-none');
 
         // Mocks live at the factory level, so mutations persist across sibling
         // tests. Reset before yielding so the next "no selection" test starts
@@ -202,27 +216,13 @@ describe('DotUsersListComponent', () => {
         (store.selectedUsers as jest.Mock).mockReturnValue([]);
     });
 
-    it('should keep the selection toolbar mounted but faded when nothing is selected', () => {
-        // The toolbar always renders — the fade / max-w-0 transition needs
-        // both mount states to keep animation on enter and exit, so we
-        // check the collapsed classes instead of a mount check.
-        const toolbar = spectator.query(byTestId('users-selection-toolbar'));
-
-        expect(toolbar).toBeTruthy();
-        expect(toolbar?.className).toContain('opacity-0');
-        expect(toolbar?.className).toContain('pointer-events-none');
-    });
-
-    it('should reveal the selection toolbar and count when there is a selection', () => {
+    it('should reveal the selection actions and count when there is a selection', () => {
         const store = spectator.inject(DotUsersListStore, true);
         (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0], MOCK_USERS[1]]);
         spectator.detectChanges();
 
-        const toolbar = spectator.query(byTestId('users-selection-toolbar'));
         const countLabel = spectator.query(byTestId('users-selected-count'));
 
-        expect(toolbar?.className).toContain('opacity-100');
-        expect(toolbar?.className).not.toContain('pointer-events-none');
         expect(countLabel?.textContent?.trim()).toBe('2 selected');
         expect(spectator.query(byTestId('users-delete-btn'))).toBeTruthy();
     });
@@ -278,7 +278,7 @@ describe('DotUsersListComponent', () => {
             const items = spectator.component['getRowMenuItems'](MOCK_USERS[0]);
             const labels = items.filter((i) => i.label).map((i) => i.label);
 
-            expect(labels).toEqual(['Push to Publish', 'Add to Bundle']);
+            expect(labels).toEqual(['Push Publish', 'Add to Bundle']);
         });
 
         it('should not carry icons on the menu items', () => {

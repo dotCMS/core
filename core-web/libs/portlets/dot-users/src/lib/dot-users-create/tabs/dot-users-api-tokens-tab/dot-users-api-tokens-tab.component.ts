@@ -24,6 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
@@ -69,12 +70,12 @@ type TokenStatus = 'valid' | 'revoked' | 'expired';
         SkeletonModule,
         TableModule,
         TagModule,
+        TooltipModule,
         DotMessagePipe
     ],
     templateUrl: './dot-users-api-tokens-tab.component.html',
-    styleUrl: './dot-users-api-tokens-tab.component.scss',
     providers: [DialogService, ConfirmationService],
-    host: { class: 'flex min-h-0 flex-1 flex-col gap-4' }
+    host: { class: 'flex min-h-0 flex-1 flex-col' }
 })
 export class DotUsersApiTokensTabComponent {
     readonly #dialogService = inject(DialogService);
@@ -295,7 +296,7 @@ export class DotUsersApiTokensTabComponent {
             acceptLabel: this.#messageService.get('users.dialog.tokens.revoke'),
             rejectLabel: this.#messageService.get('users.cancel'),
             acceptButtonProps: {},
-            rejectButtonProps: { outlined: true },
+            rejectButtonProps: { text: true },
             accept: () => {
                 this.#usersService
                     .revokeApiToken(token.id)

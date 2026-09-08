@@ -19,9 +19,13 @@ import { TreeModule } from 'primeng/tree';
 
 import { switchMap, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRolesService
+} from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { flattenRoleHierarchy } from '../../../utils/dot-roles-hierarchy.utils';
 
@@ -68,7 +72,14 @@ interface RoleTreeNode {
  */
 @Component({
     selector: 'dot-users-roles-tab',
-    imports: [FormsModule, ButtonModule, InputTextModule, TreeModule, DotMessagePipe],
+    imports: [
+        FormsModule,
+        ButtonModule,
+        InputTextModule,
+        TreeModule,
+        DotEmptyContainerComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-users-roles-tab.component.html',
     styleUrl: './dot-users-roles-tab.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,8 +87,24 @@ interface RoleTreeNode {
 })
 export class DotUsersRolesTabComponent {
     readonly #rolesService = inject(DotRolesService);
+    readonly #messageService = inject(DotMessageService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #destroyRef = inject(DestroyRef);
+
+    /**
+     * Empty-state config for the granted panel. Uses the shared
+     * `<dot-empty-container>` so the panel matches the app-wide empty
+     * pattern (icon + title, centred) instead of a lone paragraph.
+     * `security` material symbol reads as "roles/permissions" and
+     * matches the tab's domain. Contact-us link stays off — this
+     * empty state is a hint for the admin on the current dialog, not
+     * a marketing surface.
+     */
+    protected readonly grantedEmptyConfig: PrincipalConfiguration = {
+        title: this.#messageService.get('users.dialog.roles.granted.empty'),
+        icon: 'shield_person',
+        iconStyle: 'material-symbols-rounded'
+    };
 
     /**
      * Role IDs the user currently holds — sourced from the parent
@@ -354,6 +381,34 @@ export class DotUsersRolesTabComponent {
         return list;
     });
 
+    /**
+     * Flat forest of granted roles for `<p-tree>`. Same shape as the
+     * available side (no children) so both panels render with identical
+     * PrimeNG chrome — matching checkboxes, row padding, hover and
+     * selection colours — instead of a hand-rolled row list that never
+     * quite catches up with the theme.
+     */
+    protected readonly $grantedTreeNodes = computed<TreeNode[]>(() =>
+        this.$grantedList().map((role) => ({
+            key: role.id,
+            label: role.name,
+            data: role,
+            selectable: true
+        }))
+    );
+
+    /**
+     * PrimeNG selection binding for the granted tree. Reconstructed
+     * from `$selectedGranted` (id source of truth) whenever either the
+     * selection or the visible node set changes — this lets `revoke()`
+     * clear the visible checkboxes just by clearing the id set.
+     */
+    protected readonly $selectedGrantedTreeNodes = computed<TreeNode[]>(() => {
+        const selected = new Set(this.$selectedGranted());
+
+        return this.$grantedTreeNodes().filter((node) => selected.has(node.key ?? ''));
+    });
+
     protected readonly $grantedCount = computed(() => this.$granted().length);
     protected readonly $canGrant = computed(() => this.$selectedAvailable().length > 0);
     protected readonly $canRevoke = computed(() => this.$selectedGranted().length > 0);
@@ -405,10 +460,15 @@ export class DotUsersRolesTabComponent {
         }
     }
 
-    protected toggleGrantedSelection(id: string): void {
-        this.$selectedGranted.update((current) =>
-            current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
-        );
+    /**
+     * PrimeNG `(selectionChange)` handler for the granted-side tree.
+     * The granted forest is flat (no parents) so every emitted node is
+     * a leaf — dropping any node with a nullish key is defensive; in
+     * practice `$grantedTreeNodes` always sets one.
+     */
+    protected onGrantedTreeSelectionChange(selection: TreeNode | TreeNode[] | null): void {
+        const nodes = Array.isArray(selection) ? selection : selection ? [selection] : [];
+        this.$selectedGranted.set(nodes.map((node) => node.key ?? '').filter((key) => !!key));
     }
 
     /**
@@ -455,10 +515,6 @@ export class DotUsersRolesTabComponent {
         this.$granted.update((current) => current.filter((id) => !toRemove.has(id)));
         this.$selectedGranted.set([]);
         this.grantedChange.emit(this.$granted());
-    }
-
-    protected isSelectedGranted(id: string): boolean {
-        return this.$selectedGranted().includes(id);
     }
 
     /**

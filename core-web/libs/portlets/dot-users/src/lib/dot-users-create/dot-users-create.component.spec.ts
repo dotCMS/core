@@ -35,10 +35,6 @@ const MESSAGES = {
     'users.dialog.tabs.roles': 'Roles',
     'users.dialog.tabs.permissions': 'Permissions',
     'users.dialog.tabs.api-tokens': 'API Tokens',
-    'users.dialog.new-user': 'New User',
-    'users.dialog.untitled-user': 'Untitled User',
-    'users.dialog.status.active': 'Active',
-    'users.dialog.status.inactive': 'Inactive',
     'users.dialog.save': 'Save Changes',
     'users.dialog.create': 'Create User',
     'users.dialog.delete.button': 'Delete User',
@@ -106,14 +102,6 @@ describe('DotUsersCreateComponent', () => {
             expect(spectator.query(byTestId('users-dialog-tab-roles'))).toBeTruthy();
             expect(spectator.query(byTestId('users-dialog-tab-permissions'))).toBeTruthy();
             expect(spectator.query(byTestId('users-dialog-tab-api-tokens'))).toBeTruthy();
-        });
-
-        it('should NOT render the status chip in the header when no user is provided', () => {
-            expect(spectator.query(byTestId('users-dialog-header-status'))).toBeFalsy();
-        });
-
-        it('should show NU as the initials placeholder', () => {
-            expect(spectator.component.$initials()).toBe('NU');
         });
 
         it('should mark password as required in create mode', () => {
@@ -266,10 +254,6 @@ describe('DotUsersCreateComponent', () => {
             expect(account.active).toBe(true);
         });
 
-        it('should render the status chip in the header', () => {
-            expect(spectator.query(byTestId('users-dialog-header-status'))).toBeTruthy();
-        });
-
         it('should NOT mark password as required in edit mode', () => {
             const password = spectator.component.form.controls.account.controls.password;
             expect(password.hasError('required')).toBe(false);
@@ -281,22 +265,6 @@ describe('DotUsersCreateComponent', () => {
             expect(access.backend).toBe(true);
             expect(access.cmsAdmin).toBe(false);
             expect(access.frontend).toBe(false);
-        });
-
-        it('should derive canLoginToAdmin from CMS Admin or Back-end toggles', () => {
-            const access = spectator.component.form.controls.access.controls;
-
-            // Loaded user has DOTCMS_BACK_END_USER → chip shows.
-            expect(spectator.component.$canLoginToAdmin()).toBe(true);
-
-            access.backend.setValue(false);
-            expect(spectator.component.$canLoginToAdmin()).toBe(false);
-
-            access.cmsAdmin.setValue(true);
-            expect(spectator.component.$canLoginToAdmin()).toBe(true);
-
-            access.cmsAdmin.setValue(false);
-            expect(spectator.component.$canLoginToAdmin()).toBe(false);
         });
 
         it('should merge access toggles into `roles` and drop the personal role on save', () => {
