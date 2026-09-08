@@ -82,4 +82,21 @@ describe('DotAiIndexCreateComponent', () => {
 
         expect(dialogRef.close).toHaveBeenCalledWith();
     });
+
+    it('should associate the mode heading with the segmented control', () => {
+        const group = spectator.query('[role="group"]');
+
+        expect(group?.getAttribute('aria-labelledby')).toBe('dotai-index-create-mode-label');
+        expect(spectator.query('#dotai-index-create-mode-label')).toBeTruthy();
+    });
+
+    it('should mark the two genuinely-required fields as required', () => {
+        // $canSubmit blocks submission without both, so the user got no cue until it failed.
+        expect(spectator.query('label[for="dotai-index-name"]')).toHaveClass(
+            'p-label-input-required'
+        );
+        expect(spectator.query('label[for="dotai-index-query"]')).toHaveClass(
+            'p-label-input-required'
+        );
+    });
 });

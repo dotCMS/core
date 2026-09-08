@@ -72,4 +72,14 @@ describe('DotAiSettingsPanelComponent', () => {
         expect(spectator.query(byTestId('dotai-settings-index-forbidden'))).toBeTruthy();
         expect(spectator.query(byTestId('dotai-settings-index'))).toBeFalsy();
     });
+
+    it('should give the operator radios a group name a screen reader can reach', () => {
+        // A bare <label> with no `for` names nothing, so the three radios arrived unlabelled
+        // as a group even though each one is paired correctly.
+        spectator = createComponent();
+        const group = spectator.query('[role="group"]');
+
+        expect(group?.getAttribute('aria-labelledby')).toBe('dotai-settings-operator-label');
+        expect(spectator.query('#dotai-settings-operator-label')).toBeTruthy();
+    });
 });

@@ -41,8 +41,11 @@
         <small class="p-field-hint">{{ 'dotai.settings.threshold.hint' | dm }}</small>
     </div>
 
-    <div class="field">
-        <label>{{ 'dotai.settings.operator' | dm }}</label>
+    <!-- role=group + aria-labelledby, because a bare <label> with no `for` names nothing:
+         a screen reader reached the three radios with no group name at all. The individual
+         radios are already paired correctly below. -->
+    <div class="field" role="group" aria-labelledby="dotai-settings-operator-label">
+        <label id="dotai-settings-operator-label">{{ 'dotai.settings.operator' | dm }}</label>
         @for (operator of operators; track operator.value) {
             <div class="form-radio">
                 <p-radioButton

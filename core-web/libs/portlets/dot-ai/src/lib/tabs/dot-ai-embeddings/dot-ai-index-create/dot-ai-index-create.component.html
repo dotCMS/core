@@ -1,6 +1,9 @@
 <form class="form" (ngSubmit)="submit()">
-    <div class="field">
-        <label>{{ 'dotai.index.create.mode' | dm }}</label>
+    <!-- Same reason as the operator group in the settings panel: the heading needs to be
+         programmatically associated, and a segmented control has no single input to point a
+         `for` at. -->
+    <div class="field" role="group" aria-labelledby="dotai-index-create-mode-label">
+        <label id="dotai-index-create-mode-label">{{ 'dotai.index.create.mode' | dm }}</label>
         <p-selectButton
             [options]="modes"
             optionLabel="label"
