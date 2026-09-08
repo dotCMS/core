@@ -434,7 +434,20 @@ export const DotExperimentsListStore = signalStore(
 
                 resolvePageInfo$: events.on(dotExperimentsApiEvents.listSucceeded).pipe(
                     switchMap(({ payload }) => {
-                        const pageIds = distinctPageIds(payload);
+                        const experimentPageIds = distinctPageIds(payload);
+                        const filteredPageId = store.selectedPageId();
+
+                        // The page the list is narrowed to resolves as well, whether or not it
+                        // has experiments of its own (FR-021c). Keyed on the experiments alone,
+                        // this lookup never asked for a page arriving from UVE with none — and
+                        // everything the filter renders is built from that url: the chip's
+                        // label, the empty state's copy, and the link back to the editor. The
+                        // chip ended up claiming the page was gone on the one page where
+                        // creating the first experiment is the point of the visit.
+                        const pageIds =
+                            filteredPageId && !experimentPageIds.includes(filteredPageId)
+                                ? [...experimentPageIds, filteredPageId]
+                                : experimentPageIds;
 
                         // Nothing to resolve, but the status still has to leave `loading`:
                         // `listSucceeded` set it there for any non-empty payload, and no other
@@ -456,7 +469,11 @@ export const DotExperimentsListStore = signalStore(
                                 mapResponse({
                                     next: (entity) =>
                                         dotExperimentsApiEvents.pageInfoSucceeded(
-                                            resolvedPageInfo(entity, pageIds)
+                                            // Only the experiments' own pages are checked for a
+                                            // shortfall: an unresolvable filtered page hides no
+                                            // experiment, and the chip has copy of its own for
+                                            // a page that really was deleted.
+                                            resolvedPageInfo(entity, experimentPageIds)
                                         ),
                                     error: toFailure(dotExperimentsApiEvents.pageInfoFailed)
                                 })

@@ -307,6 +307,73 @@ describe('DotExperimentsListStore', () => {
             expect(contentSearchGet).not.toHaveBeenCalled();
             expect(store.status()).toBe(ComponentStatus.LOADED);
         });
+
+        /**
+         * The filtered page resolves too, whether or not it has experiments (#37005, FR-021c).
+         *
+         * The lookup is keyed on the pageIds the experiments carry, so a page arriving from UVE
+         * with none of its own was never asked for — and the screen has no url for it. Everything
+         * the page filter renders is built from that url: the chip's label, the empty state's
+         * copy, and the link back to the editor. Without it the chip claimed the page was gone
+         * and the back-link vanished, on the one page where creating the first experiment is the
+         * whole point of the visit.
+         */
+        describe('with a page filter', () => {
+            beforeEach(() => {
+                queryParams = { pageId: 'page-unused' };
+            });
+
+            it('should resolve the filtered page alongside the experiments own pages', () => {
+                initStore();
+
+                expect(contentSearchGet).toHaveBeenCalledWith({
+                    query: '+working:true +identifier:(page-1 page-2 page-3 page-orphan page-unused)',
+                    limit: 5 * PAGE_LOOKUP_LANGUAGE_HEADROOM
+                });
+            });
+
+            it('should not ask for it twice when an experiment already uses it', () => {
+                queryParams = { pageId: 'page-1' };
+
+                initStore();
+
+                expect(contentSearchGet).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        query: '+working:true +identifier:(page-1 page-2 page-3 page-orphan)'
+                    })
+                );
+            });
+
+            it('should still run the lookup when the site has no experiments at all', () => {
+                // Otherwise the first experiment on a page is created from a screen that cannot
+                // name the page it is about.
+                getAllUnfiltered.mockReturnValue(of([]));
+
+                initStore();
+
+                expect(contentSearchGet).toHaveBeenCalledWith({
+                    query: '+working:true +identifier:(page-unused)',
+                    limit: PAGE_LOOKUP_LANGUAGE_HEADROOM
+                });
+            });
+
+            it('should not count the filtered page in the shortfall warning', () => {
+                // The warning is about experiments being hidden by a page that would not resolve.
+                // An unresolvable *filtered* page hides none — a genuinely deleted page is the one
+                // case the chip's fallback copy is for — so counting it would inflate a number
+                // whose whole job is to say how much of the list is missing.
+                const warn = jest.spyOn(console, 'warn').mockImplementation();
+
+                initStore();
+
+                // `page-orphan` is the fixture's real shortfall; `page-unused` is the filter.
+                expect(warn).toHaveBeenCalledWith(
+                    expect.stringContaining('resolved 3 of 4 pages'),
+                    ['page-orphan']
+                );
+                warn.mockRestore();
+            });
+        });
     });
 
     describe('analytics health gate', () => {
