@@ -106,4 +106,22 @@ describe('DotAiImageComponent', () => {
 
         expect(storeMock.generateImage).not.toHaveBeenCalled();
     });
+
+    describe('the composer toolbar', () => {
+        it('should place the size selector immediately before Generate', () => {
+            // Both are projected into promptEnd, so DOM order is what puts the size to the
+            // left of the action it applies to.
+            const size = spectator.query(byTestId('dotai-image-orientation')) as Element;
+            const generate = spectator.query(byTestId('dotai-image-generate')) as Element;
+
+            expect(
+                size.compareDocumentPosition(generate) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+            expect(size.parentElement).toBe(generate.parentElement);
+        });
+
+        it('should not carry the replaces hint any more', () => {
+            expect(spectator.query(byTestId('dotai-image-replaces-hint'))).toBeFalsy();
+        });
+    });
 });

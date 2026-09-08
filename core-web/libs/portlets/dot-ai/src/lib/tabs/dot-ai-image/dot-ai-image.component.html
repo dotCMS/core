@@ -95,8 +95,11 @@
             [disabled]="!store.isConfigured()"
             [ariaLabel]="'dotai.image.input.aria' | dm"
             [placeholder]="'dotai.image.placeholder' | dm">
+            <!-- promptEnd, not promptStart: the size belongs with the action it applies to,
+                 so it reads as "this size, Generate" rather than sitting alone at the far
+                 left of the row. -->
             <p-select
-                promptStart
+                promptEnd
                 [options]="orientations"
                 optionLabel="label"
                 optionValue="value"
@@ -117,13 +120,6 @@
                     </span>
                 </ng-template>
             </p-select>
-
-            <span
-                promptEnd
-                class="text-sm text-muted-color"
-                data-testid="dotai-image-replaces-hint">
-                {{ 'dotai.image.replaces-hint' | dm }}
-            </span>
 
             <p-button
                 promptEnd
