@@ -15,6 +15,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.util.I18NMessage;
 import com.dotcms.notifications.business.NotificationAPI;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -27,6 +28,7 @@ import com.liferay.portal.model.User;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.UUID;
 import org.jboss.weld.junit5.EnableWeld;
@@ -74,7 +76,12 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
         public Object invoke(final Object proxy, final Method method, final Object[] args) {
             if ("generateNotification".equals(method.getName()) && args != null
                     && args.length >= 8) {
-                this.messageKey = String.valueOf(args[1]);
+                // getKey(), not String.valueOf: I18NMessage#toString renders the whole object —
+                // "I18NMessage{key=..., arguments=[...]}" — so a test comparing against a bare key
+                // would never match, and one only checking non-null would pass no matter which
+                // message was chosen. Which message it is, is the whole subject here.
+                this.messageKey = args[1] instanceof I18NMessage
+                        ? ((I18NMessage) args[1]).getKey() : String.valueOf(args[1]);
                 this.level = (NotificationLevel) args[3];
                 this.userId = String.valueOf(args[6]);
             }
@@ -258,6 +265,104 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
                 "the flag must be present rather than omitted, so its absence never has to be "
                         + "guessed at");
         assertEquals(Boolean.FALSE, payload.get("duplicateSubmission"));
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A resubmission of an already-succeeded batch reaches the durable
+     * notification — the bell, the channel for the author who closed the tab.
+     * <p>
+     * Expected result: Reported as "already uploaded" at {@code INFO}, not as a total failure at
+     * {@code ERROR}.
+     * <p>
+     * <b>This is the case the counts actively lie about.</b> A resubmission collides on every file,
+     * so it arrives as {@code successCount=0, failedCount=N} and is word-for-word indistinguishable
+     * from a batch that genuinely failed outright. Judged on counts alone the listener picks the
+     * failure wording, which is the exact outcome FR-040a was added to prevent — and it lands on
+     * the feature's core channel. Told "50 of 50 failed", an author re-uploads 50 files that are
+     * already in the folder, which the spec calls worse than offering no retry at all.
+     */
+    @Test
+    public void test_completion_doesNotReportAResubmissionAsATotalFailure() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        // The shape a duplicate really arrives in: nothing succeeded, everything collided.
+        final Map<String, Object> result = outcome(0, 3);
+        result.put("duplicateSubmission", true);
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, result);
+
+        final CapturingNotifications captured = listenTo(job);
+
+        assertEquals("notification.bulkupload.duplicate", captured.messageKey,
+                "a recognised resubmission must be told as one; these exact counts are also what "
+                        + "a genuine total failure looks like, which is why the flag has to be "
+                        + "consulted before them");
+        assertFalse(NotificationLevel.ERROR.equals(captured.level),
+                "and it is not an error — nothing went wrong, the files were already there");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A batch that genuinely failed on every file, with no duplicate flag.
+     * <p>
+     * Expected result: Still reported as a failure, at {@code ERROR}. The guard above must not have
+     * turned every all-collision batch into a reassuring message — a first-time batch whose files
+     * all collided with someone else's really did fail, and the author has to be told so.
+     */
+    @Test
+    public void test_completion_stillReportsAGenuineTotalFailureAsOne() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        final Map<String, Object> result = outcome(0, 3);
+        result.put("duplicateSubmission", false);
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, result);
+
+        final CapturingNotifications captured = listenTo(job);
+
+        assertEquals("notification.bulkupload.failed", captured.messageKey,
+                "identical counts, no flag: this one really did fail and must say so");
+        assertEquals(NotificationLevel.ERROR, captured.level);
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener#payloadFor}
+     * <p>
+     * Given scenario: An outcome carrying every field contracts §3 defines.
+     * <p>
+     * Expected result: The pushed payload carries all of them.
+     * <p>
+     * <b>Why this is asserted as a set rather than field by field.</b> Contract §4 says the pushed
+     * payload <i>is</i> the §3 outcome, but {@code payloadFor} copies keys by hand — so the two can
+     * drift silently, and did: {@code duplicateSubmission} was implemented on the outcome and
+     * omitted from the payload, with both halves correct in isolation and nobody owning the join.
+     * Two reviewers passed both sides clean. A per-field test would not have caught it either,
+     * because nobody writes the test for the field they forgot. This one fails the moment a field
+     * is added to §3 and not to the event, which is the failure mode worth guarding.
+     * <p>
+     * Suggested by @zJaaal, building the client against this contract.
+     */
+    @Test
+    public void test_completion_payloadCarriesEveryFieldTheContractDefines() throws Exception {
+        // Contract §3, "The outcome" — the field table, verbatim.
+        final List<String> contractFields = List.of(
+                "total", "processed", "successCount", "failedCount", "skippedCount",
+                "duplicateSubmission", "results");
+
+        final User author = new UserDataGen().nextPersisted();
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, outcome(2, 1));
+
+        final Map<String, Object> payload =
+                new BulkUploadCompletionListener().payloadFor(job);
+
+        final List<String> missing = contractFields.stream()
+                .filter(field -> !payload.containsKey(field))
+                .collect(Collectors.toList());
+
+        assertTrue(missing.isEmpty(), String.format(
+                "contracts §4 says the pushed payload is the §3 outcome, but payloadFor omits %s. "
+                        + "Add the field there as well as to getResultMetadata — a client "
+                        + "following the push cannot see what only the polled outcome carries",
+                missing));
     }
 
     /**

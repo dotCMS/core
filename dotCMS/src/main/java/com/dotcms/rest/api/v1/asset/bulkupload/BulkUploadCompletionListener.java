@@ -53,6 +53,7 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
     private static final String NOTIFICATION_PARTIAL_KEY = "notification.bulkupload.partial";
     private static final String NOTIFICATION_FAILED_KEY = "notification.bulkupload.failed";
     private static final String NOTIFICATION_CANCELLED_KEY = "notification.bulkupload.cancelled";
+    private static final String NOTIFICATION_DUPLICATE_KEY = "notification.bulkupload.duplicate";
 
     private final SystemEventsAPI systemEventsAPI;
     private final NotificationAPI notificationAPI;
@@ -171,6 +172,19 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
             // upload broke when they stopped it themselves.
             messageKey = NOTIFICATION_CANCELLED_KEY;
             level = NotificationLevel.WARNING;
+        } else if (Boolean.TRUE.equals(payload.get("duplicateSubmission"))) {
+            // Checked BEFORE the counts, because the counts are exactly what mislead here: a
+            // resubmission collides on every file, so it arrives as successCount=0, failedCount=N
+            // and matches the branch below word for word. Judged on counts alone this batch is
+            // reported as a total failure — the precise outcome FR-040a exists to prevent, landing
+            // on the durable notification, which is the channel for the author who walked away and
+            // therefore the feature's core case.
+            //
+            // Worth being concrete about the harm: told "50 of 50 failed", an author goes and
+            // re-uploads 50 files that are already in the folder. The spec calls that worse than
+            // offering no retry at all, and it is why the flag was added.
+            messageKey = NOTIFICATION_DUPLICATE_KEY;
+            level = NotificationLevel.INFO;
         } else if (JobState.SUCCESS != job.state() || (0 == succeeded && failed > 0)) {
             messageKey = NOTIFICATION_FAILED_KEY;
             level = NotificationLevel.ERROR;
