@@ -151,11 +151,43 @@ describe('DotAiImageComponent', () => {
         });
 
         it('should not underline the download link, which is shaped like a button', () => {
-            // The global `a` rule underlines every link (style.css), which reads wrong here.
             const link = spectator.query(byTestId('dotai-image-download')) as HTMLElement;
 
-            expect(link.className).toContain('no-underline');
             expect(link.className).toContain('p-button');
+            // The bang is load-bearing, which is why it is asserted rather than just
+            // `no-underline`: style.css's `a { @apply underline }` is unlayered, and an
+            // unlayered declaration beats anything in @layer utilities whatever its
+            // specificity. Plain `no-underline` shipped once and left the link underlined.
+            expect(link.className).toContain('no-underline!');
+        });
+    });
+
+    describe('the picture frame', () => {
+        beforeEach(() => withImage());
+
+        it('should cap the picture rather than stretching it to the panel height', () => {
+            // `h-full w-auto` here was the bug: a 16:9 picture in a near-square panel
+            // resolved to 1817px of image inside a 1344px frame, so the border wrapped a
+            // letterboxed box and the action bar anchored to the frame, not the picture.
+            const image = spectator.query('p-image') as HTMLElement;
+            // Tokenised, not a substring match: 'h-full' is a substring of 'max-h-full', so
+            // `not.toContain` on the raw string passes for the very class it should reject.
+            const classes = (image.getAttribute('imageclass') ?? '').split(/\s+/);
+
+            expect(classes).toContain('max-h-full');
+            expect(classes).toContain('max-w-full');
+            expect(classes).not.toContain('h-full');
+            expect(classes).not.toContain('w-auto');
+        });
+
+        it('should let the frame shrink-wrap the picture, so the bar lands on its corner', () => {
+            const frame = spectator.query(byTestId('dotai-image-save'))?.parentElement
+                ?.parentElement as HTMLElement;
+
+            // No flex-1 and no h-full: either would stretch the frame past the picture.
+            expect(frame.className).toContain('max-h-full');
+            expect(frame.className).toContain('max-w-full');
+            expect(frame.className).not.toContain('flex-1');
         });
     });
 

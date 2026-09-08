@@ -52,16 +52,17 @@ export default class DotAiImageComponent {
     ];
 
     /**
-     * `h-full` sizes the picture from the available height and its own ratio; `w-fit` is what
-     * stops the wrapper stretching past it.
+     * Caps the root and lets it shrink; deliberately no `h-full`.
      *
-     * Without `w-fit` this element is a stretched flex item, so for a tall ratio it took the
-     * column's width — set by the wider action row — and left dead space beside the picture
-     * that the zoom overlay still covered. Sizing it to content also lines its left edge up
-     * with the buttons below, so no alignment classes are needed.
+     * `h-full w-fit` here forced the image to the full available height and then let its own
+     * ratio decide the width, which for a 16:9 picture in a near-square panel came out wider
+     * than the frame — the image overflowed while the border it carries wrapped a letterboxed
+     * box. Measured: 1817px of picture inside a 1344px frame. With `max-*` and the min-0 pair
+     * the image is only ever scaled down, so its box is exactly the rendered picture and the
+     * frame shrink-wraps it.
      */
     protected readonly imagePt = {
-        root: { class: 'flex h-full w-fit' }
+        root: { class: 'flex max-h-full max-w-full min-h-0 min-w-0' }
     };
 
     /** One rule, read by both the button's disabled state and the generate path. */

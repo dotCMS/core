@@ -27,18 +27,20 @@
                     height="100%"
                     data-testid="dotai-image-loading" />
             } @else if (store.image(); as image) {
-                <!-- items-center makes the inner column size to its content, so the frame hugs
-                     the picture instead of letterboxing it. `relative` is what the action bar
-                     anchors to, and because that bar is out of flow the wrapper's width is now
-                     purely the picture's. -->
+                <!-- The picture is capped, never stretched: `max-h-full`/`max-w-full` all the
+                     way down and no `h-full` anywhere. `h-full w-auto` on the image was the
+                     bug — a 16:9 picture in a near-square area came out 1817px wide inside a
+                     1344px frame, so the border it carries wrapped a letterboxed box instead
+                     of the picture, and the action bar anchored to the frame rather than the
+                     corner you can see. Capping instead makes the image's own box exactly the
+                     rendered picture, which the frame then shrink-wraps. -->
                 <div
-                    class="flex min-h-0 flex-1 flex-col items-center"
+                    class="flex min-h-0 flex-1 items-center justify-center"
                     data-testid="dotai-image-result">
-                    <div class="relative flex min-h-0 max-w-full flex-1 flex-col">
+                    <div class="relative flex max-h-full max-w-full">
                         <p-image
-                            class="flex min-h-0 flex-1"
                             [pt]="imagePt"
-                            imageClass="h-full w-auto rounded-lg border border-surface-200 object-contain"
+                            imageClass="max-h-full max-w-full rounded-lg border border-surface-200 object-contain"
                             [src]="store.imageUrl()"
                             [preview]="true"
                             alt="{{ image.originalPrompt }}" />
@@ -58,10 +60,13 @@
                                 data-testid="dotai-image-save" />
 
                             <!-- Same-origin anchor: no backend, and it works before any save.
-                                 no-underline because the global `a` rule underlines every
-                                 link, which reads wrong on something shaped like a button. -->
+                                 `no-underline!` needs the bang: style.css's `a { @apply
+                                 underline }` is unlayered, and an unlayered declaration beats
+                                 anything in @layer utilities whatever the specificity. Every
+                                 other no-underline in this repo carries it for the same
+                                 reason. -->
                             <a
-                                class="p-button p-button-outlined p-button-sm no-underline"
+                                class="p-button p-button-outlined p-button-sm no-underline!"
                                 [href]="store.imageUrl()"
                                 [download]="image.tempFileName"
                                 data-testid="dotai-image-download">
