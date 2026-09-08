@@ -196,6 +196,36 @@ describe('DotAiEmbeddingsComponent', () => {
         });
     });
 
+    describe('the confirm dialogs', () => {
+        const config = () => confirmSpy.mock.calls[0][0];
+
+        it('should give the delete confirmation a primary accept', () => {
+            clickButton('dotai-embeddings-delete');
+
+            // Absent, not 'p-button-primary': the theme defines no such class — `.p-button`
+            // carries the primary styling itself — so asking for one renders nothing.
+            expect(config().acceptButtonStyleClass).toBeUndefined();
+        });
+
+        it('should give the delete confirmation an outlined cancel', () => {
+            clickButton('dotai-embeddings-delete');
+
+            expect(config().rejectButtonStyleClass).toBe('p-button-outlined');
+        });
+
+        it('should keep the rebuild accept red, since it drops every embedding', () => {
+            clickButton('dotai-embeddings-rebuild');
+
+            expect(config().acceptButtonStyleClass).toBe('p-button-danger');
+        });
+
+        it('should use the same cancel treatment in both, since they share one dialog', () => {
+            clickButton('dotai-embeddings-rebuild');
+
+            expect(config().rejectButtonStyleClass).toBe('p-button-outlined');
+        });
+    });
+
     describe('the per-row delete action', () => {
         const deleteButton = () =>
             spectator.query(byTestId('dotai-embeddings-delete'))?.querySelector('button');

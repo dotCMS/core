@@ -116,7 +116,11 @@ export default class DotAiEmbeddingsComponent {
         this.#confirmationService.confirm({
             header: this.#messageService.get('dotai.embeddings.delete.header'),
             message: this.#messageService.get('dotai.embeddings.delete.message', index.name),
-            acceptButtonStyleClass: 'p-button-danger',
+            // No acceptButtonStyleClass: primary is `.p-button`'s own styling, and the theme
+            // defines no `p-button-primary` to ask for — checked in @primeuix/styles, where
+            // `p-button-secondary` exists and `p-button-primary` does not. Setting it would
+            // be a class that resolves to nothing.
+            rejectButtonStyleClass: 'p-button-outlined',
             accept: () => this.store.deleteIndex(index.name)
         });
     }
@@ -126,7 +130,12 @@ export default class DotAiEmbeddingsComponent {
             header: this.#messageService.get('dotai.embeddings.rebuild.header'),
             // States plainly that the store is discarded — this is not undoable.
             message: this.#messageService.get('dotai.embeddings.rebuild.message'),
+            // Accept stays danger here: this one drops every embedding in the instance.
+            // Cancel matches the delete dialog's — the two confirms share one
+            // `<p-confirmDialog>`, so leaving this unset gave the same screen two different
+            // cancel buttons, one of them a filled primary sitting beside a red accept.
             acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-outlined',
             accept: () => this.store.rebuildEmbeddingsDb()
         });
     }
