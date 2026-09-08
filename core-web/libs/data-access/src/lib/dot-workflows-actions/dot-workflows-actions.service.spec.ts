@@ -141,7 +141,7 @@ describe('DotWorkflowsActionsService', () => {
 
         it('should derive actionInputs for getDefaultActions', () => {
             const contentTypeId = '123';
-            let result: DotCMSContentletWorkflowActions[];
+            let result: DotCMSContentletWorkflowActions[] = [];
 
             spectator.service.getDefaultActions(contentTypeId).subscribe((res) => (result = res));
 
@@ -157,7 +157,7 @@ describe('DotWorkflowsActionsService', () => {
 
         it('should derive actionInputs for getWorkFlowActions', () => {
             const contentTypeName = 'Blog';
-            let result: DotCMSContentletWorkflowActions[];
+            let result: DotCMSContentletWorkflowActions[] = [];
 
             spectator.service
                 .getWorkFlowActions(contentTypeName)
@@ -175,7 +175,7 @@ describe('DotWorkflowsActionsService', () => {
 
         it('should derive an empty array for an action with no inputs, never undefined', () => {
             // Guards the opposite failure mode: these actions must keep firing directly.
-            let result: DotCMSContentletWorkflowActions[];
+            let result: DotCMSContentletWorkflowActions[] = [];
 
             spectator.service.getDefaultActions('123').subscribe((res) => (result = res));
 
@@ -190,7 +190,7 @@ describe('DotWorkflowsActionsService', () => {
             // Keeps the derivation from clobbering a payload that already carries the array —
             // relevant if these endpoints ever start returning WorkflowActionView.
             const serverProvided = [{ id: 'pushPublish', body: {} }];
-            let result: DotCMSContentletWorkflowActions[];
+            let result: DotCMSContentletWorkflowActions[] = [];
 
             spectator.service.getDefaultActions('123').subscribe((res) => (result = res));
 
@@ -204,25 +204,25 @@ describe('DotWorkflowsActionsService', () => {
         it('should NOT re-derive on getByInode — the server already populates it there', () => {
             // Deriving here would mask a future backend regression in the endpoint that is
             // supposed to build the array itself.
+            //
+            // The fixture omits `actionInputs` entirely while setting `commentable: true`. That
+            // combination is what makes this guard bite: `withDerivedActionInputs` short-circuits
+            // on any NON-EMPTY array, so a fixture that already carried one would pass whether or
+            // not derivation ran. With the key absent, applying derivation to getByInode would
+            // produce a `commentable` entry and fail this assertion.
+            //
+            // Verified by mutation: adding `map(withDerivedActionInputs)` to getByInode turns this
+            // test red.
             const inode = 'cc2cdf9c-a20d-4862-9454-2a76c1132123';
-            const serverProvided = [{ id: 'moveable', body: {} }];
-            let result: DotCMSWorkflowAction[];
+            let result: DotCMSWorkflowAction[] = [];
 
             spectator.service.getByInode(inode).subscribe((res) => (result = res));
 
             spectator
                 .expectOne(`/api/v1/workflow/contentlet/${inode}/actions`, HttpMethod.GET)
-                .flush({
-                    entity: [
-                        {
-                            ...rawCommentableAction,
-                            commentable: false,
-                            actionInputs: serverProvided
-                        }
-                    ]
-                });
+                .flush({ entity: [{ ...rawCommentableAction, commentable: true }] });
 
-            expect(result[0].actionInputs).toEqual(serverProvided);
+            expect(result[0].actionInputs).toBeUndefined();
         });
     });
 

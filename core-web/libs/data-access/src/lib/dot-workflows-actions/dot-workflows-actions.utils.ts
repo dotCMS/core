@@ -51,5 +51,13 @@ export const deriveActionInputs = (action: DotCMSWorkflowAction): DotCMSWorkflow
  * @param action the workflow action as it came off the wire
  * @returns a new action; the argument is never mutated
  */
-export const withDerivedActionInputs = (action: DotCMSWorkflowAction): DotCMSWorkflowAction =>
-    action?.actionInputs?.length ? action : { ...action, actionInputs: deriveActionInputs(action) };
+export const withDerivedActionInputs = (action: DotCMSWorkflowAction): DotCMSWorkflowAction => {
+    // No optional chaining on `action` itself: `deriveActionInputs` dereferences it anyway, so a
+    // `?.` here would only move the TypeError one line down while reading as if it were handled.
+    // A missing action is a malformed payload — let it fail loudly rather than half-guard it.
+    if (action.actionInputs?.length) {
+        return action;
+    }
+
+    return { ...action, actionInputs: deriveActionInputs(action) };
+};

@@ -23,6 +23,7 @@ import {
     DotContentletService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFireActionOptions,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
@@ -723,6 +724,22 @@ describe('DotFormComponent', () => {
                     actionInputs: [{ id: 'commentable', body: {} }]
                 } as DotCMSWorkflowAction;
 
+                // `fireWorkflowAction` is an rxMethod, so its parameter type is a union of
+                // (value | Observable | factory). Narrow to the value form for assertions.
+                const firedPayload = (spy: jest.SpyInstance, call = 0) =>
+                    spy.mock.calls[call][0] as DotFireActionOptions<{
+                        [key: string]: string | object | string[];
+                    }>;
+
+                // `DotWizardService` is a factory-level mockProvider, so its `open` jest.fn is
+                // shared by every test in this file. The tests below swap in never-emitting
+                // Subjects, and `jest.clearAllMocks()` clears call data but NOT implementations —
+                // so without this restore the last Subject would leak into any later test that
+                // expects `open()` to emit, breaking it by declaration order alone.
+                afterEach(() => {
+                    (spectator.inject(DotWizardService).open as jest.Mock).mockReturnValue(of({}));
+                });
+
                 it('should not fire the action while the dialog is still open', () => {
                     const wizardService = spectator.inject(DotWizardService);
                     // A wizard that never emits models a dialog the author has not answered yet.
@@ -754,7 +771,7 @@ describe('DotFormComponent', () => {
                     wizard$.next({ comments: 'looks good' });
 
                     expect(fireSpy).toHaveBeenCalledTimes(1);
-                    expect(fireSpy.mock.calls[0][0].data).toEqual(
+                    expect(firedPayload(fireSpy).data).toEqual(
                         expect.objectContaining({ comments: 'looks good' })
                     );
                 });
@@ -792,9 +809,52 @@ describe('DotFormComponent', () => {
                     secondAttempt$.next({ comments: 'second try' });
 
                     expect(fireSpy).toHaveBeenCalledTimes(1);
-                    expect(fireSpy.mock.calls[0][0].data.contentlet).toEqual(
+                    expect(firedPayload(fireSpy).data.contentlet).toEqual(
                         expect.objectContaining({ text1: 'a value the author typed' })
                     );
+                });
+            });
+
+            // #36883: the derivation emits `pushPublish` too, so a Push Publish action on content
+            // with no inode now routes through the environment check instead of firing directly.
+            // That is intended: previously it fired with NO push-publish data at all, so the
+            // action's push publish silently did nothing. Blocking with a notification is the
+            // correct outcome — you cannot push publish without an environment. Pinned here so the
+            // behavior reads as deliberate rather than accidental.
+            describe('push publish without environments (#36883)', () => {
+                const pushPublishWorkflow = {
+                    id: '1',
+                    actionInputs: [{ id: 'pushPublish', body: {} }]
+                } as DotCMSWorkflowAction;
+
+                it('should not fire the action when no publish environments are configured', () => {
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.containsPushPublish as jest.Mock).mockReturnValue(true);
+                    (eventHandler.checkPublishEnvironments as jest.Mock).mockReturnValue(of(false));
+                    const wizardService = spectator.inject(DotWizardService);
+                    const fireSpy = jest.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({
+                        workflow: pushPublishWorkflow,
+                        ...baseParams
+                    });
+
+                    expect(fireSpy).not.toHaveBeenCalled();
+                    expect(wizardService.open).not.toHaveBeenCalled();
+                });
+
+                it('should open the wizard when environments are configured', () => {
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.containsPushPublish as jest.Mock).mockReturnValue(true);
+                    (eventHandler.checkPublishEnvironments as jest.Mock).mockReturnValue(of(true));
+                    const wizardService = spectator.inject(DotWizardService);
+
+                    component.fireWorkflowAction({
+                        workflow: pushPublishWorkflow,
+                        ...baseParams
+                    });
+
+                    expect(wizardService.open).toHaveBeenCalled();
                 });
             });
         });

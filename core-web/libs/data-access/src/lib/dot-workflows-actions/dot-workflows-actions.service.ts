@@ -20,9 +20,16 @@ import { withDerivedActionInputs } from './dot-workflows-actions.utils';
  * Fills in the `actionInputs` the default/initial-action endpoints do not send (#36883).
  *
  * Applied to `getDefaultActions` and `getWorkFlowActions` only — those return
- * `WorkflowDefaultActionView`, which wraps the raw action and omits the array. `getByInode`,
- * `getByWorkflows` and `getBulkActions` are deliberately left alone: their endpoints build it
- * server-side, and deriving over them would hide a backend regression rather than surface it.
+ * `WorkflowDefaultActionView`, which wraps the raw action and omits the array.
+ *
+ * Left alone, for two different reasons:
+ * - `getByInode` and `getBulkActions` — their endpoints build `actionInputs` server-side
+ *   (`WorkflowActionView`), so deriving over them would hide a backend regression rather than
+ *   surface it.
+ * - `getByWorkflows` — its endpoint (`POST /schemes/actions/{systemAction}`) returns raw
+ *   `List<WorkflowAction>` (`WorkflowHelper#findActions`) and *does* have the same omission,
+ *   despite its `@Schema` advertising `ResponseEntityWorkflowActionsView`. It is out of scope
+ *   here only because nothing in edit-content consumes it; deriving there needs its own tests.
  */
 const deriveInputsOnEach = (
     schemeActions: DotCMSContentletWorkflowActions[]
