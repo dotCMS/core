@@ -1,4 +1,4 @@
-<div class="field" [formGroup]="formGroup()">
+<div class="flex flex-col gap-2" [formGroup]="formGroup()">
     <label [for]="field().name" class="flex items-center gap-1">
         <span>{{ label() }}</span>
         @if (field().required) {
