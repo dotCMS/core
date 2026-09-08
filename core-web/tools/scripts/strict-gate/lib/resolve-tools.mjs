@@ -70,6 +70,24 @@ export function resolveBin(specifier, binName = specifier) {
 }
 
 /**
+ * Parses a tsconfig the way both checking paths need it.
+ *
+ * The unrecoverable-diagnostic hook is a no-op on purpose: a malformed or unreadable config must
+ * not abort the run with a raw TypeScript diagnostic. Callers decide what a failed parse means —
+ * `check-ts` throws because it was asked to check that exact config, while `config-select` skips
+ * the candidate because it is only surveying which configs exist.
+ *
+ * @returns {import('typescript').ParsedCommandLine | undefined}
+ */
+export async function parseConfigFile(configPath) {
+    const ts = await loadTypeScript();
+    return ts.getParsedCommandLineOfConfigFile(configPath, {}, {
+        ...ts.sys,
+        onUnRecoverableConfigFileDiagnostic: () => {}
+    });
+}
+
+/**
  * Reports what the harness is actually running against. Recorded in the report so a measurement
  * can always be traced back to the toolchain that produced it.
  */

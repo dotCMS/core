@@ -34,6 +34,14 @@ const scopeRule = (granularity) =>
         ? 'Only lines this pull request ADDED OR MODIFIED are checked. Pre-existing problems on untouched lines are deliberately ignored.'
         : 'Every line of a changed file is checked, including pre-existing problems on lines this pull request did not touch.';
 
+/**
+ * Diagnostics the gate deliberately did not report — dependency code plus untouched lines.
+ * Infrastructure discards are excluded: they are not debt anyone is being forgiven, they are
+ * diagnostics that were never strictness violations to begin with.
+ */
+const ignoredCount = (report) =>
+    report.discarded.byOrigin.dependency + report.discarded.byOrigin.untouched;
+
 function groupByFile(findings) {
     const byFile = new Map();
     for (const f of findings) {
@@ -47,7 +55,7 @@ function groupByFile(findings) {
 /** Plain text — the default, and what an agent reading raw CI logs gets. */
 export function formatText(report) {
     const lines = [];
-    const total = report.discarded.byOrigin.dependency + report.discarded.byOrigin.untouched;
+    const total = ignoredCount(report);
 
     if (report.exitCode === 0) {
         lines.push('strict-gate: PASS — no new strict-mode violations in this diff.');
@@ -63,9 +71,9 @@ export function formatText(report) {
     lines.push(`strict-gate: FAIL — ${report.findings.length} new strict-mode violation(s) introduced by this diff.`);
     lines.push('');
     lines.push('WHY THIS FAILS');
-    lines.push(`  main is not strict yet, so these files compile today. This gate checks the code`);
+    lines.push('  main is not strict yet, so these files compile today. This gate checks the code');
     lines.push(`  THIS pull request writes against ${FLAG_SET_LABEL[report.flagSet] ?? report.flagSet},`);
-    lines.push(`  so new code stops adding to the debt the strict-mode migration has to clear.`);
+    lines.push('  so new code stops adding to the debt the strict-mode migration has to clear.');
     lines.push('');
     lines.push('SCOPE — READ BEFORE FIXING');
     lines.push(`  ${scopeRule(report.granularity)}`);
@@ -108,7 +116,7 @@ export function formatGithub(report) {
 
 /** Markdown for the job summary — what a human opening the run sees first. */
 export function formatMarkdown(report) {
-    const total = report.discarded.byOrigin.dependency + report.discarded.byOrigin.untouched;
+    const total = ignoredCount(report);
     if (report.exitCode === 0) {
         return [
             '## ✅ strict-gate: pass',

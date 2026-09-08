@@ -46,18 +46,21 @@ export function mapFilesToProjects({ projects, files }) {
  * @returns {Promise<{name:string,root:string}[]>} roots relative to `repoDir`.
  */
 export async function readProjects({ workspaceDir, repoDir }) {
-    const out = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'strict-gate-graph-')), 'graph.json');
-    await run('node', [resolveBin('nx'), 'graph', '--file', out], { cwd: workspaceDir });
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'strict-gate-graph-'));
+    const out = path.join(dir, 'graph.json');
+    try {
+        await run('node', [resolveBin('nx'), 'graph', '--file', out], { cwd: workspaceDir });
 
-    const graph = JSON.parse(await fs.readFile(out, 'utf8'));
-    const nodes = graph.graph?.nodes ?? graph.nodes ?? {};
-    const prefix = path.relative(repoDir, workspaceDir);
+        const graph = JSON.parse(await fs.readFile(out, 'utf8'));
+        const nodes = graph.graph?.nodes ?? graph.nodes ?? {};
+        const prefix = path.relative(repoDir, workspaceDir);
 
-    const projects = Object.entries(nodes)
-        .map(([name, node]) => ({ name, root: node?.data?.root }))
-        .filter((p) => typeof p.root === 'string' && p.root.length > 0)
-        .map((p) => ({ name: p.name, root: prefix ? path.join(prefix, p.root) : p.root }));
-
-    await fs.rm(path.dirname(out), { recursive: true, force: true });
-    return projects;
+        return Object.entries(nodes)
+            .map(([name, node]) => ({ name, root: node?.data?.root }))
+            .filter((p) => typeof p.root === 'string' && p.root.length > 0)
+            .map((p) => ({ name: p.name, root: prefix ? path.join(prefix, p.root) : p.root }));
+    } finally {
+        // Ran on the throwing path too: `nx graph` failing used to strand the directory.
+        await fs.rm(dir, { recursive: true, force: true });
+    }
 }

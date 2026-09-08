@@ -9,10 +9,10 @@ import { workspaceRoot } from './lib/resolve-tools.mjs';
 import { resolveChangedFiles } from './lib/changed-files.mjs';
 import { mapFilesToProjects, readProjects } from './lib/project-map.mjs';
 import { selectConfigs } from './lib/config-select.mjs';
-import { checkTypeScript } from './lib/check-ts.mjs';
+import { checkTypeScript, FLAG_SETS } from './lib/check-ts.mjs';
 import { checkAngularTemplates } from './lib/check-ng.mjs';
 import { selectMode } from './lib/mode-select.mjs';
-import { filterDiagnostics } from './lib/filter.mjs';
+import { filterDiagnostics, GRANULARITIES } from './lib/filter.mjs';
 import { buildReport } from './lib/report.mjs';
 import { FORMATTERS } from './lib/format.mjs';
 
@@ -78,7 +78,7 @@ export async function collectDiagnostics({
             // report as having done so, because a silent fallback means unchecked templates behind
             // a PASS.
             const decision = await selectMode({ configPath: config.configPath, templates });
-            const started = performance.now();
+            const checkStarted = performance.now();
 
             const { diagnostics: raw } =
                 decision.mode === 'template-aware'
@@ -89,7 +89,7 @@ export async function collectDiagnostics({
                           flagSet
                       });
 
-            const elapsed = performance.now() - started;
+            const elapsed = performance.now() - checkStarted;
             if (decision.mode === 'template-aware') templateAwareMs += elapsed;
             else typescriptMs += elapsed;
 
@@ -176,12 +176,32 @@ function parseArgs(argv) {
     return options;
 }
 
+/**
+ * Every enumerated option is checked against a closed set here, at the edge.
+ *
+ * `--format` was already guarded; `--flags` and `--granularity` were not, and the two failed
+ * differently. An unknown flag set reached the checkers, where the TypeScript path threw but the
+ * template path defaulted to `strict` — measuring one thing and reporting another. An unknown
+ * granularity reached the filter and behaved as whole-file, which §6 measures at 83% inherited
+ * findings, while the report still echoed the name it was given. Both are now rejected by name.
+ */
+function validateOptions({ format, flagSet, granularity }) {
+    const oneOf = (label, value, allowed) => {
+        if (value !== undefined && !allowed.includes(value)) {
+            throw new Error(`unknown ${label} '${value}' — one of ${allowed.join(', ')}`);
+        }
+    };
+    oneOf('format', format, Object.keys(FORMATTERS));
+    oneOf('flag set', flagSet, Object.keys(FLAG_SETS));
+    oneOf('granularity', granularity, [...GRANULARITIES]);
+}
+
 async function main(argv) {
     const { report: reportPath, format = 'text', ...options } = parseArgs(argv);
     if (!options.base) throw new Error('--base is required');
 
+    validateOptions({ format, flagSet: options.flagSet, granularity: options.granularity });
     const render = FORMATTERS[format];
-    if (!render) throw new Error(`unknown format '${format}' — one of ${Object.keys(FORMATTERS).join(', ')}`);
 
     const report = await runGate(options);
 

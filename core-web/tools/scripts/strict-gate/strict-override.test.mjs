@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { makeWorkspace } from './fixtures/make-workspace.mjs';
-import { checkTypeScript } from './lib/check-ts.mjs';
+import { checkTypeScript, resolveFlagSet, FLAG_SETS } from './lib/check-ts.mjs';
 import { checkAngularTemplates } from './lib/check-ng.mjs';
 import { makeNgProject } from './fixtures/make-ng-project.mjs';
 
@@ -198,4 +198,31 @@ test('template-aware checking leaves every configuration file byte-identical', a
 
     assert.equal(await fs.readFile(configPath, 'utf8'), before.lib);
     assert.equal(await fs.readFile(rootConfig, 'utf8'), before.root, 'strictTemplates:false must still say false');
+});
+
+/**
+ * Regression: `checkAngularTemplates` used to resolve an unknown flag set to `strict` while
+ * `checkTypeScript` threw on the same input. The template run would then measure one flag set and
+ * the report would name another — a wrong number with nothing to surface it. Both paths now share
+ * `resolveFlagSet`, so both reject.
+ */
+test('an unknown flag set is rejected, and identically on both checking paths', async () => {
+    assert.throws(() => resolveFlagSet('typo'), /unknown flag set/);
+    assert.throws(() => resolveFlagSet(undefined), /unknown flag set/);
+
+    await assert.rejects(
+        () => checkTypeScript({ configPath: 'unused.json', flagSet: 'typo' }),
+        /unknown flag set/
+    );
+    await assert.rejects(
+        () => checkAngularTemplates({ configPath: 'unused.json', flagSet: 'typo' }),
+        /unknown flag set/
+    );
+});
+
+test('every named flag set resolves to a non-empty option object', () => {
+    for (const name of Object.keys(FLAG_SETS)) {
+        const options = resolveFlagSet(name);
+        assert.ok(Object.keys(options).length > 0, `${name} should force at least one option`);
+    }
 });

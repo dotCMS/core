@@ -27,7 +27,17 @@ export const INFRASTRUCTURE_CODES = new Set([
  *   projectRoots?: string[]
  * }} input
  */
+export const GRANULARITIES = new Set(['file', 'line']);
+
 export function filterDiagnostics({ diagnostics, changedFiles, granularity = 'file', projectRoots }) {
+    // Checked rather than defaulted. An unrecognised value used to fall through the `=== 'line'`
+    // test and behave as whole-file, which §6 measures at 83% inherited findings — while the report
+    // still echoed the name that was asked for. A plural typo was enough to trigger it.
+    if (!GRANULARITIES.has(granularity)) {
+        throw new Error(
+            `unknown granularity '${granularity}' — one of ${[...GRANULARITIES].join(', ')}`
+        );
+    }
     const changed = new Map(changedFiles.map((f) => [f.path, f]));
 
     // Distinguishing "another project's file" from "an untouched file of this project" needs to
@@ -36,7 +46,13 @@ export function filterDiagnostics({ diagnostics, changedFiles, granularity = 'fi
     const owned = projectRoots?.length
         ? (file) => projectRoots.some((r) => file === r || file.startsWith(`${r}/`))
         : (() => {
-              const dirs = new Set(changedFiles.map((f) => f.path.slice(0, f.path.lastIndexOf('/'))));
+              // A repo-relative path always has a slash; guarding anyway keeps a path that
+              // somehow does not from producing an empty prefix that matches everything.
+              const dirs = new Set(
+                  changedFiles
+                      .map((f) => f.path.slice(0, f.path.lastIndexOf('/')))
+                      .filter((d) => d.length > 0)
+              );
               return (file) => [...dirs].some((d) => file.startsWith(`${d}/`));
           })();
 

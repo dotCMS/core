@@ -256,3 +256,31 @@ test('whole-file granularity is a strict superset of line granularity', () => {
     const fileKeys = new Set(byFile.map((f) => `${f.file}:${f.line}`));
     for (const f of byLine) assert.ok(fileKeys.has(`${f.file}:${f.line}`));
 });
+
+/**
+ * Regression: an unrecognised granularity used to fall through the `=== 'line'` test and behave as
+ * whole-file — reporting pre-existing debt on untouched lines while the report still echoed the
+ * name it was given. A plural typo was enough. It must fail by name instead.
+ */
+test('an unknown granularity is rejected rather than treated as whole-file', () => {
+    for (const granularity of ['lines', 'Line', 'per-line', '']) {
+        assert.throws(
+            () =>
+                filterDiagnostics({
+                    diagnostics: [diag('libs/mine/src/a.ts', 99, 'TS2345')],
+                    changedFiles: changed,
+                    granularity
+                }),
+            /unknown granularity/,
+            `granularity '${granularity}' should be rejected`
+        );
+    }
+});
+
+test('the two supported granularities are still accepted', () => {
+    for (const granularity of ['file', 'line']) {
+        assert.doesNotThrow(() =>
+            filterDiagnostics({ diagnostics: [], changedFiles: changed, granularity })
+        );
+    }
+});

@@ -5,7 +5,7 @@
  * central promise that the working tree is byte-identical afterwards (SC-010).
  */
 import path from 'node:path';
-import { loadTypeScript } from './resolve-tools.mjs';
+import { loadTypeScript, parseConfigFile } from './resolve-tools.mjs';
 
 /**
  * `--strict` is an umbrella over eight flags and does NOT include the four below. Verified against
@@ -38,6 +38,21 @@ export const FLAG_SETS = {
     }
 };
 
+/**
+ * The single gate on flag-set names. Both checkers route through it so an unknown name can never
+ * resolve to a default: the run would then measure one flag set while the report named another,
+ * and the number would be wrong in a way nothing surfaces.
+ */
+export function resolveFlagSet(flagSet) {
+    const overrides = FLAG_SETS[flagSet];
+    if (!overrides) {
+        throw new Error(
+            `unknown flag set '${flagSet}' — one of ${Object.keys(FLAG_SETS).join(', ')}`
+        );
+    }
+    return overrides;
+}
+
 export function toDiagnostic(ts, diagnostic, layer = 'source') {
     const file = diagnostic.file;
     const { line, character } = file && diagnostic.start !== undefined
@@ -59,13 +74,9 @@ export function toDiagnostic(ts, diagnostic, layer = 'source') {
  */
 export async function checkTypeScript({ configPath, flagSet = 'strict' }) {
     const ts = await loadTypeScript();
-    const overrides = FLAG_SETS[flagSet];
-    if (!overrides) throw new Error(`unknown flag set '${flagSet}'`);
+    const overrides = resolveFlagSet(flagSet);
 
-    const parsed = ts.getParsedCommandLineOfConfigFile(configPath, {}, {
-        ...ts.sys,
-        onUnRecoverableConfigFileDiagnostic: () => {}
-    });
+    const parsed = await parseConfigFile(configPath);
     if (!parsed) throw new Error(`cannot parse ${configPath}`);
 
     const program = ts.createProgram({

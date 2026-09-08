@@ -11,7 +11,7 @@
  */
 import path from 'node:path';
 import { loadAngularCompiler, loadTypeScript } from './resolve-tools.mjs';
-import { FLAG_SETS } from './check-ts.mjs';
+import { resolveFlagSet } from './check-ts.mjs';
 
 /**
  * The four settings the workspace already treats as its Angular convention: 30 project configs
@@ -64,7 +64,7 @@ export async function checkAngularTemplates({ configPath, flagSet = 'strict', fo
     const ts = await loadTypeScript();
 
     const overrides = {
-        ...(FLAG_SETS[flagSet] ?? FLAG_SETS.strict),
+        ...resolveFlagSet(flagSet),
         ...(forceTemplates ? ANGULAR_STRICT : {}),
         noEmit: true
     };
