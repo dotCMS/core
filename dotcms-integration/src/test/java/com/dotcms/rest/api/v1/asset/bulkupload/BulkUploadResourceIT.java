@@ -297,6 +297,48 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
     }
 
     /**
+     * Method to test: {@link BulkUploadHelper#submit} on a resubmission of the same batch
+     * <p>
+     * Given scenario: The author's connection dropped before they learned whether their submission
+     * was accepted, so they submit the identical batch again — same target, same files, same order.
+     * <p>
+     * Expected result: A {@code submissionFingerprint} is stored, and it is <b>the same</b> for
+     * both submissions (FR-040, data-model §1). That fingerprint is what lets the run recognise a
+     * resubmission and flag it, instead of letting the author's second attempt collide against the
+     * files their first attempt already created and be reported as "every file failed" (FR-040a).
+     * <p>
+     * The client's whole retry promise depends on this: C-002a entitles it to resubmit safely, and
+     * without a way to tell a duplicate from a genuinely all-collided batch, a successful retry
+     * reads as total failure — which is worse than no retry at all, because the author then deletes
+     * and re-uploads files that were already there.
+     * <p>
+     * <b>Expected to FAIL until T058.</b>
+     */
+    @Test
+    public void test_submit_fingerprintsABatchSoAResubmissionIsRecognisable() throws Exception {
+        final Folder folder = targetFolder();
+
+        final BulkUploadSubmitResponse first = helper().submit(
+                form(folder.getIdentifier(), null), parts(3, 10), new FakeBatchStaging(),
+                admin, request());
+        final BulkUploadSubmitResponse again = helper().submit(
+                form(folder.getIdentifier(), null), parts(3, 10), new FakeBatchStaging(),
+                admin, request());
+
+        final Object firstPrint =
+                jobQueueManagerAPI.getJob(first.jobId()).parameters().get("submissionFingerprint");
+        final Object againPrint =
+                jobQueueManagerAPI.getJob(again.jobId()).parameters().get("submissionFingerprint");
+
+        assertNotNull(firstPrint,
+                "without a fingerprint there is no way to recognise a resubmission, and the "
+                        + "client's retry promise in C-002a cannot hold");
+        assertEquals(firstPrint, againPrint,
+                "the same batch must fingerprint the same, or a retry looks like a new batch and "
+                        + "collides against the files the first attempt created");
+    }
+
+    /**
      * Method to test: {@link BulkUploadHelper#submit} — the job parameters it stores
      * <p>
      * Given scenario: A batch targeting a folder, so the {@code siteId} half of the target is

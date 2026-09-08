@@ -11,6 +11,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -214,6 +217,70 @@ public class BulkUploadHelper {
         // file in every batch would fail as unavailable.
         parameters.put("requestFingerprint",
                 APILocator.getTempFileAPI().getRequestFingerprint(request));
+        // Only when we have one. A null parameter value is rejected by the framework's
+        // ImmutableMap and the failure surfaces inside the shared job loop, stalling every queue in
+        // the product — see the fix that removed the folderId/siteId nulls. An unrecognisable batch
+        // is a small loss; an unusable queue is not.
+        final String fingerprint = submissionFingerprint(form, staged, targetId, user);
+        if (fingerprint != null) {
+            parameters.put("submissionFingerprint", fingerprint);
+        }
         return parameters;
+    }
+
+    /**
+     * A stable hash identifying <b>this batch</b>, so a resubmission of it can be recognised
+     * (spec FR-040, data-model §1).
+     * <p>
+     * <b>What it is for.</b> An author whose connection dropped before they learned whether their
+     * submission was accepted has to be able to retry. Without a way to tell their retry from a new
+     * batch, the second attempt collides against the files the first one already created and is
+     * reported as "every file failed" — so the author deletes and re-uploads files that were
+     * already there. That is worse than offering no retry at all, which is why C-002a entitles the
+     * client to one and FR-040a requires a duplicate to be distinguishable from a batch whose files
+     * genuinely all collided.
+     * <p>
+     * <b>What goes into it, and why each part.</b> The submitter, because two authors sending the
+     * same files are two batches. The target, because the same files into a different folder is a
+     * different intention. And the ordered {@code (fileName, sizeBytes)} pairs — <b>ordered</b>,
+     * because the outcome reports results in submission order, so a reordered selection is a
+     * different batch with a different report. Sizes are the <b>measured</b> ones (FR-013): a
+     * caller could declare a size to make two different batches look alike, but cannot fake a
+     * measurement.
+     * <p>
+     * <b>What is deliberately left out.</b> The staging ids, which differ on every upload of the
+     * same bytes — including them would make every resubmission look new and defeat the point.
+     */
+    private String submissionFingerprint(final BulkUploadForm form,
+                                         final List<StagedPart> staged,
+                                         final String targetId,
+                                         final User user) {
+
+        final StringBuilder material = new StringBuilder()
+                .append(user.getUserId()).append('|')
+                .append(form.getBaseType()).append('|')
+                .append(targetId);
+
+        for (final StagedPart part : staged) {
+            material.append('|').append(part.fileName()).append(':').append(part.sizeBytes());
+        }
+
+        try {
+            final byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(material.toString().getBytes(StandardCharsets.UTF_8));
+
+            final StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (final byte b : digest) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (final NoSuchAlgorithmException e) {
+            // SHA-256 is mandated by the JDK, so this cannot happen — but a batch must never be
+            // refused over it, and a submission with no fingerprint is still a valid submission
+            // that simply cannot be recognised as a duplicate later.
+            Logger.error(this, "SHA-256 unavailable; this batch will not be recognisable as a "
+                    + "resubmission: " + e.getMessage(), e);
+            return null;
+        }
     }
 }
