@@ -19,3 +19,40 @@ Object.defineProperty(window, 'ResizeObserver', {
     configurable: true,
     value: MockResizeObserver
 });
+
+/**
+ * `@materia-ui/ngx-monaco-editor` reads a GLOBAL `monaco`, loaded from an asset at
+ * runtime and absent under test: its `initEditor()` calls `monaco.editor.create(...)`
+ * from ngAfterViewInit and threw `ReferenceError: monaco is not defined`. Angular
+ * reports a hook failure asynchronously, so Jest dropped it while Vitest counts it as
+ * an unhandled error. The editor is not what these specs assert on — they exercise the
+ * page around it — so this is a no-op surface, not a fake editor.
+ */
+const monacoEditorStub = {
+    onDidChangeModelContent: () => ({ dispose: () => undefined }),
+    onDidChangeModelDecorations: () => ({ dispose: () => undefined }),
+    getValue: () => '',
+    setValue: () => undefined,
+    getModel: () => null,
+    setModel: () => undefined,
+    updateOptions: () => undefined,
+    layout: () => undefined,
+    dispose: () => undefined
+};
+
+Object.defineProperty(globalThis, 'monaco', {
+    writable: true,
+    configurable: true,
+    value: {
+        editor: {
+            create: () => monacoEditorStub,
+            createDiffEditor: () => ({ ...monacoEditorStub, setModel: () => undefined }),
+            createModel: () => ({ uri: { path: '' }, dispose: () => undefined }),
+            getModels: () => [],
+            getModelMarkers: () => [],
+            setModelLanguage: () => undefined,
+            setTheme: () => undefined
+        },
+        Uri: { parse: (value: string) => ({ path: value }) }
+    }
+});

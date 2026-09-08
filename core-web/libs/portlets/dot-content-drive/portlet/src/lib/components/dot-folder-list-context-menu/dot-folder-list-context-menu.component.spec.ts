@@ -182,7 +182,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 open: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotFolderService, {
-                getFolders: vi.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([])),
+                // getFolderHierarchyByPath() pipes this per tree level; without it the
+                // hierarchy load dereferenced undefined inside a forkJoin.
+                searchFolders: vi
+                    .fn()
+                    .mockReturnValue(of({ folders: [], pagination: { totalEntries: 0 } }))
             }),
             mockProvider(DotContentletService, {
                 canLock: vi.fn().mockReturnValue(of(createMockCanLock(true, false))),

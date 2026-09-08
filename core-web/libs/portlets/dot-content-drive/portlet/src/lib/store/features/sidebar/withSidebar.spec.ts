@@ -132,11 +132,17 @@ describe('withSidebar', () => {
             createFakeFolderSearchView({ id: 'b', name: 'blog', path: '/' })
         ];
 
-        beforeEach((done) => {
-            folderService.searchFolders.mockReturnValue(searchResult(rootViews));
-            store.loadFolders();
-            setTimeout(done, 0);
-        });
+        // A returned promise, not a `done` parameter: Vitest rejects the callback style
+        // outright with "done() callback is deprecated, use promise instead", and the
+        // hook then never completed — every test in this describe timed out.
+        beforeEach(
+            () =>
+                new Promise<void>((done) => {
+                    folderService.searchFolders.mockReturnValue(searchResult(rootViews));
+                    store.loadFolders();
+                    setTimeout(done, 0);
+                })
+        );
 
         afterEach(() => {
             // The mock is created once with the factory, so a return value set here would otherwise

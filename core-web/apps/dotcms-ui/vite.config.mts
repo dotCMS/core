@@ -73,7 +73,15 @@ export default defineConfig(() => ({
                     /ng2-dragula/,
                     /ngx-markdown/,
                     /ngx-tiptap/,
-                    /primeng/
+                    /primeng/,
+                    /y-protocols/,
+                    /lib0/,
+                    /@tiptap/,
+                    /y-prosemirror/,
+                    /gridstack/,
+                    /uuid/,
+                    /lowlight/,
+                    /devlop/
                 ]
             }
         },

@@ -73,7 +73,9 @@ export default defineConfig(() => ({
                     /ng2-dragula/,
                     /ngx-markdown/,
                     /ngx-tiptap/,
-                    /primeng/
+                    /primeng/,
+                    /d3/,
+                    /internmap\//
                 ]
             }
         },

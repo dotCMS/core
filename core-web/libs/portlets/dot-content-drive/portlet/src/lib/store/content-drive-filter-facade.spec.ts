@@ -28,7 +28,7 @@ import { mockLocales } from '@dotcms/utils-testing';
 import { createContentDriveFilterFacade } from './content-drive-filter-facade';
 import { DotContentDriveStore } from './dot-content-drive.store';
 
-import { MAP_BASE_TYPES_TO_NUMBERS } from '../shared/constants';
+import { DEFAULT_PAGE, MAP_BASE_TYPES_TO_NUMBERS } from '../shared/constants';
 
 /**
  * Content Drive's half of the shared conformance suite.
@@ -87,7 +87,18 @@ describe('Content Drive filter facade', () => {
                 facade: createContentDriveFilterFacade(store),
                 readRawBag: () => store.filters() as Record<string, unknown>,
                 readPage: () => store.pagination().page,
-                goToPage2: () => store.setPagination({ ...store.pagination(), page: 2 }),
+                goToPage2: () => {
+                    // The page is appended alongside the pagination change, as the
+                    // store's own paging path does. `setPagination` alone leaves `pages`
+                    // holding only page 1 while the `$request` computed reads
+                    // `pages()[page - 1]` unguarded — an undefined entry there threw
+                    // inside a signal computation, which Jest dropped and Vitest counts
+                    // as an unhandled error. It is a state the store never produces.
+                    patchState(unprotected(store), {
+                        pages: [...store.pages(), DEFAULT_PAGE]
+                    });
+                    store.setPagination({ ...store.pagination(), page: 2 });
+                },
                 // What `withFilterDefaults` produces: the environment language, plus the
                 // shared-assets toggle written out explicitly so the URL always states it.
                 expectedDefaults: {

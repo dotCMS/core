@@ -205,14 +205,34 @@ function jestSettings(dir) {
 
     // transformIgnorePatterns lists packages Jest had to transform because they ship
     // ESM; under Vite the equivalent problem is externalisation, so the same list
-    // becomes deps.inline. Alternation groups are matched directly because the outer
-    // lookahead nests and a naive [^)]* stops at the wrong paren.
+    // becomes deps.inline.
+    //
+    // Strip the regex machinery and keep the package-shaped tokens, rather than trying
+    // to match an alternation group. An earlier version looked for `(a|b|c)` and so
+    // silently produced an EMPTY list for the two projects written as
+    // `(?:\.mjs$|a|b|c)` — the `?:`, `\` and `$` are outside a package-name character
+    // class, so the group never matched. dotcms-ui was one of them: y-protocols, lib0,
+    // @tiptap and friends stayed externalised, Node's ESM resolver could not find
+    // `y-protocols/awareness`, and ELEVEN spec files failed to load — 307 tests missing
+    // against the Jest baseline, with zero reported failures. A pattern that quietly
+    // matches nothing is the worst kind.
     const esm = [];
     const tip = /transformIgnorePatterns:\s*\[([\s\S]*?)\]/.exec(src);
-    for (const m of tip?.[1].matchAll(/\(([A-Za-z0-9@/_.-]+(?:\|[A-Za-z0-9@/_.-]+)+)\)/g) ?? []) {
-        for (const name of m[1].split('|')) {
-            const clean = name.trim();
-            if (clean.length > 1 && !clean.includes('.mjs')) esm.push(clean);
+    for (const lit of tip?.[1].matchAll(/'([^']*)'/g) ?? []) {
+        const bare = lit[1]
+            .replace(/^node_modules\//, '')
+            .replace(/\(\?[:!]/g, '|')
+            .replace(/[()]/g, '|')
+            .replace(/\.\*/g, '')
+            .replace(/\\?\.mjs\$?/g, '')
+            .replace(/\$/g, '');
+        for (const token of bare.split('|')) {
+            const name = token.trim();
+            // Package-shaped only: `@scope/name`, `name`, or either with a trailing
+            // slash (`d3/`, `internmap/`). This drops the `-` left behind by `d3(/|-)`.
+            if (/^@?[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9._-]*)?$/.test(name) && name.length > 1) {
+                esm.push(name);
+            }
         }
     }
 

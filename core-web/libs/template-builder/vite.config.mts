@@ -73,7 +73,8 @@ export default defineConfig(() => ({
                     /ng2-dragula/,
                     /ngx-markdown/,
                     /ngx-tiptap/,
-                    /primeng/
+                    /primeng/,
+                    /gridstack/
                 ]
             }
         },
