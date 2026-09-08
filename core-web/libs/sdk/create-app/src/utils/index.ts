@@ -4,8 +4,16 @@ import { execa } from 'execa';
 import net from 'net';
 import path from 'path';
 
-import { describeRequestFailure, type RetryReporter } from './fetch-retry';
-import { httpGet, isHttpError } from './http';
+import {
+    describeRequestFailure,
+    httpGet,
+    isHttpError,
+    Err,
+    Ok,
+    type RetryReporter,
+    type Result
+} from '@dotcms/http';
+
 import { REQUIRED_PORTS } from './ports';
 import { escapeShellPath } from './validation';
 
@@ -19,7 +27,6 @@ import {
     NEXTJS_DEPENDENCIES,
     NEXTJS_DEPENDENCIES_DEV
 } from '../constants';
-import { Err, Ok, type Result } from '../result';
 
 import type { SupportedFrontEndFrameworks } from '../types';
 

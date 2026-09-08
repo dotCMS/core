@@ -79,18 +79,19 @@
 
 import { Mock, MockInstance, vi } from 'vitest';
 
+import { HttpError, httpGet, httpPost } from '@dotcms/http';
+
 import { configureUVE } from './configure-uve';
 
 import { getUVEConfigValue } from '../utils';
-import { HttpError, httpGet, httpPost } from '../utils/http';
 
 // The CLI dropped axios for native fetch (utils/http.ts) after semgrep flagged the
 // Proxy-Authorization redirect leak. The http module is mocked rather than `fetch` itself so
 // these cases stay about configureUVE's CONTRACT — probe once, retry 5xx only, mode-dependent
 // guidance — while http.spec.ts covers the transport. HttpError stays real, because the
 // outcome's `status` is derived from it.
-vi.mock('../utils/http', async () => {
-    const actual = await vi.importActual('../utils/http');
+vi.mock('@dotcms/http', async () => {
+    const actual = await vi.importActual('@dotcms/http');
 
     return { ...actual, httpGet: vi.fn(), httpPost: vi.fn() };
 });
