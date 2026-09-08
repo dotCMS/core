@@ -1247,7 +1247,9 @@ export class DotContentDriveShellComponent {
             operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
             actionName: this.#dotMessageService.get('content-drive.upload'),
             total: files.length,
-            targetLabel: hostFolder?.path ?? this.#store.currentSite()?.hostname,
+            // `||`, not `??`: the site root's node carries an *empty* path, which is present but
+            // names nothing, so the indicator would read "Applying Upload to " with a blank target.
+            targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
             // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
             // run over rows is already reported by those rows dimming. An upload's content does not
             // exist until the run creates it, so the indicator is its only surface — naming the
@@ -1279,12 +1281,19 @@ export class DotContentDriveShellComponent {
         this.#fileService
             .uploadFilesByBaseType(files, {
                 baseType: baseType as DotBulkUploadForm['baseType'],
-                // A folder id carries its site. At the site root there is no folder, so the batch
-                // targets the site being browsed rather than the backend's default host — two
-                // fields because the contract states the intent rather than overloading one.
-                ...(hostFolder?.id
+                // Two fields because the contract states the intent rather than overloading one,
+                // and the distinction is `path`, not `id`.
+                //
+                // The tree's root row stands for the *site*, and `createSiteNode` gives it the
+                // site's identifier as `id` and `type: 'folder'` like every other row — so "has an
+                // id" reads as "is a folder" and sends a site id as `folderId`, which the server
+                // answers 404 to, correctly: that folder does not exist. An empty `path` is what
+                // marks the row as the site itself.
+                ...(hostFolder?.id && hostFolder.path
                     ? { folderId: hostFolder.id }
-                    : { siteId: this.#store.currentSite()?.identifier ?? '' })
+                    : {
+                          siteId: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? ''
+                      })
             })
             .subscribe({
                 next: (event) => {
@@ -1318,7 +1327,9 @@ export class DotContentDriveShellComponent {
                     this.#store.trackUploadJob(event.handle.jobId, [
                         toFolderRef(
                             hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
-                            hostFolder?.path ?? '/'
+                            // Same reason: an empty path is the site root, which normalises to
+                            // `//hostname` — the ref the listing computes when browsing it.
+                            hostFolder?.path || '/'
                         )
                     ]);
 

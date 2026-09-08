@@ -1268,6 +1268,15 @@ describe('DotContentDriveShellComponent', () => {
         type: 'folder'
     } as DotFolderTreeNodeData;
 
+    // The tree's root row stands for the site, not a folder: `createSiteNode` builds it with the
+    // site's identifier as `id`, an empty `path`, and `type: 'folder'` like any other row.
+    const SITE_ROOT_NODE = {
+        id: MOCK_SITES[0].identifier,
+        hostname: MOCK_SITES[0].hostname,
+        path: '',
+        type: 'folder'
+    } as DotFolderTreeNodeData;
+
     const createFile = (name = 'test.jpg') =>
         new File(['test content'], name, { type: 'image/jpeg' });
 
@@ -1705,6 +1714,29 @@ describe('DotContentDriveShellComponent', () => {
             window.dispatchEvent(event);
 
             expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should target the site, not a folder, when uploading at the root', () => {
+            // The root row carries the *site* identifier in `id`, so treating "has an id" as "is a
+            // folder" sends a site id as `folderId` and the server answers 404 — the folder really
+            // does not exist. An empty `path` is what marks the row as the site itself.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: SITE_ROOT_NODE,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(expect.anything(), {
+                baseType: 'DOTASSET',
+                siteId: MOCK_SITES[0].identifier
+            });
         });
 
         it('should report how far the upload has got', () => {
