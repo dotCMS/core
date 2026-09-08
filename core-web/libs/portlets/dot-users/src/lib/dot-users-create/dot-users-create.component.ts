@@ -11,17 +11,14 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
@@ -95,13 +92,11 @@ const PERMISSIONS_TAB = 2;
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        AvatarModule,
         ButtonModule,
         DialogModule,
         InputTextModule,
         SkeletonModule,
         TabsModule,
-        TagModule,
         TooltipModule,
         DotMessagePipe,
         DotUsersReplacementPickerComponent,
@@ -121,7 +116,6 @@ export class DotUsersCreateComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #config = inject<DynamicDialogConfig<DialogData>>(DynamicDialogConfig);
     readonly #fb = inject(FormBuilder);
-    readonly #messageService = inject(DotMessageService);
     readonly #store = inject(DotUsersCreateStore);
 
     readonly user = this.#config.data?.user ?? null;
@@ -156,66 +150,6 @@ export class DotUsersCreateComponent {
             showGettingStarted: [true]
         })
     });
-
-    /**
-     * Signal mirror of `form.controls.access.valueChanges`. Drives the
-     * header `Can login to Admin UI` chip reactively — the value is
-     * derived from CMS Admin || Back-end User, so the chip appears
-     * and disappears as those toggles change without any manual
-     * change detection.
-     */
-    readonly #$accessValue = toSignal(this.form.controls.access.valueChanges, {
-        initialValue: this.form.controls.access.getRawValue()
-    });
-
-    /**
-     * Whether the user has console access. Derived on the backend as
-     * `admin OR backendUser`, so we mirror the same rule locally —
-     * lets the header chip react instantly to Access toggle changes
-     * without waiting for a save round-trip.
-     */
-    readonly $canLoginToAdmin = computed(() => {
-        const access = this.#$accessValue();
-
-        return !!access.cmsAdmin || !!access.backend;
-    });
-
-    /**
-     * Signal mirror of `form.controls.account.valueChanges`. Used to
-     * derive the header (name + initials) reactively without wiring up
-     * change detection manually. `toSignal` starts from the current
-     * form value so the very first render already reflects the reset
-     * we ran below.
-     */
-    readonly #$accountValue = toSignal(this.form.controls.account.valueChanges, {
-        initialValue: this.form.controls.account.getRawValue()
-    });
-
-    readonly $displayName = computed(() => {
-        const account = this.#$accountValue();
-        const first = (account.firstName ?? '').trim();
-        const last = (account.lastName ?? '').trim();
-        const combined = `${first} ${last}`.trim();
-
-        if (combined) {
-            return combined;
-        }
-
-        return this.isEdit
-            ? this.#messageService.get('users.dialog.untitled-user')
-            : this.#messageService.get('users.dialog.new-user');
-    });
-
-    readonly $initials = computed(() => {
-        const account = this.#$accountValue();
-        const first = (account.firstName ?? '').charAt(0);
-        const last = (account.lastName ?? '').charAt(0);
-        const value = `${first}${last}`.toUpperCase();
-
-        return value || (this.isEdit ? '?' : 'NU');
-    });
-
-    readonly $isActive = computed(() => Boolean(this.#$accountValue().active));
 
     protected readonly $activeTab = signal(0);
     protected readonly $deleteConfirmVisible = signal(false);

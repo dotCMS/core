@@ -1,5 +1,15 @@
-<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
-    <div class="flex w-full items-center gap-2 py-3">
+<!--
+    Two layers of vertical padding were stacking: PrimeNG's toolbar
+    theme adds 0.5rem top+bottom on `.p-toolbar`, and the inner div
+    piled another `py-3` (12px each) on top. Together that's 20px on
+    each side before the tallest child (a ~42px `<p-button>`) is even
+    counted. `[pt]` zeroes PrimeNG's contribution and the inner div
+    now owns the 17.5px design spec exactly.
+-->
+<p-toolbar
+    class="justify-start gap-1 border-x-0! border-t-0! px-3"
+    [pt]="{ root: { class: 'py-0!' } }">
+    <div class="flex w-full items-center gap-2 py-[17.5px]">
         <p-iconField iconPosition="left">
             <p-inputIcon>
                 <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
@@ -14,30 +24,45 @@
                 [placeholder]="'users.search.placeholder' | dm"
                 [attr.aria-label]="'users.search.placeholder' | dm"
                 data-testid="users-search-input"
-                class="w-80" />
+                class="w-md" />
         </p-iconField>
 
         <dot-users-filter-by data-testid="users-filter-by" />
 
-        <div class="ml-auto flex items-center gap-4">
-            <!--
-                Fade + slide-in on selection instead of `@if` mount/unmount so the
-                transition can play on both enter and exit. `pointer-events-none`
-                keeps the hidden buttons non-interactive when the row is empty,
-                and `max-w` collapses so it does not steal layout space either.
-            -->
+        <!--
+            Selection ↔ New swap with fade + slide, without the height
+            inflation the previous version had. Both branches stay
+            mounted so `transition-all` can play on enter AND exit,
+            but each collapses `max-w` AND `max-h` when hidden — the
+            previous version only collapsed `max-w`, leaving the
+            invisible buttons at full ~42px height and pushing the
+            row taller than one visible button.
+
+            Button order: primary lives at the RIGHT, secondary to
+            its left, tertiary (text delete) further left. Because
+            `flex-row-reverse` reverses the DOM iteration order, the
+            source-order below reads primary-first (top-to-bottom in
+            code), and the browser lays them out right-first on screen.
+        -->
+        <div class="ml-auto flex items-center gap-3">
+            <!-- Selection actions -->
             <div
-                class="flex items-center gap-3 overflow-hidden transition-all duration-300 ease-out"
+                class="flex flex-row-reverse items-center gap-3 overflow-hidden transition-all duration-300 ease-out"
                 [class.opacity-100]="store.selectedUsers().length > 0"
                 [class.opacity-0]="store.selectedUsers().length === 0"
                 [class.max-w-\[600px\]]="store.selectedUsers().length > 0"
                 [class.max-w-0]="store.selectedUsers().length === 0"
+                [class.max-h-12]="store.selectedUsers().length > 0"
+                [class.max-h-0]="store.selectedUsers().length === 0"
                 [class.pointer-events-none]="store.selectedUsers().length === 0"
                 data-testid="users-selection-toolbar">
-                <span class="text-color-secondary text-sm" data-testid="users-selected-count">
-                    {{ 'users.selected.count' | dm: [store.selectedUsers().length.toString()] }}
-                </span>
                 @if ($isPushPublishEnabled()) {
+                    <!--
+                        Source order (primary first, tertiary last) is
+                        reversed to visible order (primary rightmost,
+                        tertiary leftmost) by `flex-row-reverse` on
+                        the parent.
+                    -->
                     <p-button
                         [label]="'users.actions.push-publish' | dm"
                         (onClick)="openBulkPushPublish()"
@@ -49,9 +74,10 @@
                         data-testid="users-bulk-add-to-bundle-btn" />
                 } @else {
                     <!--
-                        Add to Bundle promotes to primary when Push Publish is not
-                        available: on a non-EE instance it is the only bulk action
-                        besides delete, so it earns the emphasis Push Publish would
+                        Add to Bundle promotes to primary when Push
+                        Publish is not available: on a non-EE instance
+                        it is the only bulk action besides delete, so
+                        it earns the emphasis Push Publish would
                         otherwise take.
                     -->
                     <p-button
@@ -64,19 +90,21 @@
                     [text]="true"
                     (onClick)="confirmDelete()"
                     data-testid="users-delete-btn" />
+                <span
+                    class="text-sm whitespace-nowrap text-slate-500"
+                    data-testid="users-selected-count">
+                    {{ 'users.selected.count' | dm: [store.selectedUsers().length.toString()] }}
+                </span>
             </div>
-            <!--
-                Mirror of the selection toolbar: while a selection is active
-                the New button fades and collapses out of the way so only the
-                bulk actions read. Kept mounted for symmetric enter/leave
-                transitions with the selection block on the other side.
-            -->
+            <!-- Default action (New) -->
             <div
                 class="overflow-hidden transition-all duration-300 ease-out"
                 [class.opacity-100]="store.selectedUsers().length === 0"
                 [class.opacity-0]="store.selectedUsers().length > 0"
                 [class.max-w-40]="store.selectedUsers().length === 0"
                 [class.max-w-0]="store.selectedUsers().length > 0"
+                [class.max-h-12]="store.selectedUsers().length === 0"
+                [class.max-h-0]="store.selectedUsers().length > 0"
                 [class.pointer-events-none]="store.selectedUsers().length > 0"
                 data-testid="users-new-btn-wrapper">
                 <p-button
@@ -96,9 +124,17 @@
         table wraps its paginator in — an inline overlay would be clipped and
         cut off the second option on open, exactly the way it does in the drive.
     -->
+    <!--
+        `[scrollable]="true"` + `scrollHeight="flex"` is PrimeNG's own
+        mechanism for filling a flex parent: the table root claims the
+        wrapper's height, the tbody flex-fills between the sticky
+        thead and the paginator, and the paginator pins to the bottom.
+        Column widths (percent hints on the `<th>`s below) still work
+        because we're NOT passing `[tableStyle]` — the previous
+        `tableLayout: fixed` was what interfered before.
+    -->
     <p-table
         [value]="store.users()"
-        [tableStyle]="{ width: '100%' }"
         [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
@@ -122,15 +158,20 @@
         data-testid="users-table">
         <ng-template pTemplate="header">
             <!--
-                Columns flow with `table-layout: auto` — the browser
-                sizes each one from its content and header text. Same
-                convention as the API tokens table.
+                Percentage widths on the auto-layout `<p-table>`, same
+                pattern the content-types listing uses via
+                `dot-listing-data-table`: small columns get a `%` hint
+                and the browser distributes the rest, with heavy
+                columns absorbing the leftover. No `table-layout: fixed`
+                and no `[scrollable]` — the wrapper's `overflow-auto`
+                gives us scroll on tall pages without PrimeNG's
+                scrollable table plumbing overriding the widths.
             -->
             <tr>
-                <th>
+                <th style="width: 3rem">
                     <p-tableHeaderCheckbox />
                 </th>
-                <th pSortableColumn="firstName">
+                <th pSortableColumn="firstName" style="width: 22%">
                     {{ 'users.table.header.user' | dm }}
                     <p-sortIcon field="firstName" />
                 </th>
@@ -138,13 +179,13 @@
                     {{ 'users.table.header.email' | dm }}
                     <p-sortIcon field="emailAddress" />
                 </th>
-                <th>{{ 'users.table.header.roles' | dm }}</th>
-                <th>{{ 'users.table.header.access' | dm }}</th>
-                <th pSortableColumn="lastLoginDate">
+                <th style="width: 24%">{{ 'users.table.header.roles' | dm }}</th>
+                <th style="width: 15%">{{ 'users.table.header.access' | dm }}</th>
+                <th pSortableColumn="lastLoginDate" style="width: 8%">
                     {{ 'users.table.header.last-login' | dm }}
                     <p-sortIcon field="lastLoginDate" />
                 </th>
-                <th></th>
+                <th style="width: 3rem"></th>
             </tr>
         </ng-template>
 
@@ -184,7 +225,7 @@
                                             data-testid="users-inactive-chip" />
                                     }
                                 </span>
-                                <span class="text-color-secondary text-xs">{{ user.userId }}</span>
+                                <span class="text-xs text-slate-500">{{ user.userId }}</span>
                             </div>
                         </div>
                     </td>
@@ -193,7 +234,7 @@
                         @if ($rolesByUserId()[user.userId]; as roles) {
                             <span>{{ roles.visible }}</span>
                             @if (roles.more > 0) {
-                                <span class="text-color-secondary italic">
+                                <span class="text-slate-500 italic">
                                     {{ 'users.roles.and-more' | dm: [roles.more.toString()] }}
                                 </span>
                             }
@@ -311,7 +352,7 @@
                     {{ key | dm }}
                 </small>
             } @else {
-                <small class="text-color-secondary">
+                <small class="text-slate-500">
                     {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
                 </small>
             }
@@ -329,7 +370,7 @@
         }
         <p-button
             [label]="'users.cancel' | dm"
-            [outlined]="true"
+            [text]="true"
             (onClick)="closeBulkDelete()"
             data-testid="users-bulk-delete-cancel-btn" />
         <p-button

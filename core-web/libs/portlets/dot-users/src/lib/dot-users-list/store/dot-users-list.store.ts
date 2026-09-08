@@ -10,15 +10,9 @@ import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService,
-    DotRolesService
+    DotMessageService
 } from '@dotcms/data-access';
-import {
-    DotCMSAPIResponse,
-    DotMessageSeverity,
-    DotMessageType,
-    DotRole
-} from '@dotcms/dotcms-models';
+import { DotCMSAPIResponse, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import {
     DotUserFormPayload,
@@ -46,13 +40,11 @@ export interface DotUsersListState {
     sortOrder: DotUsersListSortDirection;
     status: DotUsersListStatus;
     /**
-     * Role NAMES per userId for the currently displayed page. Since
-     * #37236 the primary source is the `roles` array the list
-     * endpoint inlines per row when we ask for `includeRoles=true`,
-     * so this map is filled in one go with the initial response. A
-     * per-row fan-out is kept as a fallback when the backend
-     * predates #37236 or when the current viewer lacks the portlet
-     * gate that flag requires.
+     * Role NAMES per userId for the currently displayed page. Filled
+     * in one go from the inline `roles` array the list endpoint
+     * returns when we ask for `includeRoles=true` (#37236 merged).
+     * No per-row fan-out — a viewer whose 403-fallback strips the
+     * flag just sees empty Roles cells rather than N extra requests.
      */
     userRoles: Record<string, string[]>;
 }
@@ -121,51 +113,10 @@ function fetchUsersPage(
     );
 }
 
-/**
- * Legacy per-user fan-out used only when the inline `roles` field is
- * missing on the list response (older backend, or the 403 fallback
- * above kicked in). Errors on a single row don't kill the batch —
- * the row's Roles column just renders empty. Uses the shared
- * `DotRolesService.getForUser` API rather than the users service so
- * this file's role fetching goes through the same seam every other
- * dot-roles / dot-users consumer already does.
- */
-function fetchRolesPerUser(
-    rolesService: DotRolesService,
-    users: DotUserListItem[]
-): Observable<Record<string, string[]>> {
-    const roleFetches = users.map((user) =>
-        rolesService.getForUser(user.userId).pipe(
-            map((roles) => ({ userId: user.userId, roles })),
-            catchError(() => of({ userId: user.userId, roles: [] as DotRole[] }))
-        )
-    );
-
-    return forkJoin(roleFetches).pipe(
-        map((results) => {
-            const rolesMap: Record<string, string[]> = {};
-            for (const { userId, roles } of results) {
-                rolesMap[userId] = roles
-                    .filter(
-                        (role) =>
-                            !!role.name &&
-                            // Skip the user's implicit personal role
-                            // (its key is the userId).
-                            role.roleKey !== userId
-                    )
-                    .map((role) => role.name as string);
-            }
-
-            return rolesMap;
-        })
-    );
-}
-
 export const DotUsersListStore = signalStore(
     withState<DotUsersListState>(initialState),
     withMethods((store) => {
         const usersService = inject(DotUsersService);
-        const rolesService = inject(DotRolesService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const messageDisplayService = inject(DotMessageDisplayService);
         const messageService = inject(DotMessageService);
@@ -179,45 +130,27 @@ export const DotUsersListStore = signalStore(
             pipe(
                 tap(() => patchState(store, { status: 'loading' })),
                 switchMap(() => fetchUsersPage(usersService, buildFilterParams(store))),
-                switchMap((response) => {
+                tap((response) => {
+                    // Backend returns `roles: [{id, name, roleKey}]` per
+                    // row when `includeRoles=true` (#37236). Build the
+                    // userRoles map synchronously from the response —
+                    // personal role and inherited grants are already
+                    // filtered out server-side. Rows without a `roles`
+                    // field (a viewer whose 403-fallback stripped the
+                    // flag) leave that user's cell empty; we no longer
+                    // fan out N `/v1/roles/users/{id}` requests.
+                    const rolesMap: Record<string, string[]> = {};
+                    for (const user of response.entity) {
+                        rolesMap[user.userId] = (user.roles ?? [])
+                            .map((role) => role.name)
+                            .filter((name): name is string => !!name);
+                    }
                     patchState(store, {
                         users: response.entity,
                         totalRecords: response.pagination?.totalEntries ?? 0,
                         status: 'loaded',
-                        userRoles: {}
+                        userRoles: rolesMap
                     });
-
-                    if (response.entity.length === 0) {
-                        return of(null);
-                    }
-
-                    // Fast path (#37236): the backend inlined each row's
-                    // directly assigned roles. Build the userRoles map
-                    // synchronously without any second HTTP call —
-                    // personal role and inherited grants are already
-                    // filtered out server-side.
-                    if (response.entity.every((user) => user.roles !== undefined)) {
-                        const rolesMap: Record<string, string[]> = {};
-                        for (const user of response.entity) {
-                            rolesMap[user.userId] = (user.roles ?? [])
-                                .map((role) => role.name)
-                                .filter((name): name is string => !!name);
-                        }
-                        patchState(store, { userRoles: rolesMap });
-
-                        return of(null);
-                    }
-
-                    // Fallback for older backends / callers whose
-                    // portlet permissions caused the `includeRoles=true`
-                    // request to be silently downgraded. Behaviour
-                    // matches the pre-#37236 shape: users grid is up
-                    // already, Roles column back-fills as each per-user
-                    // request lands. Remove once #37236 has shipped on
-                    // every supported backend.
-                    return fetchRolesPerUser(rolesService, response.entity).pipe(
-                        tap((rolesMap) => patchState(store, { userRoles: rolesMap }))
-                    );
                 }),
                 catchError((error) => {
                     httpErrorManager.handle(error);

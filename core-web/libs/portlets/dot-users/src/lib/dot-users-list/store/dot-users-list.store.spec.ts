@@ -7,8 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService,
-    DotRolesService
+    DotMessageService
 } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -68,7 +67,6 @@ describe('DotUsersListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotUsersListStore>>;
     let store: InstanceType<typeof DotUsersListStore>;
     let usersService: Mocked<DotUsersService>;
-    let rolesService: Mocked<DotRolesService>;
 
     const createService = createServiceFactory({
         service: DotUsersListStore,
@@ -78,9 +76,6 @@ describe('DotUsersListStore', () => {
                 deleteUser: vi.fn().mockReturnValue(of({})),
                 createUser: vi.fn().mockReturnValue(of(MOCK_USERS[0])),
                 updateUser: vi.fn().mockReturnValue(of(MOCK_USERS[0]))
-            }),
-            mockProvider(DotRolesService, {
-                getForUser: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageDisplayService, { push: vi.fn() }),
@@ -92,7 +87,6 @@ describe('DotUsersListStore', () => {
         spectator = createService();
         store = spectator.service;
         usersService = spectator.inject(DotUsersService) as Mocked<DotUsersService>;
-        rolesService = spectator.inject(DotRolesService) as Mocked<DotRolesService>;
         // Clear call history from other tests (mockProvider's vi.fn() is shared).
         // Implementations set via mockReturnValue are preserved.
         vi.clearAllMocks();
@@ -100,7 +94,6 @@ describe('DotUsersListStore', () => {
         usersService.deleteUser.mockReturnValue(of({}));
         usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
         usersService.updateUser.mockReturnValue(of(MOCK_USERS[0]));
-        rolesService.getForUser.mockReturnValue(of([]));
     });
 
     it('loadUsers passes the current state as query params (opts into includeRoles)', () => {
@@ -124,7 +117,7 @@ describe('DotUsersListStore', () => {
     });
 
     describe('includeRoles fast path (#37236)', () => {
-        it('reads role names from the inline `roles` field and skips the per-user fetch', () => {
+        it('reads role names from the inline `roles` field on every row', () => {
             usersService.getUsersPaginated.mockReturnValueOnce(
                 of({
                     ...MOCK_RESPONSE,
@@ -154,36 +147,30 @@ describe('DotUsersListStore', () => {
 
             store.loadUsers();
 
-            expect(rolesService.getForUser).not.toHaveBeenCalled();
             expect(store.userRoles()).toEqual({
                 'dotcms.org.1': ['CMS Administrator', 'Back-end User'],
                 'dotcms.org.2': []
             });
         });
 
-        it('falls back to per-row rolesService.getForUser when the response omits `roles`', () => {
-            // Envelope without the `roles` field — models an older
-            // backend that predates #37236.
-            const legacyRow = { ...MOCK_USERS[0] };
-            delete (legacyRow as Partial<(typeof MOCK_USERS)[0]>).roles;
+        it('leaves the Roles column empty when a row omits `roles` (no per-user fetch)', () => {
+            // Envelope without the `roles` field — happens when the
+            // viewer's 403 fallback stripped `includeRoles=true`. We no
+            // longer fan out N per-user requests; the cell just stays
+            // empty for that viewer.
+            const strippedRow = { ...MOCK_USERS[0] };
+            delete (strippedRow as Partial<(typeof MOCK_USERS)[0]>).roles;
             usersService.getUsersPaginated.mockReturnValueOnce(
-                of({ ...MOCK_RESPONSE, entity: [legacyRow] })
-            );
-            rolesService.getForUser.mockReturnValueOnce(
-                of([
-                    { id: 'r-1', name: 'Admin', roleKey: 'CMS Administrator', childCount: 0 },
-                    // Filtered: personal role's key === userId.
-                    { id: 'r-p', name: 'Personal', roleKey: 'dotcms.org.1', childCount: 0 }
-                ])
+                of({ ...MOCK_RESPONSE, entity: [strippedRow] })
             );
 
             store.loadUsers();
 
-            expect(rolesService.getForUser).toHaveBeenCalledWith('dotcms.org.1');
-            expect(store.userRoles()).toEqual({ 'dotcms.org.1': ['Admin'] });
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
+            expect(store.userRoles()).toEqual({ 'dotcms.org.1': [] });
         });
 
-        it('retries without includeRoles when the backend gates the flag with 403, then N+1s', () => {
+        it('retries without includeRoles when the backend gates the flag with 403', () => {
             usersService.getUsersPaginated
                 .mockReturnValueOnce(
                     throwError(
@@ -196,9 +183,6 @@ describe('DotUsersListStore', () => {
                     )
                 )
                 .mockReturnValueOnce(of({ ...MOCK_RESPONSE, entity: [MOCK_USERS[0]] }));
-            rolesService.getForUser.mockReturnValueOnce(
-                of([{ id: 'r-1', name: 'Admin', roleKey: 'CMS Administrator', childCount: 0 }])
-            );
 
             store.loadUsers();
 
@@ -211,8 +195,8 @@ describe('DotUsersListStore', () => {
                 2,
                 expect.objectContaining({ includeRoles: false })
             );
-            expect(rolesService.getForUser).toHaveBeenCalledWith('dotcms.org.1');
-            expect(store.userRoles()).toEqual({ 'dotcms.org.1': ['Admin'] });
+            // No inline roles in the downgraded response — column stays empty.
+            expect(store.userRoles()).toEqual({ 'dotcms.org.1': [] });
         });
 
         it('does NOT retry on non-403 errors — they bubble up to the error state', () => {

@@ -225,8 +225,19 @@ export class DotUsersListComponent {
      * standard 700px form dialog.
      */
     private openUserDialog(user?: DotUserListItem): void {
+        // Edit mode: show the user's name in the dialog title so the
+        // internal avatar/name header row can drop. Fall back through
+        // fullName → name → email so a record with a missing display
+        // name still gets a stable title (matches what the list column
+        // renders).
+        const editHeader =
+            user &&
+            (user.fullName?.trim() ||
+                user.name?.trim() ||
+                user.emailAddress?.trim() ||
+                this.#dotMessageService.get('users.edit.header'));
         const ref = this.#dialogService.open(DotUsersCreateComponent, {
-            header: this.#dotMessageService.get(user ? 'users.edit.header' : 'users.create.header'),
+            header: user ? editHeader : this.#dotMessageService.get('users.create.header'),
             width: 'min(92vw, 75rem)',
             height: 'min(90vh, 48rem)',
             data: user ? { user } : undefined,
