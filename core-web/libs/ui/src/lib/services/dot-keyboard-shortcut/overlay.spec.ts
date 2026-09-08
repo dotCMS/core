@@ -7,8 +7,7 @@ import { hasOverlayAbove } from './overlay';
 describe('hasOverlayAbove', () => {
     afterEach(() => vi.restoreAllMocks());
 
-    const stackTop = (value: number) =>
-        vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(value);
+    const stackTop = (value: number) => vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(value);
 
     const elementAt = (zIndex: number) => {
         const element = document.createElement('div');
