@@ -189,6 +189,24 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
+            // A name already taken is decided here rather than by letting the create fail.
+            //
+            // NOT for correctness — the unique index below is still the authority, and has to be:
+            // two batches racing for one name (FR-042) can both pass this check and only one can
+            // win, so removing the backstop would let the loser through. This is about what the
+            // expensive path costs and what it leaves behind. A resubmission is a NORMAL outcome
+            // this feature explicitly supports (FR-040a), and resolving it by exception meant a
+            // full workflow fire and validation per file, each one logging its rejection at ERROR
+            // through WorkflowAPIImpl. Fifty resubmitted files produced fifty ERROR lines
+            // describing something entirely expected and already handled — which is how an
+            // operator learns to stop reading them.
+            if (nameIsTaken(job.parameters(), user, fileName)) {
+                record(job, seq, fileName, BatchItemStatus.FAILED,
+                        BatchFailureReason.NAME_COLLISION,
+                        "A file of that name already exists in the target", null);
+                return;
+            }
+
             final File binary = resolveStagedContent(job, tempFileId, user)
                     .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
 
@@ -374,6 +392,52 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         }
         contentlet.setHost(String.valueOf(parameters.get("siteId")));
         contentlet.setFolder(Folder.SYSTEM_FOLDER);
+    }
+
+    /**
+     * Whether the target already holds a file of this name, asked before the create is attempted.
+     * <p>
+     * <b>Case-insensitive</b>, because the underlying rule is (FR-042a): {@code Report.pdf} and
+     * {@code report.pdf} are one contended name, and {@code fileNameExists} resolves through the
+     * same lower-cased identifier the unique index is built on.
+     * <p>
+     * <b>Only for FILEASSET.</b> A dotAsset does not carry a file name the way a fileAsset does —
+     * its title is derived from the binary — so there is no equivalent lookup, and the create
+     * itself remains the only answer for that base type. Returning false here is therefore not a
+     * claim that the name is free; it means "not decided yet", and the create decides it. Safe
+     * precisely because this check never had authority in the first place.
+     * <p>
+     * <b>Never allowed to fail the file.</b> If the lookup itself errors, this yields to the
+     * create rather than inventing a collision: a diagnostic query must not be able to reject an
+     * author's file.
+     */
+    private boolean nameIsTaken(final Map<String, Object> parameters, final User user,
+                                final String fileName) {
+
+        if (!"FILEASSET".equals(parameters.get("baseType"))) {
+            return false;
+        }
+
+        try {
+            final Object folderId = parameters.get("folderId");
+            if (folderId == null) {
+                // A site-rooted batch targets SYSTEM_FOLDER, which fileNameExists does not resolve
+                // the way it resolves a real folder. Left to the create.
+                return false;
+            }
+
+            final Folder folder = APILocator.getFolderAPI()
+                    .find(String.valueOf(folderId), user, false);
+
+            return APILocator.getFileAssetAPI().fileNameExists(
+                    APILocator.getHostAPI().find(folder.getHostId(), user, false),
+                    folder, fileName);
+        } catch (final Exception e) {
+            Logger.debug(this, String.format(
+                    "Could not pre-check the name '%s'; leaving it to the create: %s",
+                    fileName, e.getMessage()));
+            return false;
+        }
     }
 
     /**
