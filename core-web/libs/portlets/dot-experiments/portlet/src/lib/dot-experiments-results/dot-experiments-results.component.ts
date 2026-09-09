@@ -51,8 +51,6 @@ import { listReturnParams } from '../util/dot-experiments-list.util';
 /** Route `data` key `dotAnalyticsHealthCheckResolver` publishes the analytics health under. */
 const HEALTH_STATUS_ROUTE_DATA_KEY = 'healthStatus';
 
-/** Route parameter naming the experiment being reported on. */
-
 /**
  * Shell of the Results screen, routed on `/experiments/:experimentId/results`.
  *

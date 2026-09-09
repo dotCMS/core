@@ -460,7 +460,9 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotPropertiesService,
                 useValue: {
-                    getFreshFeatureFlag: () => of($experimentsPortletSwitchSignal())
+                    // The switch reads the raw key rather than a normalised flag, so that a
+                    // response missing it fails closed — see `readExperimentsPortletSwitch`.
+                    getKey: () => of(String($experimentsPortletSwitchSignal()))
                 }
             },
             {

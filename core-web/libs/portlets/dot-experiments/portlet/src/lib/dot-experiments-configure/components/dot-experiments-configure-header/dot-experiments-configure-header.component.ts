@@ -181,12 +181,18 @@ export class DotExperimentsConfigureHeaderComponent {
      *
      * Only reachable once the experiment exists — `$showResults()` already gates on the allowed
      * actions, which never include results for a draft that has not been created yet.
+     *
+     * Carries the page narrowing across, for the same reason `onBackToList` reads it off the
+     * address: Results has its own back button, and arriving there without `pageId` would send it
+     * to the site-wide list instead of the one the editor came from.
      */
     onViewResults(): void {
         const experimentId = this.store.experiment()?.id;
 
         if (experimentId) {
-            this.#router.navigate(resultsCommandsOf(experimentId));
+            this.#router.navigate(resultsCommandsOf(experimentId), {
+                queryParams: listReturnParams(this.#route.snapshot.queryParams)
+            });
         }
     }
 

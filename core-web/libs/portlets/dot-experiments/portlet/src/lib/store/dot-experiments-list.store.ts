@@ -332,12 +332,6 @@ export const DotExperimentsListStore = signalStore(
             filter: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
-        // Same shape as every other narrowing here: set it, and send the user back to page 1,
-        // since the page they were on may not exist in the narrowed set.
-        on(dotExperimentsListPageEvents.pageAssetFilterChanged, ({ payload }) => ({
-            selectedPageId: payload,
-            page: DEFAULT_EXPERIMENTS_LIST_PAGE
-        })),
         on(dotExperimentsListPageEvents.statusesChanged, ({ payload }) => ({
             selectedStatuses: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
@@ -356,9 +350,19 @@ export const DotExperimentsListStore = signalStore(
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.hydratedFromUrl, ({ payload }) => ({ ...payload })),
-        // A site switch keeps search, sort and status selection but always restarts paging.
+        /**
+         * A site switch keeps search, sort and status selection but always restarts paging — and
+         * drops the page narrowing, which belongs to the site being left (#37005).
+         *
+         * The lookup behind `pageInfoByPageId` carries no host restriction, so a narrowing carried
+         * across a switch resolved to a real path on the other site: the page-scoped empty state
+         * rendered with that path and offered to create an experiment for a page the editor could
+         * no longer see. `syncUrlEffect` follows the reset, so the address loses `pageId` too.
+         */
         on(dotExperimentsListPageEvents.siteChanged, () => ({
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+            selectedPageId: null,
+            languageId: null,
             status: ComponentStatus.LOADING
         })),
         on(

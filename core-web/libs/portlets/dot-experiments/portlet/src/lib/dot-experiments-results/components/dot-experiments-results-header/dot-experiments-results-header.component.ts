@@ -112,7 +112,9 @@ export class DotExperimentsResultsHeaderComponent {
         const experimentId = this.store.experiment()?.id;
 
         if (experimentId) {
-            this.#router.navigate(configureCommandsOf(experimentId));
+            this.#router.navigate(configureCommandsOf(experimentId), {
+                queryParams: listReturnParams(this.#route.snapshot.queryParams)
+            });
         }
     }
 

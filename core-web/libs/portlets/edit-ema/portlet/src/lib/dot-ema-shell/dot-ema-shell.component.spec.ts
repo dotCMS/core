@@ -1545,13 +1545,13 @@ describe('DotEmaShellComponent', () => {
              * mock without rebuilding would be asserting live reactivity nothing promises.
              */
             const withSwitch = (enabled: boolean) => {
-                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(of(enabled));
+                dotPropertiesServiceMock.getKey.mockReturnValue(of(String(enabled)));
                 spectator = createComponent();
                 spectator.detectChanges();
             };
 
             afterEach(() => {
-                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(of(false));
+                dotPropertiesServiceMock.getKey.mockReturnValue(of('false'));
             });
 
             // T052 / FR-016. The exact href a build without this change produces.
@@ -1593,7 +1593,7 @@ describe('DotEmaShellComponent', () => {
             // T058 / FR-015 and the spec's unreadable-switch edge case. The item must not go
             // inert and the editor must not be left on a blank screen — it falls to legacy.
             it('should fall back to the legacy href when the switch cannot be read', () => {
-                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(
+                dotPropertiesServiceMock.getKey.mockReturnValue(
                     throwError(() => new Error('config read failed'))
                 );
                 spectator = createComponent();

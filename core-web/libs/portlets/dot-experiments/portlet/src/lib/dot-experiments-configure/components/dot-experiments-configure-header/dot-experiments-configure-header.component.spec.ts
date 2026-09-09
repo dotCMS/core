@@ -261,9 +261,28 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
                 clickButton('experiments-configure-results-btn');
 
-                expect(navigate).toHaveBeenCalledWith(['/experiments', EXPERIMENT.id, 'results']);
+                expect(navigate).toHaveBeenCalledWith(['/experiments', EXPERIMENT.id, 'results'], {
+                    queryParams: {}
+                });
             }
         );
+
+        /**
+         * #37005. Results has a back button of its own, reading the same address. Arriving there
+         * without `pageId` sent it to the site-wide list — so a trip out to Results and back
+         * widened a narrowing the editor never cleared.
+         */
+        it('should carry the page narrowing across to Results', () => {
+            routeQueryParams = { pageId: 'page-1', language_id: '2' };
+            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            renderWith(DotExperimentStatus.RUNNING);
+
+            clickButton('experiments-configure-results-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', EXPERIMENT.id, 'results'], {
+                queryParams: { pageId: 'page-1', language_id: '2' }
+            });
+        });
 
         it.each([
             DotExperimentStatus.DRAFT,

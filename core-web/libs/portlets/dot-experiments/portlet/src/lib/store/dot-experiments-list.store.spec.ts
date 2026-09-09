@@ -27,6 +27,7 @@ import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events
 import { DotExperimentsListStore } from './dot-experiments-list.store';
 
 import {
+    DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
@@ -34,6 +35,7 @@ import {
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
+import { DotExperimentsListViewState } from '../shared/models';
 
 const CURRENT_SITE_ID = 'site-1';
 const OTHER_SITE_ID = 'site-2';
@@ -117,6 +119,24 @@ const EXPERIMENTS: DotExperiment[] = [
     EXPERIMENT_ORPHAN
 ];
 
+/**
+ * The list's URL-backed view state at its defaults, as `parseViewState` reads a bare address.
+ *
+ * `hydratedFromUrl` takes the whole state, so a test that wants one field of it says so against
+ * this rather than restating the other eight.
+ */
+const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
+    filter: '',
+    selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+    perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+    orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+    direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    selectedPageId: null,
+    languageId: null
+};
+
 const PAGE_SEARCH_RESULT = {
     jsonObjectView: {
         contentlets: [
@@ -131,6 +151,21 @@ describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotExperimentsListStore>>;
     let store: InstanceType<typeof DotExperimentsListStore>;
     let dispatcher: Dispatcher;
+
+    /**
+     * Narrows the list to a page the way the app does: through the address.
+     *
+     * The narrowing has one writer left — `hydratedFromUrl`. There is no event for it any more:
+     * the chip that used to set and clear it is gone, and nothing on the screen replaced it
+     * (#37005).
+     */
+    const hydrateWithPage = (pageId: string | null) =>
+        dispatcher.dispatch(
+            dotExperimentsListPageEvents.hydratedFromUrl({
+                ...VIEW_STATE_DEFAULTS,
+                selectedPageId: pageId
+            })
+        );
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
 
     const healthCheck = jest.fn();
@@ -562,9 +597,6 @@ describe('DotExperimentsListStore', () => {
     describe('page filter', () => {
         beforeEach(() => initStore());
 
-        const filterToPage = (pageId: string | null) =>
-            dispatcher.dispatch(dotExperimentsListPageEvents.pageAssetFilterChanged(pageId));
-
         it('should show every experiment when no page filter is set', () => {
             expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
         });
@@ -572,7 +604,7 @@ describe('DotExperimentsListStore', () => {
         // FR-021b, many: `page-1` carries a draft and an archived experiment. Both belong to the
         // page, so both survive this stage — the status selection is a later, separate narrowing.
         it('should keep every experiment on the filtered page', () => {
-            filterToPage('page-1');
+            hydrateWithPage('page-1');
 
             expect(store.pageAssetFilteredExperiments()).toEqual([
                 EXPERIMENT_DRAFT,
@@ -582,30 +614,30 @@ describe('DotExperimentsListStore', () => {
 
         // FR-021b, one.
         it('should keep a single experiment when the page has one', () => {
-            filterToPage('page-2');
+            hydrateWithPage('page-2');
 
             expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
         });
 
         // FR-021b, zero. Distinct from "no filter": an empty result is a real answer here.
         it('should keep nothing when the page has no experiments', () => {
-            filterToPage('page-with-none');
+            hydrateWithPage('page-with-none');
 
             expect(store.pageAssetFilteredExperiments()).toEqual([]);
         });
 
         it('should be cleared by a null page, revealing the full site-wide list', () => {
-            filterToPage('page-2');
+            hydrateWithPage('page-2');
             expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
 
-            filterToPage(null);
+            hydrateWithPage(null);
 
             expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
         });
 
         // Site scoping comes first, so a page on another site cannot be filtered *into* the list.
         it('should not resurrect a page from another site', () => {
-            filterToPage('page-3');
+            hydrateWithPage('page-3');
 
             expect(store.pageAssetFilteredExperiments()).toEqual([]);
         });
@@ -621,7 +653,7 @@ describe('DotExperimentsListStore', () => {
             );
             expect(store.page()).toBe(3);
 
-            filterToPage('page-1');
+            hydrateWithPage('page-1');
 
             expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
         });
@@ -629,7 +661,7 @@ describe('DotExperimentsListStore', () => {
         // The chip counts describe the narrowed set, which only holds if the page filter is
         // applied before they are computed.
         it('should narrow the status counts to the filtered page', () => {
-            filterToPage('page-2');
+            hydrateWithPage('page-2');
 
             expect(store.statusCounts()[DotExperimentStatus.RUNNING]).toBe(1);
             expect(store.statusCounts()[DotExperimentStatus.DRAFT]).toBe(0);
@@ -670,15 +702,13 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should not match the page whose path merely starts with the same text', () => {
-            dispatcher.dispatch(dotExperimentsListPageEvents.pageAssetFilterChanged('page-about'));
+            hydrateWithPage('page-about');
 
             expect(store.pageAssetFilteredExperiments()).toEqual([onAbout]);
         });
 
         it('should still match the longer path when that is the one filtered to', () => {
-            dispatcher.dispatch(
-                dotExperimentsListPageEvents.pageAssetFilterChanged('page-about-us')
-            );
+            hydrateWithPage('page-about-us');
 
             expect(store.pageAssetFilteredExperiments()).toEqual([onAboutUs]);
         });

@@ -272,6 +272,11 @@ export class DotExperimentsListComponent {
      * `null` when there is no page filter. When there is one but `pageInfoByPageId` cannot resolve
      * it — the page was deleted after the editor left it — the empty state still says so, rather
      * than reading as a page that merely has no experiments.
+     *
+     * The narrowing arrives in the address and there is no control here that widens it: FR-021c's
+     * "starting point, not a cage" half is not met, and is deliberately left for the UVE drawer
+     * that takes over this screen. With rows present the only sign of it is the `Page` column and
+     * the page's own crumb, which a fresh session does not have.
      */
     readonly $pageFilter = computed<{ path: string; resolved: boolean } | null>(() => {
         const pageId = this.store.selectedPageId();
@@ -339,6 +344,22 @@ export class DotExperimentsListComponent {
                   icon: 'science',
                   iconStyle: 'material-symbols-rounded'
               };
+    });
+
+    /**
+     * The empty state's action, or `''` when the state has nothing to offer.
+     *
+     * Paired with `onEmptyAction` below and read off the same two conditions as
+     * `$emptyConfiguration`, so the copy and the button cannot end up describing different states.
+     */
+    readonly $emptyActionLabel = computed<string>(() => {
+        if (this.$pageFilter()) {
+            return this.#dotMessageService.get('experiments.list.empty.page.action');
+        }
+
+        return this.$hasActiveFilters()
+            ? this.#dotMessageService.get('experiments.list.no-results.clear')
+            : '';
     });
 
     /**
@@ -437,11 +458,34 @@ export class DotExperimentsListComponent {
         this.$searchTerm.set('');
     }
 
-    /** Clears every narrowing at once, from the no-results state. */
+    /**
+     * Clears the narrowings the user applied, from the no-results state.
+     *
+     * Not the page filter: that one is not the user's — they arrived with it from the editor — and
+     * it lives in the address rather than in a control on this screen. Nothing here can widen it;
+     * see the note on `$pageFilter`.
+     */
     onClearFilters(): void {
         this.$searchTerm.set('');
         this.#dispatch.statusesChanged([]);
         this.#dispatch.goalsChanged([]);
+    }
+
+    /**
+     * The empty state's one action, whichever of the two states it is in.
+     *
+     * Two branches on one condition rather than two containers in the template: the states differ
+     * only in the label and what the press does, and keeping them in one place is what stops a
+     * later edit from moving one and not the other.
+     */
+    onEmptyAction(): void {
+        if (this.$pageFilter()) {
+            this.onNewExperiment();
+
+            return;
+        }
+
+        this.onClearFilters();
     }
 
     onStatusesChange(statuses: string[]): void {

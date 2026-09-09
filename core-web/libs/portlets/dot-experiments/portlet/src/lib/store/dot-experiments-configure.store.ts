@@ -888,16 +888,6 @@ export const DotExperimentsConfigureStore = signalStore(
                 ),
 
                 /**
-                 * A refused save that carried a page puts the displayed page back.
-                 *
-                 * The card applies a pick optimistically, which is right for every field that
-                 * cannot be refused on its own. `pageId` can: the screen gates on the same rule the
-                 * server enforces, but that rule reads state — a variant added in another tab is
-                 * enough to make the two disagree. Leaving the refused page on screen would show
-                 * the user something that is not stored anywhere, so it is re-resolved from the
-                 * experiment. The message explaining why was already raised by the error handler.
-                 */
-                /**
                  * Persists a confirmed page change on its own, instead of letting it ride along
                  * with the next Save Draft.
                  *
@@ -935,6 +925,16 @@ export const DotExperimentsConfigureStore = signalStore(
                     )
                 ),
 
+                /**
+                 * A refused save that carried a page puts the displayed page back.
+                 *
+                 * The card applies a pick optimistically, which is right for every field that
+                 * cannot be refused on its own. `pageId` can: the screen gates on the same rule the
+                 * server enforces, but that rule reads state — a variant added in another tab is
+                 * enough to make the two disagree. Leaving the refused page on screen would show
+                 * the user something that is not stored anywhere, so it is re-resolved from the
+                 * experiment. The message explaining why was already raised by the error handler.
+                 */
                 revertRefusedPage$: merge(
                     events.on(apiEvents.saveFailed),
                     events.on(apiEvents.pageChangeFailed)

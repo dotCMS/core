@@ -1,5 +1,5 @@
 import { DotPageBrowserPage } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { fromBrowserPage, toConfigurePage } from './dot-experiments-configure.util';
 
@@ -17,12 +17,12 @@ import { fromBrowserPage, toConfigurePage } from './dot-experiments-configure.ut
 describe('dot-experiments-configure.util', () => {
     describe('toConfigurePage', () => {
         it('should carry pageId, title, path and languageId from the contentlet', () => {
-            const contentlet = {
+            const contentlet = createFakeContentlet({
                 identifier: 'page-1',
                 title: 'Pricing',
                 url: '/pricing/index',
                 languageId: 2
-            } as unknown as DotCMSContentlet;
+            });
 
             expect(toConfigurePage(contentlet)).toEqual({
                 pageId: 'page-1',
@@ -33,12 +33,12 @@ describe('dot-experiments-configure.util', () => {
         });
 
         it('should keep the existing title fallback to the path when the title is empty', () => {
-            const contentlet = {
+            const contentlet = createFakeContentlet({
                 identifier: 'page-1',
                 title: '',
                 url: '/pricing/index',
                 languageId: 1
-            } as unknown as DotCMSContentlet;
+            });
 
             expect(toConfigurePage(contentlet).title).toBe('/pricing/index');
         });
@@ -48,11 +48,14 @@ describe('dot-experiments-configure.util', () => {
         // to survive this mapping rather than being defaulted to 1 here — defaulting at either
         // layer is what FR-004 forbids.
         it('should leave languageId undefined when the contentlet has none, not default it to 1', () => {
-            const contentlet = {
+            // The factory fills `languageId` in, so the absence this test is about has to be
+            // stated: the mapping must pass the gap through rather than default it.
+            const contentlet = createFakeContentlet({
                 identifier: 'page-1',
                 title: 'Pricing',
-                url: '/pricing/index'
-            } as unknown as DotCMSContentlet;
+                url: '/pricing/index',
+                languageId: undefined
+            });
 
             expect(toConfigurePage(contentlet).languageId).toBeUndefined();
         });

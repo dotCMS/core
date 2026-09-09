@@ -81,9 +81,17 @@ export function putCrumbOnTrail(trail: BreadcrumbTrail, crumb: MenuItem): void {
     trail.addNewBreadcrumb(crumb);
 }
 
-/** `?a=1&b=2`, or the empty string — the crumb `url` is a plain string, not a router command. */
+/**
+ * `?a=1&b=2`, or the empty string — the crumb `url` is a plain string, not a router command.
+ *
+ * Values are stringified rather than asserted to be strings: `Params` is `{[key: string]: any}`
+ * and the page narrowing carries `language_id` as a number, so telling the compiler otherwise
+ * would have been a lie that `URLSearchParams` happens to cover for.
+ */
 function queryOf(params: Params): string {
-    const query = new URLSearchParams(params as Record<string, string>).toString();
+    const query = new URLSearchParams(
+        Object.entries(params).map(([key, value]) => [key, String(value)])
+    ).toString();
 
     return query ? `?${query}` : '';
 }

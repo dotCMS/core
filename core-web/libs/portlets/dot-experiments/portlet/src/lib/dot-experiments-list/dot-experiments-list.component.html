@@ -79,25 +79,13 @@
         data-testid="experiments-table-wrapper">
         @if ($isEmpty()) {
             <div class="flex min-h-0 flex-1 items-center justify-center p-6">
-                @if ($pageFilter()) {
-                    <dot-empty-container
-                        [configuration]="$emptyConfiguration()"
-                        [buttonLabel]="'experiments.list.empty.page.action' | dm"
-                        [secondaryButton]="true"
-                        (buttonAction)="onNewExperiment()"
-                        [hideContactUsLink]="true"
-                        data-testid="experiments-empty-state" />
-                } @else {
-                    <dot-empty-container
-                        [configuration]="$emptyConfiguration()"
-                        [buttonLabel]="
-                            $hasActiveFilters() ? ('experiments.list.no-results.clear' | dm) : ''
-                        "
-                        [secondaryButton]="true"
-                        (buttonAction)="onClearFilters()"
-                        [hideContactUsLink]="true"
-                        data-testid="experiments-empty-state" />
-                }
+                <dot-empty-container
+                    [configuration]="$emptyConfiguration()"
+                    [buttonLabel]="$emptyActionLabel()"
+                    [secondaryButton]="true"
+                    (buttonAction)="onEmptyAction()"
+                    [hideContactUsLink]="true"
+                    data-testid="experiments-empty-state" />
             </div>
         } @else {
             <p-table

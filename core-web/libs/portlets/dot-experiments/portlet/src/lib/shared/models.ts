@@ -34,7 +34,7 @@ export interface DotExperimentsListViewState {
      * Language version of the filtered page the editor arrived from; `null` when nobody said.
      *
      * Not part of the narrowing — an experiment belongs to a page, not to one of its language
-     * versions. It exists so the page chip's back-link can return to the version the editor was
+     * versions. It is carried so a return to the editor can land on the version the editor was
      * on, which a page identifier cannot express (#37005).
      */
     languageId: number | null;

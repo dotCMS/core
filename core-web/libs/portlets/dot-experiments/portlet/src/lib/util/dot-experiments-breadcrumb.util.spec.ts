@@ -1,7 +1,10 @@
+import { MenuItem } from 'primeng/api';
+
 import {
     experimentConfigureCrumb,
     experimentResultsCrumb,
-    experimentsListCrumb
+    experimentsListCrumb,
+    putCrumbOnTrail
 } from './dot-experiments-breadcrumb.util';
 
 const PAGE_ASSET_ID = 'a9f30020-54ef-494e-92ed-645e757171c2';
@@ -100,6 +103,99 @@ describe('dot-experiments-breadcrumb.util', () => {
             );
             expect(results.label).toBe('Summer Test');
             expect(results.target).toBe('_self');
+        });
+    });
+
+    /**
+     * The reason this function exists at all.
+     *
+     * `addNewBreadcrumb` **skips** an item whose id or url matches the last crumb's — it does not
+     * replace it, whatever its name suggests. Every crumb in this file is written more than once
+     * (a rename rewrites the label on each keystroke; creating a draft swaps `/experiments/new`
+     * for the experiment's own address; a site switch widens the list's), so going through
+     * `addNewBreadcrumb` alone left the trail showing the first version forever: the label the
+     * screen opened with, and a link back to an address that no longer exists.
+     */
+    describe('putCrumbOnTrail', () => {
+        /** The trail as a list, since append-vs-replace is the whole question here. */
+        const trailOf = (...items: MenuItem[]) => {
+            const trail = [...items];
+
+            return {
+                trail,
+                lastBreadcrumb: () => trail.at(-1) ?? null,
+                addNewBreadcrumb: (crumb: MenuItem) => {
+                    trail.push(crumb);
+                },
+                setLastBreadcrumb: (crumb: MenuItem) => {
+                    trail[trail.length - 1] = crumb;
+                }
+            };
+        };
+
+        it('should append when the last crumb belongs to somebody else', () => {
+            const store = trailOf({ id: 'page-crumb', label: 'Home' });
+
+            putCrumbOnTrail(store, experimentsListCrumb('Experiments List', {}));
+
+            expect(store.trail.map(({ label }) => label)).toEqual(['Home', 'Experiments List']);
+        });
+
+        it('should append onto an empty trail', () => {
+            const store = trailOf();
+
+            putCrumbOnTrail(store, experimentsListCrumb('Experiments List', {}));
+
+            expect(store.trail).toHaveLength(1);
+        });
+
+        // The rename case: same crumb, new label, and no second copy of it.
+        it('should rewrite in place when the last crumb is the same one', () => {
+            const store = trailOf(
+                { id: 'page-crumb', label: 'Home' },
+                experimentConfigureCrumb('New Experiment', null, {})
+            );
+
+            putCrumbOnTrail(store, experimentConfigureCrumb('Summer Test', EXPERIMENT_ID, {}));
+
+            expect(store.trail.map(({ label }) => label)).toEqual(['Home', 'Summer Test']);
+        });
+
+        // The creation swap: the label may be unchanged while the address is not, and the old
+        // address pointed at a draft that no longer exists.
+        it('should carry the new address through a rewrite', () => {
+            const store = trailOf(experimentConfigureCrumb('Summer Test', null, {}));
+
+            putCrumbOnTrail(store, experimentConfigureCrumb('Summer Test', EXPERIMENT_ID, {}));
+
+            expect(store.trail).toHaveLength(1);
+            expect(store.trail[0].url).toBe(
+                `/dotAdmin/#/experiments/${EXPERIMENT_ID}/configuration`
+            );
+        });
+
+        // The list's own path: clearing the narrowing changes that crumb's address, and the skip
+        // had been discarding it.
+        it('should rewrite the list crumb when its narrowing changes', () => {
+            const store = trailOf(experimentsListCrumb('Experiments List', { pageId: 'page-1' }));
+
+            putCrumbOnTrail(store, experimentsListCrumb('Experiments List', {}));
+
+            expect(store.trail).toHaveLength(1);
+            expect(store.trail[0].url).toBe('/dotAdmin/#/experiments');
+        });
+
+        // Results sits on top of Configure rather than replacing it: different ids, so the trail
+        // keeps both screens in the order they were visited.
+        it('should append Results on top of Configure rather than replacing it', () => {
+            const store = trailOf(experimentConfigureCrumb('Summer Test', EXPERIMENT_ID, {}));
+
+            putCrumbOnTrail(store, experimentResultsCrumb('Summer Test', EXPERIMENT_ID, {}));
+
+            expect(store.trail.map(({ id }) => id)).toEqual([
+                'experiments-configure',
+                'experiments-results'
+            ]);
         });
     });
 });

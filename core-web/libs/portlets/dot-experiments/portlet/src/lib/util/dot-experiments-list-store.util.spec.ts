@@ -200,7 +200,7 @@ describe('page filter view state', () => {
             expect(parseViewState(reader({})).selectedPageId).toBeNull();
         });
 
-        // The language the editor was on, carried so the chip's back-link can return to that
+        // The language the editor was on, carried so a return to the editor can land on that
         // version of the page instead of assuming the default one.
         it('should read the language from ?language_id=', () => {
             expect(parseViewState(reader({ language_id: '2' })).languageId).toBe(2);
@@ -226,7 +226,7 @@ describe('page filter view state', () => {
     });
 
     describe('toQueryParams', () => {
-        it('should write the page filter as pageAsset', () => {
+        it('should write the page filter as pageId', () => {
             expect(toQueryParams({ ...DEFAULTS, selectedPageId: 'page-1' })).toMatchObject({
                 pageId: 'page-1'
             });

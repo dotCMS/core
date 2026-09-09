@@ -284,10 +284,6 @@ export class DotUveToolbarComponent {
     }
 
     /**
-     * Handle info display action event from presentational DotEmaInfoDisplayComponent
-     * @param optionId The ID of the action option (e.g., 'device', 'socialMedia', 'variant')
-     */
-    /**
      * Chip for the control variant previewed from the portlet, or `null` when that is not the
      * case. Same shape the store builds for a real variant, so the action handler and the template
      * need no special case: the id stays `variant` and the back arrow means the same thing.
@@ -325,6 +321,10 @@ export class DotUveToolbarComponent {
         };
     }
 
+    /**
+     * Handle info display action event from presentational DotEmaInfoDisplayComponent
+     * @param optionId The ID of the action option (e.g., 'device', 'socialMedia', 'variant')
+     */
     handleInfoDisplayAction(optionId: string) {
         if (optionId === 'device' || optionId === 'socialMedia') {
             this.#store.viewClearDeviceAndSocialMedia();

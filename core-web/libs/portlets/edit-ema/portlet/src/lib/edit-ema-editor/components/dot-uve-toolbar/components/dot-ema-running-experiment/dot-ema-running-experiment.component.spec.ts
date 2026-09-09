@@ -48,7 +48,7 @@ describe('DotEmaRunningExperimentComponent', () => {
         // In Angular 20, ng-reflect-* attributes are not available
         // Verify the routerLink directive is present and configured
         const tagDebugElement = spectator.debugElement.query(
-            By.css('[data-testId="runningExperimentTag"]')
+            By.css('[data-testid="runningExperimentTag"]')
         );
         const routerLinkDirective = tagDebugElement?.injector.get(RouterLink, null);
         expect(routerLinkDirective).toBeTruthy();
@@ -71,7 +71,7 @@ describe('DotEmaRunningExperimentComponent', () => {
      */
     it('should link to the legacy reports route, keyed on page and experiment', () => {
         const tagDebugElement = spectator.debugElement.query(
-            By.css('[data-testId="runningExperimentTag"]')
+            By.css('[data-testid="runningExperimentTag"]')
         );
         const routerLink = tagDebugElement?.injector.get(RouterLink, null);
 

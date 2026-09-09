@@ -220,14 +220,6 @@ export function isSameFormValue(
 }
 
 /**
- * The page a content-search contentlet stands for, as the Page card shows it.
- *
- * `languageId` is copied through rather than defaulted: the variant deep link sends it as
- * `language_id`, and a page whose language is unknown must reach the builder as unknown so the
- * action can be refused (FR-004). Defaulting to 1 here would open the wrong language's content
- * with nothing reporting an error.
- */
-/**
  * The one version of a page to prefill the card with, out of everything a lookup answered.
  *
  * A page answers once per language, so a lookup by path — or by identifier — can return several
@@ -254,6 +246,14 @@ export function pickPageVersion(
     )[0];
 }
 
+/**
+ * The page a content-search contentlet stands for, as the Page card shows it.
+ *
+ * `languageId` is copied through rather than defaulted: the variant deep link sends it as
+ * `language_id`, and a page whose language is unknown must reach the builder as unknown so the
+ * action can be refused (FR-004). Defaulting to 1 here would open the wrong language's content
+ * with nothing reporting an error.
+ */
 export function toConfigurePage(contentlet: DotCMSContentlet): DotExperimentConfigurePage {
     const path = contentlet.url ?? '';
 

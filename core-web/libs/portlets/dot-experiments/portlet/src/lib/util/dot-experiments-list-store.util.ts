@@ -68,7 +68,7 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
          * The language the editor was standing in, when it sent us here.
          *
          * Not a filter: the list narrows on `pageId` alone, and an experiment belongs to a page
-         * rather than to one of its language versions. It is carried so the page chip's back-link
+         * rather than to one of its language versions. It is carried so a return to the editor
          * can return to the version the editor came from — a page identifier cannot say which one
          * that was, and assuming the default sent them somewhere they had not been.
          *
