@@ -53,3 +53,39 @@ export async function createFolders(
         headers: authHeaders()
     });
 }
+
+/**
+ * Creates one folder that only admits file names matching the given globs.
+ *
+ * Its own helper because the *filter* is the point: a folder's `fileMasks` is a glob on the file
+ * name, checked per folder, and it is the only way to make the server refuse a file for a reason
+ * that has nothing to do with its type or its size. `createFolders` cannot express it — that
+ * endpoint takes paths and nothing else.
+ *
+ * @param siteName the site the folder belongs to, e.g. `demo.dotcms.com`
+ * @param path the folder path, leading slash included
+ * @param fileMasks the globs to admit, e.g. `['*.jpg']`
+ */
+export async function createFilteredFolder(
+    request: APIRequestContext,
+    siteName: string,
+    path: string,
+    fileMasks: string[]
+): Promise<void> {
+    const response = await request.post('/api/v1/assets/folders', {
+        data: {
+            assetPath: `//${siteName}${path}`,
+            data: {
+                title: path.replace(/^\//, ''),
+                name: path.replace(/^\//, ''),
+                fileMasks
+            }
+        },
+        headers: authHeaders()
+    });
+    expect(response.ok()).toBeTruthy();
+
+    await request.delete('/api/v1/caches/region/FolderCache', {
+        headers: authHeaders()
+    });
+}

@@ -2,11 +2,13 @@ import { type APIRequestContext } from '@playwright/test';
 
 import { type BaseApiHelpers, test as base } from './base.fixture';
 
-import { deleteFolders } from '../requests/folders';
+import { createFilteredFolder, deleteFolders } from '../requests/folders';
 
 /** The shared helpers plus the teardown Content Drive needs for the folders it seeds. */
 export interface ContentDriveApiHelpers extends BaseApiHelpers {
     deleteFolders: (siteName: string, paths: string[]) => Promise<void>;
+    /** Seeds a folder that only admits the given file-name globs, for the folder-filter refusal. */
+    createFilteredFolder: (siteName: string, path: string, fileMasks: string[]) => Promise<void>;
 }
 
 /**
@@ -34,7 +36,9 @@ export const test = base.extend<{ apiHelpers: ContentDriveApiHelpers }>({
         await use({
             ...apiHelpers,
             deleteFolders: (siteName: string, paths: string[]) =>
-                deleteFolders(request, siteName, paths)
+                deleteFolders(request, siteName, paths),
+            createFilteredFolder: (siteName: string, path: string, fileMasks: string[]) =>
+                createFilteredFolder(request, siteName, path, fileMasks)
         });
     }
 });

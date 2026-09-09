@@ -12,6 +12,9 @@ export class ContentDrivePage {
     readonly listTitles: Locator;
     readonly treeNodeLabels: Locator;
     readonly searchField: Locator;
+    readonly uploadIndicator: Locator;
+    readonly uploadProgress: Locator;
+    readonly toasts: Locator;
 
     constructor(private page: Page) {
         this.toolbar = page.getByTestId('toolbar');
@@ -25,6 +28,10 @@ export class ContentDrivePage {
         this.currentSiteHostname = this.sidebar.getByTestId('tree-node-label').first();
         this.listTitles = page.getByTestId('item-title-text');
         this.treeNodeLabels = this.sidebar.getByTestId('tree-node-label');
+        // The toolbar's in-flight indicator, and the position it shows when a run reports one.
+        this.uploadIndicator = page.getByTestId('action-execution-indicator');
+        this.uploadProgress = page.getByTestId('action-execution-progress');
+        this.toasts = page.locator('.p-toast-message');
     }
 
     /**
@@ -160,6 +167,68 @@ export class ContentDrivePage {
                 return transfer;
             }, names)
         });
+    }
+
+    /**
+     * Chooses `count` generated files, for the batch sizes a fixture file cannot express.
+     *
+     * The refusal for too many files starts above `CONTENT_BULK_UPLOAD_MAX_FILES`, which defaults
+     * to 100, so proving it means actually choosing 101 of them.
+     */
+    async chooseGeneratedFilesForUpload(count: number, prefix: string) {
+        await this.chooseFilesForUpload(
+            Array.from({ length: count }, (_, index) => `${prefix}-${index}.png`)
+        );
+    }
+
+    /**
+     * The handle has arrived: the author has been told the batch is theirs to leave, and the
+     * indicator is still reporting it.
+     *
+     * Both halves matter and they fail for different reasons. Without the message the author never
+     * learns the rules changed; without the indicator the batch looks finished when it is not.
+     */
+    async expectHandedToBackground() {
+        await expect(this.toasts.filter({ hasText: 'in the background' }).first()).toBeVisible({
+            timeout: 30000
+        });
+        await expect(this.uploadIndicator).toBeVisible();
+    }
+
+    /** A message the author can read, whatever severity it arrived with. */
+    async expectToastContaining(text: string) {
+        await expect(this.toasts.filter({ hasText: text }).first()).toBeVisible({
+            timeout: 60000
+        });
+    }
+
+    /**
+     * The outcome for a batch that has finished server-side.
+     *
+     * Waits on the message rather than on the listing: the run reports through a pushed signal
+     * that arrives when the job resolves, and a listing that has not refreshed yet is not evidence
+     * either way.
+     */
+    async expectOutcomeContaining(text: string) {
+        await this.expectToastContaining(text);
+    }
+
+    /**
+     * Whether the batch's outcome reached the author who left the portlet.
+     *
+     * A different surface answers this than the one inside the portlet: the toast belongs to a
+     * component that is destroyed on navigation, so what survives is the durable notification, and
+     * the bell is where it lands.
+     */
+    async expectNotificationContaining(text: string) {
+        await this.page.locator('.pi-bell').first().click();
+
+        await expect(
+            this.page
+                .locator('#dot-toolbar-notifications-content')
+                .filter({ hasText: text })
+                .first()
+        ).toBeVisible({ timeout: 60000 });
     }
 
     /**
