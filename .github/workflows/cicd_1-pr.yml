@@ -127,11 +127,62 @@ jobs:
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
+  # Validate SDK package.json shapes - guards against a floating @dotcms/* version
+  # specifier (latest/next/*) regressing into an SDK lib's peerDependencies, a sibling
+  # SDK dependency reappearing in the wrong field, or an example app pinning a floating
+  # tag anywhere it isn't allowed (main's examples are the one deliberate exception for
+  # "latest" - see specs/37399-sdk-packaging-version-fix/spec.md).
+  validate-sdk-package-shapes:
+    name: Validate SDK package.json shapes
+    needs: [ initialize ]
+    if: >-
+      always() && !cancelled() &&
+      (fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+       fromJSON(needs.initialize.outputs.filters).examples == 'true')
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: 'Setup Node'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: 'core-web/.nvmrc'
+
+      - name: 'Build validator'
+        working-directory: .github/scripts/validate-sdk-package-shapes
+        run: |
+          npm ci
+          npm run build
+        shell: bash
+
+      - name: 'Validate SDK lib and example manifests'
+        working-directory: .github/scripts/validate-sdk-package-shapes
+        env:
+          # This workflow only triggers for PRs targeting main/master (see the `on:`
+          # trigger above), so "main" is always the correct branch context here -
+          # examples on main are allowed to float on "latest" (see file header).
+          TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          FAIL=0
+
+          for pkg_json in $(find ../../../core-web/libs/sdk -maxdepth 2 -name package.json); do
+            node dist/index.js "$pkg_json" || FAIL=1
+          done
+
+          for pkg_json in $(find ../../../examples -maxdepth 2 -name package.json); do
+            node dist/index.js "$pkg_json" --branch "$TARGET_BRANCH" || FAIL=1
+          done
+
+          exit $FAIL
+        shell: bash
+
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ test ]
+    needs: [ test, validate-sdk-package-shapes ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

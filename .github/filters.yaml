@@ -50,6 +50,9 @@ cli: &cli
 sdk_libs:
   - 'core-web/libs/sdk/**'
 
+examples:
+  - 'examples/**'
+
 # PR area labeling filters
 # These are separate from test-triggering filters to avoid false positives
 # (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")
