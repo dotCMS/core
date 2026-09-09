@@ -243,6 +243,9 @@ run reports a collision failure for it.
   limit; no partial batch is created.
 - **A file over the configured per-file size limit, inside an otherwise valid batch.** That file
   fails; the batch does not.
+- **A file the target folder's own filename filter does not admit** *(added by amendment,
+  2026-09-08)*. That file fails with its own reason; the batch does not, and the files the filter
+  does admit are still created. Not the same condition as a disallowed media type (FR-012c).
 - **The author cannot add children to the target folder.** Refused at submission as a permission
   error — not as N per-file failures.
 - **A file collides with an existing asset the author cannot edit, or resolves to a content type
@@ -366,6 +369,14 @@ run reports a collision failure for it.
   content sniffing, not by trusting the name — and matches it against the content type's allow
   list, which is written in media-type terms and supports wildcards. Renaming a file to change its
   extension therefore does not get it past the rule.
+- **FR-012c** *(added by amendment, 2026-09-08)*: A file MAY also be refused by the **target
+  folder's own filename filter** — a per-folder glob such as `*.jpg`, distinct from the content
+  type's media-type allow list. That file MUST be recorded as its own failure with a reason
+  distinguishable from every other, and MUST NOT fail the batch. **The distinction from FR-012 is
+  not cosmetic**: the two have different fixes, and reporting one as the other sends the author to
+  do something that cannot work — renaming does not get a file past a media-type rule, and moving
+  does not get it past a folder one. The rule is the product's own, inherited unchanged; what this
+  feature owes is naming it correctly.
 - **FR-012b**: Where the media type **cannot be resolved**, the product skips the allow-list check
   and accepts the file. This feature inherits that behavior rather than tightening it, since
   tightening would break FR-006. It MUST NOT be described to the author as though every file were
@@ -416,9 +427,13 @@ run reports a collision failure for it.
   succeeded, failed, or skipped (never attempted).
 - **FR-016**: Every failed per-file result MUST carry a machine-readable reason and a
   human-readable message. The reason MUST distinguish at least: over size limit,
-  disallowed file type (FR-012a — a media-type rule, not an extension one), name collision,
+  disallowed file type (FR-012a — a media-type rule, not an extension one), a target-folder
+  filename-filter mismatch (FR-012c — *added by amendment, 2026-09-08*), name collision,
   permission denied (a per-file check narrower than the target-folder check in FR-003 — see Edge
-  Cases), staged content unavailable (FR-032), and an unclassified error.
+  Cases), staged content unavailable (FR-032), and an unclassified error. The list is a **floor**,
+  not a closed set — "at least" — so a reason may be added without contradicting this requirement.
+  What may not happen is a distinguishable cause being folded into an existing reason, which is
+  what FR-012c was added to correct.
 - **FR-016a**: The **reason** is what the client presents, by mapping it to resolved product copy.
   The **message** is diagnostic and log-only: it MUST NOT be the text shown to the author, which
   the frontend spec's FR-030 already requires. Every reason a failure can carry MUST therefore
