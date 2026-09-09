@@ -14,10 +14,13 @@
 
         @if (loading()) {
             <div class="flex items-center justify-center py-12">
-                <dot-spinner />
+                <dot-spinner data-testid="loading-indicator" />
             </div>
         } @else if (loadFailed()) {
-            <p-message severity="error" [text]="'apps.ai.error.load' | dm" />
+            <p-message
+                severity="error"
+                [text]="'apps.ai.error.load' | dm"
+                data-testid="error-message" />
         } @else {
             @for (meta of capabilityMeta; track meta.capability) {
                 <dot-ai-capability-card

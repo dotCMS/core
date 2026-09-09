@@ -5,7 +5,6 @@ import {
     Component,
     DestroyRef,
     OnInit,
-    computed,
     effect,
     inject,
     signal,
@@ -45,7 +44,11 @@ import { CAPABILITY_META } from './dot-ai-config.constants';
 @Component({
     selector: 'dot-ai-config-detail',
     templateUrl: './dot-ai-config-detail.component.html',
-    host: { class: 'flex h-full w-full flex-col overflow-hidden' },
+    // `bg-surface-0` is the tokenized white the rest of this screen's chrome is built from. It has
+    // to be declared here: the wrapper this route renders into (`main-legacy.component.html`) sets
+    // no background, and neither does `html`/`body` — without it the page only looks right by
+    // falling back to the browser's default canvas.
+    host: { class: 'flex h-full w-full flex-col overflow-hidden bg-surface-0' },
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ButtonModule,
@@ -76,10 +79,6 @@ export class DotAiConfigDetailComponent implements OnInit {
     readonly initialSections = signal<Record<string, DotAiCapabilitySectionValue | null>>({});
     readonly initialSettings = signal<Record<string, unknown> | null>(null);
     readonly providers = signal<DotAiProviderMetadata[]>([]);
-
-    /** The site this configuration applies to — already resolved by the route (see the
-     *  `dotAiConfigDetailResolver`), just never surfaced in the redesigned page. */
-    readonly siteName = computed(() => this.app()?.sites?.[0]?.name ?? null);
 
     private readonly capabilityCards = viewChildren(DotAiCapabilityCardComponent);
     private readonly settingsCard = viewChild(DotAiSettingsCardComponent);

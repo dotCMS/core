@@ -23,7 +23,7 @@ describe('DotAiCapabilityCardComponent', () => {
         sectionKey: 'chat',
         title: 'apps.ai.capability.chat.title',
         description: 'apps.ai.capability.chat.description',
-        icon: 'pi pi-comments'
+        icon: 'forum'
     };
 
     const openAiProvider: DotAiProviderMetadata = {

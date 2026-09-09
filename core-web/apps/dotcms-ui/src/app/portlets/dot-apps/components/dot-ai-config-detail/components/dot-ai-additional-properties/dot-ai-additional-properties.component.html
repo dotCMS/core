@@ -11,19 +11,29 @@
                         pInputText
                         formControlName="key"
                         class="w-2/5 font-mono text-sm"
+                        [attr.data-testid]="'property-key-' + i"
                         [placeholder]="'apps.ai.additional-properties.key.placeholder' | dm" />
                     <input
                         pInputText
                         formControlName="value"
                         class="flex-1 font-mono text-sm"
+                        [attr.data-testid]="'property-value-' + i"
                         [placeholder]="'apps.ai.additional-properties.value.placeholder' | dm" />
+                    <!-- Projected through `#icon`, not as bare content: p-button derives
+                         `p-button-icon-only` (the square, label-less shape) from the `icon` input
+                         or an `#icon` template, and bare content satisfies neither. -->
                     <p-button
                         [text]="true"
                         severity="secondary"
                         size="small"
-                        [attr.aria-label]="'apps.ai.additional-properties.remove.aria-label' | dm"
+                        [ariaLabel]="'apps.ai.additional-properties.remove.aria-label' | dm"
+                        [attr.data-testid]="'remove-property-' + i"
                         (onClick)="removeProperty(i)">
-                        <span class="material-symbols-outlined text-base">close</span>
+                        <ng-template #icon>
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">
+                                close
+                            </span>
+                        </ng-template>
                     </p-button>
                 </div>
             }
@@ -35,7 +45,10 @@
         size="small"
         [label]="'apps.ai.additional-properties.add.button' | dm"
         styleClass="self-start"
+        data-testid="add-property"
         (onClick)="addProperty()">
-        <span class="material-symbols-outlined text-base">add</span>
+        <ng-template #icon>
+            <span class="material-symbols-outlined text-base" aria-hidden="true">add</span>
+        </ng-template>
     </p-button>
 </div>

@@ -1,6 +1,11 @@
-<div class="flex flex-col rounded-md border border-surface">
+<!-- `overflow-hidden` so the header fill is clipped to the border's inner curve. Without it the
+     header's square corners paint over the rounded corners: when the capability is off the header
+     is the only child, and its bottom corners erase the border stroke along both bottom arcs.
+     Safe here because nothing in this card opens a PrimeNG overlay (`p-password` runs with
+     `[feedback]="false"`) — see `dot-ai-settings-card`, which holds a `p-select` and cannot. -->
+<div class="flex flex-col overflow-hidden rounded-md border border-surface">
     <!-- Header -->
-    <div class="flex items-start gap-3 rounded-t-md bg-surface-50 px-5 py-4.5">
+    <div class="flex items-start gap-3 bg-surface-50 px-5 py-4.5">
         <span class="material-symbols-outlined mt-0.5 text-xl text-gray-600">
             {{ meta().icon }}
         </span>
