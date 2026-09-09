@@ -161,6 +161,57 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 .build();
     }
 
+    /**
+     * Stages files under the names given, rather than overriding the declared metadata on top of
+     * generically-named content the way {@link #jobWith} does.
+     * <p>
+     * The distinction matters wherever a rule reads the <b>binary's own name</b> instead of the
+     * declared one — a folder's {@code filesMasks} filter is checked against
+     * {@code contentlet.getBinary(...).getName()}. With {@code jobWith}, a file declared
+     * {@code allowed.jpg} is really {@code bulk-<uuid>.txt} on disk, so it passes a pre-check that
+     * reads the declaration and then fails the create that reads the file. In production the two
+     * always agree: {@code TempFileAPI} writes to {@code /<tempFileId>/<incomingFileName>}, so the
+     * staged file carries the author's own name.
+     * <p>
+     * Built standalone rather than by adjusting a {@link #jobFor} result: {@code Job#parameters()}
+     * is immutable, so the fingerprint cannot be swapped afterwards and the content has to be
+     * staged through the same request from the start.
+     */
+    private Job jobForNames(final Folder folder, final List<String> fileNames) throws Exception {
+        final HttpServletRequest request = request();
+        final List<Map<String, Object>> stagedFiles = new ArrayList<>();
+
+        for (int i = 0; i < fileNames.size(); i++) {
+            final String fileName = fileNames.get(i);
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, 0)));
+
+            final Map<String, Object> file = new HashMap<>();
+            file.put("tempFileId", tempFile.id);
+            file.put("fileName", fileName);
+            file.put("sizeBytes", tempFile.length());
+            file.put("mimeType", tempFile.mimeType);
+            stagedFiles.add(file);
+        }
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("baseType", "DOTASSET");
+        parameters.put("folderId", folder.getIdentifier());
+        parameters.put("targetId", folder.getIdentifier());
+        parameters.put("userId", admin().getUserId());
+        parameters.put("stagedFiles", stagedFiles);
+        parameters.put("requestFingerprint",
+                APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        return Job.builder()
+                .id(UUID.randomUUID().toString())
+                .queueName("assetBulkUpload")
+                .state(JobState.RUNNING)
+                .parameters(parameters)
+                .progressTracker(new DefaultProgressTracker())
+                .build();
+    }
+
     /** File content: distinct per file, padded to {@code minBytes} where a size is asked for. */
     private static byte[] bodyOf(final int index, final int minBytes) {
         final byte[] body = new byte[Math.max(minBytes, 16)];
@@ -752,15 +803,18 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         folder.setFilesMasks("*.jpg");
         APILocator.getFolderAPI().save(folder, admin(), false);
 
-        final Job job = jobWith(folder, List.of(
-                file("allowed.jpg", 10L, "image/jpeg"),
-                file("refused.txt", 10L, "text/plain"),
-                file("refused.pdf", 10L, "application/pdf")));
+        // Staged under their real names: the folder filter is checked against the binary's own
+        // name, so declaring a name the staged content does not have tests nothing.
+        final Job job = jobForNames(folder,
+                List.of("allowed.jpg", "refused.txt", "refused.pdf"));
 
         final BulkUploadProcessor processor = new BulkUploadProcessor();
         processor.process(job);
         final Map<String, Object> outcome = processor.getResultMetadata(job);
 
+        assertEquals(1, ((Number) outcome.get("successCount")).intValue(),
+                "the matching file must still land — a filter refuses what it names and nothing "
+                        + "else.\n" + describe(outcome));
         assertEquals(2, ((Number) outcome.get("failedCount")).intValue(),
                 "both non-matching files must fail.\n" + describe(outcome));
 

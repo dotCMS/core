@@ -269,6 +269,15 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                         "No NEW action leaves content working for [%s]; checking in directly",
                         contentType.variable()));
 
+                // DISABLE_WORKFLOW is what makes this an actual fallback rather than a detour back
+                // to the same decision. checkin is NOT the plain save it reads as: it looks up the
+                // NEW system action itself (ESContentletAPIImpl:5779) and, if that action saves,
+                // fires the workflow instead of checking in — so without this flag the fallback
+                // re-enters the very mapping it exists to bypass, and a NEW mapped to Publish
+                // publishes the file anyway. The bug this whole branch was written to prevent,
+                // reintroduced by the escape hatch.
+                contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+
                 final Contentlet checkedIn = APILocator.getContentletAPI()
                         .checkin(contentlet, user, false);
                 recordCreated(job, seq, fileName, checkedIn, createdInodes);
