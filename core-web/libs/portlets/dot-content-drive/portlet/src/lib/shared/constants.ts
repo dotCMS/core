@@ -276,7 +276,13 @@ export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
 ];
 
 export const SUCCESS_MESSAGE_LIFE = 4500;
-export const WARNING_MESSAGE_LIFE = 4200;
+/**
+ * Longer than a success, deliberately (FR-023). Both messages that use it are shortfalls the
+ * author has to act on, and one of them now carries a counts line plus a grouped line per
+ * failure reason. It was 4200, which put the outcome an author has to read on screen for less
+ * time than the one they can ignore.
+ */
+export const WARNING_MESSAGE_LIFE = 7000;
 export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 

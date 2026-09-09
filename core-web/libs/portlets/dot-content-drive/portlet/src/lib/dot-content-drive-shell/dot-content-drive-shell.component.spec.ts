@@ -69,6 +69,8 @@ import {
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
     ERROR_MESSAGE_LIFE,
+    SUCCESS_MESSAGE_LIFE,
+    WARNING_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
 import {
@@ -931,6 +933,28 @@ describe('DotContentDriveShellComponent', () => {
                 'content-drive.upload.failure.over-size-limit',
                 'huge.mov'
             );
+        });
+
+        it('should keep a shortfall on screen longer than a clean success', () => {
+            // FR-023 asks for two things of a partial outcome, and this is the second: the names and
+            // reasons are the part the author has to act on, and a message that leaves at the speed
+            // of a success is one they did not finish reading.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 1,
+                backgrounded: true,
+                failures: [{ key: 'huge.mov', status: 'FAILED', reason: 'OVER_SIZE_LIMIT' }]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    life: WARNING_MESSAGE_LIFE
+                })
+            );
+            expect(WARNING_MESSAGE_LIFE).toBeGreaterThan(SUCCESS_MESSAGE_LIFE);
         });
 
         it('should not print a failure list for a clean run', () => {
