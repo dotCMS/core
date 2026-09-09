@@ -40,11 +40,11 @@ public class BulkUploadHelper {
 
     static final String QUEUE_NAME = "assetBulkUpload";
 
-    static final String MAX_FILES_KEY = "CONTENT_BULK_UPLOAD_MAX_FILES";
-    static final String MAX_TOTAL_BYTES_KEY = "CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES";
+    public static final String MAX_FILES_KEY = "CONTENT_BULK_UPLOAD_MAX_FILES";
+    public static final String MAX_TOTAL_BYTES_KEY = "CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES";
 
-    static final int DEFAULT_MAX_FILES = 100;
-    static final long DEFAULT_MAX_TOTAL_BYTES = 1073741824L;
+    public static final int DEFAULT_MAX_FILES = 100;
+    public static final long DEFAULT_MAX_TOTAL_BYTES = 1073741824L;
 
     private final JobQueueManagerAPI jobQueueManagerAPI;
 

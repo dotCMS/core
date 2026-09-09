@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadHelper;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
@@ -66,6 +67,9 @@ public class ConfigurationHelper implements Serializable {
 	public static final String DISPLAY_SERVER_ID = "displayServerId";
 	public static final String LEVEL_NAME = "levelName";
 	public static final String LICENSE_LEVEL = "level";
+	public static final String BULK_UPLOAD = "bulkUpload";
+	public static final String BULK_UPLOAD_MAX_FILES = "maxFiles";
+	public static final String BULK_UPLOAD_MAX_TOTAL_BYTES = "maxTotalBytes";
 	public static final String RELEASE_INFO = "releaseInfo";
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
@@ -166,6 +170,25 @@ public class ConfigurationHelper implements Serializable {
 						LOGIN_SCREEN_LOGO,loginScreenLogo,
 						NAV_BAR_LOGO,navBarLogo
 				)
+		));
+
+		// The bulk upload ceilings (#37166), so the client can name the limit instead of saying
+		// "fewer". Two things follow from a number the author can read: a refusal becomes one
+		// informed retry rather than a descending series of guesses, and the client can stop an
+		// over-ceiling batch IN THE FILE CHOOSER instead of uploading gigabytes to be told no —
+		// which is the courtesy check the contract already describes and which could not be built
+		// while the value was unreachable.
+		// Read through BulkUploadHelper's own constants rather than repeating the keys and
+		// defaults: a value advertised here that disagrees with the one enforced there would be
+		// worse than not advertising it at all — the client would refuse batches the server
+		// accepts, or pass batches it refuses.
+		map.put(BULK_UPLOAD, Map.of(
+				BULK_UPLOAD_MAX_FILES,
+				Config.getIntProperty(BulkUploadHelper.MAX_FILES_KEY,
+						BulkUploadHelper.DEFAULT_MAX_FILES),
+				BULK_UPLOAD_MAX_TOTAL_BYTES,
+				Config.getLongProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY,
+						BulkUploadHelper.DEFAULT_MAX_TOTAL_BYTES)
 		));
 
 	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
