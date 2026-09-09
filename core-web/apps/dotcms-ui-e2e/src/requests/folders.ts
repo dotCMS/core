@@ -76,8 +76,9 @@ export async function createFilteredFolder(
         data: {
             assetPath: `//${siteName}${path}`,
             data: {
+                // `title` and nothing else about naming: the endpoint rejects an unknown `name`
+                // field outright, and derives the folder's name from the path anyway.
                 title: path.replace(/^\//, ''),
-                name: path.replace(/^\//, ''),
                 fileMasks
             }
         },

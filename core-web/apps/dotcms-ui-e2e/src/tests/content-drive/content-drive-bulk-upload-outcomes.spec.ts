@@ -97,13 +97,17 @@ test.describe('Content Drive bulk upload outcomes', () => {
         inSeededFolder(
             { adminPage, apiHelpers, name: `cd-collide-${testSuffix}` },
             async (drive) => {
+                // FILEASSET, deliberately, and this is the only test in the file that pins a base
+                // type. A dotAsset has no name to collide on: its title is derived from the binary, so
+                // the server has no equivalent lookup and a repeated name legitimately creates a second
+                // asset. Written against DOTASSET this test asserted a refusal the product never makes.
                 const taken = `taken-${testSuffix}.png`;
-                await drive.chooseFilesForUpload([taken]);
+                await drive.chooseFilesForUpload([taken], 'FILEASSET');
                 await drive.expectListContainsTitle(taken);
 
                 // One name taken, one free. The outcome has to name which, because "1 of 2 failed"
                 // leaves the author to work out the difference themselves.
-                await drive.chooseFilesForUpload([taken, `free-${testSuffix}.png`]);
+                await drive.chooseFilesForUpload([taken, `free-${testSuffix}.png`], 'FILEASSET');
 
                 await drive.expectOutcomeContaining(taken);
             }
@@ -125,6 +129,11 @@ test.describe('Content Drive bulk upload outcomes', () => {
             await drive.chooseFilesForUpload(batch);
 
             await drive.expectOutcomeContaining('already uploaded');
+
+            // And the folder has to agree with the message. "Nothing was duplicated" is a claim
+            // about what is in the folder, so one row per name is the part worth asserting.
+            await drive.expectTitleCount(batch[0], 1);
+            await drive.expectTitleCount(batch[1], 1);
         }));
 
     test("says the folder's own rule refused the file, not that the type is wrong", ({
@@ -158,22 +167,38 @@ test.describe('Content Drive bulk upload outcomes', () => {
             await drive.expectToastContaining('more files than');
         }));
 
-    test('reaches the author who left the portlet before it finished', ({
+    test('reaches the author who left the portlet before it finished', async ({
         adminPage,
         apiHelpers,
         testSuffix
-    }) =>
-        inSeededFolder({ adminPage, apiHelpers, name: `cd-leave-${testSuffix}` }, async (drive) => {
-            await drive.chooseFilesForUpload([`leave-${testSuffix}.png`]);
-            await drive.expectHandedToBackground();
+    }) => {
+        // Longer than the default: this one waits for the server to finish the batch, not just to
+        // accept it, and the default budget cannot hold an inner wait of its own size.
+        test.setTimeout(150000);
 
-            // Away from the portlet entirely, which is the case the story is named for. The
-            // toast cannot follow: it belongs to a component that is destroyed on navigation.
-            // What follows is the durable notification, and this is the only test that can tell
-            // the difference.
-            await adminPage.goto('/dotAdmin/#/pages');
-            await adminPage.waitForLoadState('domcontentloaded');
+        // Durable and per user, so without this the assertion passes against the last run's
+        // notifications. A bulk upload's notification carries counts and no file name, so nothing
+        // in the text could distinguish them.
+        await apiHelpers.clearNotifications();
 
-            await drive.expectNotificationContaining('Upload Finished');
-        }));
+        await inSeededFolder(
+            { adminPage, apiHelpers, name: `cd-leave-${testSuffix}` },
+            async (drive) => {
+                // Acceptance, not the advisory: this test is about the outcome following the author
+                // out of the portlet, and the message left behind is another test's subject.
+                await drive.chooseFilesAndAwaitAcceptance([`leave-${testSuffix}.png`]);
+
+                // Away from the portlet entirely, which is the case the story is named for. The
+                // toast cannot follow: it belongs to a component that is destroyed on navigation.
+                // What follows is the durable notification, and this is the only test that can tell
+                // the difference.
+                await adminPage.goto('/dotAdmin/#/pages');
+                await adminPage.waitForLoadState('domcontentloaded');
+
+                // The message, which is what the panel renders. Counts only: the notification names no
+                // files, which is the difference between it and the toast inside the portlet.
+                await drive.expectNotificationContaining('file(s) uploaded');
+            }
+        );
+    });
 });

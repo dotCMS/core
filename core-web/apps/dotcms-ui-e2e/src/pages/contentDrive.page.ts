@@ -137,14 +137,60 @@ export class ContentDrivePage {
 
         await this.toolbar.getByTestId('upload-button').click();
 
-        // A folder that pins a default base type skips the selector and opens the chooser straight
-        // away, so the option is clicked only when it actually appears.
-        const option = this.page.getByTestId(`upload-selector-option-${baseType}`);
-        if (await option.isVisible().catch(() => false)) {
-            await option.click();
-        }
+        await this.answerUploadTypeIfAsked(baseType);
 
         await (await chooser).setFiles(names.map((name) => filePayload(name)));
+    }
+
+    /**
+     * How many rows in the listing carry this exact title.
+     *
+     * The assertion a duplicate-resubmission message cannot make for itself: "nothing was
+     * duplicated" is a claim about the folder, and only counting the rows tests it. A copy
+     * assertion alone would pass just as happily over a folder holding two of everything.
+     */
+    async expectTitleCount(title: string, count: number) {
+        await expect(this.listTitles.filter({ hasText: title })).toHaveCount(count, {
+            timeout: 30000
+        });
+    }
+
+    /**
+     * Chooses files and waits for the server to accept the batch.
+     *
+     * For tests about what happens *after* acceptance. Waiting on the copy instead would couple
+     * them to the wording of a message another test already owns, and waiting on rows would be
+     * waiting for the wrong thing: acceptance means queued, not created.
+     *
+     * The response wait is armed before the click that causes it, which is the only order that
+     * works.
+     */
+    async chooseFilesAndAwaitAcceptance(names: string[]) {
+        const accepted = this.page.waitForResponse(
+            (response) => response.url().includes('/_bulkupload'),
+            { timeout: 60000 }
+        );
+
+        await this.chooseFilesForUpload(names);
+
+        await accepted;
+    }
+
+    /**
+     * Answers the upload-type dialog, when the target folder has not already decided.
+     *
+     * Both routes in need this, which is why it is not inlined in either: a folder that pins a
+     * default base type never shows the dialog, and one that does not shows it whether the files
+     * arrived through the chooser or through a drop. The drop route missed it, and the batch then
+     * waited behind a dialog nobody answered while the test waited for rows that could not appear.
+     */
+    async answerUploadTypeIfAsked(baseType = 'DOTASSET') {
+        const option = this.page.getByTestId(`upload-selector-option-${baseType}`);
+
+        await option
+            .waitFor({ state: 'visible', timeout: 5000 })
+            .then(() => option.click())
+            .catch(() => undefined);
     }
 
     /**
@@ -153,7 +199,7 @@ export class ContentDrivePage {
      * Synthesises the `DataTransfer` inside the page: this exercises the same handler a real drag
      * reaches, but it is not a drag from the desktop, which no browser automation can perform.
      */
-    async dropFilesOnList(names: string[]) {
+    async dropFilesOnList(names: string[], baseType = 'DOTASSET') {
         const dropzone = this.page.getByTestId('dropzone');
 
         await dropzone.dispatchEvent('dragenter');
@@ -167,6 +213,10 @@ export class ContentDrivePage {
                 return transfer;
             }, names)
         });
+
+        // The files are already chosen here, so the dialog comes *after* the drop rather than
+        // before the chooser.
+        await this.answerUploadTypeIfAsked(baseType);
     }
 
     /**
@@ -221,6 +271,9 @@ export class ContentDrivePage {
      * the bell is where it lands.
      */
     async expectNotificationContaining(text: string) {
+        // The panel renders each notification's *message*, never its title, so asserting on
+        // "Upload Finished" matched nothing while the outcome was sitting right there. Cost a whole
+        // run to learn.
         await this.page.locator('.pi-bell').first().click();
 
         await expect(
