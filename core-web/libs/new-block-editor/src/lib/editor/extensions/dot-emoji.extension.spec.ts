@@ -324,7 +324,7 @@ describe('DotEmoji — nothing creates an emoji node (#37340)', () => {
  * addition rather than an acceptance criterion. They exist because the one thing that must not
  * regress is the fix itself: the menu resolves to a CHARACTER, never back to an `emoji` node.
  */
-describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () => {
+describe('DotEmoji — the : autocomplete inserts text, not a node (AC-024…AC-028)', () => {
     let injector: Injector;
     let editor: Editor;
 
@@ -358,15 +358,21 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         return extension?.options?.suggestion;
     };
 
-    it('registers the : trigger with upstream’s plugin key and allow guard', () => {
+    it('AC-024 — registers the : trigger with upstream’s plugin key and allow guard', () => {
         editor = createTestEditor(injector);
         const suggestion = suggestionOf(editor);
 
         expect(suggestion?.char).toBe(':');
         expect(typeof suggestion?.allow).toBe('function');
+
+        // The three lines above read upstream's OPTIONS object, which exists whether or not we
+        // register a Suggestion plugin — on its own this test passes against an extension that
+        // registers nothing. Retroactive Red (T056) caught exactly that. Asserting the plugin key
+        // resolves to state proves OUR plugin is installed in the view, which is the claim.
+        expect(EmojiSuggestionPluginKey.getState(editor.state)).toBeDefined();
     });
 
-    it('ranks a prefix match above a mere tag match', () => {
+    it('AC-027 — ranks a prefix match above a mere tag match', () => {
         const rows = filterEmojis('smi', emojis);
 
         expect(rows.length).toBeGreaterThan(0);
@@ -375,12 +381,17 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         expect(rows[0].label.startsWith(':smi')).toBe(true);
     });
 
-    it('every row carries a character to insert', () => {
+    it('AC-025 — every row carries a character to insert', () => {
+        const rows = filterEmojis('flag', emojis);
+
+        // `[].every()` is `true`, so without this guard the assertion below holds for a filter
+        // that returns nothing at all — which is how it survived the T056 Red probe.
+        expect(rows.length).toBeGreaterThan(0);
         // Entries with no `emoji` are the image-only ones; offering them would insert nothing.
-        expect(filterEmojis('flag', emojis).every((row) => Boolean(row.emoji))).toBe(true);
+        expect(rows.every((row) => Boolean(row.emoji))).toBe(true);
     });
 
-    it('labels rows as :shortcode: and uses the glyph as the icon', () => {
+    it('AC-028 — labels rows by NAME, not first shortcode, and draws the glyph bare', () => {
         const [row] = filterEmojis('rocket', emojis);
 
         expect(row.label).toBe(':rocket:');
@@ -390,12 +401,28 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         expect(row.iconKind).toBe('glyph');
     });
 
-    it('returns at most five rows, so the fixed-width dropdown stays scannable', () => {
+    /**
+     * `rocket` alone cannot prove AC-028: its `name` and its first shortcode are the same string,
+     * so a row labelled from either source reads `:rocket:` and the assertion passes whichever is
+     * wrong. 590 of the catalogued emojis DO differ, and `smile` is the one the criterion names —
+     * `{ name: 'smile', shortcodes: ['grinning_face_with_closed_eyes', 'smile'] }`.
+     *
+     * This is the assertion that fails if `toBlockItem` goes back to `shortcodes[0]`.
+     */
+    it('AC-028 — a row whose name and first shortcode DIFFER is labelled by the name', () => {
+        const [row] = filterEmojis('smile', emojis);
+
+        expect(row.label).toBe(':smile:');
+        expect(row.label).not.toBe(':grinning_face_with_closed_eyes:');
+        expect(row.emoji).toBe('😄');
+    });
+
+    it('AC-027 — returns at most five rows, so the fixed-width dropdown stays scannable', () => {
         expect(filterEmojis('a', emojis).length).toBeLessThanOrEqual(5);
         expect(filterEmojis('', emojis).length).toBeLessThanOrEqual(5);
     });
 
-    it('opens a session on : and passes the filtered rows to the menu', async () => {
+    it('AC-024 — opens a session on : and passes the filtered rows to the menu', async () => {
         const menu = recordingMenuService();
         editor = createTestEditor(injector, { menuService: menu.service });
 
@@ -410,7 +437,7 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         expect(menu.items().length).toBeLessThanOrEqual(5);
     });
 
-    it('does not open a session for a bare : with no query yet closes cleanly on exit', () => {
+    it('AC-024 — does not open a session for a bare : with no query yet closes cleanly on exit', () => {
         const menu = recordingMenuService();
         editor = createTestEditor(injector, { menuService: menu.service });
 
@@ -427,7 +454,7 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
      * six. Ours replaces it, and this drives the REAL callback the plugin handed the menu rather
      * than simulating an insert, because simulating one would test the assertion and not the code.
      */
-    it('the real menu command inserts a character and creates NO emoji node', async () => {
+    it('AC-025 — the real menu command inserts a character and creates NO emoji node', async () => {
         const menu = recordingMenuService();
         editor = createTestEditor(injector, { menuService: menu.service });
 
@@ -447,7 +474,7 @@ describe('DotEmoji — the : autocomplete inserts text, not a node (draft)', () 
         expect(docText(editor)).toContain('hi ');
     });
 
-    it('the inserted character inherits the marks of the run it lands in', async () => {
+    it('AC-026 — the inserted character inherits the marks of the run it lands in', async () => {
         const menu = recordingMenuService();
         editor = createTestEditor(injector, {
             menuService: menu.service,
