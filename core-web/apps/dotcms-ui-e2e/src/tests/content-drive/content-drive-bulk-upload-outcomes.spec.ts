@@ -1,5 +1,5 @@
-import { type Page } from '@playwright/test';
 import { ContentDrivePage } from '@pages';
+import { type Page } from '@playwright/test';
 
 import { type ContentDriveApiHelpers, test } from '../../fixtures/content-drive.fixture';
 
@@ -120,13 +120,19 @@ test.describe('Content Drive bulk upload outcomes', () => {
     }) =>
         inSeededFolder({ adminPage, apiHelpers, name: `cd-retry-${testSuffix}` }, async (drive) => {
             const batch = [`retry-a-${testSuffix}.png`, `retry-b-${testSuffix}.png`];
-            await drive.chooseFilesForUpload(batch);
+
+            // FILEASSET, for the same reason the collision test above pins it: the whole premise
+            // here is that every file in the resubmitted batch collides, and only a fileAsset has a
+            // name to collide on. Sent as dotAssets these uploaded a second time and the folder
+            // ended up holding two of everything, which is the product behaving correctly and the
+            // test asserting a refusal that was never on offer.
+            await drive.chooseFilesForUpload(batch, 'FILEASSET');
             await drive.expectListContainsTitle(batch[0]);
 
             // By the counts this is a total failure: every file collides. Reporting it that way
             // sends the author to delete and re-upload files that are already correctly there,
             // which the spec calls worse than offering no retry at all.
-            await drive.chooseFilesForUpload(batch);
+            await drive.chooseFilesForUpload(batch, 'FILEASSET');
 
             await drive.expectOutcomeContaining('already uploaded');
 
