@@ -15,6 +15,20 @@ import { DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
  * wrote copy for, which is the failure this whole mapping exists to prevent. That is what makes
  * adding a reason to the contract fail the build here until someone writes its copy.
  */
+/**
+ * The folder-filter copy, in its two forms.
+ *
+ * The generic one names no rule, because the rule is the *folder's* and is not on the wire: a
+ * failure carries the file name and the reason, never the mask that refused it. So the better
+ * sentence is available only to a caller that already knows the target folder's `filesMasks`, and
+ * the generic one stays for every caller that does not — an outcome that arrives after a reload,
+ * or for a folder the author has since navigated away from.
+ */
+export const FOLDER_FILTER_MISMATCH_KEY = 'content-drive.upload.failure.folder-filter-mismatch';
+
+/** Same refusal, naming what the folder does accept. See {@link FOLDER_FILTER_MISMATCH_KEY}. */
+export const FOLDER_FILTER_MISMATCH_NAMED_KEY = `${FOLDER_FILTER_MISMATCH_KEY}-named`;
+
 const MESSAGE_KEY_BY_REASON: Record<DotBulkUploadFailureReason, string> = {
     OVER_SIZE_LIMIT: 'content-drive.upload.failure.over-size-limit',
     // Named for the *type*, not the extension: the server resolves the media type by detection
@@ -25,7 +39,7 @@ const MESSAGE_KEY_BY_REASON: Record<DotBulkUploadFailureReason, string> = {
     // same file is accepted one folder over — the fix is to rename or move it, where a disallowed
     // type means the file cannot be uploaded here at all. One message for both would send the
     // author to change the wrong thing.
-    FOLDER_FILTER_MISMATCH: 'content-drive.upload.failure.folder-filter-mismatch',
+    FOLDER_FILTER_MISMATCH: FOLDER_FILTER_MISMATCH_KEY,
     NAME_COLLISION: 'content-drive.upload.failure.name-collision',
     PERMISSION_DENIED: 'content-drive.upload.failure.permission-denied',
     STAGED_CONTENT_UNAVAILABLE: 'content-drive.upload.failure.staged-content-unavailable',

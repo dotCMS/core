@@ -761,10 +761,38 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // can act on. Empty for a clean run, so a success never grows a list.
         // Nothing to list for a recognised retry: its "failures" are the files already in place,
         // and naming them would be telling the author to fix what is correctly there.
+        // What a folder itself refuses is not on the wire: a failure carries the file name and the
+        // reason, never the mask that refused it. So the sentence that names what the folder *does*
+        // accept is available only while the batch's target is the folder on screen, and the
+        // generic one stands for every other case.
+        //
+        // Strictly one affected folder, and strictly the selected one. A result for somewhere else
+        // — or a run spanning several folders — would otherwise explain this folder's rule to an
+        // author who was refused by another's, which is worse than saying nothing about the rule.
+        const affectedRefs = (affectedFolders ?? []).map(normalizeFolderRef);
+        const refusingFolderIsOnScreen =
+            affectedRefs.length === 1 &&
+            affectedRefs[0] ===
+                toFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
+
+        // Narrowed the same way the upload itself narrows the selection: the tree's load-more row
+        // is a node without a folder behind it, so it carries no filter to name.
+        const selectedNodeData = this.#store.selectedNode()?.data;
+        const selectedFolder =
+            selectedNodeData && selectedNodeData.type !== LOAD_MORE_NODE_TYPE
+                ? (selectedNodeData as DotFolderTreeNodeContentData)
+                : undefined;
+
         const failureGroups = duplicateSubmission
             ? []
-            : describeUploadFailures(failures, (key, ...args) =>
-                  this.#dotMessageService.get(key, ...args)
+            : describeUploadFailures(
+                  failures,
+                  (key, ...args) => this.#dotMessageService.get(key, ...args),
+                  {
+                      folderFilter: refusingFolderIsOnScreen
+                          ? selectedFolder?.filesMasks
+                          : undefined
+                  }
               );
 
         if (announce) {

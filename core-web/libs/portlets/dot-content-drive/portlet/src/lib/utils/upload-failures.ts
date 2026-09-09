@@ -2,6 +2,8 @@ import { DotBatchItemResult, DotBulkUploadFailureReason } from '@dotcms/dotcms-m
 
 import {
     DotUploadFailureSeverity,
+    FOLDER_FILTER_MISMATCH_KEY,
+    FOLDER_FILTER_MISMATCH_NAMED_KEY,
     messageKeyForFailureReason,
     severityForFailureReason
 } from './failure-reasons';
@@ -27,6 +29,21 @@ const N_FILES_KEY = 'content-drive.upload.failure.n-files';
 
 /** Resolves a message key with arguments. Narrower than `DotMessageService` on purpose. */
 type ResolveMessage = (key: string, ...args: string[]) => string;
+
+/**
+ * What the caller knows that the wire does not.
+ *
+ * Only the folder's own filter so far, and it is optional because it is knowable only sometimes:
+ * see {@link FOLDER_FILTER_MISMATCH_KEY}.
+ */
+export interface DotUploadFailureContext {
+    /**
+     * The target folder's `filesMasks` as stored, e.g. `*.jpg,*.png`. Read into a readable list
+     * before it reaches the copy, so how the field happens to be punctuated is not the author's
+     * problem.
+     */
+    folderFilter?: string;
+}
 
 /** Lines that belong in one message, because they are the same kind of news. */
 export interface DotUploadFailureGroup {
@@ -62,7 +79,8 @@ export interface DotUploadFailureGroup {
  */
 export function describeUploadFailures(
     results: DotBatchItemResult<DotBulkUploadFailureReason>[] | undefined,
-    resolve: ResolveMessage
+    resolve: ResolveMessage,
+    context: DotUploadFailureContext = {}
 ): DotUploadFailureGroup[] {
     if (!results?.length) {
         return [];
@@ -98,11 +116,48 @@ export function describeUploadFailures(
                 severity,
                 lines: [...namesByReason]
                     .filter(([, group]) => group.severity === severity)
-                    .map(([key, group]) => resolve(key, subjectFor(group.names, severity, resolve)))
+                    .map(([key, group]) =>
+                        lineFor(key, subjectFor(group.names, severity, resolve), context, resolve)
+                    )
             }))
             // A severity nothing failed under gets no message at all, rather than an empty one.
             .filter((group) => group.lines.length > 0)
     );
+}
+
+/**
+ * Resolves one line, taking the fuller copy where the caller supplied what it needs.
+ *
+ * Matched on the message key rather than special-cased at the mapping, so a reason with no extra
+ * copy needs nothing said about it here and the reason-to-copy `Record` stays the one place a new
+ * reason has to be answered.
+ */
+function lineFor(
+    key: string,
+    subject: string,
+    context: DotUploadFailureContext,
+    resolve: ResolveMessage
+): string {
+    const folderFilter = readableFilter(context.folderFilter);
+
+    return FOLDER_FILTER_MISMATCH_KEY === key && folderFilter
+        ? resolve(FOLDER_FILTER_MISMATCH_NAMED_KEY, subject, folderFilter)
+        : resolve(key, subject);
+}
+
+/**
+ * A folder's stored filter as a list a sentence can end with.
+ *
+ * `filesMasks` is one comma-separated string with no promised spacing, so it is re-punctuated here
+ * rather than dropped into the copy as typed. Empty means the folder names no rule, which is not
+ * the same as naming an empty one: the caller falls back to the generic line.
+ */
+function readableFilter(filesMasks: string | undefined): string {
+    return (filesMasks ?? '')
+        .split(',')
+        .map((mask) => mask.trim())
+        .filter((mask) => mask.length > 0)
+        .join(', ');
 }
 
 /**

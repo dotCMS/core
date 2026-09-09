@@ -220,4 +220,48 @@ describe('describeUploadFailures', () => {
             'content-drive.upload.failure.name-collision|file-0.png, file-1.png, file-2.png'
         ]);
     });
+    it("should say what the folder accepts when the caller knows the folder's rule", () => {
+        // The complaint this answers: the generic line reads identically whatever the folder's rule
+        // is, so an author who has just been refused learns only that a rule exists. Naming the
+        // masks turns it into something they can act on without opening the folder's settings.
+        expect(
+            describeUploadFailures([failed('notes.txt', 'FOLDER_FILTER_MISMATCH')], get, {
+                // As the folder stores it: one string, commas, no promised spacing.
+                folderFilter: '*.jpg,*.png'
+            }).flatMap((group) => group.lines)
+        ).toEqual([
+            'content-drive.upload.failure.folder-filter-mismatch-named|notes.txt|*.jpg, *.png'
+        ]);
+    });
+
+    it("should keep the generic line when the folder's rule is not known here", () => {
+        // The outcome can arrive long after the author left the folder, or after a reload, and the
+        // masks are only known while the batch's target is on screen. An unknown rule falls back
+        // rather than rendering a sentence with a blank where the rule should be.
+        expect(
+            describeUploadFailures([failed('notes.txt', 'FOLDER_FILTER_MISMATCH')], get, {
+                folderFilter: undefined
+            }).flatMap((group) => group.lines)
+        ).toEqual(['content-drive.upload.failure.folder-filter-mismatch|notes.txt']);
+    });
+
+    it('should keep the generic line when the folder names no rule at all', () => {
+        // A folder with an empty `filesMasks` cannot be the thing that refused the file, but the
+        // outcome is what it is: an empty rule must not render as "only accepts ." either.
+        expect(
+            describeUploadFailures([failed('notes.txt', 'FOLDER_FILTER_MISMATCH')], get, {
+                folderFilter: ' , '
+            }).flatMap((group) => group.lines)
+        ).toEqual(['content-drive.upload.failure.folder-filter-mismatch|notes.txt']);
+    });
+
+    it('should leave every other reason alone when a folder rule is known', () => {
+        // The extra argument belongs to one reason only. A size refusal has nothing to do with the
+        // folder's filter, and appending the masks to it would explain the wrong rule.
+        expect(
+            describeUploadFailures([failed('huge.mov', 'OVER_SIZE_LIMIT')], get, {
+                folderFilter: '*.jpg'
+            }).flatMap((group) => group.lines)
+        ).toEqual(['content-drive.upload.failure.over-size-limit|huge.mov']);
+    });
 });
