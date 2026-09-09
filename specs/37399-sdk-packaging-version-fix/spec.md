@@ -125,7 +125,7 @@ The `@dotcms/*` npm SDK packaging/release mechanism (introduced a few weeks ago)
 - **AC-003**: In each of the seven `core-web/libs/sdk/*/package.json` files (`analytics`, `angular`, `client`, `experiments`, `react`, `uve`, `vue`), every sibling `@dotcms/*` entry in `peerDependencies` uses the `"0.0.0"` sentinel, never `latest`/`next`/`*`. `dependencies`/`devDependencies` entries are unaffected by this AC (they intentionally keep `"latest"` in source — see AC-002's masking and Fix Scope).
 - **AC-003b**: `@dotcms/client` and `@dotcms/uve` are declared in `peerDependencies`, not `dependencies`, in `react`, `angular`, `vue`, and `analytics`; installing a pinned version of any of these four under yarn or pnpm no longer produces a second, independently-resolved copy of `@dotcms/client`/`@dotcms/uve` nested in that package's own `node_modules`.
 - **AC-004**: `examples/nextjs`, `examples/vuejs`, and `examples/nextjs-experiments` on `main` point to `"latest"` (no longer `"next"`), matching `examples/angular`/`examples/astro`/`examples/angular-ssr`; scaffolding each of the six, installing, and running `npm ls @dotcms/client` yields exactly one copy, resolved from the `latest` npm dist-tag (never `next`, never a stale pin). Each example's README carries the documented note (see Fix Scope) for non-Evergreen customers.
-- **AC-005**: `examples/nextjs` on `release-25.07.10_lts_v12` and `release-25.07.10_lts_v16` pins a version verified compatible with that LTS server's GraphQL schema; scaffolding and rendering a page against a 25.07.10 LTS server produces no `FieldUndefined` errors.
+- **AC-005**: `examples/nextjs` on `release-25.07.10_lts_v12` and `release-25.07.10_lts_v16` pins a version verified compatible with that LTS server's GraphQL schema. **Verification method note (added after `_v12`'s two false starts)**: a live-server scaffold test is only trustworthy against a genuine build of that exact LTS version — a mismatched local Docker image (e.g. `trunk`) will falsely report no `FieldUndefined` errors regardless of SDK version, since it always has every field. The **static** method that actually caught this — comparing the SDK's hardcoded query fields (`core-web/libs/sdk/client/src/lib/client/page/utils.ts`) against the branch's own GraphQL schema source (`dotCMS/src/main/java/com/dotcms/graphql/`) and the field's first-added date/PR via `git log -S` — is the preferred, more reliable verification for this AC; a live-server render is confirmatory, not a substitute, when it can be arranged against a verified-correct build.
 - **AC-010**: Cutting a new release branch (via `cicd_comp_release-prepare-phase.yml`, either LTS or non-LTS format) results in every `examples/*/package.json`'s `@dotcms/*` dependencies being pinned to that release's exact, normalized version — never `"latest"`/`"next"`/`"*"` — with no manual step required. `main` is unaffected and continues to float on `"latest"`.
 - **AC-006**: Installing a pinned `@dotcms/react` under npm 7+ and pnpm each yields exactly one `@dotcms/client` at the pinned version (no silent override). Under yarn classic (1.x) or npm below v7, installing `@dotcms/react` **alone** (without also explicitly installing `@dotcms/client`) is expected to warn about an unmet peer dependency (or fail with a missing-module error at runtime) rather than silently install a mismatched copy — this is the documented behavior change (see AC-003b, Fix Scope).
 - **AC-009**: `react/README.md`, `angular/README.md`, and `vue/README.md`'s Installation sections no longer claim that installing the main package automatically installs its required dependencies; each explicitly instructs the consumer to also install `@dotcms/client`, `@dotcms/uve`, and `@dotcms/types`, and names yarn classic (1.x) and npm below v7 as the package managers that require this manual step.
@@ -135,22 +135,37 @@ The `@dotcms/*` npm SDK packaging/release mechanism (introduced a few weeks ago)
 
 ## Assumptions
 
-- **Resolved during implementation (2026-09-09)**: the LTS-compatible pin for
-  `release-25.07.10_lts_v12`'s `examples/nextjs` is **`26.9.3-1`**, not the `1.2.0` this spec
-  originally assumed. The developer scaffolded the example (in a separate `git worktree`, not
-  the feature branch) against a real 25.07.10 LTS server using the then-current `"latest"` pin
-  and found it rendered correctly — including inside UVE — with no `FieldUndefined` errors,
-  installing `26.9.3-1` (confirmed via the installed tarball's still-malformed `26.09.03-01`,
-  independent live evidence of Defect A). `1.2.0` was never independently tested and is now
-  known to be far behind the SDK's current feature set; `26.9.3-1` is preferred because it is
-  developer-verified-working today, not a guess. Likely explanation for why `"latest"` no longer
-  reproduces the original failure: this LTS branch has received schema-compatible patches since
-  the original issue was filed (2026-08-05) that closed the specific field gap. This does **not**
-  change the conclusion that an exact pin is still required (a floating `"latest"` could break
-  again on some future SDK release) — only which version to pin. Backport PR:
-  [dotCMS/core#37475](https://github.com/dotCMS/core/pull/37475) against
-  `release-25.07.10_lts_v12`. `release-25.07.10_lts_v16` must be verified independently — not
-  assumed identical — before its own backport PR is opened.
+- **Resolved during implementation (2026-09-09), corrected same day**: the LTS-compatible pin
+  for `release-25.07.10_lts_v12`'s `examples/nextjs` is **`1.2.0`** — confirming, not
+  overturning, this spec's original assumption. Two prior attempts at this line were wrong and
+  are recorded here for the trail:
+  1. A live scaffold test against a locally-run Docker container reported no `FieldUndefined`
+     errors with the then-current `"latest"` pin (resolving to `26.9.3-1`), so `26.9.3-1` was
+     pinned instead of `1.2.0`. **This test was invalid**: the container was running
+     `dotcms/dotcms:trunk`, not a real 25.07.10 LTS build — trunk already has every field the
+     SDK's query needs, so the test could not have failed regardless of the SDK version used.
+  2. Once the Docker mismatch surfaced, the correct version was instead determined **statically,
+     without a running server**: `release-25.07.10_lts_v12`'s GraphQL schema
+     (`PageAPIGraphQLTypesProvider.java` and related files) does not define `lockedBy`,
+     `lockedByName`, `numberContents`, `styleEditorSchemas`, or a layout `metadata` field, but
+     `@dotcms/client`'s `DotCMSPage` query has requested all five unconditionally since
+     2025-11-26 through 2026-05-07 (added across PRs #33905, #34966, #34173, #35528 — traced via
+     `git log -S<field>` on `core-web/libs/sdk/client/src/lib/client/page/utils.ts`). `26.9.3-1`
+     was published long after all four dates, so it requests fields this schema lacks —
+     confirming it would in fact `FieldUndefined` against a real LTS server, i.e. attempt 1's
+     "no failure" result was an artifact of testing against the wrong server, not evidence
+     `26.9.3-1` is actually compatible. `@dotcms/client@1.2.0` published 2025-10-24 (per npm
+     registry metadata), over a month before the first field addition, with no other stable
+     version published in that gap (only `1.2.0-next.*` prereleases) — its query requests none
+     of the five fields, making it schema-compatible with this branch by construction, and
+     confirmed published for all five `@dotcms/*` packages this example depends on.
+  This does **not** change the conclusion that an exact pin is still required (a floating
+  `"latest"` could break again on some future SDK release) — only which version to pin, twice.
+  Backport PR: [dotCMS/core#37475](https://github.com/dotCMS/core/pull/37475) against
+  `release-25.07.10_lts_v12` (description corrected to match). `release-25.07.10_lts_v16` must
+  be verified independently — not assumed identical — before its own backport PR is opened;
+  given the unreliability of a live-server test exposed here, prefer the same static
+  schema-inspection method over attempting another Docker-based live test.
 - `main`'s six examples deliberately keep using the floating `"latest"` npm dist-tag (not an exact pin) going forward — confirmed with the developer as an intentional decision, grounded in ADR-0019's own Evergreen-convergence reasoning (see Scope of Investigation): a customer scaffolding from `main` is expected to be on dotCMS Evergreen (always the current release), for whom `"latest"` and "the version matching my CMS" are the same thing by construction. A customer on an older/non-Evergreen server is documented (Fix Scope) as needing to manually pin the version matching their own instance. This is the one deliberate exception to "no floating `@dotcms/*` specifiers" elsewhere in this spec, and the CI guardrail (AC-007) must not flag it.
 - No separate GitHub issue/spec is being opened for the "keep the LTS example pin in sync with newer compatible releases over time" concern; it is accepted as a manual, as-needed process step, guarded only against the floating-specifier regression (see Non-Goals). This does not apply to `main`'s examples, which cannot go stale since they float by design.
 - Keeping the standalone `next`-tag publish workflow (`cicd_3-trunk.yml`) active, rather than retiring/disabling it as ADR-0019's Implementation Notes suggest, is a decision the team already made independently of this issue — internal developers need it for testing. This spec does not revisit that decision; it is explicitly out of scope (see Non-Goals).
