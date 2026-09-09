@@ -25,6 +25,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
@@ -202,6 +204,57 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         parameters.put("stagedFiles", stagedFiles);
         parameters.put("requestFingerprint",
                 APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        return Job.builder()
+                .id(UUID.randomUUID().toString())
+                .queueName("assetBulkUpload")
+                .state(JobState.RUNNING)
+                .parameters(parameters)
+                .progressTracker(new DefaultProgressTracker())
+                .build();
+    }
+
+    /**
+     * Builds a job the way {@link #jobFor} does, but lets the caller choose the base type and
+     * whether the target is a folder or a site root.
+     * <p>
+     * Both axes were previously fixed at DOTASSET-into-a-folder for every test in this class, which
+     * left the FILEASSET creation branch and the site-root branch running only in production.
+     */
+    private Job jobFor(final String baseType, final Folder folder, final Host siteRoot,
+                       final int count) throws Exception {
+        final HttpServletRequest request = request();
+        final List<Map<String, Object>> stagedFiles = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            final String fileName = "bulk-" + UUID.randomUUID() + ".txt";
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, 0)));
+
+            final Map<String, Object> file = new HashMap<>();
+            file.put("tempFileId", tempFile.id);
+            file.put("fileName", fileName);
+            file.put("sizeBytes", tempFile.length());
+            file.put("mimeType", tempFile.mimeType);
+            stagedFiles.add(file);
+        }
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("baseType", baseType);
+        parameters.put("userId", admin().getUserId());
+        parameters.put("stagedFiles", stagedFiles);
+        parameters.put("requestFingerprint",
+                APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        // Exactly one target, never both and never a null — the framework holds parameters in an
+        // ImmutableMap and one null value stalls the shared processing loop.
+        if (folder != null) {
+            parameters.put("folderId", folder.getIdentifier());
+            parameters.put("targetId", folder.getIdentifier());
+        } else {
+            parameters.put("siteId", siteRoot.getIdentifier());
+            parameters.put("targetId", siteRoot.getIdentifier());
+        }
 
         return Job.builder()
                 .id(UUID.randomUUID().toString())
@@ -895,6 +948,135 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         } catch (final Exception e) {
             Logger.warn(this, "Could not restore the NEW mapping: " + e.getMessage());
         }
+    }
+
+
+    /**
+     * Method to test: the bulk-upload processor, against a <b>site root</b>
+     * <p>
+     * Given scenario: A batch submitted with {@code siteId} rather than {@code folderId}.
+     * <p>
+     * Expected result: The files are created on that site, exactly as US1/AC4 requires.
+     * <p>
+     * <b>This branch had never run in a test.</b> Every other processor test targets a folder, so
+     * {@code applyTarget}'s {@code SYSTEM_FOLDER} path and {@code folderRefusal}'s site-rooted
+     * early return existed only in production — an acceptance criterion with no coverage at all,
+     * which is a different thing from a criterion that is merely hard to test.
+     */
+    @Test
+    public void test_run_createsFilesAtASiteRoot() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Job job = jobFor("DOTASSET", null, site, 3);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+        assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
+                "a site-rooted batch must create its files like a folder-targeted one.\n"
+                        + describe(outcome));
+        assertEquals(0, ((Number) outcome.get("failedCount")).intValue());
+
+        for (final Contentlet created : APILocator.getContentletAPI()
+                .findContentletsByHost(site, admin(), false)) {
+            assertEquals(site.getIdentifier(), created.getHost(),
+                    "the files land on the site that was asked for");
+        }
+    }
+
+    /**
+     * Method to test: the bulk-upload processor, creating <b>FILEASSET</b> content
+     * <p>
+     * Given scenario: A batch of FILEASSETs against a folder.
+     * <p>
+     * Expected result: Every file is created, as a draft, with its file name and title set from
+     * the submitted name.
+     * <p>
+     * <b>Why this needed its own test.</b> FR-006 promises equivalence with the single-file upload
+     * — and that endpoint <b>only ever creates FileAssets</b>
+     * ({@code WebAssetHelper:652} resolves the {@code FileAsset} type outright). Every test making
+     * the equivalence, draft, indexing and ceiling claims used dotAsset, so the base type the
+     * comparison is actually about was exercised by one concurrency test that asserts collisions
+     * and nothing else. The two write different fields — {@code fileAsset} plus title and file
+     * name, against {@code asset} alone — and getting it wrong fails with a message that never
+     * names the field.
+     */
+    @Test
+    public void test_run_createsFileAssetsWithTheirNameAndTitleSet() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor("FILEASSET", folder, null, 3);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> submitted =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+        assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
+                "the FILEASSET branch must create its files too.\n" + describe(outcome));
+
+        final List<Contentlet> created =
+                APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
+        assertEquals(3, created.size());
+
+        final List<String> submittedNames = submitted.stream()
+                .map(f -> String.valueOf(f.get("fileName")))
+                .collect(Collectors.toList());
+
+        for (final Contentlet contentlet : created) {
+            final String fileName =
+                    contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+            assertTrue(submittedNames.contains(fileName), String.format(
+                    "a fileAsset carries the submitted name in its own fileName field; got '%s'",
+                    fileName));
+            assertFalse(contentlet.isLive(),
+                    "and a FILEASSET batch leaves drafts, the same as a dotAsset one");
+        }
+    }
+
+    /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: The staged content of one file in the batch is gone by the time the run
+     * reaches it — expired, or reclaimed by something else.
+     * <p>
+     * Expected result: That file fails as {@code STAGED_CONTENT_UNAVAILABLE}, and the rest of the
+     * batch is still created.
+     * <p>
+     * <b>This reason had no test anywhere.</b> It exists because FR-032 refuses to let a file be
+     * lost silently when the staging layer cannot produce it — and because it is the one failure
+     * that is explicitly <b>not the author's fault</b>, so its copy must not send them looking for
+     * a problem with the file they chose. Untested, both of those are one refactor from becoming
+     * an {@code UNCLASSIFIED}.
+     */
+    @Test
+    public void test_run_namesUnretrievableStagedContentWithoutBlamingTheAuthor() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 3);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+
+        // Point the middle file at content that was never staged. Cheaper and more faithful than
+        // waiting out the expiry window, and it is the same condition the run sees: a temp id the
+        // staging layer cannot resolve.
+        final String lostName = String.valueOf(staged.get(1).get("fileName"));
+        staged.get(1).put("tempFileId", "temp_" + UUID.randomUUID().toString().substring(0, 10));
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(BatchFailureReason.STAGED_CONTENT_UNAVAILABLE, reasonFor(outcome, lostName),
+                "content the run cannot retrieve is its own named failure, never a silent loss "
+                        + "and never blamed on the file the author chose.\n" + describe(outcome));
+
+        assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
+                "and the files whose content was still there are created");
     }
 
 }
