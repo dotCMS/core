@@ -76,6 +76,9 @@ const MENU_ITEM = {
     addToBundle: 'experiments-add-to-bundle'
 } as const;
 
+/** Sourced from the shared table so the kebab tests and the gate cannot drift apart. */
+const DELETABLE_STATUSES = AllowedActionsByExperimentStatus['delete'];
+
 const ARCHIVE_LABEL = 'Archive';
 const RESTORE_LABEL = 'Restore';
 const ACTIONS_MENU_LABEL = 'Actions';
@@ -183,8 +186,15 @@ describe('DotExperimentsListComponent', () => {
 
         return spectator.component
             .$rowMenuItems()
-            .filter(({ visible }) => visible)
+            .filter(({ visible, separator }) => visible && !separator)
             .map(({ id }) => id as string);
+    };
+
+    /** The kebab as the user sees it, separators included, in render order. */
+    const visibleMenuEntries = (): MenuItem[] => {
+        clickButton('experiment-actions-btn');
+
+        return spectator.component.$rowMenuItems().filter(({ visible }) => visible);
     };
 
     const runMenuItem = (itemId: string) => {
@@ -422,6 +432,79 @@ describe('DotExperimentsListComponent', () => {
                     spectator.query(byTestId('experiment-row'))?.querySelector('a[href]')
                 ).toBeNull();
             });
+        });
+
+        it.each(DELETABLE_STATUSES)(
+            'should close the kebab with delete behind a rule for %s',
+            (status) => {
+                renderRowWith(status);
+
+                const entries = visibleMenuEntries();
+                const [separator, remove] = entries.slice(-2);
+
+                expect(separator.separator).toBe(true);
+                expect(remove.id).toBe(MENU_ITEM.delete);
+            }
+        );
+
+        it.each(
+            Object.values(DotExperimentStatus).filter(
+                (status) => !DELETABLE_STATUSES.includes(status)
+            )
+        )('should leave no dangling rule when delete is not offered for %s', (status) => {
+            renderRowWith(status);
+
+            expect(visibleMenuEntries().some(({ separator }) => separator)).toBe(false);
+        });
+    });
+
+    describe('row click', () => {
+        const clickRow = () => {
+            spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+            spectator.detectChanges();
+        };
+
+        it.each(AllowedActionsByExperimentStatus['results'])(
+            'should open the Results screen from a %s row',
+            (status) => {
+                const experiment = renderRowWith(status);
+
+                clickRow();
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results']);
+            }
+        );
+
+        it.each(
+            Object.values(DotExperimentStatus).filter(
+                (status) => !AllowedActionsByExperimentStatus['results'].includes(status)
+            )
+        )('should open the Configure screen from a %s row', (status) => {
+            const experiment = renderRowWith(status);
+
+            clickRow();
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'configuration']);
+        });
+
+        it('should open the row from the keyboard', () => {
+            const experiment = renderRowWith(DotExperimentStatus.RUNNING);
+            const row = spectator.query(byTestId('experiment-row')) as HTMLElement;
+
+            spectator.dispatchKeyboardEvent(row, 'keydown', 'Enter');
+            spectator.detectChanges();
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results']);
+        });
+
+        it('should not navigate when the kebab is opened', () => {
+            // The button sits inside the clickable row, so opening the menu must not also
+            // navigate away from the list.
+            renderRowWith(DotExperimentStatus.RUNNING);
+
+            clickButton('experiment-actions-btn');
+
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 

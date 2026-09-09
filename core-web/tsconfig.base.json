@@ -96,6 +96,7 @@
             "@dotcms/types": ["libs/sdk/types/src/index.ts"],
             "@dotcms/types/internal": ["libs/sdk/types/src/internal.ts"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
+            "@dotcms/ui/testing": ["libs/ui/src/testing.ts"],
             "@dotcms/utils": ["libs/utils/src"],
             "@dotcms/utils-testing": ["libs/utils-testing/src/index.ts"],
             "@dotcms/utils/*": ["libs/utils/src/*"],
@@ -116,7 +117,9 @@
             "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
             "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"],
             "@dotcms/portlets/dot-roles/portlet": ["libs/portlets/dot-roles/src/index.ts"],
-            "@dotcms/portlets/dot-agents/portlet": ["libs/portlets/dot-agents/src/index.ts"]
+            "@dotcms/portlets/dot-agents/portlet": ["libs/portlets/dot-agents/src/index.ts"],
+            "@dotcms/http": ["libs/http/src/index.ts"],
+            "dotcms": ["libs/sdk/cli/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

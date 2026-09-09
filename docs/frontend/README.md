@@ -18,6 +18,7 @@
 | [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) | Writing tests: Spectator, Jest, `byTestId`, `setInput`, `data-testid` |
 | [TESTING_REVIEW_RULES.md](./TESTING_REVIEW_RULES.md) | **Reviewing** test files: condensed violation checklist, severity-ranked |
 | [BREADCRUMBS.md](./BREADCRUMBS.md) | GlobalStore breadcrumbs: `addNewBreadcrumb`, `setBreadcrumbs`, `id`/`url` for tabs, duplicate prevention |
+| [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) | Shortcut registry: per-combination last-in-wins, bubble phase, adding one, selection semantics, event-synthesis testing hazards |
 
 ## Picking between the two testing docs
 

@@ -1,4 +1,4 @@
-import { isSuccessStatus } from './fetch-retry';
+import { isSuccessStatus } from '@dotcms/http';
 
 /**
  * Answers one question: will the call we are about to make succeed?
