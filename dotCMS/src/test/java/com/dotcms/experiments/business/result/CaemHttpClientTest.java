@@ -28,7 +28,7 @@ public class CaemHttpClientTest {
 
     @Test
     public void get_successfulResponse_returnsPopulatedResultSet() throws DotDataException {
-        final String json = "{\"data\":[" +
+        final String json = "{\"rows\":[" +
                 "{\"variant\":\"control\",\"totalSessions\":100,\"bounceSessions\":45,\"bounceRate\":45.0,\"day\":\"2026-09-01\"}," +
                 "{\"variant\":\"variant-a\",\"totalSessions\":80,\"bounceSessions\":30,\"bounceRate\":37.5,\"day\":\"2026-09-01\"}" +
                 "]}";
@@ -80,7 +80,7 @@ public class CaemHttpClientTest {
             @Override protected Map<String, String> buildHeaders(final Host h) { return Map.of(); }
             @Override
             protected CaemResponse doGet(final String relativePath, final Map<String, String> queryParams, final Map<String, String> headers) {
-                return new CaemResponse(200, "{\"data\":[]}");
+                return new CaemResponse(200, "{\"rows\":[]}");
             }
         };
 

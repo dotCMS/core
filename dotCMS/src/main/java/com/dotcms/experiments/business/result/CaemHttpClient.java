@@ -119,13 +119,13 @@ public class CaemHttpClient {
         }
         try {
             final Map<String, Object> parsed = JsonUtil.getJsonFromString(json);
-            final List<Map<String, Object>> data =
-                    (List<Map<String, Object>>) parsed.get("data");
-            if (!UtilMethods.isSet(data)) {
+            final List<Map<String, Object>> rows =
+                    (List<Map<String, Object>>) parsed.get("rows");
+            if (!UtilMethods.isSet(rows)) {
                 return new AnalyticsResultSetImpl(Collections.emptyList());
             }
             final List<Map<String, Object>> mapped = new java.util.ArrayList<>();
-            for (final Map<String, Object> row : data) {
+            for (final Map<String, Object> row : rows) {
                 mapped.add(mapCaemFieldsToEventFields(row));
             }
             return new AnalyticsResultSetImpl(mapped);
