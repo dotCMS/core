@@ -99,8 +99,7 @@ export default defineConfig(() => ({
         // cost is the graph rather than the file count), dropping the libs|apps deps.inline
         // entry (17.8GB, WORSE — Node then loads those sources separately), and happy-dom
         // instead of jsdom (9%).
-        pool: 'vmForks',
-        vmMemoryLimit: '1G',
+        pool: 'forks',
         environment: 'jsdom',
         environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

@@ -362,6 +362,23 @@ function jestSettings(dir) {
  */
 const INLINE_EXCLUDE = new Set(['uuid']);
 
+/**
+ * Projects that must stay on the default 'forks' pool.
+ *
+ * 'vmForks' is what keeps the Angular projects inside a runner's memory (see the pool
+ * comment in the emitted config), but a VM context is not a perfect stand-in for a
+ * real one, and these two are measured regressions under it:
+ *
+ *   sdk-analytics    3 failed. Its SSR specs do `global.window = undefined`, and on a
+ *                    VM context `window` is a getter-only property, so the assignment
+ *                    throws instead of simulating a server.
+ *   sdk-experiments  48 tests -> 39. Nine simply stop being collected.
+ *
+ * Neither has the problem the VM pool solves: they peak at 0.25-1.4GB, against 14GB
+ * for dotcms-ui. The pool is chosen per project on measurement, not uniformly.
+ */
+const POOL_FORKS = new Set(['libs/sdk/analytics', 'libs/sdk/experiments']);
+
 /** Jest environment -> Vitest. Absent means the project inherited the preset's jsdom. */
 function environmentFor(jestEnv) {
     if (!jestEnv) return 'jsdom';
@@ -662,8 +679,7 @@ ${isolateBlock(dir)}
         // cost is the graph rather than the file count), dropping the libs|apps deps.inline
         // entry (17.8GB, WORSE — Node then loads those sources separately), and happy-dom
         // instead of jsdom (9%).
-        pool: 'vmForks',
-        vmMemoryLimit: '1G',
+        pool: '${POOL_FORKS.has(dir) ? 'forks' : 'vmForks'}',${POOL_FORKS.has(dir) ? '' : "\n        vmMemoryLimit: '1G',"}
         environment: '${env}',${environmentOptionsFor(env)}
         include: ['{${includeRootsFor(dir).join(',')}}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {
