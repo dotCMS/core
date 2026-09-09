@@ -55,6 +55,7 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     MAX_INPUT_TITLE_LENGTH
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsConfigureDetailsComponent } from './components/dot-experiments-configure-details/dot-experiments-configure-details.component';
@@ -67,9 +68,11 @@ import { DotExperimentsConfigureVariantsComponent } from './components/dot-exper
 
 import {
     EXPERIMENTS_URL,
+    LIST_TITLE_KEY,
     MAX_TRAFFIC_ALLOCATION,
     MIN_PROGRESS_BAR_VISIBLE_MS,
     MIN_TRAFFIC_ALLOCATION,
+    NEW_EXPERIMENT_TITLE_KEY,
     SUCCESS_MESSAGE_LIFE,
     TOTAL_WEIGHT,
     WEIGHTS_TOTAL_ERROR_KIND
@@ -78,6 +81,12 @@ import { ConfigureFormModel, SchedulingDateBounds } from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
+import {
+    EXPERIMENTS_LIST_CRUMB_ID,
+    experimentConfigureCrumb,
+    experimentsListCrumb,
+    putCrumbOnTrail
+} from '../util/dot-experiments-breadcrumb.util';
 import {
     ConfigureFormSource,
     emptyConfigureForm,
@@ -229,6 +238,51 @@ export class DotExperimentsConfigureComponent {
         untracked(() => this.#trackSavingBar(isSaving));
     });
 
+    /**
+     * Label of this screen's crumb: the experiment's name as typed, or the new-experiment title.
+     *
+     * Empty while an existing experiment is still loading — `draftName` is only seeded from the
+     * response, so labelling the crumb before it arrives would put "New Experiment" on the trail
+     * for an experiment that has a name. The effect below waits rather than showing the wrong one.
+     */
+    readonly $breadcrumbLabel = computed<string>(() => {
+        const name = this.store.draftName().trim();
+
+        if (name) {
+            return name;
+        }
+
+        return this.store.isNew() ? this.#dotMessageService.get(NEW_EXPERIMENT_TITLE_KEY) : '';
+    });
+
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * Without it the trail ended at the list's crumb, so the shell rendered "Experiments List" as
+     * the title of a screen that is not the list — and the list, which *is* a level above, was
+     * missing from the path instead of sitting in it.
+     *
+     * The label is the experiment, not the screen: "Experiments Configuration" would say the same
+     * thing on every one of them, and at this depth the trail's job is to say *which* one. A draft
+     * with no name yet says that it is a new one.
+     *
+     * An effect rather than a one-shot, because both halves of the label move without leaving the
+     * screen: the name is rewritten as it is typed, and creating the draft swaps `/experiments/new`
+     * for the experiment's own address. The crumb keeps one id across that swap, and
+     * `putCrumbOnTrail` rewrites the crumb already carrying it, so neither move stacks a second
+     * one.
+     */
+    protected readonly syncBreadcrumbEffect = effect(() => {
+        const label = this.$breadcrumbLabel();
+        const experimentId = this.store.experiment()?.id ?? null;
+
+        if (!label) {
+            return;
+        }
+
+        untracked(() => this.#syncBreadcrumb(label, experimentId));
+    });
+
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #events = inject(Events);
@@ -237,6 +291,7 @@ export class DotExperimentsConfigureComponent {
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #locale = inject(LOCALE_ID);
 
     /** Same format the pickers' own copy uses, so the bounds read the same wherever they appear. */
@@ -562,6 +617,40 @@ export class DotExperimentsConfigureComponent {
                     injector: this.#injector
                 });
             });
+    }
+
+    /**
+     * Appends this screen's crumb, and the list's above it when the trail does not already carry
+     * one.
+     *
+     * The list's crumb is normally already there — it puts itself on the trail when it renders,
+     * and this screen is reached through it. It is not there on a reload of a deep link into a
+     * fresh session, and the level above still belongs in the path, so it is added rather than
+     * assumed. Guarded on the trail's contents rather than on an id match: `addNewBreadcrumb` only
+     * replaces the *last* crumb, so re-adding the list while this screen's crumb sits on top of it
+     * would append a second copy at the end.
+     *
+     * Both crumbs keep the page narrowing in their address, for the same reason the back button
+     * carries it: a return that dropped the filter would leave the screen it returns to pointing
+     * at the site-wide list.
+     */
+    #syncBreadcrumb(label: string, experimentId: string | null): void {
+        const pageFilter = listReturnParams(this.#route.snapshot.queryParams);
+        const hasListCrumb = this.#globalStore
+            .breadcrumbs()
+            .some(({ id }) => id === EXPERIMENTS_LIST_CRUMB_ID);
+
+        if (!hasListCrumb) {
+            putCrumbOnTrail(
+                this.#globalStore,
+                experimentsListCrumb(this.#dotMessageService.get(LIST_TITLE_KEY), pageFilter)
+            );
+        }
+
+        putCrumbOnTrail(
+            this.#globalStore,
+            experimentConfigureCrumb(label, experimentId, pageFilter)
+        );
     }
 
     /**

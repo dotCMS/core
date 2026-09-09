@@ -111,9 +111,6 @@ const LIST_TITLE_COPY = 'Experiments List';
 const messageServiceMock = new MockDotMessageService({
     'experiment.container.list.title': LIST_TITLE_COPY,
     'experiments.list.page-filter.unavailable': PAGE_UNAVAILABLE_COPY,
-    'experiments.list.page-filter.label': 'Page: {0}',
-    'experiments.list.page-filter.back': 'Back to page',
-    'experiments.list.page-filter.clear': 'Clear page filter',
     'experiments.list.empty.page.title': 'No Experiments on this Page',
     'experiments.list.empty.page.description': 'Nothing is running on {0} yet.',
     'experiments.list.empty.page.action': CREATE_FOR_PAGE_COPY,
@@ -162,7 +159,11 @@ const createStoreMock = () => ({
 describe('DotExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
     /** Where the trail is written; the component only ever appends its own crumb. */
-    let globalStore: { addNewBreadcrumb: jest.Mock };
+    let globalStore: {
+        addNewBreadcrumb: jest.Mock;
+        setLastBreadcrumb: jest.Mock;
+        lastBreadcrumb: jest.Mock;
+    };
     let storeMock: ReturnType<typeof createStoreMock>;
     let dispatch: jest.SpyInstance;
     let confirm: jest.SpyInstance;
@@ -177,12 +178,7 @@ describe('DotExperimentsListComponent', () => {
             ConfirmationService
         ],
         providers: [
-            provideRouter([
-                { path: 'experiments', children: [] },
-                // The page-filter chip's back link target; without it the navigation the test
-                // follows would be rejected by the router rather than resolved.
-                { path: 'edit-page/content', children: [] }
-            ]),
+            provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotMessageDisplayService),
@@ -256,7 +252,11 @@ describe('DotExperimentsListComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
-        globalStore = { addNewBreadcrumb: jest.fn() };
+        globalStore = {
+            addNewBreadcrumb: jest.fn(),
+            setLastBreadcrumb: jest.fn(),
+            lastBreadcrumb: jest.fn().mockReturnValue(null)
+        };
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
 
@@ -743,12 +743,12 @@ describe('DotExperimentsListComponent', () => {
     });
 
     /**
-     * The page filter's UI (#37005, US3, FR-021b, FR-021c, FR-024).
+     * The page filter's UI (#37005, US3, FR-021b).
      *
      * With the entry-point switch on, an editor arrives here from a page and the list is already
-     * narrowed to it. The narrowing has to be *visible* — an invisibly filtered list looks like a
-     * site with almost no experiments — and clearable, and it has to offer a way back to the page
-     * and a way to create an experiment for it when there are none.
+     * narrowed to it. The narrowing shows in the breadcrumb trail and in the empty state, which
+     * has to name the page and offer to create an experiment for it rather than offer to clear a
+     * filter the editor never set.
      */
     describe('page filter', () => {
         const PAGE_ID = 'page-1';
@@ -757,66 +757,6 @@ describe('DotExperimentsListComponent', () => {
             storeMock.selectedPageId.mockReturnValue(pageId);
             spectator.detectChanges();
         };
-
-        // FR-021c, first half.
-        it('should render a chip naming the filtered page', () => {
-            withPageFilter();
-
-            const chip = spectator.query(byTestId('experiments-page-filter-chip'));
-
-            expect(chip).not.toBeNull();
-            // The path the Page column already resolves, not the raw id: the editor recognises
-            // their page by its path, and `pageInfoByPageId` is already loaded for the column.
-            expect(chip?.textContent).toContain(PAGE_INFO[PAGE_ID].url);
-        });
-
-        it('should render no chip when the list is not narrowed to a page', () => {
-            withPageFilter(null);
-
-            expect(spectator.query(byTestId('experiments-page-filter-chip'))).toBeNull();
-        });
-
-        // FR-021c, second half — "the filter is a starting point, not a cage".
-        it('should clear the filter when the chip is dismissed', () => {
-            withPageFilter();
-
-            const clear = spectator
-                .query(byTestId('experiments-page-filter-clear'))
-                ?.querySelector('button') as HTMLElement;
-            spectator.click(clear);
-
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.pageAssetFilterChanged(null)
-            );
-        });
-
-        // FR-024. Reuses the deep-link builder, so the address is the one the round-trip uses
-        // minus the experiment context — not a second URL assembler.
-        //
-        // Asserted by following the link rather than by reading its `href`: dotAdmin runs on
-        // `withHashLocation()`, and a serialised address in a plain `href` renders a string that
-        // *looks* right (`/edit-page/content?...`) while sending the browser out of the app,
-        // because only the `LocationStrategy` knows about the `#`. Whether the click reaches the
-        // router is the difference an `href` substring check cannot see.
-        it('should navigate back to the page in the editor', async () => {
-            withPageFilter();
-
-            const back = spectator.query(byTestId('experiments-page-filter-back'));
-
-            expect(back).not.toBeNull();
-
-            // Still a real anchor, so it stays middle-clickable and copyable.
-            expect(back?.getAttribute('href')).toBeTruthy();
-
-            spectator.click(back as HTMLElement);
-            await spectator.fixture.whenStable();
-
-            const url = spectator.inject(Router).url;
-
-            expect(url).toContain('/edit-page/content');
-            expect(url).toContain(`url=${encodeURIComponent(PAGE_INFO[PAGE_ID].url)}`);
-            expect(url).toContain('language_id=');
-        });
 
         // #37005. Arriving from UVE the trail already ends with the page's own crumb (pushed by
         // the UVE shell, carrying the editor address). The list has to put its own crumb on top of
@@ -893,17 +833,18 @@ describe('DotExperimentsListComponent', () => {
         });
 
         // The spec's last edge case: an editor arrives from a page that has since been deleted.
-        // `pageInfoByPageId` cannot resolve it, so the chip has no path to show — it must say the
-        // page is gone rather than render an unlabelled chip over a silently empty list.
+        // `pageInfoByPageId` cannot resolve it, so there is no path to name — the empty state has
+        // to say the page is gone rather than read as a page that merely has no experiments.
         it('should report a filtered page that no longer resolves', () => {
             storeMock.selectedPageId.mockReturnValue('page-deleted');
             storeMock.pagedExperiments.mockReturnValue([]);
+            storeMock.totalRecords.mockReturnValue(0);
             spectator.detectChanges();
 
-            const chip = spectator.query(byTestId('experiments-page-filter-chip'));
+            const empty = spectator.query(byTestId('experiments-empty-state'));
 
-            expect(chip).not.toBeNull();
-            expect(chip?.textContent).toContain(PAGE_UNAVAILABLE_COPY);
+            expect(empty).not.toBeNull();
+            expect(empty?.textContent).toContain(PAGE_UNAVAILABLE_COPY);
         });
     });
 

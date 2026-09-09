@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Params, Router, RouterLink } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -59,6 +59,7 @@ import {
     EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
     LIST_TABLE_STYLE,
+    LIST_TITLE_KEY,
     NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
@@ -77,7 +78,7 @@ import {
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
-import { experimentsListCrumb } from '../util/dot-experiments-breadcrumb.util';
+import { experimentsListCrumb, putCrumbOnTrail } from '../util/dot-experiments-breadcrumb.util';
 import {
     configureCommandsOf,
     ExperimentScheduleLabels,
@@ -89,28 +90,10 @@ import {
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
-import { buildPageEditorLink, DotEditorLink } from '../util/dot-experiments-uve-link.util';
-
-/**
- * i18n key of the list screen's own title — the same one its route declares, so the crumb and the
- * browser tab cannot drift apart.
- */
-const LIST_TITLE_KEY = 'experiment.container.list.title';
 
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
 
-/**
- * Language for the chip's back-link when the address does not carry one.
- *
- *
- * `pageInfoByPageId` carries only `url` and `host` — the two fields the list needs — so the page's
- * real language is not available here. The editor's own guard substitutes 1 for a missing
- * `language_id`, so sending 1 explicitly is the same destination it would reach anyway, and the
- * link is a convenience rather than the variant round-trip's exact contract. Widening
- * `DotExperimentPageInfo` for one link would mean another field on every row's lookup.
- */
-const DEFAULT_PAGE_FILTER_LANGUAGE_ID = 1;
 @Component({
     selector: 'dot-experiments-list',
     imports: [
@@ -126,7 +109,6 @@ const DEFAULT_PAGE_FILTER_LANGUAGE_ID = 1;
         TableModule,
         TagModule,
         ToolbarModule,
-        RouterLink,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentListFilterComponent,
@@ -285,12 +267,11 @@ export class DotExperimentsListComponent {
      * after the injections because field initialisers run in declaration order.
      */
     /**
-     * The page the list is narrowed to, as the chip shows it (#37005, FR-021c).
+     * The page the list is narrowed to (#37005, FR-021c).
      *
      * `null` when there is no page filter. When there is one but `pageInfoByPageId` cannot resolve
-     * it — the page was deleted after the editor left it — the chip still renders, saying so: an
-     * unlabelled chip over a silently empty list is the one outcome the spec's last edge case
-     * rules out.
+     * it — the page was deleted after the editor left it — the empty state still says so, rather
+     * than reading as a page that merely has no experiments.
      */
     readonly $pageFilter = computed<{ path: string; resolved: boolean } | null>(() => {
         const pageId = this.store.selectedPageId();
@@ -307,37 +288,6 @@ export class DotExperimentsListComponent {
                   path: this.#dotMessageService.get('experiments.list.page-filter.unavailable'),
                   resolved: false
               };
-    });
-
-    /**
-     * Link back to the page in the editor (FR-024).
-     *
-     * The round-trip's own builder with the variant, experiment and mode omitted — one function,
-     * two call sites, rather than a second URL assembler that can drift from the first. `null`
-     * when the page cannot be resolved, since there is then nothing to open.
-     *
-     * Returned as the builder's `commands`/`queryParams` pair for the template to bind through
-     * `routerLink`, NOT as a serialised string. `createUrlTree(...).toString()` renders the
-     * router's internal address (`/edit-page/content?...`), and dotAdmin runs on
-     * `withHashLocation()` — so that string in a plain `href` sends the browser to
-     * `<host>/edit-page/content`, outside the app, instead of
-     * `<host>/dotAdmin/#/edit-page/content`. `routerLink` puts the value through the active
-     * `LocationStrategy`, which is the only thing that knows about the hash.
-     */
-    readonly $pageFilterBackLink = computed<DotEditorLink | null>(() => {
-        const pageId = this.store.selectedPageId();
-        const info = pageId ? this.store.pageInfoByPageId()[pageId] : null;
-
-        if (!pageId || !info?.url) {
-            return null;
-        }
-
-        return buildPageEditorLink({
-            pageId,
-            title: info.url,
-            path: info.url,
-            languageId: this.store.languageId() ?? DEFAULT_PAGE_FILTER_LANGUAGE_ID
-        });
     });
 
     /** Any narrowing the user applied, as opposed to a site that simply has no experiments. */
@@ -435,7 +385,7 @@ export class DotExperimentsListComponent {
      * its title.
      *
      * Appended rather than set: the crumb the UVE shell pushed for the page is exactly the way
-     * back to the editor, and it belongs above this one. `addNewBreadcrumb` replaces on a matching
+     * back to the editor, and it belongs above this one. `putCrumbOnTrail` replaces on a matching
      * id, so re-entering the list (a reload, clearing the page filter, returning from Configure)
      * lands on the crumb already there instead of stacking another.
      *
@@ -445,10 +395,10 @@ export class DotExperimentsListComponent {
     protected readonly syncBreadcrumbEffect = effect(() => {
         const crumb = experimentsListCrumb(
             this.#dotMessageService.get(LIST_TITLE_KEY),
-            this.store.selectedPageId()
+            this.#pageFilterParams()
         );
 
-        untracked(() => this.#globalStore.addNewBreadcrumb(crumb));
+        untracked(() => putCrumbOnTrail(this.#globalStore, crumb));
     });
 
     /**
@@ -488,11 +438,6 @@ export class DotExperimentsListComponent {
     }
 
     /** Clears every narrowing at once, from the no-results state. */
-    /** FR-021c: the filter is a starting point, not a cage. */
-    onClearPageFilter(): void {
-        this.#dispatch.pageAssetFilterChanged(null);
-    }
-
     onClearFilters(): void {
         this.$searchTerm.set('');
         this.#dispatch.statusesChanged([]);

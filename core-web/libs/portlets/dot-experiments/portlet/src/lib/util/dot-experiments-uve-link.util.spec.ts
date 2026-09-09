@@ -1,7 +1,7 @@
 import { EXPERIMENT_RETURN_PARAM, EXPERIMENT_RETURN_PORTLET } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
-import { buildPageEditorLink, buildVariantEditorLink } from './dot-experiments-uve-link.util';
+import { buildVariantEditorLink } from './dot-experiments-uve-link.util';
 
 import { DotExperimentConfigurePage } from '../shared/models';
 
@@ -212,10 +212,6 @@ describe('buildVariantEditorLink', () => {
     });
 });
 
-/**
- * The same builder without the variant, experiment and mode params — the list's page-filter chip
- * uses it to send the editor back to the page they came from (FR-024).
- */
 // The page the card shows and the page the experiment is actually on can drift apart: a page
 // change is only persisted when Save Draft is pressed, so adding a variant in between creates
 // it under the OLD page and no later PATCH can move it. Building the link anyway produced a
@@ -245,35 +241,5 @@ describe('when the card and the experiment disagree about the page', () => {
         });
 
         expect(link).not.toBeNull();
-    });
-});
-
-describe('buildPageEditorLink', () => {
-    it('should target the page in the editor with no experiment context', () => {
-        const link = buildPageEditorLink(PAGE);
-
-        expect(link?.commands).toEqual(['/edit-page/content']);
-        expect(link?.queryParams).toEqual({
-            url: '/pricing/index',
-            language_id: 2,
-            'com.dotmarketing.persona.id': expect.any(String)
-        });
-    });
-
-    it('should carry no variant, experiment, mode or origin marker', () => {
-        const link = buildPageEditorLink(PAGE);
-
-        expect(link?.queryParams).not.toHaveProperty('variantName');
-        expect(link?.queryParams).not.toHaveProperty('experimentId');
-        expect(link?.queryParams).not.toHaveProperty('mode');
-        expect(link?.queryParams).not.toHaveProperty(EXPERIMENT_RETURN_PARAM);
-    });
-
-    it('should refuse on the same incomplete page data', () => {
-        expect(buildPageEditorLink(null)).toBeNull();
-        expect(buildPageEditorLink({ ...PAGE, path: '' })).toBeNull();
-        expect(
-            buildPageEditorLink({ ...PAGE, languageId: undefined as unknown as number })
-        ).toBeNull();
     });
 });

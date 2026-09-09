@@ -44,6 +44,8 @@ const CURRENT_SITE_ID = 'site-123';
 /** `GlobalStore` is `providedIn: 'root'`; only what this screen reads and writes is stubbed. */
 const globalStoreMock = {
     addNewBreadcrumb: jest.fn(),
+    setLastBreadcrumb: jest.fn(),
+    lastBreadcrumb: signal(null),
     currentSiteId: signal(CURRENT_SITE_ID),
     siteDetails: signal({
         identifier: CURRENT_SITE_ID,

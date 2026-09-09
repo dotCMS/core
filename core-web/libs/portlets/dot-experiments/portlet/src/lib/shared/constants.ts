@@ -133,6 +133,15 @@ export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
 export const RESULTS_SEGMENT = 'results';
 
 /**
+ * i18n key of the list screen's own title — the same one its route declares, so the crumb the list
+ * puts on the trail and the one the deeper screens put above it cannot drift apart.
+ */
+export const LIST_TITLE_KEY = 'experiment.container.list.title';
+
+/** i18n key of the Configure screen's title while the draft has no name yet. */
+export const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
+
+/**
  * Multiplier applied to the page-lookup limit.
  *
  * Elasticsearch holds one document per identifier *and* language, so a multilingual site returns

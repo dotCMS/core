@@ -14,14 +14,16 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { EXPERIMENTS_URL, STATUS_LABEL_KEYS, STATUS_SEVERITIES } from '../../../shared/constants';
+import {
+    EXPERIMENTS_URL,
+    NEW_EXPERIMENT_TITLE_KEY,
+    STATUS_LABEL_KEYS,
+    STATUS_SEVERITIES
+} from '../../../shared/constants';
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 import { listReturnParams, resultsCommandsOf } from '../../../util/dot-experiments-list.util';
-
-/** Title shown while the draft has no name yet. */
-const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
 
 /** Subline shown while no page is selected. */
 const NO_PAGE_SELECTED_KEY = 'experiments.configure.header.no-page';

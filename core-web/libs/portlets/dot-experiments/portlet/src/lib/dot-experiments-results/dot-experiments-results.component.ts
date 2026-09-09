@@ -1,6 +1,6 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
 
-import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -20,6 +20,7 @@ import {
     HealthStatusTypes,
     MINIMUM_SESSIONS_TO_SHOW_CHART
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsResultsChartsComponent } from './components/dot-experiments-results-charts/dot-experiments-results-charts.component';
@@ -30,12 +31,19 @@ import { DotExperimentsResultsSummaryTableComponent } from './components/dot-exp
 
 import {
     EXPERIMENTS_URL,
+    LIST_TITLE_KEY,
     RESULTS_CONFIRM_DIALOG_KEY,
     SUCCESS_MESSAGE_LIFE
 } from '../shared/constants';
 import { dotExperimentsResultsApiEvents } from '../store/dot-experiments-results-api.events';
 import { dotExperimentsResultsPageEvents } from '../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../store/dot-experiments-results.store';
+import {
+    EXPERIMENTS_LIST_CRUMB_ID,
+    experimentResultsCrumb,
+    experimentsListCrumb,
+    putCrumbOnTrail
+} from '../util/dot-experiments-breadcrumb.util';
 import { listReturnParams } from '../util/dot-experiments-list.util';
 
 /** Route `data` key `dotAnalyticsHealthCheckResolver` publishes the analytics health under. */
@@ -92,6 +100,7 @@ export class DotExperimentsResultsComponent {
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
     readonly #confirmationService = inject(ConfirmationService);
 
@@ -195,6 +204,24 @@ export class DotExperimentsResultsComponent {
               );
     });
 
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * The same reasoning as the Configure screen's crumb: without one the trail ended at the
+     * list's, so the shell titled this screen "Experiments List" and left the level above it out
+     * of the path. Named after the experiment, and held back until it loads — the name is what the
+     * crumb is for.
+     */
+    protected readonly syncBreadcrumbEffect = effect(() => {
+        const experiment = this.store.experiment();
+
+        if (!experiment) {
+            return;
+        }
+
+        untracked(() => this.#syncBreadcrumb(experiment.name, experiment.id));
+    });
+
     constructor() {
         this.#listenForActionSuccess();
     }
@@ -210,6 +237,24 @@ export class DotExperimentsResultsComponent {
         this.#router.navigate([EXPERIMENTS_URL], {
             queryParams: listReturnParams(this.#route.snapshot.queryParams)
         });
+    }
+
+    /**
+     * Appends this screen's crumb, and the list's above it when the trail does not already carry
+     * one — see the Configure shell's copy of this for why the guard reads the trail's contents
+     * rather than matching an id.
+     */
+    #syncBreadcrumb(label: string, experimentId: string): void {
+        const pageFilter = listReturnParams(this.#route.snapshot.queryParams);
+
+        if (!this.#globalStore.breadcrumbs().some(({ id }) => id === EXPERIMENTS_LIST_CRUMB_ID)) {
+            putCrumbOnTrail(
+                this.#globalStore,
+                experimentsListCrumb(this.#dotMessageService.get(LIST_TITLE_KEY), pageFilter)
+            );
+        }
+
+        putCrumbOnTrail(this.#globalStore, experimentResultsCrumb(label, experimentId, pageFilter));
     }
 
     /** Runs the whole load again, experiment included: a failed load left nothing behind. */

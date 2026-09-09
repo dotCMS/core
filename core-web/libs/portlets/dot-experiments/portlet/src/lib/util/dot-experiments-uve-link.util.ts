@@ -136,16 +136,3 @@ export function buildVariantEditorLink({
         }
     };
 }
-
-/**
- * Deep link back to a page in the editor, with no experiment context — the page-filter chip's
- * return affordance on the site-wide list (FR-024).
- *
- * The same page params as {@link buildVariantEditorLink} without the variant, experiment, mode or
- * origin marker: this is a return to the page, not the start of a round-trip.
- */
-export function buildPageEditorLink(page: DotExperimentConfigurePage | null): DotEditorLink | null {
-    const pageParams = pageParamsOf(page);
-
-    return pageParams ? { commands: [UVE_CONTENT_ROUTE], queryParams: pageParams } : null;
-}

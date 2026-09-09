@@ -6,7 +6,7 @@ import { ApplicationRef, Component, input, signal, WritableSignal } from '@angul
 import { FieldTree } from '@angular/forms/signals';
 import { ActivatedRoute, convertToParamMap, Params, provideRouter, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -23,6 +23,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigureDetailsComponent } from './components/dot-experiments-configure-details/dot-experiments-configure-details.component';
@@ -59,6 +60,9 @@ const LOCKED_COPY = {
     readOnly: 'This experiment can no longer be edited'
 };
 
+const LIST_TITLE_COPY = 'Experiments List';
+const NEW_EXPERIMENT_COPY = 'New Experiment';
+
 const messageServiceMock = new MockDotMessageService({
     'experiments.list.error.title': ERROR_COPY.title,
     'experiments.error.fetching.data': ERROR_COPY.subtitle,
@@ -70,7 +74,9 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.action.start.confirm-message': 'Experiment {0} started',
     'experiments.action.stop.confirm-message': 'Experiment {0} ended',
     'experiments.notification.cancel.schedule': 'Experiment {0} unscheduled',
-    'experiments.notification.abort': 'Experiment {0} aborted'
+    'experiments.notification.abort': 'Experiment {0} aborted',
+    'experiment.container.list.title': LIST_TITLE_COPY,
+    'experiments.configure.header.new-experiment': NEW_EXPERIMENT_COPY
 });
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -187,11 +193,36 @@ const createStoreMock = () => ({
     draftDescription: signal('')
 });
 
+/**
+ * The trail, as a real list rather than four independent spies: whether a crumb is appended or
+ * written in place is the whole question here, and a mock that only records the calls answers it
+ * the same way either way.
+ *
+ * Not `mockProvider`: `GlobalStore` is a signal store, so its methods live on the instance rather
+ * than the prototype and Spectator's auto-mock finds none of them.
+ */
+const createGlobalStoreMock = () => {
+    const trail: MenuItem[] = [];
+
+    return {
+        trail,
+        addNewBreadcrumb: jest.fn((crumb: MenuItem) => {
+            trail.push(crumb);
+        }),
+        setLastBreadcrumb: jest.fn((crumb: MenuItem) => {
+            trail[trail.length - 1] = crumb;
+        }),
+        breadcrumbs: jest.fn(() => [...trail]),
+        lastBreadcrumb: jest.fn(() => trail.at(-1) ?? null)
+    };
+};
+
 describe('DotExperimentsConfigureComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
     let scrollIntoView: jest.Mock;
     let dispatch: jest.SpyInstance;
+    let globalStore: ReturnType<typeof createGlobalStoreMock>;
 
     /**
      * A screen mounted on one of the two URLs it answers on, with whatever the config resolver
@@ -223,6 +254,7 @@ describe('DotExperimentsConfigureComponent', () => {
                 provideLocationMocks(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
+                { provide: GlobalStore, useFactory: () => globalStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -341,6 +373,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        globalStore = createGlobalStoreMock();
         // jsdom does not implement scrollIntoView, so there is nothing to spy on.
         scrollIntoView = jest.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
@@ -1017,6 +1050,108 @@ describe('DotExperimentsConfigureComponent', () => {
                 queryParams: { pageId: 'page-1', language_id: '2' }
             });
         });
+
+        it('should keep the narrowing in the crumbs it puts on the trail', () => {
+            storeMock.experiment.set(EXPERIMENT);
+            storeMock.draftName.set(EXPERIMENT.name);
+            spectator.detectChanges();
+
+            expect(globalStore.trail.map(({ url }) => url)).toEqual([
+                '/dotAdmin/#/experiments?pageId=page-1&language_id=2',
+                `/dotAdmin/#/experiments/${EXPERIMENT.id}/configuration?pageId=page-1&language_id=2`
+            ]);
+        });
+    });
+
+    /**
+     * #37005. Nothing else puts this screen on the trail, so the trail ended at the list's crumb
+     * and the shell titled the Configure screen "Experiments List" — naming the screen the editor
+     * had just left, and leaving the level above out of the path instead of in it.
+     */
+    describe('breadcrumbs', () => {
+        const crumbLabels = () => globalStore.trail.map(({ label }) => label);
+
+        describe('on a new experiment', () => {
+            const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
+
+            beforeEach(() => {
+                spectator = createComponent();
+                spectator.detectChanges();
+            });
+
+            it('should name the screen after the draft, with the list above it', () => {
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, NEW_EXPERIMENT_COPY]);
+            });
+
+            // Written in place, not appended: `addNewBreadcrumb` skips an item whose id matches
+            // the last crumb's rather than replacing it, so the trail kept saying "New
+            // Experiment" for an experiment that had been named.
+            it('should follow the name as it is typed', () => {
+                storeMock.draftName.set('Summer Test');
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, 'Summer Test']);
+            });
+        });
+
+        // The flow from UVE: the editor's page crumb, then the list's, then this screen's. The
+        // list is already on the trail, and adding it again would put a second copy at the end.
+        describe('arriving on a trail that already carries the list', () => {
+            const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
+
+            it('should put itself on top of what is there', () => {
+                globalStore.trail.push(
+                    { label: 'Home' },
+                    { id: 'experiments-list', label: LIST_TITLE_COPY }
+                );
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual(['Home', LIST_TITLE_COPY, NEW_EXPERIMENT_COPY]);
+            });
+        });
+
+        describe('on an existing experiment', () => {
+            const createComponent = createComponentOn({
+                experimentId: EXPERIMENT.id,
+                configProps: CONFIGURED_DURATIONS
+            });
+
+            // The label is the experiment, and `draftName` is only seeded from the response — so
+            // labelling before it arrives would put "New Experiment" on the trail for an
+            // experiment that has a name.
+            it('should say nothing until the experiment has loaded', () => {
+                storeMock.isNew.set(false);
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(globalStore.trail).toEqual([]);
+            });
+
+            it('should name the crumb after the experiment', () => {
+                storeMock.isNew.set(false);
+                spectator = createComponent();
+                storeMock.experiment.set(EXPERIMENT);
+                storeMock.draftName.set(EXPERIMENT.name);
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, EXPERIMENT.name]);
+            });
+
+            // The address is the experiment's own, not `/experiments/new`: the crumb is a way
+            // back to this screen, and the draft it was opened as no longer exists.
+            it('should address the experiment it loaded', () => {
+                storeMock.isNew.set(false);
+                spectator = createComponent();
+                storeMock.experiment.set(EXPERIMENT);
+                storeMock.draftName.set(EXPERIMENT.name);
+                spectator.detectChanges();
+
+                expect(globalStore.trail.at(-1)?.url).toBe(
+                    `/dotAdmin/#/experiments/${EXPERIMENT.id}/configuration`
+                );
+            });
+        });
     });
 
     // #37005. Variants are copies of the page, and the server takes `pageId` only while the
@@ -1264,13 +1399,15 @@ describe('DotExperimentsConfigureComponent', () => {
                 provideLocationMocks(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
+                { provide: GlobalStore, useFactory: () => globalStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap({ experimentId: EXPERIMENT.id }),
                             // Present and empty, as `ActivatedRoute` always is: the screen reads
-                            // the `section` param from here on init.
+                            // the `section` param and the page narrowing from here.
+                            queryParams: {},
                             queryParamMap: convertToParamMap({}),
                             data: { config: CONFIGURED_DURATIONS }
                         }
