@@ -1,7 +1,7 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
-import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import {
@@ -28,15 +28,14 @@ export const appConfig: ApplicationConfig = {
         // Core Angular providers
         provideAnimations(),
         provideDotCMSTheme(),
-        // `withXhr` because the bulk upload reports bytes sent against the declared total, and
-        // Angular 22 made `FetchBackend` the default: fetch has no equivalent of `xhr.upload`, so
-        // `HttpEventType.UploadProgress` never fires and a `reportProgress` request reports nothing
-        // on the way up. Angular's own guidance for this feature is exactly that use, and its only
-        // caveat is server-side rendering, which this app is not. See `http-backend.spec.ts`.
-        provideHttpClient(
-            withXhr(),
-            withInterceptors([apiPrefixInterceptor, serverErrorInterceptor])
-        ),
+        // Angular's default backend, which since v22 is `FetchBackend`.
+        //
+        // Upload progress is not available on it: fetch has no equivalent of `xhr.upload`, so
+        // `HttpEventType.UploadProgress` never fires. `withXhr()` restores that and was tried here,
+        // then dropped by developer decision — XHR sits too near the deprecation line, its
+        // server-side half already being slated for removal. So a bulk upload reports activity
+        // without a position, which the indicator renders as activity rather than as zero.
+        provideHttpClient(withInterceptors([apiPrefixInterceptor, serverErrorInterceptor])),
         provideRouter(
             appRoutes,
             withHashLocation(),
