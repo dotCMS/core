@@ -6,7 +6,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { Mock, MockInstance, expect, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -23,6 +23,7 @@ import {
     DotContentletService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFireActionOptions,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
@@ -184,6 +185,17 @@ describe('DotFormComponent', () => {
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
         dotContentletService = spectator.inject(DotContentletService);
+
+        // `mockProvider` registers its vi.fn()s at factory level, so any test that swaps an
+        // implementation keeps it for the rest of the file — `vi.clearAllMocks()` below clears
+        // call data but not implementations. Re-establishing the defaults here makes every test
+        // start from the same state regardless of declaration order.
+        (spectator.inject(DotWizardService).open as Mock).mockReturnValue(of({}));
+
+        const workflowEventHandler = spectator.inject(DotWorkflowEventHandlerService);
+        (workflowEventHandler.containsPushPublish as Mock).mockReturnValue(false);
+        (workflowEventHandler.checkPublishEnvironments as Mock).mockReturnValue(of(true));
+        (workflowEventHandler.processWorkflowPayload as Mock).mockReturnValue(undefined);
     });
 
     afterEach(() => {
@@ -710,6 +722,159 @@ describe('DotFormComponent', () => {
                     });
 
                     expect(wizardService.open).not.toHaveBeenCalled();
+                });
+            });
+
+            // AC-002 (#36883): the action must not complete until the author submits the
+            // dialog, and cancelling must leave everything untouched. The branch logic above
+            // was already covered; what was not is the *gating* — that nothing fires while the
+            // dialog is open, and that a cancelled dialog fires nothing at all.
+            describe('dialog gating (AC-002, #36883)', () => {
+                const commentableWorkflow = {
+                    id: '1',
+                    actionInputs: [{ id: 'commentable', body: {} }]
+                } as DotCMSWorkflowAction;
+
+                // `fireWorkflowAction` is an rxMethod, so its parameter type is a union of
+                // (value | Observable | factory). Narrow to the value form for assertions.
+                const firedPayload = (spy: MockInstance, call = 0) =>
+                    spy.mock.calls[call][0] as DotFireActionOptions<{
+                        [key: string]: string | object | string[];
+                    }>;
+
+                it('should not fire the action while the dialog is still open', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    // A wizard that never emits models a dialog the author has not answered yet.
+                    (wizardService.open as Mock).mockReturnValue(new Subject());
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                    expect(fireSpy).not.toHaveBeenCalled();
+                });
+
+                it('should fire the action only once the author submits, carrying the comment', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    const wizard$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(wizard$);
+                    // The payload the wizard collects reaches the store through
+                    // processWorkflowPayload; pass it through so we can assert the comment
+                    // actually survives the hop.
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.processWorkflowPayload as Mock).mockImplementation(
+                        (data) => data
+                    );
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    expect(fireSpy).not.toHaveBeenCalled();
+
+                    wizard$.next({ comments: 'looks good' });
+
+                    expect(fireSpy).toHaveBeenCalledTimes(1);
+                    expect(firedPayload(fireSpy).data).toEqual(
+                        expect.objectContaining({ comments: 'looks good' })
+                    );
+                });
+
+                it('should fire nothing when the author cancels the dialog', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    const wizard$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(wizard$);
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    // DotWizardService.cancel() completes the stream without emitting.
+                    wizard$.complete();
+
+                    expect(fireSpy).not.toHaveBeenCalled();
+                });
+
+                it('should keep the typed form values after a cancel, so a second attempt works', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    const firstAttempt$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(firstAttempt$);
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.form.get('text1')?.setValue('a value the author typed');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    firstAttempt$.complete(); // cancel
+
+                    expect(component.form.get('text1')?.value).toBe('a value the author typed');
+
+                    // Second attempt: same action, this time submitted.
+                    const secondAttempt$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(secondAttempt$);
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    secondAttempt$.next({ comments: 'second try' });
+
+                    expect(fireSpy).toHaveBeenCalledTimes(1);
+                    expect(firedPayload(fireSpy).data.contentlet).toEqual(
+                        expect.objectContaining({ text1: 'a value the author typed' })
+                    );
+                });
+            });
+
+            // #36883: `moveable` is the second behavior change the derivation brings. A Move
+            // action with no preset path previously fired directly on unsaved content; it now
+            // folds into a `commentAndAssign` step and asks the author for a path — parity with
+            // saved content, which already gets `moveable` from getByInode.
+            it('should open the wizard for a moveable-only action', () => {
+                const wizardService = spectator.inject(DotWizardService);
+
+                component.fireWorkflowAction({
+                    workflow: {
+                        id: '1',
+                        actionInputs: [{ id: 'moveable', body: {} }]
+                    } as DotCMSWorkflowAction,
+                    ...baseParams
+                });
+
+                expect(wizardService.open).toHaveBeenCalled();
+            });
+
+            // #36883: the derivation emits `pushPublish` too, so a Push Publish action on content
+            // with no inode now routes through the environment check instead of firing directly.
+            // That is intended: previously it fired with NO push-publish data at all, so the
+            // action's push publish silently did nothing. Blocking with a notification is the
+            // correct outcome — you cannot push publish without an environment. Pinned here so the
+            // behavior reads as deliberate rather than accidental.
+            describe('push publish without environments (#36883)', () => {
+                const pushPublishWorkflow = {
+                    id: '1',
+                    actionInputs: [{ id: 'pushPublish', body: {} }]
+                } as DotCMSWorkflowAction;
+
+                it('should not fire the action when no publish environments are configured', () => {
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.containsPushPublish as Mock).mockReturnValue(true);
+                    (eventHandler.checkPublishEnvironments as Mock).mockReturnValue(of(false));
+                    const wizardService = spectator.inject(DotWizardService);
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({
+                        workflow: pushPublishWorkflow,
+                        ...baseParams
+                    });
+
+                    expect(fireSpy).not.toHaveBeenCalled();
+                    expect(wizardService.open).not.toHaveBeenCalled();
+                });
+
+                it('should open the wizard when environments are configured', () => {
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.containsPushPublish as Mock).mockReturnValue(true);
+                    (eventHandler.checkPublishEnvironments as Mock).mockReturnValue(of(true));
+                    const wizardService = spectator.inject(DotWizardService);
+
+                    component.fireWorkflowAction({
+                        workflow: pushPublishWorkflow,
+                        ...baseParams
+                    });
+
+                    expect(wizardService.open).toHaveBeenCalled();
                 });
             });
         });
