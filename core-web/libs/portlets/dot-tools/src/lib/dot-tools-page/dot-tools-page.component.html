@@ -3,9 +3,11 @@
         class="flex min-h-0 w-80 flex-col border-r border-gray-200 bg-gray-50"
         data-testid="tools-sections-panel">
         <header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-            <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">Sections</span>
+            <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">
+                {{ 'tools.sections' | dm }}
+            </span>
             <p-button
-                label="New Section"
+                [label]="'tools.new-section' | dm"
                 size="small"
                 (onClick)="openNewSectionDialog()"
                 data-testid="tools-new-section-btn" />
@@ -100,7 +102,7 @@
                                         severity="secondary"
                                         [text]="true"
                                         [rounded]="true"
-                                        pTooltip="Remove from section"
+                                        [pTooltip]="'tools.section-tool.remove.tooltip' | dm"
                                         (click)="onRemoveTool(tool.id)"
                                         [attr.data-testid]="'tools-section-tool-remove-' + tool.id"
                                         styleClass="opacity-0 group-hover/tool:opacity-100" />
@@ -125,7 +127,7 @@
         </ul>
 
         <footer class="border-t border-gray-100 px-4 py-2 text-xs text-gray-500">
-            Drag to set the order of the navigation.
+            {{ 'tools.sections.footer' | dm }}
         </footer>
     </aside>
 
@@ -138,8 +140,7 @@
                 <h2 class="m-0 text-xl font-semibold tracking-tight">{{ section.name }}</h2>
             </header>
             <p class="mb-3 text-xs text-gray-500">
-                Check a tool to add it to this section. It appears under the section on the left,
-                where you can drag to set its order or remove it.
+                {{ 'tools.available-tools.instruction' | dm }}
             </p>
 
             <div
@@ -147,10 +148,10 @@
                 <div
                     class="flex h-12 items-center justify-between border-b border-gray-200 bg-gray-50 px-4">
                     <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">
-                        Available Tools
+                        {{ 'tools.available-tools' | dm }}
                     </span>
                     <p-button
-                        label="New Tool"
+                        [label]="'tools.new-tool' | dm"
                         size="small"
                         (onClick)="openNewToolDialog()"
                         data-testid="tools-new-tool-btn" />
@@ -163,7 +164,7 @@
                             pInputText
                             type="text"
                             class="w-full"
-                            placeholder="Search tools"
+                            [placeholder]="'tools.search.placeholder' | dm"
                             [ngModel]="store.catalogFilter()"
                             (ngModelChange)="onCatalogFilterChange($event)"
                             data-testid="tools-catalog-search" />
@@ -207,13 +208,15 @@
                         <li
                             class="py-6 text-center text-xs text-gray-400"
                             data-testid="tools-catalog-empty">
-                            No tools match that search.
+                            {{ 'tools.catalog.empty' | dm }}
                         </li>
                     }
                     @if (store.hasMoreCatalog()) {
                         <li class="p-2">
                             <p-button
-                                label="Load 40 more"
+                                [label]="
+                                    'tools.catalog.load-more' | dm: [loadMoreStep().toString()]
+                                "
                                 icon="pi pi-plus-circle"
                                 [text]="true"
                                 (onClick)="onLoadMore()"
