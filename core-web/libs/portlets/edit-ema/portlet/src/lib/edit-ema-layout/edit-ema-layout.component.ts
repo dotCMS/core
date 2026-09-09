@@ -63,6 +63,12 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     // Lifecycle: set true when the POST fires → stays true through pageReload() re-hydration
     // → cleared by #handleReloadComplete when uveStatus returns to LOADED.
     // On HTTP error it is cleared immediately (no reload happens on failure).
+    //
+    // Also doubles as the mutex between the two save triggers (debounced auto-save and
+    // force-save-on-leave): both saveTemplate() and the debounce switchMap below check it
+    // before firing, so only one of them ever has a POST in flight for a given template.
+    // Without this, the two paths could race and send two concurrent layout saves for the
+    // same page.
     readonly #layoutSaveInFlight = signal(false);
     protected readonly $isSaving = this.#layoutSaveInFlight.asReadonly();
 
@@ -139,10 +145,20 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     /**
      * Save the template
      *
+     * Guarded on #layoutSaveInFlight: if the debounced auto-save already has a POST in
+     * flight for this page, this is a no-op — that request's own finalize()/complete
+     * callback already unlocks route deactivation once it settles. Firing a second,
+     * concurrent save here would race the first one at the server.
+     *
      * @param {DotTemplateDesigner} template
      * @memberof EditEmaLayoutComponent
      */
     saveTemplate(template: DotTemplateDesigner) {
+        if (this.#layoutSaveInFlight()) {
+            return;
+        }
+
+        this.#layoutSaveInFlight.set(true);
         this.messageService.add({
             severity: 'info',
             summary: 'Info',
@@ -186,6 +202,14 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                 debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
                 switchMap((layout: DotTemplateDesigner) => {
+                    // A force-save-on-leave may have already sent this exact template
+                    // while this debounce was ticking down. Skip the redundant duplicate
+                    // POST — that request's own finalize() already unlocks route
+                    // deactivation.
+                    if (this.#layoutSaveInFlight()) {
+                        return EMPTY;
+                    }
+
                     // Lock the canvas when the POST is actually sent, not on every edit.
                     this.#layoutSaveInFlight.set(true);
                     this.messageService.add({
@@ -253,6 +277,10 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     /**
      * Init the force save on leave
+     *
+     * Always delegates to saveTemplate(), which is itself guarded on
+     * #layoutSaveInFlight — if a debounced auto-save is already in flight for this
+     * page, this is a no-op and route deactivation unblocks when that save settles.
      *
      * @private
      * @memberof EditEmaLayoutComponent
