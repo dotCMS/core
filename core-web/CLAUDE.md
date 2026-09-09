@@ -83,20 +83,10 @@ spectator.setInput('prop', value);           // ALWAYS use setInput
 
 ### Form Markup
 
-Always wrap form fields with this structure for consistent styling:
-
-```html
-<form class="form">
-  <div class="field">
-    <label for="name">Name</label>
-    <input pInputText id="name" />
-  </div>
-  <div class="field">
-    <label for="site">Site</label>
-    <p-select id="site" [options]="sites()" />
-  </div>
-</form>
-```
+See [Form Fields](docs/frontend/STYLING_STANDARDS.md#form-fields) for the current field-layout,
+typography, and hint-handling rules — do not hand-roll a form wrapper from memory or copy an
+existing form without checking it first. Different areas of the app (e.g. `edit-content`) have
+diverged in the past; the doc is the tie-breaker.
 
 ## Portlet Development
 
