@@ -315,10 +315,25 @@ describe('DotEmaShellComponent', () => {
                 provide: DotPageApiService,
                 useValue: {
                     get({ language_id = 1 }) {
-                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
+                        // Falls back to a REAL response shape, not `of({})`. An empty object is
+                        // not something this endpoint can return, and the store believes it: the
+                        // page-api forkJoin resolves, `setPageAsset` reads
+                        // `payload.pageAsset.page.styleEditorSchemas`, and an unhandled
+                        // "Cannot read properties of undefined" escapes from inside an rxMethod —
+                        // after the test that caused it has finished, so it failed the whole
+                        // project rather than a test. Any language not in the map now behaves like
+                        // language 1 instead of like a broken server.
+                        return (
+                            PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] ??
+                            PAGE_RESPONSE_BY_LANGUAGE_ID[1]
+                        );
                     },
                     getGraphQLPage() {
-                        return of({});
+                        // Same reason as `get` above: the store does
+                        // `map((response) => response.pageAsset)` on this and then reads
+                        // `.page` off it, so `of({})` hands it `undefined` and the throw
+                        // escapes asynchronously, outside any test.
+                        return of({ pageAsset: MOCK_RESPONSE_HEADLESS, content: {} });
                     },
                     save() {
                         return of({});
