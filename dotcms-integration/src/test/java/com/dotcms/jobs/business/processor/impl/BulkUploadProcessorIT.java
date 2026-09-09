@@ -774,5 +774,73 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                         + "rename a file whose name was never the problem");
     }
 
+    /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: A batch is run against a content type whose {@code NEW} system action is
+     * mapped to an action that <b>publishes</b>.
+     * <p>
+     * Expected result: The files are still drafts.
+     * <p>
+     * <b>This is the case that made drafts non-deterministic.</b> Firing {@code SystemAction.NEW}
+     * only asks for whatever action the content type happens to map it to, and that differs per
+     * content type — on a real instance a dotAsset published while a fileAsset stayed working, from
+     * identical code. So the author's files were published or not according to a workflow mapping
+     * they cannot see and did not choose. The run now checks what it resolved and refuses to create
+     * a draft with an action that publishes.
+     */
+    @Test
+    public void test_run_leavesFilesAsDraftsEvenWhenNewIsMappedToPublish() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
+
+        mapNewTo(dotAsset, SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
+        try {
+            final Job job = jobFor(folder, 2);
+
+            final BulkUploadProcessor processor = new BulkUploadProcessor();
+            processor.process(job);
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+            assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
+                    "the files still have to be created.\n" + describe(outcome));
+
+            for (final Contentlet created :
+                    APILocator.getFolderAPI().getWorkingContent(folder, admin(), false)) {
+                assertFalse(created.isLive(), String.format(
+                        "publish state must not depend on how NEW happens to be mapped; '%s' was "
+                                + "published because the mapping said so", created.getTitle()));
+            }
+        } finally {
+            restoreNewMapping(dotAsset);
+        }
+    }
+
+    /**
+     * Points the content type's {@code NEW} system action at a specific workflow action.
+     * <p>
+     * Undone in a {@code finally} without exception: a system-action mapping persisted on a
+     * <b>shared</b> content type outlives the test that set it, and the next test to create a
+     * dotAsset would publish for no reason it could see.
+     */
+    private void mapNewTo(final ContentType contentType, final String workflowActionId)
+            throws Exception {
+        APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
+                WorkflowAPI.SystemAction.NEW,
+                APILocator.getWorkflowAPI().findAction(workflowActionId, admin()),
+                contentType);
+    }
+
+    private void restoreNewMapping(final ContentType contentType) {
+        try {
+            APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
+                    WorkflowAPI.SystemAction.NEW,
+                    APILocator.getWorkflowAPI().findAction(
+                            SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, admin()),
+                    contentType);
+        } catch (final Exception e) {
+            Logger.warn(this, "Could not restore the NEW mapping: " + e.getMessage());
+        }
+    }
 
 }

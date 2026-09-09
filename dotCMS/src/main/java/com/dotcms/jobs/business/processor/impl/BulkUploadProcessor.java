@@ -235,19 +235,50 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             }
             applyTarget(contentlet, job.parameters(), user);
 
-            // The action has to be resolved explicitly. fireContentWorkflow with no action logs
-            // "should not have a null workflow action", creates nothing, and RETURNS NORMALLY —
-            // so a run that did no work reported every file as a success.
+            // Created as a DRAFT, and deterministically so.
             //
-            // NEW, not PUBLISH. The single-file endpoint checks the asset in as WORKING unless the
-            // caller explicitly asks for live (WebAssetHelper#checkinOrPublish), so PUBLISH made a
-            // batch upload publish content that the same file uploaded alone would have left as a
-            // draft — the opposite of the equivalence FR-006 requires.
-            final WorkflowAction action = APILocator.getWorkflowAPI()
+            // NEW rather than PUBLISH: the single-file endpoint checks an asset in as WORKING
+            // unless the caller explicitly asks for live (WebAssetHelper#checkinOrPublish), so
+            // firing PUBLISH made a batch publish content that the same file uploaded alone would
+            // have left as a draft — the opposite of the equivalence FR-006 requires, and a
+            // surprise with real consequences: it puts unreviewed files straight onto the live site.
+            //
+            // But NEW alone is not enough, which is the part that had to be learned twice. What
+            // NEW resolves to is whatever action the CONTENT TYPE happens to map it to, and that
+            // differs per content type: on one instance a dotAsset published while a fileAsset
+            // stayed a draft, from this same code. So the mapping is consulted and then CHECKED —
+            // an action that publishes is not used to create a draft, whatever it is mapped to.
+            // Leaving that to configuration means the author's files are published or not
+            // depending on a workflow mapping they cannot see and did not choose.
+            final Optional<WorkflowAction> mapped = APILocator.getWorkflowAPI()
                     .findActionMappedBySystemActionContentlet(
-                            contentlet, WorkflowAPI.SystemAction.NEW, user)
-                    .orElseThrow(() -> new IllegalStateException(
-                            "No workflow action is mapped to NEW for this content type"));
+                            contentlet, WorkflowAPI.SystemAction.NEW, user);
+
+            final Optional<WorkflowAction> draftAction = mapped
+                    .filter(WorkflowAction::hasSaveActionlet)
+                    .filter(action -> !action.hasPublishActionlet());
+
+            if (draftAction.isEmpty()) {
+                // No mapped action both saves and leaves the content working. Fall back to the
+                // plain checkin, which is exactly what the single-file endpoint does for a draft —
+                // so the outcome the author sees is identical, which is the requirement. What is
+                // given up is the content type's own actionlets, and that is the right trade: a
+                // scheme with no draft-producing action has not asked for a draft path, and
+                // publishing against the author's intent is the worse failure.
+                Logger.debug(this, String.format(
+                        "No NEW action leaves content working for [%s]; checking in directly",
+                        contentType.variable()));
+
+                final Contentlet checkedIn = APILocator.getContentletAPI()
+                        .checkin(contentlet, user, false);
+                recordCreated(job, seq, fileName, checkedIn, createdInodes);
+                return;
+            }
+
+            // fireContentWorkflow with no action logs "should not have a null workflow action",
+            // creates nothing, and RETURNS NORMALLY — so a run that did no work reported every
+            // file as a success. The action is always resolved explicitly, never left null.
+            final WorkflowAction action = draftAction.get();
 
             final Contentlet created = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                     new ContentletDependencies.Builder()
