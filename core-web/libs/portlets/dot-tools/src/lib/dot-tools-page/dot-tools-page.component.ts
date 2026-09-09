@@ -19,6 +19,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
@@ -55,6 +56,7 @@ import {
         InputIconModule,
         InputTextModule,
         MenuModule,
+        ProgressSpinnerModule,
         TooltipModule,
         DotMessagePipe
     ],
@@ -140,6 +142,10 @@ export class DotToolsPageComponent {
 
     protected onLoadMore(): void {
         this.store.loadMoreCatalog();
+    }
+
+    protected onRetry(): void {
+        this.store.loadAll();
     }
 
     protected onSectionDrop(event: CdkDragDrop<DotToolsSection[]>): void {

@@ -113,6 +113,17 @@ export const DotToolsStore = signalStore(
                 store.sections().filter((section) => section.portletIds.includes(toolId)).length
         );
 
+        // View-state helpers. Kept in the store so the template stays a plain
+        // reader — no `status === 'loading' && sections.length === 0` inline
+        // checks scattered across the page component.
+        const showLoading = computed(
+            () => store.status() === 'loading' && store.sections().length === 0
+        );
+        const showError = computed(() => store.status() === 'error');
+        const showEmptySections = computed(
+            () => store.status() === 'loaded' && store.sections().length === 0
+        );
+
         return {
             selectedSection,
             selectedSectionTools,
@@ -120,7 +131,10 @@ export const DotToolsStore = signalStore(
             paginatedCatalog,
             hasMoreCatalog,
             selectedSectionToolIds,
-            toolSectionCount
+            toolSectionCount,
+            showLoading,
+            showError,
+            showEmptySections
         };
     }),
     withMethods((store) => {
