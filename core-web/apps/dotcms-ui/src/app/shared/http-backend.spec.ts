@@ -1,4 +1,4 @@
-import { HttpBackend, HttpXhrBackend, provideHttpClient, withXhr } from '@angular/common/http';
+import { HttpBackend, HttpXhrBackend, provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 
 import { appConfig } from '../app.config';
