@@ -60,8 +60,16 @@ public class JobItemResultFactory {
      * @param reason  machine-readable cause; null unless {@code status} is
      *                {@link BatchItemStatus#FAILED}
      * @param message diagnostic detail for logs; never displayed to the author
-     * @param refId   what the item produced — the created contentlet's identifier — so a resumed
-     *                run's "already created" answer is verifiable rather than inferred
+     * @param refId   what the item produced — the created contentlet's identifier.
+     *                <p>
+     *                <b>Written and not yet read.</b> This previously claimed it made a resumed
+     *                run's "already created" answer <i>verifiable rather than inferred</i>; it does
+     *                not, and no code path realizes that. {@code findByJobId} does not select the
+     *                column and {@code AbstractBatchItemResult} has no accessor for it, so resume
+     *                is answered from {@code seq} alone. The claim is corrected here rather than
+     *                the column dropped, deliberately: whether this table survives at all is under
+     *                review, so changing its DDL now is churn either way. Decide the column's fate
+     *                with the table's.
      */
     public void record(final String jobId, final int seq, final String itemKey,
                        final BatchItemStatus status, final BatchFailureReason reason,
