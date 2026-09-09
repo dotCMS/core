@@ -1261,7 +1261,22 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$canSave()).toBe(false);
         });
 
-        it('should send a cleared schedule, which is a change like any other', () => {
+        /**
+         * TC-031. The clear has to reach the server as a *value*, not as an absent one.
+         *
+         * `PATCH /api/v1/experiments/{id}` applies only the keys its body carries:
+         * `ExperimentsResource` builds the update with `if (experimentForm.getScheduling() != null)`,
+         * so a `null` scheduling means "leave it alone". Sending `null` for a cleared card
+         * therefore kept the old dates — Clear Schedule followed by Save Draft looked like it had
+         * worked and had not.
+         *
+         * An empty range is the value that says "no schedule": `Scheduling` is two
+         * `Optional<Instant>`s, and `ExperimentsAPIImpl.emptyScheduling` already reads a range with
+         * neither date as no schedule at all — it is what `startNowScheduling` replaces when an
+         * experiment is started without one. Verified against a running instance: PATCH with
+         * `scheduling: null` answers 200 and keeps the dates; with an empty range it clears them.
+         */
+        it('should send a cleared schedule as an empty range, not as a null (TC-031)', () => {
             initExisting(buildExperiment({ scheduling: { startDate: 1000, endDate: 2000 } }));
 
             edit({ scheduling: { startDate: null, endDate: null } });
@@ -1269,7 +1284,7 @@ describe('DotExperimentsConfigureStore', () => {
 
             expect(patchExperiment).toHaveBeenCalledWith(
                 EXPERIMENT_ID,
-                expect.objectContaining({ scheduling: null })
+                expect.objectContaining({ scheduling: { startDate: null, endDate: null } })
             );
         });
 
@@ -1490,7 +1505,9 @@ describe('DotExperimentsConfigureStore', () => {
             expect(request.request.body).toMatchObject({
                 name: 'Alpha campaign v2',
                 goals,
-                scheduling: null
+                // An empty range, not a `null` — see TC-031 above for why the distinction is the
+                // whole difference between clearing the schedule and leaving it untouched.
+                scheduling: { startDate: null, endDate: null }
             });
             expect(request.request.body).not.toHaveProperty('targetingConditions');
             expect(request.request.body).not.toHaveProperty('pageId');

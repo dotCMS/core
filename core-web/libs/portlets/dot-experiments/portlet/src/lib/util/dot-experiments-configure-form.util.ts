@@ -354,15 +354,25 @@ export function toSchedulingSlice(
 }
 
 /**
- * And the persisted shape it goes back out as: instants, or `null` for the whole range when neither
- * date is set — which is what `PATCH /api/v1/experiments/{id}` reads as "no schedule at all", and
- * therefore what both ways of emptying the card mean.
+ * And the persisted shape it goes back out as: instants, and an **empty range** — not `null` — when
+ * neither date is set (TC-031).
+ *
+ * The distinction is the whole difference between clearing the schedule and leaving it alone.
+ * `PATCH /api/v1/experiments/{id}` applies only the keys its body carries: `ExperimentsResource`
+ * builds the update with `if (experimentForm.getScheduling() != null)`, so a `null` here means
+ * "no change", and Clear Schedule followed by Save Draft came back with the old dates still on it.
+ *
+ * An empty range is the value that says "no schedule", and it is the backend's own spelling of it:
+ * `Scheduling` is a pair of `Optional<Instant>`s, and `ExperimentsAPIImpl.emptyScheduling` reads a
+ * range carrying neither date as no schedule — the state `startNowScheduling` replaces when an
+ * experiment is started without one. Confirmed against a running instance: PATCH with `null`
+ * answers 200 and keeps the dates; with an empty range it clears them.
  */
-export function toRange(scheduling: SchedulingFormSlice): RangeOfDateAndTime | null {
-    const startDate = toTime(scheduling.startDate);
-    const endDate = toTime(scheduling.endDate);
-
-    return startDate === null && endDate === null ? null : { startDate, endDate };
+export function toRange(scheduling: SchedulingFormSlice): RangeOfDateAndTime {
+    return {
+        startDate: toTime(scheduling.startDate),
+        endDate: toTime(scheduling.endDate)
+    };
 }
 
 /** Two schedules are the same when they name the same two instants, whatever `Date`s carry them. */
