@@ -26,7 +26,6 @@ export * from './lib/components/dot-asset-search/components/dot-asset-search-dia
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
-export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
 export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-filter-bar/constants';
 export * from './lib/components/dot-filter-bar/dot-filter-bar.component';

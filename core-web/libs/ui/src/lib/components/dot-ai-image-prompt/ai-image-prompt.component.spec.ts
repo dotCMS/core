@@ -7,7 +7,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import {
     AIImagePrompt,
     DotAIImageContent,
@@ -29,7 +29,7 @@ describe('DotAIImagePromptComponent', () => {
     let spectator: Spectator<DotAIImagePromptComponent>;
     let store: InstanceType<typeof DotAiImagePromptStore>;
     let dynamicDialogRef: SpyObject<DynamicDialogRef>;
-    let dotAiService: SpyObject<DotAiService>;
+    let dotAiService: SpyObject<DotAiContentService>;
     let confirmationService: SpyObject<ConfirmationService>;
 
     const createComponent = createComponentFactory({
@@ -40,14 +40,17 @@ describe('DotAIImagePromptComponent', () => {
             mockProvider(DynamicDialogConfig),
             ConfirmationService
         ],
-        providers: [provideHttpClient(), { provide: DotAiService, useValue: mockDotAiService }]
+        providers: [
+            provideHttpClient(),
+            { provide: DotAiContentService, useValue: mockDotAiService }
+        ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
         store = spectator.inject(DotAiImagePromptStore, true);
         dynamicDialogRef = spectator.inject(DynamicDialogRef, true);
-        dotAiService = spectator.inject(DotAiService, true);
+        dotAiService = spectator.inject(DotAiContentService, true);
         confirmationService = spectator.inject(ConfirmationService, true);
 
         jest.spyOn(dotAiService, 'generateAndPublishImage');

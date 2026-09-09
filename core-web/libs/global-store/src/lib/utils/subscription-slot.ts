@@ -3,8 +3,10 @@ import { Subscription } from 'rxjs';
 /**
  * A single-occupancy slot for an in-flight subscription.
  *
- * The run store holds three long-lived streams (the primary scan / fix SSE, the
- * comparison LIVE scan, and the mid-fix rescan) that all need the same discipline:
+ * Promoted here from the a11y agent store, where it was written for three long-lived
+ * streams; the dotAI chat needs exactly the same discipline for its completions stream,
+ * and reaching into another portlet's internals is not an option. The streams that use it
+ * all share the requirement:
  * starting a new one cancels whatever was already there, and every teardown path
  * has to both unsubscribe AND drop the reference. Written inline that was seven
  * scattered `sub?.unsubscribe(); sub = null;` pairs — each one a place to forget
