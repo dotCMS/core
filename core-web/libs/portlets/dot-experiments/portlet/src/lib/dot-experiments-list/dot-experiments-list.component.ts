@@ -274,9 +274,16 @@ export class DotExperimentsListComponent {
      * than reading as a page that merely has no experiments.
      *
      * The narrowing arrives in the address and there is no control here that widens it: FR-021c's
-     * "starting point, not a cage" half is not met, and is deliberately left for the UVE drawer
-     * that takes over this screen. With rows present the only sign of it is the `Page` column and
-     * the page's own crumb, which a fresh session does not have.
+     * "starting point, not a cage" half is **not met**, and is tracked in **#37478** — the UVE
+     * panel that takes over this screen, where the requirement changes shape (the panel is
+     * page-scoped by construction, so "clearable" becomes an explicit way out to the full
+     * portlet). With rows present the only sign of the narrowing is the `Page` column and the
+     * page's own crumb, which a fresh session does not have.
+     *
+     * A narrowing by *path* is the exception: one that resolves to no page reads as "nothing
+     * matched" and the empty state's own button clears it — see `$hasActiveFilters`. That case has
+     * a way out because without one the list is a dead end; this one shows the page-scoped empty
+     * state instead, which offers to create the first experiment for the page.
      */
     readonly $pageFilter = computed<{ path: string; resolved: boolean } | null>(() => {
         const pageId = this.store.selectedPageId();
