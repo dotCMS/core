@@ -34,9 +34,9 @@ describe('describeUploadFailures', () => {
     it('should say nothing when every file succeeded', () => {
         expect(
             linesOf([
-                    { key: 'a.png', status: 'SUCCESS' },
-                    { key: 'b.png', status: 'SUCCESS' }
-                ])
+                { key: 'a.png', status: 'SUCCESS' },
+                { key: 'b.png', status: 'SUCCESS' }
+            ])
         ).toEqual([]);
     });
 
@@ -57,19 +57,19 @@ describe('describeUploadFailures', () => {
         // three times.
         expect(
             linesOf([
-                    failed('a.mov', 'OVER_SIZE_LIMIT'),
-                    failed('b.mov', 'OVER_SIZE_LIMIT'),
-                    failed('c.mov', 'OVER_SIZE_LIMIT')
-                ])
+                failed('a.mov', 'OVER_SIZE_LIMIT'),
+                failed('b.mov', 'OVER_SIZE_LIMIT'),
+                failed('c.mov', 'OVER_SIZE_LIMIT')
+            ])
         ).toEqual(['content-drive.upload.failure.over-size-limit|a.mov, b.mov, c.mov']);
     });
 
     it('should keep each reason on its own line', () => {
         const lines = linesOf([
-                failed('huge.mov', 'OVER_SIZE_LIMIT'),
-                failed('notes.exe', 'DISALLOWED_FILE_TYPE'),
-                failed('report.pdf', 'NAME_COLLISION')
-            ]);
+            failed('huge.mov', 'OVER_SIZE_LIMIT'),
+            failed('notes.exe', 'DISALLOWED_FILE_TYPE'),
+            failed('report.pdf', 'NAME_COLLISION')
+        ]);
 
         expect(lines).toHaveLength(3);
         expect(lines).toEqual(
@@ -98,15 +98,16 @@ describe('describeUploadFailures', () => {
     it('should ignore skipped files, which are not failures', () => {
         // Never attempted is not the same as failed, and the counts report them separately.
         expect(
-            linesOf([{ key: 'later.png', status: 'SKIPPED' }, failed('huge.mov', 'OVER_SIZE_LIMIT')])
+            linesOf([
+                { key: 'later.png', status: 'SKIPPED' },
+                failed('huge.mov', 'OVER_SIZE_LIMIT')
+            ])
         ).toEqual(['content-drive.upload.failure.over-size-limit|huge.mov']);
     });
 
     it('should escape a file name so a crafted one cannot alter the message', () => {
         // These lines reach the toast as HTML, and a file name is content the author supplied.
-        expect(
-            linesOf([failed('<img src=x onerror=alert(1)>', 'NAME_COLLISION')])
-        ).toEqual([
+        expect(linesOf([failed('<img src=x onerror=alert(1)>', 'NAME_COLLISION')])).toEqual([
             'content-drive.upload.failure.name-collision|&lt;img src=x onerror=alert(1)&gt;'
         ]);
     });
@@ -170,6 +171,23 @@ describe('describeUploadFailures', () => {
 
         expect(linesOf(many)).toEqual([
             'content-drive.upload.failure.name-collision|content-drive.upload.failure.n-files|94'
+        ]);
+    });
+
+    it('should name a group of exactly eight, and count one of nine', () => {
+        // The boundary itself, because "past eight" is a judgement that will get revisited and the
+        // two sides of it are different sentences. Eight names is still a list an author can scan;
+        // nine reads as a wall of text where the count is the only part they take in.
+        const collisions = (count: number) =>
+            Array.from({ length: count }, (_, i) => failed(`file-${i}.png`, 'NAME_COLLISION'));
+
+        expect(linesOf(collisions(8))).toEqual([
+            'content-drive.upload.failure.name-collision|' +
+                Array.from({ length: 8 }, (_, i) => `file-${i}.png`).join(', ')
+        ]);
+
+        expect(linesOf(collisions(9))).toEqual([
+            'content-drive.upload.failure.name-collision|content-drive.upload.failure.n-files|9'
         ]);
     });
 

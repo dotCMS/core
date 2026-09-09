@@ -11,8 +11,14 @@ import {
  *
  * Past this, the line leads with the number and names none. Naming the first eight of fifty would
  * read as "eight files failed", which is worse than saying nothing — and a batch caps at 100 files,
- * so a wholly failed one is well past being a sentence. The names stay recoverable from the outcome,
- * which the durable notification keeps, so nothing is lost by not reciting them here.
+ * so a wholly failed one is well past being a sentence.
+ *
+ * **What is lost, stated honestly.** The names are not recoverable from anywhere the author can
+ * reach: the durable notification carries counts only, so past this threshold those file names are
+ * gone from the interface. They survive in the job's own record, which the status endpoint returns
+ * and this client already knows how to read, so showing them is a *feature nobody has built* rather
+ * than information the server threw away — which is the difference between this being a considered
+ * trade and a quiet loss.
  */
 const MAX_NAMES_PER_LINE = 8;
 
