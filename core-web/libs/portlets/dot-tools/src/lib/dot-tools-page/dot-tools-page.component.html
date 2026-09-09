@@ -13,122 +13,175 @@
                 data-testid="tools-new-section-btn" />
         </header>
 
-        <!--
-            Drag polish: the [&_.cdk-drag]:transition-transform variant on the
-            drop list makes siblings slide when a drag hovers; the placeholder
-            and preview templates below provide the "from" and "moving" cues.
-        -->
-        <ul
-            cdkDropList
-            (cdkDropListDropped)="onSectionDrop($event)"
-            class="flex-1 overflow-auto py-2 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
-            data-testid="tools-sections-list">
-            @for (section of store.sections(); track section.id) {
-                <li cdkDrag class="group">
-                    <div
-                        role="button"
-                        tabindex="0"
-                        (click)="onSelectSection(section.id)"
-                        (keydown.enter)="onSelectSection(section.id)"
-                        (keydown.space)="$event.preventDefault(); onSelectSection(section.id)"
-                        [class.bg-indigo-50]="store.selectedSectionId() === section.id"
-                        [class.text-indigo-900]="store.selectedSectionId() === section.id"
-                        [class.font-semibold]="store.selectedSectionId() === section.id"
-                        class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-                        [attr.data-testid]="'tools-section-row-' + section.id">
-                        <span
-                            cdkDragHandle
-                            class="material-symbols-outlined cursor-grab text-base leading-none text-gray-400 opacity-0 group-hover:opacity-100 active:cursor-grabbing">
-                            drag_indicator
-                        </span>
-                        <span class="material-symbols-outlined text-lg leading-none">
-                            {{ section.icon }}
-                        </span>
-                        <span class="flex-1 truncate">{{ section.name }}</span>
-                        <p-button
-                            icon="pi pi-ellipsis-v"
-                            size="small"
-                            severity="secondary"
-                            [text]="true"
-                            [rounded]="true"
-                            (click)="
-                                $event.stopPropagation();
-                                setSectionMenuTarget(section);
-                                sectionMenu.toggle($event)
-                            "
-                            [attr.data-testid]="'tools-section-menu-btn-' + section.id"
-                            styleClass="opacity-0 group-hover:opacity-100" />
-                    </div>
+        @if (store.showLoading()) {
+            <div
+                class="flex flex-1 flex-col items-center justify-center gap-3 text-xs text-gray-500"
+                data-testid="tools-sections-loading">
+                <p-progressSpinner styleClass="!size-6" strokeWidth="4" />
+                <span>{{ 'tools.sections.loading' | dm }}</span>
+            </div>
+        } @else if (store.showError()) {
+            <div class="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+                <span class="material-symbols-outlined text-3xl text-gray-400">error</span>
+                <div class="text-sm font-semibold text-gray-700">
+                    {{ 'tools.state.error.title' | dm }}
+                </div>
+                <div class="text-xs text-gray-500">{{ 'tools.state.error.subtitle' | dm }}</div>
+                <p-button
+                    [label]="'tools.state.error.action' | dm"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="onRetry()"
+                    data-testid="tools-retry-btn" />
+            </div>
+        } @else if (store.showEmptySections()) {
+            <div
+                class="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center"
+                data-testid="tools-sections-empty">
+                <span class="material-symbols-outlined text-3xl text-gray-400">
+                    space_dashboard
+                </span>
+                <div class="text-sm font-semibold text-gray-700">
+                    {{ 'tools.sections.empty.title' | dm }}
+                </div>
+                <div class="text-xs text-gray-500">
+                    {{ 'tools.sections.empty.subtitle' | dm }}
+                </div>
+                <p-button
+                    [label]="'tools.sections.empty.action' | dm"
+                    size="small"
+                    (onClick)="openNewSectionDialog()"
+                    data-testid="tools-sections-empty-action" />
+            </div>
+        } @else {
+            <!--
+                Drag polish: the [&_.cdk-drag]:transition-transform variant on
+                the drop list makes siblings slide when a drag hovers; the
+                placeholder and preview templates below provide the "from" and
+                "moving" cues.
+            -->
+            <ul
+                cdkDropList
+                (cdkDropListDropped)="onSectionDrop($event)"
+                class="flex-1 overflow-auto py-2 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
+                data-testid="tools-sections-list">
+                @for (section of store.sections(); track section.id) {
+                    <li cdkDrag class="group">
+                        <div
+                            role="button"
+                            tabindex="0"
+                            (click)="onSelectSection(section.id)"
+                            (keydown.enter)="onSelectSection(section.id)"
+                            (keydown.space)="$event.preventDefault(); onSelectSection(section.id)"
+                            [class.bg-indigo-50]="store.selectedSectionId() === section.id"
+                            [class.text-indigo-900]="store.selectedSectionId() === section.id"
+                            [class.font-semibold]="store.selectedSectionId() === section.id"
+                            class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            [attr.data-testid]="'tools-section-row-' + section.id">
+                            <span
+                                cdkDragHandle
+                                [attr.aria-label]="'tools.section.drag-handle.aria-label' | dm"
+                                class="material-symbols-outlined cursor-grab text-base leading-none text-gray-400 opacity-0 group-hover:opacity-100 active:cursor-grabbing">
+                                drag_indicator
+                            </span>
+                            <span class="material-symbols-outlined text-lg leading-none">
+                                {{ section.icon }}
+                            </span>
+                            <span class="flex-1 truncate">{{ section.name }}</span>
+                            <p-button
+                                icon="pi pi-ellipsis-v"
+                                size="small"
+                                severity="secondary"
+                                [text]="true"
+                                [rounded]="true"
+                                [ariaLabel]="'tools.section-menu.aria-label' | dm"
+                                (click)="
+                                    $event.stopPropagation();
+                                    setSectionMenuTarget(section);
+                                    sectionMenu.toggle($event)
+                                "
+                                [attr.data-testid]="'tools-section-menu-btn-' + section.id"
+                                styleClass="opacity-0 group-hover:opacity-100" />
+                        </div>
 
-                    <!-- "Moving from here" — muted dashed slot -->
-                    <div
-                        *cdkDragPlaceholder
-                        class="mx-1 my-0.5 flex h-9 items-center gap-2 rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-sm text-indigo-300">
-                        <span class="material-symbols-outlined text-lg leading-none">
-                            {{ section.icon }}
-                        </span>
-                        <span class="flex-1 truncate">{{ section.name }}</span>
-                    </div>
+                        <!-- "Moving from here" — muted dashed slot -->
+                        <div
+                            *cdkDragPlaceholder
+                            class="mx-1 my-0.5 flex h-9 items-center gap-2 rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-sm text-indigo-300">
+                            <span class="material-symbols-outlined text-lg leading-none">
+                                {{ section.icon }}
+                            </span>
+                            <span class="flex-1 truncate">{{ section.name }}</span>
+                        </div>
 
-                    <!-- "Moving this" — lifted card following the cursor -->
-                    <div
-                        *cdkDragPreview
-                        class="flex w-72 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-900 shadow-xl">
-                        <span class="material-symbols-outlined text-lg leading-none">
-                            {{ section.icon }}
-                        </span>
-                        <span class="flex-1 truncate">{{ section.name }}</span>
-                    </div>
+                        <!-- "Moving this" — lifted card following the cursor -->
+                        <div
+                            *cdkDragPreview
+                            class="flex w-72 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-900 shadow-xl">
+                            <span class="material-symbols-outlined text-lg leading-none">
+                                {{ section.icon }}
+                            </span>
+                            <span class="flex-1 truncate">{{ section.name }}</span>
+                        </div>
 
-                    @if (store.selectedSectionId() === section.id) {
-                        <ul
-                            cdkDropList
-                            (cdkDropListDropped)="onToolDrop($event)"
-                            class="py-1 pr-2 pl-10 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
-                            [attr.data-testid]="'tools-section-tools-' + section.id">
-                            @for (tool of store.selectedSectionTools(); track tool.id) {
-                                <li
-                                    cdkDrag
-                                    class="group/tool flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
-                                    <span
-                                        cdkDragHandle
-                                        class="material-symbols-outlined cursor-grab text-sm leading-none text-gray-400 opacity-0 group-hover/tool:opacity-100 active:cursor-grabbing">
-                                        drag_indicator
-                                    </span>
-                                    <span class="flex-1 truncate">{{ tool.title }}</span>
-                                    <p-button
-                                        icon="pi pi-times"
-                                        size="small"
-                                        severity="secondary"
-                                        [text]="true"
-                                        [rounded]="true"
-                                        [pTooltip]="'tools.section-tool.remove.tooltip' | dm"
-                                        (click)="onRemoveTool(tool.id)"
-                                        [attr.data-testid]="'tools-section-tool-remove-' + tool.id"
-                                        styleClass="opacity-0 group-hover/tool:opacity-100" />
-
-                                    <div
-                                        *cdkDragPlaceholder
-                                        class="mx-1 my-0.5 flex h-7 items-center rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-xs text-indigo-300">
+                        @if (store.selectedSectionId() === section.id) {
+                            <ul
+                                cdkDropList
+                                (cdkDropListDropped)="onToolDrop($event)"
+                                class="py-1 pr-2 pl-10 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
+                                [attr.data-testid]="'tools-section-tools-' + section.id">
+                                @for (tool of store.selectedSectionTools(); track tool.id) {
+                                    <li
+                                        cdkDrag
+                                        class="group/tool flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
+                                        <span
+                                            cdkDragHandle
+                                            [attr.aria-label]="
+                                                'tools.tool.drag-handle.aria-label' | dm
+                                            "
+                                            class="material-symbols-outlined cursor-grab text-sm leading-none text-gray-400 opacity-0 group-hover/tool:opacity-100 active:cursor-grabbing">
+                                            drag_indicator
+                                        </span>
                                         <span class="flex-1 truncate">{{ tool.title }}</span>
-                                    </div>
+                                        <p-button
+                                            icon="pi pi-times"
+                                            size="small"
+                                            severity="secondary"
+                                            [text]="true"
+                                            [rounded]="true"
+                                            [ariaLabel]="
+                                                'tools.section-tool.remove.aria-label' | dm
+                                            "
+                                            [pTooltip]="'tools.section-tool.remove.tooltip' | dm"
+                                            (click)="onRemoveTool(tool.id)"
+                                            [attr.data-testid]="
+                                                'tools-section-tool-remove-' + tool.id
+                                            "
+                                            styleClass="opacity-0 group-hover/tool:opacity-100" />
 
-                                    <div
-                                        *cdkDragPreview
-                                        class="flex w-64 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-900 shadow-xl">
-                                        <span class="flex-1 truncate">{{ tool.title }}</span>
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                    }
-                </li>
-            }
-        </ul>
+                                        <div
+                                            *cdkDragPlaceholder
+                                            class="mx-1 my-0.5 flex h-7 items-center rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-xs text-indigo-300">
+                                            <span class="flex-1 truncate">{{ tool.title }}</span>
+                                        </div>
 
-        <footer class="border-t border-gray-100 px-4 py-2 text-xs text-gray-500">
-            {{ 'tools.sections.footer' | dm }}
-        </footer>
+                                        <div
+                                            *cdkDragPreview
+                                            class="flex w-64 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-900 shadow-xl">
+                                            <span class="flex-1 truncate">{{ tool.title }}</span>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </li>
+                }
+            </ul>
+
+            <footer class="border-t border-gray-100 px-4 py-2 text-xs text-gray-500">
+                {{ 'tools.sections.footer' | dm }}
+            </footer>
+        }
     </aside>
 
     <section class="flex min-h-0 flex-1 flex-col px-6 pt-5" data-testid="tools-available-panel">
@@ -194,6 +247,7 @@
                                     severity="secondary"
                                     [text]="true"
                                     [rounded]="true"
+                                    [ariaLabel]="'tools.tool-menu.aria-label' | dm"
                                     (click)="
                                         $event.stopPropagation();
                                         setToolMenuTarget(entry);
@@ -225,6 +279,20 @@
                         </li>
                     }
                 </ul>
+            </div>
+        } @else if (!store.showLoading() && !store.showError()) {
+            <div
+                class="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center"
+                data-testid="tools-no-selection">
+                <span class="material-symbols-outlined text-3xl text-gray-400">
+                    left_panel_open
+                </span>
+                <div class="text-sm font-semibold text-gray-700">
+                    {{ 'tools.no-selection.title' | dm }}
+                </div>
+                <div class="text-xs text-gray-500">
+                    {{ 'tools.no-selection.subtitle' | dm }}
+                </div>
             </div>
         }
     </section>
