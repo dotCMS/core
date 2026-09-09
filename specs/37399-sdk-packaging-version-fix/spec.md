@@ -131,7 +131,22 @@ The `@dotcms/*` npm SDK packaging/release mechanism (introduced a few weeks ago)
 
 ## Assumptions
 
-- The LTS-compatible pin for `release-25.07.10_lts_v12`/`_v16`'s `examples/nextjs` is assumed to be `1.2.0` (the newest release the original issue's author identified as validating against that LTS server's GraphQL schema). **Resolution (developer decision)**: this has not been independently re-verified against a live 25.07.10 LTS server in this investigation, and will not be taken as given — `/speckit-plan`/`/speckit-implement` MUST confirm `1.2.0` (or identify the correct version) by actually scaffolding `examples/nextjs` and rendering a page against a real 25.07.10 LTS server before it is committed as the LTS example's pin. This confirmation step is now folded into AC-005's verification method, not left as an open question blocking this spec.
+- **Resolved during implementation (2026-09-09)**: the LTS-compatible pin for
+  `release-25.07.10_lts_v12`'s `examples/nextjs` is **`26.9.3-1`**, not the `1.2.0` this spec
+  originally assumed. The developer scaffolded the example (in a separate `git worktree`, not
+  the feature branch) against a real 25.07.10 LTS server using the then-current `"latest"` pin
+  and found it rendered correctly — including inside UVE — with no `FieldUndefined` errors,
+  installing `26.9.3-1` (confirmed via the installed tarball's still-malformed `26.09.03-01`,
+  independent live evidence of Defect A). `1.2.0` was never independently tested and is now
+  known to be far behind the SDK's current feature set; `26.9.3-1` is preferred because it is
+  developer-verified-working today, not a guess. Likely explanation for why `"latest"` no longer
+  reproduces the original failure: this LTS branch has received schema-compatible patches since
+  the original issue was filed (2026-08-05) that closed the specific field gap. This does **not**
+  change the conclusion that an exact pin is still required (a floating `"latest"` could break
+  again on some future SDK release) — only which version to pin. Backport PR:
+  [dotCMS/core#37475](https://github.com/dotCMS/core/pull/37475) against
+  `release-25.07.10_lts_v12`. `release-25.07.10_lts_v16` must be verified independently — not
+  assumed identical — before its own backport PR is opened.
 - `main`'s six examples deliberately keep using the floating `"latest"` npm dist-tag (not an exact pin) going forward — confirmed with the developer as an intentional decision, grounded in ADR-0019's own Evergreen-convergence reasoning (see Scope of Investigation): a customer scaffolding from `main` is expected to be on dotCMS Evergreen (always the current release), for whom `"latest"` and "the version matching my CMS" are the same thing by construction. A customer on an older/non-Evergreen server is documented (Fix Scope) as needing to manually pin the version matching their own instance. This is the one deliberate exception to "no floating `@dotcms/*` specifiers" elsewhere in this spec, and the CI guardrail (AC-007) must not flag it.
 - No separate GitHub issue/spec is being opened for the "keep the LTS example pin in sync with newer compatible releases over time" concern; it is accepted as a manual, as-needed process step, guarded only against the floating-specifier regression (see Non-Goals). This does not apply to `main`'s examples, which cannot go stale since they float by design.
 - Keeping the standalone `next`-tag publish workflow (`cicd_3-trunk.yml`) active, rather than retiring/disabling it as ADR-0019's Implementation Notes suggest, is a decision the team already made independently of this issue — internal developers need it for testing. This spec does not revisit that decision; it is explicitly out of scope (see Non-Goals).
