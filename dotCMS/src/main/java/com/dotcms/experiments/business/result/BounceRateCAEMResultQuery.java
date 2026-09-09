@@ -40,7 +40,7 @@ import java.util.Map;
  */
 public class BounceRateCAEMResultQuery implements ExperimentGoalResultsQuery {
 
-    private static final String SESSIONS_PATH = "/v1/analytics/sessions";
+    private static final String SESSIONS_PATH = "/v1/sessions";
     private static final String METRICS = "totalSessions,bounceSessions,bounceRate";
 
     private final CaemHttpClient caemHttpClient;
