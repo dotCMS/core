@@ -9,11 +9,11 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@dotcms/client": "26.9.3-1",
-        "@dotcms/experiments": "26.9.3-1",
-        "@dotcms/react": "26.9.3-1",
-        "@dotcms/types": "26.9.3-1",
-        "@dotcms/uve": "26.9.3-1",
+        "@dotcms/client": "1.2.0",
+        "@dotcms/experiments": "1.2.0",
+        "@dotcms/react": "1.2.0",
+        "@dotcms/types": "1.2.0",
+        "@dotcms/uve": "1.2.0",
         "@tinymce/tinymce-react": "6.2.1",
         "next": "15.3.2",
         "react": "19.1.0",
