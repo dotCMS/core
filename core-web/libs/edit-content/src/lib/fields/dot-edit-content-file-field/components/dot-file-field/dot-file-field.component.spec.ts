@@ -10,7 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageService,
     DotSiteService,
     DotWorkflowActionsFireService
@@ -78,7 +78,7 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DotMessageService, {
                 get: vi.fn().mockReturnValue('Test Message')
             }),
-            mockProvider(DotAiService, {
+            mockProvider(DotAiConfigService, {
                 checkPluginInstallation: vi.fn().mockReturnValue(of(false))
             }),
             provideHttpClient(),

@@ -10,7 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageService,
     DotSiteService,
     DotWorkflowActionsFireService
@@ -58,7 +58,7 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
             LegacyDojoImageEditorLauncher,
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
-            mockProvider(DotAiService, {
+            mockProvider(DotAiConfigService, {
                 checkPluginInstallation: vi.fn().mockReturnValue(of(false))
             }),
             provideHttpClient(),

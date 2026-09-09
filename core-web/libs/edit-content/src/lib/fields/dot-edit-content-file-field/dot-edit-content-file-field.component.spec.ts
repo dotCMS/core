@@ -9,7 +9,7 @@ import { Component } from '@angular/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotContentletService,
     DotMessageService,
     DotSiteService,
@@ -110,7 +110,7 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DotMessageService, {
                 get: vi.fn().mockReturnValue('Test Message')
             }),
-            mockProvider(DotAiService, {
+            mockProvider(DotAiConfigService, {
                 checkPluginInstallation: vi.fn().mockReturnValue(of(true))
             }),
             // Angular Edit Content host: the launcher is what makes "Select Existing File" open the

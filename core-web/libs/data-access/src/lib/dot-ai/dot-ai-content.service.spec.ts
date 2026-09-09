@@ -7,12 +7,13 @@ import {
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
 
-import { DotAiService, API_ENDPOINT_FOR_PUBLISH, API_ENDPOINT } from './dot-ai.service';
+import { DotAiContentService } from './dot-ai-content.service';
+import { AI_API_ENDPOINT, API_ENDPOINT_FOR_PUBLISH } from './dot-ai.constants';
 
-describe('DotAiService', () => {
-    let spectator: SpectatorHttp<DotAiService>;
+describe('DotAiContentService', () => {
+    let spectator: SpectatorHttp<DotAiContentService>;
 
-    const createHttp = createHttpFactory(DotAiService);
+    const createHttp = createHttpFactory(DotAiContentService);
 
     beforeEach(() => {
         spectator = createHttp();
@@ -92,7 +93,7 @@ describe('DotAiService', () => {
             });
 
             const generateRequest = spectator.expectOne(
-                `${API_ENDPOINT}/image/generate`,
+                `${AI_API_ENDPOINT}/image/generate`,
                 HttpMethod.POST
             );
             generateRequest.flush(mockGenerateResponse);
@@ -184,6 +185,35 @@ describe('DotAiService', () => {
 
             const req = spectator.expectOne(API_ENDPOINT_FOR_PUBLISH, HttpMethod.POST);
             req.flush(null, { status: 500, statusText: 'Test Error' });
+        });
+    });
+    describe('generateImage (extracted from generateAndPublishImage)', () => {
+        it('should POST the prompt and size and NOT publish anything', () => {
+            const mockResponse = { response: 'abc', tempFileName: 'img.png' } as DotAIImageResponse;
+
+            spectator.service.generateImage('a cat', DotAIImageOrientation.SQUARE).subscribe();
+
+            const req = spectator.expectOne(`${AI_API_ENDPOINT}/image/generate`, HttpMethod.POST);
+            expect(JSON.parse(req.request.body)).toEqual({
+                prompt: 'a cat',
+                size: DotAIImageOrientation.SQUARE
+            });
+            req.flush(mockResponse);
+
+            // FR-037: generating must not publish. Nothing may hit the workflow endpoint.
+            spectator.controller.expectNone(API_ENDPOINT_FOR_PUBLISH);
+        });
+
+        it('should surface the generate error without attempting a publish', () => {
+            let caught: unknown;
+            spectator.service.generateImage('a cat').subscribe({ error: (e) => (caught = e) });
+
+            spectator
+                .expectOne(`${AI_API_ENDPOINT}/image/generate`, HttpMethod.POST)
+                .flush({ error: { message: 'nope' } }, { status: 400, statusText: 'Bad Request' });
+
+            expect(caught).toBe('nope');
+            spectator.controller.expectNone(API_ENDPOINT_FOR_PUBLISH);
         });
     });
 });
