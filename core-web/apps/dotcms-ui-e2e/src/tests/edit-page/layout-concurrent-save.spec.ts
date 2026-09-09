@@ -42,19 +42,28 @@ test.beforeEach(async ({ request }) => {
             title: `e2e concurrent-save template ${suffix}`,
             header: true,
             footer: true,
+            // GridStack uses a 12-column grid: `width` is a 1-12 column span and
+            // `leftOffset` is the 1-based starting column (gridstack-utils.ts maps
+            // `w: col.width` / `x: col.leftOffset - 1` directly, uncapped). A 50/100-style
+            // percentage value here (as an earlier draft of this fixture used) exceeds the
+            // 12-column max and made both columns collapse onto the same gs-w="12"
+            // position, which is what caused the "element intercepts pointer events"
+            // failure on the first CI run — the two boxes were literally stacked on top of
+            // each other. width: 6 + leftOffset: 1/7 is a real 50/50 split (columns 1-6
+            // and 7-12).
             body: {
                 rows: [
                     {
                         columns: [
                             {
                                 containers: [{ identifier: SYSTEM_CONTAINER, uuid: '1' }],
-                                width: 50,
+                                width: 6,
                                 leftOffset: 1
                             },
                             {
                                 containers: [{ identifier: SYSTEM_CONTAINER, uuid: '2' }],
-                                width: 50,
-                                leftOffset: 51
+                                width: 6,
+                                leftOffset: 7
                             }
                         ]
                     }
