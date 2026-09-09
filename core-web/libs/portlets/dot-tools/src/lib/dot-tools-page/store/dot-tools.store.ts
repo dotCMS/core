@@ -14,6 +14,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
+import { CATALOG_INITIAL_LIMIT, CATALOG_LOAD_MORE_STEP } from '../../constants/dot-tools.constants';
 import {
     DotToolsCatalogEntry,
     DotToolsSection,
@@ -23,12 +24,6 @@ import {
 import { DotToolsService } from '../../services/dot-tools.service';
 
 type DotToolsStatus = 'init' | 'loading' | 'loaded' | 'error';
-
-// Catalog rendering starts at CATALOG_INITIAL_LIMIT rows. Each "Load more" click
-// bumps by CATALOG_LOAD_MORE_STEP. Matches the design (Tools.dc.html:1088):
-// "Load 40 more", starting at 15.
-const CATALOG_INITIAL_LIMIT = 15;
-const CATALOG_LOAD_MORE_STEP = 40;
 
 interface DotToolsState {
     sections: DotToolsSection[];
