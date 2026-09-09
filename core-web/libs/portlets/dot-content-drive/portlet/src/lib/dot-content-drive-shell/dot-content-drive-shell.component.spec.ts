@@ -2002,10 +2002,13 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
-        it('should surface the server sentence when a submission fails for any other reason', () => {
-            // The refusal mapper answers `{ message }`, not the `{ errors: [{ message }] }` shape
-            // the workflow endpoints use, so a handler reading only the latter shows the generic
-            // copy for every server explanation there is.
+        it('should keep the server sentence out of the author-visible copy', () => {
+            // FR-030 draws the line here: resolved product copy in front of the author, the raw
+            // detail in the log. This branch already removed the same pattern from the folder
+            // dialogs; the upload path had kept it, and reading a second body shape would have
+            // spread it rather than closed it.
+            const log = jest.spyOn(console, 'error').mockImplementation();
+
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(
                     () =>
@@ -2025,9 +2028,16 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
                     severity: 'error',
-                    detail: 'Staging directory is not writable'
+                    detail: 'content-drive.add-dotasset-error-detail'
                 })
             );
+            // The other half of the requirement: shown copy is not the same as lost detail.
+            expect(log).toHaveBeenCalledWith(
+                expect.stringContaining('status 500'),
+                expect.objectContaining({ status: 500 })
+            );
+
+            log.mockRestore();
         });
 
         it('should warn before the page unloads while an upload is in flight', () => {
@@ -2351,7 +2361,11 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        it('should show the server error message on failure with an errors payload', () => {
+        it('should not show the server error message from an errors payload either', () => {
+            // Was asserting the opposite, and inherited from the path this feature replaced. FR-030
+            // is the rule for every outcome in this portlet: the author reads product copy and the
+            // log keeps the detail. The `errors[]` shape is the workflow endpoints' one, so it is
+            // covered separately from the refusal mapper's `{ message }`.
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(() => ({ error: { errors: [{ message: 'Upload failed' }] } }))
             );
@@ -2366,7 +2380,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(addSpy).toHaveBeenCalledWith({
                 severity: 'error',
                 summary: 'content-drive.add-dotasset-error',
-                detail: 'Upload failed',
+                detail: 'content-drive.add-dotasset-error-detail',
                 life: ERROR_MESSAGE_LIFE
             });
         });

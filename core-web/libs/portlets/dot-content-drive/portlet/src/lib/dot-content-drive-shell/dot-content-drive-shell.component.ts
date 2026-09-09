@@ -1500,10 +1500,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * names byte counts and part limits, which is a sentence written for a developer reading a log,
      * not for the author who just dropped the files.
      *
-     * Anything else falls back to what the server said, read from *both* shapes it can arrive in:
-     * the refusal mapper answers `{ message }`, while the workflow endpoints answer
-     * `{ errors: [{ message }] }`. Reading only one of them is how every server explanation ends up
-     * rendered as the generic failure copy.
+     * Anything else gets the generic copy, and the server's sentence goes to the log instead of the
+     * toast. FR-030 draws that line for every outcome in this portlet, and the folder dialogs were
+     * corrected to it earlier on this branch: a message written for whoever reads the log names
+     * staging paths, byte counts and class names, none of which an author can act on. The two
+     * ceilings are the cases worth distinguishing, and they now have copy of their own, so there is
+     * nothing left the raw sentence would say better.
      */
     #describeSubmissionRefusal(error: HttpErrorResponse): string {
         if (error?.status === HttpStatusCode.PayloadTooLarge) {
@@ -1514,11 +1516,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return this.#dotMessageService.get('content-drive.upload.refused.too-many-files');
         }
 
-        return (
-            error?.error?.errors?.[0]?.message ??
-            error?.error?.message ??
-            this.#dotMessageService.get('content-drive.add-dotasset-error-detail')
-        );
+        return this.#dotMessageService.get('content-drive.add-dotasset-error-detail');
     }
 
     /**
