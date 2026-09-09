@@ -76,6 +76,21 @@ export default defineConfig(() => ({
         // and these specs were written under that. Measured exceptions live in NO_ISOLATE
         // in tools/generate-vite-configs.mjs.
         isolate: true,
+        // CI only, and it is a memory cap rather than a speed knob. Frontend Unit Tests
+        // was killed by the kernel — "The operation was canceled." with no stack, no
+        // failing sibling and no new head SHA — first with three projects in flight, and
+        // again after nx was serialised to one project at a time. Vitest gives each fork
+        // its own Vite module graph, and dotcms-ui's forks alone were measured summing
+        // 16-24GB of RSS locally, so one project can exhaust a 16GB runner without any
+        // help from its neighbours. maxForks defaults to the CPU count: 4 on the runner.
+        //
+        // 2 rather than 1 because serialising within a project as well would roughly
+        // double an already 20-minute job. The figure is a starting point validated in
+        // CI, not locally: a 16-core laptop with spare RAM never reproduces the kill, and
+        // summed RSS across forks double-counts shared pages, so local numbers could not
+        // rank the options (removing the libs|apps inline made the sum look WORSE, and
+        // maxForks: 2 barely moved it — both artefacts of the measurement).
+        poolOptions: process.env.CI ? { forks: { maxForks: 2 } } : undefined,
         environment: 'jsdom',
         environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
