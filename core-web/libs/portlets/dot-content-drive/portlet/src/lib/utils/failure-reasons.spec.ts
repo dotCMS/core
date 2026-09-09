@@ -36,6 +36,7 @@ describe('messageKeyForFailureReason', () => {
     it.each([
         ['OVER_SIZE_LIMIT'],
         ['DISALLOWED_FILE_TYPE'],
+        ['FOLDER_FILTER_MISMATCH'],
         ['NAME_COLLISION'],
         ['PERMISSION_DENIED'],
         ['STAGED_CONTENT_UNAVAILABLE'],
@@ -75,6 +76,19 @@ describe('messageKeyForFailureReason', () => {
             messageKeyForFailureReason('UNCLASSIFIED')
         );
         expect(messageKeyForFailureReason('toString')).toBe(
+            messageKeyForFailureReason('UNCLASSIFIED')
+        );
+    });
+
+    it('should tell a folder filter apart from a disallowed type', () => {
+        // The folder's own filename glob and the content type's media-type allow list refuse for
+        // different reasons and want different fixes: rename or move it, versus you cannot upload
+        // this kind of file here at all. One copy for both would send the author to change the
+        // wrong thing.
+        expect(messageKeyForFailureReason('FOLDER_FILTER_MISMATCH')).not.toBe(
+            messageKeyForFailureReason('DISALLOWED_FILE_TYPE')
+        );
+        expect(messageKeyForFailureReason('FOLDER_FILTER_MISMATCH')).not.toBe(
             messageKeyForFailureReason('UNCLASSIFIED')
         );
     });

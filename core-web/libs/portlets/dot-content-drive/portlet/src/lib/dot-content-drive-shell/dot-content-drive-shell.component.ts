@@ -671,7 +671,8 @@ export class DotContentDriveShellComponent {
             backgrounded,
             confirmSuccess,
             affectedFolders,
-            failures
+            failures,
+            duplicateSubmission
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -683,7 +684,11 @@ export class DotContentDriveShellComponent {
         // So anything short of a clean run reports all three numbers, each next to its own cause.
         // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
         // cause and its number is what keeps the message honest.
-        const isPartial = failedCount > 0 || skippedCount > 0;
+        // A recognised resubmission is not a shortfall, whatever its counts say. Under the
+        // collision branch a retry that worked collides on every file, so by the numbers it is a
+        // total failure — and reporting it that way sends the author to delete and re-upload files
+        // that were already correctly there, which is worse than offering no retry at all.
+        const isPartial = !duplicateSubmission && (failedCount > 0 || skippedCount > 0);
 
         // Silent on a clean success, unless the operation leaves no visible trace.
         //
@@ -703,28 +708,37 @@ export class DotContentDriveShellComponent {
         // even reload. Staying silent there would mean a run finished and the author never learned.
         const announce = isPartial || confirmSuccess || backgrounded;
 
-        const detail = isPartial
+        const detail = duplicateSubmission
             ? this.#dotMessageService.get(
-                  // Actions whose failures and skips mean something other than permissions, locks and
-                  // workflow steps say so themselves — see `partialDetailKey`.
-                  partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
-                  actionName,
-                  String(successCount),
-                  String(failedCount),
-                  String(skippedCount)
+                  'content-drive.upload.toast.already-uploaded',
+                  String(failedCount + successCount)
               )
-            : this.#dotMessageService.get(
-                  'content-drive.action-center.toast.executed-detail',
-                  actionName,
-                  String(successCount)
-              );
+            : isPartial
+              ? this.#dotMessageService.get(
+                    // Actions whose failures and skips mean something other than permissions, locks and
+                    // workflow steps say so themselves — see `partialDetailKey`.
+                    partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
+                    actionName,
+                    String(successCount),
+                    String(failedCount),
+                    String(skippedCount)
+                )
+              : this.#dotMessageService.get(
+                    'content-drive.action-center.toast.executed-detail',
+                    actionName,
+                    String(successCount)
+                );
 
         // Named files and their reasons, grouped one line per reason, appended to the counts.
         // The counts say how many; only this says which and why, and that is the part the author
         // can act on. Empty for a clean run, so a success never grows a list.
-        const failureLines = describeUploadFailures(failures, (key, ...args) =>
-            this.#dotMessageService.get(key, ...args)
-        );
+        // Nothing to list for a recognised retry: its "failures" are the files already in place,
+        // and naming them would be telling the author to fix what is correctly there.
+        const failureLines = duplicateSubmission
+            ? []
+            : describeUploadFailures(failures, (key, ...args) =>
+                  this.#dotMessageService.get(key, ...args)
+              );
 
         if (announce) {
             this.#messageService.add({

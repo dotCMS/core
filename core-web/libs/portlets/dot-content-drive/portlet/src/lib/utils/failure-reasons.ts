@@ -21,6 +21,11 @@ const MESSAGE_KEY_BY_REASON: Record<DotBulkUploadFailureReason, string> = {
     // rather than by trusting the file name (FR-039), so copy about extensions would describe a
     // check the product does not make.
     DISALLOWED_FILE_TYPE: 'content-drive.upload.failure.disallowed-file-type',
+    // Its own copy, not the type one. This is the *folder's* filename glob (`filesMasks`), so the
+    // same file is accepted one folder over — the fix is to rename or move it, where a disallowed
+    // type means the file cannot be uploaded here at all. One message for both would send the
+    // author to change the wrong thing.
+    FOLDER_FILTER_MISMATCH: 'content-drive.upload.failure.folder-filter-mismatch',
     NAME_COLLISION: 'content-drive.upload.failure.name-collision',
     PERMISSION_DENIED: 'content-drive.upload.failure.permission-denied',
     STAGED_CONTENT_UNAVAILABLE: 'content-drive.upload.failure.staged-content-unavailable',

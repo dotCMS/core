@@ -58,6 +58,14 @@ export interface DotBatchOutcome<TReason extends string = string> {
     failedCount: number;
     /** Never attempted, because the run was cancelled before reaching them. */
     skippedCount: number;
+    /**
+     * `true` when this run was a resubmission of a batch that had already succeeded.
+     *
+     * The counts cannot tell the two apart. Under the collision branch a retry that worked collides
+     * on every file, so it reads as "everything failed" — and an author told that deletes and
+     * re-uploads files that were already there, which is worse than being offered no retry at all.
+     */
+    duplicateSubmission?: boolean;
     results?: DotBatchItemResult<TReason>[];
 }
 

@@ -500,6 +500,53 @@ describe('withActionExecution', () => {
             expect(handle).toHaveBeenCalled();
         });
 
+        it('should report a recognised resubmission as already uploaded, not as total failure', () => {
+            // The retry promise. Under the collision branch a retry that worked collides on every
+            // file, so the counts read as "50 of 50 failed — already in this folder". Only the flag
+            // tells that apart from a batch whose files genuinely all collided, and without it the
+            // author deletes and re-uploads files that were already there.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted(
+                'Upload',
+                completed({
+                    total: 3,
+                    processed: 3,
+                    successCount: 0,
+                    failedCount: 3,
+                    skippedCount: 0,
+                    duplicateSubmission: true
+                })
+            );
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ duplicateSubmission: true })
+            );
+        });
+
+        it('should not flag an ordinary all-collided batch as a resubmission', () => {
+            // Same counts, different cause: these files really were already there, and the author
+            // does need to deal with them.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted(
+                'Upload',
+                completed({
+                    total: 3,
+                    processed: 3,
+                    successCount: 0,
+                    failedCount: 3,
+                    skippedCount: 0
+                })
+            );
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ duplicateSubmission: undefined })
+            );
+        });
+
         it('should carry the per-file failures so the author learns which files and why', () => {
             // Counts alone tell an author three files failed and nothing they can act on. The names
             // and reasons are the whole point of a partial outcome.

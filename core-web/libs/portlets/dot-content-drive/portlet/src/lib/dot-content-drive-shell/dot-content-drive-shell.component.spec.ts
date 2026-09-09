@@ -616,6 +616,54 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
+        it('should report a recognised retry as already uploaded, not as a failure', () => {
+            // Every file collided, so by the counts this is a total failure. It is not: the batch
+            // had already uploaded, and the author needs to know that rather than be sent to clean
+            // up files that are correctly there.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 3,
+                backgrounded: true,
+                duplicateSubmission: true,
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'c.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.already-uploaded',
+                '3'
+            );
+        });
+
+        it('should not list the collisions of a recognised retry as failures', () => {
+            // Naming them would be telling the author to fix files that are correctly there.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true,
+                duplicateSubmission: true,
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(dotMessageService.get).not.toHaveBeenCalledWith(
+                'content-drive.upload.failure.name-collision',
+                expect.anything()
+            );
+        });
+
         it('should name the files that failed, and why, in the outcome', () => {
             // A partial outcome that says only "1 failed" leaves the author to guess which file and
             // what to do about it. The names and the reason are the actionable part.

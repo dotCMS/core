@@ -446,6 +446,7 @@ export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCoun
 export const DOT_BULK_UPLOAD_FAILURE_REASONS = [
     'OVER_SIZE_LIMIT',
     'DISALLOWED_FILE_TYPE',
+    'FOLDER_FILTER_MISMATCH',
     'NAME_COLLISION',
     'PERMISSION_DENIED',
     'STAGED_CONTENT_UNAVAILABLE',

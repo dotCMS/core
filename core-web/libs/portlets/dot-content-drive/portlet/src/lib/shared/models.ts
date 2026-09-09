@@ -203,6 +203,13 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
     /**
+     * Whether this run was a resubmission of a batch that had already succeeded.
+     *
+     * Changes what the same counts mean: all-failed-on-collision is "already uploaded" when it is a
+     * retry, and a real problem when it is not.
+     */
+    duplicateSubmission?: boolean;
+    /**
      * Per-file results, for a run that reports them.
      *
      * Counts alone tell an author three files failed and nothing they can act on. The names and

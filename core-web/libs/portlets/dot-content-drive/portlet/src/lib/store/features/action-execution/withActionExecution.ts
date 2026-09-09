@@ -832,6 +832,7 @@ export function withActionExecution() {
                                 // copy is the shell's business, and the store has no message
                                 // service to do it with.
                                 failures: event.results,
+                                duplicateSubmission: event.duplicateSubmission,
                                 // It arrives unprompted, long after the click, so it announces
                                 // itself and must not interrupt whatever is happening now.
                                 backgrounded: true
