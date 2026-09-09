@@ -881,8 +881,11 @@ describe('DotContentDriveShellComponent', () => {
                 ]
             });
 
+            // Warned, not celebrated: nothing the author asked for happened, and on today's
+            // server the files may well have been created a second time. A green message invites
+            // them to move on; this one should make them look.
             expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({ severity: 'success' })
+                expect.objectContaining({ severity: 'warn' })
             );
             expect(dotMessageService.get).toHaveBeenCalledWith(
                 'content-drive.upload.toast.already-uploaded',
@@ -2135,10 +2138,10 @@ describe('DotContentDriveShellComponent', () => {
             expect(event.defaultPrevented).toBe(true);
         });
 
-        it('should hold the route while the bytes are in flight', () => {
+        it('should refuse to leave the route while the bytes are in flight', () => {
             // In-app navigation does not kill the request, but it destroys this shell — and with it
             // the store the settle path writes to and the indicator that was reporting the run. So
-            // the route is held for the same window the page is.
+            // the route is refused for the same window the page is.
             uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
 
             selectUploadType({
@@ -2147,10 +2150,33 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(routerService.forbidRouteDeactivation).toHaveBeenCalled();
+            expect(spectator.component.canLeaveRoute()).toBe(false);
         });
 
-        it('should release the route once the batch has been accepted', () => {
+        it('should say why, rather than refusing silently like a broken link', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            spectator.component.canLeaveRoute();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
+        });
+
+        it('should cancel the navigation it refused, not hold it for later', () => {
+            // The point of answering `false` instead of holding the route through the shared lock.
+            // That lock is a subject the guard filters on: refusing leaves the navigation *pending*,
+            // and releasing the lock at the handle lets that same pending navigation complete — so
+            // an author who clicked a link, was told to wait, and stayed put would be thrown out of
+            // the portlet minutes later, at a moment they did not choose.
+            //
+            // Nothing touches the shared lock any more, which is what makes that impossible.
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 of({
                     kind: 'accepted',
@@ -2164,12 +2190,34 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(routerService.allowRouteDeactivation).toHaveBeenCalled();
+            expect(routerService.forbidRouteDeactivation).not.toHaveBeenCalled();
+            expect(routerService.allowRouteDeactivation).not.toHaveBeenCalled();
         });
 
-        it('should say why when the author tries to leave mid-upload', () => {
-            // The guard refuses silently on its own, which reads as a broken link. UVE answers the
-            // same request by force-saving; there is nothing to save here, so it explains instead.
+        it('should let the author leave once the batch is the server to finish', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(spectator.component.canLeaveRoute()).toBe(true);
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
+        });
+
+        it('should warn before the page unloads while an upload is in flight', () => {
+            // The only moment the interface can intervene: while the bytes are still going the
+            // request dies with the page and nothing is recorded, so there is no run to resume
+            // and nobody is notified.
             uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
 
             selectUploadType({
@@ -2178,11 +2226,10 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            pageLeaveRequestSubject.next();
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
 
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({ severity: 'warn' })
-            );
+            expect(event.defaultPrevented).toBe(true);
         });
 
         it('should stop warning once the batch has been accepted', () => {

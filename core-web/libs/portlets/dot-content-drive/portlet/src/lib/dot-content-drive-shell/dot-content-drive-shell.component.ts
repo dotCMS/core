@@ -33,7 +33,6 @@ import {
     DotUploadFileService,
     DotWorkflowsActionsService,
     DotMessageService,
-    DotRouterService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -186,9 +185,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /** Browser history subscription for the edit-panel guard. Released in {@link ngOnDestroy}. */
     #locationSubscription?: SubscriptionLike;
-
-    /** Page-leave requests from the route guard. Released in {@link ngOnDestroy}. */
-    #pageLeaveSubscription?: SubscriptionLike;
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
@@ -439,17 +435,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         this.#syncDialog(this.#store.dialog);
 
-        // The guard refuses on its own, silently, which reads as a broken link. UVE answers this
-        // same request by force-saving; there is nothing to save here, so it explains instead.
-        this.#pageLeaveSubscription = this.#routerService.pageLeaveRequest$.subscribe(() => {
-            this.#messageService.add({
-                severity: 'warn',
-                summary: this.#dotMessageService.get('content-drive.upload'),
-                detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail'),
-                life: WARNING_MESSAGE_LIFE
-            });
-        });
-
         // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
         // The `new`-mode marker is ignored — creating is not shareable, so only real identifiers
@@ -611,6 +596,37 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * `returnValue` alongside `preventDefault()`: the modern call is enough in current browsers,
      * the legacy assignment is what older ones read.
      */
+    /**
+     * Whether the route may be left, asked by this portlet's own `canDeactivate`.
+     *
+     * **Answers, rather than holding.** The shared `CanDeactivateGuardService` refuses by filtering
+     * a subject, which leaves the navigation *pending* rather than cancelling it: releasing the
+     * lock later lets that same navigation complete, so an author who clicked a link, was told to
+     * wait and stayed put would be thrown out of the portlet at a moment they did not choose. UVE
+     * wants that, because it force-saves and then continues. There is nothing to save here, and
+     * nothing to continue: the answer is no, the navigation is cancelled, and the author decides
+     * when to try again.
+     *
+     * Refusing silently reads as a broken link, so it says why.
+     *
+     * Only while bytes are still going. Past the handle the run is the server's, leaving is safe,
+     * and holding the route would contradict the message that just said so.
+     */
+    canLeaveRoute(): boolean {
+        if (!this.#uploadsInFlight()) {
+            return true;
+        }
+
+        this.#messageService.add({
+            severity: 'warn',
+            summary: this.#dotMessageService.get('content-drive.upload'),
+            detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail'),
+            life: WARNING_MESSAGE_LIFE
+        });
+
+        return false;
+    }
+
     protected onBeforeUnload(event: BeforeUnloadEvent): void {
         if (!this.#uploadsInFlight()) {
             return;
@@ -652,8 +668,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /** Distinguishes overlapping upload runs, which share an operation and have no targets. */
     #uploadSequence = 0;
-
-    readonly #routerService = inject(DotRouterService);
 
     /**
      * Whether the listing on screen can show what a run changed (FR-044).
@@ -757,10 +771,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
             this.#messageService.add({
                 // A skip is a shortfall too — those items did not get the action — so it warns
                 // rather than reporting green, which is what it used to do.
-                severity: isPartial ? 'warn' : 'success',
+                //
+                // A recognised resubmission warns as well, for a different reason: nothing the
+                // author asked for happened. It is not the failure the counts describe, but it is
+                // not an accomplishment either, and a green message invites them to move on when
+                // they should look at the folder.
+                severity: isPartial || duplicateSubmission ? 'warn' : 'success',
                 summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
                 detail: [detail, ...failureLines].join('<br>'),
-                life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+                life: isPartial || duplicateSubmission ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
             });
         }
 
@@ -959,7 +978,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
     ngOnDestroy(): void {
         this.#withdrawShortcuts?.();
         this.#locationSubscription?.unsubscribe();
-        this.#pageLeaveSubscription?.unsubscribe();
     }
 
     /**
@@ -1382,11 +1400,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
             targets: []
         });
 
+        // The route answers from this count directly (see {@link canLeaveRoute}), so there is no
+        // lock to set: the guard asks, and while this is above zero the answer is no.
         this.#uploadsInFlight.update((count) => count + 1);
-        // Held through the same window the page is. In-app navigation does not kill the request,
-        // but it destroys this shell — and with it the store `settleUploadPhase` writes to and the
-        // indicator that was reporting the run, so the upload would finish invisibly.
-        this.#routerService.forbidRouteDeactivation();
 
         // The upload phase ends at the handle, whichever way it ends. Leaving its run registered
         // would spin the indicator for a run that has become the server's to report.
@@ -1396,11 +1412,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
             const remaining = Math.max(this.#uploadsInFlight() - 1, 0);
             this.#uploadsInFlight.set(remaining);
 
-            // Only once the last of them is done: uploads overlap, and releasing on the first to
-            // finish would let the author leave while another is still sending.
-            if (!remaining) {
-                this.#routerService.allowRouteDeactivation();
-            }
+            // Nothing to release: the count *is* the answer, and uploads overlap, so the route
+            // reopens exactly when the last of them reaches its handle.
         };
 
         this.#fileService
