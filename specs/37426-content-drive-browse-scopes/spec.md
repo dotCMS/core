@@ -75,7 +75,7 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 - **A search combined with a scope.** A text search narrows within the selected scope; it never widens it. Searching while the site row is selected must not start returning content from inside folders, and searching while System Host is selected must not start returning site content.
 - **Restoring a shared link.** A link that carries a scope reopens on that scope. A link saved before this feature carries no scope and reopens on the view it produced before, so old links do not silently change meaning.
 - **Switching sites while System Host is selected.** System Host is not part of any site, so the selection survives the switch and the listing is unchanged.
-- **Deep link to a folder.** A URL pointing at a folder still selects that folder in the hierarchy, not All.
+- **A URL that points at a folder and also names a scope.** The scope wins: a link naming System Host opens System Host even if it still carries the folder the sender happened to be in beforehand.
 - **A user without read access to System Host content.** Permission filtering applies to every scope, so the System Host entry can legitimately produce an empty listing for such a user.
 - **A user who may browse System Host but not add to it.** The System Host entry lists content but refuses uploads, creation and drops, the same way a folder the user cannot add to already behaves.
 - **Switching scope mid-page.** A user on page 4 of All who selects System Host lands on the first page of System Host, with nothing carried over from the previous selection.
@@ -118,13 +118,15 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 
 #### Persistence
 
-- **FR-021**: The selected scope MUST survive a reload, a browser back or forward, and a shared link, the way the other filters already do.
-- **FR-022**: Changing the scope MUST return the listing to its first page and clear the current item selection, since neither carries any meaning across scopes.
+- **FR-021**: The selected scope MUST travel in the URL alongside the other filters, so a reload, a browser back or forward, and a shared link all reopen the scope the sender was viewing.
+- **FR-022**: A URL that names a scope MUST open on that scope. When that scope is All or System Host, a location carried elsewhere in the URL does not change what is listed, because neither scope points at a place in the hierarchy.
+- **FR-023**: A URL that names no scope MUST open on the folder it points at, if it points at one, and on All otherwise. This is what keeps links made before this feature meaning what they meant: a link to a folder still opens that folder, and a link with no location still lists the whole site.
+- **FR-024**: Changing the scope MUST return the listing to its first page and clear the current item selection, since neither carries any meaning across scopes.
 
 #### Not breaking what exists
 
-- **FR-023**: A content listing requested without a scope MUST behave as it does today, so other surfaces that share this listing (notably the Asset Picker) are unaffected by this feature.
-- **FR-024**: No consumer of the shared content-listing service other than Content Drive may change behavior. Only Content Drive's own requests carry a scope; every other caller MUST keep producing exactly the results it produces today.
+- **FR-025**: A content listing requested without a scope MUST behave as it does today, so other surfaces that share this listing (notably the Asset Picker) are unaffected by this feature.
+- **FR-026**: No consumer of the shared content-listing service other than Content Drive may change behavior. Only Content Drive's own requests carry a scope; every other caller MUST keep producing exactly the results it produces today.
 
 ### Key Entities
 
@@ -154,7 +156,6 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 
 ## Assumptions
 
-- **The default scope on a cold load is All**, which reproduces what a user sees today when Content Drive opens on a site. Landing on the site root instead would be a different first impression than the current product gives, so the conservative choice is assumed here and is worth an explicit confirmation before this spec is approved.
 - **System Host accepts everything a folder accepts**: moved content, uploaded files, and newly created content. It is a real place to put things, unlike **All**, which spans the whole site and names no single destination.
 - **Selecting System Host survives a site switch**, because System Host belongs to no site and the listing would not change.
 - **The site root scope shows the site's top-level folders.** They sit at the root, so they are part of what is "at" the root. This means the site-root and All scopes differ in their content, not in their folders, since All shows no folders at all.
