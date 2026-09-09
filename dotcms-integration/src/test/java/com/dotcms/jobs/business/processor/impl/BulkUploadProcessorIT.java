@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.processor.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,10 +27,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,13 +118,22 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * captured fingerprint, and a fake would hide it if it were not.
      */
     private Job jobFor(final Folder folder, final int count) throws Exception {
+        return jobFor(folder, count, 0);
+    }
+
+    /**
+     * As above, but every file is padded to at least {@code minBytes}. Only the throughput
+     * measurement needs realistically sized content; everywhere else a few bytes say the same
+     * thing faster.
+     */
+    private Job jobFor(final Folder folder, final int count, final int minBytes) throws Exception {
         final HttpServletRequest request = request();
         final List<Map<String, Object>> stagedFiles = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
             final String fileName = "bulk-" + UUID.randomUUID() + ".txt";
             final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
-                    fileName, request, new ByteArrayInputStream(("content " + i).getBytes()));
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, minBytes)));
 
             final Map<String, Object> file = new HashMap<>();
             file.put("tempFileId", tempFile.id);
@@ -146,6 +159,64 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 .parameters(parameters)
                 .progressTracker(new DefaultProgressTracker())
                 .build();
+    }
+
+    /**
+     * Stages files under the names given, rather than overriding the declared metadata on top of
+     * generically-named content the way {@link #jobWith} does.
+     * <p>
+     * The distinction matters wherever a rule reads the <b>binary's own name</b> instead of the
+     * declared one — a folder's {@code filesMasks} filter is checked against
+     * {@code contentlet.getBinary(...).getName()}. With {@code jobWith}, a file declared
+     * {@code allowed.jpg} is really {@code bulk-<uuid>.txt} on disk, so it passes a pre-check that
+     * reads the declaration and then fails the create that reads the file. In production the two
+     * always agree: {@code TempFileAPI} writes to {@code /<tempFileId>/<incomingFileName>}, so the
+     * staged file carries the author's own name.
+     * <p>
+     * Built standalone rather than by adjusting a {@link #jobFor} result: {@code Job#parameters()}
+     * is immutable, so the fingerprint cannot be swapped afterwards and the content has to be
+     * staged through the same request from the start.
+     */
+    private Job jobForNames(final Folder folder, final List<String> fileNames) throws Exception {
+        final HttpServletRequest request = request();
+        final List<Map<String, Object>> stagedFiles = new ArrayList<>();
+
+        for (int i = 0; i < fileNames.size(); i++) {
+            final String fileName = fileNames.get(i);
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, 0)));
+
+            final Map<String, Object> file = new HashMap<>();
+            file.put("tempFileId", tempFile.id);
+            file.put("fileName", fileName);
+            file.put("sizeBytes", tempFile.length());
+            file.put("mimeType", tempFile.mimeType);
+            stagedFiles.add(file);
+        }
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("baseType", "DOTASSET");
+        parameters.put("folderId", folder.getIdentifier());
+        parameters.put("targetId", folder.getIdentifier());
+        parameters.put("userId", admin().getUserId());
+        parameters.put("stagedFiles", stagedFiles);
+        parameters.put("requestFingerprint",
+                APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        return Job.builder()
+                .id(UUID.randomUUID().toString())
+                .queueName("assetBulkUpload")
+                .state(JobState.RUNNING)
+                .parameters(parameters)
+                .progressTracker(new DefaultProgressTracker())
+                .build();
+    }
+
+    /** File content: distinct per file, padded to {@code minBytes} where a size is asked for. */
+    private static byte[] bodyOf(final int index, final int minBytes) {
+        final byte[] body = new byte[Math.max(minBytes, 16)];
+        Arrays.fill(body, (byte) ('a' + (index % 26)));
+        return body;
     }
 
     /**
@@ -181,10 +252,9 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
         assertEquals(10, inFolder.size(), "zero silently discarded");
 
-        // NOTE: working content, not live. The run fires the content type's DEFAULT workflow
-        // action, while the drag-and-drop path this feature replaces fires PUBLISH explicitly.
-        // Whether a bulk upload should publish is a product question FR-006's equivalence rule
-        // arguably already answers; it is raised rather than settled here.
+        // Settled: the run fires NEW, so these are drafts. See
+        // test_run_leavesEveryFileAsADraftRatherThanPublishingIt for the assertion that pins it —
+        // this one would pass either way, because publishing leaves a working version too.
     }
 
     /**
@@ -609,4 +679,222 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         assertTrue(((Number) outcome.get("skippedCount")).intValue() > 0,
                 "and they are recorded as skipped, which is a distinct outcome");
     }
+
+    /**
+     * Method to test: the bulk-upload processor, at the configured maximum
+     * <p>
+     * Given scenario: A full batch — 100 files of 1 MB, {@code CONTENT_BULK_UPLOAD_MAX_FILES} —
+     * run on a single node.
+     * <p>
+     * Expected result: It finishes inside 120 seconds with all 100 created (SC-003).
+     * <p>
+     * <b>Read the ceiling as an order of magnitude, not as a performance target.</b> 120s for 100
+     * files is roughly 1.2s per file, which is several times slower than this run is on any
+     * machine that would execute it — the headroom is deliberate, so that CI jitter, a cold cache
+     * or a loaded box never turn this red. What it is written to catch is the regression that
+     * matters: **a per-file search-index wait creeping back in**. That is what FR-008 removed and
+     * what SC-003 names explicitly, and it does not fail anything else in the suite — every other
+     * test would still pass, just slowly. It changes throughput by an order of magnitude, so it
+     * lands well outside this bound while ordinary variance stays well inside it.
+     * <p>
+     * The criterion is deliberately absolute rather than measured against today's single-file
+     * upload: that path waits for each file to become searchable, which is the very pathology
+     * being removed, so comparing against it would make SC-003 true by construction.
+     */
+    @Test
+    public void test_run_sustainsThroughputAtTheConfiguredMaximum() throws Exception {
+        final int fileCount = 100;
+        final long ceilingMillis = 120_000L;
+
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        // Staged outside the measurement: the submission is a separate leg with its own bound
+        // (FR-013b), and SC-003 is about the run.
+        final Job job = jobFor(folder, fileCount, 1024 * 1024);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+
+        final long startedAt = System.currentTimeMillis();
+        processor.process(job);
+        final long elapsed = System.currentTimeMillis() - startedAt;
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(fileCount, ((Number) outcome.get("successCount")).intValue(),
+                "a timing measurement over a run that did not do the work says nothing.\n"
+                        + "Recorded per-item results: " + describe(outcome));
+
+        assertTrue(elapsed < ceilingMillis, String.format(
+                "a full batch of %d files took %dms, past the %dms ceiling. The headroom here is "
+                        + "generous enough that jitter does not explain this: look first for a "
+                        + "per-file search-index wait, which is what SC-003 guards against and "
+                        + "what an IndexPolicy other than DEFER would reintroduce",
+                fileCount, elapsed, ceilingMillis));
+    }
+
+
+    /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: A batch of valid files is run.
+     * <p>
+     * Expected result: Every file is left as a <b>draft</b> — working, not live.
+     * <p>
+     * <b>This needs its own test because the obvious assertion does not catch it.</b> Publishing a
+     * contentlet leaves a working version behind as well, so
+     * {@code getWorkingContent(...).size() == n} passes whether the run published or not. Only
+     * asking each contentlet whether it is live tells the two apart, which is why an earlier
+     * version of this feature fired PUBLISH for weeks with a green suite.
+     * <p>
+     * <b>Why draft is the right answer</b> (FR-006): the single-file endpoint checks an asset in as
+     * working unless the caller explicitly asks for live. A batch that published would mean the
+     * same file put an author's unreviewed content on the live site when uploaded with others and
+     * not when uploaded alone — an equivalence failure whose consequence is publishing something
+     * nobody approved.
+     */
+    @Test
+    public void test_run_leavesEveryFileAsADraftRatherThanPublishingIt() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 3);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+        assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
+                "the run has to have created something for this to mean anything.\n"
+                        + "Recorded per-item results: " + describe(outcome));
+
+        final List<Contentlet> created =
+                APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
+        assertEquals(3, created.size());
+
+        for (final Contentlet contentlet : created) {
+            assertFalse(contentlet.isLive(), String.format(
+                    "a bulk upload must leave files as drafts, exactly as uploading the same file "
+                            + "on its own does; '%s' was published instead",
+                    contentlet.getTitle()));
+        }
+    }
+
+
+    /**
+     * Method to test: the bulk-upload processor, against a folder that filters names
+     * <p>
+     * Given scenario: The target folder declares {@code filesMasks = *.jpg}, and a batch mixes a
+     * matching file with two that do not match.
+     * <p>
+     * Expected result: The non-matching files fail as {@code FOLDER_FILTER_MISMATCH} — <b>not</b>
+     * as {@code NAME_COLLISION}.
+     * <p>
+     * <b>Why it said NAME_COLLISION before.</b> The product reports a filter mismatch and a name
+     * collision through the same exception class <i>and</i> the same invalid field
+     * ({@code hostFolder}), differing only by a translated message. Read from the exception the two
+     * are genuinely indistinguishable, so the resolver's structural signature matched both. The
+     * author was told to rename a file whose name was never the problem — a fix that cannot work,
+     * because every new name fails the same filter.
+     * <p>
+     * Also distinct from {@code DISALLOWED_FILE_TYPE}: that is the content type's media-type allow
+     * list, sniffed from content. This is a glob on the file <i>name</i>, configured per folder, so
+     * the same file is refused here and accepted one folder over.
+     */
+    @Test
+    public void test_run_namesAFolderFilterMismatchAsItsOwnReason() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        folder.setFilesMasks("*.jpg");
+        APILocator.getFolderAPI().save(folder, admin(), false);
+
+        // Staged under their real names: the folder filter is checked against the binary's own
+        // name, so declaring a name the staged content does not have tests nothing.
+        final Job job = jobForNames(folder,
+                List.of("allowed.jpg", "refused.txt", "refused.pdf"));
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(1, ((Number) outcome.get("successCount")).intValue(),
+                "the matching file must still land — a filter refuses what it names and nothing "
+                        + "else.\n" + describe(outcome));
+        assertEquals(2, ((Number) outcome.get("failedCount")).intValue(),
+                "both non-matching files must fail.\n" + describe(outcome));
+
+        assertEquals(BatchFailureReason.FOLDER_FILTER_MISMATCH, reasonFor(outcome, "refused.txt"),
+                "the folder's filter is what stopped this file, and the author has to be told "
+                        + "that rather than sent to rename it");
+        assertEquals(BatchFailureReason.FOLDER_FILTER_MISMATCH, reasonFor(outcome, "refused.pdf"));
+
+        assertNotEquals(BatchFailureReason.NAME_COLLISION, reasonFor(outcome, "refused.txt"),
+                "NAME_COLLISION is the reason this used to report, and it sends the author to "
+                        + "rename a file whose name was never the problem");
+    }
+
+    /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: A batch is run against a content type whose {@code NEW} system action is
+     * mapped to an action that <b>publishes</b>.
+     * <p>
+     * Expected result: The files are still drafts.
+     * <p>
+     * <b>This is the case that made drafts non-deterministic.</b> Firing {@code SystemAction.NEW}
+     * only asks for whatever action the content type happens to map it to, and that differs per
+     * content type — on a real instance a dotAsset published while a fileAsset stayed working, from
+     * identical code. So the author's files were published or not according to a workflow mapping
+     * they cannot see and did not choose. The run now checks what it resolved and refuses to create
+     * a draft with an action that publishes.
+     */
+    @Test
+    public void test_run_leavesFilesAsDraftsEvenWhenNewIsMappedToPublish() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
+
+        mapNewTo(dotAsset, SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
+        try {
+            final Job job = jobFor(folder, 2);
+
+            final BulkUploadProcessor processor = new BulkUploadProcessor();
+            processor.process(job);
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+            assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
+                    "the files still have to be created.\n" + describe(outcome));
+
+            for (final Contentlet created :
+                    APILocator.getFolderAPI().getWorkingContent(folder, admin(), false)) {
+                assertFalse(created.isLive(), String.format(
+                        "publish state must not depend on how NEW happens to be mapped; '%s' was "
+                                + "published because the mapping said so", created.getTitle()));
+            }
+        } finally {
+            restoreNewMapping(dotAsset);
+        }
+    }
+
+    /**
+     * Points the content type's {@code NEW} system action at a specific workflow action.
+     * <p>
+     * Undone in a {@code finally} without exception: a system-action mapping persisted on a
+     * <b>shared</b> content type outlives the test that set it, and the next test to create a
+     * dotAsset would publish for no reason it could see.
+     */
+    private void mapNewTo(final ContentType contentType, final String workflowActionId)
+            throws Exception {
+        APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
+                WorkflowAPI.SystemAction.NEW,
+                APILocator.getWorkflowAPI().findAction(workflowActionId, admin()),
+                contentType);
+    }
+
+    private void restoreNewMapping(final ContentType contentType) {
+        try {
+            APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
+                    WorkflowAPI.SystemAction.NEW,
+                    APILocator.getWorkflowAPI().findAction(
+                            SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, admin()),
+                    contentType);
+        } catch (final Exception e) {
+            Logger.warn(this, "Could not restore the NEW mapping: " + e.getMessage());
+        }
+    }
+
 }

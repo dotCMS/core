@@ -125,6 +125,20 @@ public class BulkUploadReasonResolver {
      * would break the first time the language key is edited, which is the trap research R4
      * documented.
      * <p>
+     * <b>This signature is not unique, and that is handled elsewhere.</b> A folder
+     * {@code filesMasks} mismatch raises the same class and marks the same field
+     * ({@code ESContentletAPIImpl#validateFileAsset}), differing only by the translated message —
+     * so read from the exception alone the two are genuinely indistinguishable, and this reported a
+     * filter mismatch as {@code NAME_COLLISION}, telling an author to rename a file whose name was
+     * never the problem. The fix is not a cleverer signature: <b>both are now decided before the
+     * create</b>, from the folder's own filter and a name lookup, where each is a fact
+     * ({@code BulkUploadProcessor#folderRefusal}).
+     * <p>
+     * Which makes reaching here a <b>race</b>, and settles what to call it: a folder's filter does
+     * not change between the pre-check and the create, while another batch taking the name is the
+     * expected concurrent outcome this feature is specified for (FR-042, US6). So a collision is
+     * not a guess here — it is the only one of the two that can actually arrive this way.
+     * <p>
      * The collision itself is not this feature's rule. The unique index on the lower-cased path
      * already decided who wins — so this is <b>case-insensitive</b>, and {@code Report.pdf} and
      * {@code report.pdf} are one contended name (FR-042a). All that is added here is telling the

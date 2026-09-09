@@ -53,6 +53,7 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
     private static final String NOTIFICATION_PARTIAL_KEY = "notification.bulkupload.partial";
     private static final String NOTIFICATION_FAILED_KEY = "notification.bulkupload.failed";
     private static final String NOTIFICATION_CANCELLED_KEY = "notification.bulkupload.cancelled";
+    private static final String NOTIFICATION_DUPLICATE_KEY = "notification.bulkupload.duplicate";
 
     private final SystemEventsAPI systemEventsAPI;
     private final NotificationAPI notificationAPI;
@@ -109,7 +110,8 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
     }
 
     /**
-     * The outcome as it travels to the author: counts <b>and</b> the per-file results.
+     * The outcome as it travels to the author: the §3 outcome entire — counts, the per-file
+     * results, and the duplicate-resubmission flag.
      * <p>
      * <b>The results are not optional.</b> A counts-only payload leaves an author with "27 of 30
      * created" and no way to learn which three — which FR-023 forbids, because those names are
@@ -135,6 +137,13 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
             payload.put("failedCount", found.get("failedCount"));
             payload.put("skippedCount", found.get("skippedCount"));
             payload.put("results", found.get("results"));
+
+            // Travels on this channel too, not only on the polled outcome. A client following the
+            // push — which is the case User Story 4 is built around, the author who left the page —
+            // would otherwise read a resubmission as "every file failed", which is exactly what
+            // FR-040a exists to prevent. §4 says the payload is the §3 outcome, and this is part
+            // of it.
+            payload.put("duplicateSubmission", found.get("duplicateSubmission"));
         });
 
         return payload;
@@ -163,6 +172,19 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
             // upload broke when they stopped it themselves.
             messageKey = NOTIFICATION_CANCELLED_KEY;
             level = NotificationLevel.WARNING;
+        } else if (Boolean.TRUE.equals(payload.get("duplicateSubmission"))) {
+            // Checked BEFORE the counts, because the counts are exactly what mislead here: a
+            // resubmission collides on every file, so it arrives as successCount=0, failedCount=N
+            // and matches the branch below word for word. Judged on counts alone this batch is
+            // reported as a total failure — the precise outcome FR-040a exists to prevent, landing
+            // on the durable notification, which is the channel for the author who walked away and
+            // therefore the feature's core case.
+            //
+            // Worth being concrete about the harm: told "50 of 50 failed", an author goes and
+            // re-uploads 50 files that are already in the folder. The spec calls that worse than
+            // offering no retry at all, and it is why the flag was added.
+            messageKey = NOTIFICATION_DUPLICATE_KEY;
+            level = NotificationLevel.INFO;
         } else if (JobState.SUCCESS != job.state() || (0 == succeeded && failed > 0)) {
             messageKey = NOTIFICATION_FAILED_KEY;
             level = NotificationLevel.ERROR;
