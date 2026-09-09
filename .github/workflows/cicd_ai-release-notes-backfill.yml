@@ -31,8 +31,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The phase's final step is `gh release edit --notes-file`, an unconditional replace on a
+  # public release body — it overwrites hand edits and cannot be undone from here.
+  # workflow_dispatch is open to every account with write access on this repo, so reviewer
+  # approval is the access control. Same pattern as cicd_evergreen-tracks-promote.yml.
+  # The environment must carry required_reviewers; GitHub auto-creates it UNPROTECTED on
+  # first use if it is missing, which would silently remove this gate.
+  gate:
+    name: Approve Notes Rewrite
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: release-notes-backfill
+    steps:
+      - run: |
+          echo "Approved: rewrite release notes for ${{ inputs.release_tag }}"
+          echo "Previous tag: ${{ inputs.previous_tag || '(auto-detect)' }}"
+
   release-notes:
     name: Generate Notes
+    needs: gate
     uses: ./.github/workflows/cicd_comp_ai-release-notes-phase.yml
     with:
       release_tag: ${{ inputs.release_tag }}
