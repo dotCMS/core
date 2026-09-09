@@ -109,10 +109,59 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * <b>submission</b> does, and this stands in for it.
      */
     private HttpServletRequest request() throws Exception {
+        return request(admin());
+    }
+
+    /**
+     * As above, for a specific author.
+     * <p>
+     * <b>Who stages the content is not incidental.</b> The run resolves it through
+     * {@code getTempFile(accessingList, …)} with {@code [userId, requestFingerprint]}, both taken
+     * from the job — so content staged by one user and claimed by another is simply not found, and
+     * the run reports {@code STAGED_CONTENT_UNAVAILABLE} before it ever reaches the rule the test
+     * meant to exercise. Any test about a non-admin author has to stage as that author.
+     */
+    private HttpServletRequest request(final User author) {
         final HttpServletRequest request = new MockSessionRequest(new MockAttributeRequest(
                 new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request();
-        request.setAttribute(com.liferay.portal.util.WebKeys.USER, admin());
+        request.setAttribute(com.liferay.portal.util.WebKeys.USER, author);
         return request;
+    }
+
+    /** A job whose files were staged by {@code author}, and which runs as them. */
+    private Job jobAs(final User author, final Folder folder, final int count) throws Exception {
+        final HttpServletRequest request = request(author);
+        final List<Map<String, Object>> stagedFiles = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            final String fileName = "bulk-" + UUID.randomUUID() + ".txt";
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, 0)));
+
+            final Map<String, Object> file = new HashMap<>();
+            file.put("tempFileId", tempFile.id);
+            file.put("fileName", fileName);
+            file.put("sizeBytes", tempFile.length());
+            file.put("mimeType", tempFile.mimeType);
+            stagedFiles.add(file);
+        }
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("baseType", "DOTASSET");
+        parameters.put("folderId", folder.getIdentifier());
+        parameters.put("targetId", folder.getIdentifier());
+        parameters.put("userId", author.getUserId());
+        parameters.put("stagedFiles", stagedFiles);
+        parameters.put("requestFingerprint",
+                APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        return Job.builder()
+                .id(UUID.randomUUID().toString())
+                .queueName("assetBulkUpload")
+                .state(JobState.RUNNING)
+                .parameters(parameters)
+                .progressTracker(new DefaultProgressTracker())
+                .build();
     }
 
     /**
@@ -1085,51 +1134,52 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: the bulk-upload processor, for an author the per-file check refuses
      * <p>
-     * Given scenario: A run whose submitting user cannot create the batch's content type, on a
-     * folder they may otherwise write to.
+     * Given scenario: A run whose author staged the content themselves but has no rights on the
+     * target folder.
      * <p>
      * Expected result: Each file fails as {@code PERMISSION_DENIED}, and the run finishes normally
      * rather than throwing.
      * <p>
-     * <b>EC8's case, and it had no integration coverage.</b> The submission-time check (FR-003)
-     * covers the target; this is the narrower one underneath it — "resolving to a content type the
-     * author cannot create" — and only a unit assertion on {@code classify} existed for it, which
-     * proves the mapping and not that the creation path ever produces the exception being mapped.
+     * <b>EC8's case, which had no integration coverage.</b> The submission-time check (FR-003)
+     * covers the target before a batch exists; this is the narrower one underneath it, and only a
+     * unit assertion on {@code classify} existed — which proves the mapping and not that the
+     * creation path ever produces the exception being mapped.
      * <p>
      * That the run <b>completes</b> matters as much as the reason: a security failure that
      * propagated would abort the batch, and FR-007 says one failing file must not.
+     * <p>
+     * <b>The author stages their own content, and that is load-bearing.</b> An earlier version of
+     * this test reused admin-staged files and merely swapped the job's {@code userId}; the run then
+     * could not retrieve the content at all and reported
+     * {@code STAGED_CONTENT_UNAVAILABLE} — passing through the permission check without ever
+     * reaching it. See {@link #request(User)}.
      */
     @Test
     public void test_run_reportsAPerFilePermissionFailureWithoutAbortingTheRun() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
-        final Job job = jobFor(folder, 3);
+        final User limited = new UserDataGen().nextPersisted();
 
-        // Swap in an author who was never granted anything on the content type. The submission
-        // gate is not in play here — this test builds the job directly, which is exactly the seam
-        // where the narrower per-file check lives.
-        final Map<String, Object> parameters = new HashMap<>(job.parameters());
-        parameters.put("userId", new UserDataGen().nextPersisted().getUserId());
-
-        final Job asLimitedUser = Job.builder().from(job).parameters(parameters).build();
+        final Job job = jobAs(limited, folder, 3);
 
         final BulkUploadProcessor processor = new BulkUploadProcessor();
-        processor.process(asLimitedUser);
+        processor.process(job);
 
-        final Map<String, Object> outcome = processor.getResultMetadata(asLimitedUser);
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
 
         assertEquals(0, ((Number) outcome.get("successCount")).intValue(),
-                "an author who cannot create the type creates nothing.\n" + describe(outcome));
+                "an author with no rights on the target creates nothing.\n" + describe(outcome));
         assertEquals(3, ((Number) outcome.get("failedCount")).intValue(),
-                "and every file is reported, not just the first one that failed");
+                "and every file is reported, not just the first one that failed — the run did not "
+                        + "abort");
 
         @SuppressWarnings("unchecked")
-        final List<BatchItemResult> results =
-                (List<BatchItemResult>) outcome.get("results");
+        final List<BatchItemResult> results = (List<BatchItemResult>) outcome.get("results");
         for (final BatchItemResult result : results) {
             assertEquals(BatchFailureReason.PERMISSION_DENIED, result.reason().orElse(null),
-                    String.format("'%s' must name the permission rule, not fall through to "
-                            + "UNCLASSIFIED — an author told only that it failed has nothing to "
-                            + "act on.\n%s", result.key(), describe(outcome)));
+                    String.format("'%s' must name the permission rule. UNCLASSIFIED leaves the "
+                            + "author with nothing to act on, and STAGED_CONTENT_UNAVAILABLE would "
+                            + "mean this test never reached the check it is about.\n%s",
+                            result.key(), describe(outcome)));
         }
     }
 
