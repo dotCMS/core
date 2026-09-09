@@ -3,8 +3,10 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.cube.AnalyticsResultSet;
 import com.dotcms.cube.AnalyticsResultSetImpl;
 import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
@@ -166,9 +168,24 @@ public class CaemHttpClient {
 
     protected Map<String, String> buildHeaders(@Nullable final Host host) {
         final Map<String, String> headers = new HashMap<>();
-        ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host)
+        final Host resolvedHost = host != null ? host : resolveCurrentHost();
+        ContentAnalyticsUtil.getBearerTokenFromAppSecrets(resolvedHost)
                 .ifPresent(token -> headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + token));
         return headers;
+    }
+
+    private static Host resolveCurrentHost() {
+        try {
+            final javax.servlet.http.HttpServletRequest request =
+                    HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            if (request != null) {
+                return WebAPILocator.getHostWebAPI().getCurrentHost(request);
+            }
+        } catch (final Exception e) {
+            Logger.debug(CaemHttpClient.class,
+                    "Could not resolve current host from request context: " + e.getMessage());
+        }
+        return null;
     }
 
     private String buildUrl(final String baseUrl,
