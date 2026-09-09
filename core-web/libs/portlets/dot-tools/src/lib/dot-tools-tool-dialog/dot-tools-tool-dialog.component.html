@@ -1,0 +1,121 @@
+<form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <p class="mb-4 text-xs text-gray-500">
+        A tool is a filtered content list. It lands in Available Tools — add it to any section from
+        there.
+    </p>
+
+    <div class="field">
+        <label for="tools-tool-name">
+            Name
+            <span class="text-red-600">*</span>
+        </label>
+        <input
+            pInputText
+            id="tools-tool-name"
+            formControlName="portletName"
+            placeholder="e.g. Press Releases"
+            (input)="onNameChange(form.controls.portletName.value)"
+            [class.ng-invalid]="$nameShowsError()"
+            [class.ng-dirty]="$nameShowsError()"
+            data-testid="tools-tool-name-input"
+            class="w-full" />
+        @if ($nameShowsError()) {
+            <small class="text-red-600" data-testid="tools-tool-name-error">
+                A name is required.
+            </small>
+        }
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-id">Id</label>
+        <input
+            pInputText
+            id="tools-tool-id"
+            formControlName="portletId"
+            placeholder="auto-generated from the name"
+            (input)="onIdTouched()"
+            [class.ng-invalid]="$idShowsError()"
+            [class.ng-dirty]="$idShowsError()"
+            data-testid="tools-tool-id-input"
+            class="w-full font-mono text-sm" />
+        @if ($idShowsError()) {
+            <small class="text-red-600" data-testid="tools-tool-id-error">An id is required.</small>
+        } @else {
+            <small class="text-gray-500">
+                Generated from the name. Change it only if an integration depends on a specific id.
+            </small>
+        }
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-base-types">Base types</label>
+        <p-multiSelect
+            inputId="tools-tool-base-types"
+            formControlName="baseTypes"
+            [options]="baseTypes"
+            optionLabel="label"
+            optionValue="id"
+            display="chip"
+            placeholder="Any base type"
+            appendTo="body"
+            data-testid="tools-tool-base-types-select"
+            styleClass="w-full" />
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-content-types">Content types</label>
+        <p-multiSelect
+            inputId="tools-tool-content-types"
+            formControlName="contentTypes"
+            [options]="$contentTypes()"
+            [loading]="$contentTypesLoading()"
+            optionLabel="label"
+            optionValue="variable"
+            display="chip"
+            [filter]="true"
+            filterBy="label"
+            placeholder="All content types"
+            appendTo="body"
+            data-testid="tools-tool-content-types-select"
+            styleClass="w-full" />
+        <small class="text-gray-500">
+            Pick whole base types above, specific content types here, or leave both empty for the
+            full catalog.
+        </small>
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-view-mode">Data view mode</label>
+        <p-selectButton
+            inputId="tools-tool-view-mode"
+            formControlName="dataViewMode"
+            [options]="viewModes"
+            optionLabel="label"
+            optionValue="id"
+            [allowEmpty]="false"
+            data-testid="tools-tool-view-mode-select" />
+    </div>
+
+    <div class="mt-4 flex items-center gap-2">
+        @if ($submitted() && form.invalid) {
+            <span
+                class="mr-auto inline-flex items-center gap-2 text-xs text-red-600"
+                data-testid="tools-tool-form-error">
+                <span class="material-symbols-outlined text-base leading-none">warning</span>
+                <span>Please fix the highlighted fields.</span>
+            </span>
+        } @else {
+            <span class="mr-auto"></span>
+        }
+        <p-button
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+            data-testid="tools-tool-cancel-btn" />
+        <p-button
+            [label]="isEdit ? 'Save' : 'Create'"
+            type="submit"
+            data-testid="tools-tool-save-btn" />
+    </div>
+</form>
