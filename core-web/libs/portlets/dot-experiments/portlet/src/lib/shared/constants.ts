@@ -132,13 +132,26 @@ export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
 /** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
 export const RESULTS_SEGMENT = 'results';
 
+/** Route parameter naming the experiment on the Configure and Results URLs. */
+export const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
+
 /**
- * i18n key of the list screen's own title — the same one its route declares, so the crumb the list
- * puts on the trail and the one the deeper screens put above it cannot drift apart.
+ * i18n keys of the three screens' own titles — the same ones their routes declare.
+ *
+ * The crumb a screen puts on the trail says where you are, so it is the screen's title and not the
+ * experiment's: the experiment is already named right below, in the header. Reading the key the
+ * route reads keeps the crumb and the browser tab from drifting apart.
  */
 export const LIST_TITLE_KEY = 'experiment.container.list.title';
+export const CONFIGURE_TITLE_KEY = 'experiment.container.configuration.title';
+export const RESULTS_TITLE_KEY = 'experiment.container.report.title';
 
-/** i18n key of the Configure screen's title while the draft has no name yet. */
+/**
+ * i18n key of the Configure screen's title while the draft has no name yet.
+ *
+ * Also the screen's own name at that point: a draft that has not been created is the New
+ * Experiment screen, and only becomes the Configure screen once it exists.
+ */
 export const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
 
 /**

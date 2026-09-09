@@ -3,7 +3,7 @@ import { createComponentFactory, mockProvider, Spectator } from '@openng/spectat
 import { of } from 'rxjs';
 
 import { signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
@@ -21,6 +21,7 @@ const NOT_ENOUGH_SESSIONS_COPY = 'An Experiment needs at least 10 sessions.';
 const UNAVAILABLE_COPY = 'The report could not be loaded, so there are no numbers to show here.';
 
 const LIST_TITLE_COPY = 'Experiments List';
+const RESULTS_TITLE_COPY = 'Experiments Reports';
 
 /** The experiment the screen reports on, as the store publishes it once the load settles. */
 const EXPERIMENT = {
@@ -30,6 +31,7 @@ const EXPERIMENT = {
 
 const messageServiceMock = new MockDotMessageService({
     'experiment.container.list.title': LIST_TITLE_COPY,
+    'experiment.container.report.title': RESULTS_TITLE_COPY,
     'experiments.results.empty.title': 'No results to report yet',
     'experiments.results.empty.description': NOT_ENOUGH_SESSIONS_COPY,
     'experiments.results.empty.not-started.description': NOT_STARTED_COPY,
@@ -161,7 +163,13 @@ describe('DotExperimentsResultsComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
                     provide: ActivatedRoute,
-                    useValue: { data: of({}), snapshot: { paramMap: new Map(), queryParams: {} } }
+                    useValue: {
+                        data: of({}),
+                        snapshot: {
+                            paramMap: convertToParamMap({ experimentId: EXPERIMENT.id }),
+                            queryParams: {}
+                        }
+                    }
                 },
                 { provide: GlobalStore, useFactory: () => globalStore },
                 mockProvider(DotMessageDisplayService)
@@ -172,22 +180,10 @@ describe('DotExperimentsResultsComponent', () => {
 
         const crumbLabels = () => globalStore.trail.map(({ label }) => label);
 
-        beforeEach(() => {
+        it('should name the screen, with the list above it', () => {
             spectator = createComponent();
-        });
 
-        // The crumb is named after the experiment, and the name only arrives with the load.
-        it('should say nothing until the experiment has loaded', () => {
-            spectator.flushEffects();
-
-            expect(globalStore.trail).toEqual([]);
-        });
-
-        it('should name the screen after the experiment, with the list above it', () => {
-            storeMock.experiment.set(EXPERIMENT);
-            spectator.flushEffects();
-
-            expect(crumbLabels()).toEqual([LIST_TITLE_COPY, EXPERIMENT.name]);
+            expect(crumbLabels()).toEqual([LIST_TITLE_COPY, RESULTS_TITLE_COPY]);
             expect(globalStore.trail.at(-1)).toEqual(
                 expect.objectContaining({
                     id: 'experiments-results',
@@ -201,10 +197,9 @@ describe('DotExperimentsResultsComponent', () => {
         it('should put itself on top of a trail that already carries the list', () => {
             globalStore.trail.push(
                 { id: 'experiments-list', label: LIST_TITLE_COPY },
-                { id: 'experiments-configure', label: EXPERIMENT.name }
+                { id: 'experiments-configure', label: 'Configure Experiment' }
             );
-            storeMock.experiment.set(EXPERIMENT);
-            spectator.flushEffects();
+            spectator = createComponent();
 
             expect(globalStore.trail.map(({ id }) => id)).toEqual([
                 'experiments-list',

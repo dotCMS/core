@@ -1,6 +1,6 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
 
-import { Component, computed, DestroyRef, effect, inject, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -30,9 +30,11 @@ import { DotExperimentsResultsStatStripComponent } from './components/dot-experi
 import { DotExperimentsResultsSummaryTableComponent } from './components/dot-experiments-results-summary-table/dot-experiments-results-summary-table.component';
 
 import {
+    EXPERIMENT_ID_ROUTE_PARAM,
     EXPERIMENTS_URL,
     LIST_TITLE_KEY,
     RESULTS_CONFIRM_DIALOG_KEY,
+    RESULTS_TITLE_KEY,
     SUCCESS_MESSAGE_LIFE
 } from '../shared/constants';
 import { dotExperimentsResultsApiEvents } from '../store/dot-experiments-results-api.events';
@@ -50,7 +52,6 @@ import { listReturnParams } from '../util/dot-experiments-list.util';
 const HEALTH_STATUS_ROUTE_DATA_KEY = 'healthStatus';
 
 /** Route parameter naming the experiment being reported on. */
-const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
 
 /**
  * Shell of the Results screen, routed on `/experiments/:experimentId/results`.
@@ -204,26 +205,9 @@ export class DotExperimentsResultsComponent {
               );
     });
 
-    /**
-     * Puts this screen on the breadcrumb trail (#37005).
-     *
-     * The same reasoning as the Configure screen's crumb: without one the trail ended at the
-     * list's, so the shell titled this screen "Experiments List" and left the level above it out
-     * of the path. Named after the experiment, and held back until it loads — the name is what the
-     * crumb is for.
-     */
-    protected readonly syncBreadcrumbEffect = effect(() => {
-        const experiment = this.store.experiment();
-
-        if (!experiment) {
-            return;
-        }
-
-        untracked(() => this.#syncBreadcrumb(experiment.name, experiment.id));
-    });
-
     constructor() {
         this.#listenForActionSuccess();
+        this.#syncBreadcrumbOnInit();
     }
 
     /**
@@ -237,6 +221,27 @@ export class DotExperimentsResultsComponent {
         this.#router.navigate([EXPERIMENTS_URL], {
             queryParams: listReturnParams(this.#route.snapshot.queryParams)
         });
+    }
+
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * The same reasoning as the Configure screen's crumb: without one the trail ended at the
+     * list's, so the shell titled this screen "Experiments List" and left the level above it out
+     * of the path. Named after the screen, not the experiment — the header right below already
+     * names the experiment, next to its status and its page.
+     *
+     * A one-shot rather than an effect: unlike Configure, this screen is only ever reached on an
+     * experiment that exists, so neither half of its crumb can change while it is open.
+     */
+    #syncBreadcrumbOnInit(): void {
+        const experimentId = this.#route.snapshot.paramMap.get(EXPERIMENT_ID_ROUTE_PARAM);
+
+        if (!experimentId) {
+            return;
+        }
+
+        this.#syncBreadcrumb(this.#dotMessageService.get(RESULTS_TITLE_KEY), experimentId);
     }
 
     /**

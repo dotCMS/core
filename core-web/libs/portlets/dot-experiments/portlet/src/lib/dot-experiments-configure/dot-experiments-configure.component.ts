@@ -67,6 +67,8 @@ import { DotExperimentsConfigureSchedulingComponent } from './components/dot-exp
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 
 import {
+    CONFIGURE_TITLE_KEY,
+    EXPERIMENT_ID_ROUTE_PARAM,
     EXPERIMENTS_URL,
     LIST_TITLE_KEY,
     MAX_TRAFFIC_ALLOCATION,
@@ -239,21 +241,19 @@ export class DotExperimentsConfigureComponent {
     });
 
     /**
-     * Label of this screen's crumb: the experiment's name as typed, or the new-experiment title.
+     * Identifier of the experiment this screen is on, or `null` while the draft has none.
      *
-     * Empty while an existing experiment is still loading — `draftName` is only seeded from the
-     * response, so labelling the crumb before it arrives would put "New Experiment" on the trail
-     * for an experiment that has a name. The effect below waits rather than showing the wrong one.
+     * Read from the store first and from the address second, because the two lead by turns:
+     * creating the draft fills the store immediately and rewrites the URL right after, and a
+     * screen entered on an existing experiment has the id in the address before the load answers.
+     * One derivation, so the crumb's label and its address can never disagree about which of the
+     * screen's two states it is in.
      */
-    readonly $breadcrumbLabel = computed<string>(() => {
-        const name = this.store.draftName().trim();
-
-        if (name) {
-            return name;
-        }
-
-        return this.store.isNew() ? this.#dotMessageService.get(NEW_EXPERIMENT_TITLE_KEY) : '';
-    });
+    readonly $experimentId = computed<string | null>(
+        () =>
+            this.store.experiment()?.id ??
+            this.#route.snapshot.paramMap.get(EXPERIMENT_ID_ROUTE_PARAM)
+    );
 
     /**
      * Puts this screen on the breadcrumb trail (#37005).
@@ -262,23 +262,21 @@ export class DotExperimentsConfigureComponent {
      * the title of a screen that is not the list — and the list, which *is* a level above, was
      * missing from the path instead of sitting in it.
      *
-     * The label is the experiment, not the screen: "Experiments Configuration" would say the same
-     * thing on every one of them, and at this depth the trail's job is to say *which* one. A draft
-     * with no name yet says that it is a new one.
+     * The label is the screen, not the experiment: the experiment is already named right below, in
+     * the header, next to its status and its page. Naming it twice on the same screen says nothing
+     * the second time, and the crumb is the one place that has to say *where* you are — which,
+     * before the draft exists, is the New Experiment screen rather than the Configure one.
      *
-     * An effect rather than a one-shot, because both halves of the label move without leaving the
-     * screen: the name is rewritten as it is typed, and creating the draft swaps `/experiments/new`
-     * for the experiment's own address. The crumb keeps one id across that swap, and
-     * `putCrumbOnTrail` rewrites the crumb already carrying it, so neither move stacks a second
-     * one.
+     * An effect rather than a one-shot, because the screen changes which of those two it is
+     * without being left: creating the draft swaps `/experiments/new` for the experiment's own
+     * address. The crumb keeps one id across that swap, and `putCrumbOnTrail` rewrites the crumb
+     * already carrying it, so it does not stack a second one.
      */
     protected readonly syncBreadcrumbEffect = effect(() => {
-        const label = this.$breadcrumbLabel();
-        const experimentId = this.store.experiment()?.id ?? null;
-
-        if (!label) {
-            return;
-        }
+        const experimentId = this.$experimentId();
+        const label = this.#dotMessageService.get(
+            experimentId ? CONFIGURE_TITLE_KEY : NEW_EXPERIMENT_TITLE_KEY
+        );
 
         untracked(() => this.#syncBreadcrumb(label, experimentId));
     });

@@ -62,6 +62,7 @@ const LOCKED_COPY = {
 
 const LIST_TITLE_COPY = 'Experiments List';
 const NEW_EXPERIMENT_COPY = 'New Experiment';
+const CONFIGURE_TITLE_COPY = 'Configure Experiment';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.list.error.title': ERROR_COPY.title,
@@ -76,6 +77,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.notification.cancel.schedule': 'Experiment {0} unscheduled',
     'experiments.notification.abort': 'Experiment {0} aborted',
     'experiment.container.list.title': LIST_TITLE_COPY,
+    'experiment.container.configuration.title': CONFIGURE_TITLE_COPY,
     'experiments.configure.header.new-experiment': NEW_EXPERIMENT_COPY
 });
 
@@ -1053,7 +1055,6 @@ describe('DotExperimentsConfigureComponent', () => {
 
         it('should keep the narrowing in the crumbs it puts on the trail', () => {
             storeMock.experiment.set(EXPERIMENT);
-            storeMock.draftName.set(EXPERIMENT.name);
             spectator.detectChanges();
 
             expect(globalStore.trail.map(({ url }) => url)).toEqual([
@@ -1083,14 +1084,29 @@ describe('DotExperimentsConfigureComponent', () => {
                 expect(crumbLabels()).toEqual([LIST_TITLE_COPY, NEW_EXPERIMENT_COPY]);
             });
 
-            // Written in place, not appended: `addNewBreadcrumb` skips an item whose id matches
-            // the last crumb's rather than replacing it, so the trail kept saying "New
-            // Experiment" for an experiment that had been named.
-            it('should follow the name as it is typed', () => {
+            // The crumb says where you are, and the header right below already says which
+            // experiment: naming it in both places said nothing the second time.
+            it('should not repeat the experiment name the header already shows', () => {
                 storeMock.draftName.set('Summer Test');
                 spectator.detectChanges();
 
-                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, 'Summer Test']);
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, NEW_EXPERIMENT_COPY]);
+            });
+
+            /**
+             * Written in place, not appended: `addNewBreadcrumb` skips an item whose id matches
+             * the last crumb's rather than replacing it, so the trail kept the label and the
+             * address the screen opened with — a link back to a draft that no longer exists.
+             */
+            it('should become the Configure screen once the draft is created', () => {
+                storeMock.experiment.set(EXPERIMENT);
+                storeMock.isNew.set(false);
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, CONFIGURE_TITLE_COPY]);
+                expect(globalStore.trail.at(-1)?.url).toBe(
+                    `/dotAdmin/#/experiments/${EXPERIMENT.id}/configuration`
+                );
             });
         });
 
@@ -1117,25 +1133,24 @@ describe('DotExperimentsConfigureComponent', () => {
                 configProps: CONFIGURED_DURATIONS
             });
 
-            // The label is the experiment, and `draftName` is only seeded from the response — so
-            // labelling before it arrives would put "New Experiment" on the trail for an
-            // experiment that has a name.
-            it('should say nothing until the experiment has loaded', () => {
-                storeMock.isNew.set(false);
-                spectator = createComponent();
-                spectator.detectChanges();
-
-                expect(globalStore.trail).toEqual([]);
-            });
-
-            it('should name the crumb after the experiment', () => {
+            it('should name the crumb after the screen', () => {
                 storeMock.isNew.set(false);
                 spectator = createComponent();
                 storeMock.experiment.set(EXPERIMENT);
                 storeMock.draftName.set(EXPERIMENT.name);
                 spectator.detectChanges();
 
-                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, EXPERIMENT.name]);
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, CONFIGURE_TITLE_COPY]);
+            });
+
+            // The address carries it even before the load answers, so the crumb never points at
+            // `/experiments/new` on a screen that was entered on an experiment.
+            it('should read the experiment off the address before the load answers', () => {
+                storeMock.isNew.set(false);
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, CONFIGURE_TITLE_COPY]);
             });
 
             // The address is the experiment's own, not `/experiments/new`: the crumb is a way
