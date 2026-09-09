@@ -271,6 +271,10 @@ run reports a collision failure for it.
 - **The connection drops before the client learns whether its submission was accepted.** Covered by
   FR-040: the client can safely resubmit, and either gets the original batch back or sees the
   already-created files rejected as collisions. What it must never get is a silent second copy.
+- **The same batch resubmitted as `DOTASSET`** *(added by amendment, 2026-09-09)*. A second copy of
+  every file is created and the run reports clean success. Accepted, not prevented — FR-040b records
+  why the collision branch has no mechanism for a dotAsset, and why refusing would make the batch
+  endpoint stricter than every other path that creates one.
 - **Two batches racing for the same name in the same folder.** Exactly one wins; the other records
   a collision for that file only (FR-041, FR-042).
 - **The batch exceeds the configured total size.** Refused at submission, by accumulating the
@@ -537,6 +541,29 @@ run reports a collision failure for it.
   original handle, or let the per-file collision rule (FR-041) reject the already-created files —
   and whichever it does MUST be stated, because a client cannot know whether its submission
   landed when the connection drops.
+- **FR-040b** *(added by amendment, 2026-09-09 — narrows FR-040)*: **FR-040 binds for `FILEASSET`
+  only.** For `DOTASSET` a resubmission **does** create a second copy, and that is accepted rather
+  than prevented.
+  - **Why it cannot be prevented by the chosen branch.** FR-040's collision branch has no mechanism
+    for a dotAsset. A file asset's identifier takes its `asset_name` from the file name, so the
+    unique index FR-042 relies on contends; a dotAsset's `asset_name` is
+    `content.<inode>` (`IdentifierFactoryImpl:420`), freshly generated per contentlet, so **the
+    index can never collide for one**. Nor is there a content-hash rule anywhere in the product to
+    fall back on.
+  - **Why it is accepted rather than fixed.** A dotAsset is a piece of content, not a named file in
+    a folder; two copies of the same image are two legitimate assets, and the product has never
+    said otherwise. Making the batch endpoint refuse them would make it **stricter than every other
+    path that creates a dotAsset**, which is the divergence FR-006 exists to prevent — the same
+    objection that settled the folder `defaultBaseType` question.
+  - **What the author is exposed to.** A `DOTASSET` retry after a dropped connection leaves two
+    copies of everything, reported as a clean `successCount: N`. The client cannot distinguish it
+    from a first upload, and `duplicateSubmission` is `false` whenever the file order differed,
+    because the fingerprint is order-sensitive by construction. This is a **known, accepted cost**,
+    and it MUST be stated wherever the retry guarantee is described (contract §1, C-002a) so no
+    client is built on a promise that does not hold for half the base types.
+  - **Not in scope of this exception**: an interrupted run that **resumes**. That is deduplicated by
+    the per-item `seq` checkpoint (FR-036, FR-037) and holds for both base types — see SC-009, which
+    is unchanged.
 - **FR-040a**: If the collision branch is chosen, a duplicate resubmission MUST be **distinguishable
   from a genuinely all-collided batch** — by a reason, a flag on the outcome, or both. The two
   branches protect the author's data equally but do not report equally: under the collision branch
@@ -551,8 +578,12 @@ run reports a collision failure for it.
   succeed**. The other MUST be recorded as that file's own collision failure. Two files with the
   same name in one folder, and a silent overwrite, are both unacceptable outcomes.
 - **FR-042**: FR-041 MUST hold when the two runs overlap in time. **The storage layer already
-  guarantees it**: a unique index over the lower-cased full path per host (the same one FR-042a
-  names) rejects the second writer of a contended name on every existing install. The product's own pre-check is
+  guarantees it for `FILEASSET`**: a unique index over the lower-cased full path per host (the same
+  one FR-042a names) rejects the second writer of a contended name on every existing install.
+  *(Amended 2026-09-09 — this previously read as an unqualified guarantee, which was wrong: a
+  dotAsset's `asset_name` is generated per contentlet, so the index never contends for one. FR-040b
+  records the consequence. FR-041 is therefore a `FILEASSET` guarantee, and a `DOTASSET` batch
+  simply has no contended name to lose.)* The product's own pre-check is
   a check followed by a create and can pass for both runs, so it is a courtesy that produces a
   clean message, not the guarantee. The requirement is therefore to **catch the constraint
   violation and report it as the same collision failure as the pre-check** — not to build a lock
@@ -615,6 +646,12 @@ from the consumer's point of view.
   collision branch, a duplicate resubmission MUST be distinguishable from a genuinely all-collided
   batch** (FR-040a); without that the client is handed "every file failed" for a batch that
   succeeded, and cannot keep its own promise that retrying is safe.
+- **C-002a1** *(added by amendment, 2026-09-09)*: **That answer differs by base type, and the client
+  must be told which one it is getting.** For `FILEASSET`, C-002a holds as written. For `DOTASSET` a
+  retry creates a second copy and reports clean success (FR-040b), with nothing in the outcome
+  saying so — `duplicateSubmission` is `false` whenever the file order differed, because the
+  fingerprint is order-sensitive. A client therefore MUST NOT present "safe to retry" as
+  unconditional.
 - **C-002b**: A stable set of failure reasons, each mapped to product copy on the client side. The
   server's message is diagnostic and is not displayed (FR-016a). Adding a reason later changes both
   halves.
