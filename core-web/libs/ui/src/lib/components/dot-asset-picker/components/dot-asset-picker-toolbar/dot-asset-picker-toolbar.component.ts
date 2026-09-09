@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    OnDestroy,
+    output,
+    viewChild
+} from '@angular/core';
 
 import {
     DotCMSBaseTypesContentTypes,
@@ -7,6 +15,8 @@ import {
     TreeNodeContentData
 } from '@dotcms/dotcms-models';
 
+import { DotKeyboardShortcutService } from '../../../../services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
+import { DotKeyboardShortcutUnregister } from '../../../../services/dot-keyboard-shortcut/models';
 import { DotContentTypeFilterChipComponent } from '../../../dot-filter-bar/chips/dot-content-type-filter-chip/dot-content-type-filter-chip.component';
 import { DotFieldFilterComponent } from '../../../dot-filter-bar/chips/dot-field-filter/dot-field-filter.component';
 import { DotFieldFilterMenuComponent } from '../../../dot-filter-bar/chips/dot-field-filter-menu/dot-field-filter-menu.component';
@@ -50,8 +60,12 @@ import { allowedStatusesFor } from '../../store/filter-defaults';
     ],
     host: { class: 'block w-full' }
 })
-export class DotAssetPickerToolbarComponent {
+export class DotAssetPickerToolbarComponent implements OnDestroy {
     readonly store = inject(DotAssetPickerStore);
+    readonly #shortcuts = inject(DotKeyboardShortcutService);
+
+    /** Withdrawals for the claims made in the constructor, released in {@link ngOnDestroy}. */
+    #withdrawShortcuts: DotKeyboardShortcutUnregister[] = [];
 
     /** Re-emitted to the shell, which owns the upload flow. */
     readonly upload = output<MouseEvent>();
@@ -64,6 +78,52 @@ export class DotAssetPickerToolbarComponent {
      * legacy host it runs in does not have (FR-015).
      */
     readonly fieldFilterError = output<DotFilterChipError>();
+
+    // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a
+    // signal query on an ES-private field: "Cannot use 'viewChild' on a class member that is
+    // declared as ES private." The standard cannot be followed here.
+    private readonly $searchInput = viewChild.required(DotSearchInputComponent);
+
+    /**
+     * Claims the search shortcut while this dialog is open.
+     *
+     * This is the case the shortcut registry exists for. The picker opens *over* a portlet that has
+     * already claimed the same combination, and both search boxes are alive at once. Because claims
+     * are per-combination and last-in-wins, registering here takes the key for exactly as long as the
+     * dialog is up and hands it straight back on close.
+     *
+     * Note this claims the *asset* search, not the sidebar's sites-and-folders search: with two boxes
+     * on screen the shortcut has to pick one, and the asset list is what the dialog is for.
+     */
+    constructor() {
+        // `viewChild.required`: the search box is rendered unconditionally in this template, so it
+        // always resolves by the time a keypress can reach here.
+        const focusSearch = () => {
+            this.$searchInput().focus();
+
+            return true;
+        };
+
+        // Both keys the portlet claims, so the dialog shadows the whole search shortcut rather than
+        // half of it — otherwise `/` would still reach the listing behind this dialog. Two calls
+        // because labels must be unique within a single `register()` call.
+        this.#withdrawShortcuts = ['/', 'mod+k'].map((combination) =>
+            this.#shortcuts.register({
+                combination,
+                label: 'dot.asset.picker.shortcut.search',
+                handler: focusSearch
+            })
+        );
+    }
+
+    /**
+     * Hands both combinations back to the surface underneath. This is the half that makes the
+     * shadowing correct: without it the picker would keep the shortcut after closing, and the
+     * portlet behind would lose it for the rest of the session.
+     */
+    ngOnDestroy(): void {
+        this.#withdrawShortcuts.forEach((withdraw) => withdraw());
+    }
 
     protected readonly $searchTerm = computed(() => this.store.filters().title ?? '');
 

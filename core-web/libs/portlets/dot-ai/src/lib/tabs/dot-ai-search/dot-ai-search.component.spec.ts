@@ -1,0 +1,280 @@
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { LoggerService } from '@dotcms/dotcms-js';
+import {
+    DOT_AI_VECTOR_OPERATOR,
+    DotAiSearchResponse,
+    DotAiSearchResult
+} from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
+
+import DotAiSearchComponent from './dot-ai-search.component';
+
+import { DotAiStore } from '../../store/dot-ai.store';
+
+const result = (overrides: Partial<DotAiSearchResult> = {}): DotAiSearchResult => ({
+    identifier: 'id-1',
+    inode: 'inode-1',
+    title: 'Ecotourism in Costa Rica',
+    contentType: 'Blog',
+    modDate: '2026-01-01',
+    matches: [{ distance: 0.2, extractedText: 'a matching passage' }],
+    ...overrides
+});
+
+const response = (overrides: Partial<DotAiSearchResponse> = {}): DotAiSearchResponse => ({
+    timeToEmbeddings: '10ms',
+    total: 1,
+    count: 1,
+    query: 'costa rica',
+    threshold: 0.75,
+    operator: DOT_AI_VECTOR_OPERATOR.COSINE,
+    offset: 0,
+    limit: 20,
+    results: [],
+    ...overrides
+});
+
+/**
+ * Four states, explicitly (FR-054). On this screen "nothing matched" and "you have not
+ * searched yet" mean very different things, so they are separate branches rather than one
+ * shared empty state.
+ */
+describe('DotAiSearchComponent', () => {
+    let spectator: Spectator<DotAiSearchComponent>;
+
+    const storeMock = {
+        searchPrompt: jest.fn().mockReturnValue(''),
+        searchResponse: jest.fn().mockReturnValue(null),
+        searchResults: jest.fn().mockReturnValue([]),
+        searchMissingIndex: jest.fn().mockReturnValue(null),
+        isSearching: jest.fn().mockReturnValue(false),
+        hasSearched: jest.fn().mockReturnValue(false),
+        isConfigured: jest.fn().mockReturnValue(true),
+        showNotConfigured: jest.fn().mockReturnValue(false),
+        setSearchPrompt: jest.fn(),
+        runSearch: jest.fn(),
+        // Read by the settings panel, which is a real child of this component.
+        indexesForbidden: jest.fn().mockReturnValue(false),
+        indexOptions: jest.fn().mockReturnValue([]),
+        chatModels: jest.fn().mockReturnValue([]),
+        settingsIndexName: jest.fn().mockReturnValue('default'),
+        settingsThreshold: jest.fn().mockReturnValue(0.75),
+        settingsOperator: jest.fn().mockReturnValue('cosine'),
+        settingsModel: jest.fn().mockReturnValue(''),
+        settingsTemperature: jest.fn().mockReturnValue(0),
+        settingsResponseLength: jest.fn().mockReturnValue(1024),
+        settingsContentTypes: jest.fn().mockReturnValue(''),
+        settingsSite: jest.fn().mockReturnValue(null),
+        setSettings: jest.fn()
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotAiSearchComponent,
+        componentProviders: [{ provide: DotAiStore, useValue: storeMock }],
+        // DotRelativeDatePipe pulls DotFormatDateService -> DotcmsConfigService -> LoggerService;
+        // mocking the two the pipe actually injects stops that chain at the boundary.
+        providers: [
+            mockProvider(DotFormatDateService),
+            mockProvider(DotMessageService),
+            // LoggerService is the leaf of the chain the date pipe drags in; mocking the
+            // root-provided services above it does not intercept, so break it here.
+            mockProvider(LoggerService)
+        ],
+        shallow: true
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        storeMock.searchPrompt.mockReturnValue('');
+        storeMock.searchResponse.mockReturnValue(null);
+        storeMock.searchResults.mockReturnValue([]);
+        storeMock.searchMissingIndex.mockReturnValue(null);
+        storeMock.isSearching.mockReturnValue(false);
+        storeMock.hasSearched.mockReturnValue(false);
+        storeMock.isConfigured.mockReturnValue(true);
+    });
+
+    it('should show the first-run state before any search', () => {
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-search-empty-first-run'))).toBeTruthy();
+        expect(spectator.query(byTestId('dotai-search-results'))).toBeFalsy();
+    });
+
+    it('should show a loading state while searching', () => {
+        storeMock.isSearching.mockReturnValue(true);
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-search-loading'))).toBeTruthy();
+    });
+
+    it('should distinguish "nothing matched" from "not searched yet"', () => {
+        storeMock.hasSearched.mockReturnValue(true);
+        storeMock.searchResults.mockReturnValue([]);
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-search-no-results'))).toBeTruthy();
+        expect(spectator.query(byTestId('dotai-search-empty-first-run'))).toBeFalsy();
+    });
+
+    it('should render results with their closeness and match count', () => {
+        storeMock.hasSearched.mockReturnValue(true);
+        storeMock.searchResults.mockReturnValue([result()]);
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-search-results'))).toBeTruthy();
+        expect(spectator.query(byTestId('dotai-search-result-title'))).toHaveText(
+            'Ecotourism in Costa Rica'
+        );
+        expect(spectator.query(byTestId('dotai-search-result-distance'))).toHaveText('0.20');
+    });
+
+    it('should drop the date and its separator when the server omits modDate', () => {
+        storeMock.hasSearched.mockReturnValue(true);
+        storeMock.searchResults.mockReturnValue([result({ modDate: undefined })]);
+        spectator = createComponent();
+
+        // The separator is only rendered alongside a date, so it must not dangle.
+        const meta = spectator.query(byTestId('dotai-search-results'))?.textContent ?? '';
+        expect(meta).not.toContain('·\n');
+    });
+
+    it('should name the missing index rather than failing generically', () => {
+        storeMock.hasSearched.mockReturnValue(true);
+        storeMock.searchMissingIndex.mockReturnValue('gone');
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-search-missing-index'))).toBeTruthy();
+    });
+
+    it('should not search on an empty prompt', () => {
+        spectator = createComponent();
+
+        spectator.click(spectator.query(byTestId('dotai-search-submit')) as Element);
+
+        expect(storeMock.runSearch).not.toHaveBeenCalled();
+    });
+
+    describe('submitting (FR-007)', () => {
+        // Both paths are wired in the template and neither had a positive test — only the
+        // empty-prompt negative, which passes even if the wiring is broken.
+        beforeEach(() => {
+            storeMock.searchPrompt.mockReturnValue('costa rica');
+            spectator = createComponent();
+        });
+
+        it('should search when the action is clicked', () => {
+            spectator.click(
+                spectator
+                    .query(byTestId('dotai-search-submit'))
+                    ?.querySelector('button') as HTMLElement
+            );
+
+            expect(storeMock.runSearch).toHaveBeenCalled();
+        });
+
+        it('should search on Enter in the field', () => {
+            // A real KeyboardEvent: spectator's helper needs initKeyboardEvent, which this
+            // jsdom does not provide.
+            spectator
+                .query(byTestId('dotai-search-input'))
+                ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+            expect(storeMock.runSearch).toHaveBeenCalled();
+        });
+
+        it('should render a restored prompt in the field (FR-010)', () => {
+            expect(
+                (spectator.query(byTestId('dotai-search-input')) as HTMLInputElement).value
+            ).toBe('costa rica');
+        });
+    });
+
+    it('should disable the input and submit while unconfigured (FR-047)', () => {
+        storeMock.isConfigured.mockReturnValue(false);
+        storeMock.searchPrompt.mockReturnValue('a question');
+        spectator = createComponent();
+
+        // Angular's [disabled] sets the DOM property, not the attribute.
+        expect((spectator.query(byTestId('dotai-search-input')) as HTMLInputElement).disabled).toBe(
+            true
+        );
+        spectator.click(spectator.query(byTestId('dotai-search-submit')) as Element);
+        expect(storeMock.runSearch).not.toHaveBeenCalled();
+    });
+
+    describe('closeness bar', () => {
+        it('should handle the negative distances inner product produces', () => {
+            // Measured around -0.33 against a live index. A naive 0..1 bar renders empty.
+            storeMock.hasSearched.mockReturnValue(true);
+            storeMock.searchResults.mockReturnValue([
+                result({ matches: [{ distance: -0.33, extractedText: 'x' }] })
+            ]);
+            spectator = createComponent();
+
+            // The normalisation itself is covered in dot-ai-distance.utils.spec.ts; here we
+            // only care that the raw negative value still reaches the row unmangled.
+            expect(spectator.query(byTestId('dotai-search-result-distance'))).toHaveText('-0.33');
+        });
+
+        it('should rank the closeness bars the way the results are ranked', () => {
+            // With inner product the best hit is the most negative, so its bar must be the
+            // fullest. Normalising every operator the same way inverted this.
+            storeMock.hasSearched.mockReturnValue(true);
+            storeMock.searchResponse.mockReturnValue(
+                response({ operator: DOT_AI_VECTOR_OPERATOR.INNER_PRODUCT })
+            );
+            storeMock.searchResults.mockReturnValue([
+                result({ inode: 'best', matches: [{ distance: -0.65, extractedText: 'x' }] }),
+                result({ inode: 'worst', matches: [{ distance: -0.09, extractedText: 'y' }] })
+            ]);
+            spectator = createComponent();
+
+            const bars = spectator
+                .queryAll('p-progressbar')
+                .map((bar) => Number(bar.getAttribute('aria-valuenow')));
+
+            expect(bars[0]).toBeGreaterThan(bars[1]);
+        });
+
+        it('should print the echoed threshold without float32 noise', () => {
+            // Asserted on the formatter rather than the rendered line: DotMessageService is
+            // mocked here, so the `dm` pipe renders the meta string empty.
+            spectator = createComponent();
+            const format = (
+                spectator.component as unknown as { formatThreshold(value: number): string }
+            ).formatThreshold;
+
+            expect(format(0.009999999776482582)).toBe('0.01');
+            expect(format(0.75)).toBe('0.75');
+            expect(format(Number.NaN)).toBe('');
+        });
+    });
+
+    describe('the container column', () => {
+        it('should share one set of edges between the field and the results', () => {
+            // Chat and Image both centre their content in a `container mx-auto` column;
+            // without it Search spanned the full pane and its field did not line up with
+            // the results underneath.
+            const field = spectator.query(byTestId('dotai-search-input'))?.closest('.container');
+            const results = spectator
+                .query(byTestId('dotai-search-scroll'))
+                ?.querySelector('.container');
+
+            expect(field?.className).toContain('mx-auto');
+            expect(results?.className).toContain('mx-auto');
+        });
+
+        it('should keep the meta line in the same column as the field', () => {
+            storeMock.searchResponse.mockReturnValue(response({ count: 1 }));
+            spectator = createComponent();
+
+            const field = spectator.query(byTestId('dotai-search-input'))?.closest('.container');
+            const meta = spectator.query(byTestId('dotai-search-meta'));
+
+            expect(field?.contains(meta as Node)).toBe(true);
+        });
+    });
+});

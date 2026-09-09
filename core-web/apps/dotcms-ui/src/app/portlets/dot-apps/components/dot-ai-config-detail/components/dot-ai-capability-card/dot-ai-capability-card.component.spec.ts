@@ -3,7 +3,7 @@ import { createComponentFactory, mockProvider, Spectator } from '@openng/spectat
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotAiConfigService, DotMessageService } from '@dotcms/data-access';
 import {
     DotAiCapability,
     DotAiProviderFieldType,
@@ -51,7 +51,7 @@ describe('DotAiCapabilityCardComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAiCapabilityCardComponent,
         providers: [
-            mockProvider(DotAiService),
+            mockProvider(DotAiConfigService),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
         schemas: [NO_ERRORS_SCHEMA],

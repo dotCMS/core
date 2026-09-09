@@ -21,6 +21,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAssetPickerToolbarComponent } from './dot-asset-picker-toolbar.component';
 
+import { DotKeyboardShortcutService } from '../../../../services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
 import { DotContentTypeFilterComponent } from '../../../dot-content-type-filter/dot-content-type-filter.component';
 import {
     DOT_FIELD_FILTER_HOST,
@@ -361,6 +362,62 @@ describe('DotAssetPickerToolbarComponent', () => {
             expect(
                 spectator.query('.p-popover, [data-pc-name="popover"]', { root: true })
             ).toBeTruthy();
+        });
+    });
+
+    // This is the case the shortcut registry exists for. The picker opens over a portlet that has
+    // already claimed the same combination, so both search boxes are alive at once and something has
+    // to arbitrate. Claims are per-combination and last-in-wins, so the dialog wins while it is up.
+    describe('search shortcut', () => {
+        const pressModK = (): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                key: 'k',
+                metaKey: true,
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+
+            return event;
+        };
+
+        const searchField = () => spectator.query('[data-testid="asset-picker-search-input"]');
+
+        it('should focus its own search field', () => {
+            setup({ site: SITE });
+
+            pressModK();
+
+            expect(document.activeElement).toBe(searchField());
+        });
+
+        it('should suppress the browser default', () => {
+            setup({ site: SITE });
+
+            const event = pressModK();
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        // The claim it shadowed has to come back, or the portlet behind would lose its shortcut for
+        // the rest of the session after the dialog is used once.
+        it('should hand the shortcut back to the surface underneath when it closes', () => {
+            setup({ site: SITE });
+
+            const portletSearch = jest.fn();
+            const shortcuts = spectator.inject(DotKeyboardShortcutService);
+            shortcuts.register({
+                combination: 'mod+k',
+                label: 'portlet search',
+                handler: portletSearch
+            });
+
+            // The picker registered first, so re-registering above puts the "portlet" on top. Destroy
+            // the picker and the standing claim must still be the one it was shadowing.
+            spectator.fixture.destroy();
+            pressModK();
+
+            expect(portletSearch).toHaveBeenCalledTimes(1);
         });
     });
 });
