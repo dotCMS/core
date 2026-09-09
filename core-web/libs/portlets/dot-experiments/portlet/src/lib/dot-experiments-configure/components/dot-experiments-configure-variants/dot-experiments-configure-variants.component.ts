@@ -425,13 +425,13 @@ export class DotExperimentsConfigureVariantsComponent {
      * No `queryParamsHandling`: the portlet's own URL carries `filter`/`orderby`/`pageAsset`, none
      * of which UVE wants.
      */
-    onEditContent(row: VariantRowViewModel): void {
+    onEditContent(row: VariantRowViewModel, mode: UVE_MODE = row.editorMode): void {
         const link = buildVariantEditorLink({
             page: this.store.selectedPage(),
             variantId: row.id,
             experimentId: this.store.experiment()?.id ?? '',
             experimentPageId: this.store.experiment()?.pageId,
-            mode: row.editorMode
+            mode
         });
 
         if (!link) {
@@ -467,9 +467,15 @@ export class DotExperimentsConfigureVariantsComponent {
                 id: 'variant-preview',
                 label: this.#dotMessageService.get('experiments.configure.variants.action.preview'),
                 icon: 'visibility',
-                // TODO(#37005 US4): wire to onEditContent with PREVIEW once the read-only
-                // rules land. Edit Content on the row already opens the editor.
-                disabled: true
+                /**
+                 * Forced to PREVIEW, which is the whole reason this sits beside Edit Content.
+                 *
+                 * The row's own button follows `row.editorMode` — read-only where an edit would do
+                 * harm, editable otherwise — so on the rows that show this menu at all (a
+                 * non-control variant of an editable draft) that button says *Edit*. This is the
+                 * only way to look at such a variant without opening it for writing.
+                 */
+                command: () => this.onEditContent(row, UVE_MODE.PREVIEW)
             },
             {
                 id: 'variant-delete',

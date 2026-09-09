@@ -415,13 +415,34 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             expect(spectator.query(byTestId('variant-actions-btn'))).toBeNull();
         });
 
-        it('should offer Preview and Delete, with Preview waiting on the editor', () => {
+        it('should offer Preview and Delete, both live', () => {
             render();
 
             const items = openRowMenu(1);
 
             expect(items.map(({ id }) => id)).toEqual(['variant-preview', 'variant-delete']);
-            expect(items[0].disabled).toBe(true);
+            expect(items[0].disabled).toBeUndefined();
+        });
+
+        /**
+         * Forced to PREVIEW rather than following the row.
+         *
+         * The kebab only appears on a non-control variant of an editable draft, where the row's own
+         * button opens the editor for writing — so this entry is the only way to look at that
+         * variant read-only, and it would be pointless if it opened the same mode.
+         */
+        it('should open the variant read-only from the kebab, whatever the row would do', () => {
+            render();
+
+            const items = openRowMenu(1);
+            items.find(({ id }) => id === 'variant-preview')?.command?.({} as never);
+
+            expect(navigate).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({ mode: UVE_MODE.PREVIEW })
+                })
+            );
         });
 
         it('should confirm on the shell dialog before dispatching variantDeleted', () => {
