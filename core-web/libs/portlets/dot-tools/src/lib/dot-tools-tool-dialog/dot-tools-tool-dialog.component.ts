@@ -20,6 +20,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_TOOLS_BASE_TYPES, DOT_TOOLS_DATA_VIEW_MODES } from '../constants/dot-tools.constants';
 import {
@@ -46,7 +47,8 @@ interface ContentTypeOption {
         InputTextModule,
         MultiSelectModule,
         SelectButtonModule,
-        ButtonModule
+        ButtonModule,
+        DotMessagePipe
     ],
     templateUrl: './dot-tools-tool-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -23,8 +23,12 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotToolsStore } from './store/dot-tools.store';
 
+import { CATALOG_LOAD_MORE_STEP } from '../constants/dot-tools.constants';
 import { DotToolsSectionDialogComponent } from '../dot-tools-section-dialog/dot-tools-section-dialog.component';
 import { DotToolsToolDialogComponent } from '../dot-tools-tool-dialog/dot-tools-tool-dialog.component';
 import {
@@ -51,7 +55,8 @@ import {
         InputIconModule,
         InputTextModule,
         MenuModule,
-        TooltipModule
+        TooltipModule,
+        DotMessagePipe
     ],
     providers: [DotToolsStore, DialogService, ConfirmationService],
     templateUrl: './dot-tools-page.component.html',
@@ -63,6 +68,11 @@ export class DotToolsPageComponent {
 
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);
+    readonly #messageService = inject(DotMessageService);
+
+    // Exposed so the "Load N more" button label stays in sync with the store's
+    // pagination step without hardcoding "40" in a translation string.
+    protected readonly loadMoreStep = signal(CATALOG_LOAD_MORE_STEP);
 
     // The overflow menu on a section row is a single p-menu instance
     // reparented to whichever row's trigger was clicked. Storing the target
@@ -78,12 +88,12 @@ export class DotToolsPageComponent {
 
         return [
             {
-                label: 'Edit',
+                label: this.#messageService.get('tools.menu.edit'),
                 icon: 'pi pi-pencil',
                 command: () => this.openEditSectionDialog(section)
             },
             {
-                label: 'Delete',
+                label: this.#messageService.get('tools.menu.delete'),
                 icon: 'pi pi-trash',
                 styleClass: 'text-red-600',
                 command: () => this.confirmDeleteSection(section)
@@ -99,12 +109,12 @@ export class DotToolsPageComponent {
 
         return [
             {
-                label: 'Edit',
+                label: this.#messageService.get('tools.menu.edit'),
                 icon: 'pi pi-pencil',
                 command: () => this.openEditToolDialog(tool)
             },
             {
-                label: 'Delete',
+                label: this.#messageService.get('tools.menu.delete'),
                 icon: 'pi pi-trash',
                 styleClass: 'text-red-600',
                 command: () => this.confirmDeleteTool(tool)
@@ -156,7 +166,7 @@ export class DotToolsPageComponent {
 
     protected openNewSectionDialog(): void {
         const ref = this.#dialogService.open(DotToolsSectionDialogComponent, {
-            header: 'New Section',
+            header: this.#messageService.get('tools.new-section'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
@@ -173,7 +183,7 @@ export class DotToolsPageComponent {
 
     protected openNewToolDialog(): void {
         const ref = this.#dialogService.open(DotToolsToolDialogComponent, {
-            header: 'New Tool',
+            header: this.#messageService.get('tools.new-tool'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
@@ -200,9 +210,9 @@ export class DotToolsPageComponent {
         return tool.isCustom;
     }
 
-    #openEditSectionDialogRef(section: DotToolsSection) {
-        return this.#dialogService.open(DotToolsSectionDialogComponent, {
-            header: 'Edit Section',
+    private openEditSectionDialog(section: DotToolsSection): void {
+        const ref = this.#dialogService.open(DotToolsSectionDialogComponent, {
+            header: this.#messageService.get('tools.edit-section'),
             width: '700px',
             data: { section },
             closable: true,
@@ -210,10 +220,6 @@ export class DotToolsPageComponent {
             draggable: false,
             position: 'center'
         });
-    }
-
-    private openEditSectionDialog(section: DotToolsSection): void {
-        const ref = this.#openEditSectionDialogRef(section);
 
         ref?.onClose.pipe(take(1)).subscribe((form: DotToolsSectionForm | undefined) => {
             if (form) {
@@ -228,7 +234,7 @@ export class DotToolsPageComponent {
         // the stored base types, content types and view mode. Until then the
         // dialog opens with defaults and the user has to re-pick.
         const ref = this.#dialogService.open(DotToolsToolDialogComponent, {
-            header: 'Edit Tool',
+            header: this.#messageService.get('tools.edit-tool'),
             width: '700px',
             data: { tool },
             closable: true,
@@ -246,17 +252,20 @@ export class DotToolsPageComponent {
 
     private confirmDeleteSection(section: DotToolsSection): void {
         const toolCount = section.portletIds.length;
-        const body =
+        const message =
             toolCount > 0
-                ? `The section and its ${toolCount === 1 ? '1 tool assignment' : toolCount + ' tool assignments'} will be removed from the navigation. This action cannot be undone.`
-                : 'The section will be removed from the navigation. This action cannot be undone.';
+                ? this.#messageService.get(
+                      'tools.confirm.delete-section.body.with-tools',
+                      this.#toolAssignmentPhrase(toolCount)
+                  )
+                : this.#messageService.get('tools.confirm.delete-section.body');
 
         this.#confirmationService.confirm({
-            header: `Delete section "${section.name}"?`,
-            message: body,
+            header: this.#messageService.get('tools.confirm.delete-section.header', section.name),
+            message,
             icon: 'pi pi-exclamation-triangle',
-            acceptLabel: 'Delete',
-            rejectLabel: 'Cancel',
+            acceptLabel: this.#messageService.get('tools.confirm.accept'),
+            rejectLabel: this.#messageService.get('tools.confirm.reject'),
             acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             accept: () => this.store.deleteSection(section.id)
@@ -265,20 +274,44 @@ export class DotToolsPageComponent {
 
     private confirmDeleteTool(tool: DotToolsCatalogEntry): void {
         const sectionCount = this.store.toolSectionCount()(tool.id);
-        const body =
+        const message =
             sectionCount > 0
-                ? `The tool will be deleted and removed from ${sectionCount === 1 ? '1 section' : sectionCount + ' sections'}. This action cannot be undone.`
-                : 'The tool will be deleted from the catalog. This action cannot be undone.';
+                ? this.#messageService.get(
+                      'tools.confirm.delete-tool.body.with-sections',
+                      this.#sectionCountPhrase(sectionCount)
+                  )
+                : this.#messageService.get('tools.confirm.delete-tool.body');
 
         this.#confirmationService.confirm({
-            header: `Delete tool "${tool.title}"?`,
-            message: body,
+            header: this.#messageService.get('tools.confirm.delete-tool.header', tool.title),
+            message,
             icon: 'pi pi-exclamation-triangle',
-            acceptLabel: 'Delete',
-            rejectLabel: 'Cancel',
+            acceptLabel: this.#messageService.get('tools.confirm.accept'),
+            rejectLabel: this.#messageService.get('tools.confirm.reject'),
             acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             accept: () => this.store.deleteCustomTool(tool.id)
         });
+    }
+
+    // Two-key pluralization: the resolved phrase gets interpolated into the
+    // "body.with-*" string. Keeps grammar right without a real i18n plural
+    // library while staying inside the existing DotMessageService helpers.
+    #toolAssignmentPhrase(count: number): string {
+        return count === 1
+            ? this.#messageService.get('tools.confirm.delete-section.tool-count.single')
+            : this.#messageService.get(
+                  'tools.confirm.delete-section.tool-count.multi',
+                  count.toString()
+              );
+    }
+
+    #sectionCountPhrase(count: number): string {
+        return count === 1
+            ? this.#messageService.get('tools.confirm.delete-tool.section-count.single')
+            : this.#messageService.get(
+                  'tools.confirm.delete-tool.section-count.multi',
+                  count.toString()
+              );
     }
 }
