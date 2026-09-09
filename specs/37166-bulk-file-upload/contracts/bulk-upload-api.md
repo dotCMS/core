@@ -179,11 +179,17 @@ reads the same as a batch of files, for #37062 / #37063 to adopt unchanged.
 
 Stable set. Every one needs client copy; adding one later is a change to both halves (FR-016a).
 
+> **Changed 2026-09-08**: `FOLDER_FILTER_MISMATCH` added, taking the set from six to seven. Found
+> in manual testing — a folder filter mismatch was being reported as `NAME_COLLISION`, which told
+> the author to rename a file whose name was never the problem. **The client needs copy for it
+> before this ships.**
+
 | `reason` | Meaning |
 |---|---|
 | `OVER_SIZE_LIMIT` | Larger than the ceiling that applies — the content type's own, or the configured fallback where it declares none (FR-011) |
 | `DISALLOWED_FILE_TYPE` | The resolved media type is not in the content type's allow list. **A media-type rule, not an extension rule** (FR-012a): the server sniffs content, so renaming a file does not get past it. A file whose media type cannot be resolved skips the check and is accepted (FR-012b) |
 | `NAME_COLLISION` | A file of that name already exists in the target. **Case-insensitive** — `Report.pdf` and `report.pdf` are one name (FR-042a) |
+| `FOLDER_FILTER_MISMATCH` | The target folder's own filename filter (`filesMasks`, e.g. `*.jpg`) does not admit this name. **Distinct from `DISALLOWED_FILE_TYPE`**: that is the content type's media-type allow list, decided by sniffing content, while this is a glob on the *file name* configured per folder — so the same file is refused here and accepted one folder over. The two need different copy, because renaming does not get past a media-type rule and moving does not get past a folder one |
 | `PERMISSION_DENIED` | A per-file check narrower than the submission-time one that already passed |
 | `STAGED_CONTENT_UNAVAILABLE` | The uploaded content could not be retrieved when the run reached it (FR-032). **Not the author's fault** — the copy should not suggest they supplied a bad file |
 | `UNCLASSIFIED` | Anything else; `message` carries the detail for logs |
@@ -245,6 +251,7 @@ Useful when reading the two halves side by side.
 | Content type's size ceiling, or the fallback | the run, per file | `FAILED` / `OVER_SIZE_LIMIT` — batch continues |
 | Content type's allowed media types | the run, per file | `FAILED` / `DISALLOWED_FILE_TYPE` — batch continues |
 | Name collision in the target | the run, per file | `FAILED` / `NAME_COLLISION` — batch continues |
+| Target folder's `filesMasks` filter | the run, per file | `FAILED` / `FOLDER_FILTER_MISMATCH` — batch continues |
 
 The content-type rules stay per-file rather than becoming submission refusals even though staging
 already reported the size and media type: FR-011 and FR-012 require one bad file to fail on its own
