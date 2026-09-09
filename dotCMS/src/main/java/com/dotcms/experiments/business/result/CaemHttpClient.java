@@ -78,10 +78,22 @@ public class CaemHttpClient {
                                  final Map<String, String> headers) {
         final String baseUrl = Config.getStringProperty(
                 EventAnalyticsProxyHelper.DOT_ANALYTICS_BASE_URL, "");
+        final String tenant  = Config.getStringProperty(
+                EventAnalyticsProxyHelper.DOT_ANALYTICS_TENANT, "");
+        final String project = Config.getStringProperty(
+                EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT, "");
+
         if (!UtilMethods.isSet(baseUrl)) {
-            throw new RuntimeException("DOT_ANALYTICS_BASE_URL is not configured");
+            throw new RuntimeException("CAEM is not configured: DOT_ANALYTICS_BASE_URL is missing");
         }
-        final String url = buildUrl(baseUrl, relativePath, queryParams);
+        if (!UtilMethods.isSet(tenant)) {
+            throw new RuntimeException("CAEM is not configured: DOT_ANALYTICS_TENANT is missing");
+        }
+        if (!UtilMethods.isSet(project)) {
+            throw new RuntimeException("CAEM is not configured: DOT_ANALYTICS_PROJECT is missing");
+        }
+
+        final String url = buildUrl(baseUrl, relativePath, queryParams, project);
         try {
             final CircuitBreakerUrl.Response<String> raw = CircuitBreakerUrl.builder()
                     .setUrl(url)
@@ -161,27 +173,22 @@ public class CaemHttpClient {
 
     private String buildUrl(final String baseUrl,
                             final String relativePath,
-                            final Map<String, String> queryParams) {
+                            final Map<String, String> queryParams,
+                            final String project) {
         final String clean = baseUrl.endsWith("/")
                 ? baseUrl.substring(0, baseUrl.length() - 1)
                 : baseUrl;
         final StringBuilder sb = new StringBuilder(clean).append(relativePath);
 
         final Map<String, String> allParams = new HashMap<>(queryParams);
-
-        // Append project from config if not already provided by the caller — same behaviour
-        // as EventAnalyticsProxyHelper.buildUpstreamUrl() to ensure CAEM can route the request.
-        final String project = Config.getStringProperty(
-                EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT, "");
-        if (UtilMethods.isSet(project) && !allParams.containsKey("project")) {
+        if (!allParams.containsKey("project")) {
             allParams.put("project", project);
         }
 
-        if (!allParams.isEmpty()) {
-            sb.append('?');
-            allParams.forEach((k, v) -> sb.append(k).append('=').append(v).append('&'));
-            sb.setLength(sb.length() - 1);
-        }
+        sb.append('?');
+        allParams.forEach((k, v) -> sb.append(k).append('=').append(v).append('&'));
+        sb.setLength(sb.length() - 1);
+
         return sb.toString();
     }
 
