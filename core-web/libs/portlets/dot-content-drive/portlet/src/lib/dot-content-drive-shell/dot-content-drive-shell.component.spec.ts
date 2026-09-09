@@ -1940,6 +1940,75 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.endExternalRun).toHaveBeenCalled();
         });
 
+        it('should say the batch was too large when the submission is refused for its size', () => {
+            // The two ceilings have different fixes, and the server distinguishes them by status
+            // alone: its own message names byte counts at the author, which is a developer's
+            // sentence, not copy. So the status picks the copy and the body is not read for it.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 413 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.upload.refused.too-large'
+                })
+            );
+        });
+
+        it('should say there were too many files when the submission is refused for its count', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.upload.refused.too-many-files'
+                })
+            );
+        });
+
+        it('should surface the server sentence when a submission fails for any other reason', () => {
+            // The refusal mapper answers `{ message }`, not the `{ errors: [{ message }] }` shape
+            // the workflow endpoints use, so a handler reading only the latter shows the generic
+            // copy for every server explanation there is.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(
+                    () =>
+                        new HttpErrorResponse({
+                            status: 500,
+                            error: { message: 'Staging directory is not writable' }
+                        })
+                )
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'Staging directory is not writable'
+                })
+            );
+        });
+
         it('should warn before the page unloads while an upload is in flight', () => {
             // The only moment the interface can intervene: while the bytes are still going the
             // request dies with the page and nothing is recorded, so there is no run to resume

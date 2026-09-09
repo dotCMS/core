@@ -2,6 +2,7 @@ import { signalMethod } from '@ngrx/signals';
 import { of, SubscriptionLike } from 'rxjs';
 
 import { Location, NgTemplateOutlet } from '@angular/common';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -1475,13 +1476,41 @@ export class DotContentDriveShellComponent implements OnDestroy {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
-                        detail:
-                            error.error?.errors?.[0]?.message ??
-                            this.#dotMessageService.get('content-drive.add-dotasset-error-detail'),
+                        detail: this.#describeSubmissionRefusal(error),
                         life: ERROR_MESSAGE_LIFE
                     });
                 }
             });
+    }
+
+    /**
+     * The sentence shown when a submission never became a run at all.
+     *
+     * The endpoint enforces two ceilings and keeps them distinguishable by *status*: too much data
+     * is answered `413`, too many files `400` (`BulkUploadRefusedExceptionMapper`). They have
+     * different fixes, so the status picks the copy rather than the body: the server's own message
+     * names byte counts and part limits, which is a sentence written for a developer reading a log,
+     * not for the author who just dropped the files.
+     *
+     * Anything else falls back to what the server said, read from *both* shapes it can arrive in:
+     * the refusal mapper answers `{ message }`, while the workflow endpoints answer
+     * `{ errors: [{ message }] }`. Reading only one of them is how every server explanation ends up
+     * rendered as the generic failure copy.
+     */
+    #describeSubmissionRefusal(error: HttpErrorResponse): string {
+        if (error?.status === HttpStatusCode.PayloadTooLarge) {
+            return this.#dotMessageService.get('content-drive.upload.refused.too-large');
+        }
+
+        if (error?.status === HttpStatusCode.BadRequest) {
+            return this.#dotMessageService.get('content-drive.upload.refused.too-many-files');
+        }
+
+        return (
+            error?.error?.errors?.[0]?.message ??
+            error?.error?.message ??
+            this.#dotMessageService.get('content-drive.add-dotasset-error-detail')
+        );
     }
 
     /**
