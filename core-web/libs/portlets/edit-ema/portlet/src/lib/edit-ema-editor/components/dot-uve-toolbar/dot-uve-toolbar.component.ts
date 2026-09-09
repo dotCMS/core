@@ -287,6 +287,18 @@ export class DotUveToolbarComponent {
      * Chip for the control variant previewed from the portlet, or `null` when that is not the
      * case. Same shape the store builds for a real variant, so the action handler and the template
      * need no special case: the id stays `variant` and the back arrow means the same thing.
+     *
+     * **This reads the address outside the signal graph, and that is safe for one reason only.**
+     * `snapshot.queryParams` is not a signal, so the computed calling this does not re-derive when
+     * it changes. The origin marker is *write-once per component instance*: it can only arrive on
+     * the navigation **into** UVE from the portlet's Configure screen, which builds a new toolbar
+     * whose first evaluation already sees it. Nothing in a live session adds, removes or rewrites
+     * `experimentReturn` on an instance that already exists.
+     *
+     * What would break it: any flow that sets the marker on an already-mounted editor. If one is
+     * ever added, this has to move to `toSignal(this.#activatedRoute.queryParams)` — and note that
+     * even then it would only track *router* navigations, not the `Location.go` writes UVE uses for
+     * its own params, which never emit on `queryParams`.
      */
     #controlFromPortletProps(): InfoOptions | null {
         const { queryParams } = this.#activatedRoute.snapshot;
