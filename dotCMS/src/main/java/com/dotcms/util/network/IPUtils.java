@@ -2,6 +2,7 @@ package com.dotcms.util.network;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
@@ -94,11 +95,34 @@ public class IPUtils {
         }
     }
 
+    private static final String REMOTE_CALL_SUBNET_BLACKLIST = "REMOTE_CALL_SUBNET_BLACKLIST";
+
     private static final String[] REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT = {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16", "169.254.169.254/32"};
 
-    static final Lazy<String[]> disallowedSubnets = Lazy.of(() ->
-                    Try.of(() -> Config.getStringArrayProperty("REMOTE_CALL_SUBNET_BLACKLIST", REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT))
-                    .getOrElse(REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT));
+    /**
+     * The subnets from {@code REMOTE_CALL_SUBNET_BLACKLIST}, or {@code null} when the property is
+     * not set. The distinction matters: an explicitly configured list is treated as the whole
+     * policy, so a deployment can keep permitting specific internal ranges by narrowing it.
+     */
+    static final Lazy<String[]> configuredSubnets = Lazy.of(() -> {
+
+        final String[] configured =
+                Try.of(() -> Config.getStringArrayProperty(REMOTE_CALL_SUBNET_BLACKLIST, null))
+                        .getOrNull();
+
+        if (isSet(configured) && Arrays.stream(configured).noneMatch(subnet -> subnet.indexOf(':') >= 0)) {
+            Logger.warn(IPUtils.class, REMOTE_CALL_SUBNET_BLACKLIST + " is set and lists IPv4 ranges only. "
+                    + "An explicit list replaces the built-in address checks, so IPv6 ranges are not "
+                    + "covered unless listed. Add the IPv6 ranges in use, for example ::1/128, "
+                    + "fc00::/7 and fe80::/10.");
+        }
+
+        return configured;
+    });
+
+    private static boolean isSet(final String[] subnets) {
+        return subnets != null && subnets.length > 0;
+    }
 
     /**
      * It is important when we allow calling to remote endpoints that we verify that the remote
@@ -108,6 +132,10 @@ public class IPUtils {
      * <p>Every address the host resolves to is checked, across both address families, including
      * hosts that resolve to IPv6 addresses only. A host that resolves to any internal address is
      * treated as private.</p>
+     *
+     * <p>When {@code REMOTE_CALL_SUBNET_BLACKLIST} is set it defines the policy on its own and the
+     * built-in address checks are not applied, so a deployment can permit specific internal ranges
+     * by narrowing the list. When it is not set, the built-in checks apply.</p>
      *
      * <p>Resolution failures fail closed and return {@code true}.</p>
      *
@@ -139,7 +167,7 @@ public class IPUtils {
             }
 
             for (final InetAddress address : resolvedAddresses) {
-                if (isInternalAddress(address)) {
+                if (isInternalAddress(address, configuredSubnets.get())) {
                     return true;
                 }
             }
@@ -151,10 +179,30 @@ public class IPUtils {
     }
 
     /**
-     * Whether a single resolved address belongs to a range that must never be reachable from a
+     * Whether a single resolved address belongs to a range that must not be reachable from a
      * user-supplied URL.
+     *
+     * @param address    the resolved address to classify
+     * @param configured the explicitly configured subnets, or {@code null} when the property is
+     *                   unset. When present it is the whole policy and replaces the built-in
+     *                   checks, which is what keeps a narrowed list able to permit internal ranges.
      */
-    private static boolean isInternalAddress(final InetAddress address) {
+    static boolean isInternalAddress(final InetAddress address, final String[] configured) {
+
+        final String hostAddress = stripScopeId(address.getHostAddress());
+
+        if (isSet(configured)) {
+            return matchesAny(hostAddress, configured);
+        }
+
+        return isInternalByCategory(address) || matchesAny(hostAddress, REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT);
+    }
+
+    /**
+     * Built-in classification of the ranges that are internal by definition rather than by
+     * configuration. Applied only when {@code REMOTE_CALL_SUBNET_BLACKLIST} is not set.
+     */
+    private static boolean isInternalByCategory(final InetAddress address) {
 
         if (address.isAnyLocalAddress()      // 0.0.0.0 and ::
                 || address.isLoopbackAddress()   // 127.0.0.0/8 and ::1
@@ -167,19 +215,18 @@ public class IPUtils {
         // Unique-local addresses, fc00::/7. These are the IPv6 counterpart of the RFC1918 ranges
         // and the JDK exposes no predicate for them, so they are matched here. This range also
         // covers IPv6 instance-metadata addresses.
-        if (address instanceof Inet6Address && (address.getAddress()[0] & 0xFE) == 0xFC) {
-            return true;
-        }
+        return address instanceof Inet6Address && (address.getAddress()[0] & 0xFE) == 0xFC;
+    }
 
-        // Site-specific ranges from REMOTE_CALL_SUBNET_BLACKLIST apply on top of the categories
-        // above, and may be expressed as either IPv4 or IPv6 CIDRs.
-        final String hostAddress = stripScopeId(address.getHostAddress());
-        for (final String subnet : disallowedSubnets.get()) {
+    /**
+     * Whether the address falls in any of the given CIDR ranges. Accepts IPv4 and IPv6 CIDRs.
+     */
+    private static boolean matchesAny(final String hostAddress, final String[] subnets) {
+        for (final String subnet : subnets) {
             if (isIpInCIDR(hostAddress, subnet)) {
                 return true;
             }
         }
-
         return false;
     }
 
