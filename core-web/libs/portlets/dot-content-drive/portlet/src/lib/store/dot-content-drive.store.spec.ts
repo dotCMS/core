@@ -84,7 +84,10 @@ describe('DotContentDriveStore', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
+                siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST),
+                // Nothing advertised by default, which is what an instance older than the field
+                // reports and what a configuration still in flight reads as.
+                systemBulkUpload: jest.fn().mockReturnValue(null)
             }),
             mockProvider(DotContentDriveService),
             // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
@@ -143,6 +146,31 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
+        });
+    });
+
+    describe('uploadCeilings', () => {
+        it('should pass through the ceilings the server advertises', () => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore.systemBulkUpload as unknown as jest.Mock).mockReturnValue({
+                maxFiles: 100,
+                maxTotalBytes: 1073741824
+            });
+
+            expect(store.uploadCeilings()).toEqual({ maxFiles: 100, maxTotalBytes: 1073741824 });
+        });
+
+        it('should read as no ceiling when the server advertises none', () => {
+            // Set here rather than left to the provider's default: that mock is built once for the
+            // factory, so the test above it would decide what this one sees.
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore.systemBulkUpload as unknown as jest.Mock).mockReturnValue(null);
+
+            // The two cases callers must not tell apart: a configuration still loading, and an
+            // instance too old to carry the field. Both mean the server does the refusing.
+            expect(store.uploadCeilings()).toBeNull();
         });
     });
 

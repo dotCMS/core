@@ -44,7 +44,8 @@ import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotContentDriveFolder,
-    DotContentDriveItem
+    DotContentDriveItem,
+    DotSystemConfig
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentSidePanelComponent,
@@ -138,7 +139,12 @@ describe('DotContentDriveShellComponent', () => {
                 get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
-            mockProvider(DotSystemConfigService),
+            // Returns a real observable: GlobalStore loads the configuration on init, and a mock
+            // that answers `undefined` throws inside that load the moment anything injects the
+            // store, surfacing as unrelated tests failing on `.pipe` of undefined.
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({} as DotSystemConfig)
+            }),
             // The folder context menu confirms folder deletes through this.
             mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
@@ -230,6 +236,9 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // No advertised ceiling by default, which is the case that leaves the refusing
+                    // to the server. The gate's own tests set one.
+                    uploadCeilings: jest.fn().mockReturnValue(null),
                     // Read by the toolbar (rendered for real here) and the drop zone: both gate
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
@@ -2161,6 +2170,52 @@ describe('DotContentDriveShellComponent', () => {
                     detail: 'content-drive.upload.refused.too-many-files'
                 })
             );
+        });
+
+        it('should refuse a batch over the advertised file ceiling without uploading it', () => {
+            // The point of reading the ceiling: the refusal arrives in the chooser, not after the
+            // author has waited out the upload of a batch that was never going to be accepted.
+            store.uploadCeilings.mockReturnValue({ maxFiles: 1, maxTotalBytes: 0 });
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.upload.refused.too-many-files-named'
+                })
+            );
+        });
+
+        it('should not register a run for a batch it refuses itself', () => {
+            // Nothing was submitted, so nothing is in flight. Starting a run here would leave the
+            // indicator lit and the route guarded for an upload that never happened.
+            store.uploadCeilings.mockReturnValue({ maxFiles: 1, maxTotalBytes: 0 });
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).not.toHaveBeenCalled();
+        });
+
+        it('should leave the refusing to the server when no ceiling is advertised', () => {
+            // An instance older than the configuration field, or a configuration request that never
+            // landed. Refusing on a guessed default would refuse batches the server accepts.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalled();
         });
 
         it('should keep the server sentence out of the author-visible copy', () => {
@@ -4156,7 +4211,12 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             mockProvider(ActivatedRoute, {
                 snapshot: { queryParams: deepLinkQueryParams }
             }),
-            mockProvider(DotSystemConfigService),
+            // Returns a real observable: GlobalStore loads the configuration on init, and a mock
+            // that answers `undefined` throws inside that load the moment anything injects the
+            // store, surfacing as unrelated tests failing on `.pipe` of undefined.
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({} as DotSystemConfig)
+            }),
             // The folder context menu confirms folder deletes through this.
             mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
@@ -4232,6 +4292,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // No advertised ceiling by default, which is the case that leaves the refusing
+                    // to the server. The gate's own tests set one.
+                    uploadCeilings: jest.fn().mockReturnValue(null),
                     // Read by the toolbar (rendered for real here) and the drop zone: both gate
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,

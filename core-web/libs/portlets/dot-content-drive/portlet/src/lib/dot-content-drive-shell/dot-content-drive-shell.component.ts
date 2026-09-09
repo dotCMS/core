@@ -108,6 +108,7 @@ import {
     normalizeFolderRef,
     toFolderRef
 } from '../utils/functions';
+import { refuseOverCeiling } from '../utils/upload-ceilings';
 import { describeUploadFailures } from '../utils/upload-failures';
 
 @Component({
@@ -1437,6 +1438,29 @@ export class DotContentDriveShellComponent implements OnDestroy {
         baseType: string,
         hostFolder?: DotFolderTreeNodeData
     ) {
+        // The courtesy refusal, in front of the server's own. Both ceilings are the server's and it
+        // stays the enforcement point; what changes is that the author is told in the file chooser
+        // instead of after waiting out the upload of a batch that was never going to be accepted,
+        // and the sentence can name the limit rather than saying "fewer".
+        //
+        // No advertised ceiling means no check here: the server refuses as it always did, with the
+        // copy that names no number (see {@link #describeSubmissionRefusal}).
+        const refusal = refuseOverCeiling(files, this.#store.uploadCeilings());
+
+        if (refusal) {
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
+                detail: this.#dotMessageService.get(refusal.key, ...refusal.args),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            // Before the run is registered, deliberately: nothing was submitted, so nothing is in
+            // flight, and a run started here would leave the indicator lit and the route guarded
+            // for an upload that never happened.
+            return;
+        }
+
         // Reported from here rather than from the 202, because this is the part that takes time.
         // Until the handle comes back the author has no sign anything is happening, and a thirty-file
         // batch can spend a long while in exactly that state.

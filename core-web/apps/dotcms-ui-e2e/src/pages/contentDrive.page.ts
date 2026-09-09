@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page, type Request } from '@playwright/test';
 import { Portlet } from '@utils/portlets';
 
 /**
@@ -246,6 +246,35 @@ export class ContentDrivePage {
     }
 
     /** A message the author can read, whatever severity it arrived with. */
+    /**
+     * Runs `body` and fails if any batch was submitted while it did.
+     *
+     * The evidence that a refusal happened *in front of* the server rather than behind it. The copy
+     * alone cannot tell the two apart, and which side refused is the whole point of the client
+     * reading the advertised ceiling: an author refused before the upload has waited for nothing.
+     */
+    async expectNothingUploadedWhile(body: () => Promise<void>) {
+        const submissions: string[] = [];
+        const record = (request: Request) => {
+            if (request.url().includes('/_bulkupload')) {
+                submissions.push(request.url());
+            }
+        };
+
+        this.page.on('request', record);
+
+        try {
+            await body();
+        } finally {
+            this.page.off('request', record);
+        }
+
+        expect(
+            submissions,
+            'the batch reached the server, so it was not refused before the upload'
+        ).toEqual([]);
+    }
+
     async expectToastContaining(text: string) {
         await expect(this.toasts.filter({ hasText: text }).first()).toBeVisible({
             timeout: 60000

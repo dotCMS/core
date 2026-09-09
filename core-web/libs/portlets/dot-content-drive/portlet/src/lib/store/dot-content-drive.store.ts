@@ -680,6 +680,22 @@ export const DotContentDriveStore = signalStore(
     withActionExecution(),
     withPushPublishEnvironments(),
     withSitePermissions(),
+    withComputed(() => {
+        const globalStore = inject(GlobalStore);
+
+        return {
+            /**
+             * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
+             *
+             * Read through the store rather than injected into the shell so the component keeps to
+             * rendering: the ceilings are data, and every other piece of server state this portlet
+             * shows arrives the same way. Null covers both a configuration that has not loaded and
+             * an instance older than the field, which callers must treat alike — no readable
+             * ceiling, so the refusing is left to the server.
+             */
+            uploadCeilings: computed(() => globalStore.systemBulkUpload())
+        };
+    }),
     withComputed(({ selectedNode, siteCanAddChildren }) => ({
         /**
          * Whether the browsed folder accepts new children.

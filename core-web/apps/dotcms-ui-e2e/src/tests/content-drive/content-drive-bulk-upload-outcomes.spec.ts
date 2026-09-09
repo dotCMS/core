@@ -165,12 +165,18 @@ test.describe('Content Drive bulk upload outcomes', () => {
         testSuffix
     }) =>
         inSeededFolder({ adminPage, apiHelpers, name: `cd-many-${testSuffix}` }, async (drive) => {
-            // One over the default ceiling. Nothing is queued, so the author must be told which
-            // ceiling they crossed: "fewer files" and "smaller files" are different
-            // instructions.
-            await drive.chooseGeneratedFilesForUpload(101, `many-${testSuffix}`);
+            // One over the default ceiling, and refused without being sent. The client reads the
+            // ceiling off the configuration the server advertises, so the author is told in the
+            // chooser rather than after uploading 101 files to be turned away.
+            await drive.expectNothingUploadedWhile(async () => {
+                await drive.chooseGeneratedFilesForUpload(101, `many-${testSuffix}`);
 
-            await drive.expectToastContaining('more files than');
+                // Both numbers, in one sentence. "Fewer" makes an author with 140 files retry with
+                // 120, then 110, uploading the whole batch each time to be refused again — and
+                // "fewer files" and "smaller files" are different instructions, so the ceiling
+                // that refused them has to be the one named.
+                await drive.expectToastContaining('101 files, and one upload allows 100');
+            });
         }));
 
     test('reaches the author who left the portlet before it finished', async ({
