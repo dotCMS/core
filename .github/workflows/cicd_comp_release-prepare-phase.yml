@@ -248,6 +248,57 @@ jobs:
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> "$GITHUB_OUTPUT"
 
+      # Pin every example app's @dotcms/* dependencies to this exact release's SDK
+      # version, on every release branch (LTS and non-LTS alike) — the root-cause fix
+      # for examples/nextjs on release-25.07.10_lts_v12/_v16 having shipped with a
+      # floating "latest" for months with nothing to catch or correct it (see
+      # dotCMS/core#36891, specs/37399-sdk-packaging-version-fix). ADR-0019's
+      # date-lockstep versioning means the SDK version matching this exact release is
+      # known with certainty the moment the branch is cut — no runtime verification
+      # needed, unlike the one-time manual fix required to retrofit the two LTS
+      # branches that predate this step. `main` is never touched here and keeps
+      # floating on "latest" by design (its examples target Evergreen customers).
+      - name: Pin example app SDK dependencies to the release version
+        id: pin-examples
+        env:
+          RELEASE_VERSION: ${{ steps.set-version.outputs.release_version }}
+          RELEASE_BRANCH: ${{ steps.set-version.outputs.release_branch }}
+        run: |
+          set -euo pipefail
+          echo "::group::Pin example app SDK dependencies"
+
+          # Same normalization as deploy-javascript-sdk/action.yml (Defect A): the
+          # release version is zero-padded CalVer (e.g. 26.08.03-01); npm packages
+          # publish under the leading-zero-stripped, valid-semver form (26.8.3-1).
+          NORMALIZED_VERSION=$(echo "$RELEASE_VERSION" | awk -F'[.-]' '{
+            for (i = 1; i <= NF; i++) { sub(/^0+/, "", $i); if ($i == "") $i = "0" }
+            out = $1 "." $2 "." $3
+            if (NF >= 4) out = out "-" $4
+            print out
+          }')
+          echo "Normalized release version: ${NORMALIZED_VERSION}"
+
+          CHANGED=false
+          for pkg_json in $(find examples -maxdepth 2 -name package.json 2>/dev/null); do
+            for dep in $(jq -r '.dependencies // {} | keys[] | select(startswith("@dotcms/"))' "$pkg_json"); do
+              jq --arg dep "$dep" --arg v "$NORMALIZED_VERSION" \
+                '.dependencies[$dep] = $v' "$pkg_json" > tmp.$$.json && mv tmp.$$.json "$pkg_json"
+              echo "  ↳ ${pkg_json}: dependencies[\"${dep}\"] -> ${NORMALIZED_VERSION}"
+              CHANGED=true
+            done
+          done
+
+          if [ "$CHANGED" = "true" ]; then
+            git add examples
+            git commit -m "🏁 Pin example app SDK dependencies to ${NORMALIZED_VERSION}"
+            git push origin "${RELEASE_BRANCH}"
+          else
+            echo "No @dotcms/* dependencies found in any examples/*/package.json on this branch — nothing to pin."
+          fi
+
+          echo "::endgroup::"
+        shell: bash
+
       - name: Create GitHub Release
         run: |
           curl -X POST \
