@@ -44,7 +44,7 @@ import java.util.Map;
  */
 public class ExitRateCAEMResultQuery implements ExperimentGoalResultsQuery {
 
-    private static final String SESSIONS_PATH = "/v1/analytics/sessions";
+    private static final String SESSIONS_PATH = "/v1/sessions";
     private static final String METRICS = "totalSessions,exitSessions,exitRate";
 
     private final CaemHttpClient caemHttpClient;

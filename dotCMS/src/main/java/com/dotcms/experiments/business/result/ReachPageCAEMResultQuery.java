@@ -45,7 +45,7 @@ import java.util.Map;
  */
 public class ReachPageCAEMResultQuery implements ExperimentGoalResultsQuery {
 
-    private static final String BEHAVIOR_PATH = "/v1/analytics/sessions/behavior";
+    private static final String BEHAVIOR_PATH = "/v1/sessions/behavior";
 
     private final CaemHttpClient caemHttpClient;
 
