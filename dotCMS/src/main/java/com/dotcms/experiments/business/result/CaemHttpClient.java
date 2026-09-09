@@ -166,9 +166,20 @@ public class CaemHttpClient {
                 ? baseUrl.substring(0, baseUrl.length() - 1)
                 : baseUrl;
         final StringBuilder sb = new StringBuilder(clean).append(relativePath);
-        if (!queryParams.isEmpty()) {
+
+        final Map<String, String> allParams = new HashMap<>(queryParams);
+
+        // Append project from config if not already provided by the caller — same behaviour
+        // as EventAnalyticsProxyHelper.buildUpstreamUrl() to ensure CAEM can route the request.
+        final String project = Config.getStringProperty(
+                EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT, "");
+        if (UtilMethods.isSet(project) && !allParams.containsKey("project")) {
+            allParams.put("project", project);
+        }
+
+        if (!allParams.isEmpty()) {
             sb.append('?');
-            queryParams.forEach((k, v) -> sb.append(k).append('=').append(v).append('&'));
+            allParams.forEach((k, v) -> sb.append(k).append('=').append(v).append('&'));
             sb.setLength(sb.length() - 1);
         }
         return sb.toString();
