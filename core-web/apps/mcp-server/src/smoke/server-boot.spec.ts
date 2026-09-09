@@ -149,14 +149,38 @@ describe('mcp-server boot smoke test', () => {
     // explicit list is not possible here). If xmcp ever emits a chunk into a subdirectory, that
     // glob silently drops it.
     it('packs every file the bundle needs', () => {
+        // Both packers are tried because neither is present everywhere, and each failed in
+        // exactly one of the two places this runs. `npm` is absent from a pnpm-managed local
+        // toolchain (`pnpm env` installs node without it), so `npm pack` died with "command
+        // not found" on a dev machine. `pnpm` is on PATH in CI but old enough there to reject
+        // the flag outright — "Unknown option: 'dry-run'" — which is what turned this green
+        // check red after the first fix. Whichever answers first decides it; if neither does,
+        // both errors are reported, because a silent packer is what made this unreadable.
+        //
         // --dry-run --json reports the tarball manifest without writing one, so this needs no
-        // temp directory and no tar — it runs the same everywhere the build does. pnpm, not
-        // npm: this workspace is pnpm-only and npm is not on PATH, so `npm pack` died with
-        // "command not found" before reading anything. pnpm honours the same `files`
-        // allowlist and reports one manifest object where npm reports an array of them.
-        const manifest = JSON.parse(
-            execSync('pnpm pack --dry-run --json', { cwd: DIST, encoding: 'utf-8' })
-        ) as { files: { path: string }[] };
+        // temp directory and no tar.
+        const manifest = ((): { files: { path: string }[] } => {
+            const failures: string[] = [];
+            for (const packer of ['pnpm', 'npm']) {
+                try {
+                    const raw = execSync(`${packer} pack --dry-run --json`, {
+                        cwd: DIST,
+                        encoding: 'utf-8',
+                        stdio: ['pipe', 'pipe', 'pipe']
+                    });
+                    const parsed = JSON.parse(raw);
+
+                    // npm answers with an ARRAY of manifests, pnpm with a single object.
+                    return Array.isArray(parsed) ? parsed[0] : parsed;
+                } catch (error) {
+                    failures.push(`${packer}: ${(error as Error).message.split('\n')[0]}`);
+                }
+            }
+
+            throw new Error(
+                `no packer could report the tarball manifest, so the \`files\` allowlist is unverified:\n${failures.join('\n')}`
+            );
+        })();
 
         const packed = new Set(manifest.files.map((file) => file.path));
 
