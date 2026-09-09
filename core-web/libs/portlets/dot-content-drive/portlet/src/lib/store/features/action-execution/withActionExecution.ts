@@ -844,6 +844,11 @@ export function withActionExecution() {
                                 skippedCount: event.skippedCount ?? 0,
                                 failedCount: event.failedCount ?? 0,
                                 affectedFolders,
+                                // An upload's shortfall needs its own sentence. The default is the
+                                // workflow one, which explains failures as missing permissions or
+                                // content locked by another user, and skips as the action not being
+                                // on the item's workflow step — none of which an upload can mean.
+                                partialDetailKey: 'content-drive.upload.toast.partial',
                                 // Carried whole rather than summarised here: turning results into
                                 // copy is the shell's business, and the store has no message
                                 // service to do it with.

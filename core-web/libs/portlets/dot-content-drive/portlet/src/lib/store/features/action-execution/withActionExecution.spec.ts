@@ -547,6 +547,26 @@ describe('withActionExecution', () => {
             );
         });
 
+        it('should explain a partial upload in upload terms, not workflow terms', () => {
+            // Without its own key the outcome falls back to the workflow copy, which explains a
+            // shortfall as "you may not have permission, or the content is locked by another user"
+            // and "this action is not on their workflow step". None of that is true of an upload,
+            // and all of it sends the author somewhere useless.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted(
+                'Upload',
+                completed({ total: 3, successCount: 1, failedCount: 2, skippedCount: 0 })
+            );
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    partialDetailKey: 'content-drive.upload.toast.partial'
+                })
+            );
+        });
+
         it('should carry the per-file failures so the author learns which files and why', () => {
             // Counts alone tell an author three files failed and nothing they can act on. The names
             // and reasons are the whole point of a partial outcome.
