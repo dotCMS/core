@@ -1,19 +1,16 @@
 <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <p class="mb-4 text-xs text-gray-500">
-        A tool is a filtered content list. It lands in Available Tools — add it to any section from
-        there.
-    </p>
+    <p class="mb-4 text-xs text-gray-500">{{ 'tools.tool-dialog.description' | dm }}</p>
 
     <div class="field">
         <label for="tools-tool-name">
-            Name
+            {{ 'tools.form.name' | dm }}
             <span class="text-red-600">*</span>
         </label>
         <input
             pInputText
             id="tools-tool-name"
             formControlName="portletName"
-            placeholder="e.g. Press Releases"
+            [placeholder]="'tools.tool-dialog.name.placeholder' | dm"
             (input)="onNameChange(form.controls.portletName.value)"
             [class.ng-invalid]="$nameShowsError()"
             [class.ng-dirty]="$nameShowsError()"
@@ -21,34 +18,34 @@
             class="w-full" />
         @if ($nameShowsError()) {
             <small class="text-red-600" data-testid="tools-tool-name-error">
-                A name is required.
+                {{ 'tools.form.error.name-required' | dm }}
             </small>
         }
     </div>
 
     <div class="field">
-        <label for="tools-tool-id">Id</label>
+        <label for="tools-tool-id">{{ 'tools.form.id' | dm }}</label>
         <input
             pInputText
             id="tools-tool-id"
             formControlName="portletId"
-            placeholder="auto-generated from the name"
+            [placeholder]="'tools.tool-dialog.id.placeholder' | dm"
             (input)="onIdTouched()"
             [class.ng-invalid]="$idShowsError()"
             [class.ng-dirty]="$idShowsError()"
             data-testid="tools-tool-id-input"
             class="w-full font-mono text-sm" />
         @if ($idShowsError()) {
-            <small class="text-red-600" data-testid="tools-tool-id-error">An id is required.</small>
-        } @else {
-            <small class="text-gray-500">
-                Generated from the name. Change it only if an integration depends on a specific id.
+            <small class="text-red-600" data-testid="tools-tool-id-error">
+                {{ 'tools.form.error.id-required' | dm }}
             </small>
+        } @else {
+            <small class="text-gray-500">{{ 'tools.tool-dialog.id.hint' | dm }}</small>
         }
     </div>
 
     <div class="field">
-        <label for="tools-tool-base-types">Base types</label>
+        <label for="tools-tool-base-types">{{ 'tools.form.base-types' | dm }}</label>
         <p-multiSelect
             inputId="tools-tool-base-types"
             formControlName="baseTypes"
@@ -56,14 +53,14 @@
             optionLabel="label"
             optionValue="id"
             display="chip"
-            placeholder="Any base type"
+            [placeholder]="'tools.form.base-types.placeholder' | dm"
             appendTo="body"
             data-testid="tools-tool-base-types-select"
             styleClass="w-full" />
     </div>
 
     <div class="field">
-        <label for="tools-tool-content-types">Content types</label>
+        <label for="tools-tool-content-types">{{ 'tools.form.content-types' | dm }}</label>
         <p-multiSelect
             inputId="tools-tool-content-types"
             formControlName="contentTypes"
@@ -74,18 +71,15 @@
             display="chip"
             [filter]="true"
             filterBy="label"
-            placeholder="All content types"
+            [placeholder]="'tools.form.content-types.placeholder' | dm"
             appendTo="body"
             data-testid="tools-tool-content-types-select"
             styleClass="w-full" />
-        <small class="text-gray-500">
-            Pick whole base types above, specific content types here, or leave both empty for the
-            full catalog.
-        </small>
+        <small class="text-gray-500">{{ 'tools.form.content-types.hint' | dm }}</small>
     </div>
 
     <div class="field">
-        <label for="tools-tool-view-mode">Data view mode</label>
+        <label for="tools-tool-view-mode">{{ 'tools.form.data-view-mode' | dm }}</label>
         <p-selectButton
             inputId="tools-tool-view-mode"
             formControlName="dataViewMode"
@@ -102,19 +96,19 @@
                 class="mr-auto inline-flex items-center gap-2 text-xs text-red-600"
                 data-testid="tools-tool-form-error">
                 <span class="material-symbols-outlined text-base leading-none">warning</span>
-                <span>Please fix the highlighted fields.</span>
+                <span>{{ 'tools.form.error.summary' | dm }}</span>
             </span>
         } @else {
             <span class="mr-auto"></span>
         }
         <p-button
-            label="Cancel"
+            [label]="'tools.form.cancel' | dm"
             severity="secondary"
             [outlined]="true"
             (onClick)="onCancel()"
             data-testid="tools-tool-cancel-btn" />
         <p-button
-            [label]="isEdit ? 'Save' : 'Create'"
+            [label]="(isEdit ? 'tools.form.save' : 'tools.form.create') | dm"
             type="submit"
             data-testid="tools-tool-save-btn" />
     </div>

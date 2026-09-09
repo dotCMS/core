@@ -13,6 +13,8 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DOT_TOOLS_SECTION_ICONS } from '../constants/dot-tools.constants';
 import { DotToolsSection } from '../models/dot-tools.models';
 
@@ -28,7 +30,7 @@ interface IconOption {
 @Component({
     selector: 'dot-tools-section-dialog',
     standalone: true,
-    imports: [ReactiveFormsModule, InputTextModule, SelectModule, ButtonModule],
+    imports: [ReactiveFormsModule, InputTextModule, SelectModule, ButtonModule, DotMessagePipe],
     templateUrl: './dot-tools-section-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

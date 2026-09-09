@@ -1,31 +1,29 @@
 <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <p class="mb-4 text-xs text-gray-500">
-        Sections are the groups in the left navigation. Add tools to it once it exists.
-    </p>
+    <p class="mb-4 text-xs text-gray-500">{{ 'tools.section-dialog.description' | dm }}</p>
 
     <div class="field">
         <label for="tools-section-name">
-            Name
+            {{ 'tools.form.name' | dm }}
             <span class="text-red-600">*</span>
         </label>
         <input
             pInputText
             id="tools-section-name"
             formControlName="name"
-            placeholder="e.g. Reporting"
+            [placeholder]="'tools.section-dialog.name.placeholder' | dm"
             [class.ng-invalid]="$nameShowsError()"
             [class.ng-dirty]="$nameShowsError()"
             data-testid="tools-section-name-input"
             class="w-full" />
         @if ($nameShowsError()) {
             <small class="text-red-600" data-testid="tools-section-name-error">
-                A name is required.
+                {{ 'tools.form.error.name-required' | dm }}
             </small>
         }
     </div>
 
     <div class="field">
-        <label for="tools-section-icon">Icon</label>
+        <label for="tools-section-icon">{{ 'tools.form.icon' | dm }}</label>
         <p-select
             inputId="tools-section-icon"
             formControlName="icon"
@@ -64,21 +62,21 @@
                 class="mr-auto inline-flex items-center gap-2 text-xs text-red-600"
                 data-testid="tools-section-form-error">
                 <span class="material-symbols-outlined text-base leading-none">warning</span>
-                <span>Please fix the highlighted fields.</span>
+                <span>{{ 'tools.form.error.summary' | dm }}</span>
             </span>
         } @else {
             <span class="mr-auto text-xs text-gray-500">
-                Order is set by dragging in the sections panel.
+                {{ 'tools.section-dialog.footer.order-hint' | dm }}
             </span>
         }
         <p-button
-            label="Cancel"
+            [label]="'tools.form.cancel' | dm"
             severity="secondary"
             [outlined]="true"
             (onClick)="onCancel()"
             data-testid="tools-section-cancel-btn" />
         <p-button
-            [label]="isEdit ? 'Save' : 'Create'"
+            [label]="(isEdit ? 'tools.form.save' : 'tools.form.create') | dm"
             type="submit"
             data-testid="tools-section-save-btn" />
     </div>

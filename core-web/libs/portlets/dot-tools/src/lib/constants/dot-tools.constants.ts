@@ -1,6 +1,13 @@
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
 /**
+ * Catalog pagination. Kept here so the store's slice count, the "Load N more"
+ * button label and any future test stay in agreement.
+ */
+export const CATALOG_INITIAL_LIMIT = 15;
+export const CATALOG_LOAD_MORE_STEP = 40;
+
+/**
  * Curated Material Symbols set the Section dialog picks from. Client-owned:
  * the backend accepts any string (see `Layout.description`), so this list is
  * ours to expand. Order is roughly by role (navigation → domain → generic).
