@@ -87,6 +87,7 @@ export * from './lib/dot-workflow-actions-fire/dot-workflow-actions-fire.service
 export * from './lib/dot-workflow-event-handler/dot-workflow-event-handler.service';
 export * from './lib/dot-workflow/dot-workflow.service';
 export * from './lib/dot-workflows-actions/dot-workflows-actions.service';
+export * from './lib/dot-workflows-actions/dot-workflows-actions.utils';
 export * from './lib/ema-app-configuration/ema-app-configuration.service';
 export * from './lib/paginator/paginator.service';
 export * from './lib/push-publish/push-publish.service';
