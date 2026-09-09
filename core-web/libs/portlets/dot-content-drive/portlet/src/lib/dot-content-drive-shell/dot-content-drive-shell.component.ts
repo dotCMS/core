@@ -1472,7 +1472,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
                     // Only a refused *submission* lands here. Once a handle exists the run is the
                     // server's, and its failures arrive as per-file reasons in the outcome.
-                    console.error('Content drive upload error => ', error);
+                    // A log, not `DotHttpErrorManagerService`: that service answers a status with
+                    // its own dialog and can redirect, which would stack a vaguer second account of
+                    // the same refusal on top of the toast below. Carries the status and the batch
+                    // size so a ceiling refusal can be told from a transport failure without
+                    // reproducing it.
+                    console.error(
+                        `Content drive upload refused: status ${error?.status ?? 'none'}, ${files.length} file(s)`,
+                        error
+                    );
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),

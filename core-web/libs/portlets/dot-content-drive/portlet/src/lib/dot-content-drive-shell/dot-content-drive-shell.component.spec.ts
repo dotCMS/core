@@ -840,6 +840,27 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
+        it('should report the counts and name nothing when an outcome carries no per-file results', () => {
+            // A guard, not a Red gate: `results` is optional on the wire, so a job that reports only
+            // counters is a shape the client must survive. What it must not do is fill the gap —
+            // there is no honest way to name a file the outcome never named, and inventing one
+            // sends the author to look for something that is not there.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    detail: 'content-drive.action-center.toast.executed-partial'
+                })
+            );
+        });
+
         it('should report a recognised retry as already uploaded, not as a failure', () => {
             // Every file collided, so by the counts this is a total failure. It is not: the batch
             // had already uploaded, and the author needs to know that rather than be sent to clean
