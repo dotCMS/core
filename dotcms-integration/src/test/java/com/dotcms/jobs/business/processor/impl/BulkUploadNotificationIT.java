@@ -387,4 +387,81 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
         assertTrue(captured.messageKey.contains("cancelled"),
                 "and the wording says cancelled, not failed");
     }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A batch where some files landed and some did not.
+     * <p>
+     * Expected result: The <b>partial</b> wording, at {@code WARNING} — not the success wording and
+     * not the failure one.
+     * <p>
+     * FR-022 requires four outcomes to read differently, and this was one of the two branches no
+     * test reached. It is also the branch most likely to be got wrong quietly: a partial batch that
+     * started reading as a clean success would tell an author nothing went wrong while some of
+     * their files are missing, and the counts they would need to notice are in the same message
+     * that just reassured them.
+     */
+    @Test
+    public void test_completion_tellsApartAPartialBatchFromASuccessfulOne() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, outcome(2, 1));
+
+        final CapturingNotifications captured = listenTo(job);
+
+        assertEquals("notification.bulkupload.partial", captured.messageKey,
+                "some created and some failed is its own outcome, not a success and not a "
+                        + "total failure");
+        assertEquals(NotificationLevel.WARNING, captured.level,
+                "and it is a warning: something needs the author's attention, but the run worked");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A batch where every file was created.
+     * <p>
+     * Expected result: The <b>success</b> wording, at {@code INFO}.
+     * <p>
+     * The other untested branch, and the control that gives the partial test above its meaning: a
+     * listener that reported everything as partial would have satisfied that test on its own.
+     */
+    @Test
+    public void test_completion_reportsACleanBatchAsASuccess() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, outcome(3, 0));
+
+        final CapturingNotifications captured = listenTo(job);
+
+        assertEquals("notification.bulkupload.success", captured.messageKey,
+                "nothing failed and nothing was skipped, so nothing should suggest otherwise");
+        assertEquals(NotificationLevel.INFO, captured.level);
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A cancelled run that had created some files and never reached others.
+     * <p>
+     * Expected result: The cancelled wording, <b>not</b> the partial one — even though the counts
+     * satisfy the partial branch too.
+     * <p>
+     * Skipped files make a cancelled run look partial on the numbers alone. Cancellation is
+     * something the author chose, and reporting it as "some of your files failed" describes a fault
+     * they did not experience.
+     */
+    @Test
+    public void test_completion_prefersCancelledOverPartial_whenBothWouldMatch() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        final Map<String, Object> result = outcome(2, 0);
+        result.put("skippedCount", 3);
+        final Job job = finishedJob(author.getUserId(), JobState.CANCELED, result);
+
+        final CapturingNotifications captured = listenTo(job);
+
+        assertEquals("notification.bulkupload.cancelled", captured.messageKey,
+                "these counts also match the partial branch; the state has to win");
+        assertFalse(NotificationLevel.ERROR.equals(captured.level));
+    }
+
 }

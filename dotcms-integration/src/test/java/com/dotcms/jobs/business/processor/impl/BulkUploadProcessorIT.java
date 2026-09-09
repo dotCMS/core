@@ -25,6 +25,8 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -1077,6 +1079,124 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
         assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
                 "and the files whose content was still there are created");
+    }
+
+
+    /**
+     * Method to test: the bulk-upload processor, for an author the per-file check refuses
+     * <p>
+     * Given scenario: A run whose submitting user cannot create the batch's content type, on a
+     * folder they may otherwise write to.
+     * <p>
+     * Expected result: Each file fails as {@code PERMISSION_DENIED}, and the run finishes normally
+     * rather than throwing.
+     * <p>
+     * <b>EC8's case, and it had no integration coverage.</b> The submission-time check (FR-003)
+     * covers the target; this is the narrower one underneath it — "resolving to a content type the
+     * author cannot create" — and only a unit assertion on {@code classify} existed for it, which
+     * proves the mapping and not that the creation path ever produces the exception being mapped.
+     * <p>
+     * That the run <b>completes</b> matters as much as the reason: a security failure that
+     * propagated would abort the batch, and FR-007 says one failing file must not.
+     */
+    @Test
+    public void test_run_reportsAPerFilePermissionFailureWithoutAbortingTheRun() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 3);
+
+        // Swap in an author who was never granted anything on the content type. The submission
+        // gate is not in play here — this test builds the job directly, which is exactly the seam
+        // where the narrower per-file check lives.
+        final Map<String, Object> parameters = new HashMap<>(job.parameters());
+        parameters.put("userId", new UserDataGen().nextPersisted().getUserId());
+
+        final Job asLimitedUser = Job.builder().from(job).parameters(parameters).build();
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(asLimitedUser);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(asLimitedUser);
+
+        assertEquals(0, ((Number) outcome.get("successCount")).intValue(),
+                "an author who cannot create the type creates nothing.\n" + describe(outcome));
+        assertEquals(3, ((Number) outcome.get("failedCount")).intValue(),
+                "and every file is reported, not just the first one that failed");
+
+        @SuppressWarnings("unchecked")
+        final List<BatchItemResult> results =
+                (List<BatchItemResult>) outcome.get("results");
+        for (final BatchItemResult result : results) {
+            assertEquals(BatchFailureReason.PERMISSION_DENIED, result.reason().orElse(null),
+                    String.format("'%s' must name the permission rule, not fall through to "
+                            + "UNCLASSIFIED — an author told only that it failed has nothing to "
+                            + "act on.\n%s", result.key(), describe(outcome)));
+        }
+    }
+
+    /**
+     * Method to test: the bulk-upload processor's progress reporting
+     * <p>
+     * Given scenario: A batch of 5 files.
+     * <p>
+     * Expected result: Progress is reported <b>as each file completes</b> — a strictly rising
+     * series, one report per file, ending at 1.0.
+     * <p>
+     * <b>Asserting only the final 1.0 does not test FR-024.</b> A processor that reported nothing
+     * until the very end would pass that, and it is precisely the behaviour FR-024 rules out: the
+     * requirement is that progress be readable <i>in flight</i>, which is what a client following a
+     * long batch needs and the only reason the tracker is threaded through at all.
+     */
+    @Test
+    public void test_run_reportsProgressAsEachFileCompletes_notOnlyAtTheEnd() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job built = jobFor(folder, 5);
+
+        final RecordingProgressTracker tracker = new RecordingProgressTracker();
+        final Job job = Job.builder().from(built).progressTracker(tracker).build();
+
+        new BulkUploadProcessor().process(job);
+
+        final List<Float> reported = tracker.reported();
+
+        assertTrue(reported.size() >= 5, String.format(
+                "progress must be reported per file, not once at the end; got %d report(s) for "
+                        + "5 files: %s", reported.size(), reported));
+
+        assertEquals(1.0f, reported.get(reported.size() - 1), 0.0001f,
+                "and it finishes at 1.0");
+
+        float previous = -1f;
+        for (final Float value : reported) {
+            assertTrue(value >= previous,
+                    String.format("progress must never go backwards: %s", reported));
+            previous = value;
+        }
+
+        assertTrue(reported.get(0) < 1.0f,
+                "the first report must land before the batch is done, or nothing is readable "
+                        + "in flight: " + reported);
+    }
+
+    /** A {@link ProgressTracker} that keeps every value it was handed, in order. */
+    private static class RecordingProgressTracker implements ProgressTracker {
+
+        private final List<Float> reported = new ArrayList<>();
+        private volatile float current;
+
+        @Override
+        public void updateProgress(final float progress) {
+            this.current = progress;
+            this.reported.add(progress);
+        }
+
+        @Override
+        public float progress() {
+            return current;
+        }
+
+        List<Float> reported() {
+            return reported;
+        }
     }
 
 }
