@@ -1652,13 +1652,20 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should return false when page is undefined', () => {
-                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
-                    of({
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: undefined
-                    })
-                );
+                // The page-less asset goes straight into the store instead of through a
+                // `get` mock. The Page API never returns an asset without `page`, and the
+                // load pipeline believes that: its final tap reads
+                // `payload.pageAsset.page.styleEditorSchemas`, which throws — after this
+                // synchronous test has finished, so the TypeError escapes as an unhandled
+                // rejection and fails the whole project instead of a test. `$canRead` only
+                // reads the stored asset, so patching state exercises exactly what this
+                // test is about.
                 spectator.detectChanges();
+                patchState(writableStore(), {
+                    pageAssetResponse: {
+                        pageAsset: { ...MOCK_RESPONSE_HEADLESS, page: undefined }
+                    }
+                });
 
                 const canRead = spectator.component['$canRead']();
 
