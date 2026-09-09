@@ -1,0 +1,233 @@
+<div class="flex min-h-0 flex-1">
+    <aside
+        class="flex min-h-0 w-80 flex-col border-r border-gray-200 bg-gray-50"
+        data-testid="tools-sections-panel">
+        <header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+            <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">Sections</span>
+            <p-button
+                label="New Section"
+                size="small"
+                (onClick)="openNewSectionDialog()"
+                data-testid="tools-new-section-btn" />
+        </header>
+
+        <!--
+            Drag polish: the [&_.cdk-drag]:transition-transform variant on the
+            drop list makes siblings slide when a drag hovers; the placeholder
+            and preview templates below provide the "from" and "moving" cues.
+        -->
+        <ul
+            cdkDropList
+            (cdkDropListDropped)="onSectionDrop($event)"
+            class="flex-1 overflow-auto py-2 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
+            data-testid="tools-sections-list">
+            @for (section of store.sections(); track section.id) {
+                <li cdkDrag class="group">
+                    <div
+                        role="button"
+                        tabindex="0"
+                        (click)="onSelectSection(section.id)"
+                        (keydown.enter)="onSelectSection(section.id)"
+                        (keydown.space)="$event.preventDefault(); onSelectSection(section.id)"
+                        [class.bg-indigo-50]="store.selectedSectionId() === section.id"
+                        [class.text-indigo-900]="store.selectedSectionId() === section.id"
+                        [class.font-semibold]="store.selectedSectionId() === section.id"
+                        class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                        [attr.data-testid]="'tools-section-row-' + section.id">
+                        <span
+                            cdkDragHandle
+                            class="material-symbols-outlined cursor-grab text-base leading-none text-gray-400 opacity-0 group-hover:opacity-100 active:cursor-grabbing">
+                            drag_indicator
+                        </span>
+                        <span class="material-symbols-outlined text-lg leading-none">
+                            {{ section.icon }}
+                        </span>
+                        <span class="flex-1 truncate">{{ section.name }}</span>
+                        <p-button
+                            icon="pi pi-ellipsis-v"
+                            size="small"
+                            severity="secondary"
+                            [text]="true"
+                            [rounded]="true"
+                            (click)="
+                                $event.stopPropagation();
+                                setSectionMenuTarget(section);
+                                sectionMenu.toggle($event)
+                            "
+                            [attr.data-testid]="'tools-section-menu-btn-' + section.id"
+                            styleClass="opacity-0 group-hover:opacity-100" />
+                    </div>
+
+                    <!-- "Moving from here" — muted dashed slot -->
+                    <div
+                        *cdkDragPlaceholder
+                        class="mx-1 my-0.5 flex h-9 items-center gap-2 rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-sm text-indigo-300">
+                        <span class="material-symbols-outlined text-lg leading-none">
+                            {{ section.icon }}
+                        </span>
+                        <span class="flex-1 truncate">{{ section.name }}</span>
+                    </div>
+
+                    <!-- "Moving this" — lifted card following the cursor -->
+                    <div
+                        *cdkDragPreview
+                        class="flex w-72 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-900 shadow-xl">
+                        <span class="material-symbols-outlined text-lg leading-none">
+                            {{ section.icon }}
+                        </span>
+                        <span class="flex-1 truncate">{{ section.name }}</span>
+                    </div>
+
+                    @if (store.selectedSectionId() === section.id) {
+                        <ul
+                            cdkDropList
+                            (cdkDropListDropped)="onToolDrop($event)"
+                            class="py-1 pr-2 pl-10 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
+                            [attr.data-testid]="'tools-section-tools-' + section.id">
+                            @for (tool of store.selectedSectionTools(); track tool.id) {
+                                <li
+                                    cdkDrag
+                                    class="group/tool flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
+                                    <span
+                                        cdkDragHandle
+                                        class="material-symbols-outlined cursor-grab text-sm leading-none text-gray-400 opacity-0 group-hover/tool:opacity-100 active:cursor-grabbing">
+                                        drag_indicator
+                                    </span>
+                                    <span class="flex-1 truncate">{{ tool.title }}</span>
+                                    <p-button
+                                        icon="pi pi-times"
+                                        size="small"
+                                        severity="secondary"
+                                        [text]="true"
+                                        [rounded]="true"
+                                        pTooltip="Remove from section"
+                                        (click)="onRemoveTool(tool.id)"
+                                        [attr.data-testid]="'tools-section-tool-remove-' + tool.id"
+                                        styleClass="opacity-0 group-hover/tool:opacity-100" />
+
+                                    <div
+                                        *cdkDragPlaceholder
+                                        class="mx-1 my-0.5 flex h-7 items-center rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-xs text-indigo-300">
+                                        <span class="flex-1 truncate">{{ tool.title }}</span>
+                                    </div>
+
+                                    <div
+                                        *cdkDragPreview
+                                        class="flex w-64 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-900 shadow-xl">
+                                        <span class="flex-1 truncate">{{ tool.title }}</span>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </li>
+            }
+        </ul>
+
+        <footer class="border-t border-gray-100 px-4 py-2 text-xs text-gray-500">
+            Drag to set the order of the navigation.
+        </footer>
+    </aside>
+
+    <section class="flex min-h-0 flex-1 flex-col px-6 pt-5" data-testid="tools-available-panel">
+        @if (store.selectedSection(); as section) {
+            <header class="mb-4 flex items-center gap-3">
+                <span class="material-symbols-outlined text-2xl text-gray-700">
+                    {{ section.icon }}
+                </span>
+                <h2 class="m-0 text-xl font-semibold tracking-tight">{{ section.name }}</h2>
+            </header>
+            <p class="mb-3 text-xs text-gray-500">
+                Check a tool to add it to this section. It appears under the section on the left,
+                where you can drag to set its order or remove it.
+            </p>
+
+            <div
+                class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-gray-200 bg-white">
+                <div
+                    class="flex h-12 items-center justify-between border-b border-gray-200 bg-gray-50 px-4">
+                    <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">
+                        Available Tools
+                    </span>
+                    <p-button
+                        label="New Tool"
+                        size="small"
+                        (onClick)="openNewToolDialog()"
+                        data-testid="tools-new-tool-btn" />
+                </div>
+
+                <div class="border-b border-gray-100 px-3 py-2">
+                    <p-iconField iconPosition="left" class="w-full">
+                        <p-inputIcon styleClass="pi pi-search" />
+                        <input
+                            pInputText
+                            type="text"
+                            class="w-full"
+                            placeholder="Search tools"
+                            [ngModel]="store.catalogFilter()"
+                            (ngModelChange)="onCatalogFilterChange($event)"
+                            data-testid="tools-catalog-search" />
+                    </p-iconField>
+                </div>
+
+                <ul class="flex-1 overflow-auto py-1" data-testid="tools-catalog-list">
+                    @for (entry of store.paginatedCatalog(); track entry.id) {
+                        <li
+                            role="button"
+                            tabindex="0"
+                            class="group/row flex cursor-pointer items-center gap-3 px-4 py-1.5 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            (click)="onToggleTool(entry.id)"
+                            (keydown.enter)="onToggleTool(entry.id)"
+                            (keydown.space)="$event.preventDefault(); onToggleTool(entry.id)"
+                            [attr.data-testid]="'tools-catalog-row-' + entry.id">
+                            <p-checkbox
+                                [binary]="true"
+                                [ngModel]="store.selectedSectionToolIds().has(entry.id)"
+                                (click)="$event.stopPropagation(); onToggleTool(entry.id)"
+                                [attr.data-testid]="'tools-catalog-check-' + entry.id" />
+                            <span class="flex-1 text-sm text-gray-800">{{ entry.title }}</span>
+                            @if (isToolCustom(entry)) {
+                                <p-button
+                                    icon="pi pi-ellipsis-v"
+                                    size="small"
+                                    severity="secondary"
+                                    [text]="true"
+                                    [rounded]="true"
+                                    (click)="
+                                        $event.stopPropagation();
+                                        setToolMenuTarget(entry);
+                                        toolMenu.toggle($event)
+                                    "
+                                    [attr.data-testid]="'tools-catalog-menu-btn-' + entry.id"
+                                    styleClass="opacity-0 group-hover/row:opacity-100" />
+                            }
+                        </li>
+                    }
+                    @if (store.paginatedCatalog().length === 0) {
+                        <li
+                            class="py-6 text-center text-xs text-gray-400"
+                            data-testid="tools-catalog-empty">
+                            No tools match that search.
+                        </li>
+                    }
+                    @if (store.hasMoreCatalog()) {
+                        <li class="p-2">
+                            <p-button
+                                label="Load 40 more"
+                                icon="pi pi-plus-circle"
+                                [text]="true"
+                                (onClick)="onLoadMore()"
+                                styleClass="w-full justify-start"
+                                data-testid="tools-catalog-load-more" />
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </section>
+</div>
+
+<p-menu #sectionMenu [popup]="true" [model]="sectionMenuItems()" appendTo="body" />
+<p-menu #toolMenu [popup]="true" [model]="toolMenuItems()" appendTo="body" />
+
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
