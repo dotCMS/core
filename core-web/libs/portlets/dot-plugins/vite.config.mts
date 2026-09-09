@@ -69,6 +69,38 @@ export default defineConfig(() => ({
         // and these specs were written under that. Measured exceptions live in NO_ISOLATE
         // in tools/generate-vite-configs.mjs.
         isolate: true,
+        // The pool is a MEMORY decision here, not a speed one, and it is what makes this
+        // suite fit a CI runner at all.
+        //
+        // With the default 'forks' pool, a worker keeps Vite's module graph and transform
+        // cache for the whole run and reuses them across test files — that reuse is where
+        // Vitest's speed comes from, and isolate only replaces the ENVIRONMENT per file,
+        // never that cache. Angular makes the consequence extreme: the JIT compiler hangs
+        // compiled definitions off the component classes held in that cache, so nothing is
+        // released. Measured on dotcms-ui: one spec file peaks at 2.9GB and the same process
+        // reaches 14.2GB after 226 of them. Jest never showed this because it drops its
+        // module registry per test file — its workers stayed at 1.15GB each, so the same
+        // total memory arrived in pieces a runner could schedule instead of one block that
+        // has to fit whole. Frontend Unit Tests was killed three times for exactly this,
+        // always mid-dotcms-ui, always a bare "The operation was canceled.".
+        //
+        // 'vmForks' gives each test file a fresh VM context, so module state does not
+        // accumulate, and vmMemoryLimit caps what one of them may hold. Measured peak RSS of
+        // a single process, same specs, all green:
+        //
+        //   dotcms-ui              14.2GB -> 2.16GB    (44s -> 38s)
+        //   ui                     13.7GB -> 1.92GB
+        //   edit-content           ~14GB  -> 1.68GB
+        //   portlets-content-drive ~14GB  -> 2.72GB
+        //
+        // Faster as well as smaller, which is not the usual direction for an isolation
+        // change. Ruled out first, each measured the same way: maxForks (14.2GB unchanged —
+        // shrinking the count cannot shrink a block that size), 4-way sharding (13.3GB, the
+        // cost is the graph rather than the file count), dropping the libs|apps deps.inline
+        // entry (17.8GB, WORSE — Node then loads those sources separately), and happy-dom
+        // instead of jsdom (9%).
+        pool: 'vmForks',
+        vmMemoryLimit: '1G',
         environment: 'jsdom',
         environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
