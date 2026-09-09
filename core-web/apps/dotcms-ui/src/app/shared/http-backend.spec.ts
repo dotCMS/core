@@ -19,8 +19,16 @@ import { appConfig } from '../app.config';
  * grep to find, and the absence of `withFetch` no longer means XHR — which is exactly the reasoning
  * that missed it. So the requirement gets a test rather than a comment.
  *
- * The SSR caveat in Angular's docs does not apply: dotAdmin is a browser SPA and this app is not
- * server-rendered.
+ * **`withXhr` is not deprecated; `withFetch` is.** Worth stating plainly, because the pairing
+ * invites the opposite assumption. `withFetch` is tagged `@deprecated` ("not required anymore"),
+ * while `withXhr` carries no deprecation at all — only a critical note scoped to **server-side
+ * rendering**, where the Node `xhr2` shim is deprecated and due for removal in Angular 23 because
+ * it mishandles redirects. dotAdmin is a browser SPA and is not server-rendered, so that note does
+ * not apply, and `HttpXhrBackend` itself remains supported.
+ *
+ * If browser XHR is ever withdrawn too, the fallback is a raw `XMLHttpRequest` inside the upload
+ * service, or dropping to an indeterminate indicator. This test is what would make that a decision
+ * rather than a silent regression.
  */
 describe('dotcms-ui HTTP backend', () => {
     it('should use the Xhr backend, because fetch cannot report upload progress', () => {
