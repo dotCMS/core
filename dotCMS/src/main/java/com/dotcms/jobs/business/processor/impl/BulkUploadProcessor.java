@@ -189,21 +189,27 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
-            // A name already taken is decided here rather than by letting the create fail.
+            // What the TARGET FOLDER refuses is decided here rather than by letting the create
+            // fail — both its filename filter and a name already taken.
             //
-            // NOT for correctness — the unique index below is still the authority, and has to be:
-            // two batches racing for one name (FR-042) can both pass this check and only one can
-            // win, so removing the backstop would let the loser through. This is about what the
-            // expensive path costs and what it leaves behind. A resubmission is a NORMAL outcome
-            // this feature explicitly supports (FR-040a), and resolving it by exception meant a
-            // full workflow fire and validation per file, each one logging its rejection at ERROR
-            // through WorkflowAPIImpl. Fifty resubmitted files produced fifty ERROR lines
-            // describing something entirely expected and already handled — which is how an
-            // operator learns to stop reading them.
-            if (nameIsTaken(job.parameters(), user, fileName)) {
-                record(job, seq, fileName, BatchItemStatus.FAILED,
-                        BatchFailureReason.NAME_COLLISION,
-                        "A file of that name already exists in the target", null);
+            // NOT for correctness: the unique index below is still the authority on a name, and has
+            // to be, because two batches racing for one name (FR-042) can both pass this check and
+            // only one can win. This is about what the expensive path costs and what it leaves
+            // behind. A resubmission is a NORMAL outcome this feature supports (FR-040a), and
+            // resolving it by exception meant a full workflow fire and validation per file, each
+            // logging its rejection at ERROR through WorkflowAPIImpl.
+            //
+            // For the folder filter it is not only cheaper, it is the only way to name the reason
+            // at all: the product reports a filter mismatch and a name collision through the same
+            // exception class AND the same invalid field (hostFolder), differing only by a
+            // translated message — so a filter mismatch recovered from the exception was reported
+            // to the author as NAME_COLLISION, telling them to rename a file whose name was never
+            // the problem.
+            final Optional<BatchFailureReason> refusedByFolder =
+                    folderRefusal(job.parameters(), user, fileName);
+            if (refusedByFolder.isPresent()) {
+                record(job, seq, fileName, BatchItemStatus.FAILED, refusedByFolder.get(),
+                        "Refused by the target folder before creation", null);
                 return;
             }
 
@@ -233,19 +239,10 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             // "should not have a null workflow action", creates nothing, and RETURNS NORMALLY —
             // so a run that did no work reported every file as a success.
             //
-            // NEW, not PUBLISH. An earlier version fired PUBLISH on the belief that it matched the
-            // single-file path; it does not. The single-file endpoint checks the asset in as
-            // WORKING unless the caller explicitly asks for live (WebAssetHelper#checkinOrPublish),
-            // so PUBLISH made a batch upload publish content that the same file uploaded alone
-            // would have left as a draft — the opposite of the equivalence FR-006 requires, and a
-            // surprise with real consequences: it puts an author's unreviewed files straight onto
-            // the live site.
-            //
-            // NEW maps to the Save action by default (Task05175AssignDefaultActionsToTheSystem-
-            // Workflow) and leaves the asset working. Firing it through the workflow rather than
-            // calling checkin directly is deliberate: it keeps the content type's own scheme,
-            // its actionlets and its permission checks in play, which is what the WebDAV file
-            // upload does for the same reason (DotWebdavHelper#runWorkflow).
+            // NEW, not PUBLISH. The single-file endpoint checks the asset in as WORKING unless the
+            // caller explicitly asks for live (WebAssetHelper#checkinOrPublish), so PUBLISH made a
+            // batch upload publish content that the same file uploaded alone would have left as a
+            // draft — the opposite of the equivalence FR-006 requires.
             final WorkflowAction action = APILocator.getWorkflowAPI()
                     .findActionMappedBySystemActionContentlet(
                             contentlet, WorkflowAPI.SystemAction.NEW, user)
@@ -265,16 +262,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                             .indexPolicyDependencies(IndexPolicy.DEFER)
                             .build());
 
-            // Never report a success we cannot point at. The whole feature exists so the author is
-            // told what actually happened, so "created" has to mean a contentlet that exists.
-            if (created == null || !UtilMethods.isSet(created.getIdentifier())) {
-                throw new IllegalStateException(
-                        "The workflow returned no persisted contentlet for " + fileName);
-            }
-
-            createdInodes.add(created.getInode());
-            record(job, seq, fileName, BatchItemStatus.SUCCESS, null, null,
-                    created.getIdentifier());
+            recordCreated(job, seq, fileName, created, createdInodes);
 
         } catch (final StagedContentUnavailableException e) {
             // Not the author's fault: the content expired or could not be read. Named explicitly
@@ -288,6 +276,29 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             record(job, seq, fileName, BatchItemStatus.FAILED, reasons.classify(e),
                     e.getClass().getName() + ": " + e.getMessage(), null);
         }
+    }
+
+    /**
+     * Records one file as created, having first confirmed that it was.
+     * <p>
+     * <b>Never report a success we cannot point at.</b> The whole feature exists so the author is
+     * told what actually happened, so "created" has to mean a contentlet that exists — and this is
+     * not hypothetical: {@code fireContentWorkflow} with an unresolved action logs an error,
+     * creates nothing and returns normally, which once had every file in a batch recorded SUCCESS
+     * against an empty folder.
+     * <p>
+     * Shared by both creation routes — the workflow fire and the direct checkin — so neither can
+     * grow its own idea of what counts as created.
+     */
+    private void recordCreated(final Job job, final int seq, final String fileName,
+                               final Contentlet created, final List<String> createdInodes) {
+
+        if (created == null || !UtilMethods.isSet(created.getIdentifier())) {
+            throw new IllegalStateException("No persisted contentlet was returned for " + fileName);
+        }
+
+        createdInodes.add(created.getInode());
+        record(job, seq, fileName, BatchItemStatus.SUCCESS, null, null, created.getIdentifier());
     }
 
     /**
@@ -395,48 +406,65 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Whether the target already holds a file of this name, asked before the create is attempted.
+     * What the target folder refuses about this file, asked before the create is attempted.
      * <p>
-     * <b>Case-insensitive</b>, because the underlying rule is (FR-042a): {@code Report.pdf} and
-     * {@code report.pdf} are one contended name, and {@code fileNameExists} resolves through the
-     * same lower-cased identifier the unique index is built on.
+     * Two rules, resolved together because they need the same folder and the same lookup order:
+     * <ul>
+     *   <li><b>The folder's filename filter</b> ({@code filesMasks}). Applies to both base types —
+     *       {@code validateFileAsset} and {@code validateDotAsset} both call
+     *       {@code FolderAPI.matchFilter}.</li>
+     *   <li><b>A name already taken</b>, <b>case-insensitively</b> (FR-042a): {@code Report.pdf}
+     *       and {@code report.pdf} are one contended name, and {@code fileNameExists} resolves
+     *       through the same lower-cased identifier the unique index is built on.</li>
+     * </ul>
+     * <b>Filter first</b>, deliberately. A file can break both, carries only one reason, and the
+     * folder filter is the one the author can act on without knowing what else is in the folder —
+     * "this folder only takes .jpg" is actionable; "that name is taken" sends them to rename a file
+     * the folder would have refused anyway.
      * <p>
-     * <b>Only for FILEASSET.</b> A dotAsset does not carry a file name the way a fileAsset does —
-     * its title is derived from the binary — so there is no equivalent lookup, and the create
-     * itself remains the only answer for that base type. Returning false here is therefore not a
-     * claim that the name is free; it means "not decided yet", and the create decides it. Safe
-     * precisely because this check never had authority in the first place.
+     * <b>Only the name check is FILEASSET-only.</b> A dotAsset does not carry a file name the way a
+     * fileAsset does — its title is derived from the binary — so there is no equivalent lookup and
+     * the create remains the only answer for that base type. Answering "no refusal" here is
+     * therefore not a claim that the name is free; it means "not decided yet", which is safe
+     * precisely because this check never had authority.
      * <p>
-     * <b>Never allowed to fail the file.</b> If the lookup itself errors, this yields to the
-     * create rather than inventing a collision: a diagnostic query must not be able to reject an
-     * author's file.
+     * <b>Never allowed to fail the file.</b> If a lookup itself errors, this yields to the create
+     * rather than inventing a refusal: a diagnostic query must not be able to reject an author's
+     * file.
      */
-    private boolean nameIsTaken(final Map<String, Object> parameters, final User user,
-                                final String fileName) {
-
-        if (!"FILEASSET".equals(parameters.get("baseType"))) {
-            return false;
-        }
-
+    private Optional<BatchFailureReason> folderRefusal(final Map<String, Object> parameters,
+                                                       final User user, final String fileName) {
         try {
             final Object folderId = parameters.get("folderId");
             if (folderId == null) {
-                // A site-rooted batch targets SYSTEM_FOLDER, which fileNameExists does not resolve
-                // the way it resolves a real folder. Left to the create.
-                return false;
+                // A site-rooted batch targets SYSTEM_FOLDER, which carries no filter and which
+                // fileNameExists does not resolve the way it resolves a real folder. Left to the
+                // create.
+                return Optional.empty();
             }
 
             final Folder folder = APILocator.getFolderAPI()
                     .find(String.valueOf(folderId), user, false);
 
+            if (!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
+                return Optional.of(BatchFailureReason.FOLDER_FILTER_MISMATCH);
+            }
+
+            if (!"FILEASSET".equals(parameters.get("baseType"))) {
+                return Optional.empty();
+            }
+
             return APILocator.getFileAssetAPI().fileNameExists(
                     APILocator.getHostAPI().find(folder.getHostId(), user, false),
-                    folder, fileName);
+                    folder, fileName)
+                    ? Optional.of(BatchFailureReason.NAME_COLLISION)
+                    : Optional.empty();
+
         } catch (final Exception e) {
             Logger.debug(this, String.format(
-                    "Could not pre-check the name '%s'; leaving it to the create: %s",
+                    "Could not pre-check the target folder for '%s'; leaving it to the create: %s",
                     fileName, e.getMessage()));
-            return false;
+            return Optional.empty();
         }
     }
 

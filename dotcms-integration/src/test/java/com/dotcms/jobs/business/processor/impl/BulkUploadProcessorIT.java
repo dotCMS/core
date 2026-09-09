@@ -27,6 +27,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayInputStream;
@@ -722,5 +724,55 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                     contentlet.getTitle()));
         }
     }
+
+
+    /**
+     * Method to test: the bulk-upload processor, against a folder that filters names
+     * <p>
+     * Given scenario: The target folder declares {@code filesMasks = *.jpg}, and a batch mixes a
+     * matching file with two that do not match.
+     * <p>
+     * Expected result: The non-matching files fail as {@code FOLDER_FILTER_MISMATCH} — <b>not</b>
+     * as {@code NAME_COLLISION}.
+     * <p>
+     * <b>Why it said NAME_COLLISION before.</b> The product reports a filter mismatch and a name
+     * collision through the same exception class <i>and</i> the same invalid field
+     * ({@code hostFolder}), differing only by a translated message. Read from the exception the two
+     * are genuinely indistinguishable, so the resolver's structural signature matched both. The
+     * author was told to rename a file whose name was never the problem — a fix that cannot work,
+     * because every new name fails the same filter.
+     * <p>
+     * Also distinct from {@code DISALLOWED_FILE_TYPE}: that is the content type's media-type allow
+     * list, sniffed from content. This is a glob on the file <i>name</i>, configured per folder, so
+     * the same file is refused here and accepted one folder over.
+     */
+    @Test
+    public void test_run_namesAFolderFilterMismatchAsItsOwnReason() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        folder.setFilesMasks("*.jpg");
+        APILocator.getFolderAPI().save(folder, admin(), false);
+
+        final Job job = jobWith(folder, List.of(
+                file("allowed.jpg", 10L, "image/jpeg"),
+                file("refused.txt", 10L, "text/plain"),
+                file("refused.pdf", 10L, "application/pdf")));
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(2, ((Number) outcome.get("failedCount")).intValue(),
+                "both non-matching files must fail.\n" + describe(outcome));
+
+        assertEquals(BatchFailureReason.FOLDER_FILTER_MISMATCH, reasonFor(outcome, "refused.txt"),
+                "the folder's filter is what stopped this file, and the author has to be told "
+                        + "that rather than sent to rename it");
+        assertEquals(BatchFailureReason.FOLDER_FILTER_MISMATCH, reasonFor(outcome, "refused.pdf"));
+
+        assertNotEquals(BatchFailureReason.NAME_COLLISION, reasonFor(outcome, "refused.txt"),
+                "NAME_COLLISION is the reason this used to report, and it sends the author to "
+                        + "rename a file whose name was never the problem");
+    }
+
 
 }

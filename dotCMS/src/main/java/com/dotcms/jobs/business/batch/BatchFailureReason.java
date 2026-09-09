@@ -27,6 +27,18 @@ public enum BatchFailureReason {
     /** An item of that name already exists in the target. Case-insensitive (spec FR-042a). */
     NAME_COLLISION,
 
+    /**
+     * The target folder's own filename filter ({@code filesMasks}, e.g. {@code *.jpg}) does not
+     * admit this name.
+     * <p>
+     * <b>Distinct from {@link #DISALLOWED_FILE_TYPE}</b>, which is the content type's media-type
+     * allow list and is decided by sniffing content. This one is a glob on the <i>file name</i>,
+     * configured per folder, so the same file is accepted in one folder and refused in the next —
+     * which is exactly why the author has to be told which of the two stopped them. Telling them
+     * "type not allowed" when the folder is the constraint sends them to change the wrong thing.
+     */
+    FOLDER_FILTER_MISMATCH,
+
     /** A per-item permission check narrower than the submission-time one that already passed. */
     PERMISSION_DENIED,
 
