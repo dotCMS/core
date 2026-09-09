@@ -1262,21 +1262,22 @@ describe('DotExperimentsConfigureStore', () => {
         });
 
         /**
-         * TC-031. The clear has to reach the server as a *value*, not as an absent one.
+         * TC-031, pinned as it stands rather than as it should be.
          *
-         * `PATCH /api/v1/experiments/{id}` applies only the keys its body carries:
-         * `ExperimentsResource` builds the update with `if (experimentForm.getScheduling() != null)`,
-         * so a `null` scheduling means "leave it alone". Sending `null` for a cleared card
-         * therefore kept the old dates — Clear Schedule followed by Save Draft looked like it had
-         * worked and had not.
+         * A cleared card sends `null`, and `PATCH /api/v1/experiments/{id}` reads that as "leave
+         * the schedule alone" — so the clear does not reach the server. That is the open defect.
          *
-         * An empty range is the value that says "no schedule": `Scheduling` is two
-         * `Optional<Instant>`s, and `ExperimentsAPIImpl.emptyScheduling` already reads a range with
-         * neither date as no schedule at all — it is what `startNowScheduling` replaces when an
-         * experiment is started without one. Verified against a running instance: PATCH with
-         * `scheduling: null` answers 200 and keeps the dates; with an empty range it clears them.
+         * This asserts `null` anyway, because the alternative is worse and was measured: an empty
+         * range clears the dates but leaves a `Scheduling` object carrying none, and `start()` asks
+         * `scheduling().isEmpty()` — is there an object — to decide whether the experiment was
+         * meant to run now. On a page that already has a running experiment that takes the
+         * schedule-conflict branch, where `startDate().orElseThrow()` throws and Start answers 500
+         * (`ExperimentsAPIImpl.start:572`) instead of refusing with a reason.
+         *
+         * So this test guards the shape until the backend agrees with itself about what an empty
+         * `Scheduling` means. Change it only together with that.
          */
-        it('should send a cleared schedule as an empty range, not as a null (TC-031)', () => {
+        it('should send a cleared schedule as a null, until the backend can express a clear (TC-031)', () => {
             initExisting(buildExperiment({ scheduling: { startDate: 1000, endDate: 2000 } }));
 
             edit({ scheduling: { startDate: null, endDate: null } });
@@ -1284,7 +1285,7 @@ describe('DotExperimentsConfigureStore', () => {
 
             expect(patchExperiment).toHaveBeenCalledWith(
                 EXPERIMENT_ID,
-                expect.objectContaining({ scheduling: { startDate: null, endDate: null } })
+                expect.objectContaining({ scheduling: null })
             );
         });
 
@@ -1505,9 +1506,9 @@ describe('DotExperimentsConfigureStore', () => {
             expect(request.request.body).toMatchObject({
                 name: 'Alpha campaign v2',
                 goals,
-                // An empty range, not a `null` — see TC-031 above for why the distinction is the
-                // whole difference between clearing the schedule and leaving it untouched.
-                scheduling: { startDate: null, endDate: null }
+                // `null`, which the endpoint reads as "no change" — the open TC-031 defect. See the
+                // test above for why the empty range that *would* clear it is not sent instead.
+                scheduling: null
             });
             expect(request.request.body).not.toHaveProperty('targetingConditions');
             expect(request.request.body).not.toHaveProperty('pageId');
