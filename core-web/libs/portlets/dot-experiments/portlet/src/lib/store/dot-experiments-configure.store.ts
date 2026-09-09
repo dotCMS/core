@@ -603,6 +603,16 @@ export const DotExperimentsConfigureStore = signalStore(
             pageEvents.abortRequested,
             () => ({ status: ComponentStatus.SAVING })
         ),
+        /**
+         * A transition's answer is authoritative about the schedule, the same way a PATCH's is.
+         *
+         * The server dates the experiment as part of running it: starting one that carries no
+         * schedule stamps a real window on it (`ExperimentsAPIImpl.startNowScheduling` — a minute
+         * from now, through the default duration), stopping one rewrites its end date, and
+         * cancelling a schedule clears both. So the baseline moves with the experiment here —
+         * without it the screen is left dirty against dates the user never typed, and the autosave
+         * would offer to write them back to an experiment that is no longer a draft.
+         */
         on(
             apiEvents.startSucceeded,
             apiEvents.stopSucceeded,
@@ -610,6 +620,7 @@ export const DotExperimentsConfigureStore = signalStore(
             apiEvents.abortSucceeded,
             ({ payload }) => ({
                 experiment: payload,
+                savedFormValue: baselineOf(payload),
                 validationRevealed: false,
                 starting: false,
                 status: ComponentStatus.LOADED

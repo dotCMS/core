@@ -46,6 +46,7 @@ import {
     emptyStatusCounts,
     fromRouteParams,
     goalTypeOfExperiment,
+    normalizePagePath,
     parseViewState,
     resolvedPageInfo,
     toQueryParams
@@ -77,6 +78,7 @@ const initialState: DotExperimentsListState = {
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     selectedPageId: null,
+    selectedPageUrl: null,
     languageId: null,
     error: null
 };
@@ -166,12 +168,27 @@ export const DotExperimentsListStore = signalStore(
          */
         const pageAssetFilteredExperiments = computed<DotExperiment[]>(() => {
             const pageId = store.selectedPageId();
+            // Normalised on both sides of the comparison rather than trusted from the writer: the
+            // address is one caller today, and a spelling difference would read as "no experiments
+            // on that page" — the failure this narrowing exists to avoid.
+            const pageUrl = normalizePagePath(store.selectedPageUrl());
 
-            if (!pageId) {
+            if (!pageId && !pageUrl) {
                 return searchedExperiments();
             }
 
-            return searchedExperiments().filter((experiment) => experiment.pageId === pageId);
+            const pageInfoByPageId = store.pageInfoByPageId();
+
+            return searchedExperiments().filter(
+                (experiment) =>
+                    (!pageId || experiment.pageId === pageId) &&
+                    // By path, against the same value the Page column renders — and by equality,
+                    // for the reason above. A path nothing matches leaves this empty, which is the
+                    // honest answer to "the experiments for that page": none, rather than all.
+                    (!pageUrl ||
+                        normalizePagePath(resolvePagePath(experiment.pageId, pageInfoByPageId)) ===
+                            pageUrl)
+            );
         });
 
         /**
@@ -362,8 +379,20 @@ export const DotExperimentsListStore = signalStore(
         on(dotExperimentsListPageEvents.siteChanged, () => ({
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             selectedPageId: null,
+            selectedPageUrl: null,
             languageId: null,
             status: ComponentStatus.LOADING
+        })),
+        /**
+         * `languageId` goes with it: it exists only to return the editor to the version of the
+         * narrowed page they came from, so it means nothing once that page is gone.
+         * `syncUrlEffect` follows, which is what takes the params out of the address.
+         */
+        on(dotExperimentsListPageEvents.pageNarrowingCleared, () => ({
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+            selectedPageId: null,
+            selectedPageUrl: null,
+            languageId: null
         })),
         on(
             dotExperimentsListPageEvents.archiveExperiment,
@@ -629,6 +658,7 @@ export const DotExperimentsListStore = signalStore(
                         page: store.page(),
                         perPage: store.perPage(),
                         selectedPageId: store.selectedPageId(),
+                        selectedPageUrl: store.selectedPageUrl(),
                         languageId: store.languageId(),
                         orderBy: store.orderBy(),
                         direction: store.direction()

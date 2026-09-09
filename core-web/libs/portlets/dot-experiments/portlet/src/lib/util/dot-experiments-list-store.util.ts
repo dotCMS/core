@@ -64,6 +64,7 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         // name across the portlet. An empty
         // value is no filter rather than a page named "" — same rule as `filter` above.
         selectedPageId: reader.get('pageId') || null,
+        selectedPageUrl: normalizePagePath(reader.get('url')),
         /**
          * The language the editor was standing in, when it sent us here.
          *
@@ -76,6 +77,28 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
          */
         languageId: parsePositiveInteger(reader.get('language_id'), null)
     };
+}
+
+/**
+ * A page path as the Page column resolves it, or `null` when there is nothing to narrow by.
+ *
+ * Both sides of the comparison come from different places — one from an address someone pasted,
+ * the other from `htmlpageasset` — so the two ways the same path can be spelled are settled here:
+ * a missing leading slash, and a trailing one. Case is left alone; dotCMS paths are not
+ * case-insensitive, and lowercasing here would claim a match the backend would not make.
+ */
+export function normalizePagePath(rawPath: string | null | undefined): string | null {
+    const path = (rawPath ?? '').trim();
+
+    if (!path) {
+        return null;
+    }
+
+    const withLeadingSlash = path.startsWith('/') ? path : `/${path}`;
+
+    return withLeadingSlash.length > 1 && withLeadingSlash.endsWith('/')
+        ? withLeadingSlash.slice(0, -1)
+        : withLeadingSlash;
 }
 
 /**
@@ -186,6 +209,7 @@ export function toQueryParams(
                 ? null
                 : view.selectedGoals,
         pageId: view.selectedPageId || null,
+        url: view.selectedPageUrl || null,
         // Written back so it survives filtering, sorting and paging: `writeUrl` merges, and the
         // back-link reads it from the address rather than from a value held only on entry.
         language_id: view.languageId ? String(view.languageId) : null

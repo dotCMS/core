@@ -147,6 +147,7 @@ const createStoreMock = () => ({
     selectedGoals: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
     filter: jest.fn().mockReturnValue(''),
     selectedPageId: jest.fn().mockReturnValue(null),
+    selectedPageUrl: jest.fn().mockReturnValue(null),
     languageId: jest.fn().mockReturnValue(null),
     status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
     page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
@@ -1290,6 +1291,32 @@ describe('DotExperimentsListComponent', () => {
 
             // The site may well have experiments; these filters are hiding them.
             expect(emptyTitle()).toContain('experiments.list.no-results.title');
+        });
+
+        /**
+         * `?url=` is the shape of every Universal Visual Editor address, and one pasted into the
+         * list used to be ignored — a request for one page answered with every experiment on the
+         * site. Narrowing to nothing is the honest answer; this is the state that says so.
+         */
+        it('should say nothing matched when the address narrows to a path with no page', () => {
+            storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+            expect(emptyTitle()).toContain('experiments.list.no-results.clear');
+        });
+
+        // Otherwise the button on that state is dead: the search and the chips are already empty,
+        // and the narrowing that is actually hiding everything would survive the press.
+        it('should clear a path narrowing from the empty state', () => {
+            storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+            renderEmpty();
+
+            spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+            expect(dispatchedEvents().map(({ type }) => type)).toContain(
+                dotExperimentsListPageEvents.pageNarrowingCleared.type
+            );
         });
 
         it('should say nothing matched when only a search term is set', () => {

@@ -110,6 +110,18 @@ const CONFIG_ROUTE_DATA_KEY = 'config';
 const VARIANTS_SECTION_SELECTOR = '[data-testid="configure-section-variants"]';
 
 /**
+ * Which experiment, in which state, the form is currently filled from — `null` for no experiment
+ * at all, which is the creation form.
+ *
+ * The status is part of the identity on purpose: it is what tells a transition's answer apart from
+ * an autosave's, and only the former may refill the form under the user. See
+ * {@link DotExperimentsConfigureComponent.hydrateFormEffect}.
+ */
+function formKeyOf(experiment: DotExperiment | null | undefined): string | null {
+    return experiment ? `${experiment.id}:${experiment.status}` : null;
+}
+
+/**
  * Shell of the Configure screen, routed on both `/experiments/new` and
  * `/experiments/:experimentId/configuration`.
  *
@@ -462,32 +474,39 @@ export class DotExperimentsConfigureComponent {
     };
 
     /**
-     * Which experiment's values are in the form. `null` means an empty creation form — either the
-     * screen opened on `/experiments/new`, or a URL took it back there.
+     * Which experiment's values are in the form, and in which state — see {@link formKeyOf}.
+     * `null` means an empty creation form: the screen opened on `/experiments/new`, or a URL took
+     * it back there.
      */
-    readonly #hydratedExperimentId = signal<string | null>(null);
+    readonly #hydratedFormKey = signal<string | null>(null);
 
     /**
-     * Keeps the form on whichever experiment the store is showing, filling it once per experiment.
+     * Keeps the form on whichever experiment the store is showing, filling it once per experiment
+     * *state*.
      *
-     * Keyed on the identifier rather than on the values: every autosave response replaces
-     * `experiment`, and re-reading it would drop characters typed while the PATCH was travelling.
+     * Not on the values: every autosave response replaces `experiment`, and re-reading it would
+     * drop characters typed while the PATCH was travelling. But not on the identifier alone
+     * either — a status transition is the one response that is not an autosave. The server dates
+     * the experiment as part of running it, so an experiment started with both pickers empty comes
+     * back carrying a real window, and keying on the id alone left the card locked showing the two
+     * empty pickers it was started with. Nothing can be in flight at that moment for the refill to
+     * lose: the transition is what locks the card.
      *
-     * A draft created on this screen is claimed as hydrated the moment its POST answers (see
-     * `#listenForActionSuccess`), which is what keeps this from reading it back: the form is what
-     * created it, and a goal or a schedule entered before the name is still on its way to the server.
+     * A draft created on this screen is claimed as hydrated the moment its POST answers (see the
+     * constructor), which is what keeps this from reading it back: the form is what created it, and
+     * a goal or a schedule entered before the name is still on its way to the server.
      */
     protected readonly hydrateFormEffect = effect(() => {
-        const experimentId = this.store.experiment()?.id ?? null;
+        const formKey = formKeyOf(this.store.experiment());
 
-        if (experimentId === untracked(this.#hydratedExperimentId)) {
+        if (formKey === untracked(this.#hydratedFormKey)) {
             return;
         }
 
         untracked(() => {
-            this.#hydratedExperimentId.set(experimentId);
+            this.#hydratedFormKey.set(formKey);
             this.$model.set(
-                experimentId ? toConfigureFormModel(this.#formSource()) : emptyConfigureForm()
+                formKey ? toConfigureFormModel(this.#formSource()) : emptyConfigureForm()
             );
         });
     });
@@ -556,7 +575,7 @@ export class DotExperimentsConfigureComponent {
         this.#events
             .on(dotExperimentsConfigureApiEvents.createSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(({ payload }) => this.#hydratedExperimentId.set(payload.id));
+            .subscribe(({ payload }) => this.#hydratedFormKey.set(formKeyOf(payload)));
 
         // A save that settled as the screen was left would otherwise fire into a dead component.
         this.#destroyRef.onDestroy(() => this.#cancelProgressBarHide());

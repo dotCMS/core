@@ -295,12 +295,23 @@ export class DotExperimentsListComponent {
               };
     });
 
-    /** Any narrowing the user applied, as opposed to a site that simply has no experiments. */
+    /**
+     * Any narrowing in force, as opposed to a site that simply has no experiments.
+     *
+     * A page narrowing by path counts. It arrives in the address rather than from a control here —
+     * `?url=` is the shape of every Universal Visual Editor address — and one that resolves to no
+     * page is the case this exists for: the list has nothing to show and no reason on screen for
+     * it, so it has to read as "nothing matched" with a way out, not as an empty site.
+     *
+     * A narrowing by `pageId` deliberately does not count: that one has its own empty state, which
+     * names the page and offers to create the first experiment for it.
+     */
     readonly $hasActiveFilters = computed<boolean>(
         () =>
             this.store.filter().length > 0 ||
             this.store.selectedStatuses().length > 0 ||
-            this.store.selectedGoals().length > 0
+            this.store.selectedGoals().length > 0 ||
+            !!this.store.selectedPageUrl()
     );
 
     /** The table is replaced by an empty state once a settled load has nothing to show. */
@@ -469,6 +480,10 @@ export class DotExperimentsListComponent {
         this.$searchTerm.set('');
         this.#dispatch.statusesChanged([]);
         this.#dispatch.goalsChanged([]);
+        // Including a page narrowing that matched nothing — the only case where this button is on
+        // screen beside one. A narrowing that *is* matching shows the page-scoped empty state,
+        // whose action creates an experiment for the page rather than widening the list.
+        this.#dispatch.pageNarrowingCleared();
     }
 
     /**

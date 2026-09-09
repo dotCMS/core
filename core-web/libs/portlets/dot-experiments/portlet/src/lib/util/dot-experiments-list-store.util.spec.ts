@@ -188,6 +188,7 @@ describe('page filter view state', () => {
         orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
         direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
         selectedPageId: null,
+        selectedPageUrl: null,
         languageId: null
     };
 
@@ -209,6 +210,41 @@ describe('page filter view state', () => {
         it('should treat a missing or unusable ?language_id= as no language', () => {
             expect(parseViewState(reader({})).languageId).toBeNull();
             expect(parseViewState(reader({ language_id: 'abc' })).languageId).toBeNull();
+        });
+
+        /**
+         * `?url=` is how the Universal Visual Editor names a page, so a UVE address pasted into
+         * the list has to narrow rather than be ignored — the list used to answer it with every
+         * experiment on the site.
+         */
+        it('should read the page filter from ?url=', () => {
+            expect(parseViewState(reader({ url: '/destinations/index' })).selectedPageUrl).toBe(
+                '/destinations/index'
+            );
+        });
+
+        // The two ways the same path gets spelled, settled on the way in so the comparison against
+        // the resolved Page column is not making them up on each side.
+        it.each([
+            ['destinations/index', '/destinations/index'],
+            ['/destinations/index/', '/destinations/index'],
+            ['  /destinations/index  ', '/destinations/index'],
+            ['/', '/']
+        ])('should normalise ?url=%s to %s', (raw, expected) => {
+            expect(parseViewState(reader({ url: raw })).selectedPageUrl).toBe(expected);
+        });
+
+        it('should treat an empty ?url= as no filter', () => {
+            expect(parseViewState(reader({ url: '' })).selectedPageUrl).toBeNull();
+            expect(parseViewState(reader({})).selectedPageUrl).toBeNull();
+        });
+
+        // Case is left alone: dotCMS paths are not case-insensitive, and folding it here would
+        // claim a match the backend would not make.
+        it('should not fold the case of a path', () => {
+            expect(parseViewState(reader({ url: '/Destinations/Index' })).selectedPageUrl).toBe(
+                '/Destinations/Index'
+            );
         });
 
         it('should treat an empty ?pageId= as no filter, not as a page named ""', () => {

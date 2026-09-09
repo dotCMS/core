@@ -54,6 +54,19 @@ export interface DotExperimentsListViewState {
      * Serialised as `pageAsset`, not `page`: `page` is the pagination cursor two fields up.
      */
     selectedPageId: string | null;
+    /**
+     * Page the list is narrowed to, by path; `null` for no such narrowing.
+     *
+     * The same narrowing as `selectedPageId` expressed the way the Universal Visual Editor
+     * expresses a page — `?url=/destinations/index` is the shape of every UVE address, and one of
+     * those pasted into the list used to be ignored, which answered a request for one page with
+     * every experiment on the site.
+     *
+     * Matched by equality against the resolved Page column, for the same reason as `selectedPageId`
+     * above. A path that matches no page therefore narrows to nothing rather than widening — an
+     * unanswerable narrowing is still a narrowing, and the empty state offers the way out.
+     */
+    selectedPageUrl: string | null;
 }
 
 /** Paging change emitted by the table paginator. */

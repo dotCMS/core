@@ -134,6 +134,7 @@ const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     selectedPageId: null,
+    selectedPageUrl: null,
     languageId: null
 };
 
@@ -640,6 +641,57 @@ describe('DotExperimentsListStore', () => {
             hydrateWithPage('page-3');
 
             expect(store.pageAssetFilteredExperiments()).toEqual([]);
+        });
+
+        /**
+         * The same narrowing spelled the way the Universal Visual Editor spells a page. `?url=` is
+         * the shape of every UVE address, and one pasted into the list used to be ignored — a
+         * request for one page answered with every experiment on the site.
+         */
+        describe('by path', () => {
+            const hydrateWithPath = (pageUrl: string | null) =>
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.hydratedFromUrl({
+                        ...VIEW_STATE_DEFAULTS,
+                        selectedPageUrl: pageUrl
+                    })
+                );
+
+            it('should keep the experiments of the page at that path', () => {
+                hydrateWithPath('/checkout');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+            });
+
+            // The point of the change: not widening. A path nothing resolves to narrows to
+            // nothing, which is what lets the empty state say so.
+            it('should keep nothing when no page has that path', () => {
+                hydrateWithPath('/asdasd');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([]);
+            });
+
+            it('should accept a path spelled without its leading slash', () => {
+                hydrateWithPath('checkout');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+            });
+
+            // Site scoping still comes first, exactly as it does for the identifier.
+            it('should not resurrect a page from another site', () => {
+                hydrateWithPath('/remote');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([]);
+            });
+
+            it('should be dropped by pageNarrowingCleared, revealing the site-wide list', () => {
+                hydrateWithPath('/asdasd');
+                expect(store.pageAssetFilteredExperiments()).toEqual([]);
+
+                dispatcher.dispatch(dotExperimentsListPageEvents.pageNarrowingCleared());
+
+                expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
+            });
         });
 
         // Same rule as every other filter here: a narrowing that could leave the current page

@@ -694,6 +694,49 @@ describe('DotExperimentsConfigureComponent', () => {
 
                 expect(modelOf()().trafficAllocation).toBe(40);
             });
+
+            /**
+             * The one response that is not an autosave. Starting an experiment with both pickers
+             * empty is the case that matters: the backend dates it for real
+             * (`ExperimentsAPIImpl.startNowScheduling`), and reading the id alone left the card
+             * locked showing the two empty pickers it was started with.
+             */
+            it("should take the server's schedule when a transition rewrites it", () => {
+                loadExperiment({ ...EXPERIMENT, scheduling: null });
+
+                expect(modelOf()().scheduling).toEqual({ startDate: null, endDate: null });
+
+                storeMock.experiment.set({
+                    ...EXPERIMENT,
+                    status: DotExperimentStatus.RUNNING,
+                    scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+                });
+                spectator.detectChanges();
+
+                expect(modelOf()().scheduling).toEqual({
+                    startDate: new Date(1893456000000),
+                    endDate: new Date(1893542400000)
+                });
+            });
+
+            // Cancelling a schedule clears both dates server-side and hands the card back as a
+            // draft; the pickers have to follow it down as well as up.
+            it('should follow a transition that clears the schedule', () => {
+                loadExperiment({
+                    ...EXPERIMENT,
+                    status: DotExperimentStatus.SCHEDULED,
+                    scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+                });
+
+                storeMock.experiment.set({
+                    ...EXPERIMENT,
+                    status: DotExperimentStatus.DRAFT,
+                    scheduling: null
+                });
+                spectator.detectChanges();
+
+                expect(modelOf()().scheduling).toEqual({ startDate: null, endDate: null });
+            });
         });
 
         /**

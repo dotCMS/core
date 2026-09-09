@@ -1909,6 +1909,32 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.experiment()).toEqual(running);
             expect(store.status()).toBe(ComponentStatus.LOADED);
         });
+
+        /**
+         * Starting an experiment with no schedule is the server dating it: the answer carries a
+         * window the form never had. The baseline has to move with it, or the screen is dirty
+         * against dates the user never typed and the autosave offers to write them back to an
+         * experiment that is no longer a draft.
+         */
+        it('should settle the baseline on the schedule the server stamped', () => {
+            start.mockReturnValue(
+                of(
+                    buildExperiment({
+                        status: DotExperimentStatus.RUNNING,
+                        scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+                    })
+                )
+            );
+            initExisting(buildExperiment({ scheduling: null }));
+
+            expect(store.$hasUnsavedChanges()).toBe(false);
+
+            dispatcher.dispatch(pageEvents.startRequested());
+            // The shell refills the form from the answer; mirroring it is what the screen does next.
+            mirrorForm(store.experiment());
+
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
     });
 
     describe('start (AC31/AC32)', () => {
