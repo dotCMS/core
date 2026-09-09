@@ -8,7 +8,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsReportDailyDetailsComponent } from './dot-experiments-report-daily-details.component';
 
-import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
+import { DotExperimentsDetailsTableComponent } from '../../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 
 const messageServiceMock = new MockDotMessageService({

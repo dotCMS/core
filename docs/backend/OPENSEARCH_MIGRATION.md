@@ -5,6 +5,11 @@
 Migrate dotCMS indexing infrastructure from ElasticSearch to OpenSearch **transparently**.
 No downtime, no data loss, no visible behavior change for the end user.
 
+> **Running an actual migration?** This document is the architecture and design. The step-by-step
+> operator procedure — impact assessment, OpenSearch security prerequisites, phase transitions,
+> restart rules, cluster handling, rollback — lives in
+> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md).
+
 ---
 
 ## Configuration
