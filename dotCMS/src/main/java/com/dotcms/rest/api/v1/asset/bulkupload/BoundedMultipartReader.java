@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.asset.bulkupload;
 
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotcms.jobs.business.batch.BatchFailureReason;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,13 +35,27 @@ public class BoundedMultipartReader {
     private final BatchStaging staging;
     private final int maxFiles;
     private final long maxTotalBytes;
+    private final long perFileCeiling;
 
     public BoundedMultipartReader(final BatchStaging staging,
                                   final int maxFiles,
                                   final long maxTotalBytes) {
+        this(staging, maxFiles, maxTotalBytes, -1L);
+    }
+
+    /**
+     * @param perFileCeiling the staging layer's own per-file ceiling, or {@code -1} for none. When
+     *                       set, this reader enforces it itself so that crossing it is a fact
+     *                       rather than a guess — see {@link PerFileCeilingExceededException}.
+     */
+    public BoundedMultipartReader(final BatchStaging staging,
+                                  final int maxFiles,
+                                  final long maxTotalBytes,
+                                  final long perFileCeiling) {
         this.staging = staging;
         this.maxFiles = maxFiles;
         this.maxTotalBytes = maxTotalBytes;
+        this.perFileCeiling = perFileCeiling;
     }
 
     /**
@@ -74,9 +89,16 @@ public class BoundedMultipartReader {
 
                 // Staged before it is counted, because the size is only a fact once staging has
                 // measured it — a declared figure can be under-stated or absent (spec FR-013).
-                final StagedPart stagedPart = staging.stage(part.fileName(), part.content());
+                final StagedPart stagedPart = stageWithinCeiling(part);
                 staged.add(stagedPart);
-                totalBytes += stagedPart.sizeBytes();
+
+                // A refused part contributes nothing to the batch total, because nothing of it was
+                // measured. That under-counts the batch by whatever the author actually sent for
+                // it, which is the right way to be wrong here: the total exists to bound what
+                // reaches DISK, and a refused part reaches none.
+                if (stagedPart.isStaged()) {
+                    totalBytes += stagedPart.sizeBytes();
+                }
 
                 if (totalBytes > maxTotalBytes) {
                     throw new BulkUploadRefusedException(
@@ -104,6 +126,33 @@ public class BoundedMultipartReader {
      * Hands every part staged so far back for cleanup. Best-effort per part: one failure must not
      * stop the rest being reclaimed, and none of it may mask the exception already unwinding.
      */
+    /**
+     * Stages one part, turning a crossing of the per-file ceiling into <b>that part's</b> refusal
+     * rather than the whole submission's.
+     * <p>
+     * FR-011 requires a size rejection to be the file's own failure and to leave the batch running,
+     * and that must hold whether the ceiling is the content type's (decided later, by the run, from
+     * the measured size) or the staging layer's (decided here, because the file never finishes
+     * being written). Before this, the second case took the entire submission down with it.
+     */
+    private StagedPart stageWithinCeiling(final UploadPart part) throws IOException {
+
+        if (perFileCeiling <= 0) {
+            // Unbounded, which is how the staging layer ships. Nothing is wrapped, so the ordinary
+            // path is exactly what it was.
+            return staging.stage(part.fileName(), part.content());
+        }
+
+        try {
+            return staging.stage(part.fileName(),
+                    new CeilingBoundedInputStream(part.content(), part.fileName(),
+                            perFileCeiling));
+        } catch (final PerFileCeilingExceededException refused) {
+            Logger.info(this, refused.getMessage() + "; recorded as that file's own failure");
+            return StagedPart.refused(part.fileName(), BatchFailureReason.OVER_SIZE_LIMIT);
+        }
+    }
+
     private void reclaimAll(final List<StagedPart> staged) {
         for (final StagedPart part : staged) {
             try {

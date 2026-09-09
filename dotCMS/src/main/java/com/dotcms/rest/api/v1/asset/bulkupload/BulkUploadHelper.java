@@ -106,8 +106,12 @@ public class BulkUploadHelper {
 
         // 3. The authoritative read (FR-010a, FR-013c.2). Aborts at whichever ceiling is crossed
         //    and reclaims what it staged; nothing purges staged content on a schedule.
-        final List<StagedPart> staged =
-                new BoundedMultipartReader(staging, maxFiles, maxTotalBytes).read(parts);
+        // The staging layer's own per-file ceiling is passed in so THIS reader enforces it. Left
+        // to the staging layer, crossing it raises the same exception, with the same wording, as a
+        // dropped connection — so one over-size file refused the whole submission (FR-011 says it
+        // must be that file's own failure). Ships as -1, in which case nothing changes.
+        final List<StagedPart> staged = new BoundedMultipartReader(staging, maxFiles, maxTotalBytes,
+                APILocator.getTempFileAPI().maxFileSize(request)).read(parts);
 
         if (staged.isEmpty()) {
             throw new BulkUploadRefusedException(
@@ -189,10 +193,19 @@ public class BulkUploadHelper {
         final List<Map<String, Object>> files = new ArrayList<>(staged.size());
         for (final StagedPart part : staged) {
             final Map<String, Object> file = new HashMap<>();
-            file.put("tempFileId", part.tempFileId());
             file.put("fileName", part.fileName());
             file.put("sizeBytes", part.sizeBytes());
-            file.put("mimeType", part.mimeType());
+
+            if (part.isStaged()) {
+                file.put("tempFileId", part.tempFileId());
+                file.put("mimeType", part.mimeType());
+            } else {
+                // Refused before staging, so it has no temp id and no resolved type. The reason
+                // travels instead, and the run records it without attempting the file. Null values
+                // are never put: the framework holds parameters in an ImmutableMap and one null
+                // stalls the SHARED processing loop, not just this job.
+                file.put("refusedReason", part.refusedReason().name());
+            }
             files.add(file);
         }
 

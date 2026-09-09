@@ -1,9 +1,12 @@
 package com.dotcms.rest.api.v1.asset.bulkupload;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.jobs.business.batch.BatchFailureReason;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -108,4 +111,73 @@ public class BoundedMultipartReaderTest {
 
         assertEquals(3, reader.read(parts(3, 100)).size());
     }
+
+    /**
+     * Method to test: {@link BoundedMultipartReader#read}
+     * <p>
+     * Given scenario: One part in the middle of an otherwise valid batch is larger than the
+     * staging layer's per-file ceiling.
+     * <p>
+     * Expected result: That part alone is refused, carrying {@code OVER_SIZE_LIMIT}, and
+     * <b>every other part still stages</b>.
+     * <p>
+     * <b>Before this, the whole submission died.</b> The staging layer enforces the same ceiling
+     * but reports it as a {@code DotStateException} carrying a size-flavoured translated message —
+     * and raises the identical class and wording when the read simply dies underneath it. So the
+     * two were indistinguishable, the safe reading was "the read died", and one over-size file
+     * refused everything the author had sent. FR-011 says the opposite: a size rejection is that
+     * file's own failure and must not fail the batch.
+     */
+    @Test
+    public void test_read_refusesOnlyTheOversizePart_andStagesTheRest() {
+        final FakeBatchStaging staging = new FakeBatchStaging();
+        final BoundedMultipartReader reader =
+                new BoundedMultipartReader(staging, 100, 1_000_000L, 50L);
+
+        final List<UploadPart> parts = new ArrayList<>();
+        parts.add(new UploadPart("small-1.bin", new ByteArrayInputStream(new byte[10])));
+        parts.add(new UploadPart("too-big.bin", new ByteArrayInputStream(new byte[500])));
+        parts.add(new UploadPart("small-2.bin", new ByteArrayInputStream(new byte[10])));
+
+        final List<StagedPart> result = reader.read(parts);
+
+        assertEquals("every part must still be accounted for, refused or not", 3, result.size());
+
+        assertFalse("the over-size part is refused", result.get(1).isStaged());
+        assertEquals(BatchFailureReason.OVER_SIZE_LIMIT, result.get(1).refusedReason());
+        assertNull("a refused part has nothing staged to point at", result.get(1).tempFileId());
+
+        assertTrue("the part before it stages", result.get(0).isStaged());
+        assertTrue("and so does the part after it — the batch keeps going",
+                result.get(2).isStaged());
+
+        assertEquals("both valid parts reached the staging layer", 2, staging.staged().size());
+        assertTrue("and neither was reclaimed, because the read completed",
+                staging.leaked().size() == 2);
+    }
+
+    /**
+     * Method to test: {@link BoundedMultipartReader#read}
+     * <p>
+     * Given scenario: No per-file ceiling is configured — which is how the staging layer ships
+     * ({@code TEMP_RESOURCE_MAX_FILE_SIZE} defaults to {@code -1}).
+     * <p>
+     * Expected result: Nothing is wrapped and nothing is refused, however large the part.
+     * <p>
+     * The negative control for the test above: it confirms the new bound is the configured ceiling
+     * and not something this reader invented, so the default installation behaves exactly as it did.
+     */
+    @Test
+    public void test_read_appliesNoPerFileCeiling_whenNoneIsConfigured() {
+        final FakeBatchStaging staging = new FakeBatchStaging();
+        final BoundedMultipartReader reader =
+                new BoundedMultipartReader(staging, 100, 1_000_000L, -1L);
+
+        final List<StagedPart> result = reader.read(parts(2, 5_000));
+
+        assertEquals(2, result.size());
+        assertTrue("with no ceiling configured, a large part is not refused",
+                result.get(0).isStaged() && result.get(1).isStaged());
+    }
+
 }

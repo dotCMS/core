@@ -171,6 +171,18 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         final String tempFileId = String.valueOf(file.get("tempFileId"));
 
         try {
+            // A part the submission already refused. Recorded and skipped: there is no temp id to
+            // fetch and nothing to create, and re-deciding it here would need a measurement that
+            // was never completed. Checked before everything else for that reason.
+            final Object refusedAtSubmission = file.get("refusedReason");
+            if (refusedAtSubmission != null) {
+                record(job, seq, fileName, BatchItemStatus.FAILED,
+                        BatchFailureReason.valueOf(String.valueOf(refusedAtSubmission)),
+                        "Refused by the staging layer's per-file ceiling while the body was read",
+                        null);
+                return;
+            }
+
             // Decided from what staging measured, before anything is created (research R4). The
             // validation layer reports an over-size file and a disallowed type through the same
             // exception class, differing only by a translated string, so a reason recovered from
@@ -523,6 +535,11 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     private void reclaimStagedContent(final Job job, final List<Map<String, Object>> stagedFiles,
                                       final User user) {
         for (final Map<String, Object> file : stagedFiles) {
+            if (file.get("tempFileId") == null) {
+                // Refused before staging — nothing of it reached the staging layer, so there is
+                // nothing to release and asking would log a spurious failure.
+                continue;
+            }
             final String tempFileId = String.valueOf(file.get("tempFileId"));
             try {
                 resolveStagedContent(job, tempFileId, user).ifPresent(binary -> {
