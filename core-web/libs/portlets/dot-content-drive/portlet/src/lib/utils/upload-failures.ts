@@ -1,6 +1,10 @@
 import { DotBatchItemResult, DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
 
-import { messageKeyForFailureReason } from './failure-reasons';
+import {
+    DotUploadFailureSeverity,
+    messageKeyForFailureReason,
+    severityForFailureReason
+} from './failure-reasons';
 
 /**
  * How many names one line will print before it counts them instead.
@@ -18,11 +22,26 @@ const N_FILES_KEY = 'content-drive.upload.failure.n-files';
 /** Resolves a message key with arguments. Narrower than `DotMessageService` on purpose. */
 type ResolveMessage = (key: string, ...args: string[]) => string;
 
+/** Lines that belong in one message, because they are the same kind of news. */
+export interface DotUploadFailureGroup {
+    severity: DotUploadFailureSeverity;
+    /** One line per reason, each naming the files it applied to. */
+    lines: string[];
+}
+
 /**
- * Describes a batch's failures as one line per reason, each naming the files it applied to.
+ * Describes a batch's failures as one message per severity, each holding one line per reason.
  *
- * Grouped rather than one line per file: three lines saying "larger than the limit" tell an author
- * nothing three times, and the same reason repeated is the noise this feature set out to remove.
+ * **Two levels of grouping, for two different reasons.** Lines are grouped by reason because three
+ * lines saying "larger than the limit" tell an author nothing three times. Lines are then grouped
+ * by *severity* because a name the folder refuses and a permission the author does not hold are
+ * different kinds of news: one is a thing to go and fix, the other is a wall. A single notification
+ * carrying both leaves the reader to work out which half is theirs to act on, and the half they can
+ * act on is the whole point of naming the files at all.
+ *
+ * Errors come first regardless of the order the files arrived in. File order is an accident of how
+ * they were selected; which message the author reads first is not.
+ *
  * Skipped files are left out entirely — never attempted is not the same as failed, and the counts
  * report them separately.
  *
@@ -33,7 +52,7 @@ type ResolveMessage = (key: string, ...args: string[]) => string;
 export function describeUploadFailures(
     results: DotBatchItemResult<DotBulkUploadFailureReason>[] | undefined,
     resolve: ResolveMessage
-): string[] {
+): DotUploadFailureGroup[] {
     if (!results?.length) {
         return [];
     }
@@ -41,21 +60,38 @@ export function describeUploadFailures(
     // A Map, so reasons come out in the order they were first met and the names inside each keep
     // submission order — which is the order the author chose them in, and therefore the order they
     // can still find a name in.
-    const namesByReason = new Map<string, string[]>();
+    const namesByReason = new Map<
+        string,
+        { severity: DotUploadFailureSeverity; names: string[] }
+    >();
 
     results
         .filter((result) => result.status === 'FAILED')
         .forEach((result) => {
             // A failure with no reason is the unclassified case, which has real copy of its own
-            // rather than a blank or a raw code.
+            // rather than a blank or a raw code — and is ranked an error, since an unrecognised
+            // reason is no evidence the author can do anything about it.
             const key = messageKeyForFailureReason(result.reason);
-            const names = namesByReason.get(key) ?? [];
+            const group = namesByReason.get(key) ?? {
+                severity: severityForFailureReason(result.reason),
+                names: []
+            };
 
-            names.push(escapeFileName(result.key));
-            namesByReason.set(key, names);
+            group.names.push(escapeFileName(result.key));
+            namesByReason.set(key, group);
         });
 
-    return [...namesByReason].map(([key, names]) => resolve(key, subjectFor(names, resolve)));
+    return (
+        (['error', 'warn'] as const)
+            .map((severity) => ({
+                severity,
+                lines: [...namesByReason]
+                    .filter(([, group]) => group.severity === severity)
+                    .map(([key, group]) => resolve(key, subjectFor(group.names, resolve)))
+            }))
+            // A severity nothing failed under gets no message at all, rather than an empty one.
+            .filter((group) => group.lines.length > 0)
+    );
 }
 
 /**

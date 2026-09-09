@@ -761,26 +761,57 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // can act on. Empty for a clean run, so a success never grows a list.
         // Nothing to list for a recognised retry: its "failures" are the files already in place,
         // and naming them would be telling the author to fix what is correctly there.
-        const failureLines = duplicateSubmission
+        const failureGroups = duplicateSubmission
             ? []
             : describeUploadFailures(failures, (key, ...args) =>
                   this.#dotMessageService.get(key, ...args)
               );
 
         if (announce) {
-            this.#messageService.add({
-                // A skip is a shortfall too — those items did not get the action — so it warns
-                // rather than reporting green, which is what it used to do.
-                //
-                // A recognised resubmission warns as well, for a different reason: nothing the
-                // author asked for happened. It is not the failure the counts describe, but it is
-                // not an accomplishment either, and a green message invites them to move on when
-                // they should look at the folder.
-                severity: isPartial || duplicateSubmission ? 'warn' : 'success',
-                summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
-                detail: [detail, ...failureLines].join('<br>'),
-                life: isPartial || duplicateSubmission ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
-            });
+            // One message per severity (developer's call), and the counts ride with the first of
+            // them. Two reasons for the split: an author reading "2 failed" wants to know which of
+            // those they can go and fix, and a wall they cannot pass should not arrive wearing the
+            // same colour as a file that needs renaming.
+            //
+            // A run with no per-file detail still gets exactly one message, because the counts
+            // alone are an outcome — the groups are what varies, never whether anything is said.
+            const messages = failureGroups.length
+                ? failureGroups.map((group, index) => ({
+                      severity: group.severity,
+                      summary: this.#dotMessageService.get(
+                          'error' === group.severity
+                              ? 'content-drive.upload.toast.failed'
+                              : 'content-drive.upload.toast.incomplete'
+                      ),
+                      // The counts belong to the batch, not to a severity, so they are stated once
+                      // and in the message the author reads first.
+                      detail: [...(index === 0 ? [detail] : []), ...group.lines].join('<br>'),
+                      life: WARNING_MESSAGE_LIFE
+                  }))
+                : [
+                      {
+                          // A skip is a shortfall too — those items did not get the action — so it
+                          // warns rather than reporting green, which is what it used to do.
+                          //
+                          // A recognised resubmission warns as well, for a different reason:
+                          // nothing the author asked for happened. It is not the failure the counts
+                          // describe, but it is not an accomplishment either, and a green message
+                          // invites them to move on when they should look at the folder.
+                          severity: isPartial || duplicateSubmission ? 'warn' : 'success',
+                          summary: this.#dotMessageService.get(
+                              isPartial || duplicateSubmission
+                                  ? 'content-drive.upload.toast.incomplete'
+                                  : 'content-drive.action-center.toast.executed'
+                          ),
+                          detail,
+                          life:
+                              isPartial || duplicateSubmission
+                                  ? WARNING_MESSAGE_LIFE
+                                  : SUCCESS_MESSAGE_LIFE
+                      }
+                  ];
+
+            messages.forEach((message) => this.#messageService.add(message));
         }
 
         untracked(() => {

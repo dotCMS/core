@@ -960,6 +960,87 @@ describe('DotContentDriveShellComponent', () => {
             expect(WARNING_MESSAGE_LIFE).toBeGreaterThan(SUCCESS_MESSAGE_LIFE);
         });
 
+        it('should raise one message per severity, with the errors first', () => {
+            // Developer's call, and the reason it is worth the extra notification: a permission the
+            // author does not hold and a name the folder refuses are different kinds of news. One
+            // message carrying both leaves them to work out which half they can act on.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true,
+                failures: [
+                    { key: 'taken.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'locked.png', status: 'FAILED', reason: 'PERMISSION_DENIED' }
+                ]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'content-drive.upload.toast.failed'
+                })
+            );
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'content-drive.upload.toast.incomplete'
+                })
+            );
+        });
+
+        it('should state the counts once, in the message read first', () => {
+            // The counts describe the batch, not a severity, so repeating them in both messages
+            // would have the author reading the same numbers twice and wondering which set is which.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true,
+                // What the store actually sends for an upload, so the counts line here is the one
+                // an author would really read.
+                partialDetailKey: 'content-drive.upload.toast.partial',
+                failures: [
+                    { key: 'taken.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'locked.png', status: 'FAILED', reason: 'PERMISSION_DENIED' }
+                ]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: expect.stringContaining('content-drive.upload.toast.partial')
+                })
+            );
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    detail: expect.stringContaining('content-drive.upload.toast.partial')
+                })
+            );
+        });
+
+        it('should stop calling a failed upload an executed action', () => {
+            // The shared workflow summary said "Action executed" over a batch that half failed,
+            // which is the opposite of what happened.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 1,
+                backgrounded: true,
+                failures: [{ key: 'locked.png', status: 'FAILED', reason: 'PERMISSION_DENIED' }]
+            });
+
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    summary: 'content-drive.action-center.toast.executed'
+                })
+            );
+        });
+
         it('should not print a failure list for a clean run', () => {
             settle({
                 actionName: 'Upload',

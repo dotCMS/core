@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 
 import { DOT_BULK_UPLOAD_FAILURE_REASONS, DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
 
-import { messageKeyForFailureReason } from './failure-reasons';
+import { messageKeyForFailureReason, severityForFailureReason } from './failure-reasons';
 
 /**
  * FR-036: every failure reason the server can return must have its own product copy. A reason with
@@ -100,5 +100,29 @@ describe('messageKeyForFailureReason', () => {
             // make. The key itself is named for the concept, so this guards the naming too.
             expect(messageKeyForFailureReason('DISALLOWED_FILE_TYPE')).not.toContain('extension');
         });
+    });
+});
+
+describe('severityForFailureReason', () => {
+    // The split is "did the author choose something the folder will not take" versus "did something
+    // stop them that changing the file cannot fix". The first is a warning: rename it, move it,
+    // convert it, shrink it. The second is an error: no edit to the file makes a permission appear.
+    it.each([
+        ['NAME_COLLISION', 'warn'],
+        ['FOLDER_FILTER_MISMATCH', 'warn'],
+        ['DISALLOWED_FILE_TYPE', 'warn'],
+        ['OVER_SIZE_LIMIT', 'warn'],
+        ['PERMISSION_DENIED', 'error'],
+        ['STAGED_CONTENT_UNAVAILABLE', 'error'],
+        ['UNCLASSIFIED', 'error']
+    ])('should rank %s as %s', (reason, expected) => {
+        expect(severityForFailureReason(reason)).toBe(expected);
+    });
+
+    it('should treat a reason it has never heard of as an error', () => {
+        // The same soft landing the copy has, pointed the other way: an unknown reason is not
+        // evidence that nothing serious happened, so it is not allowed to read as the milder case.
+        expect(severityForFailureReason('SOMETHING_NEW')).toBe('error');
+        expect(severityForFailureReason(undefined)).toBe('error');
     });
 });

@@ -50,3 +50,42 @@ export function messageKeyForFailureReason(reason: string | undefined): string {
         ? MESSAGE_KEY_BY_REASON[reason]
         : MESSAGE_KEY_BY_REASON.UNCLASSIFIED;
 }
+
+/** The two severities an outcome's messages can carry. */
+export type DotUploadFailureSeverity = 'warn' | 'error';
+
+/**
+ * How serious each reason is, which decides **which message** a failure is reported in.
+ *
+ * The line is whether changing the file gets the author past it. A name already taken, a name the
+ * folder's glob refuses, a type the content type will not admit, a file over the ceiling: all of
+ * those are answered by renaming, moving, converting or shrinking, so they are warnings — the
+ * author has somewhere to go. A permission they do not hold, content that expired before the run
+ * reached it, or a failure nobody anticipated are none of their doing and no edit to the file will
+ * change them, so they are errors.
+ *
+ * A `Record` for the same reason the copy is one: the compiler refuses a new member of the union
+ * that nobody has ranked, so adding a reason to the contract fails the build here until someone
+ * decides which of the two it is. That decision is not one to leave to a default.
+ */
+const SEVERITY_BY_REASON: Record<DotBulkUploadFailureReason, DotUploadFailureSeverity> = {
+    NAME_COLLISION: 'warn',
+    FOLDER_FILTER_MISMATCH: 'warn',
+    DISALLOWED_FILE_TYPE: 'warn',
+    OVER_SIZE_LIMIT: 'warn',
+    PERMISSION_DENIED: 'error',
+    STAGED_CONTENT_UNAVAILABLE: 'error',
+    UNCLASSIFIED: 'error'
+};
+
+/**
+ * Ranks a failure reason.
+ *
+ * Anything unrecognised is an **error**, which is the opposite default to the copy's. There the
+ * soft landing is right, because generic copy still tells the author something. Here it would be a
+ * claim: ranking an unknown reason as a warning asserts the author can fix it, and a reason the
+ * client has never heard of is no evidence of that.
+ */
+export function severityForFailureReason(reason: string | undefined): DotUploadFailureSeverity {
+    return reason && isKnownReason(reason) ? SEVERITY_BY_REASON[reason] : 'error';
+}
