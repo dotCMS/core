@@ -9,7 +9,15 @@ import {
 import { DotExperimentsListSortDirection, ExperimentRow, TagSeverity } from './models';
 
 export const DEFAULT_EXPERIMENTS_LIST_PAGE = 1;
-export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 25;
+/**
+ * Rows per page before anyone chooses. The smallest of {@link ROWS_PER_PAGE_OPTIONS}, matching
+ * Content Drive's own default — see that list for why the two agree.
+ *
+ * It is also the value `per_page` is omitted from the address for, so changing it changes which
+ * URLs carry the param. An address that still names the old size is honoured either way: the
+ * paginator only offers the options above, but `parseViewState` takes any positive integer.
+ */
+export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 20;
 /**
  * Sortable columns. The values double as `pSortableColumn` fields, as the `orderby` URL param
  * and as the comparator keys, so the three can never drift apart.
@@ -71,7 +79,16 @@ export const STATUS_LABEL_KEYS = new Map<string, string>(
 /** Lifetime of the success toasts pushed after a row action. */
 export const SUCCESS_MESSAGE_LIFE = 5000;
 
-export const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
+/**
+ * Page sizes offered by the paginator.
+ *
+ * The same three Content Drive offers, and the same smallest one — `dot-folder-list-view`'s
+ * `rowsPerPageOptions` (`libs/ui/src/lib/components/dot-folder-list-view`). Two listing screens in
+ * the same admin should not disagree about what a page is; this list is the one a user meets first.
+ * {@link DEFAULT_EXPERIMENTS_LIST_PER_PAGE} is its smallest member, so the paginator opens on the
+ * option the dropdown shows first.
+ */
+export const ROWS_PER_PAGE_OPTIONS = [20, 40, 60];
 
 /** Placeholder rows drawn while the first page is still loading. */
 export const SKELETON_ROW_COUNT = 5;
