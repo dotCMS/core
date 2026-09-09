@@ -1444,19 +1444,57 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
                     settleUploadPhase();
 
+                    // The batch is not over, only this half of it: dotCMS is still creating and
+                    // publishing the files, and that is usually the longer wait. A second run
+                    // carries it, so the indicator stays lit until the completion arrives instead
+                    // of going dark at the handle and reading as "it stopped".
+                    //
+                    // Its own copy, because the words have to change with the guarantee: the first
+                    // phase was an operation the author had to stay for, this one is work they have
+                    // just been told they can walk away from.
+                    const backgroundRunId = this.#store.startExternalRun({
+                        operation: `${UPLOAD_BATCH_OPERATION}:${event.handle.jobId}`,
+                        actionName: this.#dotMessageService.get('content-drive.upload'),
+                        labelKey: 'content-drive.upload.indicator.background',
+                        total: files.length,
+                        targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
+                        targets: []
+                    });
+
                     // The handle is the only way to tell this batch's completion from another
                     // tab's: the event is scoped to the submitting user, not to a window. The
                     // destination travels with it because by the time it lands the author may be
                     // looking at a different folder, and the outcome decides whether the listing
                     // they are on can show the result at all.
-                    this.#store.trackUploadJob(event.handle.jobId, [
-                        toFolderRef(
-                            hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
-                            // Same reason: an empty path is the site root, which normalises to
-                            // `//hostname` — the ref the listing computes when browsing it.
-                            hostFolder?.path || '/'
-                        )
-                    ]);
+                    this.#store.trackUploadJob(
+                        event.handle.jobId,
+                        [
+                            toFolderRef(
+                                hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
+                                // Same reason: an empty path is the site root, which normalises to
+                                // `//hostname` — the ref the listing computes when browsing it.
+                                hostFolder?.path || '/'
+                            )
+                        ],
+                        backgroundRunId
+                    );
+
+                    // The one notification this flow raises, and the only in-flight fact worth
+                    // one: until the handle existed, leaving lost the batch and the page guard
+                    // said so; now leaving costs nothing. That rule changed with no visible
+                    // cause, and the indicator cannot report it — it says work is happening, not
+                    // that the author is released from it.
+                    this.#messageService.add({
+                        severity: 'info',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.upload.toast.backgrounded'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.upload.toast.backgrounded-detail',
+                            String(files.length)
+                        ),
+                        life: SUCCESS_MESSAGE_LIFE
+                    });
 
                     // Nothing else to do, and deliberately nothing. A `202` means the batch is queued,
                     // not that any file exists, so reloading here refetches a folder whose files

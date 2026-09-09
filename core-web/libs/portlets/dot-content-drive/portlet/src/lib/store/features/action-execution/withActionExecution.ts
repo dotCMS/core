@@ -38,6 +38,7 @@ import {
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveRun,
+    DotContentDriveUploadJob,
     DotContentDriveState
 } from '../../../shared/models';
 import { normalizeFolderRef, toFolderRef } from '../../../utils/functions';
@@ -75,7 +76,7 @@ interface WithActionExecutionState {
      * folders come along because the outcome decides whether the listing can show what changed, and
      * by the time the event lands the author may be looking somewhere else entirely.
      */
-    uploadJobs: Record<string, string[]>;
+    uploadJobs: Record<string, DotContentDriveUploadJob>;
 }
 
 /**
@@ -751,9 +752,16 @@ export function withActionExecution() {
                      *
                      * @param affectedFolders where the batch landed, as `//hostname/path` refs
                      */
-                    trackUploadJob: (jobId: string, affectedFolders: string[] = []): void => {
+                    trackUploadJob: (
+                        jobId: string,
+                        affectedFolders: string[] = [],
+                        runId?: string
+                    ): void => {
                         patchState(store, {
-                            uploadJobs: { ...store.uploadJobs(), [jobId]: affectedFolders }
+                            uploadJobs: {
+                                ...store.uploadJobs(),
+                                [jobId]: { affectedFolders, runId }
+                            }
                         });
                     },
 
@@ -777,10 +785,18 @@ export function withActionExecution() {
                             return;
                         }
 
-                        const affectedFolders = tracked[event.jobId];
+                        const { affectedFolders, runId } = tracked[event.jobId];
                         const remaining = { ...tracked };
                         delete remaining[event.jobId];
                         patchState(store, { uploadJobs: remaining });
+
+                        // The run reporting the server phase outlives the request that started it,
+                        // so this event is the only thing left that knows the batch is over. Ended
+                        // before the outcome is published, so the indicator is already quiet when
+                        // the message about it appears.
+                        if (runId) {
+                            endRun(runId);
+                        }
 
                         // The state first, because the counters cannot answer this. A run that
                         // gave up still records the counters it reached, and those can close over

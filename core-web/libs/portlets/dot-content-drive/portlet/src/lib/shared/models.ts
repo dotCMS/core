@@ -164,6 +164,15 @@ export interface DotContentDriveActionExecution {
      */
     targetLabel?: string;
     /**
+     * Copy this run names itself with, instead of the indicator's "Applying X to Y" form.
+     *
+     * For a run whose words are simply different: an upload's server phase is not applying anything
+     * to the folder, it is finishing files inside it, and the author has just been told they may
+     * leave — so the indicator has to read as the reassurance it now is rather than as an
+     * operation. Resolved with the target label and the total as arguments, in that order.
+     */
+    labelKey?: string;
+    /**
      * How many items are done, when the run reports it.
      *
      * **Optional on purpose.** Absent means the run does not report progress, which the indicator
@@ -182,6 +191,20 @@ export interface DotContentDriveActionExecution {
  * handle: the window a double-click has to fire twice is exactly the window before any handle has
  * come back, so a server-side id would leave it unguarded.
  */
+/**
+ * A batch this store submitted, kept until its completion signal arrives.
+ *
+ * Two things travel with it. The folders let the shell decide whether the listing the author is
+ * looking at by then can show the result at all; the run id is what is still reporting the server
+ * phase on the indicator, and nothing but the completion knows to end it.
+ */
+export interface DotContentDriveUploadJob {
+    /** Where the batch landed, as `//hostname/path` refs. */
+    affectedFolders: string[];
+    /** The run reporting the server phase, if one is. */
+    runId?: string;
+}
+
 export interface DotContentDriveRun extends DotContentDriveActionExecution {
     runId: string;
     /**

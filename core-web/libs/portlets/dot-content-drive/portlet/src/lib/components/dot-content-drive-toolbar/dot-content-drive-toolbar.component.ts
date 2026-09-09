@@ -334,6 +334,16 @@ export class DotContentDriveToolbarComponent {
         // `WorkflowAction.name` from the backend, but a target label is content an author typed.
         const actionName = escapeHtml(execution.actionName);
 
+        // A run carrying its own copy uses it: the "Applying X to Y" form describes an operation
+        // being performed on something, which is not what every run is.
+        if (execution.labelKey) {
+            return this.#dotMessageService.get(
+                execution.labelKey,
+                escapeHtml(execution.targetLabel ?? ''),
+                String(execution.total)
+            );
+        }
+
         // "Applying Publish to 1 item(s)" tells an author nothing they did not already know. When
         // the run is over one nameable thing, name it.
         return execution.targetLabel

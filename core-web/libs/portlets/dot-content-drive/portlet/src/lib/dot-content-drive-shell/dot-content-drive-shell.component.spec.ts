@@ -1971,6 +1971,59 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.endExternalRun).toHaveBeenCalled();
         });
 
+        it('should tell the author the batch is theirs to leave once the handle arrives', () => {
+            // The one moment worth a notification in a flow that otherwise has none: until the
+            // handle exists, leaving loses the batch, and after it leaving costs nothing. The
+            // author cannot see that line being crossed, and the indicator cannot say it — it
+            // reports that work is happening, not that the rules just changed.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'info',
+                    detail: 'content-drive.upload.toast.backgrounded-detail'
+                })
+            );
+        });
+
+        it('should keep reporting the batch after the handle, so the indicator does not go dark', () => {
+            // Two phases, two runs: the upload phase ends at the handle, but the batch has not
+            // finished — dotCMS is still creating and publishing the files. Ending the first run
+            // and starting nothing left the indicator dark for the longer half of the wait, which
+            // reads as "it stopped".
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // The run that carries the server phase is handed to the store with the job, so the
+            // completion that settles the batch settles the indicator with it.
+            expect(store.trackUploadJob).toHaveBeenCalledWith(
+                'job-1',
+                expect.any(Array),
+                expect.any(String)
+            );
+        });
+
         it('should stop reporting the upload when the submission is refused', () => {
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(() => new HttpErrorResponse({ status: 413 }))
@@ -2229,9 +2282,12 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(store.trackUploadJob).toHaveBeenCalledWith('job-9', [
-                `//${TARGET_FOLDER_DATA.hostname}${TARGET_FOLDER_DATA.path}`.toLowerCase()
-            ]);
+            expect(store.trackUploadJob).toHaveBeenCalledWith(
+                'job-9',
+                [`//${TARGET_FOLDER_DATA.hostname}${TARGET_FOLDER_DATA.path}`.toLowerCase()],
+                // And the run still reporting it, which only this event can end.
+                expect.any(String)
+            );
         });
 
         it('should not reload the listing when the batch is only accepted', () => {
@@ -2247,17 +2303,34 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.loadItems).not.toHaveBeenCalled();
         });
 
-        it('should not announce a single file any differently than today', () => {
-            // What "unchanged" protects is the author's experience, not a separate code path.
-            // Today one file uploads quietly and its row appears, so a batch of one must not
-            // suddenly start narrating itself.
+        it('should not announce a single file any differently than a batch', () => {
+            // What "unchanged" protects is that nothing forks on the number of files, which is the
+            // defect this feature exists to remove. It does not protect silence: the handle
+            // releases the author from a batch of one exactly as it releases them from thirty, and
+            // suppressing that for one file would be a count branch by another name.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([createFile('a.png')]),
                 baseType: 'DOTASSET'
             });
 
-            expect(messageService.add).not.toHaveBeenCalled();
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'info',
+                    detail: 'content-drive.upload.toast.backgrounded-detail'
+                })
+            );
+            // Still nothing that names it a success: the files do not exist yet.
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
         });
     });
 

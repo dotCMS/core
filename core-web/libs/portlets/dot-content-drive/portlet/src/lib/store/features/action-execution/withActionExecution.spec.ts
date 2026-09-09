@@ -583,6 +583,24 @@ describe('withActionExecution', () => {
             );
         });
 
+        it('should settle the run the batch was still being reported by', () => {
+            // The server phase's run outlives the request, so nothing in the shell is left to end
+            // it: the completion event is the only thing that knows the batch is over.
+            build();
+            const runId = store.startExternalRun({
+                actionName: 'Upload',
+                total: 1,
+                targets: []
+            });
+            store.trackUploadJob('upload-1', [], runId);
+
+            expect(store.toolbarRunCount()).toBe(1);
+
+            store.reportUploadCompleted('Upload', completed());
+
+            expect(store.toolbarRunCount()).toBe(0);
+        });
+
         it('should settle a batch only once', () => {
             // A resumed run must not report twice, and the same event can be delivered again.
             build();
