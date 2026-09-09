@@ -162,10 +162,12 @@ The `@dotcms/*` npm SDK packaging/release mechanism (introduced a few weeks ago)
   This does **not** change the conclusion that an exact pin is still required (a floating
   `"latest"` could break again on some future SDK release) — only which version to pin, twice.
   Backport PR: [dotCMS/core#37475](https://github.com/dotCMS/core/pull/37475) against
-  `release-25.07.10_lts_v12` (description corrected to match). `release-25.07.10_lts_v16` must
-  be verified independently — not assumed identical — before its own backport PR is opened;
-  given the unreliability of a live-server test exposed here, prefer the same static
-  schema-inspection method over attempting another Docker-based live test.
+  `release-25.07.10_lts_v12` (description corrected to match). **`release-25.07.10_lts_v16`
+  resolved the same day, independently verified rather than assumed identical**: the same static
+  method (all 80 files under `dotCMS/src/main/java/com/dotcms/graphql/` on that branch) found
+  the identical gap — none of the five fields defined — so `1.2.0` applies there too, for the
+  same reason. Backport PR: [dotCMS/core#37476](https://github.com/dotCMS/core/pull/37476)
+  against `release-25.07.10_lts_v16`. Both LTS backports are now complete.
 - `main`'s six examples deliberately keep using the floating `"latest"` npm dist-tag (not an exact pin) going forward — confirmed with the developer as an intentional decision, grounded in ADR-0019's own Evergreen-convergence reasoning (see Scope of Investigation): a customer scaffolding from `main` is expected to be on dotCMS Evergreen (always the current release), for whom `"latest"` and "the version matching my CMS" are the same thing by construction. A customer on an older/non-Evergreen server is documented (Fix Scope) as needing to manually pin the version matching their own instance. This is the one deliberate exception to "no floating `@dotcms/*` specifiers" elsewhere in this spec, and the CI guardrail (AC-007) must not flag it.
 - No separate GitHub issue/spec is being opened for the "keep the LTS example pin in sync with newer compatible releases over time" concern; it is accepted as a manual, as-needed process step, guarded only against the floating-specifier regression (see Non-Goals). This does not apply to `main`'s examples, which cannot go stale since they float by design.
 - Keeping the standalone `next`-tag publish workflow (`cicd_3-trunk.yml`) active, rather than retiring/disabling it as ADR-0019's Implementation Notes suggest, is a decision the team already made independently of this issue — internal developers need it for testing. This spec does not revisit that decision; it is explicitly out of scope (see Non-Goals).
