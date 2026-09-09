@@ -7,7 +7,7 @@ import {
 } from './failure-reasons';
 
 /**
- * How many names one line will print before it counts them instead.
+ * How many names a **warning** line will print before it counts them instead.
  *
  * Past this, the line leads with the number and names none. Naming the first eight of fifty would
  * read as "eight files failed", which is worse than saying nothing — and a batch caps at 100 files,
@@ -47,6 +47,11 @@ export interface DotUploadFailureGroup {
  *
  * Errors come first regardless of the order the files arrived in. File order is an accident of how
  * they were selected; which message the author reads first is not.
+ *
+ * **Errors are counted, warnings are named.** A warning's file names are the author's to-do list —
+ * rename this, move that, convert the other — so they are printed. An error's are not: no per-file
+ * action gets them past a permission they do not hold or content that expired, so the names would
+ * be a list they can act on no part of, and the count says as much with none of the noise.
  *
  * Skipped files are left out entirely — never attempted is not the same as failed, and the counts
  * report them separately.
@@ -93,7 +98,7 @@ export function describeUploadFailures(
                 severity,
                 lines: [...namesByReason]
                     .filter(([, group]) => group.severity === severity)
-                    .map(([key, group]) => resolve(key, subjectFor(group.names, resolve)))
+                    .map(([key, group]) => resolve(key, subjectFor(group.names, severity, resolve)))
             }))
             // A severity nothing failed under gets no message at all, rather than an empty one.
             .filter((group) => group.lines.length > 0)
@@ -106,8 +111,16 @@ export function describeUploadFailures(
  * Either way it is one `{0}`, so each reason keeps a single piece of copy rather than needing a
  * singular and a plural variant.
  */
-function subjectFor(names: string[], resolve: ResolveMessage): string {
-    return names.length > MAX_NAMES_PER_LINE
+function subjectFor(
+    names: string[],
+    severity: DotUploadFailureSeverity,
+    resolve: ResolveMessage
+): string {
+    // Errors are counted however few there are (developer's call). Nothing the author does to one
+    // of these files gets them past it — no permission appears because they renamed something — so
+    // the names are a list they can act on no part of, and a count says the same thing without
+    // making them read it. Warnings are the opposite: those names *are* the work.
+    return 'error' === severity || names.length > MAX_NAMES_PER_LINE
         ? resolve(N_FILES_KEY, String(names.length))
         : names.join(', ');
 }

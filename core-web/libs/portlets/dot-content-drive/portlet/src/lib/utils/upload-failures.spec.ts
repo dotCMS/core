@@ -90,8 +90,10 @@ describe('describeUploadFailures', () => {
     });
 
     it('should fall back to the unclassified reason when a failure carries none', () => {
+        // Counted rather than named: an unrecognised reason ranks as an error, and errors are
+        // counted, since nothing the author does to the file is known to help.
         expect(linesOf([{ key: 'mystery.png', status: 'FAILED' }])).toEqual([
-            'content-drive.upload.failure.unclassified|mystery.png'
+            'content-drive.upload.failure.unclassified|content-drive.upload.failure.n-files|1'
         ]);
     });
 
@@ -128,7 +130,10 @@ describe('describeUploadFailures', () => {
         expect(groups).toEqual([
             {
                 severity: 'error',
-                lines: ['content-drive.upload.failure.permission-denied|locked.png']
+                lines: [
+                    // Counted, not named: see the error/warning split below.
+                    'content-drive.upload.failure.permission-denied|content-drive.upload.failure.n-files|1'
+                ]
             },
             {
                 severity: 'warn',
@@ -171,6 +176,23 @@ describe('describeUploadFailures', () => {
 
         expect(linesOf(many)).toEqual([
             'content-drive.upload.failure.name-collision|content-drive.upload.failure.n-files|94'
+        ]);
+    });
+
+    it('should count an error group rather than naming it, however small', () => {
+        // Developer's call, and the argument for it: no per-file action gets the author past a
+        // permission they do not hold, so the names are a list they can do nothing with. A count
+        // says the same thing without the noise.
+        expect(linesOf([failed('locked.png', 'PERMISSION_DENIED')])).toEqual([
+            'content-drive.upload.failure.permission-denied|content-drive.upload.failure.n-files|1'
+        ]);
+    });
+
+    it('should still name a warning group, because that list is a to-do', () => {
+        // The other half of the same decision. These names are what the author acts on: rename
+        // this, move that, convert the other.
+        expect(linesOf([failed('taken.png', 'NAME_COLLISION')])).toEqual([
+            'content-drive.upload.failure.name-collision|taken.png'
         ]);
     });
 
