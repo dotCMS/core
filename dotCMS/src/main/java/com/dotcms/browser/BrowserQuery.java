@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
@@ -315,6 +316,9 @@ public class BrowserQuery {
         private boolean skipFolder = false;
         private boolean ignoreSiteForFolders = false;
         private String hostIdSystemFolder = null;
+        /** MIME types, and the partial and wildcard forms the file browser sends. */
+        private static final Pattern MIME_TYPE_PATTERN = Pattern.compile("[A-Za-z0-9/*._+-]{1,255}");
+
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
         private Set<String> workflowSchemeIds = new LinkedHashSet<>();
@@ -493,7 +497,22 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * Sets the MIME type filters. Values must consist of MIME type characters only, since they
+         * are interpolated into the JSONPath expression the query builder binds. Validating here
+         * covers every caller, rather than relying on each entry point to check its own input.
+         *
+         * @throws IllegalArgumentException if any value is empty or contains other characters
+         */
         public Builder showMimeTypes(@Nonnull List<String> mimeTypes) {
+            for (int i = 0; i < mimeTypes.size(); i++) {
+                final String mimeType = mimeTypes.get(i);
+                if (mimeType == null || !MIME_TYPE_PATTERN.matcher(mimeType).matches()) {
+                    // The rejected value is deliberately not echoed back to the caller or the log.
+                    throw new IllegalArgumentException("Invalid MIME type filter at index " + i
+                            + ". Allowed characters are letters, digits and / * . _ + -");
+                }
+            }
             this.mimeTypes = mimeTypes;
             return this;
         }
