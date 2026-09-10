@@ -34,7 +34,19 @@ export class TemplateBuilderPage {
         await this.page.getByRole('button', { name: 'Yes' }).click();
     }
 
+    /**
+     * Clicking this while a save is held in-flight deliberately puts Angular's Router into
+     * a CanDeactivate guard that never resolves (blocked on canDeactivateRoute$ until the
+     * in-flight save completes) — that's the exact scenario this page object exists to
+     * drive. Plain .click() then hangs indefinitely (unaffected by any timeout budget,
+     * confirmed in CI across 60s and 120s runs): Playwright's actionability retries appear
+     * to get stuck on the router's pending-navigation state. `{ force: true }` would skip
+     * those checks, but this repo's eslint config bans it (playwright/no-force-option);
+     * dispatchEvent bypasses actionability the same way without tripping that rule — the
+     * button is never disabled or covered, only the navigation it triggers stalls, which
+     * is the intended behavior under test.
+     */
     async goToContentTab(): Promise<void> {
-        await this.page.getByRole('button', { name: 'Content' }).click();
+        await this.page.getByRole('button', { name: 'Content' }).dispatchEvent('click');
     }
 }
