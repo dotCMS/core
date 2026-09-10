@@ -431,11 +431,17 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         if (lockedByOpt.isPresent()) {
             // issue #37186 (FR-004a): an orphaned locked-by id must degrade this one field, not
             // fail the whole transform — same fallback pattern as modUser above and
-            // addAuditProperties, instead of an uncaught NoSuchUserException.
+            // addAuditProperties, instead of an uncaught NoSuchUserException. The map still
+            // always carries a "lockedBy" entry when locked==true (FR-003 identical listing
+            // content) — a resolution failure falls back to the unresolved id with "N/A" names
+            // instead of omitting the key entirely.
             final User user = Try.of(() -> toolBox.userAPI.loadUserById(lockedByOpt.get())).getOrNull();
             if (null != user) {
                 map.put("lockedBy", Map.of("userId", user.getUserId(),
                         "firstName", user.getFirstName(), "lastName", user.getLastName()));
+            } else {
+                map.put("lockedBy", Map.of("userId", lockedByOpt.get(),
+                        "firstName", NOT_APPLICABLE, "lastName", ""));
             }
         }
 
