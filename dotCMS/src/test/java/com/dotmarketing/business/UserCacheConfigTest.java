@@ -1,8 +1,8 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,11 +31,23 @@ public class UserCacheConfigTest {
         return props;
     }
 
-    /** The user cache must no longer fall back to the shared cache.default.size=1000. */
+    /**
+     * The user cache must no longer fall back to the shared cache.default.size=1000.
+     *
+     * <p>Per review feedback, this intentionally does not pin the literal "4000": that would
+     * break the moment someone legitimately re-tunes the value. What actually matters is that
+     * the key is present and set well above the shared default, so it asserts a lower bound
+     * instead.</p>
+     */
     @Test
-    public void userCacheSize_isExplicitlySetTo4000() throws IOException {
+    public void userCacheSize_isExplicitlySetAboveSharedDefault() throws IOException {
         final Properties props = loadDotmarketingConfigProperties();
-        assertEquals("4000", props.getProperty("cache.userdotcmscache.size"));
+        final String rawValue = props.getProperty("cache.userdotcmscache.size");
+        assertNotNull("cache.userdotcmscache.size must be explicitly set", rawValue);
+
+        final int value = Integer.parseInt(rawValue);
+        assertTrue("cache.userdotcmscache.size must be greater than the shared cache.default.size=1000, was " + value,
+                value > 1000);
     }
 
     /**
@@ -43,6 +55,10 @@ public class UserCacheConfigTest {
      * keyed by the raw email address, but UserCacheImpl#get reads it keyed by the
      * primary-group-prefixed id, so entries are never read back. Raising it alongside line 518
      * would reserve memory for a region nothing can use — it must stay unset.
+     *
+     * <p>Note: if the key-mismatch bug described above is ever fixed so that the email region
+     * becomes usable, this assertion will need to be revisited — an unset value would then be a
+     * real regression rather than the expected state.</p>
      */
     @Test
     public void userEmailCacheSize_remainsUnsetDeadRegionNotRaised() throws IOException {
