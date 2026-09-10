@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
@@ -21,10 +21,6 @@ export class DotRolesDetailHeaderComponent {
     protected readonly store = inject(DotRolesStore);
     readonly #dialogService = inject(DialogService);
     readonly #messageService = inject(DotMessageService);
-
-    protected readonly $icon = computed(() =>
-        this.store.selectedRoleIsParent() ? 'folder' : 'shield_person'
-    );
 
     protected onEditRole(): void {
         const role = this.store.selectedRole();

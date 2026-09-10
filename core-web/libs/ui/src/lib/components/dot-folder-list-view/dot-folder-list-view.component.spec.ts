@@ -2979,4 +2979,529 @@ describe('DotFolderListViewComponent', () => {
             expect(rendered[1]).toContain('z-newer');
         });
     });
+
+    // -----------------------------------------------------------------------------------------
+    // US2 (issue #32591) — Shift+Arrow extends a contiguous selection from the anchor.
+    //
+    // The anchor is the substance here. A plain arrow moves focus *and* the anchor; Shift+Arrow moves
+    // focus and leaves the anchor put. Shrink-back and extend-through-the-anchor then fall out of
+    // that one rule rather than needing special cases.
+    // -----------------------------------------------------------------------------------------
+    describe('US2 — Shift+Arrow range selection', () => {
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
+        /**
+         * Moves focus with a real keydown, the way the table's own arrow handler is driven.
+         *
+         * Holding Shift sends a keydown for the Shift key itself before the arrow, because that is
+         * what a browser does and the component sees every keydown. Omitting it made these tests
+         * pass against behaviour that was broken in the browser.
+         */
+        const arrow = (from: number, direction: 'ArrowDown' | 'ArrowUp', shiftKey = false) => {
+            const row = rowsOf()[from];
+            row.focus();
+
+            if (shiftKey) {
+                row.dispatchEvent(
+                    new KeyboardEvent('keydown', {
+                        code: 'ShiftLeft',
+                        key: 'Shift',
+                        shiftKey: true,
+                        bubbles: true
+                    })
+                );
+            }
+
+            row.dispatchEvent(
+                new KeyboardEvent('keydown', { code: direction, shiftKey, bubbles: true })
+            );
+            spectator.detectChanges();
+        };
+
+        const spyOnSelection = () => jest.spyOn(spectator.component.selectionChange, 'emit');
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+        });
+
+        it('should extend the selection to the newly focused row', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1]]);
+        });
+
+        it('should keep extending as the arrow is held', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+            arrow(1, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1], mockItems[2]]);
+        });
+
+        it('should shrink back toward the anchor rather than growing the other way', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+            arrow(1, 'ArrowDown', true);
+            arrow(2, 'ArrowUp', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1]]);
+        });
+
+        it('should extend the other way once it passes through the anchor', () => {
+            const spy = spyOnSelection();
+
+            arrow(2, 'ArrowUp', true);
+            arrow(1, 'ArrowUp', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1], mockItems[2]]);
+        });
+
+        it('should not extend when the arrow is pressed without shift', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown');
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should re-anchor after a plain arrow, so the next range starts from there', () => {
+            arrow(0, 'ArrowDown');
+            const spy = spyOnSelection();
+
+            arrow(1, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[1], mockItems[2]]);
+        });
+
+        it('should leave the selection alone at the last row of the page', () => {
+            const spy = spyOnSelection();
+
+            arrow(mockItems.length - 1, 'ArrowDown', true);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should never paginate from a range', () => {
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+
+            arrow(mockItems.length - 1, 'ArrowDown', true);
+
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        // A range extends the selection, it does not become the selection. Rows picked before the
+        // gesture started have to survive it.
+        it('should add to an existing selection rather than replacing it', () => {
+            spectator.setInput('selection', [mockItems[4]]);
+            spectator.detectChanges();
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[4], mockItems[0], mockItems[1]]);
+        });
+
+        it('should still shrink the range without disturbing the rows selected before it', () => {
+            spectator.setInput('selection', [mockItems[4]]);
+            spectator.detectChanges();
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+            arrow(1, 'ArrowDown', true);
+            arrow(2, 'ArrowUp', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[4], mockItems[0], mockItems[1]]);
+        });
+
+        it('should not extend a range while the listing is read-only', () => {
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------------------------
+    // US4 (issue #32591) — Shift-clicking a checkbox extends the same range Shift+Arrow does.
+    //
+    // The checkbox cell stops propagation, so the row's own click handler never sees this event and
+    // the table's range path is unreachable from here. The handler sits on the checkbox for that
+    // reason, and reuses the anchor-and-extend logic rather than repeating it.
+    // -----------------------------------------------------------------------------------------
+    describe('US4 — Shift+click range selection', () => {
+        const checkboxAt = (index: number) =>
+            spectator.queryAll(byTestId('item-checkbox'))[index].querySelector('input');
+
+        // `mousedown` then `click`, in that order, because that is what a browser sends and the
+        // component reads the modifier from the mousedown — it is the last thing that happens before
+        // the row takes focus, which is what has to be told to leave the anchor alone.
+        const clickCheckbox = (index: number, shiftKey = false) => {
+            const input = checkboxAt(index);
+            // `cancelable` matters: a constructed MouseEvent defaults to false, which silently makes
+            // `preventDefault()` a no-op and lets the checkbox toggle on top of the range. Real
+            // browser clicks are cancelable.
+            input.dispatchEvent(
+                new MouseEvent('mousedown', { shiftKey, bubbles: true, cancelable: true })
+            );
+            input.dispatchEvent(
+                new MouseEvent('click', { shiftKey, bubbles: true, cancelable: true })
+            );
+            spectator.detectChanges();
+        };
+
+        const spyOnSelection = () => jest.spyOn(spectator.component.selectionChange, 'emit');
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+        });
+
+        it('should select every row between the anchor and a checkbox clicked below it', () => {
+            clickCheckbox(1);
+            const spy = spyOnSelection();
+
+            clickCheckbox(3, true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[1], mockItems[2], mockItems[3]]);
+        });
+
+        it('should extend upward when the clicked checkbox is above the anchor', () => {
+            clickCheckbox(3);
+            const spy = spyOnSelection();
+
+            clickCheckbox(1, true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[1], mockItems[2], mockItems[3]]);
+        });
+
+        it('should anchor on the clicked row when nothing is selected yet', () => {
+            const spy = spyOnSelection();
+
+            clickCheckbox(2, true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[2]]);
+        });
+
+        it('should leave a plain checkbox click alone', () => {
+            clickCheckbox(1);
+            const spy = spyOnSelection();
+
+            clickCheckbox(3);
+
+            expect(spy).not.toHaveBeenLastCalledWith([mockItems[1], mockItems[2], mockItems[3]]);
+        });
+    });
+
+    // -----------------------------------------------------------------------------------------
+    // T003 probe (issue #32591) — characterises the controlled-selection round trip that
+    // Shift+Arrow range selection has to survive. This is the one part of the keybindings feature
+    // that was not proved out during investigation, so it is written before any implementation.
+    //
+    // The loop: the parent owns `selection`, this component re-asserts the effective selection onto
+    // the table through `$syncTableSelection`, and the table sets `preventSelectionSetterPropagation`
+    // while it emits. A range handler that wrote to the table directly would be overwritten by that
+    // effect, so a range has to travel out through `selectionChange` and back in through `selection`
+    // like every other selection change.
+    // -----------------------------------------------------------------------------------------
+    describe('Keyboard range selection round trip (T003 probe)', () => {
+        const getTable = () => spectator.query(Table);
+
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
+        /**
+         * Extends a range the way a user does: focus the anchor row, hold Shift, step with the
+         * arrow keys. This drives the shipped `#extendSelectionTo`.
+         *
+         * It used to call PrimeNG's `table.selectRange()` directly, which was right when written —
+         * the probe deliberately predates the handler — but stopped testing this feature the moment
+         * the handler landed, because the shipped path never calls `selectRange`. The round-trip
+         * assertions below would have passed with the range logic wholly regressed.
+         */
+        const extendRange = (anchorIndex: number, toIndex: number) => {
+            const direction = toIndex > anchorIndex ? 'ArrowDown' : 'ArrowUp';
+            const step = toIndex > anchorIndex ? 1 : -1;
+
+            rowsOf()[anchorIndex].focus();
+            spectator.detectChanges();
+
+            // A browser sends a keydown for Shift itself before the first arrow, and the component
+            // sees every keydown. Omitting it hid a real bug once already.
+            rowsOf()[anchorIndex].dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    code: 'ShiftLeft',
+                    key: 'Shift',
+                    shiftKey: true,
+                    bubbles: true
+                })
+            );
+
+            for (let index = anchorIndex; index !== toIndex; index += step) {
+                rowsOf()[index].dispatchEvent(
+                    new KeyboardEvent('keydown', { code: direction, shiftKey: true, bubbles: true })
+                );
+                spectator.detectChanges();
+            }
+        };
+
+        it('should emit the whole range through selectionChange when a range is extended', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[0]]);
+            spectator.detectChanges();
+
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+            extendRange(0, 2);
+
+            expect(selectionChangeSpy).toHaveBeenCalledWith([
+                mockItems[0],
+                mockItems[1],
+                mockItems[2]
+            ]);
+        });
+
+        it('should keep the rendered selection matching a range the parent echoes back', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[0]]);
+            spectator.detectChanges();
+
+            extendRange(0, 2);
+
+            // A controlled parent (the Content Drive store) receives the emission and pushes it back
+            // down. This is the step `preventSelectionSetterPropagation` can swallow.
+            const echoed = [mockItems[0], mockItems[1], mockItems[2]];
+            spectator.setInput('selection', echoed);
+            spectator.detectChanges();
+
+            expect(spectator.component.selectedItems).toEqual(echoed);
+            expect(getTable().selection).toEqual(echoed);
+        });
+
+        it('should let a parent that narrows the range win over what the table computed', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[0]]);
+            spectator.detectChanges();
+
+            extendRange(0, 2);
+
+            // What the table shows has to be what the parent holds, not what the table last computed.
+            const narrowed = [mockItems[0], mockItems[1]];
+            spectator.setInput('selection', narrowed);
+            spectator.detectChanges();
+
+            expect(getTable().selection).toEqual(narrowed);
+        });
+    });
+
+    // -----------------------------------------------------------------------------------------
+    // US1 (issue #32591) — keyboard reachability and movement.
+    //
+    // Two of these describe defects rather than new behaviour: on load every row is a tab stop (a
+    // 20-stop tab trap), and after a column sort no row is reachable at all. Both come from the
+    // underlying table comparing its selection anchor against a row index this component never
+    // supplied, so the comparison is `undefined === undefined` before a sort and `null === undefined`
+    // after one.
+    //
+    // The contract asserted here is a roving tab stop: exactly one row is tabbable at a time and it
+    // follows focus. `tabindex` is asserted directly because it *is* the observable contract of a
+    // roving tab stop, not styling.
+    // -----------------------------------------------------------------------------------------
+    describe('US1 — keyboard reachability and movement', () => {
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+        const tabIndexes = () => rowsOf().map((row) => row.getAttribute('tabindex'));
+        const tabStopCount = () => tabIndexes().filter((value) => value === '0').length;
+        const focusedRowIndex = () => rowsOf().findIndex((row) => row === document.activeElement);
+
+        /** Dispatches a real keydown on a row. The table switches on `code`, so it must be set. */
+        const pressOnRow = (index: number, code: string, init: KeyboardEventInit = {}) => {
+            const row = rowsOf()[index];
+            row.focus();
+            row.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, ...init }));
+            spectator.detectChanges();
+        };
+
+        const renderRows = () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+        };
+
+        // T005
+        it('should expose exactly one row as a tab stop on load', () => {
+            renderRows();
+
+            expect(rowsOf().length).toBe(mockItems.length);
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // T006 — the defect: sorting currently leaves every row unreachable.
+        it('should still expose one tab stop after a column is sorted', () => {
+            renderRows();
+
+            spectator.click(spectator.queryAll(byTestId('header-column-sortable'))[0]);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // Review finding: T007 misses this because it never moves focus first, so index 0 still
+        // exists in the shorter list. Focus a row further down and the active index outlives the row
+        // it pointed at, matching nothing and taking every tab stop with it. Real trigger: click or
+        // focus a row down the listing, then search or filter so fewer results come back.
+        it('should keep a tab stop when the list shrinks under the focused row', () => {
+            renderRows();
+            pressOnRow(3, 'ArrowDown');
+
+            expect(tabStopCount()).toBe(1);
+
+            spectator.setInput('items', [mockItems[0], mockItems[1]]);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // T007
+        it('should still expose one tab stop after a new page of rows arrives', () => {
+            renderRows();
+
+            spectator.setInput('items', [mockItems[2], mockItems[3]]);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // T008
+        it('should move focus down a row and carry the tab stop with it', () => {
+            renderRows();
+
+            pressOnRow(0, 'ArrowDown');
+
+            expect(focusedRowIndex()).toBe(1);
+            expect(tabStopCount()).toBe(1);
+            expect(tabIndexes()[1]).toBe('0');
+        });
+
+        it('should move focus up a row', () => {
+            renderRows();
+
+            pressOnRow(1, 'ArrowUp');
+
+            expect(focusedRowIndex()).toBe(0);
+        });
+
+        it('should not change the selection when moving focus', () => {
+            renderRows();
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+            pressOnRow(0, 'ArrowDown');
+
+            expect(selectionChangeSpy).not.toHaveBeenCalled();
+        });
+
+        // T009
+        it('should keep focus on the last row rather than paginating', () => {
+            renderRows();
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const lastIndex = mockItems.length - 1;
+
+            pressOnRow(lastIndex, 'ArrowDown');
+
+            expect(focusedRowIndex()).toBe(lastIndex);
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        it('should keep focus on the first row when moving up from it', () => {
+            renderRows();
+
+            pressOnRow(0, 'ArrowUp');
+
+            expect(focusedRowIndex()).toBe(0);
+        });
+
+        // T010 — the rule is about whatever the listing marks unselectable, not a named condition.
+        // Trunk only marks rows unselectable in bulk; a per-row state will make this observable
+        // row-by-row without the behaviour itself changing.
+        it('should offer no keyboard tab stop while the listing is disabled', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(0);
+        });
+
+        // T011
+        it('should offer no keyboard tab stop while the listing is read-only', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(0);
+        });
+
+        it('should not change the selection from the keyboard while read-only', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+
+            pressOnRow(0, 'ArrowDown');
+
+            expect(selectionChangeSpy).not.toHaveBeenCalled();
+        });
+
+        // Review finding: the rows take focus and ranges extend, but nothing told assistive
+        // technology what was selected. `aria-selected` is a partial measure without `role="grid"`
+        // (deliberately out of scope, it brings the full grid keyboard contract — see the row block
+        // in the template and #37439), but it is the difference between a screen-reader user
+        // hearing nothing and hearing the state change.
+        it('should mark selected rows for assistive technology', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[1], mockItems[2]]);
+            spectator.detectChanges();
+
+            const selected = rowsOf().map((row) => row.getAttribute('aria-selected'));
+
+            expect(selected).toEqual(['false', 'true', 'true', 'false', 'false']);
+        });
+
+        // Pins the half-wiring back out. `aria-multiselectable` is not a supported property of
+        // `role="table"`, which is the role PrimeNG renders and the one this listing keeps, so
+        // setting it announces nothing and reads to the next person like the ARIA work is finished.
+        // It belongs with the rest of the grid contract in #37439, not on its own.
+        it('should not claim selection semantics its container role cannot carry', () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            const table = spectator.query('[data-testId="table"] table');
+
+            expect(table).not.toHaveAttribute('role', 'grid');
+            expect(table?.hasAttribute('aria-multiselectable')).toBe(false);
+        });
+
+        // T012 — the single-selection consumer (the asset selection dialog) shares this component.
+        //
+        // It does NOT get the roving tab stop, and that is a recorded scope decision rather than a
+        // defect: the underlying table short-circuits to "every row is tabbable" whenever the
+        // selection is empty, which is the permanent resting state of a single-selection list, so the
+        // anchor this component drives is never consulted. Confirmed structural, not a timing
+        // artifact, by letting a second render settle.
+        //
+        // What this test guards is that the row-index binding did not *change* that consumer. The
+        // asserted value is today's behaviour on trunk, so if someone later makes single-selection
+        // focusable properly, this test fails and points them here rather than silently passing.
+        // That work is tracked in #37441 — update this test, do not delete it.
+        it('should leave single-selection tab behaviour exactly as it was', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selectionMode', 'single');
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(mockItems.length);
+        });
+    });
 });

@@ -14,6 +14,34 @@ describe('appRoutes', () => {
 
     const allRoutes = flatten(appRoutes);
 
+    describe('dotAI portlet', () => {
+        const dotAiRoutes = allRoutes.filter((route) => route.path === 'dotai');
+
+        it('should be registered exactly once', () => {
+            expect(dotAiRoutes).toHaveLength(1);
+        });
+
+        it('should use `dotai` as its whole first segment', () => {
+            // Must match the portlet id in /api/v1/menu exactly, or MenuGuardService rejects it.
+            expect(dotAiRoutes[0].path).toBe('dotai');
+        });
+
+        it('should be guarded by MenuGuardService on activation and child activation', () => {
+            expect(dotAiRoutes[0].canActivate).toContain(MenuGuardService);
+            expect(dotAiRoutes[0].canActivateChild).toContain(MenuGuardService);
+        });
+
+        it('should not force `reuseRoute: false` on its subtree', () => {
+            // Route `data` is inherited, and DotCustomReuseStrategyService returns
+            // `data.reuseRoute !== false` — so this flag makes every tab change destroy and
+            // recreate the shell AND the store hung off it. Measured before removing it:
+            // three tab switches fired three /ai/completions/config requests, the chat draft
+            // was lost on a round trip, and the not-configured banner flashed each time
+            // because `isConfigured` reset to false while the config reloaded.
+            expect(dotAiRoutes[0].data?.['reuseRoute']).toBeUndefined();
+        });
+    });
+
     describe('experiments portlet', () => {
         const experimentsRoutes = allRoutes.filter((route) => route.path === 'experiments');
 

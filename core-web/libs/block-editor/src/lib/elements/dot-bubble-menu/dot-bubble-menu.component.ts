@@ -27,7 +27,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { DotAiService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotAiConfigService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -90,7 +90,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected readonly domSanitizer = inject(DomSanitizer);
     protected readonly dotMessageService = inject(DotMessageService);
     protected readonly dotContentTypeService = inject(DotContentTypeService);
-    protected readonly dotAiService = inject(DotAiService);
+    protected readonly dotAiService = inject(DotAiConfigService);
     private readonly destroyRef = inject(DestroyRef);
 
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);

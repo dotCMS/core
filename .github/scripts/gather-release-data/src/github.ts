@@ -3,11 +3,42 @@
  */
 
 import { Octokit } from '@octokit/rest';
+import { throttling } from '@octokit/plugin-throttling';
 import { CommitInfo, PRDetails } from './types';
 
 const STANDARD_RELEASE_PATTERN = /^v\d{2}\.\d{2}\.\d{2}-\d{1,2}$/;
 
-/** Create an authenticated Octokit instance. */
+/**
+ * resolvePRNumbers is one request per commit — hundreds per release under merge
+ * commits. Inside the 5000/hr primary budget, but enough to trip the per-minute
+ * secondary limit, where a 403 would degrade into a silently dropped PR.
+ */
+const ThrottledOctokit = Octokit.plugin(throttling);
+
+const MAX_RATE_LIMIT_RETRIES = 3;
+
+/** Per-PR body truncation, see fetchPRDetails. */
+export const BODY_CHAR_LIMIT = 1_000;
+
+export function onThrottle(kind: string) {
+  return (
+    retryAfter: number,
+    options: { method?: string; url?: string },
+    _octokit: unknown,
+    retryCount: number
+  ): boolean => {
+    const willRetry = retryCount < MAX_RATE_LIMIT_RETRIES;
+    process.stderr.write(
+      `${kind} rate limit on ${options.method} ${options.url}; ` +
+        (willRetry
+          ? `retry ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES} in ${retryAfter}s\n`
+          : `giving up after ${MAX_RATE_LIMIT_RETRIES} retries\n`)
+    );
+    return willRetry;
+  };
+}
+
+/** Create an authenticated, rate-limit-aware Octokit instance. */
 export function createOctokit(): Octokit {
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (!token) {
@@ -15,7 +46,13 @@ export function createOctokit(): Octokit {
       'GitHub token required. Set GITHUB_TOKEN or GH_TOKEN environment variable.'
     );
   }
-  return new Octokit({ auth: token });
+  return new ThrottledOctokit({
+    auth: token,
+    throttle: {
+      onRateLimit: onThrottle('Primary'),
+      onSecondaryRateLimit: onThrottle('Secondary'),
+    },
+  });
 }
 
 /** Parse "owner/repo" into { owner, repo }. */
@@ -123,10 +160,7 @@ export async function fetchCommitRange(
     });
 
     for (const c of response.data.commits) {
-      commits.push({
-        sha: c.sha,
-        message: c.commit.message.split('\n')[0], // first line only
-      });
+      commits.push({ sha: c.sha });
     }
 
     // If we got fewer than perPage, we've reached the end
@@ -138,17 +172,53 @@ export async function fetchCommitRange(
 }
 
 /**
- * Extract PR numbers from commit messages.
- * Looks for patterns like "(#12345)" at the end of the first line.
+ * Resolve merged PRs per commit via GET /repos/{owner}/{repo}/commits/{sha}/pulls.
+ * Commit subjects ending in "(#N)" are often an ISSUE number under merge commits,
+ * and pulls.get 404s on those; the API also maps a PR's branch commits and its
+ * merge commit to the same PR (Set dedupes) and returns [] for direct pushes.
  */
-export function extractPRNumbers(commits: CommitInfo[]): number[] {
+export async function resolvePRNumbers(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  commits: CommitInfo[]
+): Promise<number[]> {
   const prNumbers = new Set<number>();
-  for (const commit of commits) {
-    const match = commit.message.match(/\(#(\d+)\)\s*$/);
-    if (match) {
-      prNumbers.add(parseInt(match[1], 10));
+  const BATCH_SIZE = 15;
+
+  for (let i = 0; i < commits.length; i += BATCH_SIZE) {
+    const batch = commits.slice(i, i + BATCH_SIZE);
+
+    const promises = batch.map(async (commit) => {
+      try {
+        const { data } = await octokit.repos.listPullRequestsAssociatedWithCommit({
+          owner,
+          repo,
+          commit_sha: commit.sha,
+          // A default-branch commit resolves to the one merged PR that introduced
+          // it, so page 1 always suffices; this just clears the default 30.
+          per_page: 100,
+        });
+        // Only merged PRs: for commits not reachable from the default branch the
+        // endpoint also returns open PRs.
+        return data.filter((pr) => pr.merged_at).map((pr) => pr.number);
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        process.stderr.write(
+          `Warning: could not resolve PR for commit ${commit.sha}: ${errMsg}\n`
+        );
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.all(promises);
+    for (const numbers of batchResults) {
+      for (const n of numbers) prNumbers.add(n);
     }
+
+    if (i + BATCH_SIZE < commits.length) await sleep(500);
   }
+
   return Array.from(prNumbers);
 }
 
@@ -182,8 +252,12 @@ export async function fetchPRDetails(
 
         const linkedIssues = extractLinkedIssues(data.body || '');
 
-        // Safety cap at 50K chars to guard against extreme outliers
-        const body = (data.body || '').slice(0, 50_000);
+        // Bodies are ~90% of the payload and the changelog only needs the lede,
+        // so keep the first BODY_CHAR_LIMIT chars. Uncapped, a full release
+        // (50+ PRs, spec/design PRs running 10-18K each) pushes the assembled
+        // prompt past Linux MAX_ARG_STRLEN (128 KiB per argv/env entry) and any
+        // step that passes it through argv or GITHUB_ENV dies with E2BIG.
+        const body = (data.body || '').slice(0, BODY_CHAR_LIMIT);
 
         return {
           number: prNumber,

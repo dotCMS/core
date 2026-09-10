@@ -121,7 +121,7 @@ export const CustomLaraPreset = definePreset(Lara, {
         },
         chip: {
             // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
-            // tall, vertically centered, with a small label. Applied to the base
+            // tall, vertically centered, with a small label, matching `p-tag`. Applied to the base
             // `.p-chip` so every chip (locale, relationship, etc.) gets the size
             // without per-template classes. PrimeNG has no chip size token, so this
             // is expressed as CSS — same mechanism as card/confirmpopup. Content
@@ -135,9 +135,10 @@ export const CustomLaraPreset = definePreset(Lara, {
             // changes.
             css: `
                 .p-chip {
-                    height: calc(var(--spacing) * 7); /* 1.75rem */
+                    height: calc(var(--spacing) * 6); /* 1.5rem — the same height as a tag */
                     padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
                     font-size: var(--text-xs); /* 0.75rem */
+                    line-height: 1;
                 }
                 .p-chip .p-chip-remove-icon {
                     order: -1;
@@ -155,9 +156,16 @@ export const CustomLaraPreset = definePreset(Lara, {
             // there is no --radius-full token.
             css: `
                 .p-tag {
-                    height: calc(var(--spacing) * 7); /* 1.75rem — same fixed height as chip */
+                    height: calc(var(--spacing) * 6); /* 1.5rem — the same height as a chip */
                     border-radius: calc(infinity * 1px);
-                    padding: 0 calc(var(--spacing) * 3); /* 0 0.75rem — vertical centering via inline-flex */
+                    padding: 0 calc(var(--spacing) * 2.5); /* 0 0.625rem — vertical centering via inline-flex */
+                    /* A tag annotates the text beside it, so it has to read as smaller than that
+                       text rather than competing with it. Lara inherits the body size, which left
+                       the pill as tall as the line it labels. The line-height is pinned too: an
+                       inherited one keeps the label box at body height and the fixed height above
+                       cannot shrink it. */
+                    font-size: var(--text-xs);
+                    line-height: 1;
                     font-weight: var(--font-weight-medium); /* 500 */
                 }
             `,
@@ -220,21 +228,36 @@ export const CustomLaraPreset = definePreset(Lara, {
             `
         },
         popover: {
-            // Popovers are panels app-wide: the content area carries no padding of its own, so
-            // whatever is rendered inside owns its spacing. Applied to bare `.p-popover` rather
-            // than an opt-in class — same reasoning as `tag` and `chip` above, and it means a
-            // new popover cannot look different by forgetting a marker.
+            // Popovers are panels app-wide, and what the content area does depends on what is put
+            // in it. Plain block markup — a list, a form, a help blurb — gets the panel's inset
+            // from here, so no consumer has to restate it. A component dropped straight into a
+            // popover is instead the panel itself: a listbox's options have to reach the edges for
+            // the hover and selected bands to cover the full row, and a component that lays out a
+            // search box above such a list already spaces its own parts. So the inset applies when
+            // the content's direct children include a block element, and not when the content is
+            // the component.
             //
-            // Verified against all 24 popover consumers (see the audit in the PR): filter
-            // panels, the UVE persona and favorite selectors, the theme picker, the help
-            // tooltips and the rest. A popover whose content needs breathing room provides it
-            // itself rather than relying on the component default.
+            // Keying on `> div` rather than naming the components keeps this out of the business of
+            // knowing which ones own their spacing: a wrapper component reads the same as the
+            // listbox it wraps, which a `> p-listbox` selector would have missed. Checked against
+            // all 27 popover consumers; several also pin `p-0` through `pt`, which wins over both
+            // rules anyway.
+            //
+            // `dot-popover-flush` is the opt-out for a panel built from plain markup that still
+            // wants its rows to run full bleed — the Content Drive filter panels that carry their
+            // own header rows, and the template-builder layout properties panel.
             css: `
                 .p-popover {
                     border-radius: var(--radius-lg);
                     overflow: hidden;
                 }
                 .p-popover .p-popover-content {
+                    padding: 0;
+                }
+                .p-popover .p-popover-content:has(> div) {
+                    padding: calc(var(--spacing) * 4); /* 1rem */
+                }
+                .p-popover.dot-popover-flush .p-popover-content {
                     padding: 0;
                 }
             `
