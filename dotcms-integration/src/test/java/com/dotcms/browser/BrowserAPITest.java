@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.StoryBlockField;
@@ -74,6 +75,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2603,6 +2605,38 @@ public class BrowserAPITest extends IntegrationTestBase {
     }
 
     /**
+     * AC-002: "Payload for a 40-row page of long-body generic Content drops by at least half
+     * versus current behavior." Compares serialized JSON sizes for just the three long-text
+     * fields -- pre-fix (raw, untruncated stored values) versus post-fix (the previews actually
+     * in {@code row}) -- directly, rather than relying on a proxy ratio. Scoped to only the
+     * affected fields (not the whole row) so the required keys shared by both pre- and post-fix
+     * rows don't dilute the ratio with fixed overhead unrelated to this strategy's trim (found in
+     * review: none of the existing assertions pinned AC-002, the PR's one quantitative
+     * acceptance criterion).
+     */
+    private static void assertPayloadSizeDropsByAtLeastHalf(final Map<String, Object> row,
+            final String rawHtmlBody, final String rawStoryBlockJson) throws Exception {
+        final ObjectMapper objectMapper = new ObjectMapper();
+
+        final Map<String, Object> preFixFields = new LinkedHashMap<>();
+        preFixFields.put(LTP_WYSIWYG_VAR, rawHtmlBody);
+        preFixFields.put(LTP_TEXTAREA_VAR, rawHtmlBody);
+        preFixFields.put(LTP_STORY_VAR, rawStoryBlockJson);
+
+        final Map<String, Object> postFixFields = new LinkedHashMap<>();
+        postFixFields.put(LTP_WYSIWYG_VAR, row.get(LTP_WYSIWYG_VAR));
+        postFixFields.put(LTP_TEXTAREA_VAR, row.get(LTP_TEXTAREA_VAR));
+        postFixFields.put(LTP_STORY_VAR, row.get(LTP_STORY_VAR));
+
+        final int postFixBytes = objectMapper.writeValueAsBytes(postFixFields).length;
+        final int preFixBytes = objectMapper.writeValueAsBytes(preFixFields).length;
+
+        assertTrue("Post-fix long-text fields (" + postFixBytes + " bytes) must be less than "
+                        + "half the pre-fix raw values (" + preFixBytes + " bytes) per AC-002",
+                postFixBytes < preFixBytes * 0.5);
+    }
+
+    /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
      *     <li><b>Given Scenario:</b> A generic-Content row with WYSIWYG/TextArea/Story Block field
@@ -2620,12 +2654,13 @@ public class BrowserAPITest extends IntegrationTestBase {
         final ContentType contentType = createLongTextContentType(uniqueId);
 
         final String rawHtmlBody = "<p>" + "word ".repeat(60) + "</p>";
+        final String rawStoryBlockJson = storyBlockJson("word ".repeat(60));
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .folder(folder)
                 .setProperty("title", "ltpDoc_" + uniqueId)
                 .setProperty(LTP_WYSIWYG_VAR, rawHtmlBody)
                 .setProperty(LTP_TEXTAREA_VAR, rawHtmlBody)
-                .setProperty(LTP_STORY_VAR, storyBlockJson("word ".repeat(60)))
+                .setProperty(LTP_STORY_VAR, rawStoryBlockJson)
                 .languageId(1)
                 .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
@@ -2642,6 +2677,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertRequiredKeysPresent(row);
         assertLongTextValuesArePreviews(row, rawHtmlBody);
+        assertPayloadSizeDropsByAtLeastHalf(row, rawHtmlBody, rawStoryBlockJson);
     }
 
     /**
@@ -2663,12 +2699,13 @@ public class BrowserAPITest extends IntegrationTestBase {
         final ContentType contentType = createLongTextContentType(uniqueId);
 
         final String rawHtmlBody = "<p>" + "word ".repeat(60) + "</p>";
+        final String rawStoryBlockJson = storyBlockJson("word ".repeat(60));
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .folder(folder)
                 .setProperty("title", "ltpSiteBrowserDoc_" + uniqueId)
                 .setProperty(LTP_WYSIWYG_VAR, rawHtmlBody)
                 .setProperty(LTP_TEXTAREA_VAR, rawHtmlBody)
-                .setProperty(LTP_STORY_VAR, storyBlockJson("word ".repeat(60)))
+                .setProperty(LTP_STORY_VAR, rawStoryBlockJson)
                 .languageId(1)
                 .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
@@ -2688,6 +2725,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertRequiredKeysPresent(row);
         assertLongTextValuesArePreviews(row, rawHtmlBody);
+        assertPayloadSizeDropsByAtLeastHalf(row, rawHtmlBody, rawStoryBlockJson);
     }
 
     /**
