@@ -241,6 +241,64 @@ jobs:
             git add "${MIN_SDK_FILE}"
           fi
 
+          # Pin every example app's @dotcms/* dependencies to this exact release's SDK
+          # version, on every release branch (LTS and non-LTS alike) — the root-cause fix
+          # for examples/nextjs on release-25.07.10_lts_v12/_v16 having shipped with a
+          # floating "latest" for months with nothing to catch or correct it (see
+          # dotCMS/core#36891, specs/37399-sdk-packaging-version-fix). ADR-0019's
+          # date-lockstep versioning means the SDK version matching this exact release is
+          # known with certainty the moment the branch is cut — no runtime verification
+          # needed, unlike the one-time manual fix required to retrofit the two LTS
+          # branches that predate this step. `main` is never touched here and keeps
+          # floating on "latest" by design (its examples target Evergreen customers).
+          #
+          # Folded into THIS commit on purpose rather than a separate commit+push:
+          #   - `release_commit` below is the release tag's target_commitish, so a later
+          #     commit would leave the tag pointing at a tree with no pin.
+          #   - a second push to release-* re-triggers cicd_5-lts.yml, whose
+          #     `cancel-in-progress: true` would cancel the run the first push just started.
+          #   - `git commit -a` picks these rewrites up, so there is no separate commit to
+          #     fail with "nothing to commit" when the pin is a no-op on a re-run.
+          #
+          # Same normalization as deploy-javascript-sdk/action.yml (Defect A): the release
+          # version is zero-padded CalVer (e.g. 26.08.03-01); npm packages publish under the
+          # leading-zero-stripped, valid-semver form (26.8.3-1). Separators and any trailing
+          # segments are preserved — see that file for why rebuilding from $1..$4 is wrong.
+          normalized_version=$(echo "${release_version}" | awk '{
+            s = $0; out = ""
+            while (match(s, /[.-]/)) {
+              seg = substr(s, 1, RSTART - 1); sep = substr(s, RSTART, 1)
+              if (seg ~ /^[0-9]+$/) { sub(/^0+/, "", seg); if (seg == "") seg = "0" }
+              out = out seg sep
+              s = substr(s, RSTART + 1)
+            }
+            if (s ~ /^[0-9]+$/) { sub(/^0+/, "", s); if (s == "") s = "0" }
+            print out s
+          }')
+          echo "Pinning example app SDK dependencies to ${normalized_version}"
+
+          while IFS= read -r pkg_json; do
+            # jq reprints the whole document, so match each manifest's existing indentation.
+            # Without this, a pin that changes four values lands as a ~120-line whole-file
+            # whitespace diff in the release commit: examples/ mixes 2-space (angular,
+            # angular-ssr, astro) and 4-space (nextjs, nextjs-experiments, vuejs) manifests,
+            # so no single fixed --indent leaves them all alone.
+            if awk 'NR>1 && /^\t/ { found = 1; exit } END { exit !found }' "${pkg_json}"; then
+              indent_flag=(--tab)
+            else
+              indent=$(awk 'NR>1 && /^ +/ { match($0, /^ +/); print RLENGTH; exit }' "${pkg_json}")
+              # jq rejects --indent above 7; fall back to 2 for anything unexpected.
+              [[ "${indent}" =~ ^[1-7]$ ]] || indent=2
+              indent_flag=(--indent "${indent}")
+            fi
+
+            while IFS= read -r dep; do
+              jq "${indent_flag[@]}" --arg dep "${dep}" --arg v "${normalized_version}" \
+                '.dependencies[$dep] = $v' "${pkg_json}" > tmp.$$.json && mv tmp.$$.json "${pkg_json}"
+              echo "  ↳ ${pkg_json}: dependencies[\"${dep}\"] -> ${normalized_version}"
+            done < <(jq -r '.dependencies // {} | keys[] | select(startswith("@dotcms/"))' "${pkg_json}")
+          done < <(find examples -maxdepth 2 -name package.json -not -path "*/node_modules/*" 2>/dev/null)
+
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
           git push origin ${release_branch}
