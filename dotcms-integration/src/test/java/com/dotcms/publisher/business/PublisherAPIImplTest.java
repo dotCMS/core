@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -149,6 +150,218 @@ public class PublisherAPIImplTest {
         PublisherAPIImpl.getInstance().deleteElementsFromPublishQueueTableAndAuditStatus(bundle.getId());
 
         Assert.assertNull(APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()));
+    }
+
+    /**
+     * Given scenario: the SAME asset is queued in two different bundles, and it is deleted from
+     *                 one of them by id.
+     * Expected result: only that bundle's queue entry is removed. The other bundle still lists the
+     *                  asset and will still publish it.
+     *
+     * This is the scenario from issue #36861. The pre-existing single-argument overload deletes
+     * `WHERE asset = ?` with no bundle predicate, so it would clear both.
+     */
+    @Test
+    public void test_deleteElementFromBundle_leavesOtherBundleIntact() throws DotPublisherException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Contentlet sharedContentlet = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .host(host)
+                .modeDate(new Date())
+                .nextPersisted();
+
+        final Bundle bundleA = new BundleDataGen()
+                .setSavePublishQueueElements(true)
+                .addAssets(CollectionsUtils.list(sharedContentlet))
+                .nextPersisted();
+
+        final Bundle bundleB = new BundleDataGen()
+                .setSavePublishQueueElements(true)
+                .addAssets(CollectionsUtils.list(sharedContentlet))
+                .nextPersisted();
+
+        PublisherAPIImpl.getInstance()
+                .deleteElementFromPublishQueueTableAndAuditStatus(
+                        sharedContentlet.getIdentifier(), bundleA.getId());
+
+        Assert.assertTrue("Bundle A should no longer queue the asset",
+                PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundleA.getId()).isEmpty());
+        Assert.assertFalse("Bundle B must keep its own queue entry for the same asset",
+                PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundleB.getId()).isEmpty());
+    }
+
+    /**
+     * Given scenario: a bundle with two assets; one is deleted, then the other.
+     * Expected result: the publish-audit status survives the first delete and is removed only when
+     *                  the second delete empties the bundle's queue.
+     */
+    @Test
+    public void test_deleteElementFromBundle_auditStatusOnlyWhenEmptied() throws DotPublisherException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Contentlet first = new ContentletDataGen(contentType.id())
+                .languageId(language.getId()).host(host).modeDate(new Date()).nextPersisted();
+        final Contentlet second = new ContentletDataGen(contentType.id())
+                .languageId(language.getId()).host(host).modeDate(new Date()).nextPersisted();
+
+        final Bundle bundle = new BundleDataGen()
+                .setSavePublishQueueElements(true)
+                .addAssets(CollectionsUtils.list(first, second))
+                .nextPersisted();
+
+        insertPublishAuditStatus(Status.FAILED_TO_BUNDLE, bundle.getId());
+
+        PublisherAPIImpl.getInstance()
+                .deleteElementFromPublishQueueTableAndAuditStatus(first.getIdentifier(), bundle.getId());
+
+        Assert.assertNotNull("Audit status must survive while the bundle still has elements",
+                APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()));
+
+        PublisherAPIImpl.getInstance()
+                .deleteElementFromPublishQueueTableAndAuditStatus(second.getIdentifier(), bundle.getId());
+
+        Assert.assertNull("Audit status must be removed once the bundle's queue is empty",
+                APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()));
+    }
+
+    /**
+     * Given scenario: the bundle-scoped delete is called with a null or blank bundle id.
+     * Expected result: it fails loudly and deletes nothing.
+     *
+     * `publishing_queue.bundle_id` is nullable with no foreign key, so a null can genuinely reach
+     * this method. Silently dropping the predicate would turn a one-bundle delete into a
+     * `WHERE asset = ?` that clears the asset from EVERY bundle - the exact behaviour this change
+     * exists to stop.
+     */
+    @Test
+    public void test_deleteElementFromBundle_nullBundleIdDoesNotWiden() throws DotPublisherException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Contentlet sharedContentlet = new ContentletDataGen(contentType.id())
+                .languageId(language.getId()).host(host).modeDate(new Date()).nextPersisted();
+
+        final Bundle bundleA = new BundleDataGen()
+                .setSavePublishQueueElements(true)
+                .addAssets(CollectionsUtils.list(sharedContentlet))
+                .nextPersisted();
+        final Bundle bundleB = new BundleDataGen()
+                .setSavePublishQueueElements(true)
+                .addAssets(CollectionsUtils.list(sharedContentlet))
+                .nextPersisted();
+
+        for (final String badBundleId : new String[]{null, "", "   "}) {
+            try {
+                PublisherAPIImpl.getInstance()
+                        .deleteElementFromPublishQueueTableAndAuditStatus(
+                                sharedContentlet.getIdentifier(), badBundleId);
+                Assert.fail("Expected a failure for bundleId=[" + badBundleId + "]");
+            } catch (final IllegalArgumentException | DotPublisherException expected) {
+                // expected - the call must be rejected, not silently widened
+            }
+        }
+
+        Assert.assertFalse("Bundle A must be untouched by a rejected delete",
+                PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundleA.getId()).isEmpty());
+        Assert.assertFalse("Bundle B must be untouched by a rejected delete",
+                PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundleB.getId()).isEmpty());
+    }
+
+    /**
+     * Given scenario: several bundles, resolved for a CMS Admin and for a limited (contributor)
+     *                 user.
+     * Expected result: the batched {@link PublishQueuePermissionFilter} returns exactly the same
+     *                  set of bundle ids the per-item {@code doesUserHavePermission} loop returns.
+     *
+     * AC-010. The point of this test is <b>parity</b>, not speed: batching the N+1 permission
+     * check (DEC-002 / ADR-0020) must not change who can see which bundles. A too-permissive
+     * filter exposes other people's bundles and a too-strict one hides your own, and neither
+     * throws - so only a comparison against the old behaviour can catch it.
+     */
+    @Test
+    public void test_bundlePermissionFilter_matchesPerItemResult() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final java.util.Map<String, PublishQueueElement> firstElementByBundle =
+                new java.util.LinkedHashMap<>();
+
+        for (int i = 0; i < 3; i++) {
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .languageId(language.getId()).host(host).modeDate(new Date()).nextPersisted();
+
+            final Bundle bundle = new BundleDataGen()
+                    .setSavePublishQueueElements(true)
+                    .addAssets(CollectionsUtils.list(contentlet))
+                    .nextPersisted();
+
+            final List<PublishQueueElement> elements =
+                    PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundle.getId());
+            Assert.assertFalse("seeded bundle should have a queue element", elements.isEmpty());
+            firstElementByBundle.put(bundle.getId(), elements.get(0));
+        }
+
+        final List<User> users = list(
+                APILocator.systemUser(),
+                com.dotcms.datagen.TestUserUtils.getJoeContributorUser(host));
+
+        for (final User user : users) {
+            final java.util.Set<String> expected = new java.util.HashSet<>();
+
+            for (final java.util.Map.Entry<String, PublishQueueElement> entry
+                    : firstElementByBundle.entrySet()) {
+                final PublishQueueElement element = entry.getValue();
+                final com.dotmarketing.beans.PermissionableProxy proxy =
+                        new com.dotmarketing.beans.PermissionableProxy();
+                proxy.setIdentifier(element.getAsset());
+                proxy.setType(element.getType());
+                proxy.setInode(element.getAsset());
+
+                // The exact call the JSP used to make, including its respectFrontendRoles=true default.
+                if (APILocator.getPermissionAPI().doesUserHavePermission(
+                        proxy, com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH, user)) {
+                    expected.add(entry.getKey());
+                }
+            }
+
+            final java.util.Set<String> actual =
+                    PublishQueuePermissionFilter.permittedBundleIds(firstElementByBundle, user);
+
+            Assert.assertEquals(
+                    "Batched permission filter must match the per-item result for user "
+                            + user.getUserId(),
+                    expected, actual);
+        }
+    }
+
+    /**
+     * Given scenario: a bundle whose first queue element cannot be resolved (a null entry, which is
+     *                 what a NULL {@code bundle_id} in publishing_queue produces).
+     * Expected result: the bundle is simply absent from the permitted set - no NPE.
+     *
+     * AC-008. See finding F1: the render-time NPE needs an unresolvable bundle, not the
+     * "zero-element bundle" the issue described, which cannot reach that code path at all.
+     */
+    @Test
+    public void test_bundlePermissionFilter_toleratesUnresolvableBundle() throws Exception {
+        final java.util.Map<String, PublishQueueElement> withNull = new java.util.LinkedHashMap<>();
+        withNull.put("bundle-with-no-resolvable-element", null);
+
+        final java.util.Set<String> permitted =
+                PublishQueuePermissionFilter.permittedBundleIds(withNull, APILocator.systemUser());
+
+        Assert.assertTrue("An unresolvable bundle must be absent, not an error",
+                permitted.isEmpty());
     }
 
     private void insertPublishAuditStatus(final Status status, final String bundleID) throws DotPublisherException {

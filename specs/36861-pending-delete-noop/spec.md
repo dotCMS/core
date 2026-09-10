@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-07
 
-**Status**: Draft
+**Status**: Approved (PR #37430, merged) — **amended 2026-09-09, re-approval required** (see DEC-002 / DEC-003)
 
 **Type**: Issue / Bug Resolution
 
@@ -151,11 +151,15 @@ asked to delete anything, which is why the logs are silent.
 Three adjacent defects in the same file are implicated in the same user-visible failure and are
 in scope:
 
-1. **`checkAllBundle()` never selects child rows** (`view_publish_queue_list.jsp:134–142`). It
-   uses the descendant selector `dojo.query(".b" + x + " input")`, but the `b<bundleId>` class
-   is on the `<input>` itself (line 310), so the query always returns an empty list. The correct
-   selector is `dojo.query("input.b" + x)`. This means "check the bundle" has never cascaded to
-   its asset rows.
+1. **`checkAllBundle()` does not cascade — but only as a *consequence* of the parse abort.**
+   ~~The descendant selector `dojo.query(".b" + x + " input")` never matches, because the
+   `b<bundleId>` class is on the `<input>` itself.~~ **Corrected during implementation
+   (2026-09-10): that diagnosis is wrong.** `dijit.form.CheckBox` moves the source node's classes
+   onto its wrapper `<div>` and nests the real `<input>` inside it, so `.b<id> input` matches
+   exactly right once the widgets are built. Changing it to `input.b<id>` — as this spec
+   originally prescribed — **breaks** the cascade; that was tried and reverted under test. The
+   cascade fails only when the parse has already aborted, leaving no widgets and therefore no
+   wrapper to match. Fixing the duplicate id (item above) resolves it with no further change.
 2. **No failure feedback.** `deleteQueue()` / `deleteBundle()` do not null-guard
    `dijit.getEnclosingWidget()` and do not tell the user when zero ids were collected — they
    just reload the pane, which is indistinguishable from success.
@@ -175,13 +179,21 @@ in scope:
   `b<bundleId>` class already on the `<input>` (line 310), or a new `data-bundle-id` attribute.
   Whichever it picks, the **first `$`-segment of `value` must remain the bare asset id**, because
   `deleteQueue()` derives it with `nodeValue.split("$")[0]`.
-- Fix `checkAllBundle()` to use `dojo.query("input.b" + x)` so ticking a bundle checks and
-  disables its child asset rows as intended.
+- **No change to `checkAllBundle()`.** *(Revised 2026-09-10 — this bullet previously called for
+  the selector to become `dojo.query("input.b" + x)`.)* That change was implemented, proved to
+  break the cascade, and reverted; the original `.b<id> input` is correct. AC-006 is satisfied by
+  the duplicate-id fix alone and is covered by a regression test. The selector now carries a
+  comment so it is not "corrected" again.
 - Null-guard `dijit.getEnclosingWidget()` in `deleteQueue()` / `deleteBundle()` and surface a
   user-visible failure when no ids are collected, instead of reloading the pane as if the delete
   succeeded.
-- Null-guard the `permissionMap` lookup at line 234 so a bundle with zero queue elements does
-  not NPE the whole page render.
+- Ensure a bundle whose queue elements cannot be resolved does not NPE the page render at
+  `view_publish_queue_list.jsp:234`. *(Revised 2026-09-10 — this bullet previously said "null-guard
+  the `permissionMap` lookup … for a bundle with zero queue elements". Both halves were wrong: a
+  zero-element bundle never reaches that line (see AC-008), and the remedy is not a guard. The
+  block was restructured so every rendered bundle is resolved through a permitted-id set, making
+  an absent entry **mean** "not permitted" rather than something to defend against.)* The
+  reachable trigger is a NULL `bundle_id`.
 - **Scope asset-level delete to the selected bundle** (decision **DEC-001** below). Add a
   bundle-scoped delete to `PublisherAPI` / `PublisherAPIImpl` —
   `DELETE FROM publishing_queue WHERE asset = ? AND bundle_id = ?` — and have the Pending tab
@@ -189,6 +201,11 @@ in scope:
   from Bundle A only. The existing bundle-agnostic
   `deleteElementFromPublishQueueTableAndAuditStatus(String)` is **retained** for
   backward compatibility with any external/plugin caller.
+- **Batch the bundle permission check** (decision **DEC-002**). Replace the per-bundle
+  `doesUserHavePermission` loop at lines 202–218 with a single
+  `permissionAPI.filterCollection(...)` call, per CLAUDE.md and ADR-0020. While in that loop,
+  also stop calling `getQueueElementsByBundleId` **twice per bundle** (once to seed the
+  permission map, again to render) — resolve each bundle's elements once and reuse them.
 - Progressive enhancement limited to the lines touched (per constitution Principle I).
 - Automated regression coverage for the duplicate-asset-across-bundles case (see
   *Acceptance & Verification*).
@@ -205,9 +222,6 @@ in scope:
 - **No change to the publish-audit-status cleanup rule** beyond applying it to the new method:
   the audit status for a bundle is deleted when, and only when, that bundle's queue becomes
   empty — same as today.
-- **No refactor of the O(bundles) permission loop** at lines 202–218 (which calls
-  `doesUserHavePermission` per bundle rather than using batch
-  `permissionAPI.filterCollection`). Worth a follow-up issue; not this fix.
 - **No fix for other Publishing Queue tabs** (Auditing, History, Bundles) unless they share the
   exact duplicate-id defect, which is not currently believed to be the case.
 
@@ -235,6 +249,13 @@ in scope:
     unrelated flow.
   - `deleteElementsFromPublishQueueTableAndAuditStatus(bundleId)` — the whole-bundle delete
     behind `&deleteBundle=` — is **not** touched.
+  - **The permission batch (DEC-002) is the highest-risk item in this fix.** It changes who can
+    see which bundles if it is wrong, and it is a silent failure mode: a too-permissive filter
+    exposes bundles a user should not see, a too-strict one hides their own work, and neither
+    throws. `filterCollection` also filters a list *down* rather than returning a per-item
+    verdict, so the rewrite must preserve today's semantics exactly — permission is judged from
+    the **first queue element of each bundle** (the existing loop `break`s after one), not from
+    all of them. Any change to that rule is a behavior change beyond this fix's scope.
 - **Backward compatibility**: No REST endpoint, `openapi.yaml`, DB schema, or ES mapping change,
   and no new SQL migration — `publishing_queue.bundle_id` already exists. Not rollback-unsafe.
   The changed checkbox `id` is presentation-only; no persisted state, bookmark, or integration
@@ -281,11 +302,22 @@ in scope:
   message is raised with a native `alert()` whose text comes from a **new `Language.properties`
   key** read via `LanguageUtil.get(pageContext, …)`, matching `view_publish_tool.jsp:307`. A
   hardcoded English string fails this AC.
-- **AC-008**: A Pending page containing a bundle with **zero** queue elements renders without a
-  `NullPointerException` at `view_publish_queue_list.jsp:234`.
+- **AC-008** *(restated 2026-09-10)*: A Pending page containing a bundle whose queue elements
+  cannot be resolved renders without a `NullPointerException`. **The original wording — "a bundle
+  with zero queue elements" — describes a state that cannot occur**: the page's bundle list comes
+  from `select distinct(bundle_id) ... from publishing_queue`, so every bundle it shows is derived
+  from queue rows. The reachable trigger is a **NULL `bundle_id`** (the column is nullable with no
+  FK): `distinct` yields a null row, `getQueueElementsByBundleId(null)` matches nothing because
+  `= NULL` is never true in SQL, and the old `permissionMap.get(null).equals(...)` then NPE'd. A
+  concurrent delete between the list query and the per-bundle re-query is a second, narrower path.
 - **AC-009 (regression)**: Existing Pending-tab behavior is unchanged when no asset is
   duplicated across bundles: pagination (Previous/Next), the "showing first 20 of N" notice,
   per-bundle permission filtering, and single-bundle delete all behave as before.
+- **AC-010** *(DEC-002)*: Permission filtering produces the **same visible bundle list** as
+  before — a user sees exactly the bundles they could see previously, no more and no fewer —
+  while issuing **one** batched permission query instead of one per bundle, and resolving each
+  bundle's queue elements **once** instead of twice. Behavior-preserving by construction; the
+  regression risk, not the perf number, is what AC-010 gates.
 
 - **Verification method**:
 
@@ -294,18 +326,17 @@ in scope:
 
   | AC | Gate | Mechanism |
   | --- | --- | --- |
-  | AC-004, AC-005 | **Automated — integration** | New test in the existing `PublisherAPIImplTest` (see below) |
-  | AC-001, AC-002, AC-003, AC-006, AC-007, AC-008 | **Automated — render/DOM**, *if* the plan picks e2e | See *Render-level gate* below; coverage depends on which mechanism the plan chooses |
-  | AC-009 | **Manual regression pass** | Pagination, the "showing first 20 of N" notice, permission filtering and single-bundle delete are pre-existing behavior with no current automated coverage; adding it is out of scope for this fix |
+  | AC-004, AC-005, AC-010 | **Automated — integration** | New tests in the existing `PublisherAPIImplTest` |
+  | AC-001, AC-002, AC-003, AC-006, AC-007 | **Automated — Playwright e2e** (**DEC-003**) | `core-web/apps/dotcms-ui-e2e/src/tests/publishing-queue/pending-duplicate-asset.spec.ts` |
+  | AC-008 | **Automated — unit** + **manual** | `test_bundlePermissionFilter_toleratesUnresolvableBundle` covers the mechanism; the end-to-end render was verified manually by inserting a NULL `bundle_id` row. An HTTP fixture cannot seed one, so e2e coverage is not possible. |
+  | AC-009 | **Manual regression pass** | Pagination, the "showing first 20 of N" notice and single-bundle delete are pre-existing behavior with no current automated coverage; adding it is out of scope for this fix |
 
-  **The render-level mechanism choice is consequential, not cosmetic.** If the plan picks a
-  Playwright e2e against the portlet, it can cover AC-001, AC-002, AC-003, AC-006, AC-007 and
-  AC-008 — six of the nine. If it instead only extracts the id construction into testable
-  server-side code, that covers AC-003 and part of AC-001, and AC-002, AC-006, AC-007 and AC-008
-  fall back to manual. The plan must state which it chose and therefore which ACs end up
-  manual-only. Two caveats for the e2e route: AC-008 needs a **zero-queue-element bundle**
-  fixture, which is awkward to produce through the UI and may need direct DB or API setup; and
-  AC-007 asserts a **native `alert()`**, so the test must register a dialog handler.
+  **DEC-003 selected Playwright e2e.** Eight ACs have an automated gate; AC-008 is unit-tested at
+  the mechanism level with a manual end-to-end check, and AC-009 is manual. *(Revised 2026-09-10:
+  AC-008 was originally assigned to e2e via a "zero-queue-element bundle" fixture. That fixture
+  was dropped — the state it would seed never reaches the failing code path, and the reachable
+  NULL-`bundle_id` trigger cannot be created over HTTP.)* AC-007 asserts a **native `alert()`**,
+  so the e2e registers a Playwright dialog handler before clicking.
 
   - **Integration (automated gate for AC-004 / AC-005)**: extend the existing
     `dotcms-integration/src/test/java/com/dotcms/publisher/business/PublisherAPIImplTest.java` —
@@ -324,12 +355,16 @@ in scope:
     `dojo/parser` error, all checkboxes upgraded) and Network tab parameters (bundle-scoped
     delete parameters present). Covers AC-001, AC-002, AC-006, AC-007 and AC-009 by inspection,
     and is the acceptance evidence for the helpdesk ticket.
-  - **Render-level gate (AC-001, AC-002, AC-003, AC-006, AC-007, AC-008)**: the JSP has no
-    existing automated coverage and no unit-test harness. The plan must choose and justify the
-    mechanism — a Playwright e2e against the portlet, or extracting the id construction into
-    testable server-side code — and record the resulting manual-only set per the table above.
-    Per constitution Principle V the plan must not silently drop this: either implement it or
-    state explicitly why the layer cannot be tested.
+  - **Playwright e2e (AC-001, AC-002, AC-003, AC-006, AC-007, AC-008)** — **DEC-003**. New spec
+    under `core-web/apps/dotcms-ui-e2e/src/tests/publishing-queue/`. Precedent to follow:
+    `src/tests/content-search/portlet-integrity.spec.ts`, which already drives a **legacy Dojo
+    portlet inside an iframe**, asserts on `.dijitDialog` / `data-dojo-attach-point`, and ticks a
+    dijit checkbox — the same shape this test needs. The one missing piece is fixtures:
+    `src/requests/` (alias `@requests/*` — **not** `src/utils/requests/`) has helpers for
+    contentlets, content types, folders, pages, sites, templates and workflows but **none for
+    bundles or push publishing**, so a new `@requests/bundles.ts` helper is part of this work. It must seed one contentlet into
+    **three** separate bundles — three, not two, so that a checkbox renders *below* the collision
+    point and the parse abort is actually observable.
 
 ## Resolved Decisions
 
@@ -355,6 +390,32 @@ all) clears the asset from every bundle will afterwards clear it from one. That 
 semantics and is covered by AC-004. It also gives the fix a genuinely testable server-side seam,
 which resolves the TDD concern for a defect that otherwise lives only in a JSP.
 
+**DEC-002 — the N+1 bundle permission check is batched** *(decided by the developer, 2026-09-09,
+after the ADR consultation; reverses an explicit non-goal in the approved spec)*.
+
+The permission loop at lines 202–218 calls `doesUserHavePermission` once per bundle and calls
+`getQueueElementsByBundleId` a second time per bundle to do it. The originally approved spec
+declared this a non-goal to keep the fix bounded. Two things changed that:
+
+1. **ADR-0020 (accepted)** names this exact pattern as a design defect — "N+1 permission query
+   pattern… O(N) database round-trips… ~2-second response times" — and its headline remedy is
+   batch `PermissionAPI.filterCollection()`. CLAUDE.md carries the same rule.
+2. We are **already editing `permissionMap`** for AC-008 (the empty-bundle NPE), so a reviewer
+   would reasonably ask why the loop beside it was left alone.
+
+**Consequence**: this is a scope increase over the approved spec and the reason this document
+needs **re-approval** before `/speckit-implement` runs. It is also the change most likely to
+cause a silent regression — see *Regression Risk* — so AC-010 gates behavior preservation, not
+the performance win.
+
+**DEC-003 — the render-level gate is a Playwright e2e** *(decided by the developer, 2026-09-09)*.
+
+The spec previously left the mechanism to the plan. Chosen: a new spec under
+`core-web/apps/dotcms-ui-e2e`. The deciding factor was that the infrastructure and a close
+precedent already exist — `content-search/portlet-integrity.spec.ts` drives a legacy Dojo portlet
+in an iframe and ticks a dijit checkbox — so the marginal cost is a fixture helper, not a new
+harness. This takes automated AC coverage from 2 of 9 to **9 of 10**, leaving only AC-009 manual.
+
 **No open clarifications remain.**
 
 ## Assumptions
@@ -364,10 +425,12 @@ which resolves the TDD concern for a defect that otherwise lives only in a JSP.
   `main` numbers.
 - Duplicate ids are the *only* cause of the reported parse abort. If a Pending page produces
   `dojo/parser` errors from another source, that is a separate issue.
-- For a bundle missing from `permissionMap` (zero queue elements), the safe default is to treat
-  it as **not permitted** and skip rendering it — preserving the existing intent of the
-  permission gate rather than newly exposing empty bundles. The plan confirms this is the
-  desired UX.
+- For a bundle whose first queue element cannot be resolved — in practice a NULL `bundle_id`, not
+  the "zero queue elements" this bullet originally said *(revised 2026-09-10)* — the safe default
+  is to treat it as **not permitted** and skip rendering it, preserving the existing intent of the
+  permission gate rather than newly exposing unattributable bundles. This is now structural rather
+  than assumed: `PublishQueuePermissionFilter` returns only permitted ids, so an unresolvable
+  bundle is absent from that set and is simply not rendered.
 - The user-visible failure message for **AC-007** uses the nearest in-repo convention: a native
   `alert()` carrying a `LanguageUtil.get(pageContext, …)` string, as at
   `view_publish_tool.jsp:307`. Note this is the *sibling* file's pattern —
