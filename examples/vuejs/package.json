@@ -11,7 +11,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@dotcms/client": "latest",
+    "@dotcms/client": "1.2.0",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5"
   },
