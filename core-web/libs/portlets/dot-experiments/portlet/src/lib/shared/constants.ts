@@ -156,6 +156,16 @@ export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
  * change. Configuration and Results are a separate, still-open decision (O1).
  */
 export const PANEL_WIDTH = 'clamp(360px, 20vw, 500px)';
+
+/**
+ * Width of the Experiments panel once the editor widens it (#37478).
+ *
+ * The expand toggle exists for parity with the Edit Content side panel, and it is also the
+ * cheapest answer available today to O1 — configuration is a multi-card form and Results is
+ * charts, and neither reads well at {@link PANEL_WIDTH}. Whether widening on demand is the
+ * *right* answer for those two screens is still O1's to decide; this is not that decision.
+ */
+export const PANEL_EXPANDED_WIDTH = '80%';
 /** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
 export const RESULTS_SEGMENT = 'results';
 

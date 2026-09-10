@@ -1,26 +1,38 @@
 <!--
-    Not modal, and no mask. Unlike the Edit Content drawer this panel must leave the editor
-    usable: the editor may navigate to another page while it is open, and the panel re-scopes to
-    that page rather than blocking the move (D10, FR-034).
+    Mirrors `dot-edit-content-side-panel.component.html` on purpose — see the class docs for why
+    each of these is the way it is rather than the obvious way.
 
-    `dismissible` and `closeOnEscape` are on — closing is always safe on the list. Once the panel
-    carries a configuration with unsaved work, both have to route through the same confirm the
-    full-screen screen uses (FR-019, T062), so they will stop being plain booleans then.
+    `maskStyle` forces a transparent mask so the page behind stays visible. The `!important` is
+    required to override PrimeNG's default dimmed background, which neither the theme nor the `pt`
+    API otherwise lets us clear; it is deliberate, not a leftover.
+
+    The shadow goes on `pt.root.class` rather than in component SCSS because the drawer uses
+    `appendTo="body"` and is teleported out of this component's DOM, where component-scoped SCSS
+    and `:host ::ng-deep` cannot reach it.
+
+    `dismissible` is left OFF even though clicking outside DOES close the panel: PrimeNG's own
+    dismissible tears the drawer down immediately, which would bypass the unsaved-changes confirm
+    this panel gains in phase 2. The mask click is handled by the component instead (`onMaskClick`).
+    `closeOnEscape` is off for the same reason — Escape goes through the shared shortcut registry.
+
+    The header buttons name themselves through PrimeNG's `[ariaLabel]`, never `[attr.aria-label]`:
+    the latter lands on the non-focusable `<p-button>` host, leaving the real `<button>` — whose
+    only content is an icon glyph — with no accessible name.
 -->
 <p-drawer
     [visible]="store.isOpen()"
-    (visibleChange)="!$event && onClose()"
-    [modal]="false"
-    [showCloseIcon]="false"
-    [dismissible]="true"
-    [closeOnEscape]="true"
+    [modal]="true"
+    [dismissible]="false"
+    [closeOnEscape]="false"
+    [closable]="false"
     appendTo="body"
     position="right"
+    [maskStyle]="{ background: 'transparent !important' }"
     [pt]="{
         root: {
             'data-testid': 'experiments-panel',
             class: '!shadow-2xl',
-            style: { width: PANEL_WIDTH }
+            style: { width: $width(), transition: 'width 250ms ease' }
         },
         content: { class: 'p-0! flex flex-col min-h-0' }
     }">
@@ -29,16 +41,35 @@
             <span class="truncate text-xl font-semibold" data-testid="experiments-panel-title">
                 {{ $titleKey() | dm }}
             </span>
-            <p-button
-                [text]="true"
-                severity="secondary"
-                [ariaLabel]="'experiments.panel.action.close' | dm"
-                (onClick)="onClose()"
-                data-testid="experiments-panel-close">
-                <ng-template #icon>
-                    <i class="material-symbols-outlined text-xl!">close</i>
-                </ng-template>
-            </p-button>
+            <div class="flex items-center gap-1">
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="
+                        ($expanded()
+                            ? 'experiments.panel.action.collapse'
+                            : 'experiments.panel.action.expand'
+                        ) | dm
+                    "
+                    (onClick)="toggleExpanded()"
+                    data-testid="experiments-panel-expand">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">
+                            {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
+                        </i>
+                    </ng-template>
+                </p-button>
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="'experiments.panel.action.close' | dm"
+                    (onClick)="requestClose()"
+                    data-testid="experiments-panel-close">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">close</i>
+                    </ng-template>
+                </p-button>
+            </div>
         </div>
     </ng-template>
 

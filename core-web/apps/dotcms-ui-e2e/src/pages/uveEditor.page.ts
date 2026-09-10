@@ -40,8 +40,15 @@ export class UveEditorPage {
         return this.navBar.getByRole('button', { name, exact: true });
     }
 
+    /**
+     * The Experiments entry point.
+     *
+     * Named "A/B" in the navigation bar, not "Experiments" — `editema.editor.navbar.experiments`
+     * resolves to `A/B`. The accessible name is what the item actually renders, so that is what
+     * this locator has to ask for.
+     */
     get experimentsNavItem(): Locator {
-        return this.navItem('Experiments');
+        return this.navItem('A/B');
     }
 
     /** The toolbar's "running until …" tag, present only while the page has a running experiment. */
