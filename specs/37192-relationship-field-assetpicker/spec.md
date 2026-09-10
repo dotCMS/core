@@ -156,18 +156,27 @@ multi-item selection reviewed before confirming.
    not only add to it.
 7. **Given** the editor unchecks every row, **When** they look at the confirm action, **Then** it is
    **available** — it is never disabled — and confirming removes every related item from the field.
-8. **Given** the editor has selected several items, **When** they review their current selection,
-   **Then** only the selection is listed and they can deselect from there.
-9. **Given** the editor confirms, **When** the dialog closes, **Then** the field's related content
-   equals the dialog's selection; items that were already related and stayed checked are neither
-   duplicated nor reordered.
-10. **Given** the editor cancels, **When** the dialog closes, **Then** the field's related content is
-   exactly what it was before the dialog opened.
-11. **Given** the field is disabled (read-only for this user or this workflow step), **When** the
-   editor looks at it, **Then** no dialog can be opened and no item can be removed.
-12. **Given** a single-cardinality field that already holds its one item, **When** the editor looks at
-   the field, **Then** the add affordance is unavailable — the editor cannot reach a state where a
-   selection is silently dropped.
+8. **Given** the editor has checked items on page 1, **When** they move to page 2, run a new search
+   or change a filter, **Then** their earlier picks are still selected, and returning to those rows
+   shows them still checked.
+9. **Given** the field holds a related item that the picker's current result view does not return —
+   it is beyond the first page, or the opening locale/site filters it out — **When** the editor
+   confirms without touching it, **Then** it is **still related**. Confirmation reconciles against
+   the whole selection, never against the rows on screen.
+10. **Given** the editor has selected several items, **When** they review their current selection,
+    **Then** the review lists their whole selection — including items not in the current result
+    view — and they can deselect from there.
+11. **Given** the editor confirms, **When** the dialog closes, **Then** the field's related content
+    equals the dialog's selection; items that were already related and stayed checked are neither
+    duplicated nor reordered.
+12. **Given** the editor cancels, **When** the dialog closes, **Then** the field's related content is
+    exactly what it was before the dialog opened.
+13. **Given** the field is disabled (read-only for this user or this workflow step), **When** the
+    editor looks at it, **Then** no dialog can be opened and no item can be removed.
+14. **Given** a single-cardinality field that already holds its one item, **When** the editor looks at
+    the field, **Then** the add affordance is unavailable — so exchanging that item is a
+    remove-then-add, not an in-picker swap, and the editor cannot reach a state where a selection is
+    silently dropped.
 
 ---
 
@@ -217,8 +226,8 @@ confirm no paging control is present, drag an item from the far end to the top, 
 
 **Acceptance Scenarios**:
 
-1. **Given** a Relationship field with more related items than the old page size, **When** the field
-   renders, **Then** no paging control is shown.
+1. **Given** a Relationship field with any number of related items, **When** the field renders,
+   **Then** no paging control is shown — paging is gone, not resized.
 2. **Given** a relationship holding **40 or fewer** items, **When** the field renders, **Then** every
    item is listed and no *Load more* control appears.
 3. **Given** a relationship holding **more than 40** items, **When** the field renders, **Then** the
@@ -313,6 +322,14 @@ its width against the form's other fields; compare the Status column's alignment
   empty selection clears the relationship. On a **required** relationship field the result is an
   empty required field, which the form's own validation reports the same way it does when the editor
   removes the last row by hand — the picker does not gain a validation rule of its own.
+- **An already-related item that the picker's own search does not return** — it sits beyond the
+  first page, or the locale/site the picker opens on filters it out. Under FR-011 it is still in the
+  selection and survives confirmation. Worth calling out because the **current** implementation
+  computes the pre-selection by filtering the first response
+  (`data.filter(item => selectedItemsIds.includes(item.inode))`), so such an item is not pre-checked
+  today and confirming drops it. Whether that is a live defect on `main` or masked by the present
+  page size is a question for `/speckit-plan`; either way FR-011 is what stops the refactor from
+  inheriting it.
 - **Picker opened from a contentlet that has never been saved**: the "already related to another
   parent" check compares against the current contentlet's identifier, which does not exist yet. The
   new picker must handle that the way the current one does.
@@ -350,64 +367,77 @@ its width against the form's other fields; compare the Status column's alignment
   rather than an empty selection.
 - **FR-010**: The picker MUST behave as a **selection editor**, not an add-only dialog: checking a
   row adds that item, and **unchecking an already-related row removes it**.
-- **FR-011**: Confirming MUST leave the field's related content equal to the picker's selection at
+- **FR-011**: The picker's selection MUST be an **accumulated set**, not a reading of the rows
+  currently on screen. It MUST survive a page change, a search and a filter change; the field's
+  already-related items MUST enter that set **in full** when the picker opens, including any that
+  fall outside the current result view; and the selection review (FR-014) MUST read from the set
+  rather than from a page of results. Confirmation reconciles against the whole set.
+
+  This is the requirement that keeps FR-013 safe. Today the picker fetches once and pages in the
+  browser, so "the rows on screen" and "everything that matched" are accidentally the same thing.
+  Moving to `api/v1/drive/search` (FR-003) ends that accident — pages come from the server — and
+  without this requirement an item the editor never scrolled to would be dropped on confirm.
+- **FR-012**: Confirming MUST leave the field's related content equal to the picker's selection at
   the moment of confirmation. Items that were already related and stayed checked are neither
   duplicated nor reordered.
-- **FR-012**: The confirm action MUST always be available — it MUST NOT be disabled when the
+- **FR-013**: The confirm action MUST always be available — it MUST NOT be disabled when the
   selection is empty. Confirming with nothing selected removes **every** related item, which is the
   only reading consistent with FR-010: if unchecking a row unrelates it, unchecking the last row
   cannot be the one case that silently does nothing.
-- **FR-013**: The editor MUST be able to review their current selection before confirming, and
+- **FR-014**: The editor MUST be able to review their current selection before confirming, and
   deselect from that review.
-- **FR-014**: Cancelling MUST leave the field's related content exactly as it was.
-- **FR-015**: When the field is disabled, or a single-cardinality field already holds its item, the
-  picker MUST NOT be openable.
-- **FR-016**: The picker MUST keep its own **paging**: current page, previous/next, and a page-size
+- **FR-015**: Cancelling MUST leave the field's related content exactly as it was.
+- **FR-016**: When the field is disabled, or a single-cardinality field already holds its item, the
+  picker MUST NOT be openable. **This bounds FR-007 rather than contradicting it**: the
+  "a second selection replaces the first" rule applies *within* an open dialog — while the field is
+  still empty, or across picks made before confirming. Exchanging an item a single-cardinality field
+  already holds is a **remove-then-add**, not an in-picker swap.
+- **FR-017**: The picker MUST keep its own **paging**: current page, previous/next, and a page-size
   selector at the foot of the dialog.
-- **FR-017**: Result columns MUST be the shared table's — title with thumbnail, the columns the
+- **FR-018**: Result columns MUST be the shared table's — title with thumbnail, the columns the
   content type configures, Locale, Status and Last Modified — with sortable headers where the shared
   table sorts.
-- **FR-018**: The relationship-specific search service, filter controls and dialog replaced by the
+- **FR-019**: The relationship-specific search service, filter controls and dialog replaced by the
   shared ones MUST be removed from the codebase, not left in place unused.
-- **FR-019**: The picker MUST NOT be used inside the legacy Dojo edit-contentlet page (#37132).
+- **FR-020**: The picker MUST NOT be used inside the legacy Dojo edit-contentlet page (#37132).
 
 ### Functional Requirements — B. The related-content list in the form
 
-- **FR-020**: The related-content list MUST NOT render a paging control.
-- **FR-021**: When the relationship holds more than **40** items, the list MUST render only the first
+- **FR-021**: The related-content list MUST NOT render a paging control.
+- **FR-022**: When the relationship holds more than **40** items, the list MUST render only the first
   40 rows and withhold the rest from the DOM.
-- **FR-022**: A row MUST be appended after the last rendered one carrying a control that reveals the
+- **FR-023**: A row MUST be appended after the last rendered one carrying a control that reveals the
   next 40. It MUST read **"Load more"**, with no count, matching the Key/Value field's precedent
   (#37191).
-- **FR-023**: The control MUST disappear once every row is rendered, and MUST NOT appear at all for a
+- **FR-024**: The control MUST disappear once every row is rendered, and MUST NOT appear at all for a
   relationship that fits in the first page.
-- **FR-024**: Withholding MUST be a **rendering** limit only. Every related item MUST remain in the
+- **FR-025**: Withholding MUST be a **rendering** limit only. Every related item MUST remain in the
   field's value and in what it emits, so reorder, remove and the saved payload behave as though every
   row were on screen. A drag MUST NOT lose, move or reorder a withheld item.
-- **FR-025**: Revealed rows MUST survive a change: relating, unrelating or reordering MUST NOT collapse
+- **FR-026**: Revealed rows MUST survive a change: relating, unrelating or reordering MUST NOT collapse
   the list back to the first 40. A field opened afresh starts at the first page again.
-- **FR-026**: Drag-reordering MUST work between **any two** rendered items, with no page boundary
+- **FR-027**: Drag-reordering MUST work between **any two** rendered items, with no page boundary
   between them.
-- **FR-027**: A reorder MUST be persisted on save and MUST be the order shown when the contentlet is
+- **FR-028**: A reorder MUST be persisted on save and MUST be the order shown when the contentlet is
   reopened.
-- **FR-028**: The drag handle MUST be hidden at rest and revealed when its row is hovered; it MUST
+- **FR-029**: The drag handle MUST be hidden at rest and revealed when its row is hovered; it MUST
   remain reachable for keyboard users.
-- **FR-029**: A disabled field MUST NOT offer a drag handle at all.
-- **FR-030**: The **Status** column MUST be right-aligned in the header and in the body rows.
-- **FR-031**: In a **single-column** form, the Relationship field MUST NOT exceed the form's
+- **FR-030**: A disabled field MUST NOT offer a drag handle at all.
+- **FR-031**: The **Status** column MUST be right-aligned in the header and in the body rows.
+- **FR-032**: In a **single-column** form, the Relationship field MUST NOT exceed the form's
   single-column maximum width, and MUST align with the other fields in that form.
-- **FR-032**: In a **multi-column** form, the Relationship field's width MUST be unchanged.
-- **FR-033**: When the configured columns exceed the field's width, the table MUST scroll
+- **FR-033**: In a **multi-column** form, the Relationship field's width MUST be unchanged.
+- **FR-034**: When the configured columns exceed the field's width, the table MUST scroll
   horizontally inside the field rather than widening the form.
 
 ### Functional Requirements — Cross-cutting
 
-- **FR-034**: Relationship changes made by the editor (relate, unrelate, reorder) MUST mark the form
+- **FR-035**: Relationship changes made by the editor (relate, unrelate, reorder) MUST mark the form
   as edited, while programmatic loads (initial load, locale re-initialization) MUST NOT. This holds
   today and MUST survive the refactor, because the unsaved-changes guard depends on it.
-- **FR-035**: Saving after any combination of relate / unrelate / reorder MUST persist exactly the
+- **FR-036**: Saving after any combination of relate / unrelate / reorder MUST persist exactly the
   resulting set and order — no additions, no losses.
-- **FR-036**: The behaviors listed as out of scope (#36155: chip colors, Locales column, hint text,
+- **FR-037**: The behaviors listed as out of scope (#36155: chip colors, Locales column, hint text,
   empty-state copy, `showFields`) MUST be unchanged by this work.
 
 ### Key Entities
@@ -463,5 +493,5 @@ its width against the form's other fields; compare the Status column's alignment
   its own selector.
 - **Relationship persistence is unchanged.** The field continues to hand the form the same ordered
   identifier value it does today; only the way the editor arrives at that value changes.
-- **#36615 is closed and its 720px / 1000px rule already implemented** at the form level. FR-031 is
+- **#36615 is closed and its 720px / 1000px rule already implemented** at the form level. FR-032 is
   about the Relationship field **honoring** that container, not re-deriving the values.
