@@ -160,4 +160,64 @@ public class BulkUploadReasonTest {
         assertEquals(BatchFailureReason.UNCLASSIFIED,
                 resolver.classify(new DotContentletValidationException("exceeds the size")));
     }
+
+    /**
+     * Method to test: {@link BulkUploadReasonResolver#preCheck}
+     * <p>
+     * Given scenario: The allow-list entries that admit everything — {@code *}, {@code * / *} and a
+     * blank rule.
+     * <p>
+     * Expected result: Every media type passes.
+     * <p>
+     * <b>This is the branch a default installation runs</b>, and it was the one branch of
+     * {@code accepts} with no test: the existing cases use {@code image/*} and a non-matching type,
+     * so they exercise the wildcard *suffix* and the miss, never the total wildcard. Getting it
+     * wrong rejects every file on an install that restricts nothing — a failure that would look
+     * like the feature being broken outright rather than like a rule being misread.
+     */
+    @Test
+    public void test_preCheck_admitsEverythingUnderATotalWildcard() {
+        for (final String rule : new String[]{"*", "*/*", "  "}) {
+            assertTrue("rule '" + rule + "' must admit any media type",
+                    resolver.preCheck(10L, "application/x-msdownload", -1L,
+                            List.of(rule)).isEmpty());
+        }
+    }
+
+    /**
+     * Method to test: {@link BulkUploadReasonResolver#preCheck}
+     * <p>
+     * Given scenario: An allow list naming one exact media type, and a file of that exact type.
+     * <p>
+     * Expected result: Accepted.
+     * <p>
+     * The positive exact match had no test either — only the miss did. A rule that rejected
+     * everything would have passed the existing suite, because every assertion about an exact rule
+     * was an assertion about a file that did not match it.
+     */
+    @Test
+    public void test_preCheck_admitsAnExactMatchAndIsNotCaseSensitiveAboutIt() {
+        assertTrue("an exact rule admits its own type",
+                resolver.preCheck(10L, "application/pdf", -1L,
+                        List.of("application/pdf")).isEmpty());
+
+        assertTrue("and the comparison is case-insensitive on both sides",
+                resolver.preCheck(10L, "Application/PDF", -1L,
+                        List.of(" APPLICATION/pdf ")).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link BulkUploadReasonResolver#preCheck}
+     * <p>
+     * Given scenario: An allow list of several entries where only the last one matches.
+     * <p>
+     * Expected result: Accepted — the list is a set of alternatives, not a sequence where the first
+     * entry decides.
+     */
+    @Test
+    public void test_preCheck_admitsAMatchAnywhereInTheList() {
+        assertTrue(resolver.preCheck(10L, "application/pdf", -1L,
+                List.of("image/*", "text/plain", "application/pdf")).isEmpty());
+    }
+
 }

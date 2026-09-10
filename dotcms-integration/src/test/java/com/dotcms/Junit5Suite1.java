@@ -5,9 +5,7 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIIntegrationTest;
 import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessorIntegrationTest;
 import com.dotcms.jobs.business.queue.PostgresJobQueueIntegrationTest;
-import com.dotcms.jobs.business.batch.JobItemResultFactoryIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadProcessorIT;
-import com.dotcms.jobs.business.processor.impl.BulkUploadResumeIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadNotificationIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadIndexingIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadConcurrencyIT;
@@ -41,10 +39,8 @@ import org.junit.platform.suite.api.Suite;
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,
         BulkRefreshResourceIntegrationTest.class,
-        JobItemResultFactoryIT.class,
         BulkUploadResourceIT.class,
         BulkUploadProcessorIT.class,
-        BulkUploadResumeIT.class,
         BulkUploadNotificationIT.class,
         BulkUploadIndexingIT.class,
         BulkUploadConcurrencyIT.class,

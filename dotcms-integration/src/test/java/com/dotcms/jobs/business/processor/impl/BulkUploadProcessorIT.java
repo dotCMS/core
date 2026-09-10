@@ -25,6 +25,9 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.jobs.business.processor.ProgressTracker;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
@@ -37,6 +40,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
@@ -105,10 +109,59 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * <b>submission</b> does, and this stands in for it.
      */
     private HttpServletRequest request() throws Exception {
+        return request(admin());
+    }
+
+    /**
+     * As above, for a specific author.
+     * <p>
+     * <b>Who stages the content is not incidental.</b> The run resolves it through
+     * {@code getTempFile(accessingList, …)} with {@code [userId, requestFingerprint]}, both taken
+     * from the job — so content staged by one user and claimed by another is simply not found, and
+     * the run reports {@code STAGED_CONTENT_UNAVAILABLE} before it ever reaches the rule the test
+     * meant to exercise. Any test about a non-admin author has to stage as that author.
+     */
+    private HttpServletRequest request(final User author) {
         final HttpServletRequest request = new MockSessionRequest(new MockAttributeRequest(
                 new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request();
-        request.setAttribute(com.liferay.portal.util.WebKeys.USER, admin());
+        request.setAttribute(com.liferay.portal.util.WebKeys.USER, author);
         return request;
+    }
+
+    /** A job whose files were staged by {@code author}, and which runs as them. */
+    private Job jobAs(final User author, final Folder folder, final int count) throws Exception {
+        final HttpServletRequest request = request(author);
+        final List<Map<String, Object>> stagedFiles = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            final String fileName = "bulk-" + UUID.randomUUID() + ".txt";
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, 0)));
+
+            final Map<String, Object> file = new HashMap<>();
+            file.put("tempFileId", tempFile.id);
+            file.put("fileName", fileName);
+            file.put("sizeBytes", tempFile.length());
+            file.put("mimeType", tempFile.mimeType);
+            stagedFiles.add(file);
+        }
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("baseType", "DOTASSET");
+        parameters.put("folderId", folder.getIdentifier());
+        parameters.put("targetId", folder.getIdentifier());
+        parameters.put("userId", author.getUserId());
+        parameters.put("stagedFiles", stagedFiles);
+        parameters.put("requestFingerprint",
+                APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        return Job.builder()
+                .id(UUID.randomUUID().toString())
+                .queueName("assetBulkUpload")
+                .state(JobState.RUNNING)
+                .parameters(parameters)
+                .progressTracker(new DefaultProgressTracker())
+                .build();
     }
 
     /**
@@ -202,6 +255,57 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         parameters.put("stagedFiles", stagedFiles);
         parameters.put("requestFingerprint",
                 APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        return Job.builder()
+                .id(UUID.randomUUID().toString())
+                .queueName("assetBulkUpload")
+                .state(JobState.RUNNING)
+                .parameters(parameters)
+                .progressTracker(new DefaultProgressTracker())
+                .build();
+    }
+
+    /**
+     * Builds a job the way {@link #jobFor} does, but lets the caller choose the base type and
+     * whether the target is a folder or a site root.
+     * <p>
+     * Both axes were previously fixed at DOTASSET-into-a-folder for every test in this class, which
+     * left the FILEASSET creation branch and the site-root branch running only in production.
+     */
+    private Job jobFor(final String baseType, final Folder folder, final Host siteRoot,
+                       final int count) throws Exception {
+        final HttpServletRequest request = request();
+        final List<Map<String, Object>> stagedFiles = new ArrayList<>();
+
+        for (int i = 0; i < count; i++) {
+            final String fileName = "bulk-" + UUID.randomUUID() + ".txt";
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                    fileName, request, new ByteArrayInputStream(bodyOf(i, 0)));
+
+            final Map<String, Object> file = new HashMap<>();
+            file.put("tempFileId", tempFile.id);
+            file.put("fileName", fileName);
+            file.put("sizeBytes", tempFile.length());
+            file.put("mimeType", tempFile.mimeType);
+            stagedFiles.add(file);
+        }
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("baseType", baseType);
+        parameters.put("userId", admin().getUserId());
+        parameters.put("stagedFiles", stagedFiles);
+        parameters.put("requestFingerprint",
+                APILocator.getTempFileAPI().getRequestFingerprint(request));
+
+        // Exactly one target, never both and never a null — the framework holds parameters in an
+        // ImmutableMap and one null value stalls the shared processing loop.
+        if (folder != null) {
+            parameters.put("folderId", folder.getIdentifier());
+            parameters.put("targetId", folder.getIdentifier());
+        } else {
+            parameters.put("siteId", siteRoot.getIdentifier());
+            parameters.put("targetId", siteRoot.getIdentifier());
+        }
 
         return Job.builder()
                 .id(UUID.randomUUID().toString())
@@ -894,6 +998,254 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                     contentType);
         } catch (final Exception e) {
             Logger.warn(this, "Could not restore the NEW mapping: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Method to test: the bulk-upload processor, against a <b>site root</b>
+     * <p>
+     * Given scenario: A batch submitted with {@code siteId} rather than {@code folderId}.
+     * <p>
+     * Expected result: The files are created on that site, exactly as US1/AC4 requires.
+     * <p>
+     * <b>This branch had never run in a test.</b> Every other processor test targets a folder, so
+     * {@code applyTarget}'s {@code SYSTEM_FOLDER} path and {@code folderRefusal}'s site-rooted
+     * early return existed only in production — an acceptance criterion with no coverage at all,
+     * which is a different thing from a criterion that is merely hard to test.
+     */
+    @Test
+    public void test_run_createsFilesAtASiteRoot() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Job job = jobFor("DOTASSET", null, site, 3);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+        assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
+                "a site-rooted batch must create its files like a folder-targeted one.\n"
+                        + describe(outcome));
+        assertEquals(0, ((Number) outcome.get("failedCount")).intValue());
+
+        for (final Contentlet created : APILocator.getContentletAPI()
+                .findContentletsByHost(site, admin(), false)) {
+            assertEquals(site.getIdentifier(), created.getHost(),
+                    "the files land on the site that was asked for");
+        }
+    }
+
+    /**
+     * Method to test: the bulk-upload processor, creating <b>FILEASSET</b> content
+     * <p>
+     * Given scenario: A batch of FILEASSETs against a folder.
+     * <p>
+     * Expected result: Every file is created, as a draft, with its file name and title set from
+     * the submitted name.
+     * <p>
+     * <b>Why this needed its own test.</b> FR-006 promises equivalence with the single-file upload
+     * — and that endpoint <b>only ever creates FileAssets</b>
+     * ({@code WebAssetHelper:652} resolves the {@code FileAsset} type outright). Every test making
+     * the equivalence, draft, indexing and ceiling claims used dotAsset, so the base type the
+     * comparison is actually about was exercised by one concurrency test that asserts collisions
+     * and nothing else. The two write different fields — {@code fileAsset} plus title and file
+     * name, against {@code asset} alone — and getting it wrong fails with a message that never
+     * names the field.
+     */
+    @Test
+    public void test_run_createsFileAssetsWithTheirNameAndTitleSet() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor("FILEASSET", folder, null, 3);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> submitted =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+        assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
+                "the FILEASSET branch must create its files too.\n" + describe(outcome));
+
+        final List<Contentlet> created =
+                APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
+        assertEquals(3, created.size());
+
+        final List<String> submittedNames = submitted.stream()
+                .map(f -> String.valueOf(f.get("fileName")))
+                .collect(Collectors.toList());
+
+        for (final Contentlet contentlet : created) {
+            final String fileName =
+                    contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+            assertTrue(submittedNames.contains(fileName), String.format(
+                    "a fileAsset carries the submitted name in its own fileName field; got '%s'",
+                    fileName));
+            assertFalse(contentlet.isLive(),
+                    "and a FILEASSET batch leaves drafts, the same as a dotAsset one");
+        }
+    }
+
+    /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: The staged content of one file in the batch is gone by the time the run
+     * reaches it — expired, or reclaimed by something else.
+     * <p>
+     * Expected result: That file fails as {@code STAGED_CONTENT_UNAVAILABLE}, and the rest of the
+     * batch is still created.
+     * <p>
+     * <b>This reason had no test anywhere.</b> It exists because FR-032 refuses to let a file be
+     * lost silently when the staging layer cannot produce it — and because it is the one failure
+     * that is explicitly <b>not the author's fault</b>, so its copy must not send them looking for
+     * a problem with the file they chose. Untested, both of those are one refactor from becoming
+     * an {@code UNCLASSIFIED}.
+     */
+    @Test
+    public void test_run_namesUnretrievableStagedContentWithoutBlamingTheAuthor() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job job = jobFor(folder, 3);
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+
+        // Point the middle file at content that was never staged. Cheaper and more faithful than
+        // waiting out the expiry window, and it is the same condition the run sees: a temp id the
+        // staging layer cannot resolve.
+        final String lostName = String.valueOf(staged.get(1).get("fileName"));
+        staged.get(1).put("tempFileId", "temp_" + UUID.randomUUID().toString().substring(0, 10));
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(BatchFailureReason.STAGED_CONTENT_UNAVAILABLE, reasonFor(outcome, lostName),
+                "content the run cannot retrieve is its own named failure, never a silent loss "
+                        + "and never blamed on the file the author chose.\n" + describe(outcome));
+
+        assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
+                "and the files whose content was still there are created");
+    }
+
+
+    /**
+     * Method to test: the bulk-upload processor, for an author the per-file check refuses
+     * <p>
+     * Given scenario: A run whose author staged the content themselves but has no rights on the
+     * target folder.
+     * <p>
+     * Expected result: Each file fails as {@code PERMISSION_DENIED}, and the run finishes normally
+     * rather than throwing.
+     * <p>
+     * <b>EC8's case, which had no integration coverage.</b> The submission-time check (FR-003)
+     * covers the target before a batch exists; this is the narrower one underneath it, and only a
+     * unit assertion on {@code classify} existed — which proves the mapping and not that the
+     * creation path ever produces the exception being mapped.
+     * <p>
+     * That the run <b>completes</b> matters as much as the reason: a security failure that
+     * propagated would abort the batch, and FR-007 says one failing file must not.
+     * <p>
+     * <b>The author stages their own content, and that is load-bearing.</b> An earlier version of
+     * this test reused admin-staged files and merely swapped the job's {@code userId}; the run then
+     * could not retrieve the content at all and reported
+     * {@code STAGED_CONTENT_UNAVAILABLE} — passing through the permission check without ever
+     * reaching it. See {@link #request(User)}.
+     */
+    @Test
+    public void test_run_reportsAPerFilePermissionFailureWithoutAbortingTheRun() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final User limited = new UserDataGen().nextPersisted();
+
+        final Job job = jobAs(limited, folder, 3);
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(0, ((Number) outcome.get("successCount")).intValue(),
+                "an author with no rights on the target creates nothing.\n" + describe(outcome));
+        assertEquals(3, ((Number) outcome.get("failedCount")).intValue(),
+                "and every file is reported, not just the first one that failed — the run did not "
+                        + "abort");
+
+        @SuppressWarnings("unchecked")
+        final List<BatchItemResult> results = (List<BatchItemResult>) outcome.get("results");
+        for (final BatchItemResult result : results) {
+            assertEquals(BatchFailureReason.PERMISSION_DENIED, result.reason().orElse(null),
+                    String.format("'%s' must name the permission rule. UNCLASSIFIED leaves the "
+                            + "author with nothing to act on, and STAGED_CONTENT_UNAVAILABLE would "
+                            + "mean this test never reached the check it is about.\n%s",
+                            result.key(), describe(outcome)));
+        }
+    }
+
+    /**
+     * Method to test: the bulk-upload processor's progress reporting
+     * <p>
+     * Given scenario: A batch of 5 files.
+     * <p>
+     * Expected result: Progress is reported <b>as each file completes</b> — a strictly rising
+     * series, one report per file, ending at 1.0.
+     * <p>
+     * <b>Asserting only the final 1.0 does not test FR-024.</b> A processor that reported nothing
+     * until the very end would pass that, and it is precisely the behaviour FR-024 rules out: the
+     * requirement is that progress be readable <i>in flight</i>, which is what a client following a
+     * long batch needs and the only reason the tracker is threaded through at all.
+     */
+    @Test
+    public void test_run_reportsProgressAsEachFileCompletes_notOnlyAtTheEnd() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Job built = jobFor(folder, 5);
+
+        final RecordingProgressTracker tracker = new RecordingProgressTracker();
+        final Job job = Job.builder().from(built).progressTracker(tracker).build();
+
+        new BulkUploadProcessor().process(job);
+
+        final List<Float> reported = tracker.reported();
+
+        assertTrue(reported.size() >= 5, String.format(
+                "progress must be reported per file, not once at the end; got %d report(s) for "
+                        + "5 files: %s", reported.size(), reported));
+
+        assertEquals(1.0f, reported.get(reported.size() - 1), 0.0001f,
+                "and it finishes at 1.0");
+
+        float previous = -1f;
+        for (final Float value : reported) {
+            assertTrue(value >= previous,
+                    String.format("progress must never go backwards: %s", reported));
+            previous = value;
+        }
+
+        assertTrue(reported.get(0) < 1.0f,
+                "the first report must land before the batch is done, or nothing is readable "
+                        + "in flight: " + reported);
+    }
+
+    /** A {@link ProgressTracker} that keeps every value it was handed, in order. */
+    private static class RecordingProgressTracker implements ProgressTracker {
+
+        private final List<Float> reported = new ArrayList<>();
+        private volatile float current;
+
+        @Override
+        public void updateProgress(final float progress) {
+            this.current = progress;
+            this.reported.add(progress);
+        }
+
+        @Override
+        public float progress() {
+            return current;
+        }
+
+        List<Float> reported() {
+            return reported;
         }
     }
 

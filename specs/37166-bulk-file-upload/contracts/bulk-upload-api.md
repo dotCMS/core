@@ -115,10 +115,40 @@ one.
 
 ### Resubmitting after a lost connection
 
-Safe. A resubmission of the same batch never silently produces a second copy (FR-040). Where the
-implementation resolves it by the collision branch, the outcome is flagged so the client can tell a
-duplicate resubmission from a batch whose files genuinely all collided (FR-040a) — see
+**Safe for `FILEASSET`.** A resubmission never silently produces a second copy (FR-040): the
+collision branch rejects the already-created files, and the outcome is flagged so the client can
+tell a duplicate resubmission from a batch whose files genuinely all collided (FR-040a) — see
 `duplicateSubmission` in §3.
+
+> **Not safe for `DOTASSET`** *(amended 2026-09-09, FR-040b)*. A retry creates **a second copy of
+> every file** and reports a clean `successCount: N`. Nothing in the outcome says so, and
+> `duplicateSubmission` is `false` whenever the file order differed, because the fingerprint hashes
+> the files in the order they were sent.
+>
+> This is accepted rather than fixed. A dotAsset's identifier takes a per-contentlet
+> `asset_name`, so the unique index the collision branch relies on can never contend for one, and
+> there is no content-hash rule in the product to fall back on. Refusing duplicates here would make
+> this endpoint stricter than every other path that creates a dotAsset.
+>
+> **What this means for a client**: do not offer "safe to retry" unconditionally. On a `DOTASSET`
+> batch whose response was lost, the honest options are to ask the author, or to let them see the
+> folder before retrying — not to retry silently.
+
+### If a run is interrupted
+
+*(added 2026-09-10)* **A run does not resume.** If the node executing a batch dies, the run is
+re-queued and attempts **every file again from the first** — there is no per-item checkpoint.
+
+- **`FILEASSET`**: no duplicates, because the unique index rejects the second write. The **report**
+  is wrong, though: files the run itself created come back as `NAME_COLLISION`.
+- **`DOTASSET`**: duplicates, for the same reason a resubmission does (see above). A 100-file batch
+  interrupted near the end can leave up to 100 duplicate assets and report a clean success.
+
+The submitter is still notified exactly once, whatever the run went through.
+
+**What this means for a client**: nothing in the outcome distinguishes an interrupted-and-retried
+run from a first attempt, so a batch reporting collisions on files the author is sure they did not
+upload before is the expected shape of this, not a bug to report.
 
 ---
 
@@ -206,7 +236,7 @@ durable notification so the outcome survives navigating away (FR-019 … FR-023)
 - **Payload**: the §3 outcome — **counts _and_ `results`**, not counts alone. The frontend needs the
   failing file names to tell the author which files to choose again (spec C-006)
 - **Fires on any terminal state** — completed, cancelled, or permanently failed (FR-019) — and
-  **once per batch**, even across an interruption and resume (FR-039)
+  **once per batch**, even across an interruption (FR-039)
 - **Best-effort**: a failed notification is logged and does not affect the recorded outcome (FR-023)
 
 ---
@@ -218,6 +248,19 @@ durable notification so the outcome survives navigating away (FR-019 … FR-023)
 | `CONTENT_BULK_UPLOAD_MAX_FILES` | `100` | Files per batch (FR-010) |
 | `CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES` | `1073741824` (1 GB) | Summed size per batch (FR-013b) |
 | `CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES` | `209715200` (200 MB) | Per-file ceiling **only where the content type declares none** (FR-011.2) |
+
+**Two of these are readable by the client** *(added 2026-09-09)*. `GET /api/v1/appconfiguration`
+— which the admin client already fetches on startup — carries them under `bulkUpload`:
+
+```json
+"bulkUpload": { "maxFiles": 100, "maxTotalBytes": 1073741824 }
+```
+
+Served from the same constants the endpoint enforces, so the advertised ceiling and the enforced one
+cannot drift. Two things this is for: a refusal can **name the number** rather than say "fewer", and
+the client can apply the §1 courtesy check **in the file chooser** instead of after uploading the
+bytes. The fallback per-file ceiling is deliberately not exposed — it is resolved per content type
+at run time, so a single advertised value would be wrong as often as right.
 
 **Where the defaults come from.** The realistic case is an author dragging in up to 100 images or
 PDFs of a few megabytes each — roughly 500 MB — so 1 GB clears it with room and still bounds the

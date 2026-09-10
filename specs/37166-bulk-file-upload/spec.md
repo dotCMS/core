@@ -169,6 +169,12 @@ point reached.
 
 ### User Story 5 - An interrupted batch finishes without duplicating anything (Priority: P1)
 
+> **Scenarios 1 – 3 are WITHDRAWN** *(2026-09-10)*. They describe a run resuming, and there is no
+> resume — see **FR-036a**. Scenarios 4 – 6 stand: the single notification is the job framework's,
+> and the resubmission guarantees rest on the submission fingerprint, neither of which depended on
+> the checkpoint. The story is kept whole rather than deleted because what it asks for is still
+> right; it is the implementation that was withdrawn, and restoring it is a live proposal.
+
 A restart, a crash, or a lost worker does not cost the author their batch and does not leave them
 with two copies of half of it. The run picks up where it stopped, and the author is told once, at
 the end, what happened overall.
@@ -262,6 +268,8 @@ run reports a collision failure for it.
   unaffected.
 - **The server restarts while a batch is running.** The run resumes and creates only what it had
   not yet created (FR-036). It does not restart from the first file, and it does not orphan.
+  **Superseded 2026-09-10**: it *does* restart from the first file — see FR-036a. Nothing is
+  orphaned, but a `DOTASSET` batch duplicates what it had already created.
 - **The submission crosses the file-count or total-size ceiling part-way through being read.** The
   request is aborted at the ceiling and refused; whatever was staged before the abort is reclaimed
   (FR-010a, FR-013d). No batch is created, and no more than the ceiling ever reaches disk.
@@ -271,6 +279,10 @@ run reports a collision failure for it.
 - **The connection drops before the client learns whether its submission was accepted.** Covered by
   FR-040: the client can safely resubmit, and either gets the original batch back or sees the
   already-created files rejected as collisions. What it must never get is a silent second copy.
+- **The same batch resubmitted as `DOTASSET`** *(added by amendment, 2026-09-09)*. A second copy of
+  every file is created and the run reports clean success. Accepted, not prevented — FR-040b records
+  why the collision branch has no mechanism for a dotAsset, and why refusing would make the batch
+  endpoint stricter than every other path that creates one.
 - **Two batches racing for the same name in the same folder.** Exactly one wins; the other records
   a collision for that file only (FR-041, FR-042).
 - **The batch exceeds the configured total size.** Refused at submission, by accumulating the
@@ -521,22 +533,78 @@ run reports a collision failure for it.
   run can resume. These requirements make that the contract rather than an implementation detail.
 -->
 
-- **FR-036**: A run interrupted by a restart, a crash, or a lost worker MUST resume rather than
-  restart. Files it already created MUST NOT be created a second time.
-- **FR-037**: To make FR-036 possible, the run MUST record which files it has completed **durably
+> **FR-036, FR-037 and FR-038 are WITHDRAWN** *(2026-09-10)*. They required a run to resume after
+> an interruption, and the durable per-item checkpoint that made that possible has been removed —
+> see FR-036a for what was decided and what it costs. The original text is kept below, struck
+> through, because the requirements were correct and may be restored by the work FR-036a points at.
+
+- ~~**FR-036**: A run interrupted by a restart, a crash, or a lost worker MUST resume rather than
+  restart. Files it already created MUST NOT be created a second time.~~
+- ~~**FR-037**: To make FR-036 possible, the run MUST record which files it has completed **durably
   and as it goes**, not only in the final outcome. A record written only at the end is lost in
-  exactly the case it is needed for.
-- **FR-038**: A resumed run MUST produce the same outcome shape as an uninterrupted one — the
+  exactly the case it is needed for.~~
+- ~~**FR-038**: A resumed run MUST produce the same outcome shape as an uninterrupted one — the
   counts MUST reflect the whole batch across all attempts, not just the final attempt, and a file
-  created before the interruption MUST be reported as succeeded rather than skipped.
-- **FR-039**: A resumed run MUST still honour cancellation and MUST still notify the submitter on
+  created before the interruption MUST be reported as succeeded rather than skipped.~~
+- **FR-036a** *(added by amendment, 2026-09-10 — withdraws FR-036 … FR-038)*: **An interrupted run
+  restarts from the first file.** There is no resume, and no durable per-item state.
+  - **What was decided.** The checkpoint lived in a table this feature created for itself. Research
+    R1 established that the job framework persists only immutable parameters, one progress float,
+    and a result harvested at the terminal state — so any resumable batch processor must bring its
+    own store. The decision is that **one feature should not carry a private store for state the
+    framework does not offer**, and that whether the framework should offer it is an architectural
+    question rather than this feature's to answer. It is the subject of the already-proposed ADR
+    *"Durable per-item state for job-queue batch processors"*, which #37062 / #37063 will need too.
+  - **What it costs, stated plainly.** A node dying mid-batch is no longer recoverable. The
+    re-queued run attempts every file again:
+    - for a **`FILEASSET`** batch the unique index still prevents a second copy, so the data is
+      right and only the **report** is wrong — the author is told files failed that the run itself
+      created;
+    - for a **`DOTASSET`** batch there is no such index (FR-040b), so it **genuinely duplicates**.
+      A 100-file batch interrupted near the end can leave up to 100 duplicate assets and report a
+      clean success.
+  - **This is the more expensive half of the decision, and it was not visible when it was taken** —
+    FR-040b's acceptance of dotAsset duplicates and this withdrawal were settled on consecutive
+    days, and together they turn an interruption from a reporting problem into a data one. Recorded
+    here so that whoever restores resume knows which of the two guarantees they are buying back.
+  - **Unaffected**: everything the outcome carries. Counts, per-file results, reasons,
+    skipped-vs-failed, the completion payload and `duplicateSubmission` are all built from what the
+    run holds in memory, exactly as bulk refresh already does — so FR-014 … FR-018 and FR-019 …
+    FR-023 stand as written.
+- **FR-039**: A re-queued run MUST still honour cancellation and MUST still notify the submitter on
   its terminal state, once for the batch — an interruption MUST NOT produce a second notification
-  for the same batch.
+  for the same batch. *(Unchanged by FR-036a: the single notification is the job framework's, which
+  emits one completion event per terminal state whether or not the run resumed.)*
 - **FR-040**: Resubmitting a batch after a lost or uncertain response MUST NOT silently create
   duplicates. The system MUST either recognise the resubmission as the same batch and return the
   original handle, or let the per-file collision rule (FR-041) reject the already-created files —
   and whichever it does MUST be stated, because a client cannot know whether its submission
   landed when the connection drops.
+- **FR-040b** *(added by amendment, 2026-09-09 — narrows FR-040)*: **FR-040 binds for `FILEASSET`
+  only.** For `DOTASSET` a resubmission **does** create a second copy, and that is accepted rather
+  than prevented.
+  - **Why it cannot be prevented by the chosen branch.** FR-040's collision branch has no mechanism
+    for a dotAsset. A file asset's identifier takes its `asset_name` from the file name, so the
+    unique index FR-042 relies on contends; a dotAsset's `asset_name` is
+    `content.<inode>` (`IdentifierFactoryImpl:420`), freshly generated per contentlet, so **the
+    index can never collide for one**. Nor is there a content-hash rule anywhere in the product to
+    fall back on.
+  - **Why it is accepted rather than fixed.** A dotAsset is a piece of content, not a named file in
+    a folder; two copies of the same image are two legitimate assets, and the product has never
+    said otherwise. Making the batch endpoint refuse them would make it **stricter than every other
+    path that creates a dotAsset**, which is the divergence FR-006 exists to prevent — the same
+    objection that settled the folder `defaultBaseType` question.
+  - **What the author is exposed to.** A `DOTASSET` retry after a dropped connection leaves two
+    copies of everything, reported as a clean `successCount: N`. The client cannot distinguish it
+    from a first upload, and `duplicateSubmission` is `false` whenever the file order differed,
+    because the fingerprint is order-sensitive by construction. This is a **known, accepted cost**,
+    and it MUST be stated wherever the retry guarantee is described (contract §1, C-002a) so no
+    client is built on a promise that does not hold for half the base types.
+  - **Interrupted runs are now in scope too** *(revised 2026-09-10)*. This originally carved them
+    out, because the per-item checkpoint deduplicated a resume for both base types. That checkpoint
+    is gone (FR-036a), so an interrupted `DOTASSET` batch duplicates for the same reason a
+    resubmitted one does, and by the same mechanism. It is the costlier of the two cases: a
+    resubmission is something the author chose, an interruption is not.
 - **FR-040a**: If the collision branch is chosen, a duplicate resubmission MUST be **distinguishable
   from a genuinely all-collided batch** — by a reason, a flag on the outcome, or both. The two
   branches protect the author's data equally but do not report equally: under the collision branch
@@ -551,8 +619,12 @@ run reports a collision failure for it.
   succeed**. The other MUST be recorded as that file's own collision failure. Two files with the
   same name in one folder, and a silent overwrite, are both unacceptable outcomes.
 - **FR-042**: FR-041 MUST hold when the two runs overlap in time. **The storage layer already
-  guarantees it**: a unique index over the lower-cased full path per host (the same one FR-042a
-  names) rejects the second writer of a contended name on every existing install. The product's own pre-check is
+  guarantees it for `FILEASSET`**: a unique index over the lower-cased full path per host (the same
+  one FR-042a names) rejects the second writer of a contended name on every existing install.
+  *(Amended 2026-09-09 — this previously read as an unqualified guarantee, which was wrong: a
+  dotAsset's `asset_name` is generated per contentlet, so the index never contends for one. FR-040b
+  records the consequence. FR-041 is therefore a `FILEASSET` guarantee, and a `DOTASSET` batch
+  simply has no contended name to lose.)* The product's own pre-check is
   a check followed by a create and can pass for both runs, so it is a courtesy that produces a
   clean message, not the guarantee. The requirement is therefore to **catch the constraint
   violation and report it as the same collision failure as the pre-check** — not to build a lock
@@ -615,6 +687,12 @@ from the consumer's point of view.
   collision branch, a duplicate resubmission MUST be distinguishable from a genuinely all-collided
   batch** (FR-040a); without that the client is handed "every file failed" for a batch that
   succeeded, and cannot keep its own promise that retrying is safe.
+- **C-002a1** *(added by amendment, 2026-09-09)*: **That answer differs by base type, and the client
+  must be told which one it is getting.** For `FILEASSET`, C-002a holds as written. For `DOTASSET` a
+  retry creates a second copy and reports clean success (FR-040b), with nothing in the outcome
+  saying so — `duplicateSubmission` is `false` whenever the file order differed, because the
+  fingerprint is order-sensitive. A client therefore MUST NOT present "safe to retry" as
+  unconditional.
 - **C-002b**: A stable set of failure reasons, each mapped to product copy on the client side. The
   server's message is diagnostic and is not displayed (FR-016a). Adding a reason later changes both
   halves.
@@ -669,8 +747,12 @@ while the user is present; the durable record is the server's responsibility.
   the refusal depends on the size of what is being sent (FR-013b), it is decided **while the body
   is read** and the request aborted at the ceiling, so no submission can commit more than the
   ceiling to disk (FR-010a) and anything staged before the abort is reclaimed (FR-013d).
-- **SC-009**: A batch interrupted at any point and resumed produces exactly one copy of each
-  submitted file — zero duplicates, in 100% of interruptions — and notifies the submitter once.
+- ~~**SC-009**: A batch interrupted at any point and resumed produces exactly one copy of each
+  submitted file — zero duplicates, in 100% of interruptions — and notifies the submitter once.~~
+  **WITHDRAWN 2026-09-10 with FR-036 … FR-038** (see FR-036a). What survives of it is the second
+  half: the submitter is still notified exactly once, whatever the run went through. The
+  zero-duplicates half does not — a `FILEASSET` batch keeps it through the unique index, a
+  `DOTASSET` batch does not keep it at all.
 - **SC-010**: Two runs contending for the same file name in the same target produce exactly one
   file, in 100% of races, with the loser reporting a collision for that file only.
 - **SC-011**: No batch can commit more staged bytes than the configured total, and no file can
