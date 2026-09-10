@@ -24,7 +24,6 @@ import {
     DotExperimentStatus,
     DotSite,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
-    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
     GOAL_TYPES,
@@ -40,6 +39,7 @@ import { dotExperimentsConfigurePageEvents } from './dot-experiments-configure-p
 import { DotExperimentsConfigureStore } from './dot-experiments-configure.store';
 
 import {
+    PAGE_LOOKUP_LIMIT,
     DEFAULT_TRAFFIC_ALLOCATION,
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
@@ -63,15 +63,16 @@ const pageEvents = dotExperimentsConfigurePageEvents;
 const apiEvents = dotExperimentsConfigureApiEvents;
 
 const SITE_HOSTNAME = 'demo.dotcms.com';
+const SITE_ID = '48190c8c-42c4-46af-8d1a-0cd5db894797';
 const CURRENT_USER_ID = 'user-me';
-const OTHER_USER_ID = 'user-someone-else';
 const EXPERIMENT_ID = 'exp-1';
 
 /** The page every fixture runs on, as the Page card renders it. */
 const PAGE: DotExperimentConfigurePage = {
     pageId: '2e2e5f6a-1e17-4b21-9c1a-7d3f5b90ac41',
     title: 'Home',
-    path: '/home'
+    path: '/home',
+    languageId: 1
 };
 
 const buildVariant = (id: string, weight: number): Variant => ({ id, name: id, weight });
@@ -127,6 +128,9 @@ const buildPageContentlet = (contentlet: Partial<DotCMSContentlet> = {}): DotCMS
         identifier: PAGE.pageId,
         title: PAGE.title,
         url: PAGE.path,
+        // Real contentlets always carry a language, and `toConfigurePage` copies it through so the
+        // variant deep link can send it as `language_id` (#37005).
+        languageId: PAGE.languageId,
         ...contentlet
     }) as DotCMSContentlet;
 
@@ -165,14 +169,16 @@ describe('DotExperimentsConfigureStore', () => {
     const cancelSchedule = jest.fn();
     const contentSearchGet = jest.fn();
     const searchPages = jest.fn();
-    const getPageLockState = jest.fn();
     const messageGet = jest.fn();
     const navigate = jest.fn();
 
     /** `GlobalStore` is root-provided; only the two signals this store reads are stubbed. */
     const globalStoreMock = {
         loggedUser: signal<DotCurrentUser | null>(null),
-        siteDetails: signal<DotSite | null>(null)
+        siteDetails: signal<DotSite | null>(null),
+        // `?url=` is a path, and a path is not unique across sites: the lookup is scoped to the
+        // site the portlet is on (#37003 AC-3, "on the current site").
+        currentSiteId: signal<string | null>(SITE_ID)
     };
 
     let routeParams: Params;
@@ -204,7 +210,7 @@ describe('DotExperimentsConfigureStore', () => {
         // `Dispatcher`/`Events` are `providedIn: 'platform'`, so they outlive TestBed resets and
         // a store from a previous test would keep reacting to this test's events.
         provideDispatcher(),
-        mockProvider(DotPagesBrowserService, { searchPages, getPageLockState }),
+        mockProvider(DotPagesBrowserService, { searchPages }),
         mockProvider(DotContentSearchService, { get: contentSearchGet }),
         mockProvider(DotHttpErrorManagerService),
         mockProvider(DotMessageService, { get: messageGet }),
@@ -360,7 +366,6 @@ describe('DotExperimentsConfigureStore', () => {
         cancelSchedule.mockReturnValue(of(VALID_DRAFT));
         contentSearchGet.mockReturnValue(of(PAGE_LOOKUP_RESULT));
         searchPages.mockReturnValue(of([buildBrowserPage()]));
-        getPageLockState.mockReturnValue(of({ locked: false }));
         messageGet.mockImplementation((key: string) => key);
 
         globalStoreMock.loggedUser.set({ userId: CURRENT_USER_ID } as DotCurrentUser);
@@ -595,7 +600,11 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.isNew()).toBe(false);
             expect(navigate).toHaveBeenCalledWith(['..', created.id, 'configuration'], {
                 relativeTo: activatedRouteStub,
-                replaceUrl: true
+                replaceUrl: true,
+                // The page narrowing the screen was opened with has to survive the swap: it is
+                // what the back arrow returns to, and what a reload of the new address rebuilds
+                // the chip and the editor link from (#37005).
+                queryParamsHandling: 'preserve'
             });
         });
 
@@ -623,7 +632,12 @@ describe('DotExperimentsConfigureStore', () => {
             initExisting();
 
             dispatcher.dispatch(
-                pageEvents.pageSelected({ pageId: 'page-2', title: 'Pricing', path: '/pricing' })
+                pageEvents.pageSelected({
+                    pageId: 'page-2',
+                    title: 'Pricing',
+                    path: '/pricing',
+                    languageId: 1
+                })
             );
 
             expect(store.selectedPage()).toEqual(PAGE);
@@ -634,8 +648,45 @@ describe('DotExperimentsConfigureStore', () => {
      * The screen mirrors the rule `ExperimentsAPIImpl.save()` enforces, so a page the server would
      * refuse never leaves. See `specs/37176-draft-experiment-page-change`.
      */
+    // #37005. The variant endpoints persist on their own and answer with the recomputed
+    // proportion, so the weights the card is about to mirror ARE what the server holds. The
+    // baseline was not settling with them, so adding a variant left the screen dirty: Save Draft
+    // lit up for work already written, and — worse — the `canDeactivate` guard then blocked the
+    // way to UVE, which is how "Edit variant" came back as an error instead of a navigation.
+    describe('adding a variant', () => {
+        const withNewVariant = () =>
+            buildExperiment({
+                trafficProportion: {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [buildVariant('DEFAULT', 50), buildVariant('variant-new', 50)]
+                }
+            });
+
+        it('should leave the screen clean, since the endpoint already wrote it', () => {
+            initExisting();
+            const added = withNewVariant();
+
+            dispatcher.dispatch(apiEvents.addVariantSucceeded(added));
+            // The card mirrors the proportion that came back, as it does in the browser.
+            mirrorForm(added);
+
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
+
+        // Only the slice the endpoint wrote settles. A name typed and not yet sent is still work.
+        it('should keep an unsent edit dirty', () => {
+            initExisting();
+            edit({ name: 'Typed but never saved' });
+            const added = withNewVariant();
+
+            dispatcher.dispatch(apiEvents.addVariantSucceeded(added));
+
+            expect(store.$hasUnsavedChanges()).toBe(true);
+        });
+    });
+
     describe('changing the page of a draft', () => {
-        const OTHER_PAGE = { pageId: 'page-2', title: 'Pricing', path: '/pricing' };
+        const OTHER_PAGE = { pageId: 'page-2', title: 'Pricing', path: '/pricing', languageId: 1 };
 
         /** A draft in the only shape that may change page: the control and nothing else. */
         const controlOnlyDraft = () =>
@@ -660,6 +711,68 @@ describe('DotExperimentsConfigureStore', () => {
                 EXPERIMENT_ID,
                 expect.objectContaining({ pageId: OTHER_PAGE.pageId })
             );
+        });
+
+        // #37005. The server takes `pageId` only while the variants are the control alone, so this
+        // precondition expires the moment a variant is added — and adding one was a single click
+        // away for the whole wait. Waiting for Save Draft left the card showing one page and the
+        // experiment sitting on another, with no PATCH able to reconcile them.
+        it('should persist the pick immediately, without waiting for Save Draft', () => {
+            initExisting(controlOnlyDraft());
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                pageId: OTHER_PAGE.pageId
+            });
+        });
+
+        // Variants are copies of the page; one created before the change lands is created under
+        // the old one. The Configure screen reads this to gate that card and only that card.
+        it('should report the change as in flight until it settles', () => {
+            initExisting(controlOnlyDraft());
+            // Held open, so the flight is observable: the default mock answers in the same tick.
+            const answer = pendingCall(patchExperiment);
+
+            expect(store.pageChanging()).toBe(false);
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+
+            expect(store.pageChanging()).toBe(true);
+
+            answer.next(buildExperiment({ pageId: OTHER_PAGE.pageId }));
+            answer.complete();
+
+            expect(store.pageChanging()).toBe(false);
+            expect(store.experiment()?.pageId).toBe(OTHER_PAGE.pageId);
+        });
+
+        it('should let the form go again when the change is refused', () => {
+            initExisting(controlOnlyDraft());
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+            dispatcher.dispatch(apiEvents.pageChangeFailed(new Error('boom')));
+
+            expect(store.pageChanging()).toBe(false);
+        });
+
+        // Picking the page it is already on is not a change, so nothing is sent and nothing gates.
+        it('should send nothing when the pick is the page it already has', () => {
+            const draft = controlOnlyDraft();
+            initExisting(draft);
+            patchExperiment.mockClear();
+
+            dispatcher.dispatch(
+                pageEvents.pageSelected({
+                    pageId: draft.pageId,
+                    title: 'Same',
+                    path: '/same',
+                    languageId: 1
+                })
+            );
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(store.pageChanging()).toBe(false);
         });
 
         it('should ignore a pick once the draft has a variant of its own', () => {
@@ -1148,7 +1261,23 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$canSave()).toBe(false);
         });
 
-        it('should send a cleared schedule, which is a change like any other', () => {
+        /**
+         * TC-031, pinned as it stands rather than as it should be.
+         *
+         * A cleared card sends `null`, and `PATCH /api/v1/experiments/{id}` reads that as "leave
+         * the schedule alone" — so the clear does not reach the server. That is the open defect.
+         *
+         * This asserts `null` anyway, because the alternative is worse and was measured: an empty
+         * range clears the dates but leaves a `Scheduling` object carrying none, and `start()` asks
+         * `scheduling().isEmpty()` — is there an object — to decide whether the experiment was
+         * meant to run now. On a page that already has a running experiment that takes the
+         * schedule-conflict branch, where `startDate().orElseThrow()` throws and Start answers 500
+         * (`ExperimentsAPIImpl.start:572`) instead of refusing with a reason.
+         *
+         * So this test guards the shape until the backend agrees with itself about what an empty
+         * `Scheduling` means. Change it only together with that.
+         */
+        it('should send a cleared schedule as a null, until the backend can express a clear (TC-031)', () => {
             initExisting(buildExperiment({ scheduling: { startDate: 1000, endDate: 2000 } }));
 
             edit({ scheduling: { startDate: null, endDate: null } });
@@ -1377,6 +1506,8 @@ describe('DotExperimentsConfigureStore', () => {
             expect(request.request.body).toMatchObject({
                 name: 'Alpha campaign v2',
                 goals,
+                // `null`, which the endpoint reads as "no change" — the open TC-031 defect. See the
+                // test above for why the empty range that *would* clear it is not sent instead.
                 scheduling: null
             });
             expect(request.request.body).not.toHaveProperty('targetingConditions');
@@ -1413,24 +1544,149 @@ describe('DotExperimentsConfigureStore', () => {
             initNew({ pageId: PAGE.pageId });
 
             expect(contentSearchGet).toHaveBeenCalledWith({
-                query: `+contentType:htmlpageasset +working:true +identifier:${PAGE.pageId}`,
-                limit: 1
+                query: `+working:true +identifier:${PAGE.pageId}`,
+                limit: PAGE_LOOKUP_LIMIT
             });
             expect(store.selectedPage()).toEqual(PAGE);
             expect(store.pagePrefillError()).toBeNull();
         });
 
-        it('should prefill the page from ?url= through the page search', () => {
+        /**
+         * #37005. The page picker offers URL-mapped content — a `Destination` with a URL map
+         * renders as a page and can carry an experiment — but this lookup filtered
+         * `+contentType:htmlpageasset`, so it could never read one back. The experiment worked
+         * right after the pick and broke on the next entry: the card reported the page as missing
+         * and Preview/Edit refused, on a page that was live the whole time.
+         *
+         * Narrowing by identifier is enough. Whatever the contentlet turns out to be, it is the
+         * page the experiment stores.
+         */
+        it('should resolve a page that is URL-mapped content rather than an htmlpageasset', () => {
+            const urlMapped = {
+                identifier: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                contentType: 'Destination',
+                url: '/destinations/colorado',
+                title: 'Colorado & The Rockies',
+                languageId: 1
+            };
+            contentSearchGet.mockReturnValue(of({ jsonObjectView: { contentlets: [urlMapped] } }));
+
+            initNew({ pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437' });
+
+            expect(store.selectedPage()).toEqual({
+                pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                title: 'Colorado & The Rockies',
+                path: '/destinations/colorado',
+                languageId: 1
+            });
+            expect(store.pagePrefillError()).toBeNull();
+        });
+
+        /**
+         * TC-005 (#37003 AC-3). `?url=` used the page-browser endpoint, which matches a path
+         * SUBSTRING and returns at most ten rows; the exact page was then picked out client-side.
+         * On demo, twelve pages contain "index" and the endpoint answers with ten, so whether
+         * `/index` survived the cap was down to the dataset — it worked here and failed on the QA
+         * build. Both params now go through one content search, filtered server-side.
+         */
+        it('should prefill the page from ?url= with a site-scoped exact path search', () => {
             // Trailing slash and casing are not part of the identity of a path.
             initNew({ url: '/Home/' });
 
-            expect(searchPages).toHaveBeenCalledWith({ hostname: SITE_HOSTNAME, path: '/Home/' });
+            expect(searchPages).not.toHaveBeenCalled();
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +conHost:${SITE_ID} +path:"/home"`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
             expect(store.selectedPage()).toEqual(PAGE);
             expect(store.pagePrefillError()).toBeNull();
         });
 
+        // The user types what UVE shows, which has no leading slash on a nested path.
+        it('should resolve ?url= without a leading slash', () => {
+            initNew({ url: 'destinations/colorado' });
+
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +conHost:${SITE_ID} +path:"/destinations/colorado"`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
+        });
+
+        /**
+         * The same symmetry the identifier branch already has: no content-type filter, because a
+         * `Destination` with a URL map renders as a page and can carry an experiment. Filtering to
+         * `htmlpageasset` is what made `?url=destinations/colorado` unresolvable.
+         */
+        it('should resolve a URL-mapped page, not only an htmlpageasset', () => {
+            const urlMapped = {
+                identifier: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                contentType: 'Destination',
+                url: '/destinations/colorado',
+                title: 'Colorado & The Rockies',
+                languageId: 1
+            };
+            contentSearchGet.mockReturnValue(of({ jsonObjectView: { contentlets: [urlMapped] } }));
+
+            initNew({ url: '/destinations/colorado' });
+
+            expect(store.selectedPage()).toEqual({
+                pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                title: 'Colorado & The Rockies',
+                path: '/destinations/colorado',
+                languageId: 1
+            });
+        });
+
+        /**
+         * The language the editor was on, carried by the same link that carries the page. With it
+         * the lookup asks for one version instead of narrowing several after the fact — which is
+         * the difference between resolving the page the editor had open and resolving a page that
+         * merely shares its path.
+         */
+        it('should narrow the lookup to ?language_id= when it is given', () => {
+            initNew({ url: '/index', language_id: '2' });
+
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +conHost:${SITE_ID} +path:"/index" +languageId:2`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
+        });
+
+        it('should narrow ?pageId= by language too', () => {
+            initNew({ pageId: PAGE.pageId, language_id: '2' });
+
+            expect(contentSearchGet).toHaveBeenCalledWith({
+                query: `+working:true +identifier:${PAGE.pageId} +languageId:2`,
+                limit: PAGE_LOOKUP_LIMIT
+            });
+        });
+
+        /**
+         * One path answers once per language, and `limit: 1` left it to the search which row came
+         * back. `language_id` is invisible until the wrong content loads, so an arbitrary pick is
+         * the worst kind of bug — it is picked deterministically instead. The lowest id is a
+         * stand-in for the site's default language, which the search itself cannot report.
+         */
+        it('should pick the same language every time a path answers in several', () => {
+            contentSearchGet.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            buildPageContentlet({ languageId: 2, title: 'Inicio' }),
+                            buildPageContentlet({ languageId: 1, title: 'Home' })
+                        ]
+                    }
+                })
+            );
+
+            initNew({ url: '/index' });
+
+            expect(store.selectedPage()?.languageId).toBe(1);
+            expect(store.selectedPage()?.title).toBe('Home');
+        });
+
         it('should show an inline error when ?url= matches no page', () => {
-            searchPages.mockReturnValue(of([buildBrowserPage({ path: '/other', url: '/other' })]));
+            contentSearchGet.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
 
             initNew({ url: '/home' });
 
@@ -1483,50 +1739,6 @@ describe('DotExperimentsConfigureStore', () => {
             expect(contentSearchGet).not.toHaveBeenCalled();
             expect(searchPages).not.toHaveBeenCalled();
             expect(store.pagePrefillError()).toBeNull();
-        });
-    });
-
-    describe('page lock', () => {
-        it('should flag a page locked by another user', () => {
-            getPageLockState.mockReturnValue(of({ locked: true, lockedBy: OTHER_USER_ID }));
-
-            initExisting();
-
-            expect(getPageLockState).toHaveBeenCalledWith(PAGE.pageId);
-            expect(store.$lockedByAnotherUser()).toBe(true);
-            expect(store.$disabledTooltipKey()).toBe(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
-        });
-
-        it('should not flag a page this user locked themselves', () => {
-            getPageLockState.mockReturnValue(of({ locked: true, lockedBy: CURRENT_USER_ID }));
-
-            initExisting();
-
-            expect(store.$lockedByAnotherUser()).toBe(false);
-            expect(store.$disabledTooltipKey()).toBeNull();
-        });
-
-        it('should not flag an unlocked page', () => {
-            initExisting();
-
-            expect(store.$lockedByAnotherUser()).toBe(false);
-        });
-
-        it('should treat an unresolvable lock state as unlocked', () => {
-            getPageLockState.mockReturnValue(throwError(() => httpError(500)));
-
-            initExisting();
-
-            expect(store.$lockedByAnotherUser()).toBe(false);
-            expect(store.status()).toBe(ComponentStatus.LOADED);
-        });
-
-        it('should resolve the lock of a page picked before creation', () => {
-            initNew();
-
-            dispatcher.dispatch(pageEvents.pageSelected(PAGE));
-
-            expect(getPageLockState).toHaveBeenCalledWith(PAGE.pageId);
         });
     });
 
@@ -1715,6 +1927,32 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.experiment()).toEqual(running);
             expect(store.status()).toBe(ComponentStatus.LOADED);
         });
+
+        /**
+         * Starting an experiment with no schedule is the server dating it: the answer carries a
+         * window the form never had. The baseline has to move with it, or the screen is dirty
+         * against dates the user never typed and the autosave offers to write them back to an
+         * experiment that is no longer a draft.
+         */
+        it('should settle the baseline on the schedule the server stamped', () => {
+            start.mockReturnValue(
+                of(
+                    buildExperiment({
+                        status: DotExperimentStatus.RUNNING,
+                        scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+                    })
+                )
+            );
+            initExisting(buildExperiment({ scheduling: null }));
+
+            expect(store.$hasUnsavedChanges()).toBe(false);
+
+            dispatcher.dispatch(pageEvents.startRequested());
+            // The shell refills the form from the answer; mirroring it is what the screen does next.
+            mirrorForm(store.experiment());
+
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
     });
 
     describe('start (AC31/AC32)', () => {
@@ -1745,6 +1983,69 @@ describe('DotExperimentsConfigureStore', () => {
             );
 
             expect(store.$isScheduledStart()).toBe(false);
+        });
+
+        /**
+         * The backend validates a start against what is *persisted*, so a goal picked and never
+         * flushed is a goal the server has never seen — `ExperimentsAPIImpl.start()` answers "The
+         * Experiment needs to have the Goal set." for a form the screen considers complete.
+         */
+        it('should flush the pending form before starting', () => {
+            const withGoal = buildExperiment();
+            patchExperiment.mockReturnValue(of(withGoal));
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(patchExperiment).toHaveBeenCalledWith(
+                EXPERIMENT_ID,
+                expect.objectContaining({ goals: buildGoals() })
+            );
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
+
+        it('should start without a write when the screen holds nothing unsaved', () => {
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting();
+
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+        });
+
+        it('should not start when the flush is refused', () => {
+            patchExperiment.mockReturnValue(throwError(() => httpError(400, {})));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            // The refused write leaves the screen dirty and startable again, rather than
+            // transitioning an experiment the server never received the goal for.
+            expect(start).not.toHaveBeenCalled();
+            expect(store.starting()).toBe(false);
+            expect(store.$hasUnsavedChanges()).toBe(true);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+        });
+
+        it('should wait for the flush before the start leaves', () => {
+            const flushed = pendingCall(patchExperiment);
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(start).not.toHaveBeenCalled();
+            expect(store.starting()).toBe(true);
+
+            flushed.next(buildExperiment());
+
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
         });
 
         it('should not fire a second start while the first one is in flight', () => {
@@ -1898,13 +2199,12 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$lockedBannerKey()).toBe(LOCKED_BANNER_KEY_READ_ONLY);
         });
 
-        it('should explain the locked status before the page lock', () => {
-            getPageLockState.mockReturnValue(of({ locked: true, lockedBy: OTHER_USER_ID }));
+        // A lock on the page does not reach this screen at all: every edit it offers is a write to
+        // the experiment, which the backend accepts on a locked page. See `$disabledTooltipKey`.
+        it('should leave a draft editable regardless of the page', () => {
+            initExisting();
 
-            initExisting(buildExperiment({ status: DotExperimentStatus.RUNNING }));
-
-            expect(store.$lockedByAnotherUser()).toBe(true);
-            expect(store.$disabledTooltipKey()).toBe(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+            expect(store.$disabledTooltipKey()).toBeNull();
         });
     });
 

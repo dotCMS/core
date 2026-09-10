@@ -188,4 +188,40 @@ describe('DotSearchInputComponent', () => {
             expect(handler).toHaveBeenLastCalledWith('');
         });
     });
+
+    // The component stays free of any shortcut knowledge: the host registers the combination and
+    // calls this, so the box remains reusable by a surface that has no registry at all.
+    describe('focus()', () => {
+        it('should move focus to the input', () => {
+            spectator.component.focus();
+
+            expect(document.activeElement).toBe(getInput());
+        });
+
+        it('should preserve the current term', () => {
+            spectator.setInput('value', 'blog');
+            spectator.detectChanges();
+
+            spectator.component.focus();
+
+            expect(getInput().value).toBe('blog');
+        });
+
+        it('should not emit when focused', () => {
+            const handler = jest.fn();
+            spectator.output('search').subscribe(handler);
+
+            spectator.component.focus();
+            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should be a no-op when the input already has focus', () => {
+            spectator.component.focus();
+            spectator.component.focus();
+
+            expect(document.activeElement).toBe(getInput());
+        });
+    });
 });

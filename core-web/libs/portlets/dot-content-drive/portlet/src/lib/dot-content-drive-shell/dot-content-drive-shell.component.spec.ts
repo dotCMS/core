@@ -17,6 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
+import { ZIndexUtils } from 'primeng/utils';
 
 import {
     AddToBundleService,
@@ -87,6 +88,8 @@ import {
     DotContentDriveStatus
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
+import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
+import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
@@ -189,7 +192,13 @@ describe('DotContentDriveShellComponent', () => {
                 release: jest.fn()
             })
         ],
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [
+            DotContentDriveStore,
+            provideContentDriveFilterFacade(),
+            // The toolbar renders for real here, "More" overflow included, so its own seam has to
+            // be provided the same way the shell provides it in production.
+            provideContentDriveFieldFilterHost()
+        ],
         detectChanges: false
     });
 
@@ -228,6 +237,7 @@ describe('DotContentDriveShellComponent', () => {
                     setTreeForceCollapsed: jest.fn(),
                     path: jest.fn().mockReturnValue('/test/path'),
                     filters: filtersSignal,
+                    clearFilters: jest.fn(),
                     status: statusSignal,
                     sort: jest
                         .fn()
@@ -353,6 +363,228 @@ describe('DotContentDriveShellComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    // US5 and US6 (issue #32591). Both claims are made in one batch, so the shell holds a single
+    // withdrawal rather than one per combination.
+    describe('keyboard shortcuts', () => {
+        const press = (init: KeyboardEventInit): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ...init
+            });
+            document.dispatchEvent(event);
+
+            return event;
+        };
+
+        const pressEscape = () => press({ key: 'Escape' });
+        const pressModB = () => press({ key: 'b', metaKey: true });
+
+        beforeEach(() => {
+            // `ZIndexUtils` is a module-level singleton shared by the whole file, and a dialog torn
+            // down by an earlier test leaves its entry behind: this suite reads 1102 with nothing
+            // visible. Pinned to an empty stack so each test states its own overlay state.
+            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(0);
+            spectator.detectChanges();
+        });
+
+        afterEach(() => jest.restoreAllMocks());
+
+        describe('Escape', () => {
+            it('should clear the selection and leave the filters alone', () => {
+                store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+                expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            // Escape clears the selection and nothing else. It is a high-frequency "back out" key,
+            // and an active filter set is expensive to rebuild by hand, so a stray press must not be
+            // able to destroy one. Clearing filters stays on the toolbar's "Clear all" control, which
+            // is visible, labelled, and only offered when there is something to clear.
+            it('should never clear filters, even with an active filter and no selection', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.clearFilters).not.toHaveBeenCalled();
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+            });
+
+            it('should do nothing with neither a selection nor an active filter', () => {
+                pressEscape();
+
+                expect(store.clearFilters).not.toHaveBeenCalled();
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+            });
+
+            it('should leave the browser default alone when it has nothing to do', () => {
+                const event = pressEscape();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
+
+            // Declining rather than swallowing matters here: with a filter set but no selection there
+            // is nothing for the shell to do, so the key has to stay available to whatever else may
+            // claim it.
+            it('should leave the browser default alone when only a filter is active', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                const event = pressEscape();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
+
+            // Review finding: the shell's own p-dialogs close through PrimeNG's separate document
+            // listener, which never consults `defaultPrevented`. Without declining here, Escape to
+            // dismiss a dialog would also wipe the filters or the selection it was operating on.
+            it('should do nothing while an overlay is above the listing', () => {
+                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+                expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            // Deliberately not asserting `defaultPrevented` here. With a dialog open PrimeNG's own
+            // Escape handler runs and prevents the default itself, which is the outcome we want but
+            // makes the flag unable to tell "the shell declined" from "the shell swallowed it". What
+            // matters is that the shell does not act, which the test above covers; that declining
+            // falls through to the next claimant is covered in the registry's own spec.
+            it('should resume clearing once the overlay closes', () => {
+                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+                spectator.detectChanges();
+
+                pressEscape();
+
+                stack.mockReturnValue(0);
+                pressEscape();
+
+                expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+            });
+
+            it('should not change the browsed folder', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setPath).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('tree toggle', () => {
+            it('should expand a collapsed tree', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(true);
+            });
+
+            it('should collapse an expanded tree', () => {
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
+            });
+
+            // A rich text surface handling the same combination is closer to the event target, runs
+            // first and marks the event handled. The shell must not act on it a second time.
+            it('should ignore a combination a nested handler already consumed', () => {
+                const event = new KeyboardEvent('keydown', {
+                    key: 'b',
+                    metaKey: true,
+                    bubbles: true,
+                    cancelable: true
+                });
+                event.preventDefault();
+                document.dispatchEvent(event);
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+
+            // Review finding: the same reasoning as Escape. A dialog covers the tree, so toggling it
+            // rearranges a layout the user cannot see and they meet it changed once the dialog
+            // closes. Declining also leaves the combination to whatever is on top, which may want
+            // it — a rich text surface inside a dialog reads Cmd+B as bold.
+            it('should do nothing while an overlay is above the listing', () => {
+                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+
+            it('should resume toggling once the overlay closes', () => {
+                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                stack.mockReturnValue(0);
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
+            });
+
+            it('should leave the browser default alone when it declines', () => {
+                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+
+                const event = pressModB();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
+        });
+
+        // The listing is rendered for real here, so this is the only test that exercises the whole
+        // round trip: row keydown -> range -> selectionChange -> store. The component-level tests
+        // stop at the emission.
+        it('should report a keyboard-extended range to the store', () => {
+            // The shared harness starts in LOADING, which renders skeletons instead of rows. This is
+            // the only test in this file that needs real rows on screen.
+            statusSignal.set(DotContentDriveStatus.LOADED);
+            spectator.detectChanges();
+
+            const rows = spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
+            expect(rows.length).toBeGreaterThan(1);
+
+            rows[0].focus();
+            rows[0].dispatchEvent(
+                new KeyboardEvent('keydown', { code: 'ArrowDown', shiftKey: true, bubbles: true })
+            );
+            spectator.detectChanges();
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+        });
+
+        it('should release both claims when the shell is destroyed', () => {
+            filtersSignal.set({ contentType: 'Blog' });
+            spectator.detectChanges();
+
+            spectator.fixture.destroy();
+            pressModB();
+            pressEscape();
+
+            expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            expect(store.clearFilters).not.toHaveBeenCalled();
+        });
     });
 
     describe('workflow action result', () => {
@@ -3184,7 +3416,13 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 release: jest.fn()
             })
         ],
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [
+            DotContentDriveStore,
+            provideContentDriveFilterFacade(),
+            // The toolbar renders for real here, "More" overflow included, so its own seam has to
+            // be provided the same way the shell provides it in production.
+            provideContentDriveFieldFilterHost()
+        ],
         detectChanges: false
     });
 

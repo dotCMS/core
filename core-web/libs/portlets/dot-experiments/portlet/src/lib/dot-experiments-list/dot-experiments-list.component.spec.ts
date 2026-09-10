@@ -17,6 +17,7 @@ import {
     GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
@@ -38,6 +39,12 @@ import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 const PAGE_ID = 'page-1';
 
 const PAGE_INFO = { [PAGE_ID]: { url: '/blog/index', host: 'host-1' } };
+
+/** Shown on the chip when the filtered page can no longer be resolved. */
+const PAGE_UNAVAILABLE_COPY = 'This page is no longer available';
+
+/** The page-scoped empty state's one affordance. */
+const CREATE_FOR_PAGE_COPY = 'Create an Experiment for this Page';
 
 const EMPTY_GOAL_COUNTS: Record<GOAL_TYPES, number> = {
     [GOAL_TYPES.REACH_PAGE]: 0,
@@ -66,6 +73,7 @@ const experimentWith = (status: DotExperimentStatus): DotExperiment => ({
 /** Kebab item ids, as declared by the component. */
 const MENU_ITEM = {
     configure: 'experiments-configure',
+    results: 'experiments-view-results',
     archive: 'experiments-archive',
     restore: 'experiments-restore',
     cancelSchedule: 'experiments-cancel-schedule',
@@ -75,6 +83,9 @@ const MENU_ITEM = {
     pushPublish: 'experiments-push-publish',
     addToBundle: 'experiments-add-to-bundle'
 } as const;
+
+/** Sourced from the shared table so the kebab tests and the gate cannot drift apart. */
+const DELETABLE_STATUSES = AllowedActionsByExperimentStatus['delete'];
 
 const ARCHIVE_LABEL = 'Archive';
 const RESTORE_LABEL = 'Restore';
@@ -95,7 +106,14 @@ const ERROR_COPY = {
     subtitle: 'Failed to retrieve experiments data'
 };
 
+const LIST_TITLE_COPY = 'Experiments List';
+
 const messageServiceMock = new MockDotMessageService({
+    'experiment.container.list.title': LIST_TITLE_COPY,
+    'experiments.list.page-filter.unavailable': PAGE_UNAVAILABLE_COPY,
+    'experiments.list.empty.page.title': 'No Experiments on this Page',
+    'experiments.list.empty.page.description': 'Nothing is running on {0} yet.',
+    'experiments.list.empty.page.action': CREATE_FOR_PAGE_COPY,
     'experiments.analytics-app-no-configured.title': NOT_CONFIGURED_COPY.title,
     'experiments.analytics-app-no-configured.subtitle': NOT_CONFIGURED_COPY.subtitle,
     'experiments.analytics-app-misconfiguration.title': MISCONFIGURATION_COPY.title,
@@ -128,6 +146,9 @@ const createStoreMock = () => ({
     goalCounts: jest.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
     selectedGoals: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
     filter: jest.fn().mockReturnValue(''),
+    selectedPageId: jest.fn().mockReturnValue(null),
+    selectedPageUrl: jest.fn().mockReturnValue(null),
+    languageId: jest.fn().mockReturnValue(null),
     status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
     page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
     perPage: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
@@ -138,6 +159,12 @@ const createStoreMock = () => ({
 
 describe('DotExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
+    /** Where the trail is written; the component only ever appends its own crumb. */
+    let globalStore: {
+        addNewBreadcrumb: jest.Mock;
+        setLastBreadcrumb: jest.Mock;
+        lastBreadcrumb: jest.Mock;
+    };
     let storeMock: ReturnType<typeof createStoreMock>;
     let dispatch: jest.SpyInstance;
     let confirm: jest.SpyInstance;
@@ -156,7 +183,10 @@ describe('DotExperimentsListComponent', () => {
             provideLocationMocks(),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotMessageDisplayService),
-            mockProvider(DotPushPublishDialogService)
+            mockProvider(DotPushPublishDialogService),
+            // Not `mockProvider`: `GlobalStore` is a signal store, so its methods live on the
+            // instance rather than the prototype and Spectator's auto-mock finds none of them.
+            { provide: GlobalStore, useFactory: () => globalStore }
         ],
         detectChanges: false
     });
@@ -183,8 +213,15 @@ describe('DotExperimentsListComponent', () => {
 
         return spectator.component
             .$rowMenuItems()
-            .filter(({ visible }) => visible)
+            .filter(({ visible, separator }) => visible && !separator)
             .map(({ id }) => id as string);
+    };
+
+    /** The kebab as the user sees it, separators included, in render order. */
+    const visibleMenuEntries = (): MenuItem[] => {
+        clickButton('experiment-actions-btn');
+
+        return spectator.component.$rowMenuItems().filter(({ visible }) => visible);
     };
 
     const runMenuItem = (itemId: string) => {
@@ -216,8 +253,14 @@ describe('DotExperimentsListComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        globalStore = {
+            addNewBreadcrumb: jest.fn(),
+            setLastBreadcrumb: jest.fn(),
+            lastBreadcrumb: jest.fn().mockReturnValue(null)
+        };
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+
         // `p-confirmDialog` needs the real service (it subscribes to its streams), so the
         // confirmation is intercepted instead of mocked away.
         const confirmationService = spectator.inject(ConfirmationService, true);
@@ -423,6 +466,86 @@ describe('DotExperimentsListComponent', () => {
                 ).toBeNull();
             });
         });
+
+        it.each(DELETABLE_STATUSES)(
+            'should close the kebab with delete behind a rule for %s',
+            (status) => {
+                renderRowWith(status);
+
+                const entries = visibleMenuEntries();
+                const [separator, remove] = entries.slice(-2);
+
+                expect(separator.separator).toBe(true);
+                expect(remove.id).toBe(MENU_ITEM.delete);
+            }
+        );
+
+        it.each(
+            Object.values(DotExperimentStatus).filter(
+                (status) => !DELETABLE_STATUSES.includes(status)
+            )
+        )('should leave no dangling rule when delete is not offered for %s', (status) => {
+            renderRowWith(status);
+
+            expect(visibleMenuEntries().some(({ separator }) => separator)).toBe(false);
+        });
+    });
+
+    describe('row click', () => {
+        const clickRow = () => {
+            spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+            spectator.detectChanges();
+        };
+
+        it.each(AllowedActionsByExperimentStatus['results'])(
+            'should open the Results screen from a %s row',
+            (status) => {
+                const experiment = renderRowWith(status);
+
+                clickRow();
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                    queryParams: {}
+                });
+            }
+        );
+
+        it.each(
+            Object.values(DotExperimentStatus).filter(
+                (status) => !AllowedActionsByExperimentStatus['results'].includes(status)
+            )
+        )('should open the Configure screen from a %s row', (status) => {
+            const experiment = renderRowWith(status);
+
+            clickRow();
+
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: {} }
+            );
+        });
+
+        it('should open the row from the keyboard', () => {
+            const experiment = renderRowWith(DotExperimentStatus.RUNNING);
+            const row = spectator.query(byTestId('experiment-row')) as HTMLElement;
+
+            spectator.dispatchKeyboardEvent(row, 'keydown', 'Enter');
+            spectator.detectChanges();
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                queryParams: {}
+            });
+        });
+
+        it('should not navigate when the kebab is opened', () => {
+            // The button sits inside the clickable row, so opening the menu must not also
+            // navigate away from the list.
+            renderRowWith(DotExperimentStatus.RUNNING);
+
+            clickButton('experiment-actions-btn');
+
+            expect(navigate).not.toHaveBeenCalled();
+        });
     });
 
     describe('configure', () => {
@@ -435,12 +558,56 @@ describe('DotExperimentsListComponent', () => {
             expect(visibleMenuItemIds()[0]).toBe(MENU_ITEM.configure);
         });
 
+        /**
+         * Every door out of a narrowed list carries the narrowing (#37005, FR-021c).
+         *
+         * Whatever the editor opens from here has to be able to come back to the list they were
+         * looking at. Without the filter travelling, the screen they open has no way to know it
+         * was reached from one page's list, and its back arrow drops them on every experiment on
+         * the site.
+         */
+        it.each([
+            [
+                'the row itself',
+                () => spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement)
+            ],
+            ['the kebab Configure entry', () => runMenuItem(MENU_ITEM.configure)]
+        ])('should carry the page filter when opening Configure from %s', (_label, open) => {
+            const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            open();
+
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: { pageId: 'page-1', language_id: 2 } }
+            );
+        });
+
+        it('should carry the page filter when opening Results', () => {
+            const experiment = renderRowWith(DotExperimentStatus.RUNNING);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            runMenuItem(MENU_ITEM.results);
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                queryParams: { pageId: 'page-1', language_id: 2 }
+            });
+        });
+
         it('should open the Configure screen of the row', () => {
             const experiment = renderRowWith(DotExperimentStatus.RUNNING);
 
             runMenuItem(MENU_ITEM.configure);
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'configuration']);
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: {} }
+            );
         });
     });
 
@@ -460,7 +627,23 @@ describe('DotExperimentsListComponent', () => {
 
             clickButton('experiments-new');
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new']);
+            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], { queryParams: {} });
+        });
+
+        // #37005, FR-024. Arriving from UVE the list is already narrowed to the page the editor
+        // came from, and the toolbar's New is the button they reach for. Sending it to an empty
+        // picker asks them to find, by hand, the page they were standing on a click ago.
+        it('should carry the filtered page and its language into the creation screen', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            clickButton('experiments-new');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                queryParams: { pageId: 'page-1', language_id: 2 }
+            });
         });
     });
 
@@ -557,6 +740,112 @@ describe('DotExperimentsListComponent', () => {
                     message: `Experiment ${experiment.name} ${expectedVerb}`
                 })
             );
+        });
+    });
+
+    /**
+     * The page filter's UI (#37005, US3, FR-021b).
+     *
+     * With the entry-point switch on, an editor arrives here from a page and the list is already
+     * narrowed to it. The narrowing shows in the breadcrumb trail and in the empty state, which
+     * has to name the page and offer to create an experiment for it rather than offer to clear a
+     * filter the editor never set.
+     */
+    describe('page filter', () => {
+        const PAGE_ID = 'page-1';
+
+        const withPageFilter = (pageId: string | null = PAGE_ID) => {
+            storeMock.selectedPageId.mockReturnValue(pageId);
+            spectator.detectChanges();
+        };
+
+        // #37005. Arriving from UVE the trail already ends with the page's own crumb (pushed by
+        // the UVE shell, carrying the editor address). The list has to put its own crumb on top of
+        // it, or the screen keeps rendering the page's name as its title — which is what it did.
+        describe('breadcrumbs', () => {
+            it('should add its own crumb, keeping the page filter in the address', () => {
+                withPageFilter();
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        id: 'experiments-list',
+                        label: LIST_TITLE_COPY,
+                        url: `/dotAdmin/#/experiments?pageId=${PAGE_ID}`
+                    })
+                );
+            });
+
+            it('should add a site-wide crumb when the list is not narrowed to a page', () => {
+                withPageFilter(null);
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({ url: '/dotAdmin/#/experiments' })
+                );
+            });
+        });
+
+        // FR-021b, zero. The generic "your filters are hiding them" state is wrong here: the
+        // editor did not apply this filter, they arrived with it, and the useful offer is to
+        // create an experiment for the page rather than to clear a filter they did not set.
+        describe('when the filtered page has no experiments', () => {
+            beforeEach(() => {
+                storeMock.pagedExperiments.mockReturnValue([]);
+                storeMock.totalRecords.mockReturnValue(0);
+                withPageFilter();
+            });
+
+            it('should scope the empty state to the page', () => {
+                const empty = spectator.query(byTestId('experiments-empty-state'));
+
+                expect(empty).not.toBeNull();
+                expect(empty?.textContent).toContain(PAGE_INFO[PAGE_ID].url);
+            });
+
+            it('should offer to create an experiment for that page', () => {
+                // The empty container's own action button, so the offer is the one affordance on
+                // the state rather than a second control beside it.
+                const create = spectator.query(byTestId('message-button'));
+
+                expect(create).not.toBeNull();
+                expect(create?.textContent).toContain(CREATE_FOR_PAGE_COPY);
+            });
+
+            it('should carry the page into the creation screen so it arrives prefilled', () => {
+                spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                    queryParams: { pageId: PAGE_ID }
+                });
+            });
+
+            // The language is omitted above because the address the list was opened with carried
+            // none; when it did, it has to travel too, or Configure prefills whichever version of
+            // the page sorts first instead of the one the editor was looking at.
+            it('should carry the editor language when the address brought one', () => {
+                storeMock.languageId.mockReturnValue(2);
+                spectator.detectChanges();
+
+                spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                    queryParams: { pageId: PAGE_ID, language_id: 2 }
+                });
+            });
+        });
+
+        // The spec's last edge case: an editor arrives from a page that has since been deleted.
+        // `pageInfoByPageId` cannot resolve it, so there is no path to name — the empty state has
+        // to say the page is gone rather than read as a page that merely has no experiments.
+        it('should report a filtered page that no longer resolves', () => {
+            storeMock.selectedPageId.mockReturnValue('page-deleted');
+            storeMock.pagedExperiments.mockReturnValue([]);
+            storeMock.totalRecords.mockReturnValue(0);
+            spectator.detectChanges();
+
+            const empty = spectator.query(byTestId('experiments-empty-state'));
+
+            expect(empty).not.toBeNull();
+            expect(empty?.textContent).toContain(PAGE_UNAVAILABLE_COPY);
         });
     });
 
@@ -1002,6 +1291,32 @@ describe('DotExperimentsListComponent', () => {
 
             // The site may well have experiments; these filters are hiding them.
             expect(emptyTitle()).toContain('experiments.list.no-results.title');
+        });
+
+        /**
+         * `?url=` is the shape of every Universal Visual Editor address, and one pasted into the
+         * list used to be ignored — a request for one page answered with every experiment on the
+         * site. Narrowing to nothing is the honest answer; this is the state that says so.
+         */
+        it('should say nothing matched when the address narrows to a path with no page', () => {
+            storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+            expect(emptyTitle()).toContain('experiments.list.no-results.clear');
+        });
+
+        // Otherwise the button on that state is dead: the search and the chips are already empty,
+        // and the narrowing that is actually hiding everything would survive the press.
+        it('should clear a path narrowing from the empty state', () => {
+            storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+            renderEmpty();
+
+            spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+            expect(dispatchedEvents().map(({ type }) => type)).toContain(
+                dotExperimentsListPageEvents.pageNarrowingCleared.type
+            );
         });
 
         it('should say nothing matched when only a search term is set', () => {
