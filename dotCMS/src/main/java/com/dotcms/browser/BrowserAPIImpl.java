@@ -284,19 +284,24 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             dbOffset += candidateChunkInodes.size();
 
+            // A satisfied page wins over the guard rail: when this chunk already produced enough
+            // visible items we must exit through generateNextContentCursor so the next page resumes
+            // right after the last item returned. Checking the scan limit first would exit via the
+            // warn path with a chunk-aligned cursor and silently skip whatever is left over in this
+            // chunk -- reachable whenever a chunk boundary lands exactly on the scan limit.
+            if (accumulatedContent.size() >= maxRows) {
+                hasMore = (candidateChunkInodes.size() == chunkSize);
+                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
+                        candidateChunkInodes, dbOffset);
+                break;
+            }
+
             if (dbOffset >= scanLimit) {
                 Logger.warn(BrowserAPIImpl.class, String.format(
                         "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
                         dbOffset, chunkCount, accumulatedContent.size()));
                 nextContentCursor = dbOffset;
                 hasMore = true;
-                break;
-            }
-
-            if (accumulatedContent.size() >= maxRows) {
-                hasMore = (candidateChunkInodes.size() == chunkSize);
-                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
-                        candidateChunkInodes, dbOffset);
                 break;
             }
 
@@ -348,7 +353,17 @@ public class BrowserAPIImpl implements BrowserAPI {
             final Set<String> esFiltered = processESDirectly(
                     browserQuery, new LinkedHashSet<>(candidateChunkInodes));
             if (!esFiltered.isEmpty()) {
-                return getContentFilteredByRole(browserQuery, new LinkedList<>(esFiltered));
+                // Elasticsearch returns matches in relevance/index order, and when the chunk is
+                // split into several ES sub-queries those results are merged in completion order.
+                // Everything downstream assumes DB order: findContentletsInParallel preserves the
+                // order it is handed, and generateNextContentCursor locates the last item of the
+                // page by its position inside the DB-ordered chunk. Feeding it ES order would make
+                // the next cursor land on an arbitrary row and skip or repeat items across pages.
+                // Re-projecting onto candidateChunkInodes restores DB order in a single O(n) pass.
+                final List<String> esFilteredInDbOrder = candidateChunkInodes.stream()
+                        .filter(esFiltered::contains)
+                        .collect(Collectors.toList());
+                return getContentFilteredByRole(browserQuery, esFilteredInDbOrder);
             }
         } else {
             return getContentFilteredByRole(browserQuery, candidateChunkInodes);
@@ -537,10 +552,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     /**
      * True when a request has no criterion left that requires database resolution — every field
      * criterion routes to the index, and there is no workflow filter and no free-text/fileName
-     * term (issue #37184, FR-002). When eligible, the folder's candidate scan and its ES
-     * filtering can each run as a single pass instead of the chunked hybrid loop's default
-     * {@code BROWSER_CONTENT_CHUNK_SIZE}-sized iterations (up to ~23 of each on a sparse-match,
-     * 20,000-item folder today).
+     * term (issue #37184, FR-002). When eligible, the folder's candidate scan runs in
+     * {@code BROWSER_SINGLE_PASS_CHUNK_SIZE}-sized chunks (default 7,000) instead of the chunked
+     * hybrid loop's default {@code BROWSER_CONTENT_CHUNK_SIZE}-sized iterations (default 900),
+     * cutting DB round trips ~8x on a sparse-match, 20,000-item folder while keeping the ES fan-out
+     * per chunk bounded and the loop stoppable between chunks.
      *
      * <p>Takes the raw fields rather than a {@link BrowserQuery} so it stays a pure,
      * unit-testable predicate — {@code BrowserQuery}'s constructor resolves folder/site/role via
@@ -569,9 +585,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Hybrid Chunked DB + ES: delegates to {@link #getContentByChunks} with
      * {@code applyESFilter=true}, so each DB chunk is text-filtered through Elasticsearch before
      * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}
-     * (default 900) — unless the request is {@link #isSinglePassEligible}, in which case the
-     * chunk size is widened to {@code BROWSER_DB_MAX_SCAN_ROWS} so the whole candidate set is
-     * scanned and ES-filtered in one pass (issue #37184, FR-002/SC-001).
+     * (default 900) — unless the request is {@link #isSinglePassEligible}, in which case the chunk
+     * size is widened to {@code BROWSER_SINGLE_PASS_CHUNK_SIZE} (default 7,000) so far fewer DB
+     * round trips are needed to resolve the candidate set (issue #37184, FR-002/SC-001).
+     *
+     * <p>The widened size is a modest multiple of the per-ES-query inode cap rather than the whole
+     * {@code BROWSER_DB_MAX_SCAN_ROWS} guard rail: a chunk that large would fan out into dozens of
+     * concurrent ES sub-queries on the shared submitter pool and would collapse the chunk loop into
+     * a single, non-interruptible iteration. See {@code BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY}.</p>
      *
      * @param browserQuery query containing the text filter, user context, and current cursor
      * @param maxRows      maximum number of permission-visible items to return
@@ -588,11 +609,11 @@ public class BrowserAPIImpl implements BrowserAPI {
                 browserQuery.filter, browserQuery.fileName);
 
         final int chunkSize = singlePassEligible
-                ? Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT)
+                ? Config.getIntProperty(BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY, BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT)
                 : Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
 
         Logger.debug(this, singlePassEligible
-                ? "::::: Using single-pass DB+ES query (issue #37184) ::::"
+                ? "::::: Using widened-chunk DB+ES query for single-pass-eligible filters (issue #37184) ::::"
                 : "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
         return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, true);
     }
@@ -780,6 +801,17 @@ public class BrowserAPIImpl implements BrowserAPI {
     // Default of 50,000 covers a worst-case ~5% permission pass rate for a full page of 300 items.
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
+
+    // DB chunk size used by the single-pass-eligible field-filter path (issue #37184). Deliberately
+    // decoupled from BROWSER_DB_MAX_SCAN_ROWS: that property is the outer guard rail (total rows a
+    // request may scan across all chunks), not a working batch size. The default of 7,000 is a
+    // modest multiple (~8x) of the per-ES-query inode cap computed by calculateMaxInodesPerESQuery
+    // (~876 for a typical base query), so each chunk fans out to roughly 8 concurrent ES sub-queries
+    // instead of the ~57 a 50,000-row chunk would submit at once into the shared DotSubmitter pool.
+    // It still cuts DB round trips ~8x versus the BROWSER_CONTENT_CHUNK_SIZE default of 900, and it
+    // keeps the chunk loop interleaved and stoppable between chunks.
+    static final String BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY = "BROWSER_SINGLE_PASS_CHUNK_SIZE";
+    static final int BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT = 7_000;
 
     /**
      * Represents content items under a specific parent along with the total count.
