@@ -1,7 +1,7 @@
 import {
     CdkDrag,
-    CdkDragDrop,
     CdkDragHandle,
+    CdkDragMove,
     CdkDragPlaceholder,
     CdkDragPreview,
     CdkDropList,
@@ -148,26 +148,102 @@ export class DotToolsPageComponent {
         this.store.loadAll();
     }
 
-    protected onSectionDrop(event: CdkDragDrop<DotToolsSection[]>): void {
-        if (event.previousIndex === event.currentIndex) {
+    // ----- Drag-and-drop --------------------------------------------------
+    //
+    // The lists run in `cdkDropListSortingDisabled` mode: the original row
+    // stays visible in place (rendered by its placeholder template at reduced
+    // opacity) and siblings don't shift while dragging. Instead we compute a
+    // "drop index" from the pointer position on every `cdkDragMoved` event
+    // and render a 2px horizontal line in the target gap. On drop we ignore
+    // CDK's `currentIndex` (unreliable when sorting is off) and use the
+    // tracked drop index.
+
+    protected readonly $sectionDropIndex = signal<number | null>(null);
+    protected readonly $toolDropIndex = signal<number | null>(null);
+
+    protected onSectionDragMoved(event: CdkDragMove, listEl: HTMLElement): void {
+        this.$sectionDropIndex.set(this.#computeDropIndex(event, listEl));
+    }
+
+    protected onToolDragMoved(event: CdkDragMove, listEl: HTMLElement): void {
+        this.$toolDropIndex.set(this.#computeDropIndex(event, listEl));
+    }
+
+    protected onSectionDragEnded(previousIndex: number): void {
+        const target = this.$sectionDropIndex();
+        this.$sectionDropIndex.set(null);
+        if (target === null) {
             return;
         }
+
         const ids = this.store.sections().map((section) => section.id);
-        moveItemInArray(ids, event.previousIndex, event.currentIndex);
+        const currentIndex = this.#normalizeInsertionIndex(previousIndex, target, ids.length);
+        if (currentIndex === previousIndex) {
+            return;
+        }
+
+        moveItemInArray(ids, previousIndex, currentIndex);
         this.store.reorderSections(ids);
     }
 
-    protected onToolDrop(event: CdkDragDrop<DotToolsCatalogEntry[]>): void {
-        if (event.previousIndex === event.currentIndex) {
+    protected onToolDragEnded(previousIndex: number): void {
+        const target = this.$toolDropIndex();
+        this.$toolDropIndex.set(null);
+        if (target === null) {
             return;
         }
+
         const section = this.store.selectedSection();
         if (!section) {
             return;
         }
+
         const ids = [...section.portletIds];
-        moveItemInArray(ids, event.previousIndex, event.currentIndex);
+        const currentIndex = this.#normalizeInsertionIndex(previousIndex, target, ids.length);
+        if (currentIndex === previousIndex) {
+            return;
+        }
+
+        moveItemInArray(ids, previousIndex, currentIndex);
         this.store.reorderSelectedSectionTools(ids);
+    }
+
+    /**
+     * Walks the row elements inside a drop list (marked with `data-row`, which
+     * lives on both the real row li AND its placeholder replacement so the
+     * count stays N during a drag) and returns the gap index the pointer is
+     * closest to. Gap N sits above row N; gap `rows.length` is after the last
+     * row.
+     */
+    #computeDropIndex(event: CdkDragMove, listEl: HTMLElement): number {
+        const rows = Array.from(listEl.querySelectorAll<HTMLElement>('[data-row]'));
+        if (rows.length === 0) {
+            return 0;
+        }
+
+        const pointerY = event.pointerPosition.y;
+        for (let i = 0; i < rows.length; i++) {
+            const rect = rows[i].getBoundingClientRect();
+            if (pointerY < rect.top + rect.height / 2) {
+                return i;
+            }
+        }
+
+        return rows.length;
+    }
+
+    /**
+     * Converts a "gap index" (drop-line position) to the index we pass to
+     * `moveItemInArray`. Dropping into the gap immediately below the original
+     * row is a no-op; dropping into any gap after that needs to be shifted
+     * down by one because the source is being removed first.
+     */
+    #normalizeInsertionIndex(previousIndex: number, gapIndex: number, total: number): number {
+        if (gapIndex <= previousIndex) {
+            return gapIndex;
+        }
+
+        return Math.min(gapIndex - 1, total - 1);
     }
 
     protected openNewSectionDialog(): void {
