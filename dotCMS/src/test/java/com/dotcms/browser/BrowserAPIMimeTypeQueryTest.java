@@ -4,22 +4,26 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 
 /**
- * Pure unit test for the MIME type SQL fragment built by
- * {@link com.dotcms.browser.BrowserAPIImpl}{@code #appendMIMETypeQuery}.
+ * Unit tests for browser MIME filter validation and SQL generation.
  *
  * <p>The value reaching this fragment comes straight from a request body, so the two guarantees
  * that matter are that it is bound as a parameter rather than concatenated into the statement,
  * and that the builder rejects values outside the MIME type character set.</p>
  *
- * <p>The method is a DB-free string builder, exercised via reflection so no
- * {@code BrowserAPIImpl} instance (and thus no {@code APILocator} bootstrap) is required.</p>
+ * <p>SQL-building methods are exercised via reflection without an {@code APILocator} bootstrap
+ * or database connection.</p>
  */
 public class BrowserAPIMimeTypeQueryTest {
 
@@ -89,7 +93,8 @@ public class BrowserAPIMimeTypeQueryTest {
     @Test
     public void testMalformedMimeTypesAreRejectedByTheBuilder() {
         for (final String rejected : new String[]{"a\"b", "a'b", "a(b", "a)b", "a\\b", "a b",
-                "a;b", "a|b", "a[b", "a]b", "a$b", "a?b", "a,b", "a\nb", "", "a\u0000b"}) {
+                "a;b", "a|b", "a[b", "a]b", "a$b", "a?b", "a,b", "a\nb", "", "a\u0000b",
+                "text/plain; charset=utf-8", "a".repeat(256)}) {
             assertThrows("must reject: " + rejected, IllegalArgumentException.class,
                     () -> BrowserQuery.builder().showMimeTypes(List.of(rejected)));
         }
@@ -97,7 +102,8 @@ public class BrowserAPIMimeTypeQueryTest {
 
     @Test
     public void testWellFormedMimeTypesAreAcceptedByTheBuilder() {
-        BrowserQuery.builder().showMimeTypes(List.of("image/*", "application/pdf", "text/plain"));
+        BrowserQuery.builder().showMimeTypes(List.of("image", "image/*", "application/pdf",
+                "text/plain", "image/svg+xml", "application/vnd.hzn-3d-crossword", "a".repeat(255)));
     }
 
     /**
@@ -110,10 +116,43 @@ public class BrowserAPIMimeTypeQueryTest {
     }
 
     @Test
-    public void testEmptyMimeTypeListBindsNothing() throws Exception {
-        final Result result = invoke(List.of());
+    public void testValidatedMimeTypesAreCopied() throws Exception {
+        final List<String> mimeTypes = new ArrayList<>(List.of("image/png"));
+        final BrowserQuery.Builder builder = BrowserQuery.builder().showMimeTypes(mimeTypes);
+        mimeTypes.set(0, "a\"b");
 
+        final Field field = BrowserQuery.Builder.class.getDeclaredField("mimeTypes");
+        field.setAccessible(true);
+        assertEquals(List.of("image/png"), field.get(builder));
+    }
+
+    @Test
+    public void testEmptyMimeTypeListOmitsFilterFromSelectQuery() throws Exception {
+        // Avoid the API bootstrap in both constructors; exercise the real SQL-building methods.
+        final BrowserAPIImpl api = mock(BrowserAPIImpl.class, CALLS_REAL_METHODS);
+        final BrowserQuery query = mock(BrowserQuery.class, CALLS_REAL_METHODS);
+        for (final String name : List.of("languageIds", "contentTypeIds", "excludedContentTypeIds",
+                "workflowSchemeIds", "workflowStepIds", "contentStatuses")) {
+            setQueryField(query, name, Set.of());
+        }
+        setQueryField(query, "baseTypes", Set.of(BaseContentType.ANY));
+        setQueryField(query, "fieldCriteria", List.of());
+        setQueryField(query, "mimeTypes", List.of());
+
+        final Method method = BrowserAPIImpl.class.getDeclaredMethod("selectQuery", BrowserQuery.class);
+        method.setAccessible(true);
+        final BrowserAPIImpl.SelectQuery result = (BrowserAPIImpl.SelectQuery) method.invoke(api, query);
+
+        assertFalse("no MIME predicate is emitted", result.selectQuery.contains("jsonb_path_exists"));
+        assertFalse("no empty predicate group is emitted", result.selectQuery.contains("AND ()"));
         assertTrue("no value is bound for an empty list", result.params.isEmpty());
+    }
+
+    private static void setQueryField(final BrowserQuery query, final String name, final Object value)
+            throws Exception {
+        final Field field = BrowserQuery.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(query, value);
     }
 
     private static class Result {

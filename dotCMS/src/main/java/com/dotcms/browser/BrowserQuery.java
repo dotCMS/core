@@ -498,15 +498,18 @@ public class BrowserQuery {
         }
 
         /**
-         * Sets the MIME type filters. Values must consist of MIME type characters only, since they
-         * are interpolated into the JSONPath expression the query builder binds. Validating here
-         * covers every caller, rather than relying on each entry point to check its own input.
+         * Sets browser MIME filters: bare types such as {@code application/pdf}, partial types
+         * such as {@code image}, and wildcard forms such as {@code image/*}. Each filter must be
+         * 1–255 ASCII letters, digits, or {@code / * . _ + -}. MIME parameters such as
+         * {@code text/plain; charset=utf-8} are not supported. This is a restricted browser filter
+         * syntax, not a general MIME parser; existing regex matching semantics are preserved.
+         * Values are validated here because they are interpolated into the bound JSONPath string.
          *
          * <p>A {@code null} list means "no MIME type filter" and is normalised to an empty list.
          * Callers such as {@code BrowserAjax} pass null on their default path, and the query
          * builder already treats null and empty identically.</p>
          *
-         * @throws IllegalArgumentException if any value is empty or contains other characters
+         * @throws IllegalArgumentException if any value is null or outside the filter syntax
          */
         public Builder showMimeTypes(final List<String> mimeTypes) {
             if (mimeTypes == null) {
@@ -521,7 +524,7 @@ public class BrowserQuery {
                             + ". Allowed characters are letters, digits and / * . _ + -");
                 }
             }
-            this.mimeTypes = mimeTypes;
+            this.mimeTypes = List.copyOf(mimeTypes);
             return this;
         }
 
