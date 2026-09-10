@@ -1168,6 +1168,13 @@ public class BrowserAPIImpl implements BrowserAPI {
      * abort the warm-up for the remaining ids, and the per-row fallback (FR-004a) still applies
      * later during hydration for whichever row referenced it.
      *
+     * <p>Known residual limitation, flagged in review: {@code loadUserById} does not negative-cache
+     * a miss, so an orphan id stays cold after this warm-up attempt and is looked up again by
+     * every row that references it during hydration — i.e. SC-001's "N distinct authors -> exactly
+     * N DB lookups" costs {@code 1 + rowsReferencingTheOrphan} for that one id, not 1. This is
+     * accepted as-is (negative caching was deliberately not reopened for this fix) rather than
+     * silently unbounded.</p>
+     *
      * @param contentlets the page of contentlets about to be hydrated
      */
     private void warmUpUserCache(final List<Contentlet> contentlets) {
