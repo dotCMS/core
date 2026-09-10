@@ -21,4 +21,15 @@ public class UserTest {
         Assert.assertTrue("dotcms.1".equals(user.getUserId()));
         Assert.assertFalse("dotcms.2".equals(user.getUserId()));
     }
+
+    @Test
+    public void test_inactive_user_is_not_backend_or_admin() {
+        final User user = new User();
+        user.setUserId("test.inactive.user");
+        user.setActive(false);
+
+        Assert.assertFalse(user.isBackendUser());
+        Assert.assertFalse(user.isFrontendUser());
+        Assert.assertFalse(user.isAdmin());
+    }
 }

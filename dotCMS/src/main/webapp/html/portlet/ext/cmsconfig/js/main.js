@@ -44,7 +44,10 @@ var loadCompanyTab = function () {
  */
 var saveCompanyBasicInfo = function () {
   //Getting the form values
-  var companyPortalUrl = dijit.byId("companyPortalUrl").get("value");
+  var portalUrlWidget = dijit.byId("companyPortalUrl");
+  var companyPortalUrl = portalUrlWidget
+    ? portalUrlWidget.get("value")
+    : (document.getElementById("companyPortalUrl") || {}).value || "";
   var companyEmailAddress = dijit.byId("companyEmailAddress").get("value");
   var bgColor = dijit.byId("bgColor").get("value");
   var primaryColor = dijit.byId("pColor").get("value");
