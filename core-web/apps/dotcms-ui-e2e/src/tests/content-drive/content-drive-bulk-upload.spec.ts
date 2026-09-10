@@ -12,6 +12,11 @@ import { test } from '../../fixtures/content-drive.fixture';
  * The real drag from the desktop into the browser stays a manual check: Playwright can synthesise a
  * `DataTransfer` inside the page, which exercises the same handler, but it cannot drive the OS.
  */
+// A batch is asynchronous end to end: the request, then a queued job, then the completion signal
+// that refreshes the grid. Twenty seconds of that is a coin toss on a loaded runner, and the
+// default budget cannot hold a wait of its own size.
+test.describe.configure({ timeout: 180000 });
+
 test.describe('Content Drive bulk upload', () => {
     test('uploads every file chosen through the file chooser @critical', async ({
         adminPage,
@@ -32,7 +37,7 @@ test.describe('Content Drive bulk upload', () => {
         // Every one of them, which is the defect: the input carried no `multiple`, so only the
         // first ever reached the server.
         for (const name of names) {
-            await drive.expectListContainsTitle(name);
+            await drive.expectUploadedTitle(folderName, name);
         }
     });
 
@@ -55,7 +60,7 @@ test.describe('Content Drive bulk upload', () => {
         // The drop path already delivered a whole FileList, so this guards the half of the defect
         // that was never about the input attribute.
         for (const name of names) {
-            await drive.expectListContainsTitle(name);
+            await drive.expectUploadedTitle(folderName, name);
         }
     });
 

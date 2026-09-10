@@ -143,6 +143,41 @@ export class ContentDrivePage {
     }
 
     /**
+     * Waits for an uploaded file to reach the listing, forcing fresh loads instead of trusting a
+     * push to arrive inside one timeout.
+     *
+     * The grid refreshes when the run's completion signal lands, so a plain `expect(...)` on the row
+     * is really a bet on how quickly the job finishes *and* the signal is delivered. That bet loses
+     * in CI, where the same assertion passed against a dev instance and timed out at twenty seconds
+     * on the runner — the files were on their way, nothing was watching for them long enough.
+     *
+     * Reloading is what makes it deterministic: each attempt refetches the folder, so the test
+     * depends on the files existing rather than on a message arriving in time.
+     */
+    async expectUploadedTitle(folderName: string, title: string, timeoutMs = 120000) {
+        const row = () => this.listTitles.filter({ hasText: title }).first();
+        const deadline = Date.now() + timeoutMs;
+
+        while (Date.now() < deadline) {
+            const appeared = await row()
+                .waitFor({ state: 'visible', timeout: 15000 })
+                .then(() => true)
+                .catch(() => false);
+
+            if (appeared) {
+                return;
+            }
+
+            await this.page.reload();
+            await this.page.waitForLoadState('domcontentloaded');
+            await this.openFolder(folderName);
+        }
+
+        // Left to Playwright, so the failure reads with its usual detail rather than as a bare throw.
+        await expect(row()).toBeVisible({ timeout: 15000 });
+    }
+
+    /**
      * How many rows in the listing carry this exact title.
      *
      * The assertion a duplicate-resubmission message cannot make for itself: "nothing was
