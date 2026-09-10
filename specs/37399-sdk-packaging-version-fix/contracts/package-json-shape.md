@@ -19,6 +19,17 @@ able to check the built result against.
 Non-`@dotcms/*` dependencies (`@tinymce/*`, `react`/`react-dom`, `@angular/*`, `rxjs`, etc.) are
 untouched by this fix.
 
+`core-web/libs/sdk/` holds **eleven** directories, not the seven listed above. The other four —
+`ai`, `cli`, `create-app`, `types` — declare **no `@dotcms/*` entry in any dependency field**, so
+this table has nothing to say about them and the fix had nothing to change in them. They are not
+exempt from the contract: the CI validator and the release pipeline's rewrite loop both walk all
+eleven, and the moment one of them takes a sibling dependency the rows above apply to it too.
+
+One of those four matters for the release pipeline in particular: **`cli` publishes as the
+unscoped `dotcms`**, not `@dotcms/cli`. Any code that resolves a sibling by name must read the
+sibling's own `.name` field rather than assuming an `@dotcms/` prefix — see the comments in
+`deploy-javascript-sdk/action.yml`.
+
 ## SDK libraries — published tarball (post-publish, at release version `X`)
 
 Every `@dotcms/*` entry in `dependencies`, `peerDependencies`, **and `devDependencies`** (all
@@ -43,4 +54,10 @@ succeed.
 A new check in `cicd_1-pr.yml` fails the build if any file above is edited to violate this table
 — specifically: a floating (`latest`/`next`/`*`) `peerDependencies` entry in any SDK lib; a
 reintroduced `@dotcms/client`/`@dotcms/uve` in `dependencies` of `react`/`angular`/`vue`/`analytics`;
-or a floating example pin anywhere except `"latest"` on `main`.
+or an example pin that is not an exact version on any branch other than `main`/`master`
+(`latest`, `next`, `*` and ranges such as `^1.2.0`/`~1.2.0`/`1.2.x` all fail there — a range
+drifts forward past the server the release branch was cut for exactly as `latest` does).
+
+`main` and `master` are both treated as trunk because `cicd_1-pr.yml` accepts PRs targeting
+either. The same check also runs on `cicd_5-lts.yml` (`push:` to `release-*`), where the branch
+context is the pushed ref rather than a PR base.

@@ -138,8 +138,12 @@ jobs:
     if: >-
       always() && !cancelled() &&
       (fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
-       fromJSON(needs.initialize.outputs.filters).examples == 'true')
+       fromJSON(needs.initialize.outputs.filters).examples == 'true' ||
+       fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true')
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - name: 'Checkout'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -148,32 +152,41 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: 'core-web/.nvmrc'
+          cache: npm
+          cache-dependency-path: .github/scripts/validate-sdk-package-shapes/package-lock.json
 
-      - name: 'Build validator'
+      - name: 'Build and test validator'
         working-directory: .github/scripts/validate-sdk-package-shapes
         run: |
-          npm ci
+          # --ignore-scripts: this manifest is PR-controlled on cicd_1-pr.yml, and npm
+          # lifecycle scripts would execute arbitrary code from an unmerged branch — see
+          # that workflow's own "PR checks are run on code that is not yet merged" header.
+          npm ci --ignore-scripts
           npm run build
+          # The guardrail's own tests. Without this a broken validator is a green build:
+          # it would still exit 0 on manifests it should reject.
+          npm test
         shell: bash
 
       - name: 'Validate SDK lib and example manifests'
         working-directory: .github/scripts/validate-sdk-package-shapes
         env:
-          # This workflow only triggers for PRs targeting main/master (see the `on:`
-          # trigger above), so "main" is always the correct branch context here -
-          # examples on main are allowed to float on "latest" (see file header).
+          # This workflow only triggers for PRs targeting main or master (see the `on:`
+          # trigger above), and the validator treats BOTH as trunk - examples there are
+          # allowed to float on "latest" (see file header). Passing the real base ref
+          # rather than a hardcoded "main" keeps this honest if the trigger list changes.
           TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
         run: |
           set -euo pipefail
           FAIL=0
 
-          for pkg_json in $(find ../../../core-web/libs/sdk -maxdepth 2 -name package.json); do
+          while IFS= read -r pkg_json; do
             node dist/index.js "$pkg_json" || FAIL=1
-          done
+          done < <(find ../../../core-web/libs/sdk -maxdepth 2 -name package.json)
 
-          for pkg_json in $(find ../../../examples -maxdepth 2 -name package.json); do
+          while IFS= read -r pkg_json; do
             node dist/index.js "$pkg_json" --branch "$TARGET_BRANCH" || FAIL=1
-          done
+          done < <(find ../../../examples -maxdepth 2 -name package.json)
 
           exit $FAIL
         shell: bash

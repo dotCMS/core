@@ -114,4 +114,43 @@ describe('validateExamplePackageJson', () => {
         expect(validateExamplePackageJson(pkg, 'release-25.07.10_lts_v12')).toEqual([]);
         expect(validateExamplePackageJson(pkg, 'main')).toEqual([]);
     });
+
+    it('does NOT flag "latest" on master — cicd_1-pr.yml accepts PRs to main OR master', () => {
+        const pkg = { dependencies: { '@dotcms/client': 'latest' } };
+
+        expect(validateExamplePackageJson(pkg, 'master')).toEqual([]);
+    });
+
+    it.each(['^26.9.3-1', '~1.2.0', '>=1.0.0', '<2.0.0', '1.2.x', '1.0.0 - 2.0.0', '^1 || ^2'])(
+        'flags the range "%s" on a release branch — a range drifts forward just like "latest"',
+        (range) => {
+            const pkg = { dependencies: { '@dotcms/client': range } };
+
+            const violations = validateExamplePackageJson(pkg, 'release-25.07.10_lts_v12');
+
+            expect(violations).toEqual([expect.stringContaining(range)]);
+        }
+    );
+
+    it('passes an exact prerelease pin on a release branch', () => {
+        // The shape deploy-javascript-sdk/action.yml writes: normalized CalVer, and the
+        // `-next.<run>` form cicd_3-trunk.yml produces.
+        const pkg = {
+            dependencies: { '@dotcms/client': '26.8.3-1', '@dotcms/uve': '1.2.0-next.2632' }
+        };
+
+        expect(validateExamplePackageJson(pkg, 'release-26.08.03_lts_v1')).toEqual([]);
+    });
+
+    it('still allows ranges on trunk — only release branches require an exact pin', () => {
+        const pkg = { dependencies: { '@dotcms/client': '^1.2.0' } };
+
+        expect(validateExamplePackageJson(pkg, 'main')).toEqual([]);
+    });
+
+    it('ignores non-@dotcms dependencies on release branches', () => {
+        const pkg = { dependencies: { next: '^14.0.0', react: '18.2.0' } };
+
+        expect(validateExamplePackageJson(pkg, 'release-25.07.10_lts_v12')).toEqual([]);
+    });
 });

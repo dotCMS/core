@@ -73,17 +73,40 @@ runs:
         # segment before writing it anywhere. This is the single point of normalization;
         # every jq call below, and the idempotency check in the publish step, must use
         # this normalized value, not the raw $RELEASE_VERSION input.
-        RELEASE_VERSION=$(echo "$RELEASE_VERSION" | awk -F'[.-]' '{
-          for (i = 1; i <= NF; i++) { sub(/^0+/, "", $i); if ($i == "") $i = "0" }
-          out = $1 "." $2 "." $3
-          if (NF >= 4) out = out "-" $4
-          print out
+        #
+        # Walk the string segment by segment, PRESERVING the original separators and every
+        # trailing segment. Splitting on [.-] and rebuilding from only $1..$4 silently
+        # truncates the `-next.<run_number>` suffix cicd_3-trunk.yml appends to the version
+        # it passes in (26.9.3-1-next.2632 -> 26.9.3-1), which would make every `next`
+        # publish collide with the stable release version. Non-numeric segments (`next`)
+        # pass through untouched. POSIX awk, no gawk dependency.
+        RELEASE_VERSION=$(echo "$RELEASE_VERSION" | awk '{
+          s = $0; out = ""
+          while (match(s, /[.-]/)) {
+            seg = substr(s, 1, RSTART - 1); sep = substr(s, RSTART, 1)
+            if (seg ~ /^[0-9]+$/) { sub(/^0+/, "", seg); if (seg == "") seg = "0" }
+            out = out seg sep
+            s = substr(s, RSTART + 1)
+          }
+          if (s ~ /^[0-9]+$/) { sub(/^0+/, "", s); if (s == "") s = "0" }
+          print out s
         }')
         echo "Normalized release version: $RELEASE_VERSION"
         echo "normalized_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
 
         sdk_packages=($(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;))
         echo "Found SDK packages: ${sdk_packages[*]}"
+
+        # Each sibling's OWN published name, resolved once up front. Never
+        # "@dotcms/<directory>": libs/sdk/cli publishes as the UNSCOPED `dotcms`, so a
+        # hardcoded scope can never match it and would silently leave a literal "latest" in
+        # a published manifest — Defect B1 all over again. Same reason the publish step
+        # below reads .name rather than assuming the scope.
+        sdk_package_names=()
+        for dep in "${sdk_packages[@]}"; do
+          sdk_package_names+=("$(jq -r '.name' "$dep/package.json" 2>/dev/null || echo "@dotcms/$dep")")
+        done
+        echo "Resolved SDK package names: ${sdk_package_names[*]}"
 
         for sdk in "${sdk_packages[@]}"; do
           pkg="$sdk/package.json"
@@ -96,10 +119,10 @@ runs:
             # lockstep at the same version, so a range only reintroduces the ambiguity
             # ADR-0019 removes. devDependencies is included so @dotcms/types (a dev-only
             # dependency in every SDK lib) no longer ships with an unmasked "latest".
-            for dep in "${sdk_packages[@]}"; do
+            for dep_name in "${sdk_package_names[@]}"; do
               for field in dependencies peerDependencies devDependencies; do
-                if jq -e ".${field}[\"@dotcms/$dep\"]" "$pkg" >/dev/null 2>&1; then
-                  jq --arg field "$field" --arg dep "@dotcms/$dep" --arg v "$RELEASE_VERSION" \
+                if jq -e ".${field}[\"$dep_name\"]" "$pkg" >/dev/null 2>&1; then
+                  jq --arg field "$field" --arg dep "$dep_name" --arg v "$RELEASE_VERSION" \
                     '.[$field][$dep] = $v' "$pkg" > tmp.$$.json && mv tmp.$$.json "$pkg"
                   echo "    ↳ $field $dep_name -> $RELEASE_VERSION"
                 fi
@@ -108,12 +131,15 @@ runs:
           fi
         done
 
-        # Update example projects
+        # Update example projects. Exact pin, no caret: a `^` range drifts forward exactly
+        # the way Defect B3 did on the LTS branches, and validate-sdk-package-shapes rejects
+        # ranges on any non-trunk branch — the release pipeline must never emit a shape its
+        # own guardrail would fail.
         if [ -d "$EXAMPLES_PATH" ]; then
           while IFS= read -r pkg_json; do
-            for dep in "${sdk_packages[@]}"; do
-              if jq -e ".dependencies[\"@dotcms/$dep\"]" "$pkg_json" >/dev/null 2>&1; then
-                jq --arg dep "@dotcms/$dep" --arg v "^$RELEASE_VERSION" \
+            for dep_name in "${sdk_package_names[@]}"; do
+              if jq -e ".dependencies[\"$dep_name\"]" "$pkg_json" >/dev/null 2>&1; then
+                jq --arg dep "$dep_name" --arg v "$RELEASE_VERSION" \
                   '.dependencies[$dep] = $v' "$pkg_json" > tmp.$$.json && mv tmp.$$.json "$pkg_json"
               fi
             done
