@@ -38,8 +38,15 @@ let pageContentlet: PageContentlet;
 test.beforeEach(async ({ request }) => {
     const suffix = Date.now();
 
+    // Template.isAnonymous() (dotCMS/.../portlets/templates/model/Template.java) is a pure
+    // title check: title.startsWith("anonymous_layout_"). PageResourceHelper.checkoutTemplate
+    // only re-versions the SAME template identifier on a layout save when isAnonymous() is
+    // true — otherwise it mints a brand-new Template with a brand-new identifier and
+    // repoints the page at it, orphaning the one captured here. Real UVE auto-generates this
+    // exact prefix for page-only templates; matching it keeps templateIdentifier valid after
+    // the save this test triggers.
     const template = await createTemplate(request, {
-        title: `e2e concurrent-save template ${suffix}`,
+        title: `anonymous_layout_${suffix}`,
         friendlyName: 'e2e concurrent-save template',
         drawed: true,
         body: 'placeholder',
