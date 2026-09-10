@@ -55,23 +55,39 @@
             </div>
         } @else {
             <!--
-                Drag polish:
-                  * [&_.cdk-drag]:transition-transform on the drop list makes
-                    siblings slide when a drag hovers instead of teleporting.
-                  * .cdk-drop-list-dragging is set by CDK on the list while a
-                    drag is in progress — we use it for a subtle background
-                    tint so the drop target reads as active.
-                  * cdkDragPlaceholder / cdkDragPreview templates below own the
-                    "from" and "moving" cues; kept slate-toned to match the
-                    design's minimal aesthetic instead of indigo-branding them.
+                Drag polish (Notion/Linear-style):
+                  * cdkDropListSortingDisabled keeps the original row visible in
+                    place and stops siblings from shifting while a drag is in
+                    progress.
+                  * The placeholder template renders the SAME row content at
+                    reduced opacity — the "faded ghost stays where it started"
+                    cue the design specifies.
+                  * The preview template is a translucent copy following the
+                    cursor (opacity 70%).
+                  * A 2px indigo drop-line is rendered in the gap the pointer
+                    is closest to, based on $sectionDropIndex updated from
+                    cdkDragMoved events. Drop happens against that index, not
+                    CDK's currentIndex (unreliable when sorting is disabled).
             -->
             <ul
+                #sectionListEl
                 cdkDropList
-                (cdkDropListDropped)="onSectionDrop($event)"
-                class="flex-1 overflow-auto py-2 transition-colors [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out [&.cdk-drop-list-dragging]:bg-slate-100/60"
+                cdkDropListSortingDisabled
+                class="flex-1 overflow-auto py-2"
                 data-testid="tools-sections-list">
-                @for (section of store.sections(); track section.id) {
-                    <li cdkDrag class="group">
+                @for (section of store.sections(); track section.id; let i = $index) {
+                    @if ($sectionDropIndex() === i) {
+                        <li
+                            aria-hidden="true"
+                            class="mx-3 my-1 h-0.5 rounded-full bg-indigo-500"
+                            data-testid="tools-section-drop-line"></li>
+                    }
+                    <li
+                        cdkDrag
+                        data-row
+                        (cdkDragMoved)="onSectionDragMoved($event, sectionListEl)"
+                        (cdkDragEnded)="onSectionDragEnded(i)"
+                        class="group">
                         <div
                             role="button"
                             tabindex="0"
@@ -109,17 +125,13 @@
                                 styleClass="opacity-0 group-hover:opacity-100" />
                         </div>
 
-                        <!--
-                            Placeholder is a faded ghost of the row itself — same
-                            layout, same content, opacity dropped — so the eye
-                            stays anchored to where the item will land instead of
-                            following a highlighted slot.
-                        -->
+                        <!-- Faded copy of the row that stays in the original slot. -->
                         <div
                             *cdkDragPlaceholder
-                            class="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-800 opacity-40">
+                            data-row
+                            class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 opacity-40">
                             <span
-                                class="material-symbols-outlined text-base leading-none text-slate-400">
+                                class="material-symbols-outlined text-base leading-none text-gray-400">
                                 drag_indicator
                             </span>
                             <span class="material-symbols-outlined text-lg leading-none">
@@ -128,17 +140,12 @@
                             <span class="flex-1 truncate">{{ section.name }}</span>
                         </div>
 
-                        <!--
-                            Preview mirrors the row's own styling with a soft lift
-                            (subtle border + shadow) — no indigo branding, no
-                            rotation. Matches the design's "same row, lifted"
-                            aesthetic rather than a distinct card.
-                        -->
+                        <!-- Translucent copy following the cursor. -->
                         <div
                             *cdkDragPreview
-                            class="flex w-72 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-lg">
+                            class="flex w-72 items-center gap-2 rounded-md bg-white px-3 py-2 text-sm text-gray-800 opacity-70 shadow-lg">
                             <span
-                                class="material-symbols-outlined text-base leading-none text-slate-400">
+                                class="material-symbols-outlined text-base leading-none text-gray-400">
                                 drag_indicator
                             </span>
                             <span class="material-symbols-outlined text-lg leading-none">
@@ -149,13 +156,27 @@
 
                         @if (store.selectedSectionId() === section.id) {
                             <ul
+                                #toolListEl
                                 cdkDropList
-                                (cdkDropListDropped)="onToolDrop($event)"
-                                class="py-1 pr-2 pl-10 transition-colors [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out [&.cdk-drop-list-dragging]:bg-slate-100/60"
+                                cdkDropListSortingDisabled
+                                class="py-1 pr-2 pl-10"
                                 [attr.data-testid]="'tools-section-tools-' + section.id">
-                                @for (tool of store.selectedSectionTools(); track tool.id) {
+                                @for (
+                                    tool of store.selectedSectionTools();
+                                    track tool.id;
+                                    let toolIndex = $index
+                                ) {
+                                    @if ($toolDropIndex() === toolIndex) {
+                                        <li
+                                            aria-hidden="true"
+                                            class="mx-2 my-1 h-0.5 rounded-full bg-indigo-500"
+                                            data-testid="tools-tool-drop-line"></li>
+                                    }
                                     <li
                                         cdkDrag
+                                        data-row
+                                        (cdkDragMoved)="onToolDragMoved($event, toolListEl)"
+                                        (cdkDragEnded)="onToolDragEnded(toolIndex)"
                                         class="group/tool flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
                                         <span
                                             cdkDragHandle
@@ -184,9 +205,10 @@
 
                                         <div
                                             *cdkDragPlaceholder
-                                            class="flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1.5 text-xs text-slate-700 opacity-40">
+                                            data-row
+                                            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-700 opacity-40">
                                             <span
-                                                class="material-symbols-outlined text-sm leading-none text-slate-400">
+                                                class="material-symbols-outlined text-sm leading-none text-gray-400">
                                                 drag_indicator
                                             </span>
                                             <span class="flex-1 truncate">
@@ -196,9 +218,9 @@
 
                                         <div
                                             *cdkDragPreview
-                                            class="flex w-64 items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 shadow-lg">
+                                            class="flex w-64 items-center gap-2 rounded-md bg-white px-2 py-1.5 text-xs text-gray-700 opacity-70 shadow-lg">
                                             <span
-                                                class="material-symbols-outlined text-sm leading-none text-slate-400">
+                                                class="material-symbols-outlined text-sm leading-none text-gray-400">
                                                 drag_indicator
                                             </span>
                                             <span class="flex-1 truncate">
@@ -207,9 +229,21 @@
                                         </div>
                                     </li>
                                 }
+                                @if ($toolDropIndex() === store.selectedSectionTools().length) {
+                                    <li
+                                        aria-hidden="true"
+                                        class="mx-2 my-1 h-0.5 rounded-full bg-indigo-500"
+                                        data-testid="tools-tool-drop-line-end"></li>
+                                }
                             </ul>
                         }
                     </li>
+                }
+                @if ($sectionDropIndex() === store.sections().length) {
+                    <li
+                        aria-hidden="true"
+                        class="mx-3 my-1 h-0.5 rounded-full bg-indigo-500"
+                        data-testid="tools-section-drop-line-end"></li>
                 }
             </ul>
 
