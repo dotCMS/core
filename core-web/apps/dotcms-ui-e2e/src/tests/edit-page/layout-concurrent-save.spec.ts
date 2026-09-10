@@ -98,6 +98,15 @@ test('editing during an in-flight layout save does not lose container content @c
 }) => {
     const templateBuilder = new TemplateBuilderPage(page);
 
+    // Diagnostic: log every page-API request so a CI failure shows exactly what URL(s)
+    // were actually requested, instead of only "the count never reached 1".
+    page.on('request', (req) => {
+        if (req.url().includes('/api/v1/page/')) {
+            // eslint-disable-next-line no-console -- diagnostic for CI-only flakiness
+            console.log(`[layout-concurrent-save] ${req.method()} ${req.url()}`);
+        }
+    });
+
     let layoutPostCount = 0;
     let releaseFirstSave: () => void = () => undefined;
     const firstSaveHeld = new Promise<void>((resolve) => {
@@ -123,14 +132,16 @@ test('editing during an in-flight layout save does not lose container content @c
     // box 0. This starts the 5s debounce → eventually the first layout POST.
     await templateBuilder.deleteContainerFromBox(0);
 
-    // Poll layoutPostCount directly rather than gating on overlay visibility first: the
-    // DOM update (#layoutSaveInFlight flipping true) and the network request reaching
-    // Playwright's routing layer travel through different channels (rendering vs. CDP
-    // network events) and aren't guaranteed to be ordered relative to each other — an
-    // earlier version of this test checked the count immediately after toBeVisible()
-    // resolved and flaked in CI with "Expected: 1, Received: 0".
+    // Check the overlay first — confirms the deletion click really flipped
+    // #layoutSaveInFlight (i.e. a save was genuinely triggered), independent of whether
+    // our route pattern below actually matches the request.
+    await expect(templateBuilder.getOverlay()).toBeVisible({ timeout: 6000 });
+
+    // Poll layoutPostCount rather than asserting it immediately: the DOM update above and
+    // the network request reaching Playwright's routing layer travel through different
+    // channels (rendering vs. CDP network events) and aren't strictly ordered relative to
+    // each other.
     await expect.poll(() => layoutPostCount, { timeout: 6000 }).toBe(1);
-    await expect(templateBuilder.getOverlay()).toBeVisible();
 
     // Try to leave the Layout tab while save #1 is still held in flight. This exercises
     // the force-save-on-leave path (AC3) — before the fix, this fired a second, concurrent
