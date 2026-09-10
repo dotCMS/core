@@ -251,7 +251,8 @@ reading it fails, because a flag that fails open would expose unfinished work by
 **Note on the flag's nature**: it is a **development and QA gate**, not a long-lived customer
 switch. Nobody is expected to run with it off permanently once the work is done, and no promise is
 made about the two behaviors coexisting in the field. See D15 — this is a deliberate correction to
-how earlier drafts framed it, and it needs reconciling with #37005's own spec.
+how earlier drafts framed it, and it agrees with #37005, which already hands the flag's removal to
+#37008.
 
 **Independent Test**: with the flag absent, with it explicitly off, and with the read failing,
 exercise the Experiments entry point and confirm identical behavior to the current build in all
@@ -1018,12 +1019,23 @@ The technical requirement is unchanged and is not weakened by the reframing: fla
 mean today's behavior exactly, and the read must still fail closed (D5). A development gate that
 fails open is worse than a product switch that does, because it exposes unfinished work by accident.
 
-**Cost accepted, and an inconsistency to resolve outside this spec**: this **contradicts #37005's own
-approved spec**, whose SC-002 promises "an operator under a minute to move between entry points
-without a deployment or restart" — an operator-facing switch, on the same flag. Both specs cannot be
-right. This one records the reviewed intent; #37005's SC-002 needs revisiting, and that is a change
-to *that* spec, not something this one can make on its own. Flagged rather than silently diverged
-from.
+**Cost accepted**: the flag's two sides are a before and an after, so FR-048 forbids adding
+capability to either — including anything that would make keeping the flag attractive later.
+
+**Consistent with #37005, checked.** #37005 introduces this flag, and it already says #37008 takes
+it away: its Scope Note ("this does **not** retire the old screens or remove the switch — a later
+migration issue (#37008) does that") and its "Relationship to #37008" section ("#37008 … retires
+**`FEATURE_FLAG_EXPERIMENTS_PORTLET`**, the switch this work introduces, together with its shipped
+default and its wiring"). Its own US3 is P2 and scoped to "someone who deliberately opts in". The
+two specs therefore agree on the flag's lifetime, and this decision sharpens the intent behind it
+rather than contradicting a requirement.
+
+#37005's SC-002 — "an operator … under one minute … without a deployment or restart" — measures how
+fast a flip takes effect, not how long the flag lives or what may be built behind it. FR-005 keeps
+#37005's own uncached, fail-closed reader unchanged, so SC-002 goes on holding under this spec. No
+amendment to #37005 is required, and FR-048 conflicts with nothing in it: #37005's FR-014 — "the
+switch MUST NOT change the behavior of any capability other than the … entry point" — pushes the
+same way.
 
 ## Open Decisions
 
