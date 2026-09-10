@@ -1659,7 +1659,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return this.#dotMessageService.get('content-drive.upload.refused.too-large');
         }
 
-        if (error?.status === HttpStatusCode.BadRequest) {
+        // A `400` is only *attributed* to the file count where nothing else could have caused it.
+        // The ceiling mapper is not this endpoint's only source of one: the resource rejects a bad
+        // referer with a `400`, and a malformed `form` part produces one from Jackson before any of
+        // this feature's code runs. Naming the count for those sends the author to remove files
+        // from a batch whose size was never the problem.
+        //
+        // "Nothing else could have caused it" means no ceiling was advertised, so the client could
+        // not check up front — and a count refusal is then the only `400` the contract documents.
+        // Where a ceiling *is* advertised, an over-ceiling batch was already refused in the chooser
+        // with the number named, so a `400` arriving here is something else by construction.
+        if (error?.status === HttpStatusCode.BadRequest && !this.#store.uploadCeilings()) {
             return this.#dotMessageService.get('content-drive.upload.refused.too-many-files');
         }
 

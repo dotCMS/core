@@ -2200,7 +2200,39 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
-        it('should say there were too many files when the submission is refused for its count', () => {
+        it('should not blame the file count for a 400 it cannot attribute', () => {
+            // Raised in review, and correct: the ceiling mapper is not the only source of a 400
+            // from this endpoint. The resource rejects a bad referer with one, and a malformed
+            // `form` part produces one from Jackson before any of this feature's code runs. The
+            // status alone therefore does not identify the cause, and naming the wrong one sends
+            // the author to remove files from a batch whose size was never the problem.
+            //
+            // It is the *likely* case, not the edge case: the client now refuses an over-ceiling
+            // batch in the chooser, so a count refusal rarely reaches the server at all.
+            store.uploadCeilings.mockReturnValue({ maxFiles: 100, maxTotalBytes: 0 });
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.add-dotasset-error-detail'
+                })
+            );
+        });
+
+        it('should still blame the count when nothing else could have refused it', () => {
+            // The one case where the status is enough: no ceiling was advertised, so the client
+            // could not check up front, and a count refusal is the only 400 this endpoint documents
+            // as a refusal. Better than the generic copy, which names no cause at all.
+            store.uploadCeilings.mockReturnValue(null);
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(() => new HttpErrorResponse({ status: 400 }))
             );
