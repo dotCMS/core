@@ -1,5 +1,10 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { NEVER, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -93,6 +98,35 @@ describe('DotAiConfigDetailComponent', () => {
         it('does not mark the load as failed', () => {
             expect(spectator.component.loadFailed()).toBe(false);
             expect(spectator.component.loading()).toBe(false);
+        });
+    });
+
+    // The specs above assert signal values against an unrendered component, so they stay green
+    // through any template change. These render the two states instead, so the loading and error
+    // branches are checked against the markup that actually ships.
+    describe('load-state rendering', () => {
+        it('renders the spinner and no error while the config is still loading', () => {
+            spectator = createComponent();
+            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(NEVER);
+            spectator.inject(DotAiConfigService).getConfig.mockReturnValue(NEVER);
+
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('loading-indicator'))).toExist();
+            expect(spectator.query(byTestId('error-message'))).not.toExist();
+        });
+
+        it('renders the error message and no spinner when the load fails', () => {
+            spectator = createComponent();
+            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(of(providers));
+            spectator
+                .inject(DotAiConfigService)
+                .getConfig.mockReturnValue(throwError(() => new Error('network error')));
+
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('error-message'))).toExist();
+            expect(spectator.query(byTestId('loading-indicator'))).not.toExist();
         });
     });
 });
