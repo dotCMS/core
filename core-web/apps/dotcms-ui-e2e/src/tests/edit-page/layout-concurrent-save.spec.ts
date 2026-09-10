@@ -98,15 +98,6 @@ test('editing during an in-flight layout save does not lose container content @c
 }) => {
     const templateBuilder = new TemplateBuilderPage(page);
 
-    // Diagnostic: log every page-API request so a CI failure shows exactly what URL(s)
-    // were actually requested, instead of only "the count never reached 1".
-    page.on('request', (req) => {
-        if (req.url().includes('/api/v1/page/')) {
-            // eslint-disable-next-line no-console -- diagnostic for CI-only flakiness
-            console.log(`[layout-concurrent-save] ${req.method()} ${req.url()}`);
-        }
-    });
-
     let layoutPostCount = 0;
     let releaseFirstSave: () => void = () => undefined;
     const firstSaveHeld = new Promise<void>((resolve) => {
@@ -115,7 +106,13 @@ test('editing during an in-flight layout save does not lose container content @c
 
     // Hold the FIRST layout save open so we control exactly when it resolves, instead of
     // racing the real 5s debounce + network timing.
-    await page.route('**/api/v1/page/*/layout', async (route) => {
+    //
+    // Trailing `**` is required: DotPageLayoutService.save() appends `?variantName=...`
+    // whenever a variant is active (this test environment defaults to `DEFAULT`), and a
+    // glob without a trailing wildcard must match the URL exactly up to its end — so
+    // `**/layout` (no trailing `**`) never matched `.../layout?variantName=DEFAULT` and
+    // silently missed every request.
+    await page.route('**/api/v1/page/*/layout**', async (route) => {
         layoutPostCount += 1;
 
         if (layoutPostCount === 1) {
