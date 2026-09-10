@@ -193,7 +193,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             final File binary = resolveStagedContent(job, tempFileId, user)
                     .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
 
-            final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
+            final boolean isFileAsset = isFileAsset(job.parameters());
 
             final Contentlet contentlet = new Contentlet();
 
@@ -376,12 +376,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      */
     private Optional<File> resolveStagedContent(final Job job, final String tempFileId,
                                                 final User user) {
-        final List<String> accessingList = new ArrayList<>();
-        accessingList.add(user.getUserId());
-        final Object fingerprint = job.parameters().get("requestFingerprint");
-        if (fingerprint != null) {
-            accessingList.add(String.valueOf(fingerprint));
-        }
+        final List<String> accessingList = accessingList(job, user);
         return APILocator.getTempFileAPI().getTempFile(accessingList, tempFileId)
                 .map(tempFile -> tempFile.file);
     }
@@ -441,15 +436,6 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     /**
      * Resolves the <b>specific</b> content type this file should become, from its media type.
      * <p>
-     * <b>Why not just the base type's default.</b> This used to hardcode `FileAsset` or `dotAsset`
-     * from the batch's declared base type, so a PNG uploaded as {@code DOTASSET} became the generic
-     * dotAsset and never the instance's own Image type. That is not only a wrong label — <b>the
-     * resolved type is what feeds this feature's own validation</b>. {@link #effectiveCeiling}
-     * reads its {@code maxFileLength} and {@link #acceptedTypes} its {@code allowedFileTypes}, so
-     * an instance that caps Image at 5 MB and restricts it to {@code image/*} had both rules
-     * silently bypassed by this endpoint while every other path that creates an image enforced
-     * them. Exactly the divergence FR-006 exists to prevent.
-     * <p>
      * Routed through the product's own {@code BaseTypeToContentTypeStrategyResolver} — the same one
      * {@code ESContentletAPIImpl#checkOrSetContentType} uses — rather than a matcher of our own, so
      * a batch and a single upload of the same file land on the same type by construction rather
@@ -469,7 +455,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                                            final User user)
             throws DotDataException, DotSecurityException {
 
-        final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
+        final boolean isFileAsset = isFileAsset(job.parameters());
         final BaseContentType baseType =
                 isFileAsset ? BaseContentType.FILEASSET : BaseContentType.DOTASSET;
 
@@ -505,12 +491,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return Optional.empty();
             }
 
-            final List<String> accessingList = new ArrayList<>();
-            accessingList.add(user.getUserId());
-            final Object fingerprint = job.parameters().get("requestFingerprint");
-            if (null != fingerprint) {
-                accessingList.add(String.valueOf(fingerprint));
-            }
+            final List<String> accessingList = accessingList(job, user);
 
             return strategy.get().apply(baseType, Map.of(
                     "user", user,
@@ -587,7 +568,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return Optional.of(BatchFailureReason.FOLDER_FILTER_MISMATCH);
             }
 
-            if (!"FILEASSET".equals(parameters.get("baseType"))) {
+            if (!isFileAsset(parameters)) {
                 return Optional.empty();
             }
 
@@ -749,6 +730,29 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         metadata.put("duplicateSubmission", job.parameters().containsKey("duplicateOfJobId"));
 
         return metadata;
+    }
+
+    /** Whether this batch creates fileAssets. The two base types differ in enough places to name. */
+    private boolean isFileAsset(final Map<String, Object> parameters) {
+        return "FILEASSET".equals(parameters.get("baseType"));
+    }
+
+    /**
+     * Who the staging layer will accept as the owner of this run's content.
+     * <p>
+     * <b>Built from the job, never from a request.</b> The run has none — that is why the
+     * submission captures a fingerprint into the job's parameters in the first place. Shared by
+     * every caller so the two cannot drift: content resolved under one list and routed under a
+     * different one would fail in ways that look like the file being missing.
+     */
+    private List<String> accessingList(final Job job, final User user) {
+        final List<String> accessingList = new ArrayList<>();
+        accessingList.add(user.getUserId());
+        final Object fingerprint = job.parameters().get("requestFingerprint");
+        if (null != fingerprint) {
+            accessingList.add(String.valueOf(fingerprint));
+        }
+        return accessingList;
     }
 
     @SuppressWarnings("unchecked")
