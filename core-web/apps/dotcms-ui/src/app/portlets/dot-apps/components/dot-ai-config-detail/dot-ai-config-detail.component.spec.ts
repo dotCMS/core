@@ -101,8 +101,8 @@ describe('DotAiConfigDetailComponent', () => {
     describe('load-state rendering', () => {
         it('renders the spinner and no error while the config is still loading', () => {
             spectator = createComponent();
-            spectator.inject(DotAiService).getProviders.mockReturnValue(NEVER);
-            spectator.inject(DotAiService).getConfig.mockReturnValue(NEVER);
+            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(NEVER);
+            spectator.inject(DotAiConfigService).getConfig.mockReturnValue(NEVER);
 
             spectator.detectChanges();
 
@@ -112,9 +112,9 @@ describe('DotAiConfigDetailComponent', () => {
 
         it('renders the error message and no spinner when the load fails', () => {
             spectator = createComponent();
-            spectator.inject(DotAiService).getProviders.mockReturnValue(of(providers));
+            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(of(providers));
             spectator
-                .inject(DotAiService)
+                .inject(DotAiConfigService)
                 .getConfig.mockReturnValue(throwError(() => new Error('network error')));
 
             spectator.detectChanges();
