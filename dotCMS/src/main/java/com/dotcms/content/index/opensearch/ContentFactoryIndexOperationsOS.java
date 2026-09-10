@@ -146,8 +146,16 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                 // Not cached: a sentinel stored here would be replayed to every later identical
                 // query as a successful empty result, outliving the outage and defeating the
                 // fallback even after OpenSearch recovers.
+                // Index name and OpenSearch's own reason only. The full SearchRequest is
+                // deliberately left out: in Phase 2 the router logs this message at ERROR, and a
+                // Lucene query can carry end-user search terms and field values (Constitution
+                // Principle III). The request body is still available at DEBUG on the WARN block
+                // above for anyone diagnosing a specific query.
                 throw new DotRuntimeException(String.format(
-                        "OpenSearch search failed for [ %s ]: %s", searchRequest, exceptionMsg), e);
+                        "OpenSearch search failed on index [%s]: %s",
+                        (searchRequest.index() != null) ? String.join(",", searchRequest.index())
+                                : "unknown",
+                        exceptionMsg), e);
             }
             if(shouldQueryCache(exceptionMsg)) {
                 queryCache.put(searchRequest, ERROR_HIT);
@@ -211,8 +219,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), "----------------------------------------------");
             if (mustRaiseForPhase2Fallback()) {
                 // Not cached, for the same reason as the search path above.
+                // Index name only -- see the search path above for why the request is omitted.
                 throw new DotRuntimeException(String.format(
-                        "OpenSearch count failed for [ %s ]: %s", countRequest, exceptionMsg), e);
+                        "OpenSearch count failed on index [%s]: %s",
+                        countRequest.index(), exceptionMsg), e);
             }
             if(shouldQueryCache(exceptionMsg)) {
                 queryCache.put(countRequest, -1L);
@@ -244,9 +254,9 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             indexToHit = inferIndexToHit(query);
             if (indexToHit == null) {
                 if (mustRaiseForPhase2Fallback()) {
-                    throw new DotRuntimeException(String.format(
-                            "Unable to determine which OpenSearch index to query for [ %s ]",
-                            query));
+                    // The query itself is omitted -- see cachedIndexSearch below.
+                    throw new DotRuntimeException(
+                            "Unable to determine which OpenSearch index to query");
                 }
                 return SearchHits.empty();
             }
@@ -518,8 +528,9 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
             if (mustRaiseForPhase2Fallback()) {
-                throw new DotRuntimeException(String.format(
-                        "OpenSearch scroll failed for [ %s ]: %s", query, exceptionMsg), e);
+                // The Lucene query is omitted here for the same reason.
+                throw new DotRuntimeException(
+                        "OpenSearch scroll failed: " + exceptionMsg, e);
             }
             return new PaginatedArrayList<>();
         } catch (final IllegalStateException e) {
