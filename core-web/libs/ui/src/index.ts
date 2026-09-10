@@ -26,7 +26,6 @@ export * from './lib/components/dot-asset-search/components/dot-asset-search-dia
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
-export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
 export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-filter-bar/constants';
 export * from './lib/components/dot-filter-bar/dot-filter-bar.component';
@@ -65,6 +64,9 @@ export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-radio-card/dot-radio-card.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 export * from './lib/components/dot-search-input/dot-search-input.component';
+export * from './lib/services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
+export * from './lib/services/dot-keyboard-shortcut/models';
+export * from './lib/services/dot-keyboard-shortcut/overlay';
 export * from './lib/components/dot-search-input/constants';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
 export * from './lib/components/dot-sidebar-accordion';

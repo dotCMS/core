@@ -49,7 +49,6 @@ RUN apt update && \
         tini \
         zip \
         unzip \
-        libtcnative-1 \
         tzdata \
         ca-certificates \
         libmimalloc2.0 \
@@ -100,10 +99,16 @@ RUN groupadd -g "$USER_GID" "$USER_GROUP" && \
 COPY --from=container-base /java /java
 COPY --from=container-base /srv /srv
 COPY --from=container-base /data /data
+# Tomcat Native (tcnative) built for Tomcat 9 in the java-base image, so it is
+# built once per java-base release and reused here. Runtime deps (libapr1,
+# libssl3) come from the apt packages above.
+COPY --from=container-base /usr/local/tomcat-native /usr/local/tomcat-native
 
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
+# Makes the tcnative library visible to the JVM (System.loadLibrary("tcnative-1"))
+ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib"
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]

@@ -4,6 +4,7 @@ import { Component, computed, inject, input, Signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { MessageModule } from 'primeng/message';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -84,7 +85,7 @@ const WARNING_MANY_KEY = 'experiments.configure.page.change.warning.many';
  */
 @Component({
     selector: 'dot-experiments-change-page-dialog',
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [ButtonModule, MessageModule, DotMessagePipe],
     templateUrl: './dot-experiments-change-page-dialog.component.html'
 })
 export class DotExperimentsChangePageDialogComponent {

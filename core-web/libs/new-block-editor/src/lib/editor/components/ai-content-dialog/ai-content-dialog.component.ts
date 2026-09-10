@@ -14,7 +14,7 @@ import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Skeleton } from 'primeng/skeleton';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotAiContentService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -46,7 +46,7 @@ const AI_HTML_GUARDRAIL =
 })
 export class AiContentDialogComponent {
     private readonly dialogRef = inject(DynamicDialogRef);
-    private readonly dotAi = inject(DotAiService);
+    private readonly dotAi = inject(DotAiContentService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly sanitizer = inject(DomSanitizer);
 

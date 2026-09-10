@@ -1,5 +1,12 @@
-import { Component, DebugElement, inject } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+    byTestId,
+    createComponentFactory,
+    createDirectiveFactory,
+    Spectator,
+    SpectatorDirective
+} from '@openng/spectator/jest';
+
+import { Component, signal } from '@angular/core';
 import {
     ReactiveFormsModule,
     UntypedFormBuilder,
@@ -7,17 +14,38 @@ import {
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import { form, required } from '@angular/forms/signals';
 
 import { DotFieldRequiredDirective } from './dot-field-required.directive';
 
+const REQUIRED_CLASS = 'p-label-input-required';
+
+const isMarked = (element: Element | null): boolean =>
+    !!element?.classList.contains(REQUIRED_CLASS);
+
+/**
+ * The bare attribute has to stand on its own: the screens that need it most are the ones with no
+ * `[formGroup]` anywhere above the label.
+ */
+describe('DotFieldRequiredDirective (bare)', () => {
+    let spectator: SpectatorDirective<DotFieldRequiredDirective>;
+
+    const createDirective = createDirectiveFactory(DotFieldRequiredDirective);
+
+    it('should mark the label with no form of any kind above it', () => {
+        spectator = createDirective(
+            `<label dotFieldRequired data-testid="plainLabel" for="plain">Plain</label>`
+        );
+
+        expect(isMarked(spectator.query(byTestId('plainLabel')))).toBe(true);
+    });
+});
+
 @Component({
-    standalone: false,
     template: `
         <form [formGroup]="form">
             <label data-testid="nameLabel" dotFieldRequired for="name">Name</label>
             <input id="name" type="text" formControlName="name" />
-            <br />
             <label
                 data-testid="textLabel"
                 checkIsRequiredControl="text"
@@ -27,10 +55,11 @@ import { DotFieldRequiredDirective } from './dot-field-required.directive';
             </label>
             <input id="text" type="text" formControlName="text" />
         </form>
-    `
+    `,
+    imports: [ReactiveFormsModule, DotFieldRequiredDirective]
 })
-class TestHostComponent {
-    private fb = inject(UntypedFormBuilder);
+class ReactiveHostComponent {
+    private fb = new UntypedFormBuilder();
 
     form: UntypedFormGroup = this.fb.group({
         name: new UntypedFormControl('', Validators.required),
@@ -38,28 +67,56 @@ class TestHostComponent {
     });
 }
 
-describe('Directive: dotFieldRequired', () => {
-    let fixture: ComponentFixture<TestHostComponent>;
-    let labelEl: DebugElement;
+describe('DotFieldRequiredDirective (reactive forms)', () => {
+    let spectator: Spectator<ReactiveHostComponent>;
+
+    const createComponent = createComponentFactory({
+        component: ReactiveHostComponent,
+        imports: [ReactiveFormsModule]
+    });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            imports: [ReactiveFormsModule, DotFieldRequiredDirective]
-        }).compileComponents();
-        fixture = TestBed.createComponent(TestHostComponent);
-        fixture.detectChanges();
+        spectator = createComponent();
     });
 
-    it('should required field', async () => {
-        labelEl = fixture.debugElement.query(By.css('[data-testid="nameLabel"]'));
-
-        expect(labelEl.nativeElement.classList.contains('p-label-input-required')).toBeTruthy();
+    it('should mark a control carrying Validators.required', () => {
+        expect(isMarked(spectator.query(byTestId('nameLabel')))).toBe(true);
     });
 
-    it('should not required field', async () => {
-        labelEl = fixture.debugElement.query(By.css('[data-testid="textLabel"]'));
+    it('should leave an optional control unmarked', () => {
+        expect(isMarked(spectator.query(byTestId('textLabel')))).toBe(false);
+    });
+});
 
-        expect(labelEl.nativeElement.classList.contains('p-label-input-required')).toBeFalsy();
+/** A host is the right shape here: the template needs a real `form()` to hand the directive. */
+@Component({
+    template: `
+        <label [dotFieldRequired]="tree.name" data-testid="signalRequired">Name</label>
+        <label [dotFieldRequired]="tree.notes" data-testid="signalOptional">Notes</label>
+    `,
+    imports: [DotFieldRequiredDirective]
+})
+class SignalFormHostComponent {
+    readonly model = signal({ name: '', notes: '' });
+    readonly tree = form(this.model, (path) => {
+        required(path.name);
+    });
+}
+
+describe('DotFieldRequiredDirective (signal forms)', () => {
+    let spectator: Spectator<SignalFormHostComponent>;
+
+    const createComponent = createComponentFactory(SignalFormHostComponent);
+
+    beforeEach(() => {
+        spectator = createComponent();
+    });
+
+    it('should mark a field the schema declares required', () => {
+        expect(isMarked(spectator.query(byTestId('signalRequired')))).toBe(true);
+    });
+
+    it('should not mark a field the schema leaves optional', () => {
+        expect(isMarked(spectator.query(byTestId('signalOptional')))).toBe(false);
     });
 });
