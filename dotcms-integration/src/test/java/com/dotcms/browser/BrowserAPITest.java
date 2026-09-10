@@ -2652,6 +2652,87 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     /**
      * <ul>
+     *     <li><b>Given Scenario:</b> Enough contentlets in one folder to span several pages at a
+     *     small {@code maxResults}, all forced to an identical {@code mod_date} (same
+     *     {@code DotConnect} technique as the tie tests above) -- the operational risk called out
+     *     in review: {@code getContentByChunks} pages by DB offset, so a non-total {@code ORDER BY}
+     *     can return a tied boundary row twice or skip it entirely across adjacent page
+     *     requests.</li>
+     *     <li><b>Expected Result:</b> Paging through with a small {@code maxResults} and collecting
+     *     identifiers across all pages yields no duplicates, and the total collected equals the
+     *     count from a single unpaged request -- the tiebreaker makes the cursor stable across
+     *     page boundaries.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_tiedModDateDeepPagination_noDuplicatesOrGaps()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        final int totalContentlets = 35;
+        final int pageSize = 10;
+
+        final List<String> createdIdentifiers = new ArrayList<>();
+        for (int i = 0; i < totalContentlets; i++) {
+            createdIdentifiers.add(new FileAssetDataGen(
+                    FileUtil.createTemporaryFile("deep-page-" + i, ".txt", "content " + i))
+                    .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted()
+                    .getIdentifier());
+        }
+
+        // Force an identical mod_date across every contentlet in the folder so the pre-tiebreaker
+        // ORDER BY (mod_date alone) has nothing left to disambiguate any of them by.
+        final java.sql.Timestamp sharedModDate = new java.sql.Timestamp(System.currentTimeMillis());
+        final String updateSql = "update contentlet set mod_date = ? where identifier in ("
+                + createdIdentifiers.stream().map(id -> "?").collect(Collectors.joining(","))
+                + ")";
+        final List<Object> updateParams = new ArrayList<>();
+        updateParams.add(sharedModDate);
+        updateParams.addAll(createdIdentifiers);
+        new DotConnect().executeUpdate(updateSql, updateParams.toArray());
+
+        final BrowserQuery.Builder unpagedQueryBuilder = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true);
+
+        final int unpagedTotal = browserAPI.getPaginatedContents(unpagedQueryBuilder.build())
+                .list.size();
+
+        final List<String> pagedIdentifiers = new ArrayList<>();
+        int cursor = 0;
+        boolean hasMore = true;
+        while (hasMore) {
+            final PaginatedContents page = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .ignoreSiteForFolders(true)
+                    .showFiles(true)
+                    .maxResults(pageSize)
+                    .contentCursor(cursor)
+                    .build());
+
+            for (final Map<String, Object> row : page.list) {
+                pagedIdentifiers.add((String) row.get("identifier"));
+            }
+
+            hasMore = page.hasMoreContent;
+            cursor = page.nextContentCursor;
+        }
+
+        final Set<String> uniquePagedIdentifiers = new HashSet<>(pagedIdentifiers);
+        assertEquals("Paging through a tied-mod_date folder must not return duplicate identifiers",
+                pagedIdentifiers.size(), uniquePagedIdentifiers.size());
+        assertEquals(
+                "Paging through a tied-mod_date folder must not skip any identifiers versus the "
+                        + "unpaged result",
+                unpagedTotal, uniquePagedIdentifiers.size());
+    }
+
+    /**
+     * <ul>
      *     <li><b>Given Scenario:</b> FR-010/R4 -- the folder-scoping predicate the new CTE relies
      *     on must still be backed by an index on {@code identifier(parent_path, asset_name,
      *     host_inode)}, whatever that index is named under the current install lineage (fresh
