@@ -18,6 +18,22 @@
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
         <nx.build.options></nx.build.options>
+        <!--
+          The projects the dotCMS WAR actually consumes. These map 1:1 to the
+          webResources entries below (dotcms-ui -> dotAdmin, dotcms-webcomponents,
+          dotcms-binary-field-builder, dotcms-block-editor, edit-content-bridge);
+          analytics-standalone is built by its own `build-analytics` execution.
+
+          Building the whole workspace here also built the sdk-* packages, which the
+          WAR does not contain - they are published separately, and both
+          deploy-javascript-sdk and publish-sdk-next rebuild them from a clean
+          checkout anyway, so that work was thrown away. nx resolves each project's
+          dependencies via `dependsOn: ["^build"]`, so listing the leaves is enough.
+
+          Keep this list in sync with the webResources block further down - the
+          validate-nx-build-projects-sync execution below fails the build if they drift.
+        -->
+        <nx.build.projects>dotcms-ui,dotcms-webcomponents,dotcms-binary-field-builder,dotcms-block-editor,edit-content-bridge</nx.build.projects>
         <cargo.server.port>8084</cargo.server.port>
         <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
         <skip.npm.install>false</skip.npm.install>
@@ -108,6 +124,48 @@
                                 <fail if="should.fail.repo.check" message="ERROR: core-web project.basedir (${core.web.basedir}) is outside repository root (${maven.multiModuleProjectDirectory}). This indicates a path resolution issue that could cause non-reproducible builds."/>
 
                                 <echo message="Validated dist paths are scoped to core-web: ${core.web.basedir}"/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+
+                    <execution>
+                        <id>validate-nx-build-projects-sync</id>
+                        <phase>validate</phase>
+                        <configuration>
+                            <target>
+                                <!-- Every project packaged by the maven-war-plugin webResources block below must
+                                     also be built by nx.build.projects (or have its own dedicated execution, like
+                                     analytics-standalone's build-analytics). Otherwise the WAR silently ships a
+                                     stale/missing asset. -->
+                                <condition property="webresource.dotcms-ui.covered">
+                                    <contains string="${nx.build.projects}" substring="dotcms-ui"/>
+                                </condition>
+                                <fail unless="webresource.dotcms-ui.covered" message="ERROR: webResources packages dist/apps/dotcms-ui but nx.build.projects (${nx.build.projects}) does not build it."/>
+
+                                <condition property="webresource.dotcms-webcomponents.covered">
+                                    <contains string="${nx.build.projects}" substring="dotcms-webcomponents"/>
+                                </condition>
+                                <fail unless="webresource.dotcms-webcomponents.covered" message="ERROR: webResources packages dist/libs/dotcms-webcomponents but nx.build.projects (${nx.build.projects}) does not build it."/>
+
+                                <condition property="webresource.dotcms-binary-field-builder.covered">
+                                    <contains string="${nx.build.projects}" substring="dotcms-binary-field-builder"/>
+                                </condition>
+                                <fail unless="webresource.dotcms-binary-field-builder.covered" message="ERROR: webResources packages dist/apps/dotcms-binary-field-builder but nx.build.projects (${nx.build.projects}) does not build it."/>
+
+                                <condition property="webresource.dotcms-block-editor.covered">
+                                    <contains string="${nx.build.projects}" substring="dotcms-block-editor"/>
+                                </condition>
+                                <fail unless="webresource.dotcms-block-editor.covered" message="ERROR: webResources packages dist/apps/dotcms-block-editor but nx.build.projects (${nx.build.projects}) does not build it."/>
+
+                                <condition property="webresource.edit-content-bridge.covered">
+                                    <contains string="${nx.build.projects}" substring="edit-content-bridge"/>
+                                </condition>
+                                <fail unless="webresource.edit-content-bridge.covered" message="ERROR: webResources packages dist/libs/edit-content-bridge but nx.build.projects (${nx.build.projects}) does not build it."/>
+
+                                <echo message="Validated nx.build.projects covers every webResources entry."/>
                             </target>
                         </configuration>
                         <goals>
@@ -213,7 +271,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <commandlineArgs>exec nx run-many -t build --exclude=tag:skip:build --verbose ${nx.build.options}</commandlineArgs>
+                            <commandlineArgs>exec nx run-many -t build -p ${nx.build.projects} --verbose ${nx.build.options}</commandlineArgs>
                         </configuration>
                     </execution>
 
