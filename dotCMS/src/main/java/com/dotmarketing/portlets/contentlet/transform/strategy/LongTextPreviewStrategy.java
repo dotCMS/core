@@ -47,6 +47,9 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
      */
     private static final int HTML_PARSE_BUDGET = 4096;
 
+    /** Appended to a preview when truncation actually drops content (found in review). */
+    private static final String TRUNCATION_MARKER = "…";
+
     LongTextPreviewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
@@ -161,11 +164,17 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         if (text.length() <= MAX_PREVIEW_LENGTH) {
             return text;
         }
+        // Leave room for the truncation marker so the total visible length still honors the
+        // <=150-character bound from AC-001.
+        final int budget = MAX_PREVIEW_LENGTH - TRUNCATION_MARKER.length();
         // Avoid splitting a UTF-16 surrogate pair (e.g. an emoji) at the boundary -- that would
         // leave a lone high surrogate at the end of the preview (found in review).
-        final int cutIndex = Character.isHighSurrogate(text.charAt(MAX_PREVIEW_LENGTH - 1))
-                ? MAX_PREVIEW_LENGTH - 1 : MAX_PREVIEW_LENGTH;
-        return text.substring(0, cutIndex);
+        final int cutIndex = Character.isHighSurrogate(text.charAt(budget - 1))
+                ? budget - 1 : budget;
+        // A hard cut is indistinguishable from a short, complete value -- append the marker
+        // exactly when content was actually dropped, so its presence signals truncation
+        // (found in review).
+        return text.substring(0, cutIndex) + TRUNCATION_MARKER;
     }
 
 }
