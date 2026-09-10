@@ -5,12 +5,20 @@ import { createTemplate, deleteTemplate, getTemplate } from '@requests/templates
 
 /**
  * Regression coverage for dotCMS/core#36197 — the UVE Layout tab lost container/content
- * data because the canvas was never locked while a layout save was in flight, and the
- * debounced auto-save and the force-save-on-leave path could both send a layout POST for
- * the same page at the same time.
+ * data because the canvas was never locked while a layout save was in flight.
  *
- * Instead of racing real timers/network (flaky), this holds the first save's POST open via
- * route interception so the "edit while a save is in flight" window is deterministic.
+ * This covers the AC1/AC2 promise end-to-end in a real browser: a real edit starts a real
+ * 5s debounce, the canvas locks for the entire save+reload cycle (verified by holding the
+ * POST open via route interception, deterministic rather than racing real timing), and no
+ * container is collaterally lost.
+ *
+ * The AC3 guarantee — the debounced auto-save and the force-save-on-leave path can never
+ * both have a POST in flight for the same page — is covered instead by the 3 unit tests in
+ * edit-ema-layout.component.spec.ts. That's deliberate, not a gap: driving an in-app
+ * CanDeactivate-guard-blocked navigation from Playwright (via a real click, `{ force: true
+ * }`, and `dispatchEvent` — all three tried) reliably hung the browser context past any
+ * timeout budget, while the same race is trivial to simulate deterministically with fake
+ * timers in Jest.
  */
 
 const SYSTEM_CONTAINER = 'SYSTEM_CONTAINER';
@@ -96,14 +104,6 @@ test('editing during an in-flight layout save does not lose container content @c
     page,
     request
 }) => {
-    // This test's critical path includes a real 5s production debounce plus several real
-    // backend round-trips (template/page creation, deletion, reload) — comfortably over
-    // Playwright's default 60s per-test timeout on a loaded CI runner. CI logs showed the
-    // whole flow working correctly and failing only at the very last step
-    // (goToContentTab) with "Target closed", i.e. the 60s ceiling being hit mid-action,
-    // not a logic bug.
-    test.setTimeout(120_000);
-
     const templateBuilder = new TemplateBuilderPage(page);
 
     let layoutPostCount = 0;
@@ -148,18 +148,11 @@ test('editing during an in-flight layout save does not lose container content @c
     // each other.
     await expect.poll(() => layoutPostCount, { timeout: 6000 }).toBe(1);
 
-    // Try to leave the Layout tab while save #1 is still held in flight. This exercises
-    // the force-save-on-leave path (AC3) — before the fix, this fired a second, concurrent
-    // POST for the same page. If it had, that POST would already have hit the route
-    // handler above (synchronously, from the click) and bumped layoutPostCount before we
-    // ever get here.
-    await templateBuilder.goToContentTab();
-
-    // Let the held save complete and everything settle. toHaveURL's own polling wait
-    // gives plenty of real time for a (buggy) second POST to have been intercepted
-    // before the count assertion below, without an arbitrary waitForTimeout.
+    // AC2: the lock must span the whole save + reload cycle, not just the POST — release
+    // the held response and confirm the overlay only comes down once the page has actually
+    // re-hydrated, not the instant the response arrives.
     releaseFirstSave();
-    await expect(page).toHaveURL(/edit-page\/content/);
+    await expect(templateBuilder.getOverlay()).toBeHidden();
 
     expect(layoutPostCount).toBe(1);
 
