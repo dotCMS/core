@@ -55,15 +55,20 @@
             </div>
         } @else {
             <!--
-                Drag polish: the [&_.cdk-drag]:transition-transform variant on
-                the drop list makes siblings slide when a drag hovers; the
-                placeholder and preview templates below provide the "from" and
-                "moving" cues.
+                Drag polish:
+                  * [&_.cdk-drag]:transition-transform on the drop list makes
+                    siblings slide when a drag hovers instead of teleporting.
+                  * .cdk-drop-list-dragging is set by CDK on the list while a
+                    drag is in progress — we use it for a subtle background
+                    tint so the drop target reads as active.
+                  * cdkDragPlaceholder / cdkDragPreview templates below own the
+                    "from" and "moving" cues; kept slate-toned to match the
+                    design's minimal aesthetic instead of indigo-branding them.
             -->
             <ul
                 cdkDropList
                 (cdkDropListDropped)="onSectionDrop($event)"
-                class="flex-1 overflow-auto py-2 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
+                class="flex-1 overflow-auto py-2 transition-colors [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out [&.cdk-drop-list-dragging]:bg-slate-100/60"
                 data-testid="tools-sections-list">
                 @for (section of store.sections(); track section.id) {
                     <li cdkDrag class="group">
@@ -104,20 +109,38 @@
                                 styleClass="opacity-0 group-hover:opacity-100" />
                         </div>
 
-                        <!-- "Moving from here" — muted dashed slot -->
+                        <!--
+                            Placeholder is a faded ghost of the row itself — same
+                            layout, same content, opacity dropped — so the eye
+                            stays anchored to where the item will land instead of
+                            following a highlighted slot.
+                        -->
                         <div
                             *cdkDragPlaceholder
-                            class="mx-1 my-0.5 flex h-9 items-center gap-2 rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-sm text-indigo-300">
+                            class="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-800 opacity-40">
+                            <span
+                                class="material-symbols-outlined text-base leading-none text-slate-400">
+                                drag_indicator
+                            </span>
                             <span class="material-symbols-outlined text-lg leading-none">
                                 {{ section.icon }}
                             </span>
                             <span class="flex-1 truncate">{{ section.name }}</span>
                         </div>
 
-                        <!-- "Moving this" — lifted card following the cursor -->
+                        <!--
+                            Preview mirrors the row's own styling with a soft lift
+                            (subtle border + shadow) — no indigo branding, no
+                            rotation. Matches the design's "same row, lifted"
+                            aesthetic rather than a distinct card.
+                        -->
                         <div
                             *cdkDragPreview
-                            class="flex w-72 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-900 shadow-xl">
+                            class="flex w-72 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-lg">
+                            <span
+                                class="material-symbols-outlined text-base leading-none text-slate-400">
+                                drag_indicator
+                            </span>
                             <span class="material-symbols-outlined text-lg leading-none">
                                 {{ section.icon }}
                             </span>
@@ -128,7 +151,7 @@
                             <ul
                                 cdkDropList
                                 (cdkDropListDropped)="onToolDrop($event)"
-                                class="py-1 pr-2 pl-10 [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out"
+                                class="py-1 pr-2 pl-10 transition-colors [&_.cdk-drag]:transition-transform [&_.cdk-drag]:duration-200 [&_.cdk-drag]:ease-out [&.cdk-drop-list-dragging]:bg-slate-100/60"
                                 [attr.data-testid]="'tools-section-tools-' + section.id">
                                 @for (tool of store.selectedSectionTools(); track tool.id) {
                                     <li
@@ -161,14 +184,26 @@
 
                                         <div
                                             *cdkDragPlaceholder
-                                            class="mx-1 my-0.5 flex h-7 items-center rounded-md border border-dashed border-indigo-300 bg-indigo-50/50 px-3 text-xs text-indigo-300">
-                                            <span class="flex-1 truncate">{{ tool.title }}</span>
+                                            class="flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1.5 text-xs text-slate-700 opacity-40">
+                                            <span
+                                                class="material-symbols-outlined text-sm leading-none text-slate-400">
+                                                drag_indicator
+                                            </span>
+                                            <span class="flex-1 truncate">
+                                                {{ tool.title }}
+                                            </span>
                                         </div>
 
                                         <div
                                             *cdkDragPreview
-                                            class="flex w-64 items-center gap-2 rounded-md border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-900 shadow-xl">
-                                            <span class="flex-1 truncate">{{ tool.title }}</span>
+                                            class="flex w-64 items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 shadow-lg">
+                                            <span
+                                                class="material-symbols-outlined text-sm leading-none text-slate-400">
+                                                drag_indicator
+                                            </span>
+                                            <span class="flex-1 truncate">
+                                                {{ tool.title }}
+                                            </span>
                                         </div>
                                     </li>
                                 }
