@@ -8,7 +8,6 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
 import com.dotcms.jobs.business.batch.BatchItemResult;
 import com.dotcms.jobs.business.batch.BatchItemStatus;
-import com.dotcms.jobs.business.batch.JobItemResultFactory;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.job.Job;
@@ -39,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.enterprise.context.Dependent;
 
@@ -59,7 +59,22 @@ import javax.enterprise.context.Dependent;
 @Queue("assetBulkUpload")
 public class BulkUploadProcessor implements JobProcessor, Cancellable {
 
-    private final JobItemResultFactory itemResults = new JobItemResultFactory();
+    /**
+     * The run's per-item outcome, held in memory for the life of the run.
+     * <p>
+     * <b>In memory, and therefore not resumable — deliberately.</b> An earlier design committed
+     * each item to its own table as it completed, which let a re-queued run skip what it had
+     * already created. That table was removed (#37166, 2026-09-10): the product decided one
+     * feature should not carry a private store for state the job framework does not offer, and
+     * that whether the framework should offer it is an architectural question, not this feature's
+     * to answer. The cost is recorded honestly in the spec — FR-036 … FR-038 and SC-009 were
+     * withdrawn with it.
+     * <p>
+     * {@code CopyOnWriteArrayList} rather than a plain one, matching
+     * {@code BulkRefreshContentletsProcessor}: {@code getResultMetadata} is called by the job
+     * framework's thread, not the one running the batch.
+     */
+    private final List<BatchItemResult> itemResults = new CopyOnWriteArrayList<>();
     private final BulkUploadReasonResolver reasons = new BulkUploadReasonResolver();
     private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
 
@@ -73,27 +88,19 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         final ProgressTracker progressTracker = job.progressTracker().orElseThrow(
                 () -> new JobProcessingException(job.id(), "Progress tracker not found"));
 
-        // Resume: skip what a previous attempt already created rather than recreating it. Keyed by
-        // seq and not by name, because a batch may legitimately contain two files of one name and
-        // the two must remain distinguishable.
-        final List<Integer> alreadyDone = completedSeqs(job);
-
         Logger.info(this, String.format(
-                "Bulk upload job [%s]: %d file(s) for user [%s], %d already completed",
-                job.id(), stagedFiles.size(), user.getUserId(), alreadyDone.size()));
+                "Bulk upload job [%s]: %d file(s) for user [%s]",
+                job.id(), stagedFiles.size(), user.getUserId()));
 
         final List<String> createdInodes = new ArrayList<>();
 
         for (int seq = 0; seq < stagedFiles.size(); seq++) {
 
-            if (alreadyDone.contains(seq)) {
-                continue;
-            }
             if (cancellationRequested.get()) {
                 // Cancellation takes effect between files, never mid-file, so nothing is left
                 // half-created. What was never reached is SKIPPED, which is a distinct outcome from
                 // FAILED: those files were not rejected, they were simply not tried.
-                recordRemainderAsSkipped(job, stagedFiles, seq, alreadyDone);
+                recordRemainderAsSkipped(job, stagedFiles, seq);
                 break;
             }
 
@@ -120,8 +127,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
 
         // FR-019 — say how the run ended, not only that it began. Without this an operator reading
         // logs sees a batch start and nothing after it, and cannot tell a run that finished from
-        // one that stalled: both look identical. Read from the durable rows rather than from
-        // counters held in memory, so the line is true across a resume as well.
+        // one that stalled: both look identical.
         logTerminalState(job, stagedFiles.size());
     }
 
@@ -132,25 +138,17 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * failed by the log line that describes it.
      */
     private void logTerminalState(final Job job, final int submitted) {
-        try {
-            final List<BatchItemResult> results = itemResults.findByJobId(job.id());
-            final long success = countOf(results, BatchItemStatus.SUCCESS);
-            final long failed = countOf(results, BatchItemStatus.FAILED);
-            final long skipped = countOf(results, BatchItemStatus.SKIPPED);
+        // Cancellation is the author's own choice, so it is reported as a distinct ending rather
+        // than folded into "finished" — the two mean different things to whoever is reading the
+        // log to find out why a batch is short.
+        final String ending = cancellationRequested.get() ? "CANCELED" : "COMPLETED";
 
-            // Cancellation is the author's own choice, so it is reported as a distinct ending
-            // rather than folded into "finished" — the two mean different things to whoever is
-            // reading the log to find out why a batch is short.
-            final String ending = cancellationRequested.get() ? "CANCELED" : "COMPLETED";
-
-            Logger.info(this, String.format(
-                    "Bulk upload job [%s]: %s - %d submitted, %d created, %d failed, %d skipped",
-                    job.id(), ending, submitted, success, failed, skipped));
-        } catch (final DotDataException e) {
-            Logger.warn(this, String.format(
-                    "Bulk upload job [%s]: could not read the run's outcome to log it: %s",
-                    job.id(), e.getMessage()));
-        }
+        Logger.info(this, String.format(
+                "Bulk upload job [%s]: %s - %d submitted, %d created, %d failed, %d skipped",
+                job.id(), ending, submitted,
+                countOf(itemResults, BatchItemStatus.SUCCESS),
+                countOf(itemResults, BatchItemStatus.FAILED),
+                countOf(itemResults, BatchItemStatus.SKIPPED)));
     }
 
     private long countOf(final List<BatchItemResult> results, final BatchItemStatus status) {
@@ -586,35 +584,38 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     }
 
     private void recordRemainderAsSkipped(final Job job, final List<Map<String, Object>> files,
-                                          final int from, final List<Integer> alreadyDone) {
+                                          final int from) {
         for (int seq = from; seq < files.size(); seq++) {
-            if (!alreadyDone.contains(seq)) {
-                record(job, seq, String.valueOf(files.get(seq).get("fileName")),
-                        BatchItemStatus.SKIPPED, null, null, null);
-            }
+            record(job, seq, String.valueOf(files.get(seq).get("fileName")),
+                    BatchItemStatus.SKIPPED, null, null, null);
         }
     }
 
+    /**
+     * Records one item's outcome.
+     * <p>
+     * {@code seq} is kept in the signature and unused for storage: the list is appended in
+     * submission order, which is the order FR-015 reports in. It stays because every caller
+     * already knows it and a future durable store would need it back.
+     */
     private void record(final Job job, final int seq, final String key,
                         final BatchItemStatus status, final BatchFailureReason reason,
                         final String message, final String refId) {
-        try {
-            itemResults.record(job.id(), seq, key, status, reason, message, refId);
-        } catch (final DotDataException e) {
-            Logger.error(this, String.format(
-                    "Bulk upload job [%s]: could not record item %d (%s): %s",
-                    job.id(), seq, key, e.getMessage()), e);
-        }
-    }
 
-    private List<Integer> completedSeqs(final Job job) {
-        try {
-            return itemResults.findCompletedSeqs(job.id());
-        } catch (final DotDataException e) {
-            throw new JobProcessingException(job.id(),
-                    "Could not read the run's checkpoint; refusing to restart from the first file "
-                            + "and report already-created files as collisions", e);
+        final BatchItemResult.Builder builder = BatchItemResult.builder()
+                .key(key)
+                .status(status);
+
+        // Never set to null: the shared type models both as Optional, and an explicit null would
+        // be a different thing from absent to anything reading it back.
+        if (reason != null) {
+            builder.reason(reason);
         }
+        if (message != null) {
+            builder.message(message);
+        }
+
+        itemResults.add(builder.build());
     }
 
     @Override
@@ -624,35 +625,42 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * The batch outcome, built from the durable per-item rows rather than from memory — which is
-     * what lets it survive an interruption, and what bulk refresh's in-memory counters cannot do.
+     * The batch outcome, built from what this run recorded as it went.
+     * <p>
+     * <b>Held in memory, which is why it does not survive an interruption.</b> This previously read
+     * a durable per-item table, and that table is what made a re-queued run able to skip files it
+     * had already created. It was removed (#37166): the decision was that one feature should not
+     * carry a private store for state the job framework does not offer. FR-036 … FR-038 and SC-009
+     * were withdrawn from the spec with it, and a run that is interrupted now restarts from the
+     * first file — for a FILEASSET batch the unique index still prevents a second copy and only
+     * the report is wrong, but a DOTASSET batch has no such index (FR-040b) and genuinely
+     * duplicates.
+     * <p>
+     * Same shape as {@code BulkRefreshContentletsProcessor}, which is the precedent this now
+     * follows exactly.
      */
     @Override
     public Map<String, Object> getResultMetadata(final Job job) {
+
         final Map<String, Object> metadata = new HashMap<>();
-        try {
-            final List<BatchItemResult> results = itemResults.findByJobId(job.id());
-            final long success = countOf(results, BatchItemStatus.SUCCESS);
-            final long failed = countOf(results, BatchItemStatus.FAILED);
-            final long skipped = countOf(results, BatchItemStatus.SKIPPED);
+        final List<BatchItemResult> results = new ArrayList<>(itemResults);
 
-            metadata.put("total", results.size());
-            metadata.put("processed", success + failed);
-            metadata.put("successCount", success);
-            metadata.put("failedCount", failed);
-            metadata.put("skippedCount", skipped);
-            metadata.put("results", results);
+        final long success = countOf(results, BatchItemStatus.SUCCESS);
+        final long failed = countOf(results, BatchItemStatus.FAILED);
+        final long skipped = countOf(results, BatchItemStatus.SKIPPED);
 
-            // Contract §3. Lets the client report "already uploaded" instead of "everything
-            // failed" — the two look identical in the counts, because a duplicate collides on
-            // every file, and only this tells them apart (FR-040a).
-            metadata.put("duplicateSubmission",
-                    job.parameters().containsKey("duplicateOfJobId"));
-        } catch (final DotDataException e) {
-            Logger.error(this, String.format(
-                    "Bulk upload job [%s]: could not build the outcome: %s",
-                    job.id(), e.getMessage()), e);
-        }
+        metadata.put("total", results.size());
+        metadata.put("processed", success + failed);
+        metadata.put("successCount", success);
+        metadata.put("failedCount", failed);
+        metadata.put("skippedCount", skipped);
+        metadata.put("results", results);
+
+        // Contract §3. Lets the client report "already uploaded" instead of "everything failed" —
+        // the two look identical in the counts, because a duplicate collides on every file, and
+        // only this tells them apart (FR-040a).
+        metadata.put("duplicateSubmission", job.parameters().containsKey("duplicateOfJobId"));
+
         return metadata;
     }
 

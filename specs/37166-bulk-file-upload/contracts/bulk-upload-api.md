@@ -134,6 +134,22 @@ tell a duplicate resubmission from a batch whose files genuinely all collided (F
 > batch whose response was lost, the honest options are to ask the author, or to let them see the
 > folder before retrying — not to retry silently.
 
+### If a run is interrupted
+
+*(added 2026-09-10)* **A run does not resume.** If the node executing a batch dies, the run is
+re-queued and attempts **every file again from the first** — there is no per-item checkpoint.
+
+- **`FILEASSET`**: no duplicates, because the unique index rejects the second write. The **report**
+  is wrong, though: files the run itself created come back as `NAME_COLLISION`.
+- **`DOTASSET`**: duplicates, for the same reason a resubmission does (see above). A 100-file batch
+  interrupted near the end can leave up to 100 duplicate assets and report a clean success.
+
+The submitter is still notified exactly once, whatever the run went through.
+
+**What this means for a client**: nothing in the outcome distinguishes an interrupted-and-retried
+run from a first attempt, so a batch reporting collisions on files the author is sure they did not
+upload before is the expected shape of this, not a bug to report.
+
 ---
 
 ## 2. Follow, cancel
@@ -220,7 +236,7 @@ durable notification so the outcome survives navigating away (FR-019 … FR-023)
 - **Payload**: the §3 outcome — **counts _and_ `results`**, not counts alone. The frontend needs the
   failing file names to tell the author which files to choose again (spec C-006)
 - **Fires on any terminal state** — completed, cancelled, or permanently failed (FR-019) — and
-  **once per batch**, even across an interruption and resume (FR-039)
+  **once per batch**, even across an interruption (FR-039)
 - **Best-effort**: a failed notification is logged and does not affect the recorded outcome (FR-023)
 
 ---
