@@ -27,13 +27,13 @@ import { DotCMSWorkflow, WorkflowStep } from '@dotcms/dotcms-models';
 import {
     CHIP_FILTER_LISTBOX_PT,
     CHIP_FILTER_POPOVER_PT,
+    DOT_FILTER_FACADE,
     DotChipFilterComponent,
     DotFilterListItemComponent,
     DotMessagePipe
 } from '@dotcms/ui';
 
 import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
-import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 import {
     parseWorkflowToken,
     workflowEntryToToken,
@@ -91,10 +91,11 @@ interface State {
     ],
     providers: [DotWorkflowService],
     templateUrl: './dot-content-drive-workflow-filter.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { 'data-filter-chip': 'workflow' }
 })
 export class DotContentDriveWorkflowFilterComponent {
-    readonly #store = inject(DotContentDriveStore);
+    readonly #filters = inject(DOT_FILTER_FACADE);
     readonly #destroyRef = inject(DestroyRef);
     readonly #workflowService = inject(DotWorkflowService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
@@ -133,7 +134,7 @@ export class DotContentDriveWorkflowFilterComponent {
     /** Current selection, parsed from the single `workflow` filter key. */
     readonly $selection = linkedSignal<WorkflowSelection[]>(() => {
         // getFilterValue can return string | string[]; only an array is valid here.
-        const raw = this.#store.getFilterValue('workflow');
+        const raw = this.#filters.getFilterValue('workflow');
         return (Array.isArray(raw) ? raw : []).map(parseWorkflowToken);
     });
 
@@ -156,7 +157,7 @@ export class DotContentDriveWorkflowFilterComponent {
     readonly #contentTypeFilter = computed(() => {
         // Keep the raw array reference (stable identity) or undefined — never mint a
         // fresh `[]`, which would re-trigger the reload effect on every filter change.
-        const raw = this.#store.getFilterValue('contentType');
+        const raw = this.#filters.getFilterValue('contentType');
         return Array.isArray(raw) ? raw : undefined;
     });
 
@@ -255,7 +256,7 @@ export class DotContentDriveWorkflowFilterComponent {
     }
 
     #loadSchemes(): void {
-        const rawContentTypes = this.#store.getFilterValue('contentType');
+        const rawContentTypes = this.#filters.getFilterValue('contentType');
         const contentTypes = Array.isArray(rawContentTypes) ? rawContentTypes : [];
         const requestId = ++this.#schemesRequestId;
         patchState(this.$state, { loadingSchemes: true });
@@ -388,9 +389,9 @@ export class DotContentDriveWorkflowFilterComponent {
     #syncStore(): void {
         const selection = this.$selection();
         if (selection.length) {
-            this.#store.patchFilters({ workflow: selection.map(workflowEntryToToken) });
+            this.#filters.patchFilters({ workflow: selection.map(workflowEntryToToken) });
         } else {
-            this.#store.removeFilter('workflow');
+            this.#filters.removeFilter('workflow');
         }
     }
 
