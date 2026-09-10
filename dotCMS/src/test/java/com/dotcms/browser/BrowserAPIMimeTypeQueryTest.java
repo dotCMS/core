@@ -92,9 +92,17 @@ public class BrowserAPIMimeTypeQueryTest {
      */
     @Test
     public void testMalformedMimeTypesAreRejectedByTheBuilder() {
-        for (final String rejected : new String[]{"a\"b", "a'b", "a(b", "a)b", "a\\b", "a b",
-                "a;b", "a|b", "a[b", "a]b", "a$b", "a?b", "a,b", "a\nb", "", "a\u0000b",
-                "text/plain; charset=utf-8", "a".repeat(256)}) {
+        for (final String rejected : new String[]{
+                // terminate or escape the quoted regex literal the value sits inside
+                "a\"b", "a\\b",
+                // regex grouping and alternation, which would allow catastrophic backtracking
+                "a(b", "a)b", "a[b", "a]b", "a{b", "a}b", "a|b", "a?b",
+                // quoted parameter values are not produced by dotCMS and are not accepted
+                "text/plain; charset=\"utf-8\"",
+                // remaining structural and control characters
+                "a'b", "a,b", "a<b", "a>b", "a\nb", "a\u0000b",
+                // empty, and one past the length cap
+                "", "a".repeat(256)}) {
             assertThrows("must reject: " + rejected, IllegalArgumentException.class,
                     () -> BrowserQuery.builder().showMimeTypes(List.of(rejected)));
         }
@@ -104,6 +112,24 @@ public class BrowserAPIMimeTypeQueryTest {
     public void testWellFormedMimeTypesAreAcceptedByTheBuilder() {
         BrowserQuery.builder().showMimeTypes(List.of("image", "image/*", "application/pdf",
                 "text/plain", "image/svg+xml", "application/vnd.hzn-3d-crossword", "a".repeat(255)));
+    }
+
+    /**
+     * Tika reports text files with a charset parameter and that value is what lands in asset
+     * metadata, as asserted by {@code ESMappingAPITest}. A caller that reads
+     * {@code metadata.contentType} and feeds it back as a filter must keep working, so the
+     * parameter form is accepted rather than rejected.
+     */
+    @Test
+    public void testParameterisedMimeTypesFromStoredMetadataAreAccepted() throws Exception {
+        for (final String accepted : new String[]{"text/plain; charset=iso-8859-1",
+                "text/plain; charset=UTF-8", "text/html;charset=utf-8"}) {
+            final Result result = invoke(List.of(accepted));
+            assertEquals(accepted + " must bind one value", 1, result.params.size());
+            assertFalse("the value must not reach the statement text",
+                    result.sql.contains(accepted));
+            BrowserQuery.builder().showMimeTypes(List.of(accepted));
+        }
     }
 
     /**

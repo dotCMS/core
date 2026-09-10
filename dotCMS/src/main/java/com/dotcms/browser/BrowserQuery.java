@@ -316,8 +316,18 @@ public class BrowserQuery {
         private boolean skipFolder = false;
         private boolean ignoreSiteForFolders = false;
         private String hostIdSystemFolder = null;
-        /** MIME types, and the partial and wildcard forms the file browser sends. */
-        private static final Pattern MIME_TYPE_PATTERN = Pattern.compile("[A-Za-z0-9/*._+-]{1,255}");
+        /**
+         * MIME types, the partial and wildcard forms the file browser sends, and the parameter
+         * forms that appear in stored metadata such as {@code text/plain; charset=iso-8859-1}.
+         *
+         * <p>Covers the RFC 6838 token characters plus {@code ;}, {@code =} and space for
+         * parameters. Deliberately excludes {@code "} and {@code \}, which are the only
+         * characters that could terminate or escape the quoted regex literal the value is placed
+         * inside, and the grouping characters {@code ( ) [ ] { } | ?}, which would allow a caller
+         * to build a pattern with catastrophic backtracking.</p>
+         */
+        private static final Pattern MIME_TYPE_PATTERN =
+                Pattern.compile("[A-Za-z0-9 !#$&^_.+*/;=~-]{1,255}");
 
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
@@ -499,11 +509,19 @@ public class BrowserQuery {
 
         /**
          * Sets browser MIME filters: bare types such as {@code application/pdf}, partial types
-         * such as {@code image}, and wildcard forms such as {@code image/*}. Each filter must be
-         * 1–255 ASCII letters, digits, or {@code / * . _ + -}. MIME parameters such as
-         * {@code text/plain; charset=utf-8} are not supported. This is a restricted browser filter
-         * syntax, not a general MIME parser; existing regex matching semantics are preserved.
-         * Values are validated here because they are interpolated into the bound JSONPath string.
+         * such as {@code image}, wildcard forms such as {@code image/*}, and parameter forms such
+         * as {@code text/plain; charset=iso-8859-1}. The parameter form matters because that is
+         * how Tika reports text files and how the value is stored in asset metadata, so a caller
+         * that reads {@code metadata.contentType} and feeds it back as a filter keeps working.
+         *
+         * <p>Each filter must be 1–255 characters drawn from {@link #MIME_TYPE_PATTERN}. This is a
+         * restricted browser filter syntax rather than a general MIME parser: a quoted parameter
+         * value such as {@code charset="utf-8"} is not accepted, since dotCMS does not produce
+         * one. Existing regex matching semantics are preserved.</p>
+         *
+         * <p>Validation is defence in depth. What prevents SQL injection is that the JSONPath
+         * expression is bound as a parameter rather than placed into the statement text, so this
+         * pattern is kept as permissive as the surrounding quoting safely allows.</p>
          *
          * <p>A {@code null} list means "no MIME type filter" and is normalised to an empty list.
          * Callers such as {@code BrowserAjax} pass null on their default path, and the query
@@ -521,7 +539,7 @@ public class BrowserQuery {
                 if (mimeType == null || !MIME_TYPE_PATTERN.matcher(mimeType).matches()) {
                     // The rejected value is deliberately not echoed back to the caller or the log.
                     throw new IllegalArgumentException("Invalid MIME type filter at index " + i
-                            + ". Allowed characters are letters, digits and / * . _ + -");
+                            + ". Allowed characters are letters, digits, space and ! # $ & ^ _ . + * / ; = ~ -");
                 }
             }
             this.mimeTypes = List.copyOf(mimeTypes);
