@@ -755,12 +755,13 @@ export function withActionExecution() {
                     trackUploadJob: (
                         jobId: string,
                         affectedFolders: string[] = [],
-                        runId?: string
+                        runId?: string,
+                        baseType?: string
                     ): void => {
                         patchState(store, {
                             uploadJobs: {
                                 ...store.uploadJobs(),
-                                [jobId]: { affectedFolders, runId }
+                                [jobId]: { affectedFolders, runId, baseType }
                             }
                         });
                     },
@@ -785,7 +786,7 @@ export function withActionExecution() {
                             return;
                         }
 
-                        const { affectedFolders, runId } = tracked[event.jobId];
+                        const { affectedFolders, runId, baseType } = tracked[event.jobId];
                         const remaining = { ...tracked };
                         delete remaining[event.jobId];
                         patchState(store, { uploadJobs: remaining });
@@ -854,6 +855,9 @@ export function withActionExecution() {
                                 // service to do it with.
                                 failures: event.results,
                                 duplicateSubmission: event.duplicateSubmission,
+                                // Carried because the flag alone does not say what happened to the
+                                // folder: see FR-040b.
+                                baseType,
                                 // It arrives unprompted, long after the click, so it announces
                                 // itself and must not interrupt whatever is happening now.
                                 backgrounded: true

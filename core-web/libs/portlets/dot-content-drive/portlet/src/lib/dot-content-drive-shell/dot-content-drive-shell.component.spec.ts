@@ -902,6 +902,52 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should say a resubmitted dotAsset batch created a second copy', () => {
+            // FR-040b, added to the contract after manual testing found it: a dotAsset's asset_name
+            // is generated per contentlet, so the unique index the retry guarantee rests on can
+            // never contend for one. The batch runs again and every file is created a second time.
+            // Telling the author "nothing was duplicated" is then the opposite of the truth, and
+            // sends them away from a folder that now holds two of everything.
+            settle({
+                actionName: 'Upload',
+                successCount: 4,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'DOTASSET'
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.already-uploaded-again',
+                '4'
+            );
+        });
+
+        it('should keep the collision wording for a resubmitted file batch', () => {
+            // FILEASSET is the case the original copy was written for, and there it is exactly
+            // right: the index refuses the second writer, so nothing was duplicated.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 3,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'FILEASSET',
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'c.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.already-uploaded',
+                '3'
+            );
+        });
+
         it('should not list the collisions of a recognised retry as failures', () => {
             // Naming them would be telling the author to fix files that are correctly there.
             settle({
@@ -2113,6 +2159,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.trackUploadJob).toHaveBeenCalledWith(
                 'job-1',
                 expect.any(Array),
+                expect.any(String),
                 expect.any(String)
             );
         });
@@ -2469,7 +2516,10 @@ describe('DotContentDriveShellComponent', () => {
                 'job-9',
                 [`//${TARGET_FOLDER_DATA.hostname}${TARGET_FOLDER_DATA.path}`.toLowerCase()],
                 // And the run still reporting it, which only this event can end.
-                expect.any(String)
+                expect.any(String),
+                // And the base type, without which the outcome cannot say whether a resubmission
+                // left a second copy (FR-040b).
+                'DOTASSET'
             );
         });
 

@@ -203,6 +203,16 @@ export interface DotContentDriveUploadJob {
     affectedFolders: string[];
     /** The run reporting the server phase, if one is. */
     runId?: string;
+    /**
+     * Which base type the batch was submitted as.
+     *
+     * Needed to describe its own outcome. A resubmitted `FILEASSET` batch is refused a second copy
+     * by the unique index over the lower-cased path; a `DOTASSET` one is not, because a dotAsset's
+     * `asset_name` is generated per contentlet and never contends — so the identical
+     * `duplicateSubmission` flag means "nothing was duplicated" for one and "everything was
+     * duplicated" for the other (FR-040b).
+     */
+    baseType?: string;
 }
 
 export interface DotContentDriveRun extends DotContentDriveActionExecution {
@@ -230,8 +240,20 @@ export interface DotContentDriveActionExecutionResult {
      *
      * Changes what the same counts mean: all-failed-on-collision is "already uploaded" when it is a
      * retry, and a real problem when it is not.
+     *
+     * **Not sufficient on its own** — see {@link baseType}. The flag says the batch repeats an
+     * earlier successful run; whether that left a second copy depends on the base type.
      */
     duplicateSubmission?: boolean;
+    /**
+     * The base type an upload ran as, where the outcome came from one.
+     *
+     * A resubmission means opposite things by base type (FR-040b): a `FILEASSET` batch is refused
+     * its second copy by the unique index, a `DOTASSET` batch creates one and reports clean
+     * success. Describing the outcome without this would tell half of all authors the opposite of
+     * what happened to their folder.
+     */
+    baseType?: string;
     /**
      * Per-file results, for a run that reports them.
      *

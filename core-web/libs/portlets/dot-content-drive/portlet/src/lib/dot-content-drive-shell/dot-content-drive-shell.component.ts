@@ -700,7 +700,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
             confirmSuccess,
             affectedFolders,
             failures,
-            duplicateSubmission
+            duplicateSubmission,
+            baseType
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -736,9 +737,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // even reload. Staying silent there would mean a run finished and the author never learned.
         const announce = isPartial || confirmSuccess || backgrounded;
 
+        // A resubmission means opposite things by base type, so the copy cannot be one sentence
+        // (FR-040b). For a file asset the unique index refuses the second writer, so the batch
+        // collided and nothing was duplicated — the case this copy was written for. For a dotAsset
+        // the index can never contend, so the batch ran again and every file now exists twice;
+        // saying "nothing was duplicated" there points the author away from a folder they need to
+        // look at.
         const detail = duplicateSubmission
             ? this.#dotMessageService.get(
-                  'content-drive.upload.toast.already-uploaded',
+                  'DOTASSET' === baseType
+                      ? 'content-drive.upload.toast.already-uploaded-again'
+                      : 'content-drive.upload.toast.already-uploaded',
                   String(failedCount + successCount)
               )
             : isPartial
@@ -1572,7 +1581,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
                                 hostFolder?.path || '/'
                             )
                         ],
-                        backgroundRunId
+                        backgroundRunId,
+                        // Carried to the outcome because a resubmission means opposite things by
+                        // base type, and by the time the completion lands nothing else knows which
+                        // one ran (FR-040b).
+                        baseType
                     );
 
                     // The one notification this flow raises, and the only in-flight fact worth

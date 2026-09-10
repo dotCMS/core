@@ -525,6 +525,23 @@ describe('withActionExecution', () => {
             );
         });
 
+        it('should carry the base type, because what a duplicate means depends on it', () => {
+            // FR-040b: a FILEASSET resubmission is refused a second copy by the unique index, while
+            // a DOTASSET one *creates* one and reports clean success. Same flag, opposite facts, so
+            // the outcome cannot be described without knowing which base type ran.
+            build();
+            store.trackUploadJob('upload-1', [], undefined, 'DOTASSET');
+
+            store.reportUploadCompleted(
+                'Upload',
+                completed({ total: 1, successCount: 1, failedCount: 0, skippedCount: 0 })
+            );
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ baseType: 'DOTASSET' })
+            );
+        });
+
         it('should not flag an ordinary all-collided batch as a resubmission', () => {
             // Same counts, different cause: these files really were already there, and the author
             // does need to deal with them.
