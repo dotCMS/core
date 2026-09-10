@@ -185,7 +185,10 @@ test.describe('Content Drive bulk upload outcomes', () => {
                 // The distinction this asserts: the same PNG is fine one folder over, so the fix is
                 // to rename or move it. Copy about file types would send the author to change the
                 // wrong thing.
-                await drive.expectOutcomeContaining('file names');
+                // "only accepts", not the old "certain file names": the copy now names the folder's
+                // actual mask, so it reads "only accepts *.jpg". Asserting on the phrase both variants
+                // share keeps this from going stale the next time the wording improves.
+                await drive.expectOutcomeContaining('only accepts');
             }
         ));
 
