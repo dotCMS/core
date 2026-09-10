@@ -1,7 +1,7 @@
 import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { AiContentPromptState, AiContentPromptStore } from './ai-content-prompt.store';
@@ -9,17 +9,17 @@ import { AiContentPromptState, AiContentPromptStore } from './ai-content-prompt.
 describe('AiContentPromptStore', () => {
     let spectator: SpectatorService<AiContentPromptStore>;
     let store: AiContentPromptStore;
-    let dotAiService: SpyObject<DotAiService>;
+    let dotAiService: SpyObject<DotAiContentService>;
 
     const createStoreService = createServiceFactory({
         service: AiContentPromptStore,
-        mocks: [DotAiService]
+        mocks: [DotAiContentService]
     });
 
     beforeEach(() => {
         spectator = createStoreService();
         store = spectator.service;
-        dotAiService = spectator.inject(DotAiService);
+        dotAiService = spectator.inject(DotAiContentService);
     });
 
     it('should set open state', (done) => {

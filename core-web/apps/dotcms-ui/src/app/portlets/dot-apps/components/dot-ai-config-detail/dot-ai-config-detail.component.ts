@@ -20,7 +20,7 @@ import { MessageModule } from 'primeng/message';
 import { map } from 'rxjs/operators';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService
@@ -61,7 +61,7 @@ import { CAPABILITY_META } from './dot-ai-config.constants';
 })
 export class DotAiConfigDetailComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
-    private readonly dotAiService = inject(DotAiService);
+    private readonly dotAiService = inject(DotAiConfigService);
     private readonly dotRouterService = inject(DotRouterService);
     private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
     private readonly dotMessageService = inject(DotMessageService);
