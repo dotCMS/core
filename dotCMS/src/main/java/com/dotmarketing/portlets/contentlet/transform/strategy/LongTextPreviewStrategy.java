@@ -70,6 +70,10 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
                 // Contentlet#getTitle() -- never overwrite it with a truncated preview, even when
                 // the content type's title-source field is itself WYSIWYG/TextArea/Story Block.
                 .filter(field -> !TITTLE_KEY.equals(field.variable()))
+                // A field entirely absent from the row's map must stay absent -- otherwise every
+                // in-scope field on the content type gets a synthesized "" entry, growing the
+                // payload this strategy exists to shrink (found in review).
+                .filter(field -> map.containsKey(field.variable()))
                 .forEach(field -> Try.run(() ->
                         map.put(field.variable(), extractor.apply(map.get(field.variable()))))
                         .onFailure(e -> Logger.warn(LongTextPreviewStrategy.class, String.format(
