@@ -2301,6 +2301,7 @@ CREATE TABLE static_s3_vanity_mapping (
 CREATE INDEX idx_static_s3_vanity_mapping_vurl
     ON static_s3_vanity_mapping (endpoint_id, vanity_url_id);
 
+
 create table publishing_environment(
 	id varchar(36) NOT NULL  primary key,
 	name varchar(255) NOT NULL unique,

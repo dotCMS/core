@@ -1,0 +1,681 @@
+package com.dotcms.jobs.business.processor.impl;
+
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.jobs.business.batch.BatchFailureReason;
+import com.dotcms.jobs.business.batch.BatchItemResult;
+import com.dotcms.jobs.business.batch.BatchItemStatus;
+import com.dotcms.jobs.business.error.JobCancellationException;
+import com.dotcms.jobs.business.error.JobProcessingException;
+import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.processor.Cancellable;
+import com.dotcms.jobs.business.processor.JobProcessor;
+import com.dotcms.jobs.business.processor.ProgressTracker;
+import com.dotcms.jobs.business.processor.Queue;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.UtilMethods;
+import java.io.File;
+import java.util.Optional;
+import com.dotmarketing.util.Config;
+import com.dotcms.util.ConversionUtils;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadReasonResolver;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.enterprise.context.Dependent;
+
+/**
+ * Creates the assets of one bulk-upload batch (#37166).
+ * <p>
+ * <b>Not marked {@code @NoRetryPolicy}, deliberately.</b> The abandoned-job sweep re-queues a
+ * stalled run without consulting the retry policy, so marking this no-retry would not prevent a
+ * second attempt — it would only leave that attempt unprepared for one. The run is resumable
+ * instead: each item's outcome is committed as it completes, and a re-queued run skips what already
+ * succeeded rather than recreating it. A re-run without that would not duplicate data — the unique
+ * index on the lower-cased path rejects the second create — but it would make the report lie, which
+ * is worse: the author is told 30 files failed when all 30 are in the folder.
+ *
+ * @author dotCMS
+ */
+@Dependent
+@Queue("assetBulkUpload")
+public class BulkUploadProcessor implements JobProcessor, Cancellable {
+
+    /**
+     * The run's per-item outcome, held in memory for the life of the run.
+     * <p>
+     * <b>In memory, and therefore not resumable — deliberately.</b> An earlier design committed
+     * each item to its own table as it completed, which let a re-queued run skip what it had
+     * already created. That table was removed (#37166, 2026-09-10): the product decided one
+     * feature should not carry a private store for state the job framework does not offer, and
+     * that whether the framework should offer it is an architectural question, not this feature's
+     * to answer. The cost is recorded honestly in the spec — FR-036 … FR-038 and SC-009 were
+     * withdrawn with it.
+     * <p>
+     * {@code CopyOnWriteArrayList} rather than a plain one, matching
+     * {@code BulkRefreshContentletsProcessor}: {@code getResultMetadata} is called by the job
+     * framework's thread, not the one running the batch.
+     */
+    private final List<BatchItemResult> itemResults = new CopyOnWriteArrayList<>();
+    private final BulkUploadReasonResolver reasons = new BulkUploadReasonResolver();
+    private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
+
+    @Override
+    public void process(final Job job) throws JobProcessingException {
+
+        final Map<String, Object> parameters = job.parameters();
+        final User user = user(parameters);
+        final List<Map<String, Object>> stagedFiles = stagedFiles(parameters);
+
+        final ProgressTracker progressTracker = job.progressTracker().orElseThrow(
+                () -> new JobProcessingException(job.id(), "Progress tracker not found"));
+
+        Logger.info(this, String.format(
+                "Bulk upload job [%s]: %d file(s) for user [%s]",
+                job.id(), stagedFiles.size(), user.getUserId()));
+
+        final List<String> createdInodes = new ArrayList<>();
+
+        for (int seq = 0; seq < stagedFiles.size(); seq++) {
+
+            if (cancellationRequested.get()) {
+                // Cancellation takes effect between files, never mid-file, so nothing is left
+                // half-created. What was never reached is SKIPPED, which is a distinct outcome from
+                // FAILED: those files were not rejected, they were simply not tried.
+                recordRemainderAsSkipped(job, stagedFiles, seq);
+                break;
+            }
+
+            createOne(job, stagedFiles.get(seq), seq, user, createdInodes);
+            progressTracker.updateProgress((seq + 1) / (float) stagedFiles.size());
+        }
+
+        // FR-033 — release the staged content, whatever terminal state this run reached, and
+        // including the files it never got to. Cheap to overlook because it is the happy path: the
+        // reclaim was written for the two failure routes and both were tested, while a run that
+        // simply succeeds reaches a terminal state too. Nothing purges staged content on a
+        // schedule, so a batch that skipped this leaked its own bytes permanently.
+        reclaimStagedContent(job, stagedFiles, user);
+
+        // FR-008a — resolve index visibility ONCE for the batch, and before the completion signal.
+        // Per-file WAIT_FOR would not merely block on a refresh; it also flushes the system-wide
+        // query cache on every file, charging every other user for this batch. But DEFER alone only
+        // enqueues into the reindex journal, so a run reporting "finished" would hand the author
+        // files a text search cannot yet find. Content Drive lists folders from the database, so the
+        // grid is fine either way — free-text and searchable-field criteria are what need this.
+        resolveIndexVisibility(job, createdInodes);
+
+        progressTracker.updateProgress(1.0f);
+
+        // FR-019 — say how the run ended, not only that it began. Without this an operator reading
+        // logs sees a batch start and nothing after it, and cannot tell a run that finished from
+        // one that stalled: both look identical.
+        logTerminalState(job, stagedFiles.size());
+    }
+
+    /**
+     * Reports the run's terminal state and its counts, once, at the end (FR-019).
+     * <p>
+     * Best-effort like the author-facing notification: a batch that created its files must not be
+     * failed by the log line that describes it.
+     */
+    private void logTerminalState(final Job job, final int submitted) {
+        // Cancellation is the author's own choice, so it is reported as a distinct ending rather
+        // than folded into "finished" — the two mean different things to whoever is reading the
+        // log to find out why a batch is short.
+        final String ending = cancellationRequested.get() ? "CANCELED" : "COMPLETED";
+
+        Logger.info(this, String.format(
+                "Bulk upload job [%s]: %s - %d submitted, %d created, %d failed, %d skipped",
+                job.id(), ending, submitted,
+                countOf(itemResults, BatchItemStatus.SUCCESS),
+                countOf(itemResults, BatchItemStatus.FAILED),
+                countOf(itemResults, BatchItemStatus.SKIPPED)));
+    }
+
+    private long countOf(final List<BatchItemResult> results, final BatchItemStatus status) {
+        return results.stream().filter(r -> r.status() == status).count();
+    }
+
+    /**
+     * Creates one asset and commits its outcome in the same breath.
+     * <p>
+     * The row is written inside the item's own transaction so the record commits with the work it
+     * describes — a crash between the two would otherwise leave a file the resume path does not
+     * know about, and recreate it as a collision.
+     */
+    private void createOne(final Job job, final Map<String, Object> file, final int seq,
+                           final User user, final List<String> createdInodes) {
+
+        final String fileName = String.valueOf(file.get("fileName"));
+        final String tempFileId = String.valueOf(file.get("tempFileId"));
+
+        try {
+            // A part the submission already refused. Recorded and skipped: there is no temp id to
+            // fetch and nothing to create, and re-deciding it here would need a measurement that
+            // was never completed. Checked before everything else for that reason.
+            final Object refusedAtSubmission = file.get("refusedReason");
+            if (refusedAtSubmission != null) {
+                record(job, seq, fileName, BatchItemStatus.FAILED,
+                        BatchFailureReason.valueOf(String.valueOf(refusedAtSubmission)),
+                        "Refused by the staging layer's per-file ceiling while the body was read",
+                        null);
+                return;
+            }
+
+            // Decided from what staging measured, before anything is created (research R4). The
+            // validation layer reports an over-size file and a disallowed type through the same
+            // exception class, differing only by a translated string, so a reason recovered from
+            // it would be a guess. Here both are facts.
+            final ContentType contentType = contentTypeFor(job.parameters(), user);
+            final Optional<BatchFailureReason> refused = reasons.preCheck(
+                    sizeOf(file),
+                    (String) file.get("mimeType"),
+                    effectiveCeiling(contentType),
+                    acceptedTypes(contentType));
+
+            if (refused.isPresent()) {
+                record(job, seq, fileName, BatchItemStatus.FAILED, refused.get(),
+                        "Refused before creation by the file's measured size or resolved type",
+                        null);
+                return;
+            }
+
+            // What the TARGET FOLDER refuses is decided here rather than by letting the create
+            // fail — both its filename filter and a name already taken.
+            //
+            // NOT for correctness: the unique index below is still the authority on a name, and has
+            // to be, because two batches racing for one name (FR-042) can both pass this check and
+            // only one can win. This is about what the expensive path costs and what it leaves
+            // behind. A resubmission is a NORMAL outcome this feature supports (FR-040a), and
+            // resolving it by exception meant a full workflow fire and validation per file, each
+            // logging its rejection at ERROR through WorkflowAPIImpl.
+            //
+            // For the folder filter it is not only cheaper, it is the only way to name the reason
+            // at all: the product reports a filter mismatch and a name collision through the same
+            // exception class AND the same invalid field (hostFolder), differing only by a
+            // translated message — so a filter mismatch recovered from the exception was reported
+            // to the author as NAME_COLLISION, telling them to rename a file whose name was never
+            // the problem.
+            final Optional<BatchFailureReason> refusedByFolder =
+                    folderRefusal(job.parameters(), user, fileName);
+            if (refusedByFolder.isPresent()) {
+                record(job, seq, fileName, BatchItemStatus.FAILED, refusedByFolder.get(),
+                        "Refused by the target folder before creation", null);
+                return;
+            }
+
+            final File binary = resolveStagedContent(job, tempFileId, user)
+                    .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
+
+            final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
+
+            final Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentTypeIdFor(job.parameters(), user));
+
+            // The two base types name their binary field differently, and getting it wrong fails
+            // with "Unable to get The Asset From the Given dotAsset Contentlet" — a message that
+            // does not mention the field, so it is worth naming here. A dotAsset carries 'asset'
+            // and derives its title from the file; a fileAsset carries 'fileAsset' and needs the
+            // title and file name set explicitly.
+            if (isFileAsset) {
+                contentlet.setBinary(FileAssetAPI.BINARY_FIELD, binary);
+                contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
+                contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+            } else {
+                contentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, binary);
+            }
+            applyTarget(contentlet, job.parameters(), user);
+
+            // Created as a DRAFT, and deterministically so.
+            //
+            // NEW rather than PUBLISH: the single-file endpoint checks an asset in as WORKING
+            // unless the caller explicitly asks for live (WebAssetHelper#checkinOrPublish), so
+            // firing PUBLISH made a batch publish content that the same file uploaded alone would
+            // have left as a draft — the opposite of the equivalence FR-006 requires, and a
+            // surprise with real consequences: it puts unreviewed files straight onto the live site.
+            //
+            // But NEW alone is not enough, which is the part that had to be learned twice. What
+            // NEW resolves to is whatever action the CONTENT TYPE happens to map it to, and that
+            // differs per content type: on one instance a dotAsset published while a fileAsset
+            // stayed a draft, from this same code. So the mapping is consulted and then CHECKED —
+            // an action that publishes is not used to create a draft, whatever it is mapped to.
+            // Leaving that to configuration means the author's files are published or not
+            // depending on a workflow mapping they cannot see and did not choose.
+            final Optional<WorkflowAction> mapped = APILocator.getWorkflowAPI()
+                    .findActionMappedBySystemActionContentlet(
+                            contentlet, WorkflowAPI.SystemAction.NEW, user);
+
+            final Optional<WorkflowAction> draftAction = mapped
+                    .filter(WorkflowAction::hasSaveActionlet)
+                    .filter(action -> !action.hasPublishActionlet());
+
+            if (draftAction.isEmpty()) {
+                // No mapped action both saves and leaves the content working. Fall back to the
+                // plain checkin, which is exactly what the single-file endpoint does for a draft —
+                // so the outcome the author sees is identical, which is the requirement. What is
+                // given up is the content type's own actionlets, and that is the right trade: a
+                // scheme with no draft-producing action has not asked for a draft path, and
+                // publishing against the author's intent is the worse failure.
+                Logger.debug(this, String.format(
+                        "No NEW action leaves content working for [%s]; checking in directly",
+                        contentType.variable()));
+
+                // DISABLE_WORKFLOW is what makes this an actual fallback rather than a detour back
+                // to the same decision. checkin is NOT the plain save it reads as: it looks up the
+                // NEW system action itself (ESContentletAPIImpl:5779) and, if that action saves,
+                // fires the workflow instead of checking in — so without this flag the fallback
+                // re-enters the very mapping it exists to bypass, and a NEW mapped to Publish
+                // publishes the file anyway. The bug this whole branch was written to prevent,
+                // reintroduced by the escape hatch.
+                contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+                final Contentlet checkedIn = APILocator.getContentletAPI()
+                        .checkin(contentlet, user, false);
+                recordCreated(job, seq, fileName, checkedIn, createdInodes);
+                return;
+            }
+
+            // fireContentWorkflow with no action logs "should not have a null workflow action",
+            // creates nothing, and RETURNS NORMALLY — so a run that did no work reported every
+            // file as a success. The action is always resolved explicitly, never left null.
+            final WorkflowAction action = draftAction.get();
+
+            final Contentlet created = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
+                    new ContentletDependencies.Builder()
+                            .modUser(user)
+                            .workflowActionId(action.getId())
+                            .respectAnonymousPermissions(false)
+                            // DEFER, never WAIT_FOR: the per-file wait also flushes the
+                            // system-wide query cache, so a full batch would charge every other
+                            // user one flush per file. The batch resolves visibility once, at the
+                            // end, before the completion signal (FR-008a).
+                            .indexPolicy(IndexPolicy.DEFER)
+                            .indexPolicyDependencies(IndexPolicy.DEFER)
+                            .build());
+
+            recordCreated(job, seq, fileName, created, createdInodes);
+
+        } catch (final StagedContentUnavailableException e) {
+            // Not the author's fault: the content expired or could not be read. Named explicitly
+            // so the copy never suggests they supplied a bad file (FR-032).
+            record(job, seq, fileName, BatchItemStatus.FAILED,
+                    BatchFailureReason.STAGED_CONTENT_UNAVAILABLE, e.getMessage(), null);
+        } catch (final Exception e) {
+            // The exception class travels with the diagnostic message. It is never shown to the
+            // author, and it is the first thing anyone needs when an UNCLASSIFIED turns up — which
+            // by design means something nobody anticipated.
+            record(job, seq, fileName, BatchItemStatus.FAILED, reasons.classify(e),
+                    e.getClass().getName() + ": " + e.getMessage(), null);
+        }
+    }
+
+    /**
+     * Records one file as created, having first confirmed that it was.
+     * <p>
+     * <b>Never report a success we cannot point at.</b> The whole feature exists so the author is
+     * told what actually happened, so "created" has to mean a contentlet that exists — and this is
+     * not hypothetical: {@code fireContentWorkflow} with an unresolved action logs an error,
+     * creates nothing and returns normally, which once had every file in a batch recorded SUCCESS
+     * against an empty folder.
+     * <p>
+     * Shared by both creation routes — the workflow fire and the direct checkin — so neither can
+     * grow its own idea of what counts as created.
+     */
+    private void recordCreated(final Job job, final int seq, final String fileName,
+                               final Contentlet created, final List<String> createdInodes) {
+
+        if (created == null || !UtilMethods.isSet(created.getIdentifier())) {
+            throw new IllegalStateException("No persisted contentlet was returned for " + fileName);
+        }
+
+        createdInodes.add(created.getInode());
+        record(job, seq, fileName, BatchItemStatus.SUCCESS, null, null, created.getIdentifier());
+    }
+
+    /**
+     * Retrieves the staged content <b>by the fingerprint captured at submission</b>, not through
+     * the request.
+     * <p>
+     * <b>This is why the fingerprint is a job parameter.</b> The product's own binary-field
+     * strategy resolves a temp id via {@code HttpServletRequestThreadLocal.INSTANCE.getRequest()},
+     * which is null on a worker thread — a run has no HTTP request, and by the time it executes the
+     * submitting one is long closed. Setting the temp id as a field value and letting that strategy
+     * resolve it would therefore fail for every file in every batch. The {@code accessingList}
+     * overload exists for exactly this, so the run resolves the file itself and hands the creation
+     * path a real {@link File}.
+     */
+    private Optional<File> resolveStagedContent(final Job job, final String tempFileId,
+                                                final User user) {
+        final List<String> accessingList = new ArrayList<>();
+        accessingList.add(user.getUserId());
+        final Object fingerprint = job.parameters().get("requestFingerprint");
+        if (fingerprint != null) {
+            accessingList.add(String.valueOf(fingerprint));
+        }
+        return APILocator.getTempFileAPI().getTempFile(accessingList, tempFileId)
+                .map(tempFile -> tempFile.file);
+    }
+
+    /** Raised when staged content cannot be retrieved, so it is reported as its own reason. */
+    private static class StagedContentUnavailableException extends RuntimeException {
+        StagedContentUnavailableException(final String tempFileId) {
+            super("Staged content is no longer available: " + tempFileId);
+        }
+    }
+
+    /**
+     * The ceiling that applies to one file, in FR-011's order.
+     * <p>
+     * The content type's own {@code maxFileLength} wins wherever an operator declared one, so a
+     * file is accepted or rejected identically whether it arrives alone or in a batch. The
+     * configured fallback applies only where none is declared — which is the default, and without
+     * it the batch would have no per-file bound at all. That fallback is the one place a batch is
+     * deliberately stricter than a single upload (FR-011a), recorded rather than discovered.
+     */
+    private long effectiveCeiling(final ContentType contentType) {
+
+        final long declared = binaryField(contentType)
+                .flatMap(field -> field.fieldVariableValue(BinaryField.MAX_FILE_LENGTH))
+                .map(value -> ConversionUtils.toLongFromByteCountHumanDisplaySize(value, -1L))
+                .orElse(-1L);
+
+        return declared > 0 ? declared : Config.getLongProperty(
+                "CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES", 209715200L);
+    }
+
+    /** The content type's allow list, empty when it declares none — which means "everything". */
+    private List<String> acceptedTypes(final ContentType contentType) {
+        return binaryField(contentType)
+                .flatMap(field -> field.fieldVariableValue(BinaryField.ALLOWED_FILE_TYPES))
+                .filter(UtilMethods::isSet)
+                .map(value -> Arrays.asList(value.split(",")))
+                .orElse(List.of());
+    }
+
+    /** The binary field the batch writes into — 'asset' for a dotAsset, 'fileAsset' otherwise. */
+    private Optional<Field> binaryField(final ContentType contentType) {
+        return contentType.fields().stream()
+                .filter(field -> field instanceof BinaryField)
+                .findFirst();
+    }
+
+    private long sizeOf(final Map<String, Object> file) {
+        final Object size = file.get("sizeBytes");
+        return size instanceof Number ? ((Number) size).longValue() : 0L;
+    }
+
+    /**
+     * Resolves the content type the batch creates into — one type for the whole batch, validated at
+     * submission, so this never has to infer one per file.
+     */
+    private ContentType contentTypeFor(final Map<String, Object> parameters, final User user)
+            throws DotDataException, DotSecurityException {
+        final String variable = "FILEASSET".equals(parameters.get("baseType"))
+                ? FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME
+                : "dotAsset";
+        return APILocator.getContentTypeAPI(user).find(variable);
+    }
+
+    private String contentTypeIdFor(final Map<String, Object> parameters, final User user)
+            throws DotDataException, DotSecurityException {
+        return contentTypeFor(parameters, user).id();
+    }
+
+    /** Places the asset in the folder, or at the site root when the batch targets a site. */
+    private void applyTarget(final Contentlet contentlet, final Map<String, Object> parameters,
+                             final User user) throws DotDataException, DotSecurityException {
+        final Object folderId = parameters.get("folderId");
+        if (folderId != null) {
+            final Folder folder = APILocator.getFolderAPI()
+                    .find(String.valueOf(folderId), user, false);
+            contentlet.setHost(folder.getHostId());
+            contentlet.setFolder(folder.getInode());
+            return;
+        }
+        contentlet.setHost(String.valueOf(parameters.get("siteId")));
+        contentlet.setFolder(Folder.SYSTEM_FOLDER);
+    }
+
+    /**
+     * What the target folder refuses about this file, asked before the create is attempted.
+     * <p>
+     * Two rules, resolved together because they need the same folder and the same lookup order:
+     * <ul>
+     *   <li><b>The folder's filename filter</b> ({@code filesMasks}). Applies to both base types —
+     *       {@code validateFileAsset} and {@code validateDotAsset} both call
+     *       {@code FolderAPI.matchFilter}.</li>
+     *   <li><b>A name already taken</b>, <b>case-insensitively</b> (FR-042a): {@code Report.pdf}
+     *       and {@code report.pdf} are one contended name, and {@code fileNameExists} resolves
+     *       through the same lower-cased identifier the unique index is built on.</li>
+     * </ul>
+     * <b>Filter first</b>, deliberately. A file can break both, carries only one reason, and the
+     * folder filter is the one the author can act on without knowing what else is in the folder —
+     * "this folder only takes .jpg" is actionable; "that name is taken" sends them to rename a file
+     * the folder would have refused anyway.
+     * <p>
+     * <b>Only the name check is FILEASSET-only.</b> A dotAsset does not carry a file name the way a
+     * fileAsset does — its title is derived from the binary — so there is no equivalent lookup and
+     * the create remains the only answer for that base type. Answering "no refusal" here is
+     * therefore not a claim that the name is free; it means "not decided yet", which is safe
+     * precisely because this check never had authority.
+     * <p>
+     * <b>Never allowed to fail the file.</b> If a lookup itself errors, this yields to the create
+     * rather than inventing a refusal: a diagnostic query must not be able to reject an author's
+     * file.
+     */
+    private Optional<BatchFailureReason> folderRefusal(final Map<String, Object> parameters,
+                                                       final User user, final String fileName) {
+        try {
+            final Object folderId = parameters.get("folderId");
+            if (folderId == null) {
+                // A site-rooted batch targets SYSTEM_FOLDER, which carries no filter and which
+                // fileNameExists does not resolve the way it resolves a real folder. Left to the
+                // create.
+                return Optional.empty();
+            }
+
+            final Folder folder = APILocator.getFolderAPI()
+                    .find(String.valueOf(folderId), user, false);
+
+            if (!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
+                return Optional.of(BatchFailureReason.FOLDER_FILTER_MISMATCH);
+            }
+
+            if (!"FILEASSET".equals(parameters.get("baseType"))) {
+                return Optional.empty();
+            }
+
+            return APILocator.getFileAssetAPI().fileNameExists(
+                    APILocator.getHostAPI().find(folder.getHostId(), user, false),
+                    folder, fileName)
+                    ? Optional.of(BatchFailureReason.NAME_COLLISION)
+                    : Optional.empty();
+
+        } catch (final Exception e) {
+            Logger.debug(this, String.format(
+                    "Could not pre-check the target folder for '%s'; leaving it to the create: %s",
+                    fileName, e.getMessage()));
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Releases every file's staged content once the run is done with it.
+     * <p>
+     * <b>Every file, not only the ones that succeeded.</b> A cancelled run leaves items it never
+     * reached, and those are the likeliest to be forgotten precisely because no per-item outcome
+     * was written for them — there is no row pointing at what to clean up. Driven from the job's
+     * own parameters instead, which list every file the batch was given.
+     * <p>
+     * Best-effort per file: one failure must not stop the rest, and none of it may fail a run whose
+     * work is already done and recorded. A file that cannot be released is logged loudly, because
+     * nothing else will ever collect it.
+     */
+    private void reclaimStagedContent(final Job job, final List<Map<String, Object>> stagedFiles,
+                                      final User user) {
+        for (final Map<String, Object> file : stagedFiles) {
+            if (file.get("tempFileId") == null) {
+                // Refused before staging — nothing of it reached the staging layer, so there is
+                // nothing to release and asking would log a spurious failure.
+                continue;
+            }
+            final String tempFileId = String.valueOf(file.get("tempFileId"));
+            try {
+                resolveStagedContent(job, tempFileId, user).ifPresent(binary -> {
+                    if (binary.exists() && !binary.delete()) {
+                        Logger.warn(this, String.format(
+                                "Bulk upload job [%s]: could not delete staged content '%s'; "
+                                        + "nothing purges it on a schedule, so it will remain",
+                                job.id(), tempFileId));
+                    }
+                });
+            } catch (final Exception e) {
+                Logger.warn(this, String.format(
+                        "Bulk upload job [%s]: could not reclaim staged content '%s': %s",
+                        job.id(), tempFileId, e.getMessage()), e);
+            }
+        }
+    }
+
+    /**
+     * Makes every asset this run created visible to search, in one pass.
+     */
+    private void resolveIndexVisibility(final Job job, final List<String> createdInodes) {
+        if (createdInodes.isEmpty()) {
+            return;
+        }
+        try {
+            Logger.info(this, String.format(
+                    "Bulk upload job [%s]: resolving index visibility for %d asset(s)",
+                    job.id(), createdInodes.size()));
+
+            final List<Contentlet> created = APILocator.getContentletAPI()
+                    .findContentlets(createdInodes);
+
+            // One WAIT_FOR for the whole batch instead of N. This is the half that DEFER alone
+            // cannot provide: DEFER only enqueues into the reindex journal, so without this a run
+            // reporting "finished" would hand the author files a text search cannot yet find.
+            created.forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR));
+            APILocator.getContentletIndexAPI().addContentToIndex(created);
+        } catch (final Exception e) {
+            Logger.error(this, String.format(
+                    "Bulk upload job [%s]: could not resolve index visibility: %s",
+                    job.id(), e.getMessage()), e);
+        }
+    }
+
+    private void recordRemainderAsSkipped(final Job job, final List<Map<String, Object>> files,
+                                          final int from) {
+        for (int seq = from; seq < files.size(); seq++) {
+            record(job, seq, String.valueOf(files.get(seq).get("fileName")),
+                    BatchItemStatus.SKIPPED, null, null, null);
+        }
+    }
+
+    /**
+     * Records one item's outcome.
+     * <p>
+     * {@code seq} is kept in the signature and unused for storage: the list is appended in
+     * submission order, which is the order FR-015 reports in. It stays because every caller
+     * already knows it and a future durable store would need it back.
+     */
+    private void record(final Job job, final int seq, final String key,
+                        final BatchItemStatus status, final BatchFailureReason reason,
+                        final String message, final String refId) {
+
+        final BatchItemResult.Builder builder = BatchItemResult.builder()
+                .key(key)
+                .status(status);
+
+        // Never set to null: the shared type models both as Optional, and an explicit null would
+        // be a different thing from absent to anything reading it back.
+        if (reason != null) {
+            builder.reason(reason);
+        }
+        if (message != null) {
+            builder.message(message);
+        }
+
+        itemResults.add(builder.build());
+    }
+
+    @Override
+    public void cancel(final Job job) throws JobCancellationException {
+        Logger.info(this, "Cancellation requested for bulk upload job " + job.id());
+        cancellationRequested.set(true);
+    }
+
+    /**
+     * The batch outcome, built from what this run recorded as it went.
+     * <p>
+     * <b>Held in memory, which is why it does not survive an interruption.</b> This previously read
+     * a durable per-item table, and that table is what made a re-queued run able to skip files it
+     * had already created. It was removed (#37166): the decision was that one feature should not
+     * carry a private store for state the job framework does not offer. FR-036 … FR-038 and SC-009
+     * were withdrawn from the spec with it, and a run that is interrupted now restarts from the
+     * first file — for a FILEASSET batch the unique index still prevents a second copy and only
+     * the report is wrong, but a DOTASSET batch has no such index (FR-040b) and genuinely
+     * duplicates.
+     * <p>
+     * Same shape as {@code BulkRefreshContentletsProcessor}, which is the precedent this now
+     * follows exactly.
+     */
+    @Override
+    public Map<String, Object> getResultMetadata(final Job job) {
+
+        final Map<String, Object> metadata = new HashMap<>();
+        final List<BatchItemResult> results = new ArrayList<>(itemResults);
+
+        final long success = countOf(results, BatchItemStatus.SUCCESS);
+        final long failed = countOf(results, BatchItemStatus.FAILED);
+        final long skipped = countOf(results, BatchItemStatus.SKIPPED);
+
+        metadata.put("total", results.size());
+        metadata.put("processed", success + failed);
+        metadata.put("successCount", success);
+        metadata.put("failedCount", failed);
+        metadata.put("skippedCount", skipped);
+        metadata.put("results", results);
+
+        // Contract §3. Lets the client report "already uploaded" instead of "everything failed" —
+        // the two look identical in the counts, because a duplicate collides on every file, and
+        // only this tells them apart (FR-040a).
+        metadata.put("duplicateSubmission", job.parameters().containsKey("duplicateOfJobId"));
+
+        return metadata;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> stagedFiles(final Map<String, Object> parameters) {
+        final Object files = parameters.get("stagedFiles");
+        return files instanceof List ? (List<Map<String, Object>>) files : List.of();
+    }
+
+    private User user(final Map<String, Object> parameters) {
+        try {
+            return APILocator.getUserAPI()
+                    .loadUserById(String.valueOf(parameters.get("userId")));
+        } catch (final Exception e) {
+            throw new IllegalStateException("Could not resolve the submitting user", e);
+        }
+    }
+}
