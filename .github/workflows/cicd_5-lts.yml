@@ -135,6 +135,16 @@ jobs:
           npm test
         shell: bash
 
+      - name: 'Test resolve-sdk-pin'
+        working-directory: .github/scripts/resolve-sdk-pin
+        run: |
+          # The release pipeline invokes this module with a bare `node` - no install, no
+          # build - so CI is the only place its tests ever run. Without this step the
+          # resolver could be broken and every build would still be green.
+          npm ci --ignore-scripts
+          npm test
+        shell: bash
+
       - name: 'Validate SDK lib and example manifests'
         working-directory: .github/scripts/validate-sdk-package-shapes
         env:

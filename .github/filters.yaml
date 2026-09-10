@@ -60,6 +60,7 @@ examples:
 # and keep a green build.
 sdk_package_shapes:
   - '.github/scripts/validate-sdk-package-shapes/**'
+  - '.github/scripts/resolve-sdk-pin/**'
 
 # PR area labeling filters
 # These are separate from test-triggering filters to avoid false positives
