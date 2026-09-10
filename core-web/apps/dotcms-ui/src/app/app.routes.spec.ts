@@ -1,13 +1,19 @@
 import { Route, Routes } from '@angular/router';
 
+import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { appRoutes } from './app.routes';
 
 /**
  * Guards the portlet route registration.
  *
- * The path itself still matters: `MenuGuardService`, where a route uses it, validates the FIRST
- * url segment against `/api/v1/menu`, so a path that drifts from its menu entry silently stops
- * resolving. `/experiments` deliberately does not use that guard — see the test below.
+ * The path always matters: `MenuGuardService`, on the routes that use it, validates the FIRST url
+ * segment against `/api/v1/menu`, so a path that drifts from its menu entry silently stops
+ * resolving — invisible until someone opens the portlet.
+ *
+ * Whether a route *should* carry that guard is per-portlet, and the two blocks below assert
+ * opposite answers on purpose. `dotai` is registered in the menu, so the guard is what keeps its
+ * path honest. `/experiments` is opt-in and legitimately absent from the menu on most instances,
+ * so the same guard would reject it — see each test for the reasoning.
  */
 describe('appRoutes', () => {
     const flatten = (routes: Routes): Route[] =>
