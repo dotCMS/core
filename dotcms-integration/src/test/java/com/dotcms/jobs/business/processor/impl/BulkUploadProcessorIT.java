@@ -24,6 +24,10 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.jobs.business.processor.ProgressTracker;
@@ -1253,18 +1257,25 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: content-type routing in the bulk-upload processor
      * <p>
-     * Given scenario: The instance has a dotAsset-based type that accepts {@code image/*} and caps
-     * files at 1 KB. A batch is submitted as {@code DOTASSET} carrying an oversized PNG.
+     * Given scenario: The instance has its own dotAsset-based type that accepts {@code text/plain}
+     * and caps files at 1 KB — standing in for the Image type a real instance has. A batch is
+     * submitted as {@code DOTASSET} carrying a 4 KB text file.
      * <p>
      * Expected result: The file is refused as {@code OVER_SIZE_LIMIT} — meaning the run validated
-     * against the <b>specific</b> type the file routes to, not the generic one.
+     * against the <b>specific</b> type the file routes to, not the base type's default.
      * <p>
      * <b>This is the defect, and it is not about labels.</b> The processor used to hardcode the
-     * type from the declared base type, so a PNG became the generic {@code dotAsset}. Since
+     * type from the declared base type, so a file became the generic {@code dotAsset}. Since
      * {@code effectiveCeiling} and {@code acceptedTypes} read from whatever type was resolved, an
      * instance that caps its Image type at 5 MB and restricts it to {@code image/*} had both rules
-     * <b>silently bypassed by this endpoint</b>, while every other path that creates an image
-     * enforced them. Exactly the divergence FR-006 exists to prevent.
+     * <b>silently bypassed by this endpoint</b>, while every other path that creates one enforced
+     * them. Exactly the divergence FR-006 exists to prevent.
+     * <p>
+     * <b>The type is created here rather than borrowing one from the starter.</b> An earlier
+     * version capped the generic {@code dotAsset} and uploaded a file named {@code photo.png},
+     * assuming it would route there — it did not, because routing sniffs the file's real content
+     * and the outcome then depended on which types the instance happens to ship. A test whose
+     * result turns on demo data is not testing the routing.
      * <p>
      * The ceiling is the assertion rather than the type's name on purpose: a test that only read
      * back {@code getContentType()} would pass against a routing that resolved correctly and then
@@ -1274,49 +1285,71 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     public void test_run_validatesAgainstTheTypeTheFileRoutesTo_notTheGenericOne() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
 
-        // A narrow type the media type will route to, capped far below the generic fallback.
-        capImagesAt(1024L);
+        // Accepts exactly what bodyOf writes, and caps far below the generic fallback (200 MB).
+        final ContentType narrow = dotAssetTypeAccepting("text/plain", 1024L);
+        try {
+            final Job job = jobForBytes(folder, "note.txt", 4096);
 
-        final Job job = jobForNames(folder, List.of("photo.png"));
+            final BulkUploadProcessor processor = new BulkUploadProcessor();
+            processor.process(job);
+
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+            assertEquals(BatchFailureReason.OVER_SIZE_LIMIT, reasonFor(outcome, "note.txt"),
+                    "the run must apply the ceiling of the type this file actually becomes. "
+                            + "Falling back to the base type's default ceiling is how this "
+                            + "endpoint let files past rules every other creation path "
+                            + "enforces.\n" + describe(outcome));
+        } finally {
+            // Deleted, not left behind: a type accepting text/plain would otherwise capture the
+            // routing of every later dotAsset test in this JVM.
+            ContentTypeDataGen.remove(narrow);
+        }
+    }
+
+    /**
+     * A dotAsset-based type that accepts one media type and caps its binary, standing in for the
+     * Image type a real instance carries.
+     */
+    private ContentType dotAssetTypeAccepting(final String mediaType, final long maxBytes)
+            throws Exception {
+
+        final ContentType type = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.DOTASSET)
+                .velocityVarName("bulkRouted" + System.currentTimeMillis())
+                .nextPersisted();
+
+        final Field binary = new FieldDataGen()
+                .contentTypeId(type.id())
+                .type(BinaryField.class)
+                .velocityVarName(DotAssetContentType.ASSET_FIELD_VAR)
+                .nextPersisted();
+
+        new FieldVariableDataGen().field(binary)
+                .key(BinaryField.ALLOWED_FILE_TYPES).value(mediaType).nextPersisted();
+        new FieldVariableDataGen().field(binary)
+                .key(BinaryField.MAX_FILE_LENGTH).value(String.valueOf(maxBytes)).nextPersisted();
+
+        return APILocator.getContentTypeAPI(admin()).find(type.variable());
+    }
+
+    /** Stages one file of exactly {@code bytes} bytes under the given name, and builds its job. */
+    private Job jobForBytes(final Folder folder, final String fileName, final int bytes)
+            throws Exception {
+        final Job job = jobForNames(folder, List.of(fileName));
 
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> staged =
                 (List<Map<String, Object>>) job.parameters().get("stagedFiles");
-        staged.get(0).put("sizeBytes", 5_000L);
-        staged.get(0).put("mimeType", "image/png");
 
-        final BulkUploadProcessor processor = new BulkUploadProcessor();
-        processor.process(job);
+        final HttpServletRequest request = request();
+        final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                fileName, request, new ByteArrayInputStream(bodyOf(0, bytes)));
 
-        final Map<String, Object> outcome = processor.getResultMetadata(job);
-
-        assertEquals(BatchFailureReason.OVER_SIZE_LIMIT, reasonFor(outcome, "photo.png"),
-                "the run must apply the ceiling of the type this file actually becomes. Falling "
-                        + "back to the generic type's (much larger) ceiling is how this endpoint "
-                        + "let files past rules every other creation path enforces.\n"
-                        + describe(outcome));
-    }
-
-    /**
-     * Caps the dotAsset type's binary field, and registers the change for teardown.
-     * <p>
-     * Set on the shared type deliberately: it is the type a PNG routes to on a default install, so
-     * capping it is what proves the run read <i>the resolved type's</i> ceiling. Undone in the same
-     * {@code @AfterEach} as the accept-list restrictions — a field variable persisted on a shared
-     * content type outlives the test that set it.
-     */
-    private void capImagesAt(final long maxBytes) throws Exception {
-        final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
-        final Field binary = dotAsset.fields().stream()
-                .filter(f -> f instanceof BinaryField)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("dotAsset has no binary field"));
-
-        restrictions.add(new FieldVariableDataGen()
-                .field(binary)
-                .key(BinaryField.MAX_FILE_LENGTH)
-                .value(String.valueOf(maxBytes))
-                .nextPersisted());
+        staged.get(0).put("tempFileId", tempFile.id);
+        staged.get(0).put("sizeBytes", tempFile.length());
+        staged.get(0).put("mimeType", tempFile.mimeType);
+        return job;
     }
 
 }
