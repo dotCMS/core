@@ -84,6 +84,33 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                 exception.contains("search_phase_execution_exception");
     }
 
+
+    /**
+     * Whether a failure this provider would otherwise absorb must be raised instead.
+     *
+     * <p>These read paths historically convert a failure into a legitimate-looking empty result
+     * — an empty {@code SearchHits}, the {@code ERROR_HIT} sentinel, {@code -1} for a count, an
+     * empty scroll list. The provider then reports success, so the phase router sees nothing to
+     * catch and cannot fall back: with OpenSearch unable to answer in Phase 2, a search returned
+     * zero results while Elasticsearch held the data the whole time (issue #37413).</p>
+     *
+     * <p>The change is scoped to Phase 2 on purpose, and the scoping is what makes it safe. In
+     * Phase 2 the router catches the raised failure immediately above this class and turns it
+     * into a successful Elasticsearch read, so <strong>no caller ever observes a new exception
+     * type</strong> — which is why no enumeration of callers relying on empty-instead-of-throw
+     * is needed. In every other phase the absorbing behaviour is untouched: phases 0 and 1 do
+     * not read from OpenSearch at all, and Phase 3 has no Elasticsearch to fall back to, so
+     * raising there would expose every such caller with nothing gained.</p>
+     *
+     * <p>The one genuine behaviour change: when both engines fail on the same read the caller now
+     * receives an error rather than a silent empty result. That is the improvement being asked
+     * for — the silent variant is the dangerous one, because a caller cannot tell it apart from
+     * "this content type has no content".</p>
+     */
+    private static boolean mustRaiseForPhase2Fallback() {
+        return IndexConfigHelper.isReadEnabled() && !IndexConfigHelper.isMigrationComplete();
+    }
+
     /**
      * If enabled SearchRequests are executed and then cached
      */
@@ -115,6 +142,13 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), String.format("OS Query: %s", String.valueOf(searchRequest)));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if (mustRaiseForPhase2Fallback()) {
+                // Not cached: a sentinel stored here would be replayed to every later identical
+                // query as a successful empty result, outliving the outage and defeating the
+                // fallback even after OpenSearch recovers.
+                throw new DotRuntimeException(String.format(
+                        "OpenSearch search failed for [ %s ]: %s", searchRequest, exceptionMsg), e);
+            }
             if(shouldQueryCache(exceptionMsg)) {
                 queryCache.put(searchRequest, ERROR_HIT);
             }
@@ -175,6 +209,11 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), String.format("OS Query: %s", countRequest));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if (mustRaiseForPhase2Fallback()) {
+                // Not cached, for the same reason as the search path above.
+                throw new DotRuntimeException(String.format(
+                        "OpenSearch count failed for [ %s ]: %s", countRequest, exceptionMsg), e);
+            }
             if(shouldQueryCache(exceptionMsg)) {
                 queryCache.put(countRequest, -1L);
             }
@@ -204,10 +243,19 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         try {
             indexToHit = inferIndexToHit(query);
             if (indexToHit == null) {
+                if (mustRaiseForPhase2Fallback()) {
+                    throw new DotRuntimeException(String.format(
+                            "Unable to determine which OpenSearch index to query for [ %s ]",
+                            query));
+                }
                 return SearchHits.empty();
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logger.error(this, "Can't get indices information.", e);
+            if (mustRaiseForPhase2Fallback()) {
+                throw new DotRuntimeException(
+                        "Can't get OpenSearch indices information: " + e.getMessage(), e);
+            }
             return SearchHits.empty();
         }
 
@@ -469,6 +517,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), String.format("OpenSearch error for query: %s", query));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if (mustRaiseForPhase2Fallback()) {
+                throw new DotRuntimeException(String.format(
+                        "OpenSearch scroll failed for [ %s ]: %s", query, exceptionMsg), e);
+            }
             return new PaginatedArrayList<>();
         } catch (final IllegalStateException e) {
             Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, e);

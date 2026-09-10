@@ -97,6 +97,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplPhase2FallbackTest.class,
+        com.dotcms.content.elasticsearch.business.ESContentFactoryImplMissingOsIndexTest.class,
         com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class,
         com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class,
