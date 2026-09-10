@@ -122,6 +122,9 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                 .subscribe((result: DotAjaxActionResponseView) => {
                     this.isSaving = false;
                     if (!result?.errors) {
+                        // The caller decides what to say, if anything; this dialog stays free of a
+                        // messaging concern it cannot satisfy everywhere it is opened.
+                        this.eventData?.onSuccess?.();
                         this.close();
                     } else {
                         this.errorMessage = result.errors;

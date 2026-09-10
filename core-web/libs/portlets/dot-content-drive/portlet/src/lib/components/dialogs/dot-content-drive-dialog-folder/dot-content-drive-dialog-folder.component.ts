@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import {
     Component,
     computed,
@@ -286,27 +285,26 @@ export class DotContentDriveDialogFolderComponent {
             next: () => {
                 this.#onSuccess();
 
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: 'Success',
-                    detail: this.#dotMessageService.get(
-                        'content-drive.dialog.folder.message.create-success'
-                    )
-                });
+                // Silent on success: the listing shows it, so a notification would repeat what the
+                // author is already looking at. Failures still speak.
             },
             error: (err) => {
-                const { error } = err as HttpErrorResponse;
-
+                // The server's own message lives here and nowhere else now: the author is shown
+                // product copy instead (FR-030), so this log is the only route to the detail.
                 console.error('Error creating folder:', err);
 
                 this.$isLoading.set(false);
 
+                // `error.message` is the server's own wording. It stays in the log above, where
+                // support can still reach it, and the author sees product copy instead (FR-030).
                 this.#messageService.add({
                     severity: 'error',
                     summary: this.#dotMessageService.get(
                         'content-drive.dialog.folder.message.create-error'
                     ),
-                    detail: error.message
+                    detail: this.#dotMessageService.get(
+                        'content-drive.dialog.folder.message.create-error-detail'
+                    )
                 });
             }
         });
@@ -320,16 +318,10 @@ export class DotContentDriveDialogFolderComponent {
             next: () => {
                 this.#onSuccess();
 
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get(
-                        'content-drive.dialog.folder.message.save-success'
-                    )
-                });
+                // Silent on success: the listing shows it, so a notification would repeat what the
+                // author is already looking at. Failures still speak.
             },
             error: (err) => {
-                const { error } = err as HttpErrorResponse;
-
                 console.error('Error saving folder:', err);
 
                 this.$isLoading.set(false);
@@ -339,7 +331,9 @@ export class DotContentDriveDialogFolderComponent {
                     summary: this.#dotMessageService.get(
                         'content-drive.dialog.folder.message.save-error'
                     ),
-                    detail: error.message
+                    detail: this.#dotMessageService.get(
+                        'content-drive.dialog.folder.message.save-error-detail'
+                    )
                 });
             }
         });

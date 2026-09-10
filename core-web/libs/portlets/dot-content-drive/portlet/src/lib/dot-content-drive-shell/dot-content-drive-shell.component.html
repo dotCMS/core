@@ -37,10 +37,15 @@
     (uploadFiles)="onRequestUpload($event)"
     (dragEnter)="onDropzoneDragEnter()"
     class="col-start-2 row-start-3 overflow-auto">
+    <!-- `dataKey="inode"`: the language filter is multi-select, so one identifier can occupy
+         several rows here. On the component's `identifier` default, ticking one language version
+         ticked them all. The search service already backfills folder inodes for exactly this. -->
     <dot-folder-list-view
         [items]="$items()"
         [selection]="$selectedItems()"
         [loading]="$loading()"
+        dataKey="inode"
+        [busyRows]="$busyRows()"
         [totalItems]="$totalItems()"
         [extraColumns]="$extraColumns()"
         [offset]="$offset()"
@@ -62,6 +67,7 @@
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
         (cancel)="cancelAddToBundle()"
+        [onAdded]="onBundleAdded"
         [assetIdentifier]="$contextMenuData().contentlet.identifier" />
 }
 
@@ -175,7 +181,7 @@
 </p-dialog>
 
 <!-- Is pending to add the accept attribute. This will be come from the backend in the future. -->
-<input type="file" (change)="onFileChange($event)" #fileInput hidden />
+<input type="file" multiple (change)="onFileChange($event)" #fileInput hidden />
 
 <!-- Edit Content side panel: opens the new editor over Content Drive instead of navigating away.
      `@defer` splits the editor (and its Block Editor dependency chain) out of this portlet's chunk,

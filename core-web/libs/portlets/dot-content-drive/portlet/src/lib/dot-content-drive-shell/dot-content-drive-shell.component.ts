@@ -2,6 +2,7 @@ import { signalMethod } from '@ngrx/signals';
 import { of, SubscriptionLike } from 'rxjs';
 
 import { Location, NgTemplateOutlet } from '@angular/common';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -36,6 +37,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotBulkUploadForm,
     DotCMSBaseTypesContentTypes,
     DotCMSContentTypeField,
     DotCMSDataTypes,
@@ -82,6 +84,7 @@ import {
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    UPLOAD_BATCH_OPERATION,
     NEW_CONTENT_MARKER
 } from '../shared/constants';
 import {
@@ -98,7 +101,15 @@ import { provideContentDriveFieldFilterHost } from '../store/content-drive-field
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
+import {
+    canAddChildrenTo,
+    encodeFilters,
+    isFolder,
+    normalizeFolderRef,
+    toFolderRef
+} from '../utils/functions';
+import { refuseOverCeiling } from '../utils/upload-ceilings';
+import { describeUploadFailures } from '../utils/upload-failures';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -151,7 +162,12 @@ import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
+        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]',
+        // Bound here rather than with addEventListener: Angular unbinds it when the shell is
+        // destroyed. A hand-rolled window listener outlives the portlet unless every teardown path
+        // remembers to remove it, and then a stale closure keeps guarding the page on a count that
+        // belongs to a component that is gone.
+        '(window:beforeunload)': 'onBeforeUnload($event)'
     }
 })
 export class DotContentDriveShellComponent implements OnDestroy {
@@ -225,6 +241,31 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * Upload buttons via the store, so the three cannot disagree.
      */
     readonly $canAddChildren = this.#store.$canAddChildren;
+
+    /**
+     * Reports a successful Add to Bundle through the shared outcome pipeline.
+     *
+     * An arrow property, not a method: it is handed to the dialog as data and invoked from there,
+     * so it has to carry its own `this`.
+     *
+     * Publishing a result rather than raising a toast is the point — the Workflow Center fires the
+     * same operation and its wording, severity and reload all come from one place. A second toast
+     * here would say the same thing differently and drift the moment either is edited.
+     */
+    protected readonly onBundleAdded = (): void => {
+        this.#store.reportExternalResult({
+            actionName: this.#dotMessageService.get('content-drive.action-center.add-to-bundle'),
+            successCount: 1,
+            skippedCount: 0,
+            failedCount: 0,
+            // Nothing in the listing changes when an asset joins a bundle, so this is one of the
+            // few successes that still has to be said out loud.
+            confirmSuccess: true
+        });
+    };
+
+    /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
+    readonly $busyRows = this.#store.busyRows;
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -539,11 +580,109 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
      * whole post-run refresh.
      *
-     * `failCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
+     * `failedCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
      * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
      * unqualified success would be the one thing the user cannot recover from — the grid has already
      * reloaded and the selection is gone.
      */
+    /**
+     * Asks before the page is unloaded while a batch still has bytes in flight.
+     *
+     * The one moment the interface can intervene. Until the handle comes back there is no run: if
+     * the page goes, the request dies with it, nothing is recorded and nobody is notified, so there
+     * is nothing to resume and no outcome to report. Past the handle the run is the server's and
+     * leaving is safe, which is why this stops asking then instead of guarding the whole
+     * upload-and-run — the feature explicitly promises the author can walk away.
+     *
+     * `returnValue` alongside `preventDefault()`: the modern call is enough in current browsers,
+     * the legacy assignment is what older ones read.
+     */
+    /**
+     * Whether the route may be left, asked by this portlet's own `canDeactivate`.
+     *
+     * **Answers, rather than holding.** The shared `CanDeactivateGuardService` refuses by filtering
+     * a subject, which leaves the navigation *pending* rather than cancelling it: releasing the
+     * lock later lets that same navigation complete, so an author who clicked a link, was told to
+     * wait and stayed put would be thrown out of the portlet at a moment they did not choose. UVE
+     * wants that, because it force-saves and then continues. There is nothing to save here, and
+     * nothing to continue: the answer is no, the navigation is cancelled, and the author decides
+     * when to try again.
+     *
+     * Refusing silently reads as a broken link, so it says why.
+     *
+     * Only while bytes are still going. Past the handle the run is the server's, leaving is safe,
+     * and holding the route would contradict the message that just said so.
+     */
+    canLeaveRoute(): boolean {
+        if (!this.#uploadsInFlight()) {
+            return true;
+        }
+
+        this.#messageService.add({
+            severity: 'warn',
+            summary: this.#dotMessageService.get('content-drive.upload'),
+            detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail'),
+            life: WARNING_MESSAGE_LIFE
+        });
+
+        return false;
+    }
+
+    protected onBeforeUnload(event: BeforeUnloadEvent): void {
+        if (!this.#uploadsInFlight()) {
+            return;
+        }
+
+        event.preventDefault();
+        event.returnValue = '';
+    }
+
+    /**
+     * Whether reloading the listing right now would take something away from the author.
+     *
+     * `loadItems` empties `selectedItems` unconditionally and replaces every row, so firing it
+     * mid-task is not merely noisy: a run settling while rows are checked for a workflow action
+     * silently discards that selection (FR-026, FR-043).
+     *
+     * Reads `$dialogVisible` rather than `$activeDialog`, which is deliberately held through
+     * PrimeNG's close animation and so still reports a dialog that is already gone.
+     */
+    protected readonly $authorIsMidTask = computed(
+        () =>
+            this.$dialogVisible() || this.$selectedItems().length > 0 || !!this.$editPanelRequest()
+    );
+
+    /**
+     * A backgrounded reload waiting for {@link $authorIsMidTask} to clear, carrying the folders the
+     * run changed so {@link #currentFolderIsAffected} can be re-checked when it finally runs —
+     * the author may have navigated in between.
+     */
+    readonly #reloadHeld = signal<{ affectedFolders?: string[] } | undefined>(undefined);
+
+    /**
+     * How many batches still have bytes in flight.
+     *
+     * A count, not a flag: uploads can overlap, and the page has to stay guarded until the last of
+     * them has a handle.
+     */
+    readonly #uploadsInFlight = signal(0);
+
+    /** Distinguishes overlapping upload runs, which share an operation and have no targets. */
+    #uploadSequence = 0;
+
+    /**
+     * Whether the listing on screen can show what a run changed (FR-044).
+     *
+     * A run that declares no folders reloads regardless: every synchronous caller acts on rows in
+     * front of the author, so the browsed folder is the changed one by construction, and only a
+     * backgrounded run can settle after they have moved on.
+     */
+    readonly #currentFolderIsAffected = (affectedFolders?: string[]): boolean =>
+        !affectedFolders?.length ||
+        affectedFolders
+            .map(normalizeFolderRef)
+            .includes(toFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
+
     readonly actionExecutionResultEffect = effect(() => {
         const result = this.#store.actionExecutionResult();
 
@@ -555,9 +694,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
             actionName,
             successCount,
             skippedCount,
-            failCount,
+            failedCount,
             partialDetailKey,
-            backgrounded
+            backgrounded,
+            confirmSuccess,
+            affectedFolders,
+            failures,
+            duplicateSubmission,
+            baseType
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -569,43 +713,163 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // So anything short of a clean run reports all three numbers, each next to its own cause.
         // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
         // cause and its number is what keeps the message honest.
-        const isPartial = failCount > 0 || skippedCount > 0;
+        // A recognised resubmission is not a shortfall, whatever its counts say. Under the
+        // collision branch a retry that worked collides on every file, so by the numbers it is a
+        // total failure — and reporting it that way sends the author to delete and re-upload files
+        // that were already correctly there, which is worse than offering no retry at all.
+        const isPartial = !duplicateSubmission && (failedCount > 0 || skippedCount > 0);
 
-        const detail = isPartial
+        // Silent on a clean success, unless the operation leaves no visible trace.
+        //
+        // For most operations the listing already shows the outcome — the row published, moved,
+        // unlocked or disappeared — so a notification repeats what the author can see, which is the
+        // noise this feature set out to remove. A shortfall is different: the numbers and their
+        // causes are not visible anywhere, and it is the case the author has to act on.
+        //
+        // `confirmSuccess` is for the operations whose success genuinely shows nowhere, such as Add
+        // to Bundle and Push Publish.
+        //
+        // Only the *notification* is suppressed. The grid still reloads and the dialog still closes:
+        // those are how the author sees the outcome, so skipping them would replace a redundant
+        // message with no feedback at all.
+        // `backgrounded` too: that outcome arrived unprompted, minutes after the author moved on, so
+        // by definition nothing on screen reflects it — and with a dialog open the grid does not
+        // even reload. Staying silent there would mean a run finished and the author never learned.
+        const announce = isPartial || confirmSuccess || backgrounded;
+
+        // A resubmission means opposite things by base type, so the copy cannot be one sentence
+        // (FR-040b). For a file asset the unique index refuses the second writer, so the batch
+        // collided and nothing was duplicated — the case this copy was written for. For a dotAsset
+        // the index can never contend, so the batch ran again and every file now exists twice;
+        // saying "nothing was duplicated" there points the author away from a folder they need to
+        // look at.
+        const detail = duplicateSubmission
             ? this.#dotMessageService.get(
-                  // Actions whose failures and skips mean something other than permissions, locks and
-                  // workflow steps say so themselves — see `partialDetailKey`.
-                  partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
-                  actionName,
-                  String(successCount),
-                  String(failCount),
-                  String(skippedCount)
+                  'DOTASSET' === baseType
+                      ? 'content-drive.upload.toast.already-uploaded-again'
+                      : 'content-drive.upload.toast.already-uploaded',
+                  String(failedCount + successCount)
               )
-            : this.#dotMessageService.get(
-                  'content-drive.action-center.toast.executed-detail',
-                  actionName,
-                  String(successCount)
+            : isPartial
+              ? this.#dotMessageService.get(
+                    // Actions whose failures and skips mean something other than permissions, locks and
+                    // workflow steps say so themselves — see `partialDetailKey`.
+                    partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
+                    actionName,
+                    String(successCount),
+                    String(failedCount),
+                    String(skippedCount)
+                )
+              : this.#dotMessageService.get(
+                    'content-drive.action-center.toast.executed-detail',
+                    actionName,
+                    String(successCount)
+                );
+
+        // Named files and their reasons, grouped one line per reason, appended to the counts.
+        // The counts say how many; only this says which and why, and that is the part the author
+        // can act on. Empty for a clean run, so a success never grows a list.
+        // Nothing to list for a recognised retry: its "failures" are the files already in place,
+        // and naming them would be telling the author to fix what is correctly there.
+        // What a folder itself refuses is not on the wire: a failure carries the file name and the
+        // reason, never the mask that refused it. So the sentence that names what the folder *does*
+        // accept is available only while the batch's target is the folder on screen, and the
+        // generic one stands for every other case.
+        //
+        // Strictly one affected folder, and strictly the selected one. A result for somewhere else
+        // — or a run spanning several folders — would otherwise explain this folder's rule to an
+        // author who was refused by another's, which is worse than saying nothing about the rule.
+        const affectedRefs = (affectedFolders ?? []).map(normalizeFolderRef);
+        const refusingFolderIsOnScreen =
+            affectedRefs.length === 1 &&
+            affectedRefs[0] ===
+                toFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
+
+        // Narrowed the same way the upload itself narrows the selection: the tree's load-more row
+        // is a node without a folder behind it, so it carries no filter to name.
+        const selectedNodeData = this.#store.selectedNode()?.data;
+        const selectedFolder =
+            selectedNodeData && selectedNodeData.type !== LOAD_MORE_NODE_TYPE
+                ? (selectedNodeData as DotFolderTreeNodeContentData)
+                : undefined;
+
+        const failureGroups = duplicateSubmission
+            ? []
+            : describeUploadFailures(
+                  failures,
+                  (key, ...args) => this.#dotMessageService.get(key, ...args),
+                  {
+                      folderFilter: refusingFolderIsOnScreen
+                          ? selectedFolder?.filesMasks
+                          : undefined
+                  }
               );
 
-        this.#messageService.add({
-            // A skip is a shortfall too — those items did not get the action — so it warns rather
-            // than reporting green, which is what it used to do.
-            severity: isPartial ? 'warn' : 'success',
-            summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
-            detail,
-            life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
-        });
+        if (announce) {
+            // One message per severity (developer's call), and the counts ride with the first of
+            // them. Two reasons for the split: an author reading "2 failed" wants to know which of
+            // those they can go and fix, and a wall they cannot pass should not arrive wearing the
+            // same colour as a file that needs renaming.
+            //
+            // A run with no per-file detail still gets exactly one message, because the counts
+            // alone are an outcome — the groups are what varies, never whether anything is said.
+            const messages = failureGroups.length
+                ? failureGroups.map((group, index) => ({
+                      severity: group.severity,
+                      summary: this.#dotMessageService.get(
+                          'error' === group.severity
+                              ? 'content-drive.upload.toast.failed'
+                              : 'content-drive.upload.toast.incomplete'
+                      ),
+                      // The counts belong to the batch, not to a severity, so they are stated once
+                      // and in the message the author reads first.
+                      detail: [...(index === 0 ? [detail] : []), ...group.lines].join('<br>'),
+                      life: WARNING_MESSAGE_LIFE
+                  }))
+                : [
+                      {
+                          // A skip is a shortfall too — those items did not get the action — so it
+                          // warns rather than reporting green, which is what it used to do.
+                          //
+                          // A recognised resubmission warns as well, for a different reason:
+                          // nothing the author asked for happened. It is not the failure the counts
+                          // describe, but it is not an accomplishment either, and a green message
+                          // invites them to move on when they should look at the folder.
+                          severity: isPartial || duplicateSubmission ? 'warn' : 'success',
+                          summary: this.#dotMessageService.get(
+                              isPartial || duplicateSubmission
+                                  ? 'content-drive.upload.toast.incomplete'
+                                  : 'content-drive.action-center.toast.executed'
+                          ),
+                          detail,
+                          life:
+                              isPartial || duplicateSubmission
+                                  ? WARNING_MESSAGE_LIFE
+                                  : SUCCESS_MESSAGE_LIFE
+                      }
+                  ];
+
+            messages.forEach((message) => this.#messageService.add(message));
+        }
 
         untracked(() => {
             // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
-            // doing when it lands. Every other result settles a request they are waiting on.
-            const dialogIsOpen = !!this.$activeDialog();
-
-            if (!backgrounded || !dialogIsOpen) {
+            // doing when it lands. Every other result settles a request they are waiting on, so it
+            // reloads straight away — holding it would read as the action having done nothing.
+            if (!backgrounded || !this.$authorIsMidTask()) {
                 // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
-                // selection the run consumed. Skipped for a backgrounded result while a dialog is
-                // open, because reloading pulls the rows out from under the form being filled in.
-                this.#store.loadItems();
+                // selection the run consumed.
+                //
+                // Quiet: the run marked its rows, so a skeleton here would be a second load
+                // right after the first and would read as a jump.
+                if (this.#currentFolderIsAffected(affectedFolders)) {
+                    this.#store.loadItems({ quiet: true });
+                }
+            } else {
+                // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
+                // author stayed in the portlet: the run settled, the rows changed, and nothing
+                // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
+                this.#reloadHeld.set({ affectedFolders });
             }
 
             if (!backgrounded) {
@@ -617,6 +881,31 @@ export class DotContentDriveShellComponent implements OnDestroy {
             }
 
             this.#store.clearActionExecutionResult();
+        });
+    });
+
+    /**
+     * Runs a reload that was held while the author was mid-task, as soon as they are not.
+     *
+     * The guard is read first and tracked so this re-runs the moment it clears; the held flag is
+     * read untracked and consumed on the way out, so one held reload produces exactly one refetch
+     * rather than one per later dialog open and close.
+     */
+    readonly flushHeldReloadEffect = effect(() => {
+        const midTask = this.$authorIsMidTask();
+
+        untracked(() => {
+            const held = this.#reloadHeld();
+
+            if (midTask || !held) {
+                return;
+            }
+
+            this.#reloadHeld.set(undefined);
+
+            if (this.#currentFolderIsAffected(held.affectedFolders)) {
+                this.#store.loadItems({ quiet: true });
+            }
         });
     });
 
@@ -1136,105 +1425,255 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
-        if (files.length > 1) {
-            this.uploadFiles({ files, targetFolder, baseType });
-
-            return;
-        }
-
-        this.uploadFile({ files, targetFolder, baseType });
+        this.uploadByBaseType(Array.from(files), baseType, targetFolder);
     }
 
     /**
-     * Shows a warning message when multiple files are uploaded
-     *
-     * @protected
-     * @param {DotContentDriveUploadSelection} selection
-     * @memberof DotContentDriveShellComponent
-     */
-    protected uploadFiles({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
-        this.#messageService.add({
-            severity: 'warn',
-            summary: this.#dotMessageService.get('content-drive.work-in-progress'),
-            detail: this.#dotMessageService.get('content-drive.multiple-files-warning'),
-            life: WARNING_MESSAGE_LIFE
-        });
-
-        this.uploadFile({ files, targetFolder, baseType });
-    }
-
-    /**
-     * Uploads a file to the content drive
-     * @param selection The chosen content type, target folder and files to upload
-     */
-    protected uploadFile({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
-        if (!files?.length) {
-            return;
-        }
-
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
-            detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
-        });
-
-        this.uploadByBaseType(files[0], baseType, targetFolder);
-    }
-
-    /**
-     * Uploads a file to the content drive resolving the content type from the given base type
+     * Submits the chosen files as one batch, resolving the content type from the given base type
      * (`DOTASSET` for Assets, `FILEASSET` for Files).
      *
+     * One path for any number of files: a lone file is a batch of length one, so nothing forks on
+     * count and there is a single set of gates to keep right. The warning that only one file would
+     * be uploaded went with the fork that made it true.
+     *
      * @protected
-     * @param {File} file
+     * @param {File[]} files Every file the author chose, in the order they chose them
      * @param {string} baseType
      * @param {DotFolderTreeNodeData} [hostFolder]
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadByBaseType(file: File, baseType: string, hostFolder?: DotFolderTreeNodeData) {
+    protected uploadByBaseType(
+        files: File[],
+        baseType: string,
+        hostFolder?: DotFolderTreeNodeData
+    ) {
+        // The courtesy refusal, in front of the server's own. Both ceilings are the server's and it
+        // stays the enforcement point; what changes is that the author is told in the file chooser
+        // instead of after waiting out the upload of a batch that was never going to be accepted,
+        // and the sentence can name the limit rather than saying "fewer".
+        //
+        // No advertised ceiling means no check here: the server refuses as it always did, with the
+        // copy that names no number (see {@link #describeSubmissionRefusal}).
+        const refusal = refuseOverCeiling(files, this.#store.uploadCeilings());
+
+        if (refusal) {
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
+                detail: this.#dotMessageService.get(refusal.key, ...refusal.args),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            // Before the run is registered, deliberately: nothing was submitted, so nothing is in
+            // flight, and a run started here would leave the indicator lit and the route guarded
+            // for an upload that never happened.
+            return;
+        }
+
+        // Reported from here rather than from the 202, because this is the part that takes time.
+        // Until the handle comes back the author has no sign anything is happening, and a thirty-file
+        // batch can spend a long while in exactly that state.
+        const runId = this.#store.startExternalRun({
+            // Unique per batch, because the run key is `operation:targets` and the targets below
+            // are deliberately empty — every upload would otherwise share one key, the second
+            // overwriting the first and the first to finish deregistering both. Unlike a workflow
+            // action there is nothing to guard against here: each submission carries its own
+            // freshly chosen files, so two uploads at once is legitimate rather than a double-fire.
+            operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
+            actionName: this.#dotMessageService.get('content-drive.upload'),
+            total: files.length,
+            // `||`, not `??`: the site root's node carries an *empty* path, which is present but
+            // names nothing, so the indicator would read "Applying Upload to " with a blank target.
+            targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
+            // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
+            // run over rows is already reported by those rows dimming. An upload's content does not
+            // exist until the run creates it, so the indicator is its only surface — naming the
+            // files here is what excluded it from the one place it can be seen.
+            targets: []
+        });
+
+        // The route answers from this count directly (see {@link canLeaveRoute}), so there is no
+        // lock to set: the guard asks, and while this is above zero the answer is no.
+        this.#uploadsInFlight.update((count) => count + 1);
+
+        // The upload phase ends at the handle, whichever way it ends. Leaving its run registered
+        // would spin the indicator for a run that has become the server's to report.
+        const settleUploadPhase = () => {
+            this.#store.endExternalRun(runId);
+
+            const remaining = Math.max(this.#uploadsInFlight() - 1, 0);
+            this.#uploadsInFlight.set(remaining);
+
+            // Nothing to release: the count *is* the answer, and uploads overlap, so the route
+            // reopens exactly when the last of them reaches its handle.
+        };
+
         this.#fileService
-            .uploadFileByBaseType(file, baseType, {
-                // A folder id carries its site; at the site root (no folder) fall back to the
-                // current site identifier so the upload lands on the site being browsed, not the
-                // backend default host.
-                hostFolder: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? '',
-                indexPolicy: 'WAIT_FOR'
+            .uploadFilesByBaseType(files, {
+                baseType: baseType as DotBulkUploadForm['baseType'],
+                // Two fields because the contract states the intent rather than overloading one,
+                // and the distinction is `path`, not `id`.
+                //
+                // The tree's root row stands for the *site*, and `createSiteNode` gives it the
+                // site's identifier as `id` and `type: 'folder'` like every other row — so "has an
+                // id" reads as "is a folder" and sends a site id as `folderId`, which the server
+                // answers 404 to, correctly: that folder does not exist. An empty `path` is what
+                // marks the row as the site itself.
+                ...(hostFolder?.id && hostFolder.path
+                    ? { folderId: hostFolder.id }
+                    : {
+                          siteId: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? ''
+                      })
             })
             .subscribe({
-                next: ({ title }) => {
-                    // Tell the user which kind they uploaded (Asset vs File), based on the base
-                    // type they chose in the menu — not the raw resolved content-type variable.
-                    const typeLabel = this.#dotMessageService.get(
-                        baseType === DotCMSBaseTypesContentTypes.FILEASSET
-                            ? 'content-drive.dialog.upload-selector.file'
-                            : 'content-drive.dialog.upload-selector.asset'
+                next: (event) => {
+                    if (event.kind === 'progress') {
+                        // Only where the browser could compute a length. Without one, reporting 0%
+                        // would render a bar stuck at nothing, which reads as stalled rather than
+                        // as unmeasurable — the indicator falls back to a bare spinner instead.
+                        if (event.total) {
+                            this.#store.updateExternalRun(runId, {
+                                percent: Math.round((event.loaded / event.total) * 100)
+                            });
+                        }
+
+                        return;
+                    }
+
+                    // Discriminated explicitly rather than treating "not progress" as the handle:
+                    // the union can grow, and assuming an unknown event carries one would settle
+                    // the phase on nothing and then read a jobId off undefined.
+                    if (event.kind !== 'accepted') {
+                        return;
+                    }
+
+                    settleUploadPhase();
+
+                    // The batch is not over, only this half of it: dotCMS is still creating and
+                    // publishing the files, and that is usually the longer wait. A second run
+                    // carries it, so the indicator stays lit until the completion arrives instead
+                    // of going dark at the handle and reading as "it stopped".
+                    //
+                    // Its own copy, because the words have to change with the guarantee: the first
+                    // phase was an operation the author had to stay for, this one is work they have
+                    // just been told they can walk away from.
+                    const backgroundRunId = this.#store.startExternalRun({
+                        operation: `${UPLOAD_BATCH_OPERATION}:${event.handle.jobId}`,
+                        actionName: this.#dotMessageService.get('content-drive.upload'),
+                        labelKey: 'content-drive.upload.indicator.background',
+                        total: files.length,
+                        targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
+                        targets: []
+                    });
+
+                    // The handle is the only way to tell this batch's completion from another
+                    // tab's: the event is scoped to the submitting user, not to a window. The
+                    // destination travels with it because by the time it lands the author may be
+                    // looking at a different folder, and the outcome decides whether the listing
+                    // they are on can show the result at all.
+                    this.#store.trackUploadJob(
+                        event.handle.jobId,
+                        [
+                            toFolderRef(
+                                hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
+                                // Same reason: an empty path is the site root, which normalises to
+                                // `//hostname` — the ref the listing computes when browsing it.
+                                hostFolder?.path || '/'
+                            )
+                        ],
+                        backgroundRunId,
+                        // Carried to the outcome because a resubmission means opposite things by
+                        // base type, and by the time the completion lands nothing else knows which
+                        // one ran (FR-040b).
+                        baseType
                     );
 
+                    // The one notification this flow raises, and the only in-flight fact worth
+                    // one: until the handle existed, leaving lost the batch and the page guard
+                    // said so; now leaving costs nothing. That rule changed with no visible
+                    // cause, and the indicator cannot report it — it says work is happening, not
+                    // that the author is released from it.
                     this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
+                        severity: 'info',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.upload.toast.backgrounded'
+                        ),
                         detail: this.#dotMessageService.get(
-                            'content-drive.add-dotasset-success-detail',
-                            title,
-                            typeLabel
+                            'content-drive.upload.toast.backgrounded-detail',
+                            String(files.length)
                         ),
                         life: SUCCESS_MESSAGE_LIFE
                     });
 
-                    this.#store.loadItems();
+                    // Nothing else to do, and deliberately nothing. A `202` means the batch is queued,
+                    // not that any file exists, so reloading here refetches a folder whose files
+                    // have not been created — the author watches the listing refresh to show
+                    // nothing. The reload belongs to the completion event, which arrives with the
+                    // outcome and knows which folders the run actually changed.
+                    //
+                    // Nor is anything announced: an accepted submission is not an outcome, and the
+                    // toasts that used to say "started" are what the in-flight indicator replaced.
                 },
                 error: (error) => {
-                    console.error('Content drive upload error => ', error);
+                    settleUploadPhase();
+
+                    // Only a refused *submission* lands here. Once a handle exists the run is the
+                    // server's, and its failures arrive as per-file reasons in the outcome.
+                    // A log, not `DotHttpErrorManagerService`: that service answers a status with
+                    // its own dialog and can redirect, which would stack a vaguer second account of
+                    // the same refusal on top of the toast below. Carries the status and the batch
+                    // size so a ceiling refusal can be told from a transport failure without
+                    // reproducing it.
+                    console.error(
+                        `Content drive upload refused: status ${error?.status ?? 'none'}, ${files.length} file(s)`,
+                        error
+                    );
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
-                        detail:
-                            error.error?.errors?.[0]?.message ??
-                            this.#dotMessageService.get('content-drive.add-dotasset-error-detail'),
+                        detail: this.#describeSubmissionRefusal(error),
                         life: ERROR_MESSAGE_LIFE
                     });
                 }
             });
+    }
+
+    /**
+     * The sentence shown when a submission never became a run at all.
+     *
+     * The endpoint enforces two ceilings and keeps them distinguishable by *status*: too much data
+     * is answered `413`, too many files `400` (`BulkUploadRefusedExceptionMapper`). They have
+     * different fixes, so the status picks the copy rather than the body: the server's own message
+     * names byte counts and part limits, which is a sentence written for a developer reading a log,
+     * not for the author who just dropped the files.
+     *
+     * Anything else gets the generic copy, and the server's sentence goes to the log instead of the
+     * toast. FR-030 draws that line for every outcome in this portlet, and the folder dialogs were
+     * corrected to it earlier on this branch: a message written for whoever reads the log names
+     * staging paths, byte counts and class names, none of which an author can act on. The two
+     * ceilings are the cases worth distinguishing, and they now have copy of their own, so there is
+     * nothing left the raw sentence would say better.
+     */
+    #describeSubmissionRefusal(error: HttpErrorResponse): string {
+        if (error?.status === HttpStatusCode.PayloadTooLarge) {
+            return this.#dotMessageService.get('content-drive.upload.refused.too-large');
+        }
+
+        // A `400` is only *attributed* to the file count where nothing else could have caused it.
+        // The ceiling mapper is not this endpoint's only source of one: the resource rejects a bad
+        // referer with a `400`, and a malformed `form` part produces one from Jackson before any of
+        // this feature's code runs. Naming the count for those sends the author to remove files
+        // from a batch whose size was never the problem.
+        //
+        // "Nothing else could have caused it" means no ceiling was advertised, so the client could
+        // not check up front — and a count refusal is then the only `400` the contract documents.
+        // Where a ceiling *is* advertised, an over-ceiling batch was already refused in the chooser
+        // with the number named, so a `400` arriving here is something else by construction.
+        if (error?.status === HttpStatusCode.BadRequest && !this.#store.uploadCeilings()) {
+            return this.#dotMessageService.get('content-drive.upload.refused.too-many-files');
+        }
+
+        return this.#dotMessageService.get('content-drive.add-dotasset-error-detail');
     }
 
     /**
@@ -1252,32 +1691,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
         const assetContentletsCount = dragItems.contentlets.length;
 
-        if (dragItems.folders.length > 0) {
-            this.#messageService.add({
-                severity: 'info',
-                summary: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-with-folders'
-                ),
-                detail: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-detail-with-folders',
-                    assetContentletsCount.toString(),
-                    `${assetContentletsCount > 1 ? 's ' : ' '}`
-                )
-            });
-        } else {
-            this.#messageService.add({
-                severity: 'info',
-                summary: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress',
-                    folderName
-                ),
-                detail: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-detail',
-                    assetContentletsCount.toString(),
-                    `${assetContentletsCount > 1 ? 's ' : ' '}`
-                )
-            });
-        }
+        // Reports on the toolbar indicator, not as a notification announcing a start (FR-007,
+        // FR-008). The two "moving …" toasts this replaces said only that something had begun,
+        // which the indicator says better and without stacking up over the outcome that follows.
+        const runId = this.#store.startExternalRun({
+            operation: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+            actionName: this.#dotMessageService.get('content-drive.context-menu.move'),
+            total: assetContentletsCount,
+            targetLabel: folderName,
+            targets: dragItemsInodes
+        });
+
         this.#dotWorkflowActionsFireService
             .bulkFire({
                 additionalParams: {
@@ -1295,6 +1719,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             })
             .pipe(
                 catchError(() => {
+                    this.#store.endExternalRun(runId);
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
@@ -1308,21 +1733,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 })
             )
             .subscribe(({ successCount, fails }) => {
+                this.#store.endExternalRun(runId);
+
                 if (successCount > 0) {
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.move-to-folder-success'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.move-to-folder-success-detail',
-                            successCount.toString(),
-                            `${successCount > 1 ? 's ' : ' '}`,
-                            folderName
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
-                    this.#store.loadItems();
+                    // Silent on success: the rows left the folder in front of the author.
+                    // Quiet: the moved rows were marked busy.
+                    this.#store.loadItems({ quiet: true });
                 }
 
                 fails.forEach(({ errorMessage, inode }) => {

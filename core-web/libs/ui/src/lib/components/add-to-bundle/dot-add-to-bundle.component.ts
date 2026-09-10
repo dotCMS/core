@@ -62,6 +62,16 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     @Output() cancel = new EventEmitter<boolean>();
 
+    /**
+     * Called once the asset has been added, with the bundle it went into.
+     *
+     * The dialog signals success only by resetting the form and closing, which reads as it having
+     * given up rather than having worked. Rather than give a shared dialog a messaging concern —
+     * and a `MessageService` it cannot rely on being provided — the caller passes what to do and
+     * owns its own copy. Optional: the ten existing consumers keep today's behaviour by omitting it.
+     */
+    @Input() onAdded?: (bundle: DotBundle) => void;
+
     @ViewChild('formEl', { static: true }) formEl: HTMLFormElement;
 
     @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Select;
@@ -134,7 +144,12 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                             LAST_BUNDLE_USED,
                             JSON.stringify(this.setBundleData())
                         );
+                        // Read before the reset: `setBundleData()` builds from the form controls,
+                        // so calling it afterwards hands the caller a blanked bundle.
+                        const added = this.setBundleData();
+
                         this.form.reset();
+                        this.onAdded?.(added);
                         this.close();
                     } else {
                         this.#loggerService.debug(result.errorMessages);

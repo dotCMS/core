@@ -1,0 +1,128 @@
+import { describe, expect, it } from '@jest/globals';
+
+import { DOT_BULK_UPLOAD_FAILURE_REASONS, DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
+
+import { messageKeyForFailureReason, severityForFailureReason } from './failure-reasons';
+
+/**
+ * FR-036: every failure reason the server can return must have its own product copy. A reason with
+ * no copy is a hole the author sees, so this file's job is to make an unmapped reason impossible to
+ * ship rather than to check a handful of examples.
+ *
+ * **The reason set is the server's, and this asserts we cover all of it.** The codes are the closed
+ * set fixed by the submission contract, so `DOT_BULK_UPLOAD_FAILURE_REASONS` is imported rather
+ * than restated here: a set declared twice is a set that can disagree with itself, and the whole
+ * risk this file guards is a reason arriving with no copy behind it. Iterating the real vocabulary
+ * means adding a member to the contract fails here until someone writes the copy for it.
+ */
+describe('messageKeyForFailureReason', () => {
+    it('should cover every reason in the closed set, with no gaps', () => {
+        // The point of the whole file. Adding a seventh reason without copy fails here rather than
+        // rendering a blank to an author.
+        const unmapped = DOT_BULK_UPLOAD_FAILURE_REASONS.filter(
+            (reason) => !messageKeyForFailureReason(reason)
+        );
+
+        expect(unmapped).toEqual([]);
+    });
+
+    it('should give each reason its own distinct copy', () => {
+        // Two reasons sharing a key means one of them is being explained by the wrong sentence.
+        const keys = DOT_BULK_UPLOAD_FAILURE_REASONS.map(messageKeyForFailureReason);
+
+        expect(new Set(keys).size).toBe(DOT_BULK_UPLOAD_FAILURE_REASONS.length);
+    });
+
+    it.each([
+        ['OVER_SIZE_LIMIT'],
+        ['DISALLOWED_FILE_TYPE'],
+        ['FOLDER_FILTER_MISMATCH'],
+        ['NAME_COLLISION'],
+        ['PERMISSION_DENIED'],
+        ['STAGED_CONTENT_UNAVAILABLE'],
+        ['UNCLASSIFIED']
+    ] as [DotBulkUploadFailureReason][])('should resolve a key for %s', (reason) => {
+        expect(messageKeyForFailureReason(reason)).toEqual(
+            expect.stringContaining('content-drive')
+        );
+    });
+
+    describe('the unclassified case', () => {
+        it('should resolve real copy, not an empty string', () => {
+            // FR-036 is explicit that the unclassified branch reads as a real sentence rather than
+            // being a dumping ground for reasons nobody wrote copy for.
+            expect(messageKeyForFailureReason('UNCLASSIFIED')).toBeTruthy();
+        });
+
+        it('should absorb a reason code the client does not know', () => {
+            // The server is free to add one before the client learns about it. That must degrade to
+            // "something went wrong" rather than to a blank or to the raw code.
+            expect(messageKeyForFailureReason('SOMETHING_NEW_FROM_THE_SERVER')).toBe(
+                messageKeyForFailureReason('UNCLASSIFIED')
+            );
+        });
+
+        it('should absorb a missing reason', () => {
+            expect(messageKeyForFailureReason(undefined)).toBe(
+                messageKeyForFailureReason('UNCLASSIFIED')
+            );
+        });
+    });
+
+    it('should not treat an inherited Object key as a known reason', () => {
+        // `in` walks the prototype chain, so `'constructor'` would pass a guard written with it and
+        // the lookup would hand `DotMessageService.get()` a function instead of a message key.
+        expect(messageKeyForFailureReason('constructor')).toBe(
+            messageKeyForFailureReason('UNCLASSIFIED')
+        );
+        expect(messageKeyForFailureReason('toString')).toBe(
+            messageKeyForFailureReason('UNCLASSIFIED')
+        );
+    });
+
+    it('should tell a folder filter apart from a disallowed type', () => {
+        // The folder's own filename glob and the content type's media-type allow list refuse for
+        // different reasons and want different fixes: rename or move it, versus you cannot upload
+        // this kind of file here at all. One copy for both would send the author to change the
+        // wrong thing.
+        expect(messageKeyForFailureReason('FOLDER_FILTER_MISMATCH')).not.toBe(
+            messageKeyForFailureReason('DISALLOWED_FILE_TYPE')
+        );
+        expect(messageKeyForFailureReason('FOLDER_FILTER_MISMATCH')).not.toBe(
+            messageKeyForFailureReason('UNCLASSIFIED')
+        );
+    });
+
+    describe('wording constraints from the spec', () => {
+        it('should not describe a rejected file by its extension', () => {
+            // FR-039: the server resolves the media type by detection and sniffing, not by trusting
+            // the file name, so copy that says "extension" describes a check the product does not
+            // make. The key itself is named for the concept, so this guards the naming too.
+            expect(messageKeyForFailureReason('DISALLOWED_FILE_TYPE')).not.toContain('extension');
+        });
+    });
+});
+
+describe('severityForFailureReason', () => {
+    // The split is "did the author choose something the folder will not take" versus "did something
+    // stop them that changing the file cannot fix". The first is a warning: rename it, move it,
+    // convert it, shrink it. The second is an error: no edit to the file makes a permission appear.
+    it.each([
+        ['NAME_COLLISION', 'warn'],
+        ['FOLDER_FILTER_MISMATCH', 'warn'],
+        ['DISALLOWED_FILE_TYPE', 'warn'],
+        ['OVER_SIZE_LIMIT', 'warn'],
+        ['PERMISSION_DENIED', 'error'],
+        ['STAGED_CONTENT_UNAVAILABLE', 'error'],
+        ['UNCLASSIFIED', 'error']
+    ])('should rank %s as %s', (reason, expected) => {
+        expect(severityForFailureReason(reason)).toBe(expected);
+    });
+
+    it('should treat a reason it has never heard of as an error', () => {
+        // The same soft landing the copy has, pointed the other way: an unknown reason is not
+        // evidence that nothing serious happened, so it is not allowed to read as the milder case.
+        expect(severityForFailureReason('SOMETHING_NEW')).toBe('error');
+        expect(severityForFailureReason(undefined)).toBe('error');
+    });
+});

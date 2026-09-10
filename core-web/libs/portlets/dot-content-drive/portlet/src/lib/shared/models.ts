@@ -1,4 +1,6 @@
 import {
+    DotBatchItemResult,
+    DotBulkUploadFailureReason,
     DotCMSContentTypeField,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
@@ -142,8 +144,87 @@ export interface DotContentDriveDialog {
 export interface DotContentDriveActionExecution {
     /** Already-resolved action label, not an i18n key — it goes straight into the indicator. */
     actionName: string;
+    /**
+     * A position the run measures itself, `0`–`100`, for runs whose progress is not a count of
+     * items.
+     *
+     * An upload's is bytes sent of bytes to send, and the indicator's usual `processed / total`
+     * cannot express that: both of those count items, so feeding bytes through them would make the
+     * label read "to 4823913 item(s)". Preferred over that ratio where present.
+     */
+    percent?: number;
     /** Number of contentlets the run was fired over. */
     total: number;
+    /**
+     * What the run is being applied to, when that is one nameable thing.
+     *
+     * Lets a single-item run read "Applying **Publish** to *My Page*" instead of "to 1 item(s)".
+     * Like `actionName` it reaches the indicator's `[innerHTML]`, and unlike `actionName` it is
+     * content the author typed, so escaping it is not optional.
+     */
+    targetLabel?: string;
+    /**
+     * Copy this run names itself with, instead of the indicator's "Applying X to Y" form.
+     *
+     * For a run whose words are simply different: an upload's server phase is not applying anything
+     * to the folder, it is finishing files inside it, and the author has just been told they may
+     * leave — so the indicator has to read as the reassurance it now is rather than as an
+     * operation. Resolved with the target label and the total as arguments, in that order.
+     */
+    labelKey?: string;
+    /**
+     * How many items are done, when the run reports it.
+     *
+     * **Optional on purpose.** Absent means the run does not report progress, which the indicator
+     * shows as activity without a position — never as zero. Progress readback is the backend's
+     * largest piece of hidden work, so the indicator must degrade to indeterminate rather than
+     * assume a number exists.
+     */
+    processed?: number;
+}
+
+/**
+ * One run held in the store's registry.
+ *
+ * Several may be in flight at once (FR-015), so each carries its own identity and the items it is
+ * acting on. `runId` is allocated by the client at submission rather than taken from a server
+ * handle: the window a double-click has to fire twice is exactly the window before any handle has
+ * come back, so a server-side id would leave it unguarded.
+ */
+/**
+ * A batch this store submitted, kept until its completion signal arrives.
+ *
+ * Two things travel with it. The folders let the shell decide whether the listing the author is
+ * looking at by then can show the result at all; the run id is what is still reporting the server
+ * phase on the indicator, and nothing but the completion knows to end it.
+ */
+export interface DotContentDriveUploadJob {
+    /** Where the batch landed, as `//hostname/path` refs. */
+    affectedFolders: string[];
+    /** The run reporting the server phase, if one is. */
+    runId?: string;
+    /**
+     * Which base type the batch was submitted as.
+     *
+     * Needed to describe its own outcome. A resubmitted `FILEASSET` batch is refused a second copy
+     * by the unique index over the lower-cased path; a `DOTASSET` one is not, because a dotAsset's
+     * `asset_name` is generated per contentlet and never contends — so the identical
+     * `duplicateSubmission` flag means "nothing was duplicated" for one and "everything was
+     * duplicated" for the other (FR-040b).
+     */
+    baseType?: string;
+}
+
+export interface DotContentDriveRun extends DotContentDriveActionExecution {
+    runId: string;
+    /**
+     * Which operation this is. Paired with {@link targets} it forms the repeat-fire guard, which is
+     * scoped to *this operation over these items* rather than to the portlet as a whole (FR-016) —
+     * so an upload running for minutes no longer blocks locking a row.
+     */
+    operation: string;
+    /** The inodes the run is acting on. Drives the guard, and the per-row busy marks. */
+    targets: string[];
 }
 
 /**
@@ -154,9 +235,61 @@ export interface DotContentDriveActionExecution {
  */
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
+    /**
+     * Whether this run was a resubmission of a batch that had already succeeded.
+     *
+     * Changes what the same counts mean: all-failed-on-collision is "already uploaded" when it is a
+     * retry, and a real problem when it is not.
+     *
+     * **Not sufficient on its own** — see {@link baseType}. The flag says the batch repeats an
+     * earlier successful run; whether that left a second copy depends on the base type.
+     */
+    duplicateSubmission?: boolean;
+    /**
+     * The base type an upload ran as, where the outcome came from one.
+     *
+     * A resubmission means opposite things by base type (FR-040b): a `FILEASSET` batch is refused
+     * its second copy by the unique index, a `DOTASSET` batch creates one and reports clean
+     * success. Describing the outcome without this would tell half of all authors the opposite of
+     * what happened to their folder.
+     */
+    baseType?: string;
+    /**
+     * Per-file results, for a run that reports them.
+     *
+     * Counts alone tell an author three files failed and nothing they can act on. The names and
+     * reasons are the point of a partial outcome, and the reason codes are what map to product copy
+     * rather than the server's diagnostic message, which is never shown.
+     */
+    failures?: DotBatchItemResult<DotBulkUploadFailureReason>[];
+    /**
+     * The folders whose contents this run changed, as `//hostname/path` references.
+     *
+     * Used to decide whether the listing the author is *currently* looking at can show the outcome
+     * at all (FR-044): a move out of `/images/` says nothing about `/docs/`, so refetching `/docs/`
+     * costs a request and — since `loadItems` empties `selectedItems` — takes their selection, for a
+     * listing identical afterwards.
+     *
+     * Omitted means "reload regardless", which is what every synchronous caller wants: those act on
+     * rows in front of the author, so the browsed folder is the changed one by construction. Only a
+     * backgrounded run can settle after they have navigated away.
+     */
+    affectedFolders?: string[];
     successCount: number;
     skippedCount: number;
-    failCount: number;
+    /**
+     * Spelled to match every job-backed producer rather than the view.
+     *
+     * `BulkRefreshContentletsProcessor` emits `failedCount`, and so does the bulk upload contract
+     * (`specs/37166-bulk-file-upload/contracts/bulk-upload-api.md` §3), which says so explicitly.
+     * Naming it `failCount` here meant a pushed outcome was translated on the way in, and every
+     * future job-backed consumer would translate it again for nothing (FR-032).
+     *
+     * The one place a translation remains is the workflow bulk-fire adapter, which reads
+     * `summary.failCount` — that API reports a `fails[]` list and no count at all, so a conversion
+     * there is real work rather than a rename.
+     */
+    failedCount: number;
     /**
      * i18n key for the partial-outcome copy, when the default does not fit.
      *
@@ -167,6 +300,20 @@ export interface DotContentDriveActionExecutionResult {
      * different supplies its own copy rather than borrowing that one.
      */
     partialDetailKey?: string;
+    /**
+     * Whether a clean success still needs saying.
+     *
+     * Success is silent by default: for most operations the listing visibly reflects it — the row
+     * publishes, moves, unlocks or disappears — and a notification then repeats what the author can
+     * already see. That repetition is the noise this feature set out to remove.
+     *
+     * It is not true for every operation. Add to Bundle and Push Publish change nothing in the
+     * listing, so without this the author gets a dialog that closes and no other sign anything
+     * happened — the "non-responding" complaint that started this. Those set it.
+     *
+     * A shortfall is always reported, with or without this.
+     */
+    confirmSuccess?: boolean;
     /**
      * Whether this outcome arrived unprompted, from a job that finished in the background.
      *
