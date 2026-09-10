@@ -37,6 +37,7 @@ import {
     DotPageToolsSeoComponent,
     PageScannerToolType
 } from '@dotcms/portlets/dot-ema/ui';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
@@ -123,7 +124,16 @@ function hasOpenContentForEdit(component: unknown): component is RouteWithOpenCo
         MessageModule,
         DotMessagePipe
     ],
-    providers: [ConfirmationService]
+    /**
+     * `DotExperimentsPanelStore` is provided **here**, not by the panel it belongs to (#37478).
+     *
+     * The panel component is mounted and destroyed by this template's `@if` on the store's
+     * `isOpen`, so a store owned by the panel would die with it — and the variant round trip
+     * needs the state to survive a period during which the panel is closed. This shell is the
+     * smallest scope that outlives that trip: leaving for a variant only changes the editor's
+     * query params, so the shell is never re-created.
+     */
+    providers: [ConfirmationService, DotExperimentsPanelStore]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
@@ -144,6 +154,18 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
+    protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
+
+    /**
+     * The page in hand, as the Experiments panel's scope (#37478).
+     *
+     * A signal rather than a value: the panel re-scopes when the editor navigates to another
+     * page without closing it, and it must never be able to describe a page other than the one
+     * on the canvas (FR-034).
+     */
+    protected readonly $experimentsPanelPageId = computed<string | null>(
+        () => this.uveStore.pageAsset()?.page?.identifier ?? null
+    );
     readonly #dotMessageService = inject(DotMessageService);
     protected readonly $lockOptions = this.uveStore.$lockOptions;
     protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
@@ -347,6 +369,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     constructor() {
         this.$updateBreadcrumb(this.$breadcrumbPage);
+
+        // Signals, not values: the panel reads the page and the language at the moment it uses
+        // them, so neither goes stale against the canvas. The language is return context only —
+        // it never narrows the panel, because an experiment belongs to a page and not to one of
+        // its language versions (#37478, D10).
+        this.experimentsPanel.setContext({
+            pageId: this.$experimentsPanelPageId,
+            languageId: this.uveStore.pageLanguageId
+        });
     }
 
     ngOnInit(): void {

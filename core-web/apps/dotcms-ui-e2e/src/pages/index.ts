@@ -7,3 +7,4 @@ export { LoginPage } from './login.page';
 export { NewEditContentFormPage } from './newEditContentForm.page';
 export { PagesListPage } from './pagesList.page';
 export { TemplateBuilderPage } from './templateBuilder.page';
+export { UveEditorPage } from './uveEditor.page';

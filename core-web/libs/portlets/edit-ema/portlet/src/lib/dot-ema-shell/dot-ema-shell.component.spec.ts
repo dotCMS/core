@@ -38,11 +38,17 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotPageToolUrlParams,
+    FEATURE_FLAG_NOT_FOUND,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent
 } from '@dotcms/portlets/dot-ema/ui';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
@@ -261,10 +267,14 @@ describe('DotEmaShellComponent', () => {
             MockComponent(DotPageToolsSeoComponent),
             MockComponent(DotPageScannerReportComponent)
         ],
+        // `componentProviders` REPLACES the component's own `providers` array rather than
+        // extending it, so anything the shell provides for itself has to be restated here or it
+        // is simply absent under test.
         componentProviders: [
             MessageService,
             UVEStore,
             ConfirmationService,
+            DotExperimentsPanelStore,
             mockProvider(DotContentTypeService),
             DotActionUrlService,
             DotMessageService,
@@ -1594,19 +1604,61 @@ describe('DotEmaShellComponent', () => {
                 );
             });
 
-            // T052 / FR-021, FR-021a, FR-022. Absolute, so `navigate()` does not prefix
-            // `edit-page`; and carrying only the page filter, since the list has no use for
-            // UVE's params.
-            it('should lead to the filtered site-wide list with the switch on', () => {
+            /**
+             * #37478, FR-001/FR-002. The item stops being a destination and becomes an action.
+             *
+             * This replaces #37005's assertion that it led to `/experiments` with query params:
+             * the experiments for this page now appear beside the canvas instead of somewhere
+             * the editor has to navigate back from. An item with no `href` is what
+             * `EditEmaNavigationBarComponent.navigate` already treats as an action, so the
+             * absence of the href *is* the mechanism, not an omission.
+             */
+            it('should become an action rather than a destination with the switch on', () => {
                 withSwitch(true);
 
-                expect(experimentsItem()?.href).toBe('/experiments');
-                expect(experimentsItem()?.queryParams).toEqual({
-                    pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                    // The language the editor is on. Without it the list's back-link and the
-                    // Configure prefill have to guess which version of the page was meant.
-                    language_id: MOCK_RESPONSE_HEADLESS.viewAs.language.id
-                });
+                expect(experimentsItem()?.href).toBeUndefined();
+                expect(experimentsItem()?.queryParams).toBeUndefined();
+            });
+
+            // FR-001. Activating it opens the panel; nothing navigates.
+            it('should open the panel when the item is activated with the switch on', () => {
+                withSwitch(true);
+                const panel = spectator.inject(DotExperimentsPanelStore, true);
+
+                spectator.component.handleItemAction('experiments');
+
+                expect(panel.isOpen()).toBe(true);
+                expect(panel.view()).toBe('list');
+            });
+
+            // FR-044. Nothing of the panel is reachable or observable on the shipped default.
+            it('should leave the panel closed with the switch off', () => {
+                withSwitch(false);
+
+                expect(spectator.inject(DotExperimentsPanelStore, true).isOpen()).toBe(false);
+            });
+
+            /**
+             * FR-005 / D5, and the single most likely way to break this feature by accident.
+             *
+             * The natural way to add a flag to this editor is `uveStore.flags()[…]` — the batched
+             * read, which maps a **missing key to enabled** because most flags ship on. This one
+             * ships off and sits beside the visitor-facing kill switch, so reading it that way
+             * would expose unfinished work on any response that simply did not carry it.
+             *
+             * Asserted through the absent-key case rather than by spying on `flags()`: if the
+             * shell ever switched to the batch, this test fails, and it fails for the reason that
+             * matters rather than for the mechanism used.
+             */
+            it('should stay legacy when the key is absent, which the batched flag read would call enabled', () => {
+                dotPropertiesServiceMock.getKey.mockReturnValue(of(FEATURE_FLAG_NOT_FOUND));
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(experimentsItem()?.href).toBe(
+                    `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`
+                );
+                expect(spectator.inject(DotExperimentsPanelStore, true).isOpen()).toBe(false);
             });
 
             // T057 / FR-023. The switch changes the destination, never who may reach it.
@@ -1643,7 +1695,7 @@ describe('DotEmaShellComponent', () => {
                 const before = experimentsItem()?.href;
 
                 withSwitch(true);
-                expect(experimentsItem()?.href).toBe('/experiments');
+                expect(experimentsItem()?.href).toBeUndefined();
 
                 withSwitch(false);
                 expect(experimentsItem()?.href).toBe(before);
