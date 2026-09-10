@@ -70,6 +70,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2589,6 +2590,64 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Both tied rows must be present", 2, firstRunOrder.size());
         assertEquals("Order among tied mod_date rows must be reproducible run-to-run",
                 firstRunOrder, secondRunOrder);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A single identifier persisted in two languages, both working
+     *     inodes forced to an identical {@code mod_date} (same technique as the tie test above) --
+     *     in this case {@code id.id} alone is identical across both rows too, so {@code (mod_date,
+     *     id.id)} has nothing left to disambiguate them by (code review, PR #37397).</li>
+     *     <li><b>Expected Result:</b> Adding {@code cvi.lang} to the tiebreaker still produces a
+     *     deterministic, reproducible order across repeated calls even in this previously
+     *     uncovered multi-language case.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_tiedModDateMultiLanguage_orderIsDeterministicAcrossRepeatedCalls()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+
+        final Contentlet defaultLangVersion = new FileAssetDataGen(
+                FileUtil.createTemporaryFile("tie-lang", ".txt", "a"))
+                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        final Contentlet secondLangVersion = ContentletDataGen.checkout(defaultLangVersion);
+        secondLangVersion.setLanguageId(secondLanguage.getId());
+        final Contentlet secondLangVersionSaved =
+                ContentletDataGen.checkin(secondLangVersion, IndexPolicy.WAIT_FOR);
+
+        // Same identifier, same id.id -- force an identical mod_date on both working inodes so
+        // neither mod_date nor id.id is left to disambiguate them; only cvi.lang can.
+        final java.sql.Timestamp sharedModDate = new java.sql.Timestamp(System.currentTimeMillis());
+        new DotConnect().executeUpdate("update contentlet set mod_date = ? where inode = ?",
+                sharedModDate, defaultLangVersion.getInode());
+        new DotConnect().executeUpdate("update contentlet set mod_date = ? where inode = ?",
+                sharedModDate, secondLangVersionSaved.getInode());
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true)
+                .withLanguageIds(List.of(defaultLangVersion.getLanguageId(), secondLanguage.getId()))
+                .build();
+
+        final List<Long> firstRunLangOrder = browserAPI.getPaginatedContents(query).list.stream()
+                .filter(row -> defaultLangVersion.getIdentifier().equals(row.get("identifier")))
+                .map(row -> ((Number) row.get("languageId")).longValue())
+                .collect(Collectors.toList());
+        final List<Long> secondRunLangOrder = browserAPI.getPaginatedContents(query).list.stream()
+                .filter(row -> defaultLangVersion.getIdentifier().equals(row.get("identifier")))
+                .map(row -> ((Number) row.get("languageId")).longValue())
+                .collect(Collectors.toList());
+
+        assertEquals("Both language versions must be present", 2, firstRunLangOrder.size());
+        assertEquals(
+                "Order among tied mod_date/id.id rows across languages must be reproducible run-to-run",
+                firstRunLangOrder, secondRunLangOrder);
     }
 
     /**

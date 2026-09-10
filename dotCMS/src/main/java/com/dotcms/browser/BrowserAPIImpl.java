@@ -2761,11 +2761,18 @@ public class BrowserAPIImpl implements BrowserAPI {
         // byte-identical to before (found in review: this was previously unconditional for any
         // caller with sortBy set, silently changing tie order and pagination cursors for
         // non-folder-scoped callers too).
+        //
+        // `(mod_date, id.id)` is still not a total order on a multi-language folder: a single
+        // identifier legitimately comes back as several rows, one per language
+        // (appendLanguageQuery's `cvi.lang in (...)`), so id.id is identical across those rows.
+        // When they also share mod_date, nothing is left to break the tie. `cvi.lang` closes it
+        // and is already joined/in scope via contentlet_version_info -- no new join (code
+        // review, PR #37397).
         sqlQuery.append(" order by ");
         if (orderByDesc) {
-            sqlQuery.append(" c.mod_date desc").append(useFolderCte ? ", id.id desc" : "");
+            sqlQuery.append(" c.mod_date desc").append(useFolderCte ? ", id.id desc, cvi.lang desc" : "");
         } else  {
-            sqlQuery.append(" c.mod_date asc").append(useFolderCte ? ", id.id asc" : "");
+            sqlQuery.append(" c.mod_date asc").append(useFolderCte ? ", id.id asc, cvi.lang asc" : "");
         }
     }
 
