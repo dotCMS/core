@@ -3,6 +3,10 @@ package com.dotcms.jobs.business.processor.impl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotmarketing.beans.Host;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
@@ -181,11 +185,40 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
+            // The content is resolved FIRST, because the content type is routed from it.
+            //
+            // This used to come after the size and type pre-check, which forced that check to run
+            // against a hardcoded generic type — see resolveContentType. Reordering costs nothing:
+            // getTempFile hands back a handle, not a copy.
+            final File binary = resolveStagedContent(job, tempFileId, user)
+                    .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
+
+            final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
+
+            final Contentlet contentlet = new Contentlet();
+
+            // The two base types name their binary field differently, and getting it wrong fails
+            // with "Unable to get The Asset From the Given dotAsset Contentlet" — a message that
+            // does not mention the field, so it is worth naming here. A dotAsset carries 'asset'
+            // and derives its title from the file; a fileAsset carries 'fileAsset' and needs the
+            // title and file name set explicitly.
+            if (isFileAsset) {
+                contentlet.setBinary(FileAssetAPI.BINARY_FIELD, binary);
+                contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
+                contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+            } else {
+                contentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, binary);
+            }
+            applyTarget(contentlet, job.parameters(), user);
+
+            // Routed by the binary's media type, the same way every other creation path does it.
+            final ContentType contentType = resolveContentType(job, contentlet, user);
+            contentlet.setContentTypeId(contentType.id());
+
             // Decided from what staging measured, before anything is created (research R4). The
             // validation layer reports an over-size file and a disallowed type through the same
             // exception class, differing only by a translated string, so a reason recovered from
             // it would be a guess. Here both are facts.
-            final ContentType contentType = contentTypeFor(job.parameters(), user);
             final Optional<BatchFailureReason> refused = reasons.preCheck(
                     sizeOf(file),
                     (String) file.get("mimeType"),
@@ -222,28 +255,6 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                         "Refused by the target folder before creation", null);
                 return;
             }
-
-            final File binary = resolveStagedContent(job, tempFileId, user)
-                    .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
-
-            final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
-
-            final Contentlet contentlet = new Contentlet();
-            contentlet.setContentTypeId(contentTypeIdFor(job.parameters(), user));
-
-            // The two base types name their binary field differently, and getting it wrong fails
-            // with "Unable to get The Asset From the Given dotAsset Contentlet" — a message that
-            // does not mention the field, so it is worth naming here. A dotAsset carries 'asset'
-            // and derives its title from the file; a fileAsset carries 'fileAsset' and needs the
-            // title and file name set explicitly.
-            if (isFileAsset) {
-                contentlet.setBinary(FileAssetAPI.BINARY_FIELD, binary);
-                contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
-                contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
-            } else {
-                contentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, binary);
-            }
-            applyTarget(contentlet, job.parameters(), user);
 
             // Created as a DRAFT, and deterministically so.
             //
@@ -427,17 +438,93 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * Resolves the content type the batch creates into — one type for the whole batch, validated at
      * submission, so this never has to infer one per file.
      */
-    private ContentType contentTypeFor(final Map<String, Object> parameters, final User user)
+    /**
+     * Resolves the <b>specific</b> content type this file should become, from its media type.
+     * <p>
+     * <b>Why not just the base type's default.</b> This used to hardcode `FileAsset` or `dotAsset`
+     * from the batch's declared base type, so a PNG uploaded as {@code DOTASSET} became the generic
+     * dotAsset and never the instance's own Image type. That is not only a wrong label — <b>the
+     * resolved type is what feeds this feature's own validation</b>. {@link #effectiveCeiling}
+     * reads its {@code maxFileLength} and {@link #acceptedTypes} its {@code allowedFileTypes}, so
+     * an instance that caps Image at 5 MB and restricts it to {@code image/*} had both rules
+     * silently bypassed by this endpoint while every other path that creates an image enforced
+     * them. Exactly the divergence FR-006 exists to prevent.
+     * <p>
+     * Routed through the product's own {@code BaseTypeToContentTypeStrategyResolver} — the same one
+     * {@code ESContentletAPIImpl#checkOrSetContentType} uses — rather than a matcher of our own, so
+     * a batch and a single upload of the same file land on the same type by construction rather
+     * than by two implementations agreeing.
+     * <p>
+     * <b>The context map is built by hand because the run has no HTTP request.</b> The product's
+     * caller reads the request thread-local for the session id and the temp fingerprint; a worker
+     * thread has neither, so the accessing list is assembled from the job's own parameters, the
+     * same way {@link #resolveStagedContent} does. The binary is already set on the contentlet as a
+     * real {@link File}, which the strategies accept directly, so nothing here depends on
+     * re-resolving a temp id.
+     * <p>
+     * Falls back to the base type's default when nothing matches — which is what the strategies
+     * themselves do, and what the previous behaviour was for every file.
+     */
+    private ContentType resolveContentType(final Job job, final Contentlet contentlet,
+                                           final User user)
             throws DotDataException, DotSecurityException {
-        final String variable = "FILEASSET".equals(parameters.get("baseType"))
+
+        final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
+        final BaseContentType baseType =
+                isFileAsset ? BaseContentType.FILEASSET : BaseContentType.DOTASSET;
+
+        final Optional<ContentType> routed = routeByMediaType(job, contentlet, user, baseType);
+        if (routed.isPresent()) {
+            return routed.get();
+        }
+
+        final String fallback = isFileAsset
                 ? FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME
                 : "dotAsset";
-        return APILocator.getContentTypeAPI(user).find(variable);
+        return APILocator.getContentTypeAPI(user).find(fallback);
     }
 
-    private String contentTypeIdFor(final Map<String, Object> parameters, final User user)
-            throws DotDataException, DotSecurityException {
-        return contentTypeFor(parameters, user).id();
+    /**
+     * Asks the product's strategy for the specific type, and never lets that question fail a file.
+     * <p>
+     * A routing failure degrades to the base type's default — which is where every file landed
+     * before this existed, so the worst case is the previous behaviour rather than a lost file.
+     */
+    private Optional<ContentType> routeByMediaType(final Job job, final Contentlet contentlet,
+                                                   final User user,
+                                                   final BaseContentType baseType) {
+        try {
+            final Optional<BaseTypeToContentTypeStrategy> strategy =
+                    BaseTypeToContentTypeStrategyResolver.getInstance().get(baseType);
+            if (strategy.isEmpty()) {
+                return Optional.empty();
+            }
+
+            final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, false);
+            if (null == host) {
+                return Optional.empty();
+            }
+
+            final List<String> accessingList = new ArrayList<>();
+            accessingList.add(user.getUserId());
+            final Object fingerprint = job.parameters().get("requestFingerprint");
+            if (null != fingerprint) {
+                accessingList.add(String.valueOf(fingerprint));
+            }
+
+            return strategy.get().apply(baseType, Map.of(
+                    "user", user,
+                    "host", host,
+                    "contentletMap", contentlet.getMap(),
+                    "accessingList", accessingList));
+
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Bulk upload job [%s]: could not route '%s' by media type, falling back to the "
+                            + "base type's default: %s",
+                    job.id(), contentlet.getTitle(), e.getMessage()));
+            return Optional.empty();
+        }
     }
 
     /** Places the asset in the folder, or at the site root when the batch targets a site. */

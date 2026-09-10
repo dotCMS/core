@@ -1249,4 +1249,74 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         }
     }
 
+
+    /**
+     * Method to test: content-type routing in the bulk-upload processor
+     * <p>
+     * Given scenario: The instance has a dotAsset-based type that accepts {@code image/*} and caps
+     * files at 1 KB. A batch is submitted as {@code DOTASSET} carrying an oversized PNG.
+     * <p>
+     * Expected result: The file is refused as {@code OVER_SIZE_LIMIT} — meaning the run validated
+     * against the <b>specific</b> type the file routes to, not the generic one.
+     * <p>
+     * <b>This is the defect, and it is not about labels.</b> The processor used to hardcode the
+     * type from the declared base type, so a PNG became the generic {@code dotAsset}. Since
+     * {@code effectiveCeiling} and {@code acceptedTypes} read from whatever type was resolved, an
+     * instance that caps its Image type at 5 MB and restricts it to {@code image/*} had both rules
+     * <b>silently bypassed by this endpoint</b>, while every other path that creates an image
+     * enforced them. Exactly the divergence FR-006 exists to prevent.
+     * <p>
+     * The ceiling is the assertion rather than the type's name on purpose: a test that only read
+     * back {@code getContentType()} would pass against a routing that resolved correctly and then
+     * validated against something else, which is the half that actually costs an author their file.
+     */
+    @Test
+    public void test_run_validatesAgainstTheTypeTheFileRoutesTo_notTheGenericOne() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+
+        // A narrow type the media type will route to, capped far below the generic fallback.
+        capImagesAt(1024L);
+
+        final Job job = jobForNames(folder, List.of("photo.png"));
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+        staged.get(0).put("sizeBytes", 5_000L);
+        staged.get(0).put("mimeType", "image/png");
+
+        final BulkUploadProcessor processor = new BulkUploadProcessor();
+        processor.process(job);
+
+        final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+        assertEquals(BatchFailureReason.OVER_SIZE_LIMIT, reasonFor(outcome, "photo.png"),
+                "the run must apply the ceiling of the type this file actually becomes. Falling "
+                        + "back to the generic type's (much larger) ceiling is how this endpoint "
+                        + "let files past rules every other creation path enforces.\n"
+                        + describe(outcome));
+    }
+
+    /**
+     * Caps the dotAsset type's binary field, and registers the change for teardown.
+     * <p>
+     * Set on the shared type deliberately: it is the type a PNG routes to on a default install, so
+     * capping it is what proves the run read <i>the resolved type's</i> ceiling. Undone in the same
+     * {@code @AfterEach} as the accept-list restrictions — a field variable persisted on a shared
+     * content type outlives the test that set it.
+     */
+    private void capImagesAt(final long maxBytes) throws Exception {
+        final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
+        final Field binary = dotAsset.fields().stream()
+                .filter(f -> f instanceof BinaryField)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("dotAsset has no binary field"));
+
+        restrictions.add(new FieldVariableDataGen()
+                .field(binary)
+                .key(BinaryField.MAX_FILE_LENGTH)
+                .value(String.valueOf(maxBytes))
+                .nextPersisted());
+    }
+
 }
