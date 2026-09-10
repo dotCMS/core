@@ -502,9 +502,17 @@ public class BrowserQuery {
          * are interpolated into the JSONPath expression the query builder binds. Validating here
          * covers every caller, rather than relying on each entry point to check its own input.
          *
+         * <p>A {@code null} list means "no MIME type filter" and is normalised to an empty list.
+         * Callers such as {@code BrowserAjax} pass null on their default path, and the query
+         * builder already treats null and empty identically.</p>
+         *
          * @throws IllegalArgumentException if any value is empty or contains other characters
          */
-        public Builder showMimeTypes(@Nonnull List<String> mimeTypes) {
+        public Builder showMimeTypes(final List<String> mimeTypes) {
+            if (mimeTypes == null) {
+                this.mimeTypes = List.of();
+                return this;
+            }
             for (int i = 0; i < mimeTypes.size(); i++) {
                 final String mimeType = mimeTypes.get(i);
                 if (mimeType == null || !MIME_TYPE_PATTERN.matcher(mimeType).matches()) {

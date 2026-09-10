@@ -100,6 +100,22 @@ public class BrowserAPIMimeTypeQueryTest {
         BrowserQuery.builder().showMimeTypes(List.of("image/*", "application/pdf", "text/plain"));
     }
 
+    /**
+     * A null list means "no MIME type filter". Callers on their default path pass null, and the
+     * query builder treats null and empty identically, so it must not be rejected.
+     */
+    @Test
+    public void testNullMimeTypeListIsTreatedAsNoFilter() {
+        BrowserQuery.builder().showMimeTypes(null);
+    }
+
+    @Test
+    public void testEmptyMimeTypeListBindsNothing() throws Exception {
+        final Result result = invoke(List.of());
+
+        assertTrue("no value is bound for an empty list", result.params.isEmpty());
+    }
+
     private static class Result {
         private final String sql;
         private final List<Object> params;
