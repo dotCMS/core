@@ -78,6 +78,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2634,48 +2635,145 @@ public class BrowserAPITest extends IntegrationTestBase {
      * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
      *     <li><b>Given Scenario:</b> An eligible field filter (Text, no Tag/Relationship/workflow/
-     *     free-text) is applied against a folder large enough to require multiple chunked passes
-     *     pre-fix (3,000 items, comfortably over the default {@code BROWSER_CONTENT_CHUNK_SIZE=900}
-     *     -- reduced from quickstart.md Scenario A's ~20,000 reference figure since the single-pass
-     *     assertion below doesn't depend on the exact scale, only on exceeding one chunk) where
-     *     matches are sparse.</li>
+     *     free-text) is applied against a sparse-match folder holding more items than the pre-fix
+     *     chunk size. Rather than materialising a folder large enough to beat the production
+     *     default, {@code BROWSER_CONTENT_CHUNK_SIZE} is temporarily lowered to 10 so that 30 items
+     *     span three pre-fix chunks -- the single-pass assertion only depends on the candidate set
+     *     exceeding one pre-fix chunk, not on the absolute scale. This keeps the test off the bulk
+     *     indexing pressure a 3,000-contentlet {@code WAIT_FOR} fixture puts on CI.</li>
      *     <li><b>Expected Result:</b> {@link BrowserAPIImpl#processESDirectly} is invoked exactly
-     *     once and the DB candidate scan resolves in a single pass -- not the ~4 chunked passes
-     *     the pre-fix default ({@code BROWSER_CONTENT_CHUNK_SIZE=900}) would require at this scale.</li>
+     *     once, because the eligible request is routed to {@code BROWSER_SINGLE_PASS_CHUNK_SIZE}
+     *     (default 7,000) and no longer to the narrowed {@code BROWSER_CONTENT_CHUNK_SIZE}.</li>
      * </ul>
      */
     @Test
     public void test_getPaginatedContents_eligibleFieldFilter_largeSparseFolder_singlePass() throws Exception {
-        final String uniqueId = UUIDGenerator.shorty();
-        final Host site = new SiteDataGen().nextPersisted();
-        final Folder folder = new FolderDataGen().site(site).nextPersisted();
-        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+        final int originalChunkSize = Config.getIntProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY,
+                BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
+        // 30 items over a 10-row chunk = 3 chunked passes (and 3 processESDirectly calls) pre-fix.
+        Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, 10);
+        try {
+            final String uniqueId = UUIDGenerator.shorty();
+            final Host site = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(site).nextPersisted();
+            final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
 
-        final int total = 3_000;
-        final String matchValue = "sparseMatch_" + uniqueId;
-        for (int i = 0; i < total; i++) {
-            new ContentletDataGen(fixture.contentType.id())
-                    .folder(folder)
-                    .setProperty("title", "ffDoc_" + uniqueId + "_" + i)
-                    .setProperty(FF_TEXT_VAR, i == total / 2 ? matchValue : "noise_" + uniqueId + "_" + i)
-                    .languageId(1)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
-                    .nextPersisted();
+            final int total = 30;
+            final String matchValue = "sparseMatch_" + uniqueId;
+            for (int i = 0; i < total; i++) {
+                new ContentletDataGen(fixture.contentType.id())
+                        .folder(folder)
+                        .setProperty("title", "ffDoc_" + uniqueId + "_" + i)
+                        .setProperty(FF_TEXT_VAR, i == total / 2 ? matchValue : "noise_" + uniqueId + "_" + i)
+                        .languageId(1)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
+
+            final BrowserAPIImpl spyBrowserAPI = Mockito.spy(new BrowserAPIImpl());
+            final BrowserQuery browserQuery = BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .useElasticsearchFiltering(true)
+                    .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
+                    .build();
+
+            final PaginatedContents result = spyBrowserAPI.getPaginatedContents(browserQuery);
+
+            Mockito.verify(spyBrowserAPI, Mockito.times(1))
+                    .processESDirectly(ArgumentMatchers.any(), ArgumentMatchers.anySet());
+            assertEquals("The single sparse match must still be found", 1, result.list.size());
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, originalChunkSize);
         }
+    }
 
-        final BrowserAPIImpl spyBrowserAPI = Mockito.spy(new BrowserAPIImpl());
-        final BrowserQuery browserQuery = BrowserQuery.builder()
-                .withUser(APILocator.systemUser())
-                .withHostOrFolderId(folder.getIdentifier())
-                .useElasticsearchFiltering(true)
-                .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
-                .build();
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> An eligible field filter matching every item in a folder is
+     *     paged through with a small page size, following {@code nextContentCursor} /
+     *     {@code hasMoreContent} until exhausted. {@code BROWSER_SINGLE_PASS_CHUNK_SIZE} is
+     *     temporarily narrowed so the page boundaries fall inside a chunk and the chunk boundaries
+     *     fall inside the match set -- the exact shape in which an ES-ordered candidate list would
+     *     desynchronise {@code generateNextContentCursor}'s DB-order cursor lookup.</li>
+     *     <li><b>Expected Result:</b> The union of all pages carries no duplicate identifiers and
+     *     is exactly equal to the identifiers returned by a single unpaged request for the same
+     *     filter -- no gaps, no repeats (FR-007, review finding 3 on PR #37395).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_eligibleFieldFilter_pagesAreGapAndDuplicateFree() throws Exception {
+        final int originalSinglePassChunkSize = Config.getIntProperty(
+                BrowserAPIImpl.BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY,
+                BrowserAPIImpl.BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT);
+        // 18 matches, 7-row chunks and 5-item pages: neither boundary aligns with the other.
+        Config.setProperty(BrowserAPIImpl.BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY, 7);
+        try {
+            final String uniqueId = UUIDGenerator.shorty();
+            final Host site = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(site).nextPersisted();
+            final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
 
-        final PaginatedContents result = spyBrowserAPI.getPaginatedContents(browserQuery);
+            final int total = 18;
+            final int pageSize = 5;
+            final String matchValue = "pagedMatch_" + uniqueId;
+            for (int i = 0; i < total; i++) {
+                new ContentletDataGen(fixture.contentType.id())
+                        .folder(folder)
+                        .setProperty("title", "ffPaged_" + uniqueId + "_" + i)
+                        .setProperty(FF_TEXT_VAR, matchValue)
+                        .languageId(1)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
 
-        Mockito.verify(spyBrowserAPI, Mockito.times(1))
-                .processESDirectly(ArgumentMatchers.any(), ArgumentMatchers.anySet());
-        assertEquals("The single sparse match must still be found", 1, result.list.size());
+            final PaginatedContents unpaged = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .useElasticsearchFiltering(true)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
+                    .maxResults(total * 2)
+                    .contentCursor(0)
+                    .build());
+
+            final Set<String> unpagedIdentifiers = unpaged.list.stream()
+                    .map(item -> (String) item.get("identifier"))
+                    .collect(Collectors.toSet());
+            assertEquals("The unpaged request must return every match", total, unpagedIdentifiers.size());
+
+            final List<String> pagedIdentifiers = new ArrayList<>();
+            int cursor = 0;
+            int pageCount = 0;
+            boolean hasMore = true;
+            while (hasMore && pageCount < total) {
+                final PaginatedContents page = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                        .withUser(APILocator.systemUser())
+                        .withHostOrFolderId(folder.getIdentifier())
+                        .useElasticsearchFiltering(true)
+                        .showFolders(false)
+                        .showLinks(false)
+                        .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
+                        .maxResults(pageSize)
+                        .contentCursor(cursor)
+                        .build());
+                pageCount++;
+                page.list.forEach(item -> pagedIdentifiers.add((String) item.get("identifier")));
+                cursor = page.nextContentCursor;
+                hasMore = page.hasMoreContent;
+            }
+
+            assertTrue("Paging must have spanned at least 3 pages", pageCount >= 3);
+            assertEquals("No identifier may be returned on more than one page",
+                    pagedIdentifiers.size(), new HashSet<>(pagedIdentifiers).size());
+            assertEquals("The union of all pages must equal the unpaged result set",
+                    unpagedIdentifiers, new HashSet<>(pagedIdentifiers));
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY,
+                    originalSinglePassChunkSize);
+        }
     }
 
     /**

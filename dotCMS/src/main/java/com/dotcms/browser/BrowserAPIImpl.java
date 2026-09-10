@@ -610,7 +610,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final int chunkSize = singlePassEligible
                 ? Config.getIntProperty(BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY, BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT)
-                : Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+                : Config.getIntProperty(BROWSER_CONTENT_CHUNK_SIZE_KEY, BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
 
         Logger.debug(this, singlePassEligible
                 ? "::::: Using widened-chunk DB+ES query for single-pass-eligible filters (issue #37184) ::::"
@@ -801,6 +801,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     // Default of 50,000 covers a worst-case ~5% permission pass rate for a full page of 300 items.
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
+
+    // Default DB chunk size for the hybrid DB+ES text-filtering loop.
+    static final String BROWSER_CONTENT_CHUNK_SIZE_KEY = "BROWSER_CONTENT_CHUNK_SIZE";
+    static final int BROWSER_CONTENT_CHUNK_SIZE_DEFAULT = 900;
 
     // DB chunk size used by the single-pass-eligible field-filter path (issue #37184). Deliberately
     // decoupled from BROWSER_DB_MAX_SCAN_ROWS: that property is the outer guard rail (total rows a
