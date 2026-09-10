@@ -39,6 +39,14 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
 
     static final int MAX_PREVIEW_LENGTH = 150;
 
+    /**
+     * Upper bound, in characters, on how much of a raw HTML value is handed to {@link Jsoup#parse}
+     * before flattening to text and truncating. {@code MAX_PREVIEW_LENGTH} characters of visible
+     * text fit inside this budget with wide margin even for markup-heavy bodies, so a full-body
+     * parse is never needed just to keep a 150-character preview (found in review).
+     */
+    private static final int HTML_PARSE_BUDGET = 4096;
+
     LongTextPreviewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
@@ -86,7 +94,10 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         if (!(rawValue instanceof String) || ((String) rawValue).isEmpty()) {
             return rawValue instanceof String ? (String) rawValue : StringPool.BLANK;
         }
-        return truncate(Jsoup.parse((String) rawValue).text());
+        final String html = (String) rawValue;
+        final String bounded = html.length() > HTML_PARSE_BUDGET
+                ? html.substring(0, HTML_PARSE_BUDGET) : html;
+        return truncate(Jsoup.parse(bounded).text());
     }
 
     /**
