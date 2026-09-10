@@ -150,9 +150,11 @@ test('editing during an in-flight layout save does not lose container content @c
 
     // AC2: the lock must span the whole save + reload cycle, not just the POST — release
     // the held response and confirm the overlay only comes down once the page has actually
-    // re-hydrated, not the instant the response arrives.
+    // re-hydrated, not the instant the response arrives. Generous timeout: pageReload()
+    // does a real re-fetch + re-render, and this CI environment has repeatedly shown it
+    // can take well over Playwright's 5s assertion default under load.
     releaseFirstSave();
-    await expect(templateBuilder.getOverlay()).toBeHidden();
+    await expect(templateBuilder.getOverlay()).toBeHidden({ timeout: 20_000 });
 
     expect(layoutPostCount).toBe(1);
 
