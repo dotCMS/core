@@ -3,6 +3,7 @@ package com.dotcms.graphql;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
+import com.dotcms.graphql.datafetcher.FileAssetBinaryPropertyDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
@@ -11,15 +12,19 @@ import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import graphql.scalars.ExtendedScalars;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.PropertyDataFetcher;
+import graphql.schema.TypeResolver;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -61,7 +66,49 @@ public enum CustomFieldType {
 
     private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
 
+    /** Name of the shared interface exposed by every binary-bearing custom type. See #34540. */
+    public static final String DOT_BINARY_LIKE_INTERFACE_NAME = "DotBinaryLike";
+
+    private static GraphQLInterfaceType dotBinaryLikeInterface;
+
     static {
+        // Build the shared DotBinaryLike interface first so the concrete types below can
+        // declare it as an implemented interface. The TypeResolver picks the concrete
+        // GraphQL type at query time based on the Java type of the source value:
+        //   - Map          -> DotBinary      (produced by BinaryToMapTransformer)
+        //   - Contentlet   -> DotFileasset   (produced by FileFieldDataFetcher)
+        final Map<String, GraphQLOutputType> commonBinaryFields = new LinkedHashMap<>();
+        commonBinaryFields.put("name", GraphQLString);
+        commonBinaryFields.put("title", GraphQLString);
+        commonBinaryFields.put("size", GraphQLLong);
+        commonBinaryFields.put("mime", GraphQLString);
+        commonBinaryFields.put("versionPath", GraphQLString);
+        commonBinaryFields.put("idPath", GraphQLString);
+        commonBinaryFields.put("path", GraphQLString);
+        commonBinaryFields.put("sha256", GraphQLString);
+        commonBinaryFields.put("isImage", GraphQLBoolean);
+        commonBinaryFields.put("width", GraphQLLong);
+        commonBinaryFields.put("height", GraphQLLong);
+        commonBinaryFields.put("modDate", GraphQLLong);
+
+        final Map<String, TypeFetcher> dotBinaryLikeFields = new LinkedHashMap<>();
+        commonBinaryFields.forEach((name, type) ->
+                dotBinaryLikeFields.put(name, new TypeFetcher(type)));
+
+        final TypeResolver dotBinaryLikeResolver = env -> {
+            final Object source = env.getObject();
+            if (source instanceof Map) {
+                return customFieldTypes.get("BINARY");
+            }
+            if (source instanceof Contentlet) {
+                return customFieldTypes.get("FILEASSET");
+            }
+            return null;
+        };
+
+        dotBinaryLikeInterface = TypeUtil.createInterfaceType(
+                DOT_BINARY_LIKE_INTERFACE_NAME, dotBinaryLikeFields, dotBinaryLikeResolver);
+
         final Map<String, GraphQLOutputType> binaryTypeFields = new HashMap<>();
         binaryTypeFields.put("versionPath", GraphQLString);
         binaryTypeFields.put("idPath", GraphQLString);
@@ -77,7 +124,7 @@ public enum CustomFieldType {
         binaryTypeFields.put("modDate", GraphQLLong);
         binaryTypeFields.put("focalPoint", GraphQLString);
         customFieldTypes.put("BINARY", TypeUtil.createObjectType(BINARY.getTypeName(), binaryTypeFields,
-            new MapFieldPropertiesDataFetcher()));
+            new MapFieldPropertiesDataFetcher(), dotBinaryLikeInterface));
 
         final Map<String, GraphQLOutputType> categoryTypeFields = new HashMap<>();
         categoryTypeFields.put("inode", GraphQLID);
@@ -158,7 +205,17 @@ public enum CustomFieldType {
                 new TypeFetcher(list(CustomFieldType.KEY_VALUE.getType()), new KeyValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new MultiValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
-        customFieldTypes.put("FILEASSET", TypeUtil.createObjectType(FILEASSET.getTypeName(), fileAssetTypeFields));
+
+        // DotBinaryLike interface fields — resolved from the underlying FileAsset/DotAsset
+        // Contentlet via BinaryToMapTransformer so the values match those exposed by
+        // the equivalent query against a raw BinaryField. See issue #34540.
+        final FileAssetBinaryPropertyDataFetcher binaryPropertyFetcher =
+                new FileAssetBinaryPropertyDataFetcher();
+        commonBinaryFields.forEach((name, type) ->
+                fileAssetTypeFields.put(name, new TypeFetcher(type, binaryPropertyFetcher)));
+
+        customFieldTypes.put("FILEASSET", TypeUtil.createObjectType(FILEASSET.getTypeName(),
+                fileAssetTypeFields, dotBinaryLikeInterface));
 
         final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(ContentFields.getContentFields());
         siteTypeFields.remove(HOST_KEY); // remove myself
@@ -186,6 +243,20 @@ public enum CustomFieldType {
 
     public static Collection<GraphQLObjectType> getCustomFieldTypes() {
         return customFieldTypes.values();
+    }
+
+    /**
+     * Returns the shared {@code DotBinaryLike} interface implemented by {@code DotBinary} and
+     * {@code DotFileasset}. Callers registering the GraphQL schema must include this in the set
+     * of known types so introspection exposes it. See issue #34540.
+     */
+    public static GraphQLInterfaceType getDotBinaryLikeInterface() {
+        return dotBinaryLikeInterface;
+    }
+
+    /** @return all GraphQL interface types owned by this enum (currently just DotBinaryLike). */
+    public static Collection<GraphQLInterfaceType> getCustomFieldInterfaces() {
+        return Collections.singletonList(dotBinaryLikeInterface);
     }
 
     public static boolean isCustomFieldType(final GraphQLType type) {
