@@ -1,5 +1,12 @@
 # dotCMS + Next.js: Experiments (A/B Testing) Example
 
+> [!NOTE]
+> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen
+> instance (always the current release). If your dotCMS instance is **not** on Evergreen — an
+> older self-hosted release, or an LTS server — installing as-is may fail with GraphQL
+> `FieldUndefined` errors. Check your server's version and replace `latest` with that exact
+> version for every `@dotcms/*` entry in `package.json` before installing.
+
 ## Introduction & Overview
 
 This project demonstrates how to run **A/B Experiments** on a [Next.js](https://nextjs.org/) front end powered by [dotCMS](https://dotcms.com/) as a headless CMS. It builds on the standard fully-editable-page integration and adds the dotCMS **Experiments** feature, so you can:

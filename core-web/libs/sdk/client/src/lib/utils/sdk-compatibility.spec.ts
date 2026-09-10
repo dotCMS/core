@@ -29,6 +29,15 @@ describe('compareVersions', () => {
         expect(compareVersions('26.7.13_lts_v1', '26.7.13')).toBeNull();
         expect(compareVersions('not-a-version', '26.7.13')).toBeNull();
     });
+
+    it('treats a zero-padded version as equal to its normalized form (regression lock)', () => {
+        // Defect A: the release pipeline used to write the zero-padded CalVer date
+        // (e.g. "26.08.03-01") verbatim into published package.json files, instead of the
+        // normalized, valid-semver form npm's registry metadata shows ("26.8.3-1"). This
+        // already compares as equal today -- Number("08") is 8 in JS string-to-number
+        // conversion, not octal -- so this locks in that correctness against future refactors.
+        expect(compareVersions('26.08.03-01', '26.8.3-1')).toBe(0);
+    });
 });
 
 describe('checkSdkCompatibility', () => {
