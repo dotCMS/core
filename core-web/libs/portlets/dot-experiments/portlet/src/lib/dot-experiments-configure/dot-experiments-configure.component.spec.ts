@@ -4,15 +4,16 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 import { provideLocationMocks } from '@angular/common/testing';
 import { ApplicationRef, Component, input, signal, WritableSignal } from '@angular/core';
 import { FieldTree } from '@angular/forms/signals';
-import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Params, provideRouter, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotExperiment,
     DotExperimentStatus,
+    CONFIGURE_SECTION_VARIANTS,
     DotMessageSeverity,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     ExperimentsConfigProperties,
@@ -22,6 +23,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigureDetailsComponent } from './components/dot-experiments-configure-details/dot-experiments-configure-details.component';
@@ -58,6 +60,10 @@ const LOCKED_COPY = {
     readOnly: 'This experiment can no longer be edited'
 };
 
+const LIST_TITLE_COPY = 'Experiments List';
+const NEW_EXPERIMENT_COPY = 'New Experiment';
+const CONFIGURE_TITLE_COPY = 'Configure Experiment';
+
 const messageServiceMock = new MockDotMessageService({
     'experiments.list.error.title': ERROR_COPY.title,
     'experiments.error.fetching.data': ERROR_COPY.subtitle,
@@ -69,7 +75,10 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.action.start.confirm-message': 'Experiment {0} started',
     'experiments.action.stop.confirm-message': 'Experiment {0} ended',
     'experiments.notification.cancel.schedule': 'Experiment {0} unscheduled',
-    'experiments.notification.abort': 'Experiment {0} aborted'
+    'experiments.notification.abort': 'Experiment {0} aborted',
+    'experiment.container.list.title': LIST_TITLE_COPY,
+    'experiment.container.configuration.title': CONFIGURE_TITLE_COPY,
+    'experiments.configure.header.new-experiment': NEW_EXPERIMENT_COPY
 });
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -180,15 +189,42 @@ const createStoreMock = () => ({
     // The weights slice is seeded from these, so they move with `experiment` (see `loadExperiment`).
     $variants: signal<Variant[]>([]),
     $disabledTooltipKey: signal<string | null>(null),
+    /** A confirmed page change in flight; gates the Variants card on its own. */
+    pageChanging: signal(false),
     draftName: signal(''),
     draftDescription: signal('')
 });
+
+/**
+ * The trail, as a real list rather than four independent spies: whether a crumb is appended or
+ * written in place is the whole question here, and a mock that only records the calls answers it
+ * the same way either way.
+ *
+ * Not `mockProvider`: `GlobalStore` is a signal store, so its methods live on the instance rather
+ * than the prototype and Spectator's auto-mock finds none of them.
+ */
+const createGlobalStoreMock = () => {
+    const trail: MenuItem[] = [];
+
+    return {
+        trail,
+        addNewBreadcrumb: jest.fn((crumb: MenuItem) => {
+            trail.push(crumb);
+        }),
+        setLastBreadcrumb: jest.fn((crumb: MenuItem) => {
+            trail[trail.length - 1] = crumb;
+        }),
+        breadcrumbs: jest.fn(() => [...trail]),
+        lastBreadcrumb: jest.fn(() => trail.at(-1) ?? null)
+    };
+};
 
 describe('DotExperimentsConfigureComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
     let scrollIntoView: jest.Mock;
     let dispatch: jest.SpyInstance;
+    let globalStore: ReturnType<typeof createGlobalStoreMock>;
 
     /**
      * A screen mounted on one of the two URLs it answers on, with whatever the config resolver
@@ -196,10 +232,16 @@ describe('DotExperimentsConfigureComponent', () => {
      */
     const createComponentOn = ({
         experimentId,
-        configProps
+        configProps,
+        section,
+        pageFilter
     }: {
         experimentId?: string;
         configProps?: Record<string, string>;
+        /** The `section` query param, set by the return leg of the variant round-trip. */
+        section?: string;
+        /** The page narrowing the screen was opened with, when it came from a filtered list. */
+        pageFilter?: Params;
     }) =>
         createComponentFactory({
             component: DotExperimentsConfigureComponent,
@@ -214,11 +256,14 @@ describe('DotExperimentsConfigureComponent', () => {
                 provideLocationMocks(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
+                { provide: GlobalStore, useFactory: () => globalStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap(experimentId ? { experimentId } : {}),
+                            queryParams: { ...(section ? { section } : {}), ...(pageFilter ?? {}) },
+                            queryParamMap: convertToParamMap(section ? { section } : {}),
                             data: configProps ? { config: configProps } : {}
                         }
                     }
@@ -330,6 +375,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        globalStore = createGlobalStoreMock();
         // jsdom does not implement scrollIntoView, so there is nothing to spy on.
         scrollIntoView = jest.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
@@ -448,7 +494,7 @@ describe('DotExperimentsConfigureComponent', () => {
                         ?.querySelector('[data-testid="message-button"]') as HTMLElement
                 );
 
-                expect(navigate).toHaveBeenCalledWith(['/experiments']);
+                expect(navigate).toHaveBeenCalledWith(['/experiments'], { queryParams: {} });
             });
         });
 
@@ -647,6 +693,49 @@ describe('DotExperimentsConfigureComponent', () => {
                 spectator.detectChanges();
 
                 expect(modelOf()().trafficAllocation).toBe(40);
+            });
+
+            /**
+             * The one response that is not an autosave. Starting an experiment with both pickers
+             * empty is the case that matters: the backend dates it for real
+             * (`ExperimentsAPIImpl.startNowScheduling`), and reading the id alone left the card
+             * locked showing the two empty pickers it was started with.
+             */
+            it("should take the server's schedule when a transition rewrites it", () => {
+                loadExperiment({ ...EXPERIMENT, scheduling: null });
+
+                expect(modelOf()().scheduling).toEqual({ startDate: null, endDate: null });
+
+                storeMock.experiment.set({
+                    ...EXPERIMENT,
+                    status: DotExperimentStatus.RUNNING,
+                    scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+                });
+                spectator.detectChanges();
+
+                expect(modelOf()().scheduling).toEqual({
+                    startDate: new Date(1893456000000),
+                    endDate: new Date(1893542400000)
+                });
+            });
+
+            // Cancelling a schedule clears both dates server-side and hands the card back as a
+            // draft; the pickers have to follow it down as well as up.
+            it('should follow a transition that clears the schedule', () => {
+                loadExperiment({
+                    ...EXPERIMENT,
+                    status: DotExperimentStatus.SCHEDULED,
+                    scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+                });
+
+                storeMock.experiment.set({
+                    ...EXPERIMENT,
+                    status: DotExperimentStatus.DRAFT,
+                    scheduling: null
+                });
+                spectator.detectChanges();
+
+                expect(modelOf()().scheduling).toEqual({ startDate: null, endDate: null });
             });
         });
 
@@ -969,6 +1058,252 @@ describe('DotExperimentsConfigureComponent', () => {
         });
     });
 
+    /**
+     * Opened from a list narrowed to one page (#37005, FR-021c).
+     *
+     * Arriving from UVE the list is already narrowed to the page the editor came from, and New
+     * carries that narrowing on to this screen. Leaving by the error state's way out dropped it,
+     * landing the editor on every experiment on the site.
+     */
+    describe('opened from a narrowed list', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS,
+            pageFilter: { pageId: 'page-1', language_id: '2' }
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should return to the list still narrowed to that page', () => {
+            storeMock.status.set(ComponentStatus.ERROR);
+            spectator.detectChanges();
+
+            const navigate = jest
+                .spyOn(spectator.inject(Router), 'navigate')
+                .mockResolvedValue(true);
+
+            spectator.click(
+                spectator
+                    .query(byTestId('experiments-configure-error'))
+                    ?.querySelector('[data-testid="message-button"]') as HTMLElement
+            );
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1', language_id: '2' }
+            });
+        });
+
+        it('should keep the narrowing in the crumbs it puts on the trail', () => {
+            storeMock.experiment.set(EXPERIMENT);
+            spectator.detectChanges();
+
+            expect(globalStore.trail.map(({ url }) => url)).toEqual([
+                '/dotAdmin/#/experiments?pageId=page-1&language_id=2',
+                `/dotAdmin/#/experiments/${EXPERIMENT.id}/configuration?pageId=page-1&language_id=2`
+            ]);
+        });
+    });
+
+    /**
+     * #37005. Nothing else puts this screen on the trail, so the trail ended at the list's crumb
+     * and the shell titled the Configure screen "Experiments List" — naming the screen the editor
+     * had just left, and leaving the level above out of the path instead of in it.
+     */
+    describe('breadcrumbs', () => {
+        const crumbLabels = () => globalStore.trail.map(({ label }) => label);
+
+        describe('on a new experiment', () => {
+            const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
+
+            beforeEach(() => {
+                spectator = createComponent();
+                spectator.detectChanges();
+            });
+
+            it('should name the screen after the draft, with the list above it', () => {
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, NEW_EXPERIMENT_COPY]);
+            });
+
+            // The crumb says where you are, and the header right below already says which
+            // experiment: naming it in both places said nothing the second time.
+            it('should not repeat the experiment name the header already shows', () => {
+                storeMock.draftName.set('Summer Test');
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, NEW_EXPERIMENT_COPY]);
+            });
+
+            /**
+             * Written in place, not appended: `addNewBreadcrumb` skips an item whose id matches
+             * the last crumb's rather than replacing it, so the trail kept the label and the
+             * address the screen opened with — a link back to a draft that no longer exists.
+             */
+            it('should become the Configure screen once the draft is created', () => {
+                storeMock.experiment.set(EXPERIMENT);
+                storeMock.isNew.set(false);
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, CONFIGURE_TITLE_COPY]);
+                expect(globalStore.trail.at(-1)?.url).toBe(
+                    `/dotAdmin/#/experiments/${EXPERIMENT.id}/configuration`
+                );
+            });
+        });
+
+        // The flow from UVE: the editor's page crumb, then the list's, then this screen's. The
+        // list is already on the trail, and adding it again would put a second copy at the end.
+        describe('arriving on a trail that already carries the list', () => {
+            const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
+
+            it('should put itself on top of what is there', () => {
+                globalStore.trail.push(
+                    { label: 'Home' },
+                    { id: 'experiments-list', label: LIST_TITLE_COPY }
+                );
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual(['Home', LIST_TITLE_COPY, NEW_EXPERIMENT_COPY]);
+            });
+        });
+
+        describe('on an existing experiment', () => {
+            const createComponent = createComponentOn({
+                experimentId: EXPERIMENT.id,
+                configProps: CONFIGURED_DURATIONS
+            });
+
+            it('should name the crumb after the screen', () => {
+                storeMock.isNew.set(false);
+                spectator = createComponent();
+                storeMock.experiment.set(EXPERIMENT);
+                storeMock.draftName.set(EXPERIMENT.name);
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, CONFIGURE_TITLE_COPY]);
+            });
+
+            // The address carries it even before the load answers, so the crumb never points at
+            // `/experiments/new` on a screen that was entered on an experiment.
+            it('should read the experiment off the address before the load answers', () => {
+                storeMock.isNew.set(false);
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(crumbLabels()).toEqual([LIST_TITLE_COPY, CONFIGURE_TITLE_COPY]);
+            });
+
+            // The address is the experiment's own, not `/experiments/new`: the crumb is a way
+            // back to this screen, and the draft it was opened as no longer exists.
+            it('should address the experiment it loaded', () => {
+                storeMock.isNew.set(false);
+                spectator = createComponent();
+                storeMock.experiment.set(EXPERIMENT);
+                storeMock.draftName.set(EXPERIMENT.name);
+                spectator.detectChanges();
+
+                expect(globalStore.trail.at(-1)?.url).toBe(
+                    `/dotAdmin/#/experiments/${EXPERIMENT.id}/configuration`
+                );
+            });
+        });
+    });
+
+    // #37005. Variants are copies of the page, and the server takes `pageId` only while the
+    // variants are the control alone — so one created before a page change lands is created under
+    // the old page, and from then on the change can never be written.
+    describe('while a page change is in flight', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        /**
+         * Asserted on the screen's own decision rather than on the rendered card: this spec
+         * replaces the card components, so their `gated` input never reaches the DOM. Which
+         * expression feeds which card is fixed by the template; what varies, and what this covers,
+         * is that the two differ.
+         */
+        it('should gate the Variants card', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.$isVariantsGated()).toBe(false);
+
+            storeMock.pageChanging.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isVariantsGated()).toBe(true);
+        });
+
+        // The other cards do not depend on the page, so they stay live.
+        it('should leave the rest of the form live', () => {
+            storeMock.pageChanging.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isGated()).toBe(false);
+        });
+    });
+
+    // #37005. Configure is four stacked cards tall, and the variant round-trip starts and ends at
+    // the Variants card — so coming back to the top of the form loses the reader's place.
+    describe('returning from a variant', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS,
+            section: CONFIGURE_SECTION_VARIANTS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should bring the Variants card into view once the experiment is loaded', () => {
+            spectator.detectChanges();
+
+            const variants = spectator.query(byTestId('configure-section-variants')) as HTMLElement;
+            const scrollToVariants = jest.spyOn(variants, 'scrollIntoView');
+
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.loadSucceeded(EXPERIMENT));
+            flush();
+
+            expect(scrollToVariants).toHaveBeenCalled();
+        });
+    });
+
+    // Entering from the list, or creating one, still lands at the top of the form.
+    describe('entering Configure any other way', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should not scroll to any section', () => {
+            spectator.detectChanges();
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.loadSucceeded(EXPERIMENT));
+            flush();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+    });
+
     describe('on the creation screen', () => {
         const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
 
@@ -1122,11 +1457,16 @@ describe('DotExperimentsConfigureComponent', () => {
                 provideLocationMocks(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
+                { provide: GlobalStore, useFactory: () => globalStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap({ experimentId: EXPERIMENT.id }),
+                            // Present and empty, as `ActivatedRoute` always is: the screen reads
+                            // the `section` param and the page narrowing from here.
+                            queryParams: {},
+                            queryParamMap: convertToParamMap({}),
                             data: { config: CONFIGURED_DURATIONS }
                         }
                     }

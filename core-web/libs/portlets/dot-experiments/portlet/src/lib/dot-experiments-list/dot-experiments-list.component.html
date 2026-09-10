@@ -81,11 +81,9 @@
             <div class="flex min-h-0 flex-1 items-center justify-center p-6">
                 <dot-empty-container
                     [configuration]="$emptyConfiguration()"
-                    [buttonLabel]="
-                        $hasActiveFilters() ? ('experiments.list.no-results.clear' | dm) : ''
-                    "
+                    [buttonLabel]="$emptyActionLabel()"
                     [secondaryButton]="true"
-                    (buttonAction)="onClearFilters()"
+                    (buttonAction)="onEmptyAction()"
                     [hideContactUsLink]="true"
                     data-testid="experiments-empty-state" />
             </div>

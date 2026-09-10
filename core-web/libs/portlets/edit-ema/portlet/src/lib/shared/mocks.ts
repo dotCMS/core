@@ -1041,6 +1041,16 @@ export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
 
 export const dotPropertiesServiceMock = {
     getFeatureFlag: () => of(false),
+    getFreshFeatureFlag: jest.fn(() => of(false)),
+    /**
+     * Uncached raw read of one key. A `jest.fn` rather than a plain arrow so a spec can drive the
+     * #37005 entry-point switch per test — `mockReturnValue(of('true'))` — without replacing the
+     * whole provider. Defaults to `'false'`, matching that switch's shipped default.
+     *
+     * The switch reads the raw key rather than a normalised flag so that a response missing it
+     * fails closed; see `readExperimentsPortletSwitch`.
+     */
+    getKey: jest.fn(() => of('false')),
     getFeatureFlags: () =>
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,
