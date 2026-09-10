@@ -1,0 +1,195 @@
+import { patchState, signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { of, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { DotAiConfigService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotAiResolvedConfig } from '@dotcms/dotcms-models';
+
+import { withAiConfig } from './with-ai-config.feature';
+
+import { DOT_AI_INITIAL_STATE, DotAiPortletState } from '../../models/dot-ai-portlet.models';
+
+const resolved = (overrides: Partial<DotAiResolvedConfig> = {}): DotAiResolvedConfig => ({
+    configHost: 'demo.dotcms.com (falls back to system host)',
+    settings: { embeddingsSearchThreshold: '0.4' },
+    providerConfig: { chat: { model: 'a,b' } },
+    chatModels: ['a', 'b'],
+    isConfigured: true,
+    redactionFailed: false,
+    ...overrides
+});
+
+const TestStore = signalStore(
+    { providedIn: 'root' },
+    withState<DotAiPortletState>(DOT_AI_INITIAL_STATE),
+    withAiConfig()
+);
+
+describe('withAiConfig', () => {
+    let spectator: SpectatorService<InstanceType<typeof TestStore>>;
+    let store: InstanceType<typeof TestStore>;
+
+    const createService = createServiceFactory({
+        service: TestStore,
+        providers: [mockProvider(DotAiConfigService), mockProvider(DotHttpErrorManagerService)]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+    });
+
+    it('should not let the app-level embeddingsSearchThreshold override the portlet default', () => {
+        // The server sends `.25` as an app default. Seeding it here made the portlet's own
+        // default unreachable and overwrote the user's stored choice on every load.
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved({ settings: { embeddingsSearchThreshold: '0.25' } })));
+
+        store.loadConfig();
+
+        expect(store.settingsThreshold()).toBe(0.75);
+    });
+
+    it('should leave the threshold alone entirely, including a value already chosen', () => {
+        patchState(store, { settingsThreshold: 1.2 });
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved()));
+
+        store.loadConfig();
+
+        expect(store.settingsThreshold()).toBe(1.2);
+    });
+
+    it('should expose the chat models and default to the first', () => {
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
+
+        store.loadConfig();
+
+        expect(store.chatModels()).toEqual(['first', 'second']);
+        expect(store.settingsModel()).toBe('first');
+    });
+
+    it('should keep a chosen model the provider still offers (FR-018)', () => {
+        patchState(store, { settingsModel: 'second' });
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
+
+        store.loadConfig();
+
+        expect(store.settingsModel()).toBe('second');
+    });
+
+    it('should fall back when the chosen model is no longer offered (FR-018)', () => {
+        patchState(store, { settingsModel: 'retired' });
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
+
+        store.loadConfig();
+
+        expect(store.settingsModel()).toBe('first');
+    });
+
+    it('should be unconfigured when providerConfig is absent (FR-047)', () => {
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest.fn().mockReturnValue(
+            of(
+                resolved({
+                    providerConfig: null,
+                    chatModels: [],
+                    isConfigured: false
+                })
+            )
+        );
+
+        store.loadConfig();
+
+        expect(store.isConfigured()).toBe(false);
+    });
+
+    it('should route a load failure through the error manager', () => {
+        const error = new HttpErrorResponse({ status: 500 });
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(throwError(() => error));
+
+        store.loadConfig();
+
+        expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+    });
+    describe('showNotConfigured (banner gating)', () => {
+        it('should be false before the config has loaded', () => {
+            // "not yet known" is not "not configured". Showing the banner during the initial
+            // async window makes it flash on every load.
+            expect(store.showNotConfigured()).toBe(false);
+            expect(store.configLoaded()).toBe(false);
+        });
+
+        it('should be true once the config says there is no provider', () => {
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(of(resolved({ providerConfig: null, isConfigured: false })));
+
+            store.loadConfig();
+
+            expect(store.configLoaded()).toBe(true);
+            expect(store.showNotConfigured()).toBe(true);
+        });
+
+        it('should stay false once the config says a provider is present', () => {
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(of(resolved()));
+
+            store.loadConfig();
+
+            expect(store.showNotConfigured()).toBe(false);
+        });
+
+        it('should mark the config loaded even when the request fails', () => {
+            // Otherwise a failed load leaves the screen waiting forever (FR-051).
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+            store.loadConfig();
+
+            expect(store.configLoaded()).toBe(true);
+        });
+
+        it('should not claim the instance is unconfigured when the load simply failed', () => {
+            // A transient 500 leaves isConfigured false too, so the two were
+            // indistinguishable — and the user was told to configure something that already
+            // is configured.
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+            store.loadConfig();
+
+            expect(store.configUnavailable()).toBe(true);
+            expect(store.showNotConfigured()).toBe(false);
+        });
+
+        it('should clear a previous failure once a load succeeds', () => {
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+            store.loadConfig();
+
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(of(resolved()));
+            store.loadConfig();
+
+            expect(store.configUnavailable()).toBe(false);
+            expect(store.showNotConfigured()).toBe(false);
+        });
+    });
+});
