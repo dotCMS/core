@@ -8,7 +8,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageService,
     DotSiteService,
     DotWorkflowActionsFireService
@@ -69,7 +69,7 @@ describe('DotFileFieldComponent — legacy host availability (no Angular launche
             LegacyDojoImageEditorLauncher,
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('Test Message') }),
-            mockProvider(DotAiService, {
+            mockProvider(DotAiConfigService, {
                 checkPluginInstallation: jest.fn().mockReturnValue(of(false))
             }),
             provideHttpClient(),
