@@ -210,6 +210,13 @@ export class SlashMenuService {
      * @param items Latest filtered list (from {@link filterItems}).
      * @param clientRectFn Current caret rect from TipTap; refreshed in both root and sub-menu modes.
      * @param commandFn Latest TipTap command callback, ignored while in a sub-menu.
+     *
+     * **This does NOT open the menu.** It refreshes items, anchor and command but never touches
+     * {@link isOpen}, so calling it against a closed dropdown silently does nothing visible. A
+     * caller whose first event may arrive while the menu is shut — the `:` emoji suggestion, whose
+     * session activates on the bare colon before there is a query to show — has to call
+     * {@link open} for that first event. The API shape does not hint at this; #37340 lost an
+     * afternoon to it.
      */
     update(
         items: BlockItem[],
