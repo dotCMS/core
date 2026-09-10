@@ -11,7 +11,9 @@ import {
     OnDestroy,
     OnInit,
     signal,
-    ViewChild
+    untracked,
+    ViewChild,
+    ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
@@ -166,6 +168,50 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     protected readonly $experimentsPanelPageId = computed<string | null>(
         () => this.uveStore.pageAsset()?.page?.identifier ?? null
     );
+
+    @ViewChild('experimentsPanelHost', { read: ViewContainerRef })
+    experimentsPanelHost!: ViewContainerRef;
+
+    /**
+     * Creates the Experiments panel on its first open and destroys it on close (#37478).
+     *
+     * **Imperative rather than `@defer`, and that is forced.** The experiments portlet lib is
+     * reached only through dynamic imports — `app.routes.ts` and this lib's own `lib.routes.ts`
+     * both `import()` it — so Nx marks it lazy-loaded and `@nx/enforce-module-boundaries` rejects
+     * any static import of it. A `@defer` block still needs the component in `imports:`, which is
+     * a static import, so the rule fires on it too. `import()` here is what `@defer` compiles to
+     * anyway; the only thing lost is the template sugar.
+     *
+     * The split is the point: the whole lib — three screens, four stores and chart.js — stays out
+     * of what the editor loads until the panel is first opened (FR-037, SC-006).
+     *
+     * Destroying on close, rather than hiding, is what leaves nothing of the panel running behind
+     * it (FR-039).
+     */
+    readonly $experimentsPanelEffect = effect(() => {
+        const isOpen = this.experimentsPanel.isOpen();
+
+        untracked(async () => {
+            if (!this.experimentsPanelHost) {
+                return;
+            }
+
+            if (!isOpen) {
+                this.experimentsPanelHost.clear();
+
+                return;
+            }
+
+            const { DotExperimentsPanelComponent } =
+                await import('@dotcms/portlets/dot-experiments/portlet');
+
+            // Re-checked after the await: the editor can dismiss the panel while the chunk is in
+            // flight, and creating it then would show a panel nobody asked for any more.
+            if (this.experimentsPanel.isOpen() && this.experimentsPanelHost.length === 0) {
+                this.experimentsPanelHost.createComponent(DotExperimentsPanelComponent);
+            }
+        });
+    });
     readonly #dotMessageService = inject(DotMessageService);
     protected readonly $lockOptions = this.uveStore.$lockOptions;
     protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
@@ -243,31 +289,21 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             {
                 materialIcon: 'science',
                 label: 'editema.editor.navbar.experiments',
-                // The switch selects the destination and nothing else: `isDisabled` is the same
-                // rule on both sides, so an editor who cannot see experiments for this page does
-                // not gain access through the new one (FR-023).
-                ...(experimentsPortletEnabled
-                    ? {
-                          href: '/experiments',
-                          /**
-                           * The page, and the language the editor is standing in.
-                           *
-                           * `language_id` is not a filter — the list narrows on `pageId` alone.
-                           * It is the only place the language exists: a page identifier says
-                           * nothing about which version was open, so without it the list's
-                           * back-link and the Configure prefill have to guess, and a wrong
-                           * language is invisible until the wrong content loads. Spelled as UVE
-                           * spells it everywhere else, so the same key travels the whole way.
-                           *
-                           * `url` and the persona key are still left behind: they mean nothing to
-                           * the list, and `parseViewState` would leave them in its address.
-                           */
-                          queryParams: {
-                              pageId: page?.identifier,
-                              language_id: this.uveStore.pageLanguageId()
-                          }
-                      }
-                    : { href: `experiments/${page?.identifier}` }),
+                /**
+                 * With the switch on the item carries **no `href`**, and that absence is the
+                 * mechanism rather than an omission: `EditEmaNavigationBarComponent.navigate`
+                 * emits `action` for an item without one, so the gesture opens the panel beside
+                 * the canvas instead of navigating away from the page (#37478, FR-001, FR-002).
+                 *
+                 * `$activeHref` skips items with no `href`, so the item also stops being
+                 * highlighted as a destination — which is the cost D1 accepts, and it needs no
+                 * code of its own.
+                 *
+                 * The switch selects the behaviour and nothing else: `isDisabled` is the same
+                 * rule on both sides, so an editor who cannot see experiments for this page does
+                 * not gain access through the new one (FR-004).
+                 */
+                ...(experimentsPortletEnabled ? {} : { href: `experiments/${page?.identifier}` }),
                 id: 'experiments',
                 isDisabled: !page?.canEdit
             },
@@ -487,7 +523,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @memberof DotEmaShellComponent
      */
     handleItemAction(itemId: string) {
-        if (itemId === 'page-tools') {
+        if (itemId === 'experiments') {
+            // Only reachable with the switch on: with it off the item carries an `href` and the
+            // navigation bar navigates instead of emitting (#37478, FR-001).
+            this.experimentsPanel.open();
+        } else if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
             const page = this.uveStore.pageAsset()?.page;

@@ -146,6 +146,16 @@ export const CONFIGURATION_SEGMENT = 'configuration';
 
 /** Hides a `p-panel`'s footer band while its footer slot has nothing to show (see the theme). */
 export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
+
+/**
+ * Width of the Experiments panel inside the editor (#37478).
+ *
+ * The width the editor's own right-hand panel already uses, chosen because it is the sidebar
+ * width the template has rather than because it was measured against the panel's row. Explicitly
+ * provisional: if the row does not read well here the width changes, and that is not a scope
+ * change. Configuration and Results are a separate, still-open decision (O1).
+ */
+export const PANEL_WIDTH = 'clamp(360px, 20vw, 500px)';
 /** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
 export const RESULTS_SEGMENT = 'results';
 

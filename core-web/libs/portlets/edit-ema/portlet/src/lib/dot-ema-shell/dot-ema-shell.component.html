@@ -49,6 +49,16 @@
         (action)="handleItemAction($event)"
         data-testId="ema-nav-bar" />
 </div>
+<!--
+    Mount point for the page's experiments panel (#37478).
+
+    Empty on purpose: the panel is created imperatively from a dynamic `import()` the first time
+    it opens, and destroyed on close. `@defer` cannot be used — the experiments portlet lib is
+    reached only through dynamic imports, so Nx marks it lazy-loaded and rejects the static import
+    a `@defer` block still needs in `imports:`. See `$experimentsPanelEffect`.
+-->
+<ng-container #experimentsPanelHost />
+
 <p-toast position="top-center" data-testId="ema-toast" />
 <dot-page-tools-seo
     [currentPageUrlParams]="$seoParams()"
