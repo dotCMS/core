@@ -4,7 +4,7 @@ import type { Injector } from '@angular/core';
 
 import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
-import Emoji, { emojis } from '@tiptap/extension-emoji';
+import { emojis } from '@tiptap/extension-emoji';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
@@ -16,6 +16,7 @@ import StarterKit from '@tiptap/starter-kit';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { createDotEmoji } from './dot-emoji.extension';
 import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
@@ -166,21 +167,19 @@ export function createEditorExtensions(
         // `aiContent` block — still parses and renders. Removing it would silently drop
         // those blocks on load. See `ai-content.extension.ts` for details.
         AIContent,
-        // Always registered — see `has()`. Authoring gate: toolbar button + `enableEmoticons`.
-        // The `:` suggestion trigger is inert by design; insertion goes through the popover.
-        Emoji.configure({
+        // Always registered, and NOTHING creates an `emoji` node any more — the registration
+        // exists so stored nodes still parse, and so `:shortcode:`/`:)` can resolve a character.
+        // See `dot-emoji.extension.ts` for the full reasoning (#37340).
+        //
+        // `enableEmoticons` is no longer gated on `has('emoji')`: `emoji` is not selectable in
+        // Allowed Blocks at all (`getEditorBlockOptions()` offers block nodes only, #37175), so
+        // that gate was true ONLY on fields with no restriction — silently removing `:)` from
+        // every field that restricted anything else. Nobody configured that.
+        //
+        // The inert `suggestion` block is gone with the Suggestion plugin it configured.
+        createDotEmoji(menuService).configure({
             emojis,
-            enableEmoticons: has('emoji'),
-            suggestion: {
-                char: ':',
-                items: () => [],
-                render: () => ({
-                    onStart: () => undefined,
-                    onUpdate: () => undefined,
-                    onKeyDown: () => false,
-                    onExit: () => undefined
-                })
-            }
+            enableEmoticons: true
         }),
         SelectionPreserveExtension,
         createSlashCommandExtension(menuService)
