@@ -96,6 +96,14 @@ test('editing during an in-flight layout save does not lose container content @c
     page,
     request
 }) => {
+    // This test's critical path includes a real 5s production debounce plus several real
+    // backend round-trips (template/page creation, deletion, reload) — comfortably over
+    // Playwright's default 60s per-test timeout on a loaded CI runner. CI logs showed the
+    // whole flow working correctly and failing only at the very last step
+    // (goToContentTab) with "Target closed", i.e. the 60s ceiling being hit mid-action,
+    // not a logic bug.
+    test.setTimeout(120_000);
+
     const templateBuilder = new TemplateBuilderPage(page);
 
     let layoutPostCount = 0;
