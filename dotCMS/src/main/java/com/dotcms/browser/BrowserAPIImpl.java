@@ -770,8 +770,12 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param browserQuery The {@link BrowserQuery} containing search criteria (filter, fileName)
      * @param inodes       The set of inodes to filter through Elasticsearch text search
      * @return A filtered set of inodes that match the text search criteria
+     * @throws DotDataException if a sub-query fails or times out. A failure here is deliberately
+     *                          NOT swallowed into an empty result: silently dropping a failed
+     *                          sub-query's share of matches would return an incomplete page as a
+     *                          successful (HTTP 200) response, which is worse than a visible error.
      */
-    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) {
+    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) throws DotDataException {
         if (inodes == null || inodes.isEmpty()) {
             return new LinkedHashSet<>();
         }
@@ -866,8 +870,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param startTime    The time when this method was called, for performance analysis purposes.
      *
      * @return A set of Inodes matching the query.
+     * @throws DotDataException if the underlying ES search fails. Previously this method caught
+     *                          every exception, logged it, and returned an empty set — which let a
+     *                          failed sub-query silently drop its share of matches from the overall
+     *                          response instead of failing the request. The exception is now
+     *                          propagated so the caller can fail the request instead of returning
+     *                          an incomplete page as if it were successful.
      */
-    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) {
+    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) throws DotDataException {
         final boolean live = !browserQuery.showWorking;
         final SearchAPI searchAPI = APILocator.getSearchAPI();
         final List<String> collectedInodes = new ArrayList<>();
@@ -891,7 +901,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
-            Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
+            final String errorMsg = String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return new LinkedHashSet<>(collectedInodes);
@@ -900,9 +912,20 @@ public class BrowserAPIImpl implements BrowserAPI {
     /**
      * Processes multiple ES queries when inode count exceeds the limit.
      * Uses parallel processing for better performance.
+     * <p>
+     * A failed or timed-out sub-query aborts the whole call with a {@link DotDataException} rather
+     * than silently substituting an empty result for that sub-batch. Previously each future's
+     * {@code .exceptionally(...)} fallback swallowed the failure and returned an empty set, and the
+     * outer {@code allFutures.get(...)} timeout/execution errors were only logged — so a single
+     * flaky sub-query quietly removed its share of matches and the caller still got back a
+     * "successful" (but incomplete) page. With a fan-out of many sub-queries per request, that
+     * silent-partial-result risk is no longer negligible.
+     * </p>
+     *
+     * @throws DotDataException if any sub-query fails, times out, or the overall wait times out
      */
     private Set<String> processMultipleESQueries(BrowserQuery browserQuery, Set<String> inodes,
-                                                 int maxInodesPerQuery, long startTime) {
+                                                 int maxInodesPerQuery, long startTime) throws DotDataException {
         final Set<String> allResults = Collections.synchronizedSet(new LinkedHashSet<>());
         final List<String> inodesList = new ArrayList<>(inodes);
         final int totalInodes = inodesList.size();
@@ -930,29 +953,26 @@ public class BrowserAPIImpl implements BrowserAPI {
                 .supplyAsync(() -> {
                     Logger.debug(BrowserAPIImpl.this, String.format("Processing ES sub-query %d/%d: %d inodes",
                         batchIndex, batchCount, batch.size()));
-                    return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    try {
+                        return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    } catch (final DotDataException e) {
+                        // Rethrow as unchecked so it surfaces through the future's exceptional
+                        // completion instead of being caught here and papered over.
+                        throw new DotRuntimeException(e.getMessage(), e);
+                    }
                 }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
-                        batchIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
+                .orTimeout(60, TimeUnit.SECONDS);
         }
 
-        // Collect results from all sub-queries
+        // Collect results from all sub-queries. Any failure (including a timeout) here is
+        // deliberately allowed to propagate — a visible error is recoverable, a quietly
+        // incomplete page is not.
         try {
             CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
             allFutures.get(120, TimeUnit.SECONDS);
 
             for (CompletableFuture<Set<String>> future : futures) {
-                try {
-                    Set<String> batchResults = future.get();
-                    allResults.addAll(batchResults);
-                } catch (Exception e) {
-                    Logger.warn(this, "Failed to get result from ES sub-query future: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                allResults.addAll(future.get());
             }
 
             final long totalDuration = System.currentTimeMillis() - startTime;
@@ -960,12 +980,19 @@ public class BrowserAPIImpl implements BrowserAPI {
                 totalInodes, batchCount, allResults.size(), totalDuration));
 
         } catch (InterruptedException e) {
-            Logger.error(this, "Multiple ES queries interrupted: " + e.getMessage(), e);
             Thread.currentThread().interrupt();
+            final String errorMsg = "Multiple ES queries interrupted: " + e.getMessage();
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         } catch (ExecutionException e) {
-            Logger.error(this, "Multiple ES queries execution error: " + e.getMessage(), e);
+            final String errorMsg = "ES sub-query failed while resolving field-filter candidates, "
+                    + "request aborted to avoid returning incomplete results: " + getErrorMessage(e);
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e.getCause() != null ? e.getCause() : e);
         } catch (TimeoutException e) {
-            Logger.error(this, "Multiple ES queries timed out: " + e.getMessage(), e);
+            final String errorMsg = "Multiple ES queries timed out: " + e.getMessage();
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return allResults;
