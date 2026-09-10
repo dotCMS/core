@@ -1,6 +1,6 @@
 import { TemplateBuilderPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { createPage, Page as PageContentlet } from '@requests/pages';
+import { createPage, getPageTemplateIdentifier, Page as PageContentlet } from '@requests/pages';
 import { createTemplate, deleteTemplate, getTemplate } from '@requests/templates';
 
 /**
@@ -38,13 +38,11 @@ let pageContentlet: PageContentlet;
 test.beforeEach(async ({ request }) => {
     const suffix = Date.now();
 
-    // Template.isAnonymous() (dotCMS/.../portlets/templates/model/Template.java) is a pure
-    // title check: title.startsWith("anonymous_layout_"). PageResourceHelper.checkoutTemplate
-    // only re-versions the SAME template identifier on a layout save when isAnonymous() is
-    // true — otherwise it mints a brand-new Template with a brand-new identifier and
-    // repoints the page at it, orphaning the one captured here. Real UVE auto-generates this
-    // exact prefix for page-only templates; matching it keeps templateIdentifier valid after
-    // the save this test triggers.
+    // Real UVE auto-generates an "anonymous_layout_"-prefixed title for templates
+    // dedicated to a single page (Template.isAnonymous(), dotCMS backend) — matching it
+    // here for realism. Whether or not that keeps the template identifier stable across
+    // the layout save this test triggers, the identifier is re-resolved from the page
+    // afterward anyway (getPageTemplateIdentifier), so this isn't load-bearing either way.
     const template = await createTemplate(request, {
         title: `anonymous_layout_${suffix}`,
         friendlyName: 'e2e concurrent-save template',
@@ -102,8 +100,17 @@ test.beforeEach(async ({ request }) => {
 });
 
 test.afterEach(async ({ request }) => {
-    if (templateIdentifier) {
-        await deleteTemplate(request, [templateIdentifier]);
+    if (!templateIdentifier) return;
+
+    // A layout save can repoint the page at a brand-new template identifier (see the
+    // getPageTemplateIdentifier doc comment) — always resolve whatever the page currently
+    // references rather than assuming the creation-time identifier still applies. Best
+    // effort: teardown must not turn an already-failing test into a confusing second error.
+    try {
+        const currentIdentifier = await getPageTemplateIdentifier(request, pageContentlet.url);
+        await deleteTemplate(request, [currentIdentifier]);
+    } catch {
+        await deleteTemplate(request, [templateIdentifier]).catch(() => undefined);
     }
 });
 
@@ -167,7 +174,10 @@ test('editing during an in-flight layout save does not lose container content @c
 
     // Data integrity: box 0's container was intentionally removed; box 1's must survive
     // untouched — the regression this issue is about is *collateral* container loss.
-    const savedTemplate = await getTemplate(request, templateIdentifier);
+    // Re-resolve the template identifier via the page rather than reusing the
+    // creation-time one: a layout save can repoint the page at a brand-new template.
+    const currentTemplateIdentifier = await getPageTemplateIdentifier(request, pageContentlet.url);
+    const savedTemplate = await getTemplate(request, currentTemplateIdentifier);
     const rows = (
         savedTemplate.layout as {
             body: { rows: { columns: { containers: unknown[] }[] }[] };
