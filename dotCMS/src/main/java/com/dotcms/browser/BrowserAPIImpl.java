@@ -2041,7 +2041,16 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (fileNameHandledByDb) {
                 appendFileNameQuery(candidatesPredicates, browserQuery.fileName, parameters);
             }
-            candidatesCte = "with candidates as materialized (select * from identifier id where 1=1 "
+            // Only project what the outer query actually reads through the `candidates` alias
+            // (`id.id` and `id.asset_subtype`, verified by grepping every `id.`-qualified
+            // reference outside this CTE) -- `parent_path`, `host_inode` and `asset_name` are
+            // still scanned (they're referenced in the predicates below) but not materialized,
+            // and everything else `identifier` carries (asset_type, owner, create_date,
+            // syspublish_date, sysexpire_date, full_path_lc, ...) is now skipped entirely instead
+            // of being written into the work table for every row in the folder (code review,
+            // PR #37397).
+            candidatesCte = "with candidates as materialized (select id.id, id.asset_subtype "
+                    + "from identifier id where 1=1 "
                     + candidatesPredicates + ") ";
         }
 
