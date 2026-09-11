@@ -210,6 +210,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -9679,10 +9680,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 fieldValue = srcFile.getName();
                             }
                             destFile = new File(temporalFolder + File.separator + fieldValue);
-                            if (!destFile.exists()) {
-                                destFile.createNewFile();
-                            }
-                            FileUtils.copyFile(srcFile, destFile);
+                            // Do NOT preserve the source's file date. The destination is a brand
+                            // new file under a throwaway temp folder, so its modification time
+                            // carries no meaning, and preserving it fails outright on shared
+                            // storage (NFS/EFS) where setting file times is not permitted, which
+                            // would abort the whole copy even though the bytes were copied fine.
+                            // REPLACE_EXISTING must be passed explicitly: this overload defaults
+                            // to no CopyOption, and Files.copy fails if the destination exists.
+                            FileUtils.copyFile(srcFile, destFile, false,
+                                    StandardCopyOption.REPLACE_EXISTING);
                             newContentlet.setBinary(tempField.getVelocityVarName(), destFile);
                         }
                     } catch (final Exception e) {

@@ -3506,6 +3506,107 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario: A {@link ContentType} with a {@link BinaryField} is copied.
+     * ExpectedResult: The copy carries its own binary, byte-identical to the source. The copy must
+     * not depend on preserving the source file's modification time, which is not settable on
+     * shared storage (NFS/EFS) and used to abort the whole copy with "Cannot set the file time."
+     */
+    @Test
+    public void copyContentletWithBinaryFieldKeepsFileContent()
+            throws DotDataException, DotSecurityException, IOException {
+        final Field binaryField = new FieldDataGen()
+                .name("binary")
+                .velocityVarName("binary")
+                .type(BinaryField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .fields(list(binaryField))
+                .nextPersisted();
+
+        final File testFile = createFile("images/test.jpg", ".jpg");
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(binaryField.variable(), testFile)
+                .nextPersisted();
+
+        final Contentlet copy = contentletAPI.copyContentlet(contentlet, user, false);
+
+        assertNotEquals(contentlet.getIdentifier(), copy.getIdentifier());
+
+        final File copiedFile = APILocator.getContentletAPI()
+                .find(copy.getInode(), APILocator.systemUser(), false)
+                .getBinary(binaryField.variable());
+
+        assertNotNull("The copy must have its own binary file", copiedFile);
+        assertNotEquals("The copy must not point at the source file",
+                testFile.getAbsolutePath(), copiedFile.getAbsolutePath());
+        FileTestUtil.compare(testFile, copiedFile);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario: A {@link ContentType} with two {@link BinaryField}s whose files share the
+     * same name. Both are staged into the same temporary folder, so the second copy writes to a
+     * path the first one already created.
+     * ExpectedResult: The copy succeeds. This guards the {@code REPLACE_EXISTING} option on the
+     * underlying copy call — without it the second field fails with FileAlreadyExistsException.
+     */
+    @Test
+    public void copyContentletWithTwoBinaryFieldsSharingFileName()
+            throws DotDataException, DotSecurityException, IOException {
+        final Field firstBinaryField = new FieldDataGen()
+                .name("firstBinary")
+                .velocityVarName("firstBinary")
+                .type(BinaryField.class)
+                .next();
+        final Field secondBinaryField = new FieldDataGen()
+                .name("secondBinary")
+                .velocityVarName("secondBinary")
+                .type(BinaryField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .fields(list(firstBinaryField, secondBinaryField))
+                .nextPersisted();
+
+        // Same file name, different folders: both land on the same path in the temp staging folder
+        final String sharedFileName = "shared_" + System.currentTimeMillis() + ".jpg";
+        final File firstFile = createFileNamed("images/test.jpg", sharedFileName);
+        final File secondFile = createFileNamed("images/test.jpg", sharedFileName);
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(firstBinaryField.variable(), firstFile)
+                .setProperty(secondBinaryField.variable(), secondFile)
+                .nextPersisted();
+
+        final Contentlet copy = contentletAPI.copyContentlet(contentlet, user, false);
+
+        assertNotEquals(contentlet.getIdentifier(), copy.getIdentifier());
+
+        final Contentlet copyFromDataBase = APILocator.getContentletAPI()
+                .find(copy.getInode(), APILocator.systemUser(), false);
+
+        assertNotNull(copyFromDataBase.getBinary(firstBinaryField.variable()));
+        assertNotNull(copyFromDataBase.getBinary(secondBinaryField.variable()));
+    }
+
+    /**
+     * Copies a classpath resource into a fresh temp folder under an explicit file name, so two
+     * files can deliberately share a name while living in different folders.
+     */
+    private static File createFileNamed(final String path, final String fileName)
+            throws IOException {
+        final File originalFile = new File(Thread.currentThread()
+                .getContextClassLoader().getResource(path).getFile());
+
+        final File testFile = new File(Files.createTempDirectory("dotcms-test").toFile(), fileName);
+        FileUtil.copyFile(originalFile, testFile);
+
+        return testFile;
+    }
+
 
     /**
      * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}

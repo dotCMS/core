@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -180,7 +181,10 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
             try {
                 final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
-                FileUtils.copyFile(file, destBucketFile);
+                // Do NOT preserve the source's file date: on shared storage (NFS/EFS) setting file
+                // times is not permitted and would fail the push even though the bytes were
+                // written fine. REPLACE_EXISTING keeps the previous overwrite semantics.
+                FileUtils.copyFile(file, destBucketFile, false, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                 throw new DotDataException(e.getMessage(), e);
