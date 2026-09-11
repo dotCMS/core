@@ -1,7 +1,7 @@
 import { NewEditContentFormPage } from '@pages';
 
+import { AddRelationshipsDialog } from './helpers/add-relationships-dialog';
 import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fixture';
 
@@ -56,7 +56,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -77,7 +77,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await formPage.fillTextField(`Blog ${cardinality.name} ${testSuffix}`);
 
@@ -94,31 +94,43 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await relationshipField.expectRowCount(1);
             });
 
-            test('apply button disabled with no selection @smoke', async ({ adminPage }) => {
+            /**
+             * FR-013 — inverted from the dialog this replaced, deliberately.
+             *
+             * That dialog carried `[disabled]="totalItems === 0"`, which made "uncheck the last
+             * row" the single case where unchecking could not unrelate: the editor cleared the
+             * selection and then had no way to submit it. Confirming an empty selection is a valid
+             * instruction — it means "relate nothing" — so the button stays live in every state.
+             */
+            test('confirm stays enabled with no selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                await dialog.expectApplyDisabled();
+                await dialog.expectConfirmAlwaysEnabled();
 
                 await dialog.selectSingleItem(0);
-                await dialog.expectApplyEnabled();
+                await dialog.expectConfirmAlwaysEnabled();
 
                 await dialog.clickCancel();
             });
 
+            /**
+             * The behaviour the enabled button exists for: relate one item, reopen, clear it, and
+             * confirm the empty selection. The relationship must end up empty.
+             */
             test('cancel discards selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -138,7 +150,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -206,7 +218,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -223,7 +235,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -245,7 +257,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await formPage.fillTextField(`Blog ${cardinality.name} Multi ${testSuffix}`);
 
@@ -262,19 +274,60 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await relationshipField.expectRowCount(3);
             });
 
+            /**
+             * FR-013's reason for existing, end to end.
+             *
+             * Only meaningful on a multi-cardinality field: FR-016 keeps the picker shut once a
+             * single-cardinality field holds its item, so there the way back to empty is the row's
+             * delete button, not a second trip through the dialog. Written against single
+             * cardinality first, where it failed against exactly that rule.
+             */
+            test('confirming an empty selection unrelates everything @critical', async ({
+                adminPage
+            }) => {
+                const formPage = new NewEditContentFormPage(adminPage);
+                await formPage.goToNew(blogTypeVariable);
+
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
+
+                await relationshipField.clickRelateExisting();
+                await dialog.waitForVisible();
+                await dialog.waitForContentLoaded();
+                await dialog.selectItems([0, 1]);
+                await dialog.clickApply();
+                await dialog.expectClosed();
+                await relationshipField.expectRowCount(2);
+
+                // Reopen: both rows come back checked (FR-009), so clicking them clears the set.
+                await relationshipField.clickRelateExisting();
+                await dialog.waitForVisible();
+                await dialog.waitForContentLoaded();
+                await dialog.expectSelectedCount(2);
+
+                await dialog.selectItems([0, 1]);
+                await dialog.expectSelectedCount(0);
+
+                await dialog.expectConfirmAlwaysEnabled();
+                await dialog.clickApply();
+                await dialog.expectClosed();
+
+                await relationshipField.expectEmpty();
+            });
+
             test('select all with header checkbox @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
                 await dialog.toggleSelectAll();
-                await dialog.expectApplyEnabled();
+                await dialog.expectConfirmAlwaysEnabled();
 
                 await dialog.clickApply();
                 await dialog.expectClosed();
@@ -488,7 +541,7 @@ test.describe('Menu Disabled When Single Item Exists', () => {
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
-        const dialog = new SelectExistingContentDialog(adminPage);
+        const dialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();

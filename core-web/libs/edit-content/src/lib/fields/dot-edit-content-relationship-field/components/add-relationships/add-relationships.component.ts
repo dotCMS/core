@@ -17,7 +17,6 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
-
 import { DotCMSContentlet, DotContentDriveBrowseItem } from '@dotcms/dotcms-models';
 import {
     applyDialogFullscreen,

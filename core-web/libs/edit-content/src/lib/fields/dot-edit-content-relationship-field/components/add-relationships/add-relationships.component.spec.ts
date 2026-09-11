@@ -24,6 +24,7 @@ import { createFakeContentlet, MockDotMessageService } from '@dotcms/utils-testi
 import { AddRelationshipsComponent } from './add-relationships.component';
 import { AddRelationshipsSiteChipComponent } from './components/site-chip/add-relationships-site-chip.component';
 import { AddRelationshipsInput } from './models/add-relationships.models';
+import { ConstrainedIdentifiersService } from './store/constrained-identifiers.service';
 
 /**
  * US1 — the dialog presents the shared search-and-filter surface.
@@ -70,6 +71,12 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
      */
     const searchMock = jest.fn();
 
+    /**
+     * Mutable for the same reason `searchMock` is. Returns "nothing is claimed" by default so the
+     * tests that are not about cardinality are unaffected.
+     */
+    const constrainedMock = jest.fn();
+
     const createComponent = createComponentFactory({
         component: AddRelationshipsComponent,
         providers: [
@@ -84,6 +91,7 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             },
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
             mockProvider(DotContentDriveService, { search: searchMock }),
+            mockProvider(ConstrainedIdentifiersService, { get: constrainedMock }),
             // The store enriches rows with their language; without this the load never resolves
             // and every assertion below sees an empty table.
             mockProvider(DotLanguagesService, { get: jest.fn().mockReturnValue(of([])) }),
@@ -127,6 +135,7 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
     beforeEach(() => {
         input = { contentTypeId: 'target-type-id', selected: [], selectionMode: 'multiple' };
         searchMock.mockReset().mockReturnValue(of(emptyResponse));
+        constrainedMock.mockReset().mockReturnValue(of(new Set<string>()));
         spectator = createComponent();
         spectator.detectChanges();
     });
@@ -316,6 +325,37 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             mountWith(withResults);
 
             expect(spectator.query(DotFolderListViewComponent)?.$selection()).toEqual([]);
+        });
+
+        /**
+         * The same mistake as T103, one layer down.
+         *
+         * The store loaded the claimed identifiers and `toggleSelection` refused them, and the
+         * store's own tests passed on `$isConstrained`. But nothing handed the set to the list, so
+         * the row rendered exactly like the others: the control toggled under the cursor, the
+         * editor confirmed, and the pick was dropped with nothing on screen to explain it.
+         *
+         * Asserted on the list's input, because that is the only place the refusal becomes
+         * visible.
+         */
+        it('hands the claimed identifiers to the list as its unselectable rows', () => {
+            constrainedMock.mockReturnValue(of(new Set(['id-1'])));
+            input = {
+                ...input,
+                cardinality: 2,
+                isParentField: true,
+                parentContentTypeId: 'parent-type',
+                fieldVariable: 'rel'
+            };
+            mountWith(withResults);
+
+            expect(spectator.query(DotFolderListViewComponent)?.$unselectable()).toEqual(['id-1']);
+        });
+
+        it('leaves every row selectable when nothing is claimed', () => {
+            mountWith(withResults);
+
+            expect(spectator.query(DotFolderListViewComponent)?.$unselectable()).toEqual([]);
         });
     });
 });

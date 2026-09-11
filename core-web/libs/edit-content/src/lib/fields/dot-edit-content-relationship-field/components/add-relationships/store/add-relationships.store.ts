@@ -166,6 +166,15 @@ export const AddRelationshipsStore = signalStore(
             return (identifier: string): boolean => constrained.has(identifier);
         }),
         /**
+         * The same set as a list, for the table's `unselectable` input.
+         *
+         * A separate computed rather than spreading the set in the template: that would allocate a
+         * new array on every change-detection pass and defeat the table's own `computed` set. It
+         * exists because refusing the pick in `toggleSelection` is not enough on its own — the
+         * control still toggles under the cursor, so the row has to *look* refused too.
+         */
+        $constrainedList: computed(() => [...state.constrainedIdentifiers()]),
+        /**
          * Row count the paginator divides into pages.
          *
          * **Not `contentCount`.** The drive API is cursor-based and never returns a grand total —

@@ -5,8 +5,8 @@ import {
     IMMUTABLE_SIMPLE_CONTENT_TYPE
 } from '@utils/dot-content-types.mock';
 
+import { AddRelationshipsDialog } from './helpers/add-relationships-dialog';
 import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 import {
     CARDINALITY,
@@ -127,7 +127,7 @@ test.describe('Multiple Relationship Fields', () => {
 
         // Add 2 Authors to the "authors" field
         await authorsField.clickRelateExisting();
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
         await selectDialog.waitForVisible();
         await selectDialog.waitForContentLoaded();
         await selectDialog.selectItems([0, 1]);
@@ -166,7 +166,7 @@ test.describe('Multiple Relationship Fields', () => {
 
         // Add 2 Authors
         await authorsField.clickRelateExisting();
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
         await selectDialog.waitForVisible();
         await selectDialog.waitForContentLoaded();
         await selectDialog.selectItems([0, 1]);

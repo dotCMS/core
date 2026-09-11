@@ -90,6 +90,7 @@
                         [items]="store.$visibleItems()"
                         [loading]="store.$isLoading()"
                         [selection]="store.$selectedItems()"
+                        [unselectable]="store.$constrainedList()"
                         [totalItems]="store.totalItems()"
                         [offset]="store.$offset()"
                         emptyTitleKey="dot.relationship.add.dialog.empty.title"

@@ -354,6 +354,27 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     protected readonly $lockedByOthersSet = computed(() => new Set(this.$lockedByOthers()));
 
     /**
+     * Rows the caller will not accept, by `dataKey`. Rendered greyed out with their control
+     * disabled, exactly as `disabled` renders the whole table.
+     *
+     * The row is still **listed**: it exists, and hiding it would leave the user hunting for
+     * content they can see elsewhere. What it must not do is look pickable. Without this the
+     * control still toggles on click while the caller silently drops the pick — the user sees a
+     * selected row, confirms, and gets nothing back, with nothing on screen explaining why.
+     *
+     * Why the caller decides: the reason a row is refused is never the table's to know. For the
+     * relationship picker it is a child already claimed by another parent through a one-to-one or
+     * one-to-many relationship, which takes a query over every parent of the type to determine.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias unselectable
+     */
+    $unselectable = input<string[]>([], { alias: 'unselectable' });
+
+    /** Refused keys as a set — one lookup per row instead of a scan. */
+    protected readonly $unselectableSet = computed(() => new Set(this.$unselectable()));
+
+    /**
      * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
      * changes through `selectionChange`, never applying them itself. Omit for the uncontrolled
      * table, which keeps its own set and clears it whenever `items` changes.

@@ -360,6 +360,57 @@ describe('DotFolderListViewComponent', () => {
     });
 
     /**
+     * Rows the caller will not accept.
+     *
+     * The bug this exists for: refusing the pick only in the caller's handler leaves the control
+     * toggling under the cursor. The user checks a row, sees it checked, confirms — and nothing is
+     * added, with no message. So the assertions here are on what the row **renders**, not on the
+     * set the component holds.
+     */
+    describe('unselectable', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('unselectable', [mockItems[0].identifier]);
+            spectator.detectChanges();
+        });
+
+        it('should disable the control of a refused row only', () => {
+            const controls = spectator.queryAll('[data-testId="item-checkbox"] input');
+
+            expect(controls.length).toBeGreaterThan(1);
+            expect((controls[0] as HTMLInputElement).disabled).toBe(true);
+            expect((controls[1] as HTMLInputElement).disabled).toBe(false);
+        });
+
+        it('should mark the refused row aria-disabled and leave the others alone', () => {
+            const rows = spectator.queryAll('[data-testId="item-row"]');
+
+            expect(rows[0].getAttribute('aria-disabled')).toBe('true');
+            expect(rows[1].getAttribute('aria-disabled')).toBeNull();
+        });
+
+        it('should still render the refused row — it exists, it is just not pickable', () => {
+            expect(spectator.queryAll('[data-testId="item-row"]').length).toBe(mockItems.length);
+        });
+
+        it('should refuse the row to the table itself, so a range cannot sweep it in', () => {
+            // `pSelectableRowDisabled` is what keeps shift-click and the table's own range
+            // shortcuts off the row. Without it the control looks disabled and a range still
+            // selects it.
+            expect(spectator.queryAll('[data-testId="item-row"]')[0]).toHaveClass('opacity-50');
+        });
+
+        it('should leave every row selectable when nothing is refused', () => {
+            spectator.setInput('unselectable', []);
+            spectator.detectChanges();
+
+            const controls = spectator.queryAll('[data-testId="item-checkbox"] input');
+
+            expect(controls.every((c) => !(c as HTMLInputElement).disabled)).toBe(true);
+        });
+    });
+
+    /**
      * Where the rows come from. The grid is lazy: it holds one page and asks the parent for the
      * next. A caller that already has every row in memory pages locally instead.
      */

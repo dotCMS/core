@@ -291,43 +291,34 @@ export class RelationshipField {
         await expect(handles).toHaveCount(0);
     }
 
-    // ─── Pagination ──────────────────────────────────────────────────
+    // ─── Load more ───────────────────────────────────────────────────
 
     /**
-     * Gets the pagination container locator.
-     */
-    getPagination(): Locator {
-        return this.page.getByTestId('relationship-table-pagination');
-    }
-
-    /**
-     * Asserts pagination controls are visible.
-     */
-    async expectPaginationVisible(): Promise<void> {
-        await expect(this.getPagination()).toBeVisible();
-    }
-
-    /**
-     * Asserts pagination controls are not visible.
+     * Asserts the related list carries no paginator (FR-021).
+     *
+     * Kept as an assertion rather than deleted with the feature: paging is what made drag-reorder
+     * unable to move a row between pages, so its absence is a requirement and not merely the
+     * current state.
      */
     async expectPaginationHidden(): Promise<void> {
-        await expect(this.getPagination()).toBeHidden();
+        await expect(this.page.getByTestId('relationship-table-pagination')).toHaveCount(0);
     }
 
-    /**
-     * Clicks the "Next" page button in the main table pagination.
-     */
-    async clickNextPage(): Promise<void> {
-        const pagination = this.getPagination();
-        await pagination.locator('button').last().click();
+    /** The control that reveals the next batch of related items (FR-022). */
+    getLoadMore(): Locator {
+        return this.root.getByTestId('relationship-load-more');
     }
 
-    /**
-     * Clicks the "Previous" page button in the main table pagination.
-     */
-    async clickPreviousPage(): Promise<void> {
-        const pagination = this.getPagination();
-        await pagination.locator('button').first().click();
+    async expectLoadMoreVisible(): Promise<void> {
+        await expect(this.getLoadMore()).toBeVisible();
+    }
+
+    async expectLoadMoreHidden(): Promise<void> {
+        await expect(this.getLoadMore()).toHaveCount(0);
+    }
+
+    async clickLoadMore(): Promise<void> {
+        await this.getLoadMore().click();
     }
 
     // ─── Disabled State ──────────────────────────────────────────────

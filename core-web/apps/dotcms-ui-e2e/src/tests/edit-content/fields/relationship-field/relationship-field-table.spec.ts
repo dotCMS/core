@@ -1,7 +1,7 @@
 import { NewEditContentFormPage } from '@pages';
 
+import { AddRelationshipsDialog } from './helpers/add-relationships-dialog';
 import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 import {
     CARDINALITY,
@@ -81,6 +81,68 @@ test.describe('Reorder (Drag & Drop)', () => {
         const persistedFirst = await relationshipField.getRowTitle(0);
         expect(persistedFirst).toBe(originalThird);
     });
+
+    /**
+     * FR-036 — the other half of the save contract, and the half nothing covered.
+     *
+     * Relating and reordering both had a test that survived a save; removing a relationship did
+     * not. It is the direction where a bug is silent: the row disappears from the list either way,
+     * so a change that never reached the payload looks identical on screen until the editor
+     * reloads and finds the item still related.
+     */
+    test('unrelate persists after save @critical', async ({ adminPage }) => {
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToContent(blogContentlet.inode);
+
+        const relationshipField = new RelationshipField(adminPage);
+        await relationshipField.expectRowCount(3);
+
+        const removed = await relationshipField.getRowTitle(1);
+
+        await relationshipField.deleteRow(1);
+        await relationshipField.expectRowCount(2);
+
+        await formPage.save();
+
+        await relationshipField.expectRowCount(2);
+
+        // Re-read the page rather than trusting the post-save render: the assertion is that the
+        // removal reached the server, not that the component dropped a row from its own state.
+        await adminPage.reload();
+        await relationshipField.expectRowCount(2);
+
+        const remaining = [
+            await relationshipField.getRowTitle(0),
+            await relationshipField.getRowTitle(1)
+        ];
+
+        expect(remaining).not.toContain(removed);
+    });
+
+    /**
+     * The last item is the case the old dialog could not express: its confirm button was disabled
+     * on an empty selection, so "remove everything" had no way through. Asserted end to end because
+     * that is where it failed.
+     */
+    test('unrelating every item persists after save @critical', async ({ adminPage }) => {
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToContent(blogContentlet.inode);
+
+        const relationshipField = new RelationshipField(adminPage);
+        await relationshipField.expectRowCount(3);
+
+        // Always row 0: each removal shifts the rest up.
+        await relationshipField.deleteRow(0);
+        await relationshipField.deleteRow(0);
+        await relationshipField.deleteRow(0);
+
+        await relationshipField.expectEmpty();
+
+        await formPage.save();
+        await adminPage.reload();
+
+        await relationshipField.expectEmpty();
+    });
 });
 
 // ─── Search and Filter in Selection Dialog ──────────────────────
@@ -124,7 +186,7 @@ test.describe('Search and Filter', () => {
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await selectDialog.waitForVisible();
@@ -145,7 +207,7 @@ test.describe('Search and Filter', () => {
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await selectDialog.waitForVisible();
@@ -162,8 +224,8 @@ test.describe('Search and Filter', () => {
             .toBeLessThan(initialCount);
         await selectDialog.expectRowCountAtLeast(2);
 
-        // Clear via the filter popover and wait for the table to reload
-        await selectDialog.openFilters();
+        // Cleared in the search box itself. The dialog this replaced hid "clear" inside a filter
+        // popover, which the shared search input does not have.
         await selectDialog.clearSearch();
         await selectDialog.waitForContentLoaded();
 
@@ -177,7 +239,7 @@ test.describe('Search and Filter', () => {
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await selectDialog.waitForVisible();
@@ -238,7 +300,7 @@ test.describe('Dialog Content Listing', () => {
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await selectDialog.waitForVisible();
@@ -275,13 +337,25 @@ test.describe('Table Pagination', () => {
         blogTypeVariable = blogType.variable;
     });
 
-    test('paginates at 6 items per page @smoke', async ({ adminPage, apiHelpers, testSuffix }) => {
+    /**
+     * FR-021 / FR-022 — paging the related list was **removed**, not resized.
+     *
+     * Drag-reorder is the reason. With the list paged, a row could only be dragged within its own
+     * page, so moving an item from page 2 to position 1 was impossible: the operation the column
+     * exists for did not work across the set it was ordering. The list now renders the first 40 and
+     * reveals the next 40 on demand, which keeps every row in one drag surface.
+     */
+    test('reveals the first 40 related items with a Load more @smoke', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
         const authors = await apiHelpers.createContentlets(
             authorTypeVariable,
-            Array.from({ length: 8 }, (_, j) => {
+            Array.from({ length: 45 }, (_, j) => {
                 const i = j + 1;
                 return {
-                    title: `TablePag Author ${i} ${testSuffix}`,
+                    title: `LoadMore Author ${String(i).padStart(2, '0')} ${testSuffix}`,
                     bio: `Bio ${i}`
                 };
             })
@@ -289,7 +363,7 @@ test.describe('Table Pagination', () => {
 
         const blog = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
-            { title: `Blog TablePag Test ${testSuffix}` },
+            { title: `Blog LoadMore Test ${testSuffix}` },
             { authors: authors.map((a) => a.identifier).join(',') }
         );
 
@@ -298,30 +372,22 @@ test.describe('Table Pagination', () => {
 
         const relationshipField = new RelationshipField(adminPage);
 
-        await relationshipField.expectRowCount(6);
-        await relationshipField.expectPaginationVisible();
+        await relationshipField.expectRowCount(40);
+        await relationshipField.expectPaginationHidden();
+        await relationshipField.expectLoadMoreVisible();
 
-        // Capture page 1 titles
-        const page1Titles: string[] = [];
-        for (let i = 0; i < 6; i++) {
-            page1Titles.push(await relationshipField.getRowTitle(i));
-        }
+        await relationshipField.clickLoadMore();
 
-        await relationshipField.clickNextPage();
-        await relationshipField.expectRowCount(2);
-
-        // Verify page 2 shows different items than page 1
-        const page2Titles: string[] = [];
-        for (let i = 0; i < 2; i++) {
-            page2Titles.push(await relationshipField.getRowTitle(i));
-        }
-
-        for (const title of page2Titles) {
-            expect(page1Titles).not.toContain(title);
-        }
+        // The remaining five, appended — not a second page replacing the first.
+        await relationshipField.expectRowCount(45);
+        await relationshipField.expectLoadMoreHidden();
     });
 
-    test('no pagination with 6 or fewer items', async ({ adminPage, apiHelpers, testSuffix }) => {
+    test('shows every related item and no Load more below the threshold', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
         const authors = await apiHelpers.createContentlets(
             authorTypeVariable,
             Array.from({ length: 5 }, (_, j) => {
@@ -346,5 +412,6 @@ test.describe('Table Pagination', () => {
 
         await relationshipField.expectRowCount(5);
         await relationshipField.expectPaginationHidden();
+        await relationshipField.expectLoadMoreHidden();
     });
 });
