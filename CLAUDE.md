@@ -134,6 +134,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
   - [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) — QA test plan for the migration phases
   - [Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) — `OS_*`/`ES_*` config property reference and fallback chain
   - [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) — Getting-started guide for QA testers validating the migration
+- [System Events](docs/backend/SYSTEM_EVENTS.md) — Cross-node event queue: at-least-once delivery, consumer idempotency rules, payload deserialization
 
 ### Frontend Development (Angular/TypeScript)
 - **[docs/frontend/README.md](docs/frontend/README.md) — index of all frontend docs and when to load each. Start here if unsure.**
