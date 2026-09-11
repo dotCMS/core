@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { fakeAsync } from '@angular/core/testing';
 
@@ -10,14 +11,14 @@ import { DotContentletState } from '../../../models/dot-edit-content.model';
 import { getStoredUIState, saveStoreUIState } from '../../../utils/functions.util';
 import { initialRootState } from '../../edit-content.store';
 
-jest.mock('../../../utils/functions.util', () => ({
-    getStoredUIState: jest.fn(() => ({
+vi.mock('../../../utils/functions.util', () => ({
+    getStoredUIState: vi.fn(() => ({
         activeTab: 0,
         isSidebarOpen: true,
         activeSidebarTab: 0,
         localeSelectorTab: 'all'
     })),
-    saveStoreUIState: jest.fn()
+    saveStoreUIState: vi.fn()
 }));
 
 describe('UIFeature', () => {
@@ -37,7 +38,7 @@ describe('UIFeature', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createStore();
         store = spectator.service;
     });
@@ -59,7 +60,7 @@ describe('UIFeature', () => {
             expect(saveStoreUIState).toHaveBeenCalledWith(store.uiState());
 
             // Clear mock to test next state change
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Make a state change
             store.setActiveTab(2);

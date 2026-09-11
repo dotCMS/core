@@ -75,16 +75,7 @@
             }
         },
         "test": {
-            "dependsOn": ["verify-package", "verify-compose-static"],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
+            "dependsOn": ["verify-package", "verify-compose-static"]
         },
         "verify-package": {
             "executor": "nx:run-commands",

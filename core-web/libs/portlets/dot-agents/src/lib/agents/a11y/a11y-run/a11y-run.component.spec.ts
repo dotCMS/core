@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { Component, input, output } from '@angular/core';
@@ -88,15 +89,15 @@ const MOCK_PAGE: StudioPageRow = {
 describe('DotA11yRunComponent', () => {
     let spectator: Spectator<DotA11yRunComponent>;
 
-    const runScan = jest.fn();
-    const stopScan = jest.fn();
-    const startFix = jest.fn();
-    const stopAgent = jest.fn();
-    const publish = jest.fn();
-    const discard = jest.fn();
-    const setSkipCss = jest.fn();
-    const openSelectedPage = jest.fn();
-    const navigate = jest.fn().mockResolvedValue(true);
+    const runScan = vi.fn();
+    const stopScan = vi.fn();
+    const startFix = vi.fn();
+    const stopAgent = vi.fn();
+    const publish = vi.fn();
+    const discard = vi.fn();
+    const setSkipCss = vi.fn();
+    const openSelectedPage = vi.fn();
+    const navigate = vi.fn().mockResolvedValue(true);
 
     // Mutable per-test state read by the store mock's reactive getters.
     let phase: StudioPhase = 'ready';
@@ -282,7 +283,7 @@ describe('DotA11yRunComponent', () => {
     }
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         phase = 'ready';
         report = null;
         steps = [];
@@ -293,7 +294,7 @@ describe('DotA11yRunComponent', () => {
         handoverRow = MOCK_PAGE;
         // Report reduced-motion so the score count-up snaps to its final value
         // synchronously (no requestAnimationFrame timing in the DOM assertions).
-        window.matchMedia = jest
+        window.matchMedia = vi
             .fn()
             .mockReturnValue({ matches: true }) as unknown as typeof matchMedia;
     });

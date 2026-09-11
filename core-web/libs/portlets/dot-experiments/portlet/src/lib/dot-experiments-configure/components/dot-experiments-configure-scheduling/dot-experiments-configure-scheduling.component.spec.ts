@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { formatDate } from '@angular/common';
 import { computed, Injector, signal, WritableSignal } from '@angular/core';
@@ -39,15 +40,15 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
     beforeAll(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query: string) => ({
+            value: vi.fn().mockImplementation((query: string) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -139,7 +140,7 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
         mountWith();
     });
 
-    afterEach(() => jest.restoreAllMocks());
+    afterEach(() => vi.restoreAllMocks());
 
     describe('the pickers', () => {
         const openPicker = (testId: string) => {

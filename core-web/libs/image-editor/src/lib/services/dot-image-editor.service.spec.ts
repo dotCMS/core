@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -20,7 +21,7 @@ describe('DotImageEditorService', () => {
     const originalCreateObjectURL = URL.createObjectURL;
 
     beforeEach(() => {
-        URL.createObjectURL = jest.fn(() => 'blob:mock-object-url');
+        URL.createObjectURL = vi.fn(() => 'blob:mock-object-url');
         spectator = createService();
         httpMock = spectator.inject(HttpTestingController);
     });
@@ -28,7 +29,7 @@ describe('DotImageEditorService', () => {
     afterEach(() => {
         httpMock.verify();
         URL.createObjectURL = originalCreateObjectURL;
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('getFileSize', () => {
@@ -152,12 +153,12 @@ describe('DotImageEditorService', () => {
     describe('triggerDownload', () => {
         it('should create an anchor with href/download and click it', () => {
             const anchor = document.createElement('a');
-            const clickSpy = jest.spyOn(anchor, 'click').mockImplementation(jest.fn());
-            const createSpy = jest
+            const clickSpy = vi.spyOn(anchor, 'click').mockImplementation(vi.fn());
+            const createSpy = vi
                 .spyOn(document, 'createElement')
                 .mockReturnValue(anchor as HTMLAnchorElement);
-            const appendSpy = jest.spyOn(document.body, 'appendChild');
-            const removeSpy = jest.spyOn(anchor, 'remove');
+            const appendSpy = vi.spyOn(document.body, 'appendChild');
+            const removeSpy = vi.spyOn(anchor, 'remove');
 
             spectator.service.triggerDownload('/dA/asset.png', 'edited.png');
 

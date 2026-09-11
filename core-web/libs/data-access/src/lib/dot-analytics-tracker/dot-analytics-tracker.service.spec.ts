@@ -1,5 +1,6 @@
-import { expect, it, describe } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HttpClient, HttpHandler } from '@angular/common/http';
 
@@ -39,7 +40,11 @@ describe('DotAnalyticsTrackerService', () => {
 
     it('should track event', () => {
         const httpClient = spectator.inject(HttpClient);
-        const spy = jest.spyOn(httpClient, 'post');
+        // mockReturnValue, not a bare spy: `track()` subscribes to the returned
+        // observable, and the abstract `HttpHandler` provided above has no
+        // `handle()`. Calling through raised an unhandled rxjs error, which Jest
+        // swallowed and Vitest reports.
+        const spy = vi.spyOn(httpClient, 'post').mockReturnValue(of({}));
 
         const event = {
             test: 'Some test data',

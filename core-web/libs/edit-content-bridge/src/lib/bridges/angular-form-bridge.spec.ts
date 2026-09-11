@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { DotSite } from '@dotcms/dotcms-models';
 import { DotAssetPickerComponent } from '@dotcms/ui';
@@ -20,11 +21,11 @@ const SITE: DotSite = {
 
 // Mock Angular dependencies
 const mockFormGroup = {
-    get: jest.fn(),
-    setValue: jest.fn(),
+    get: vi.fn(),
+    setValue: vi.fn(),
     events: {
-        subscribe: jest.fn(() => {
-            return { unsubscribe: jest.fn() };
+        subscribe: vi.fn(() => {
+            return { unsubscribe: vi.fn() };
         })
     }
 };
@@ -36,28 +37,28 @@ const mockFormControl = {
     touched: false,
     dirty: false,
     errors: null as Record<string, unknown> | null,
-    setValue: jest.fn(),
-    markAsTouched: jest.fn(),
-    markAsDirty: jest.fn(),
-    updateValueAndValidity: jest.fn(),
-    enable: jest.fn(),
-    disable: jest.fn(),
+    setValue: vi.fn(),
+    markAsTouched: vi.fn(),
+    markAsDirty: vi.fn(),
+    updateValueAndValidity: vi.fn(),
+    enable: vi.fn(),
+    disable: vi.fn(),
     valueChanges: {
-        subscribe: jest.fn((callback) => {
+        subscribe: vi.fn((callback) => {
             mockFormControl.valueChanges._callback = callback;
 
             return {
-                unsubscribe: jest.fn()
+                unsubscribe: vi.fn()
             };
         }),
         _callback: null as ((value: string) => void) | null
     },
     events: {
-        subscribe: jest.fn((callback) => {
+        subscribe: vi.fn((callback) => {
             mockFormControl.events._callback = callback;
 
             return {
-                unsubscribe: jest.fn()
+                unsubscribe: vi.fn()
             };
         }),
         _callback: null as ((event: unknown) => void) | null
@@ -69,12 +70,12 @@ const mockNgZone = {
 };
 
 const mockDialogRef = {
-    close: jest.fn(),
+    close: vi.fn(),
     onClose: {
-        subscribe: jest.fn((callback) => {
+        subscribe: vi.fn((callback) => {
             mockDialogRef.onClose._callback = callback;
             return {
-                unsubscribe: jest.fn()
+                unsubscribe: vi.fn()
             };
         }),
         _callback: null as ((content: any) => void) | null
@@ -82,7 +83,7 @@ const mockDialogRef = {
 };
 
 const mockDialogService = {
-    open: jest.fn().mockReturnValue(mockDialogRef)
+    open: vi.fn().mockReturnValue(mockDialogRef)
 };
 
 describe('AngularFormBridge', () => {
@@ -100,7 +101,7 @@ describe('AngularFormBridge', () => {
             mockNgZone as any,
             mockDialogService as any
         );
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
@@ -139,14 +140,14 @@ describe('AngularFormBridge', () => {
     });
 
     it('should run set value inside NgZone', () => {
-        const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+        const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
         bridge.set('testField', 'new value');
         expect(zoneRunSpy).toHaveBeenCalled();
     });
 
     describe('field changes', () => {
         it('should watch field changes in Angular form', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             bridge.onChangeField('testField', callback);
 
             expect(mockFormGroup.get).toHaveBeenCalledWith('testField');
@@ -159,8 +160,8 @@ describe('AngularFormBridge', () => {
         });
 
         it('should support multiple callbacks for the same field', () => {
-            const callback1 = jest.fn();
-            const callback2 = jest.fn();
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
 
             bridge.onChangeField('testField', callback1);
             bridge.onChangeField('testField', callback2);
@@ -173,8 +174,8 @@ describe('AngularFormBridge', () => {
         });
 
         it('should remove only the specified callback when unsubscribing', () => {
-            const callback1 = jest.fn();
-            const callback2 = jest.fn();
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
 
             const unsubscribe1 = bridge.onChangeField('testField', callback1);
             bridge.onChangeField('testField', callback2);
@@ -189,7 +190,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should cleanup subscription when last callback is removed', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             const unsubscribe = bridge.onChangeField('testField', () => {});
@@ -206,7 +207,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should log warning when field not found', () => {
-            const consoleSpy = jest.spyOn(console, 'warn');
+            const consoleSpy = vi.spyOn(console, 'warn');
             mockFormGroup.get.mockReturnValue(null);
 
             bridge.onChangeField('nonExistentField', () => {});
@@ -233,13 +234,13 @@ describe('AngularFormBridge', () => {
             AngularFormBridge.resetInstance();
             // Reset the callback to ensure clean state
             mockFormControl.valueChanges._callback = null;
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
             const testBridge = AngularFormBridge.getInstance(
                 mockFormGroup as any,
                 mockNgZone as any,
                 mockDialogService as any
             );
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             testBridge.onChangeField('testField', callback);
 
@@ -258,7 +259,7 @@ describe('AngularFormBridge', () => {
 
     describe('cleanup', () => {
         it('should cleanup subscriptions on destroy', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             bridge.onChangeField('testField', () => {});
@@ -268,8 +269,8 @@ describe('AngularFormBridge', () => {
         });
 
         it('should cleanup all subscriptions on destroy', () => {
-            const unsubscribeSpy1 = jest.fn();
-            const unsubscribeSpy2 = jest.fn();
+            const unsubscribeSpy1 = vi.fn();
+            const unsubscribeSpy2 = vi.fn();
 
             mockFormControl.valueChanges.subscribe
                 .mockReturnValueOnce({ unsubscribe: unsubscribeSpy1 })
@@ -320,8 +321,8 @@ describe('AngularFormBridge', () => {
 
         it('should reset and return a new instance when getInstance is called with a different FormGroup', () => {
             const differentFormGroup = {
-                get: jest.fn(),
-                events: { subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })) }
+                get: vi.fn(),
+                events: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }
             } as any;
 
             const instance1 = AngularFormBridge.getInstance(
@@ -342,7 +343,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should call forceDestroy on the old instance when FormGroup changes (cleans up subscriptions)', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             const instance1 = AngularFormBridge.getInstance(
@@ -354,8 +355,8 @@ describe('AngularFormBridge', () => {
 
             // Simulate form recreation with a new FormGroup
             const differentFormGroup = {
-                get: jest.fn(),
-                events: { subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })) }
+                get: vi.fn(),
+                events: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }
             } as any;
             AngularFormBridge.getInstance(
                 differentFormGroup,
@@ -384,7 +385,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should destroy subscriptions when resetInstance is called', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             const instance = AngularFormBridge.getInstance(
@@ -476,7 +477,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should keep subscriptions alive when one of two consumers calls destroy', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             // Two consumers
@@ -532,7 +533,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should subscribe to changes using onChange', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             const fieldAPI = bridge.getField('testField');
             const unsubscribe = fieldAPI.onChange(callback);
 
@@ -590,7 +591,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should fire onValidationChange callback with initial state and on control events', () => {
-                const callback = jest.fn();
+                const callback = vi.fn();
                 const fieldAPI = bridge.getField('testField');
                 const unsubscribe = fieldAPI.onValidationChange(callback);
 
@@ -624,14 +625,14 @@ describe('AngularFormBridge', () => {
             it('should re-attach to the control when it is registered after onValidationChange is called', () => {
                 // Simulate the race condition: the control is not yet in the form when subscribe runs.
                 mockFormGroup.get.mockReturnValueOnce(null);
-                const formSubscribe = mockFormGroup.events.subscribe as jest.Mock;
+                const formSubscribe = mockFormGroup.events.subscribe as Mock;
                 let reconcileOnFormEvent: (() => void) | null = null;
                 formSubscribe.mockImplementationOnce((cb: () => void) => {
                     reconcileOnFormEvent = cb;
-                    return { unsubscribe: jest.fn() };
+                    return { unsubscribe: vi.fn() };
                 });
 
-                const callback = jest.fn();
+                const callback = vi.fn();
                 bridge.getField('testField').onValidationChange(callback);
 
                 // No initial emit because the control was missing.
@@ -654,7 +655,7 @@ describe('AngularFormBridge', () => {
 
             it('should not emit when control is missing on subscribe', () => {
                 mockFormGroup.get.mockReturnValue(null);
-                const callback = jest.fn();
+                const callback = vi.fn();
                 const unsubscribe = bridge.getField('missingField').onValidationChange(callback);
 
                 expect(callback).not.toHaveBeenCalled();
@@ -663,16 +664,16 @@ describe('AngularFormBridge', () => {
             });
 
             it('should unsubscribe from events when the returned function is called', () => {
-                const controlUnsubscribeSpy = jest.fn();
-                const formUnsubscribeSpy = jest.fn();
+                const controlUnsubscribeSpy = vi.fn();
+                const formUnsubscribeSpy = vi.fn();
                 mockFormControl.events.subscribe.mockReturnValueOnce({
                     unsubscribe: controlUnsubscribeSpy
                 });
-                (mockFormGroup.events.subscribe as jest.Mock).mockReturnValueOnce({
+                (mockFormGroup.events.subscribe as Mock).mockReturnValueOnce({
                     unsubscribe: formUnsubscribeSpy
                 });
 
-                const unsubscribe = bridge.getField('testField').onValidationChange(jest.fn());
+                const unsubscribe = bridge.getField('testField').onValidationChange(vi.fn());
                 unsubscribe();
 
                 expect(controlUnsubscribeSpy).toHaveBeenCalled();
@@ -707,14 +708,14 @@ describe('AngularFormBridge', () => {
         });
 
         it('should run enable inside NgZone', () => {
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
             const fieldAPI = bridge.getField('testField');
             fieldAPI.enable();
             expect(zoneRunSpy).toHaveBeenCalled();
         });
 
         it('should run disable inside NgZone', () => {
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
             const fieldAPI = bridge.getField('testField');
             fieldAPI.disable();
             expect(zoneRunSpy).toHaveBeenCalled();
@@ -731,7 +732,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should call onFieldVisibilityChange with true when show is called', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -747,7 +748,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should call onFieldVisibilityChange with false when hide is called', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -773,7 +774,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should warn once when show is called without callback', () => {
-                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
                 const fieldAPI = bridge.getField('testField');
 
                 fieldAPI.show();
@@ -791,7 +792,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should warn once when hide is called without callback', () => {
-                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
                 const fieldAPI = bridge.getField('testField');
 
                 fieldAPI.hide();
@@ -809,8 +810,8 @@ describe('AngularFormBridge', () => {
             });
 
             it('should not warn when callback is provided', () => {
-                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-                const onFieldVisibilityChange = jest.fn();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -828,7 +829,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should run show inside NgZone', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -836,7 +837,7 @@ describe('AngularFormBridge', () => {
                     mockDialogService as any,
                     onFieldVisibilityChange
                 );
-                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+                const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
 
                 const fieldAPI = bridgeWithCallback.getField('testField');
                 fieldAPI.show();
@@ -845,7 +846,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should run hide inside NgZone', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -853,7 +854,7 @@ describe('AngularFormBridge', () => {
                     mockDialogService as any,
                     onFieldVisibilityChange
                 );
-                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+                const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
 
                 const fieldAPI = bridgeWithCallback.getField('testField');
                 fieldAPI.hide();
@@ -865,14 +866,14 @@ describe('AngularFormBridge', () => {
 
     describe('ready', () => {
         it('should execute callback with bridge instance', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             bridge.ready(callback);
             expect(callback).toHaveBeenCalledWith(bridge);
         });
     });
 
     describe('openBrowserModal', () => {
-        let resolveSite: jest.Mock;
+        let resolveSite: Mock;
 
         /** A file asset row, as the picker hands one back. */
         const FILE_ITEM = {
@@ -887,10 +888,10 @@ describe('AngularFormBridge', () => {
         };
 
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             window.localStorage.clear();
             AngularFormBridge.resetInstance();
-            resolveSite = jest.fn(() => of(SITE));
+            resolveSite = vi.fn(() => of(SITE));
             bridge = AngularFormBridge.getInstance(
                 mockFormGroup as any,
                 mockNgZone as any,
@@ -933,7 +934,7 @@ describe('AngularFormBridge', () => {
             it('should run inside NgZone', () => {
                 // Callers are VTL scripts running outside Angular, so without this the dialog
                 // opens with no change detection behind it.
-                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+                const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
 
                 bridge.openBrowserModal({ kinds: ['file'] });
 
@@ -976,7 +977,7 @@ describe('AngularFormBridge', () => {
             it('should warn about an unsupported kind rather than ignore it silently', () => {
                 // AC-008: a template author must not be able to ask for a kind the picker refuses
                 // and get no signal. Same treatment the `link` + `mimeTypes` conflict already gets.
-                const warn = jest.spyOn(console, 'warn').mockImplementation();
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 bridge.openBrowserModal({
                     kinds: ['file', 'page', 'folder']
@@ -993,7 +994,7 @@ describe('AngularFormBridge', () => {
                 // Degenerate case: no requested kind maps to a base type, so `baseTypesFor` returns
                 // undefined and the picker uses its own default. Must not throw — an exception
                 // inside a VTL <script> takes the whole custom field down with it.
-                const warn = jest.spyOn(console, 'warn').mockImplementation();
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 expect(() =>
                     bridge.openBrowserModal({
@@ -1008,7 +1009,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should not warn for a caller whose kinds are all supported', () => {
-                const warn = jest.spyOn(console, 'warn').mockImplementation();
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 bridge.openBrowserModal({ kinds: ['file', 'dotasset', 'page', 'link'] });
 
@@ -1086,7 +1087,7 @@ describe('AngularFormBridge', () => {
             it('should warn when links are asked for together with mimeTypes', () => {
                 // The endpoint drops links whenever a mimetype filter is set. Surfaced, not worked
                 // around — silently returning fewer kinds than requested is the worse outcome.
-                const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 bridge.openBrowserModal({ kinds: ['link'], mimeTypes: ['image/*'] });
 
@@ -1100,7 +1101,7 @@ describe('AngularFormBridge', () => {
             const closeWith = (payload: any) => mockDialogRef.onClose._callback?.(payload);
 
             it('should report a file selection', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['file'], onClose });
                 closeWith(FILE_ITEM);
 
@@ -1118,7 +1119,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should report a dotAsset as its own kind', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['dotasset'], onClose });
                 closeWith({ ...FILE_ITEM, baseType: 'DOTASSET' });
 
@@ -1126,7 +1127,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should report a page selection', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['page'], onClose });
                 closeWith({
                     identifier: 'page-id',
@@ -1143,7 +1144,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should fall back to urlMap when there is no url', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['file'], onClose });
                 closeWith({ ...FILE_ITEM, url: undefined, urlMap: '/mapped/url' });
 
@@ -1157,7 +1158,7 @@ describe('AngularFormBridge', () => {
             // for a folder is now typed into the field, not returned by the picker.
 
             it('should report a menu link with its target as the url', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['link'], onClose });
                 closeWith({
                     type: 'link',
@@ -1184,7 +1185,7 @@ describe('AngularFormBridge', () => {
             ])('should not attach contentlet-only fields to a %s', (_kind, item) => {
                 // The whole point of the discriminated union: a consumer can never read a mimetype
                 // off something that has none.
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ onClose });
                 closeWith(item);
 
@@ -1196,7 +1197,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should fall back to fileName when there is no name', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['file'], onClose });
                 closeWith({ ...FILE_ITEM, name: undefined });
 
@@ -1209,7 +1210,7 @@ describe('AngularFormBridge', () => {
 
             it('should report null when the picker is dismissed', () => {
                 // ✕, Esc and mask click all arrive as the same empty close from PrimeNG.
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['file'], onClose });
                 closeWith(undefined);
 
@@ -1217,7 +1218,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should call onClose exactly once even if the dialog closes twice', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 bridge.openBrowserModal({ kinds: ['file'], onClose });
                 closeWith(null);
                 closeWith(FILE_ITEM);
@@ -1228,7 +1229,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should close the dialog when close() is called', () => {
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 const controller = bridge.openBrowserModal({ kinds: ['file'], onClose });
 
                 controller.close();
@@ -1239,7 +1240,7 @@ describe('AngularFormBridge', () => {
 
             it('should not call onClose a second time after close()', () => {
                 // PrimeNG still emits its own close afterwards; the caller must not see two.
-                const onClose = jest.fn();
+                const onClose = vi.fn();
                 const controller = bridge.openBrowserModal({ kinds: ['file'], onClose });
 
                 controller.close();
@@ -1251,7 +1252,7 @@ describe('AngularFormBridge', () => {
             it('should report null when no site can be resolved', () => {
                 // Opening a picker that cannot browse anything is worse than not opening it.
                 resolveSite.mockReturnValue(of(null));
-                const onClose = jest.fn();
+                const onClose = vi.fn();
 
                 bridge.openBrowserModal({ kinds: ['file'], onClose });
 
@@ -1261,7 +1262,7 @@ describe('AngularFormBridge', () => {
 
             it('should report null when the site lookup fails', () => {
                 resolveSite.mockReturnValue(throwError(() => new Error('offline')));
-                const onClose = jest.fn();
+                const onClose = vi.fn();
 
                 bridge.openBrowserModal({ kinds: ['file'], onClose });
 
@@ -1278,7 +1279,7 @@ describe('AngularFormBridge', () => {
                     mockNgZone as any,
                     mockDialogService as any
                 );
-                const onClose = jest.fn();
+                const onClose = vi.fn();
 
                 bridgeWithoutSite.openBrowserModal({ kinds: ['file'], onClose });
 

@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
@@ -149,7 +155,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
                 initialContentletState: state
             });
             spectator.detectChanges();
-            jest.spyOn(spectator.component.commentSubmitted, 'emit');
+            vi.spyOn(spectator.component.commentSubmitted, 'emit');
         });
 
         it('should show comment form when initialContentletState is not new', () => {

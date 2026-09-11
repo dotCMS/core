@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { DotAiSearchResponse } from '@dotcms/dotcms-models';
 

@@ -1,5 +1,11 @@
 import { Dispatcher, EventCreator } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router } from '@angular/router';
@@ -133,42 +139,42 @@ const messageServiceMock = new MockDotMessageService({
 
 /**
  * The store is provided by the component itself, so it is replaced through
- * `componentProviders`. Signals are plain `jest.fn()` return values: the component only
+ * `componentProviders`. Signals are plain `vi.fn()` return values: the component only
  * reads them, and every test decides the values before the component is created.
  */
 const createStoreMock = () => ({
-    healthStatus: jest.fn().mockReturnValue(HealthStatusTypes.OK),
-    isMisconfigured: jest.fn().mockReturnValue(false),
-    pagedExperiments: jest.fn().mockReturnValue([] as DotExperiment[]),
-    pageInfoByPageId: jest.fn().mockReturnValue(PAGE_INFO),
-    statusCounts: jest.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
-    selectedStatuses: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
-    goalCounts: jest.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
-    selectedGoals: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
-    filter: jest.fn().mockReturnValue(''),
-    selectedPageId: jest.fn().mockReturnValue(null),
-    selectedPageUrl: jest.fn().mockReturnValue(null),
-    languageId: jest.fn().mockReturnValue(null),
-    status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
-    page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
-    perPage: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
-    orderBy: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
-    direction: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
-    totalRecords: jest.fn().mockReturnValue(0)
+    healthStatus: vi.fn().mockReturnValue(HealthStatusTypes.OK),
+    isMisconfigured: vi.fn().mockReturnValue(false),
+    pagedExperiments: vi.fn().mockReturnValue([] as DotExperiment[]),
+    pageInfoByPageId: vi.fn().mockReturnValue(PAGE_INFO),
+    statusCounts: vi.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
+    selectedStatuses: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
+    goalCounts: vi.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
+    selectedGoals: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
+    filter: vi.fn().mockReturnValue(''),
+    selectedPageId: vi.fn().mockReturnValue(null),
+    selectedPageUrl: vi.fn().mockReturnValue(null),
+    languageId: vi.fn().mockReturnValue(null),
+    status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
+    page: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
+    perPage: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
+    orderBy: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
+    direction: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
+    totalRecords: vi.fn().mockReturnValue(0)
 });
 
 describe('DotExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
     /** Where the trail is written; the component only ever appends its own crumb. */
     let globalStore: {
-        addNewBreadcrumb: jest.Mock;
-        setLastBreadcrumb: jest.Mock;
-        lastBreadcrumb: jest.Mock;
+        addNewBreadcrumb: Mock;
+        setLastBreadcrumb: Mock;
+        lastBreadcrumb: Mock;
     };
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
-    let confirm: jest.SpyInstance;
-    let navigate: jest.SpyInstance;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
+    let navigate: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsListComponent,
@@ -254,31 +260,31 @@ describe('DotExperimentsListComponent', () => {
     beforeEach(() => {
         storeMock = createStoreMock();
         globalStore = {
-            addNewBreadcrumb: jest.fn(),
-            setLastBreadcrumb: jest.fn(),
-            lastBreadcrumb: jest.fn().mockReturnValue(null)
+            addNewBreadcrumb: vi.fn(),
+            setLastBreadcrumb: vi.fn(),
+            lastBreadcrumb: vi.fn().mockReturnValue(null)
         };
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
 
         // `p-confirmDialog` needs the real service (it subscribes to its streams), so the
         // confirmation is intercepted instead of mocked away.
         const confirmationService = spectator.inject(ConfirmationService, true);
-        confirm = jest
+        confirm = vi
             .spyOn(confirmationService, 'confirm')
-            .mockReturnValue(confirmationService) as jest.SpyInstance;
+            .mockReturnValue(confirmationService) as MockInstance;
         // The Configure screen is a real route of the portlet, so navigation is intercepted
         // rather than let through to a component this spec does not render.
-        navigate = jest.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+        navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('search', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         const type = (text: string) =>
             spectator.typeInElement(
@@ -301,7 +307,7 @@ describe('DotExperimentsListComponent', () => {
             // It settles a Resource, so the timer alone is not enough — microtasks have to
             // drain too, hence the async variant. The dispatch then lands in an effect on the
             // next pass, rather than inside the timer callback as the rxjs version did.
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
@@ -317,7 +323,7 @@ describe('DotExperimentsListComponent', () => {
 
             type('summer');
             spectator.detectChanges();
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).not.toContainEqual(
@@ -417,7 +423,7 @@ describe('DotExperimentsListComponent', () => {
             }
         );
 
-        // One status per test: the store mock's signals are plain `jest.fn()`s, so a second
+        // One status per test: the store mock's signals are plain `vi.fn()`s, so a second
         // `renderRowWith` in the same test would not recompute the row.
         it('should offer archive in the kebab once the experiment has ended', () => {
             renderRowWith(DotExperimentStatus.ENDED);
@@ -1038,12 +1044,12 @@ describe('DotExperimentsListComponent', () => {
 
     describe('search clear', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             // The component is created without an initial render, so the toolbar has to be
             // rendered before anything can be typed into it.
             spectator.detectChanges();
         });
-        afterEach(() => jest.useRealTimers());
+        afterEach(() => vi.useRealTimers());
 
         const searchInput = () =>
             spectator.query(byTestId('experiments-search-input')) as HTMLInputElement;
@@ -1068,7 +1074,7 @@ describe('DotExperimentsListComponent', () => {
 
             // `NgModel` pushes the model back to the input on a microtask, so the DOM value is
             // one tick behind the signal.
-            await jest.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
             spectator.detectChanges();
 
             expect(searchInput().value).toBe('');
@@ -1082,7 +1088,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.typeInElement('alpha', searchInput());
             spectator.detectChanges();
             storeMock.filter.mockReturnValue('alpha');
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             spectator.click(spectator.query(byTestId('experiments-search-clear')) as HTMLElement);
@@ -1090,7 +1096,7 @@ describe('DotExperimentsListComponent', () => {
 
             // Clearing writes the same signal typing does, so it settles through the debounce
             // rather than dispatching straight away.
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(

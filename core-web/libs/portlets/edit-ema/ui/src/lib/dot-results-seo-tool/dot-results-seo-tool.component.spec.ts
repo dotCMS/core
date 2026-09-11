@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 
 import {
@@ -183,48 +183,51 @@ describe('DotResultsSeoToolComponent', () => {
         expect(previews[1]).toHaveClass('results-seo-tool__version--small');
     });
 
-    it('should filter seo results by Facebook, seoMedia on changes', (done) => {
-        spectator.setInput({
-            seoMedia: SEO_MEDIA_TYPES.FACEBOOK
-        });
-        spectator.detectChanges();
-        spectator.component.currentResults$.subscribe((items) => {
-            expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
-            expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
-            expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
-            done();
-        });
-    });
+    it('should filter seo results by Facebook, seoMedia on changes', () =>
+        new Promise<void>((done) => {
+            spectator.setInput({
+                seoMedia: SEO_MEDIA_TYPES.FACEBOOK
+            });
+            spectator.detectChanges();
+            spectator.component.currentResults$.subscribe((items) => {
+                expect(items.length).toEqual(3);
+                expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
+                expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
+                expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
+                done();
+            });
+        }));
 
-    it('should filter seo results by Twitter, seoMedia on changes', (done) => {
-        spectator.setInput({
-            seoMedia: SEO_MEDIA_TYPES.TWITTER
-        });
-        spectator.detectChanges();
-        spectator.component.currentResults$.subscribe((items) => {
-            expect(items.length).toEqual(4);
-            expect(items[0].key).toEqual(seoOGTagsResultOgMockTwitter[0].key);
-            expect(items[1].key).toEqual(seoOGTagsResultOgMockTwitter[1].key);
-            expect(items[2].key).toEqual(seoOGTagsResultOgMockTwitter[2].key);
-            expect(items[3].key).toEqual(seoOGTagsResultOgMockTwitter[3].key);
-            done();
-        });
-    });
+    it('should filter seo results by Twitter, seoMedia on changes', () =>
+        new Promise<void>((done) => {
+            spectator.setInput({
+                seoMedia: SEO_MEDIA_TYPES.TWITTER
+            });
+            spectator.detectChanges();
+            spectator.component.currentResults$.subscribe((items) => {
+                expect(items.length).toEqual(4);
+                expect(items[0].key).toEqual(seoOGTagsResultOgMockTwitter[0].key);
+                expect(items[1].key).toEqual(seoOGTagsResultOgMockTwitter[1].key);
+                expect(items[2].key).toEqual(seoOGTagsResultOgMockTwitter[2].key);
+                expect(items[3].key).toEqual(seoOGTagsResultOgMockTwitter[3].key);
+                done();
+            });
+        }));
 
-    it('should filter seo results by Linkedin seoMedia on changes', (done) => {
-        spectator.setInput({
-            seoMedia: SEO_MEDIA_TYPES.LINKEDIN
-        });
-        spectator.detectChanges();
-        spectator.component.currentResults$.subscribe((items) => {
-            expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
-            expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
-            expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
-            done();
-        });
-    });
+    it('should filter seo results by Linkedin seoMedia on changes', () =>
+        new Promise<void>((done) => {
+            spectator.setInput({
+                seoMedia: SEO_MEDIA_TYPES.LINKEDIN
+            });
+            spectator.detectChanges();
+            spectator.component.currentResults$.subscribe((items) => {
+                expect(items.length).toEqual(3);
+                expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
+                expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
+                expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
+                done();
+            });
+        }));
 
     it('should render the result card title with title case', () => {
         const expectedTitle = 'Title';
