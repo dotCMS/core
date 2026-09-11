@@ -195,7 +195,11 @@ is still running.
 2. **Given** they are in edit mode, **When** they edit a contentlet in the **original** variant,
    **Then** the edit is accepted and the workflow actions are available to save it.
 3. **Given** they are in edit mode on a **created variant** of that experiment, **When** they edit a
-   contentlet, **Then** the edit is accepted and persists.
+   contentlet, **Then** the edit is accepted and persists **on that variant** — not on DEFAULT.
+   *This scenario is gated on **O6**: the guard removal alone does not deliver it, because
+   `$showWorkflowsActions` renders no save control on a non-DEFAULT variant and a save from the new
+   Edit Content editor is coerced to DEFAULT. If O6 resolves to option A, this scenario is deferred
+   with FR-007 and MUST be struck from the story rather than reported as passing.*
 4. **Given** they save, **When** the save completes, **Then** it succeeds with no error from the page
    or contentlet APIs, and the experiment's status, schedule and identity are unchanged.
 5. **Given** a page with a `RUNNING` experiment on a standard (drawed) template, **When** they open
