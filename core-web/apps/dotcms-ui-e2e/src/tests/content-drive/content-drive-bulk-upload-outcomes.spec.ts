@@ -134,6 +134,9 @@ test.describe('Content Drive bulk upload outcomes', () => {
             await drive.chooseFilesForUpload(batch, 'FILEASSET');
             await drive.expectUploadedTitle(`cd-retry-${testSuffix}`, batch[0]);
 
+            // Same race as the dotAsset case: the flag needs the first run to have reached SUCCESS.
+            await apiHelpers.waitForJobsToSettle();
+
             // By the counts this is a total failure: every file collides. Reporting it that way
             // sends the author to delete and re-upload files that are already correctly there,
             // which the spec calls worse than offering no retry at all.
@@ -161,6 +164,12 @@ test.describe('Content Drive bulk upload outcomes', () => {
 
             await drive.chooseFilesForUpload(batch, 'DOTASSET');
             await drive.expectUploadedTitle(`cd-dup-${testSuffix}`, batch[0]);
+
+            // The row proves the content exists, not that the run finished, and a resubmission is
+            // only recognised against a job already in SUCCESS. Resubmitting too early makes the
+            // server answer truthfully that this is not a duplicate, and the test then waits for
+            // copy that can never arrive. It went flaky in CI for exactly that reason.
+            await apiHelpers.waitForJobsToSettle();
 
             await drive.chooseFilesForUpload(batch, 'DOTASSET');
 

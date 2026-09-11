@@ -3,11 +3,14 @@ import { type APIRequestContext } from '@playwright/test';
 import { type BaseApiHelpers, test as base } from './base.fixture';
 
 import { createFilteredFolder, deleteFolders } from '../requests/folders';
+import { waitForJobsToSettle } from '../requests/jobs';
 import { clearNotifications } from '../requests/notifications';
 
 /** The shared helpers plus the teardown Content Drive needs for the folders it seeds. */
 export interface ContentDriveApiHelpers extends BaseApiHelpers {
     deleteFolders: (siteName: string, paths: string[]) => Promise<void>;
+    /** Waits until no job is in flight, which a visible row does not prove. */
+    waitForJobsToSettle: () => Promise<void>;
     /** Dismisses every notification, so "one arrived" is a claim about this run. */
     clearNotifications: () => Promise<void>;
     /** Seeds a folder that only admits the given file-name globs, for the folder-filter refusal. */
@@ -42,7 +45,8 @@ export const test = base.extend<{ apiHelpers: ContentDriveApiHelpers }>({
                 deleteFolders(request, siteName, paths),
             createFilteredFolder: (siteName: string, path: string, fileMasks: string[]) =>
                 createFilteredFolder(request, siteName, path, fileMasks),
-            clearNotifications: () => clearNotifications(request)
+            clearNotifications: () => clearNotifications(request),
+            waitForJobsToSettle: () => waitForJobsToSettle(request)
         });
     }
 });
