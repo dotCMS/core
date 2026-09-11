@@ -1,5 +1,12 @@
 # dotCMS Vue.js Example — TravelLux
 
+> [!NOTE]
+> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen
+> instance (always the current release). If your dotCMS instance is **not** on Evergreen — an
+> older self-hosted release, or an LTS server — installing as-is may fail with GraphQL
+> `FieldUndefined` errors. Check your server's version and replace `latest` with that exact
+> version for every `@dotcms/*` entry in `package.json` before installing.
+
 An editorial travel front end ("TravelLux") powered by [dotCMS](https://www.dotcms.com/) as a headless CMS and **Vue 3 + Vite + TypeScript + Tailwind CSS v4**, using the [`@dotcms/vue`](../../core-web/libs/sdk/vue) SDK. Content is managed in dotCMS and rendered here, fully editable in-context through the **Universal Visual Editor (UVE)**.
 
 This mirrors the [Next.js example](../nextjs) feature-for-feature (minus AI search), showing the same content-type components, block-editor rendering, inline editing, and layout system.
