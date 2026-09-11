@@ -127,6 +127,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging
 - [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) — ES → OpenSearch: deprecated `ContentletAPI` search methods, plugin migration guide
 - [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) — CDI-based metrics system, creating new metrics, `/v1/usage` endpoints
+- [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) — how `loadFields`/`toMap` build the index document; the `_dotraw` zero-padding sort invariant
 - [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — Fast class/annotation metadata lookup, prefer over reflection
 - **ES → OpenSearch Migration** — infra migration from ElasticSearch to OpenSearch, phased dual-write/read rollout
   - [Migration Design](docs/backend/OPENSEARCH_MIGRATION.md) — Architecture, phased rollout, configuration
