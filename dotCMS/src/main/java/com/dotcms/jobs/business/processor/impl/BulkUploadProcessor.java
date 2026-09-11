@@ -294,7 +294,21 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
 
                 final Contentlet checkedIn =
                         APILocator.getContentletAPI().checkin(contentlet, user, false);
+
+                // DISABLE_WORKFLOW around the publish, and it is load-bearing. publish() is not
+                // the direct operation it reads as: checkAndRunPublishAsWorkflow
+                // (ESContentletAPIImpl:5686) looks up the PUBLISH system action and runs it as a
+                // workflow instead — and the mapping that sent us down this branch is precisely
+                // one that does not publish. So the call would resolve that same action, fire it,
+                // and leave the file saved but not live: the run reporting success having done
+                // half the job. The flag is the guard that method itself honours.
+                //
+                // The product does the equivalent in firePublishWithSave by setting an actionId,
+                // which suppresses the same re-entry. There is no meaningful action id here — the
+                // mapped one was rejected for not publishing — so the flag is the lever that fits.
+                checkedIn.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                 APILocator.getContentletAPI().publish(checkedIn, user, false);
+                checkedIn.getMap().remove(Contentlet.DISABLE_WORKFLOW);
 
                 recordCreated(job, seq, fileName, checkedIn, createdInodes);
                 return;

@@ -1046,8 +1046,8 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * <p>
      * Given scenario: A batch of FILEASSETs against a folder.
      * <p>
-     * Expected result: Every file is created, as a draft, with its file name and title set from
-     * the submitted name.
+     * Expected result: Every file is created and published, with its file name and title set
+     * from the submitted name.
      * <p>
      * <b>Why this needed its own test.</b> FR-006 promises equivalence with the single-file upload
      * — and that endpoint <b>only ever creates FileAssets</b>
@@ -1088,8 +1088,8 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
             assertTrue(submittedNames.contains(fileName), String.format(
                     "a fileAsset carries the submitted name in its own fileName field; got '%s'",
                     fileName));
-            assertFalse(contentlet.isLive(),
-                    "and a FILEASSET batch leaves drafts, the same as a dotAsset one");
+            assertTrue(contentlet.isLive(),
+                    "and a FILEASSET batch publishes, the same as a dotAsset one (FR-006a)");
         }
     }
 
