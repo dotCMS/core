@@ -109,8 +109,10 @@ Two things that look like obstacles and are not:
 
   Crucially, **this is reachable today under `DRAFT`** — it needs no running experiment and no change
   from this issue. If it is a live defect it is a live defect now, for any variant edit on a content
-  type carrying `FEATURE_FLAG_CONTENT_EDITOR2_ENABLED`. It is therefore **out of scope here** and
-  recorded as **O6** only so it is not lost. It has **not** been verified at runtime (see O6).
+  type carrying `FEATURE_FLAG_CONTENT_EDITOR2_ENABLED`. The *fix* is therefore **out of scope here**
+  (**O6**), but the *question* is not: the integration test required by **FR-040a** asserts which
+  variant actually received the write, so this issue finds out rather than leaving a suspicion
+  standing.
 
 **5. The guard does not merely hide the option — it ejects you.**
 `$modeGuardEffect` (`dot-editor-mode-selector.component.ts:96-108`) fires `onModeChange(PREVIEW)` —
@@ -150,6 +152,32 @@ seen it. What is firm is the split: `RUNNING` and `SCHEDULED` describe genuinely
 must not share a string. What is an assumption is every actual word (**A1**).
 
 ---
+
+## Clarifications
+
+### Session 2026-09-11
+
+- Q: When a page is both locked by another user and carries an active experiment, what shows, and in
+  what order? → A: Both, lock banner first and experiment banner below it. The order is fixed by this
+  spec (D9), not inherited from template ordering, which is what FR-024 demanded and the spec had not
+  supplied.
+- Q: Does the banner show to a user who can read the page but not edit it? → A: Yes. No permission
+  gate (D10), matching the two existing precedents in the shell — neither `$showLockBanner` nor the
+  toolbar's running-experiment tag consults `canEdit`.
+- Q: `ExperimentDataGen.nextPersistedAndStart()` already exists, so an integration test can put an
+  experiment into `RUNNING` today. Is that test written in this issue? → A: Yes (D11). One test
+  anchors both the data-integrity guarantee (FR-040 / SC-011) and settles the open variant-coercion
+  question (O6), replacing static analysis with evidence.
+
+Resolved by reading the code rather than by asking:
+
+- Banner stability across reloads: `pageLoad` clears `editorSelected` and `editorContentArea` but not
+  `pageExperiment` (`withPageApi.ts:191-202`), so the banner does not flicker on a mode change or
+  reload. The one real case — briefly carrying the previous page's experiment across a page-to-page
+  navigation — is recorded as an edge case.
+- Accessibility semantics: no `p-message` anywhere in the repository declares `role` or `aria`
+  attributes, including the lock banner. The new banner follows that precedent rather than inventing
+  a pattern the codebase does not use (A8).
 
 ## Verified Code Baseline
 
@@ -364,6 +392,10 @@ page is still editable.
 - **An advanced (non-drawed) template with a `RUNNING` experiment.** Layout stays unavailable. The
   reason must remain the template, and the "advanced-template" tooltip must not be replaced by an
   experiment reason that no longer exists.
+- **The editor navigates from one page to another.** `pageLoad` does not clear `pageExperiment`
+  (`withPageApi.ts:191-202`), so between the navigation and the new fetch resolving, the banner still
+  reflects the page being left. It is self-correcting and matches what the toolbar tag already does,
+  but a test asserting banner content immediately after a navigation must account for it.
 - **A `RUNNING` experiment whose `scheduling` is `null`.** `DotExperiment.scheduling` is nullable and
   the toolbar tag already reads `scheduling.endDate` unguarded. The banner must not acquire the same
   exposure — nothing in it may depend on a date being present.
@@ -438,9 +470,14 @@ page is still editable.
   labelled as a link to the experiment.
 - **FR-023**: The banner MUST NOT be shown when the page has no experiment, when the experiment
   lookup returned nothing, or when the experiment's status is `DRAFT`, `ENDED` or `ARCHIVED`. It MUST
-  disappear once the experiment ends, is cancelled or is archived.
-- **FR-024**: The banner's behavior when the lock banner is also eligible MUST be explicit — both
-  shown, or one given precedence — and MUST be stated rather than left to template ordering.
+  disappear once the experiment ends, is cancelled or is archived. These are the **only** conditions
+  that suppress it.
+- **FR-023a**: The banner MUST NOT be gated on edit permission. A user who can read the page but not
+  edit it MUST still see it, matching `$showLockBanner` and the toolbar's running-experiment tag,
+  neither of which consults `canEdit` (D10).
+- **FR-024**: When the lock banner is also eligible, **both MUST be shown, with the lock banner
+  first and the experiment banner directly below it** (D9). The order MUST be a property of the
+  implementation that a test can assert, not an incidental consequence of template ordering.
 - **FR-025**: The banner MUST NOT depend on any nullable field of the experiment being populated. In
   particular it MUST NOT read `scheduling.endDate` unguarded.
 - **FR-026**: The banner MUST be added without altering the lock banner's own condition, copy or
@@ -485,6 +522,15 @@ rather than assumed, and so that a later change cannot quietly break it.
 - **FR-040**: FR-034 through FR-038 MUST be verified at the API or database level, since `runningIds`
   and `lookBackWindow` are not present on the frontend `DotExperiment` model. A frontend unit test
   MUST NOT be offered as evidence for them.
+- **FR-040a**: That verification MUST be an **integration test**, not a manual QA step (D11). The
+  pieces already exist: `ExperimentDataGen.nextPersistedAndStart()` puts an experiment into `RUNNING`
+  in one call. The test MUST start an experiment, save a contentlet on a non-DEFAULT variant, and
+  assert both that the collected data survives (FR-034 through FR-038) **and which variant actually
+  received the write** — the second assertion is what settles **O6** with evidence instead of static
+  analysis.
+- **FR-040b**: That test MUST be registered in a `MainSuite*` / `Junit5Suite*` `@SuiteClasses` list.
+  An unregistered integration test compiles, leaves CI green, and is **never executed** — which would
+  turn this issue's central guarantee into a test that only ever passes by not running.
 
 #### F. Coexistence with in-flight work
 
@@ -542,6 +588,14 @@ rather than assumed, and so that a later change cannot quietly break it.
 - **SC-013**: A page with no experiment renders and behaves identically before and after the change,
   with no banner and no access difference.
 - **SC-014**: The existing `withEditor.spec.ts` lock and permission assertions still pass unmodified.
+- **SC-015**: On a page that is both locked by another user and carrying a `RUNNING` experiment, both
+  banners render and the lock banner precedes the experiment banner in the DOM — asserted by a test,
+  not by inspection.
+- **SC-016**: A user with `canRead` but not `canEdit` sees the banner; no suppression condition other
+  than the five in FR-023 exists.
+- **SC-017**: The integration test required by FR-040a exists, is registered in a `MainSuite*` /
+  `Junit5Suite*` `@SuiteClasses` list, and passes — and its variant assertion reports which variant
+  received the write, closing **O6** with evidence.
 
 ---
 
@@ -560,6 +614,9 @@ rather than assumed, and so that a later change cannot quietly break it.
   so `RUNNING` and `SCHEDULED` expect `EDIT` while `ENDED` and `ARCHIVED` keep `PREVIEW`.
 - Unit and component tests for the above, plus the lock and permission regression tests the guard
   never had.
+- **One integration test** (FR-040a/FR-040b, D11) proving the data-integrity guarantee against a real
+  `RUNNING` experiment, registered in a `MainSuite*` / `Junit5Suite*`. Java, but a test only — no
+  production Java.
 
 **Explicitly out of scope / non-goals**:
 
@@ -669,6 +726,11 @@ rather than assumed, and so that a later change cannot quietly break it.
   This is an assumption drawn from the code, not from a runtime test: it is exactly what SC-001a
   measures, and if the two ever differ, something in this change reached the save path and the change
   is wrong.
+- **A8 — The banner declares no accessibility attributes of its own.** No `p-message` anywhere in the
+  repository sets `role` or `aria-*`, the lock banner included; the new banner follows that precedent
+  and inherits whatever PrimeNG provides. Adding bespoke a11y semantics to this one surface would
+  make it the only one of its kind and is not this issue's to introduce. If the shell's banners should
+  be announced differently, that is a change to all of them and belongs in its own issue.
 
 ---
 
@@ -785,6 +847,53 @@ Consequences, stated rather than discovered later:
 - This widens the change beyond `edit-ema` into `libs/portlets/dot-experiments`. Both are frontend,
   so the epic's frontend-only rule holds.
 
+### D9 — Both banners show, lock first
+
+A page can be locked by another user *and* carry an active experiment. Both banners are then
+eligible, and both are shown, with the **lock banner above the experiment banner**.
+
+The lock reports a rule that is being enforced right now and offers the one action available
+(Unlock); the experiment reports a cost that blocks nothing. What blocks the user goes first.
+Suppressing the experiment banner while locked was rejected for a specific reason: the editor
+deciding whether to take the lock is exactly the person who benefits from knowing an experiment is
+running — hiding it withholds the information at the moment it is most decision-relevant.
+
+The order is a property the implementation must guarantee and a test must assert. FR-024 required
+this to be stated rather than left to template ordering, and until this decision the spec had not
+stated it.
+
+### D10 — The banner is not gated on edit permission
+
+A user who can read the page but not edit it still sees it. Both existing precedents in the shell
+behave this way — `$showLockBanner` and the toolbar's running-experiment tag consult `canEdit`
+nowhere — and the copy informs as much as it warns: knowing an experiment is running explains why the
+page has variants. Gating it would also add a fourth suppression condition to FR-023, with its own
+test, to remove information from someone who might be about to request access.
+
+### D11 — The data-integrity guarantee is verified by an integration test, not by QA
+
+FR-034 through FR-038 assert that collected data survives an edit. That is the premise the whole
+change rests on, and until now this spec could only offer static analysis for it — no runtime
+verification had been performed.
+
+It turns out none is needed as a special effort: `ExperimentDataGen.nextPersistedAndStart()` already
+puts an experiment into `RUNNING` in a single call. So the test is cheap and is written here (FR-040a):
+start an experiment, save a contentlet on a non-DEFAULT variant, and assert both that the collected
+measurements survive and **which variant actually received the write**.
+
+The second assertion is the reason this decision matters beyond its own FRs: it settles **O6** with
+evidence. The static reading is genuinely inconclusive there, because `resolveContentletByVariant`
+returns the contentlet untouched when the requested variant already matches its own — so whether a
+real edit is coerced depends on which variant the contentlet lives in, which no amount of reading
+decides. One test answers it.
+
+This puts a Java *test* in a frontend-only epic. That is accepted: the constitution's Principle V
+asks for layer-appropriate tests, the claim being tested is a backend claim, and the alternative is
+shipping the issue's central guarantee unverified. It adds no production Java.
+
+FR-040b exists because of a known trap in this repository: an integration test not registered in a
+`MainSuite*` / `Junit5Suite*` `@SuiteClasses` list compiles, leaves CI green, and never runs.
+
 ## Open Decisions
 
 Questions this spec deliberately does not answer. Each is either a product call or a cross-issue
@@ -881,16 +990,18 @@ needs nothing from #37308. If it is a defect, it is already a defect, for any va
 content type carrying `FEATURE_FLAG_CONTENT_EDITOR2_ENABLED`. #37308 neither creates it nor uniquely
 exposes it, and FR-007a requires only that this change not make it worse.
 
-**What is genuinely unknown**: whether it actually misbehaves. Everything above is static analysis.
-The coercion is conditional — `resolveContentletByVariant` returns the contentlet unchanged when the
-requested variant already equals its own — so whether a real variant edit is coerced depends on which
-variant the contentlet being edited actually lives in at that moment, which reading the code does not
-settle. **This has not been verified at runtime and must not be reported as a confirmed bug.**
+**What static analysis cannot settle**: whether it actually misbehaves. The coercion is conditional —
+`resolveContentletByVariant` returns the contentlet unchanged when the requested variant already
+equals its own — so whether a real variant edit is coerced depends on which variant the contentlet
+being edited lives in at that moment, which reading the code does not decide. **Until FR-040a's test
+runs, this MUST NOT be reported as a confirmed bug.**
 
-**Disposition**: verify on a running instance (create an experiment, edit a variant's contentlet on a
-new-editor content type, read back which variant received the write). If it reproduces, file it as
-its own defect with #30556 as the precedent for the fix shape. Deliberately deferred here: it is
-independent of #37308 and the verification needs an instance this worktree does not own.
+**Disposition — resolved by D11.** The verification is no longer deferred. The integration test
+required by **FR-040a** asserts which variant actually received the write, which answers this
+question as a by-product of proving the data-integrity guarantee. If it reproduces, file the defect
+with #30556 as the precedent for the fix shape; if it does not, this entry is closed with evidence
+rather than left as a standing suspicion. Either way the *fix*, should one be needed, stays out of
+#37308 — the question was only ever whether we would find out.
 
 One thing that fix would have to reckon with, recorded so the next person does not rediscover it: the
 by-actionId fire path has nowhere to put a variant. `/actions/{actionId}/fire` declares no
