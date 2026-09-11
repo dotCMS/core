@@ -90,7 +90,7 @@ public class BulkUploadHelper {
         final long maxTotalBytes = Config.getLongProperty(MAX_TOTAL_BYTES_KEY,
                 DEFAULT_MAX_TOTAL_BYTES);
 
-        // 1. The target, and the right to write to it. Before the body, so an author who cannot
+        // 1. The target and the right to write to it. Before the body, so an author who cannot
         //    use the folder is never made to upload into it first.
         final String targetId = resolveAndAuthorizeTarget(form, user);
 
