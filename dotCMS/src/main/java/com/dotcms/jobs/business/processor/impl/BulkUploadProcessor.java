@@ -52,8 +52,7 @@ import javax.enterprise.context.Dependent;
  * stalled run without consulting the retry policy, so marking this no-retry would not prevent a
  * second attempt — it would only leave that attempt unprepared for one.
  * <p>
- * <b>A re-queued run starts over, and that is now the accepted behaviour (FR-036a).</b> The durable
- * per-item checkpoint that used to let it skip what it had already created was removed, so an
+ * <b>A re-queued run starts over, and that is now the accepted behaviour.</b> An
  * interrupted batch re-attempts every file. On {@code FILEASSET} the unique index on the
  * lower-cased path still rejects the second create, so no duplicate exists and only the report is
  * wrong — files this run created come back as collisions. On {@code DOTASSET} there is no such
@@ -68,13 +67,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     /**
      * The run's per-item outcome, held in memory for the life of the run.
      * <p>
-     * <b>In memory, and therefore not resumable — deliberately.</b> An earlier design committed
-     * each item to its own table as it completed, which let a re-queued run skip what it had
-     * already created. That table was removed (#37166, 2026-09-10): the product decided one
-     * feature should not carry a private store for state the job framework does not offer, and
-     * that whether the framework should offer it is an architectural question, not this feature's
-     * to answer. The cost is recorded honestly in the spec — FR-036 … FR-038 and SC-009 were
-     * withdrawn with it.
+     * <b>In memory, and therefore not resumable — deliberately.</b>
      * <p>
      * {@code CopyOnWriteArrayList} rather than a plain one, matching
      * {@code BulkRefreshContentletsProcessor}: {@code getResultMetadata} is called by the job
@@ -169,7 +162,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * know about, and recreate it as a collision.
      */
     private void createOne(final Job job, final Map<String, Object> file, final int seq,
-                           final User user, final List<String> createdInodes) {
+            final User user, final List<String> createdInodes) {
 
         final String fileName = String.valueOf(file.get("fileName"));
         final String tempFileId = String.valueOf(file.get("tempFileId"));
@@ -266,7 +259,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             // type's NEW action entirely — so a customer whose NEW action notifies someone or sets
             // a field lost that, silently, because a different action did the saving. Two steps
             // honour both mappings, which is why import is shaped this way.
-            final Contentlet created = publish(job, createWith(job, contentlet, contentType, user),
+            final Contentlet created = publish(job, createWith(contentlet, contentType, user),
                     user);
 
             recordCreated(job, seq, fileName, created, createdInodes);
@@ -296,8 +289,8 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * and would fire the very action just rejected — import's own comment on the same line calls it
      * "needed to avoid recursive call".
      */
-    private Contentlet createWith(final Job job, final Contentlet contentlet,
-                                  final ContentType contentType, final User user)
+    private Contentlet createWith(final Contentlet contentlet,
+            final ContentType contentType, final User user)
             throws DotDataException, DotSecurityException {
 
         final Optional<WorkflowAction> saveAction = APILocator.getWorkflowAPI()
@@ -337,8 +330,8 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * is not the direct operation it reads as — {@code checkAndRunPublishAsWorkflow}
      * ({@code ESContentletAPIImpl:5686}) resolves {@code PUBLISH} and runs it as a workflow
      * instead. This branch is entered exactly when that mapping does not publish, so without the
-     * flag the call fires the same non-publishing action and leaves the file saved but not live:
-     * a run reporting success having done half the job.
+     * flag the call fires the same non-publishing action and leaves the file saved but not live: a
+     * run reporting success having done half the job.
      */
     private Contentlet publish(final Job job, final Contentlet created, final User user)
             throws DotDataException, DotSecurityException {
@@ -387,7 +380,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * grow its own idea of what counts as created.
      */
     private void recordCreated(final Job job, final int seq, final String fileName,
-                               final Contentlet created, final List<String> createdInodes) {
+            final Contentlet created, final List<String> createdInodes) {
 
         if (created == null || !UtilMethods.isSet(created.getIdentifier())) {
             throw new IllegalStateException("No persisted contentlet was returned for " + fileName);
@@ -410,14 +403,17 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * path a real {@link File}.
      */
     private Optional<File> resolveStagedContent(final Job job, final String tempFileId,
-                                                final User user) {
+            final User user) {
         final List<String> accessingList = accessingList(job, user);
         return APILocator.getTempFileAPI().getTempFile(accessingList, tempFileId)
                 .map(tempFile -> tempFile.file);
     }
 
-    /** Raised when staged content cannot be retrieved, so it is reported as its own reason. */
+    /**
+     * Raised when staged content cannot be retrieved, so it is reported as its own reason.
+     */
     private static class StagedContentUnavailableException extends RuntimeException {
+
         StagedContentUnavailableException(final String tempFileId) {
             super("Staged content is no longer available: " + tempFileId);
         }
@@ -443,7 +439,9 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 "CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES", 209715200L);
     }
 
-    /** The content type's allow list, empty when it declares none — which means "everything". */
+    /**
+     * The content type's allow list, empty when it declares none — which means "everything".
+     */
     private List<String> acceptedTypes(final ContentType contentType) {
         return binaryField(contentType)
                 .flatMap(field -> field.fieldVariableValue(BinaryField.ALLOWED_FILE_TYPES))
@@ -452,7 +450,9 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 .orElse(List.of());
     }
 
-    /** The binary field the batch writes into — 'asset' for a dotAsset, 'fileAsset' otherwise. */
+    /**
+     * The binary field the batch writes into — 'asset' for a dotAsset, 'fileAsset' otherwise.
+     */
     private Optional<Field> binaryField(final ContentType contentType) {
         return contentType.fields().stream()
                 .filter(field -> field instanceof BinaryField)
@@ -487,7 +487,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * themselves do, and what the previous behaviour was for every file.
      */
     private ContentType resolveContentType(final Job job, final Contentlet contentlet,
-                                           final User user)
+            final User user)
             throws DotDataException, DotSecurityException {
 
         final boolean isFileAsset = isFileAsset(job.parameters());
@@ -512,8 +512,8 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * before this existed, so the worst case is the previous behaviour rather than a lost file.
      */
     private Optional<ContentType> routeByMediaType(final Job job, final Contentlet contentlet,
-                                                   final User user,
-                                                   final BaseContentType baseType) {
+            final User user,
+            final BaseContentType baseType) {
         try {
             final Optional<BaseTypeToContentTypeStrategy> strategy =
                     BaseTypeToContentTypeStrategyResolver.getInstance().get(baseType);
@@ -543,9 +543,11 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         }
     }
 
-    /** Places the asset in the folder, or at the site root when the batch targets a site. */
+    /**
+     * Places the asset in the folder, or at the site root when the batch targets a site.
+     */
     private void applyTarget(final Contentlet contentlet, final Map<String, Object> parameters,
-                             final User user) throws DotDataException, DotSecurityException {
+            final User user) throws DotDataException, DotSecurityException {
         final Object folderId = parameters.get("folderId");
         if (folderId != null) {
             final Folder folder = APILocator.getFolderAPI()
@@ -586,13 +588,13 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * file.
      */
     private Optional<BatchFailureReason> folderRefusal(final Map<String, Object> parameters,
-                                                       final User user, final String fileName) {
+            final User user, final String fileName) {
         try {
             final Object folderId = parameters.get("folderId");
             if (folderId == null) {
                 // A site-rooted batch targets SYSTEM_FOLDER, which carries no filter and which
                 // fileNameExists does not resolve the way it resolves a real folder. Left to the
-                // create.
+                // creation.
                 return Optional.empty();
             }
 
@@ -634,7 +636,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * nothing else will ever collect it.
      */
     private void reclaimStagedContent(final Job job, final List<Map<String, Object>> stagedFiles,
-                                      final User user) {
+            final User user) {
         for (final Map<String, Object> file : stagedFiles) {
             if (file.get("tempFileId") == null) {
                 // Refused before staging — nothing of it reached the staging layer, so there is
@@ -687,7 +689,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     }
 
     private void recordRemainderAsSkipped(final Job job, final List<Map<String, Object>> files,
-                                          final int from) {
+            final int from) {
         for (int seq = from; seq < files.size(); seq++) {
             record(job, seq, String.valueOf(files.get(seq).get("fileName")),
                     BatchItemStatus.SKIPPED, null, null, null);
@@ -698,12 +700,12 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * Records one item's outcome.
      * <p>
      * {@code seq} is kept in the signature and unused for storage: the list is appended in
-     * submission order, which is the order FR-015 reports in. It stays because every caller
-     * already knows it and a future durable store would need it back.
+     * submission order, which is the order FR-015 reports in. It stays because every caller already
+     * knows it and a future durable store would need it back.
      */
     private void record(final Job job, final int seq, final String key,
-                        final BatchItemStatus status, final BatchFailureReason reason,
-                        final String message, final String refId) {
+            final BatchItemStatus status, final BatchFailureReason reason,
+            final String message, final String refId) {
 
         final BatchItemResult.Builder builder = BatchItemResult.builder()
                 .key(key)
@@ -730,14 +732,14 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     /**
      * The batch outcome, built from what this run recorded as it went.
      * <p>
-     * <b>Held in memory, which is why it does not survive an interruption.</b> This previously read
+     * <b>Held in memory, which is why it does not survive an interruption.</b> This previously
+     * read
      * a durable per-item table, and that table is what made a re-queued run able to skip files it
      * had already created. It was removed (#37166): the decision was that one feature should not
      * carry a private store for state the job framework does not offer. FR-036 … FR-038 and SC-009
      * were withdrawn from the spec with it, and a run that is interrupted now restarts from the
-     * first file — for a FILEASSET batch the unique index still prevents a second copy and only
-     * the report is wrong, but a DOTASSET batch has no such index (FR-040b) and genuinely
-     * duplicates.
+     * first file — for a FILEASSET batch the unique index still prevents a second copy and only the
+     * report is wrong, but a DOTASSET batch has no such index (FR-040b) and genuinely duplicates.
      * <p>
      * Same shape as {@code BulkRefreshContentletsProcessor}, which is the precedent this now
      * follows exactly.
@@ -767,7 +769,9 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         return metadata;
     }
 
-    /** Whether this batch creates fileAssets. The two base types differ in enough places to name. */
+    /**
+     * Whether this batch creates fileAssets. The two base types differ in enough places to name.
+     */
     private boolean isFileAsset(final Map<String, Object> parameters) {
         return "FILEASSET".equals(parameters.get("baseType"));
     }

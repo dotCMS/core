@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * Reads a bulk-upload submission part by part, staging as it goes and stopping the moment a
- * ceiling is crossed (spec FR-010a, FR-013c.2, FR-013d).
+ * ceiling is crossed.
  * <p>
  * <b>This is the only bound in the path.</b> Research R10 established that nothing below it caps a
  * request: {@code TEMP_RESOURCE_MAX_FILE_SIZE} ships as {@code -1} — the config comment says

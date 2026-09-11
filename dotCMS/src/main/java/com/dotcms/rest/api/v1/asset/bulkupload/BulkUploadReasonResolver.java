@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Decides <b>why</b> a file failed, in terms a client can map to product copy (spec FR-016).
+ * Decides <b>why</b> a file failed, in terms a client can map to product copy.
  * <p>
  * <b>Why this is a pre-check rather than exception handling.</b> The validation layer this feature
  * reuses reports an over-size file and a disallowed type through the <i>same</i>
- * {@code DotContentletValidationException}, differing only by a translated message string
- * (research R4). Matching on that text would break the first time a language key is edited, and
+ * {@code DotContentletValidationException}, differing only by a translated message string.
+ * Matching on that text would break the first time a language key is edited, and
  * extending the validation layer to carry codes would edit a heavily-used legacy path far beyond
  * this feature's blast radius.
  * <p>
@@ -32,7 +32,7 @@ public class BulkUploadReasonResolver {
     /**
      * Checks a staged file against the rules that are knowable before creating anything.
      *
-     * @param sizeBytes       what staging measured, never a declared figure (FR-013)
+     * @param sizeBytes       what staging measured, never a declared figure
      * @param mimeType        what staging resolved, by detection rather than by trusting the name
      * @param effectiveCeiling the ceiling that applies: the content type's own where declared,
      *                        otherwise the configured fallback; {@code -1} for unbounded
@@ -131,11 +131,11 @@ public class BulkUploadReasonResolver {
      * so read from the exception alone the two are genuinely indistinguishable, and this reported a
      * filter mismatch as {@code NAME_COLLISION}, telling an author to rename a file whose name was
      * never the problem. The fix is not a cleverer signature: <b>both are now decided before the
-     * create</b>, from the folder's own filter and a name lookup, where each is a fact
+     * creation</b>, from the folder's own filter and a name lookup, where each is a fact
      * ({@code BulkUploadProcessor#folderRefusal}).
      * <p>
      * Which makes reaching here a <b>race</b>, and settles what to call it: a folder's filter does
-     * not change between the pre-check and the create, while another batch taking the name is the
+     * not change between the pre-check and the creation, while another batch taking the name is the
      * expected concurrent outcome this feature is specified for (FR-042, US6). So a collision is
      * not a guess here — it is the only one of the two that can actually arrive this way.
      * <p>
