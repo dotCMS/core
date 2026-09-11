@@ -1,5 +1,5 @@
 import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
-import { MockPipe } from 'ng-mocks';
+import { MockComponent, MockPipe } from 'ng-mocks';
 import { vi } from 'vitest';
 
 import { ButtonModule } from 'primeng/button';
@@ -11,6 +11,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsPanelComponent } from './dot-experiments-panel.component';
 
+import { DotExperimentsListComponent } from '../dot-experiments-list/dot-experiments-list.component';
 import { PANEL_EXPANDED_WIDTH, PANEL_WIDTH } from '../shared/constants';
 
 const EXPANDED_STORAGE_KEY = 'dot-experiments-panel-expanded';
@@ -32,6 +33,11 @@ describe('DotExperimentsPanelComponent', () => {
                         imports: [
                             DrawerModule,
                             ButtonModule,
+                            // Mocked: this spec is about the panel's chrome and its one-surface
+                            // rule. The list screen has its own spec, and rendering the real one
+                            // here would drag its store and every service behind it into a test
+                            // that asserts nothing about them.
+                            MockComponent(DotExperimentsListComponent),
                             MockPipe(DotMessagePipe, (key: string) => key)
                         ]
                     }

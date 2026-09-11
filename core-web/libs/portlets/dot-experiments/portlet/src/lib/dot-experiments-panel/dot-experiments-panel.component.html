@@ -75,12 +75,7 @@
 
     @switch (store.view()) {
         @case ('list') {
-            <!-- The list screen lands at T035; until then the panel proves its own lifecycle. -->
-            <div
-                class="flex min-h-0 flex-1 items-center justify-center p-6 text-sm text-surface-500"
-                data-testid="experiments-panel-list">
-                {{ 'experiments.panel.empty.description' | dm }}
-            </div>
+            <dot-experiments-list data-testid="experiments-panel-list" />
         }
         @default {
             <div class="flex min-h-0 flex-1 items-center justify-center p-6"></div>

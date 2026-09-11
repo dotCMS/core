@@ -46,6 +46,7 @@ import {
     GOALS_METADATA_MAP,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
@@ -126,6 +127,22 @@ const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
 })
 export class DotExperimentsListComponent {
     readonly store = inject(DotExperimentsListStore);
+
+    /**
+     * Whether this list is rendering inside the UVE panel rather than as the full-screen portlet
+     * (#37478).
+     *
+     * The presence of {@link DotExperimentsPanelStore} is the whole test: the portlet never
+     * provides it, the UVE shell always does. It is read once, at construction, because the answer
+     * cannot change for a given instance — the shell mounts and destroys the panel, it does not
+     * convert one into the other.
+     *
+     * **Never a width measurement.** `PANEL_WIDTH` is a proportion of the viewport, so a width
+     * query would give the same build the seven-column table on a 1620px monitor and compact rows
+     * on a 1440px laptop. The layout is a property of where the screen is, not of how much room it
+     * happens to have (FR-041).
+     */
+    protected readonly $inPanel = !!inject(DotExperimentsPanelStore, { optional: true });
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
     readonly NO_GOAL_PLACEHOLDER = NO_GOAL_PLACEHOLDER;
@@ -432,6 +449,14 @@ export class DotExperimentsListComponent {
      * the crumb's address has to follow it.
      */
     protected readonly syncBreadcrumbEffect = effect(() => {
+        // Not in the panel (FR-033, D8, SC-012). A breadcrumb records where the editor navigated,
+        // and opening the panel is not navigation — the editor never left the page. A crumb here
+        // would put "Experiments" on the trail of a page they are still standing on, and the way
+        // back it offers leads to the screen already behind the panel.
+        if (this.$inPanel) {
+            return;
+        }
+
         const crumb = experimentsListCrumb(
             this.#dotMessageService.get(LIST_TITLE_KEY),
             this.#pageFilterParams()

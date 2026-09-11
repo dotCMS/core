@@ -6,6 +6,7 @@ import { Drawer, DrawerModule } from 'primeng/drawer';
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotKeyboardShortcutService, DotMessagePipe, hasOverlayAbove } from '@dotcms/ui';
 
+import { DotExperimentsListComponent } from '../dot-experiments-list/dot-experiments-list.component';
 import { PANEL_EXPANDED_WIDTH, PANEL_WIDTH } from '../shared/constants';
 
 /** localStorage key persisting the editor's expanded (wide) preference for this panel. */
@@ -79,7 +80,7 @@ function writeExpandedPreference(expanded: boolean): void {
  */
 @Component({
     selector: 'dot-experiments-panel',
-    imports: [DrawerModule, ButtonModule, DotMessagePipe],
+    imports: [DrawerModule, ButtonModule, DotExperimentsListComponent, DotMessagePipe],
     templateUrl: './dot-experiments-panel.component.html',
     // Click-outside closes the panel, bound at document level because `appendTo="body"` moves the
     // drawer (and its mask) out of this component's DOM subtree, so a template listener would
