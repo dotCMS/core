@@ -67,7 +67,12 @@ export async function getPageTemplateIdentifier(
     request: APIRequestContext,
     url: string
 ): Promise<string> {
-    const endpoint = `/api/v1/page/render/${url}?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE&depth=0`;
+    // Page.url already comes back with a leading slash (dotCMS stores it as a full path
+    // from site root) — used as a query VALUE elsewhere that's harmless, but here it's a
+    // PATH SEGMENT, so keeping it produces a double slash
+    // (/api/v1/page/render//foo) that dotCMS's NormalizationFilter rejects outright.
+    const normalizedUrl = url.replace(/^\/+/, '');
+    const endpoint = `/api/v1/page/render/${normalizedUrl}?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE&depth=0`;
     const response = await request.get(endpoint, {
         headers: {
             Authorization: generateBase64Credentials(admin1.username, admin1.password)
