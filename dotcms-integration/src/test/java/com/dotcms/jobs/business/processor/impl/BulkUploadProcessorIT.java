@@ -1257,25 +1257,29 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: content-type routing in the bulk-upload processor
      * <p>
-     * Given scenario: The instance has its own dotAsset-based type that accepts {@code text/plain}
-     * and caps files at 1 KB — standing in for the Image type a real instance has. A batch is
-     * submitted as {@code DOTASSET} carrying a 4 KB text file.
+     * Given scenario: A site carrying its own dotAsset-based type, capped at 1 KB — standing in for
+     * the Image type a real instance has. A batch is submitted into that site with a 4 KB file.
      * <p>
      * Expected result: The file is refused as {@code OVER_SIZE_LIMIT} — meaning the run validated
      * against the <b>specific</b> type the file routes to, not the base type's default.
      * <p>
      * <b>This is the defect, and it is not about labels.</b> The processor used to hardcode the
-     * type from the declared base type, so a file became the generic {@code dotAsset}. Since
+     * type from the declared base type, so every file became the generic {@code dotAsset}. Since
      * {@code effectiveCeiling} and {@code acceptedTypes} read from whatever type was resolved, an
      * instance that caps its Image type at 5 MB and restricts it to {@code image/*} had both rules
      * <b>silently bypassed by this endpoint</b>, while every other path that creates one enforced
      * them. Exactly the divergence FR-006 exists to prevent.
      * <p>
-     * <b>The type is created here rather than borrowing one from the starter.</b> An earlier
-     * version capped the generic {@code dotAsset} and uploaded a file named {@code photo.png},
-     * assuming it would route there — it did not, because routing sniffs the file's real content
-     * and the outcome then depended on which types the instance happens to ship. A test whose
-     * result turns on demo data is not testing the routing.
+     * <b>Why the type is site-scoped with no accept list, rather than matched on a media type.</b>
+     * Two earlier versions of this test failed for reasons that were not the routing: the first
+     * capped the generic type and trusted a {@code .png} name, when routing sniffs content rather
+     * than names; the second declared {@code accept=text/plain} on a type the matcher then filtered
+     * out by host. {@code BaseTypeMimeTypeMatcher} resolves in the order
+     * <i>exact-current-site, exact-system-host, partial-current-site, partial-system-host,
+     * <b>wildcard-current-site</b>, wildcard-system-host</i>, and a binary field with no accept
+     * variable <b>is</b> the total wildcard. So a wildcard type on the batch's own site outranks the
+     * system-host generic one for any content whatsoever — which removes both the mime sniffing and
+     * the host filtering from what this test depends on, leaving only the thing it is about.
      * <p>
      * The ceiling is the assertion rather than the type's name on purpose: a test that only read
      * back {@code getContentType()} would pass against a routing that resolved correctly and then
@@ -1283,10 +1287,10 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      */
     @Test
     public void test_run_validatesAgainstTheTypeTheFileRoutesTo_notTheGenericOne() throws Exception {
-        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final Host routingSite = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(routingSite).nextPersisted();
 
-        // Accepts exactly what bodyOf writes, and caps far below the generic fallback (200 MB).
-        final ContentType narrow = dotAssetTypeAccepting("text/plain", 1024L);
+        final ContentType siteType = dotAssetTypeOn(routingSite, 1024L);
         try {
             final Job job = jobForBytes(folder, "note.txt", 4096);
 
@@ -1301,21 +1305,21 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                             + "endpoint let files past rules every other creation path "
                             + "enforces.\n" + describe(outcome));
         } finally {
-            // Deleted, not left behind: a type accepting text/plain would otherwise capture the
-            // routing of every later dotAsset test in this JVM.
-            ContentTypeDataGen.remove(narrow);
+            ContentTypeDataGen.remove(siteType);
         }
     }
 
     /**
-     * A dotAsset-based type that accepts one media type and caps its binary, standing in for the
-     * Image type a real instance carries.
+     * A dotAsset-based type living on one site, capped, and accepting anything.
+     * <p>
+     * No accept variable on purpose — that is the total wildcard, which puts it in the
+     * wildcard-current-site bucket and ahead of the system-host generic type for any file at all.
      */
-    private ContentType dotAssetTypeAccepting(final String mediaType, final long maxBytes)
-            throws Exception {
+    private ContentType dotAssetTypeOn(final Host host, final long maxBytes) throws Exception {
 
         final ContentType type = new ContentTypeDataGen()
                 .baseContentType(BaseContentType.DOTASSET)
+                .host(host)
                 .velocityVarName("bulkRouted" + System.currentTimeMillis())
                 .nextPersisted();
 
@@ -1325,8 +1329,6 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 .velocityVarName(DotAssetContentType.ASSET_FIELD_VAR)
                 .nextPersisted();
 
-        new FieldVariableDataGen().field(binary)
-                .key(BinaryField.ALLOWED_FILE_TYPES).value(mediaType).nextPersisted();
         new FieldVariableDataGen().field(binary)
                 .key(BinaryField.MAX_FILE_LENGTH).value(String.valueOf(maxBytes)).nextPersisted();
 
