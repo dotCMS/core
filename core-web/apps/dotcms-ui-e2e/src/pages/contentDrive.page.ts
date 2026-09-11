@@ -14,9 +14,12 @@ import { Portlet } from '@utils/portlets';
  * purely from that contention.
  *
  * Raising it does not slow a passing run, because every one of these waits returns the moment its
- * condition holds. It only changes how long a *failing* one takes to admit it.
+ * condition holds. It does decide how long a *failing* one takes to admit it, and that cost is
+ * real: at 120s a degraded instance turned an eleven-test run into 1.6 hours, where the same run
+ * takes under a minute healthy. 60s is the compromise — comfortably more than a warm instance
+ * needs, and short enough that a sick one is reported rather than waited out.
  */
-const OUTCOME_TIMEOUT = 120000;
+const OUTCOME_TIMEOUT = 60000;
 
 export class ContentDrivePage {
     readonly toolbar: Locator;
@@ -168,7 +171,7 @@ export class ContentDrivePage {
      * Reloading is what makes it deterministic: each attempt refetches the folder, so the test
      * depends on the files existing rather than on a message arriving in time.
      */
-    async expectUploadedTitle(folderName: string, title: string, timeoutMs = 120000) {
+    async expectUploadedTitle(folderName: string, title: string, timeoutMs = 90000) {
         const row = () => this.listTitles.filter({ hasText: title }).first();
         const deadline = Date.now() + timeoutMs;
 
