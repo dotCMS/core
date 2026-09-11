@@ -399,8 +399,8 @@ public class ReindexThreadUnitTest extends UnitTestBase {
 
     // ================================================================================
     // User Story 2 (issue #36922, Bug 2) — a dead runnable must never be mistaken for a
-    // paused one. AC-006..AC-011. Written against the CURRENT surface: the liveness field
-    // is located by type, so its absence fails as a readable assertion, not an Error.
+    // paused one. AC-006..AC-011. Liveness is read and staged through ReindexThread's
+    // @VisibleForTesting accessors, so these tests carry no reflection into the state machine.
     // ================================================================================
 
     /**
@@ -414,15 +414,14 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         when(queueApi.findContentToReindex()).thenThrow(new OutOfMemoryError("simulated"));
 
         final ReindexThread thread = newThread(queueApi, mockIndexApi());
-        final AtomicBoolean liveness = requireLiveness(thread);
         setStateRunning(thread);
-        liveness.set(true);
+        thread.forceWorkerAlive(true);
 
         final Thread runner = startRunnable(thread);
         try {
             runner.join(3_000);
             assertFalse("AC-007: an uncaught Error must not bypass the finally that clears "
-                    + "liveness; the runnable is still marked alive", liveness.get());
+                    + "liveness; the runnable is still marked alive", thread.isWorkerAlive());
         } finally {
             ReindexThread.stopThread();
             runner.join(3_000);
@@ -443,8 +442,7 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         final ReindexThread thread = newThread(threadRecordingQueue(pollingThreads), mockIndexApi());
 
         // Dead worker, but the state machine still says PAUSED.
-        final AtomicBoolean liveness = requireLiveness(thread);
-        liveness.set(false);
+        thread.forceWorkerAlive(false);
         setState(thread, "PAUSED");
 
         try {
@@ -464,9 +462,8 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         final Set<String> pollingThreads = Collections.synchronizedSet(new java.util.HashSet<>());
         final ReindexThread thread = newThread(threadRecordingQueue(pollingThreads), mockIndexApi());
 
-        final AtomicBoolean liveness = requireLiveness(thread);
         setStateRunning(thread);
-        liveness.set(true);
+        thread.forceWorkerAlive(true);
         final Thread runner = startRunnable(thread);
 
         try {
@@ -494,8 +491,7 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         final Set<String> pollingThreads = Collections.synchronizedSet(new java.util.HashSet<>());
         final ReindexThread thread = newThread(threadRecordingQueue(pollingThreads), mockIndexApi());
 
-        final AtomicBoolean liveness = requireLiveness(thread);
-        liveness.set(false);
+        thread.forceWorkerAlive(false);
         setState(thread, "PAUSED");
 
         final int callers = 8;
@@ -543,14 +539,13 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         final Set<String> pollingThreads = Collections.synchronizedSet(new java.util.HashSet<>());
         final ReindexThread thread = newThread(threadRecordingQueue(pollingThreads), mockIndexApi());
 
-        final AtomicBoolean liveness = requireLiveness(thread);
-        liveness.set(false);
+        thread.forceWorkerAlive(false);
         setState(thread, "PAUSED");
 
         try {
             unpauseImpl();
             Thread.sleep(2_000);
-            if (liveness.get()) {
+            if (thread.isWorkerAlive()) {
                 assertFalse("I3/V6: liveness is true but nothing is polling the queue — the flag "
                         + "is stranded and no future unpause can ever recover the worker",
                         pollingThreads.isEmpty());
@@ -738,15 +733,14 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         when(queueApi.findContentToReindex()).thenThrow(new OutOfMemoryError("simulated"));
 
         final ReindexThread thread = newThread(queueApi, mockIndexApi());
-        final AtomicBoolean liveness = requireLiveness(thread);
         setStateRunning(thread);
-        liveness.set(true);
+        thread.forceWorkerAlive(true);
 
         final Thread runner = startRunnable(thread);
         try {
             runner.join(3_000);
             assertFalse("the worker should have terminated on the Error", runner.isAlive());
-            assertFalse("liveness must be cleared", liveness.get());
+            assertFalse("liveness must be cleared", thread.isWorkerAlive());
             assertNotEquals("a worker that died in RUNNING must not leave state == RUNNING: "
                             + "unpauseImpl() handles only PAUSED and STOPPED, so the node would "
                             + "never index again and isWorking() would still report true",
@@ -843,14 +837,13 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         });
 
         final ReindexThread thread = newThread(queueApi, mockIndexApi());
-        final AtomicBoolean liveness = requireLiveness(thread);
         final int maxDeaths = intConstant("MAX_CONSECUTIVE_IMMEDIATE_DEATHS");
 
         try {
             // Drive the threshold through the real runnable, not by poking the counter.
             for (int i = 0; i < maxDeaths; i++) {
                 setStateRunning(thread);
-                liveness.set(true);
+                thread.forceWorkerAlive(true);
                 final Thread runner = startRunnable(thread);
                 runner.join(3_000);
                 assertFalse("worker " + i + " should have died on arrival", runner.isAlive());
@@ -860,14 +853,14 @@ public class ReindexThreadUnitTest extends UnitTestBase {
 
             // A further recovery request must now be refused rather than restarting again.
             setState(thread, "PAUSED");
-            liveness.set(false);
+            thread.forceWorkerAlive(false);
             unpauseImpl();
             Thread.sleep(1_500);
 
             assertEquals("after " + maxDeaths + " immediate deaths the restart must be backed off; "
                             + "otherwise every journal write restarts a worker that cannot run",
                     pollsAtThreshold, polls.get());
-            assertFalse("a refused restart must not strand the liveness claim", liveness.get());
+            assertFalse("a refused restart must not strand the liveness claim", thread.isWorkerAlive());
         } finally {
             ReindexThread.stopThread();
         }
@@ -1028,31 +1021,6 @@ public class ReindexThreadUnitTest extends UnitTestBase {
      * no such field exists (the pre-fix state), letting callers fail with a readable assertion
      * instead of a {@code NoSuchFieldException}.
      */
-    private static AtomicBoolean livenessFlag(final ReindexThread thread) throws Exception {
-        // Bound to the field by NAME, not by type. getDeclaredFields() has no specified order, so
-        // a type-based scan would silently rebind to the wrong flag the moment a second
-        // AtomicBoolean is added to ReindexThread (a `degraded` or `fullReindexInProgress` flag
-        // would be natural here) — deadWorkerIsRestartedOnUnpause would then clear the wrong flag,
-        // workerAlive would stay true, unpauseImpl() would take the healthy branch, and the test
-        // would pass vacuously. The type scan only made sense while the field name was undecided.
-        try {
-            final Field f = ReindexThread.class.getDeclaredField(LIVENESS_FIELD_NAME);
-            f.setAccessible(true);
-            return (AtomicBoolean) f.get(thread);
-        } catch (final NoSuchFieldException e) {
-            return null;
-        }
-    }
-
-    private static final String LIVENESS_FIELD_NAME = "workerAlive";
-
-    private static AtomicBoolean requireLiveness(final ReindexThread thread) throws Exception {
-        final AtomicBoolean flag = livenessFlag(thread);
-        assertNotNull("AC-006: ReindexThread must carry an AtomicBoolean liveness field named '"
-                + LIVENESS_FIELD_NAME + "' so a dead runnable can be distinguished from a paused "
-                + "one; no such field exists", flag);
-        return flag;
-    }
 
     /**
      * A queue whose {@code findContentToReindex()} records the <em>name of every thread</em> that
@@ -1091,30 +1059,14 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         return condition.getAsBoolean();
     }
 
-    /** Generalized form of {@link #setStateRunning}; sets any {@code ThreadState} by name. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static void setState(final ReindexThread thread, final String stateName)
-            throws Exception {
-        final Field stateField = ReindexThread.class.getDeclaredField("state");
-        stateField.setAccessible(true);
-        final AtomicReference<Object> stateRef = (AtomicReference<Object>) stateField.get(thread);
-
-        for (final Class<?> inner : ReindexThread.class.getDeclaredClasses()) {
-            if (inner.isEnum() && "ThreadState".equals(inner.getSimpleName())) {
-                stateRef.set(Enum.valueOf((Class<Enum>) inner, stateName));
-                return;
-            }
-        }
-        throw new IllegalStateException("ThreadState." + stateName + " not found via reflection");
+    /** Sets any {@code ThreadState} by name, via the class's test accessor. */
+    private static void setState(final ReindexThread thread, final String stateName) {
+        thread.forceState(stateName);
     }
 
     /** Reads the current {@code ThreadState} constant name, for assertions on the state machine. */
-    @SuppressWarnings("unchecked")
-    private static String currentState(final ReindexThread thread) throws Exception {
-        final Field stateField = ReindexThread.class.getDeclaredField("state");
-        stateField.setAccessible(true);
-        final AtomicReference<Object> stateRef = (AtomicReference<Object>) stateField.get(thread);
-        return ((Enum<?>) stateRef.get()).name();
+    private static String currentState(final ReindexThread thread) {
+        return thread.currentStateName();
     }
 
     private static ReindexThread newThread(final ReindexQueueAPI queueApi,
@@ -1168,23 +1120,8 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         stopLogCapture();
     }
 
-    /**
-     * Uses reflection to set the private {@code state} field of a {@link ReindexThread}
-     * instance to {@code ThreadState.RUNNING}, bypassing the private enum visibility.
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static void setStateRunning(final ReindexThread thread) throws Exception {
-        final Field stateField = ReindexThread.class.getDeclaredField("state");
-        stateField.setAccessible(true);
-        final AtomicReference<Object> stateRef =
-                (AtomicReference<Object>) stateField.get(thread);
-
-        for (final Class<?> inner : ReindexThread.class.getDeclaredClasses()) {
-            if (inner.isEnum() && "ThreadState".equals(inner.getSimpleName())) {
-                stateRef.set(Enum.valueOf((Class<Enum>) inner, "RUNNING"));
-                return;
-            }
-        }
-        throw new IllegalStateException("ThreadState.RUNNING not found via reflection");
+    /** Sets the {@link ReindexThread} to {@code RUNNING} via the class's test accessor. */
+    private static void setStateRunning(final ReindexThread thread) {
+        thread.forceState("RUNNING");
     }
 }

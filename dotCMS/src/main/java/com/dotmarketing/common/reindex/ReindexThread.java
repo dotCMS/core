@@ -317,12 +317,37 @@ public class ReindexThread {
         return contentletsIndexed;
     }
 
-    /**
-     * {@code true} when the worker must not keep running: either explicitly stopped or shut down.
-     * Every loop in this class tests this rather than {@code == STOPPED}, so the terminal
-     * {@link ThreadState#SHUTDOWN} genuinely ends the outer loop in {@link #ReindexThreadRunnable}
-     * instead of letting it re-enter {@link #runReindexLoop()} (issue #36922, Bug 1).
-     */
+    // ── Test accessors ──────────────────────────────────────────────────────────────────────
+    // ThreadState is private and must stay that way — it is an internal state machine, not API.
+    // These expose it by NAME so tests do not need raw Class<Enum> / AtomicReference<Object> casts
+    // to reach it, and so the two test classes stop duplicating that reflection. Liveness is
+    // exposed for the same reason: it is the flag unpauseImpl() branches on, and asserting on it
+    // is what keeps a dead-worker test from silently passing through the healthy path.
+
+    /** Current {@link ThreadState} by name, e.g. {@code "RUNNING"}. */
+    @VisibleForTesting
+    String currentStateName() {
+        return state.get().name();
+    }
+
+    /** Forces the {@link ThreadState} by name, bypassing the normal transitions. */
+    @VisibleForTesting
+    void forceState(final String stateName) {
+        state.set(ThreadState.valueOf(stateName));
+    }
+
+    /** Whether a runnable is actually executing — the fact, not the command state. */
+    @VisibleForTesting
+    boolean isWorkerAlive() {
+        return workerAlive.get();
+    }
+
+    /** Forces the liveness flag, to stage a dead- or live-worker scenario. */
+    @VisibleForTesting
+    void forceWorkerAlive(final boolean alive) {
+        workerAlive.set(alive);
+    }
+
     /**
      * Interrupt-aware wait, used instead of {@code ThreadUtils.sleep} on this class's own wait
      * paths.
@@ -373,6 +398,12 @@ public class ReindexThread {
         }
     }
 
+    /**
+     * {@code true} when the worker must not keep running: either explicitly stopped or shut down.
+     * Every loop in this class tests this rather than {@code == STOPPED}, so the terminal
+     * {@link ThreadState#SHUTDOWN} genuinely ends the outer loop in {@link #ReindexThreadRunnable}
+     * instead of letting it re-enter {@link #runReindexLoop()} (issue #36922, Bug 1).
+     */
     private boolean isTerminal() {
         final ThreadState current = state.get();
         return current == ThreadState.STOPPED || current == ThreadState.SHUTDOWN;

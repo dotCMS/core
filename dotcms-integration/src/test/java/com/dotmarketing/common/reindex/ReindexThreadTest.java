@@ -377,37 +377,18 @@ public class ReindexThreadTest {
     }
 
     /**
-     * Reads the private {@code workerAlive} liveness flag — the fact {@code unpauseImpl()} branches
-     * on, as opposed to {@code isWorking()}, which only reports the command state. Bound by field
-     * name so adding another {@code AtomicBoolean} to {@code ReindexThread} cannot silently rebind
-     * this to the wrong flag.
+     * Whether a runnable is actually executing — the fact {@code unpauseImpl()} branches on, as
+     * opposed to {@code isWorking()}, which only reports the command state. Uses
+     * {@code ReindexThread}'s {@code @VisibleForTesting} accessor rather than the raw-cast
+     * reflection this and the unit test used to duplicate.
      */
-    private static boolean isWorkerAlive() throws Exception {
-        final java.lang.reflect.Field field = ReindexThread.class.getDeclaredField("workerAlive");
-        field.setAccessible(true);
-        return ((java.util.concurrent.atomic.AtomicBoolean)
-                field.get(ReindexThread.getInstance())).get();
+    private static boolean isWorkerAlive() {
+        return ReindexThread.getInstance().isWorkerAlive();
     }
 
-    /**
-     * Sets the private {@code ReindexThread.state} field by reflection. The enum is private, so the
-     * constant is resolved by name off the declared inner classes.
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static void setThreadState(final String stateName) throws Exception {
-        final java.lang.reflect.Field stateField = ReindexThread.class.getDeclaredField("state");
-        stateField.setAccessible(true);
-        final java.util.concurrent.atomic.AtomicReference<Object> stateRef =
-                (java.util.concurrent.atomic.AtomicReference<Object>)
-                        stateField.get(ReindexThread.getInstance());
-
-        for (final Class<?> inner : ReindexThread.class.getDeclaredClasses()) {
-            if (inner.isEnum() && "ThreadState".equals(inner.getSimpleName())) {
-                stateRef.set(Enum.valueOf((Class<Enum>) inner, stateName));
-                return;
-            }
-        }
-        throw new IllegalStateException("ThreadState." + stateName + " not found");
+    /** Forces the {@code ThreadState} by name, via the class's test accessor. */
+    private static void setThreadState(final String stateName) {
+        ReindexThread.getInstance().forceState(stateName);
     }
 
     /**
