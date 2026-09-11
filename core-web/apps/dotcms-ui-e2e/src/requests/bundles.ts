@@ -170,6 +170,29 @@ export async function pushBundle(
 }
 
 /**
+ * Deletes a bundle and, with it, its `publishing_queue` rows.
+ *
+ * Essential for teardown, not a nicety: deleting the contentlet does **not** remove the bundle or
+ * its queue row. A leaked bundle keeps a future `publish_date`, so once that date passes
+ * `PublisherQueueJob` picks it up and attempts a real push to whatever environment was resolved.
+ * Leaked bundles also sort ahead of later runs' (the Pending tab pages 10 at a time ordered by
+ * `publish_date`), which eventually pushes a run's own bundles off page one and fails its
+ * assertions for reasons that look nothing like the real cause.
+ */
+export async function deleteBundle(request: APIRequestContext, bundleId: string): Promise<void> {
+    const response = await request.delete(`/api/v1/publishing/${bundleId}`, {
+        headers: authHeaders()
+    });
+
+    // 404 is fine - a test may have already deleted the bundle through the UI, which is exactly
+    // what the delete specs do.
+    expect(
+        response.ok() || response.status() === 404,
+        `failed to delete bundle ${bundleId}: ${response.status()}`
+    ).toBe(true);
+}
+
+/**
  * Queues the same asset into `count` SEPARATE bundles, each with a distinct future publish date
  * so their order on the Pending tab is deterministic (the tab sorts by `publish_date`).
  *

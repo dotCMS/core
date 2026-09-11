@@ -78,18 +78,27 @@
     	deleteBundleElements=true;
     }
     String elementsToDelete=null;
+    int malformedDeleteEntries = 0;
 
     try{
     	if(deleteQueueElements){
 	    	for(String entry : deleteQueueElementsStr.split(",")){
-	    		// Each entry is <assetId>$<bundleId>. The bundle is required: without it the delete
-	    		// would clear the asset from every bundle that has it queued (issue #36861), so a
-	    		// malformed entry is skipped rather than widened.
-	    		final String[] parts = entry.split("\\$");
-	    		if(parts.length < 2 || !UtilMethods.isSet(parts[1])){
+	    		// Each entry is <assetId>$<bundleId>. Split on the LAST '$', not the first: an asset
+	    		// identifier may legally contain '$' - an OSGI bundle's identifier is a jar file name
+	    		// (PublisherAPIImpl:207) - whereas a bundle id never does. Splitting left-to-right
+	    		// would mis-parse "my$plugin.jar$B" into asset="my", bundle="plugin.jar", delete zero
+	    		// rows and reload the pane looking like success: the exact silent no-op #36861 fixes.
+	    		final int separator = entry.lastIndexOf('$');
+	    		final String assetToDelete = separator > 0 ? entry.substring(0, separator) : null;
+	    		final String bundleOfAsset = separator > 0 ? entry.substring(separator + 1) : null;
+
+	    		if(!UtilMethods.isSet(assetToDelete) || !UtilMethods.isSet(bundleOfAsset)){
+	    			// The bundle is mandatory - deleting without it would clear the asset from every
+	    			// bundle holding it. Tell the user rather than silently skipping.
+	    			malformedDeleteEntries++;
 	    			continue;
 	    		}
-	    		pubAPI.deleteElementFromPublishQueueTableAndAuditStatus(parts[0], parts[1]);
+	    		pubAPI.deleteElementFromPublishQueueTableAndAuditStatus(assetToDelete, bundleOfAsset);
 	    	}
     	}
 
@@ -180,16 +189,35 @@
 	   var url="layout=<%=layout%>&offset=<%=offset%>&limit=<%=limit%>";
 
 		var ids="";
+		var malformed=0;
 		var nodes = dojo.query('.queue_to_delete');
 		   dojo.forEach(nodes, function(node) {
 			   var box = queueCheckBoxFor(node);
 			   if(box && box.checked && !box.disabled){
-				   // value is <asset>$<operation>$<bundleId>. Send asset AND bundle so the server
-				   // deletes only this bundle's entry - see issue #36861.
+				   // value is <asset>$<operation>$<bundleId>. Read the last two segments from the
+				   // RIGHT and rejoin the rest: an asset identifier may legally contain '$' (an
+				   // OSGI bundle's identifier is a jar file name), while the operation and bundle
+				   // id never do. Taking parts[0] would truncate such an asset and send a delete
+				   // that matches nothing - see issue #36861.
 				   var parts = box.value.split("$");
-				   ids+=","+parts[0]+"$"+parts[2];
+				   if(parts.length < 3){
+					   malformed++;
+
+					   return;
+				   }
+				   var bundleId = parts[parts.length - 1];
+				   var assetId = parts.slice(0, parts.length - 2).join("$");
+				   ids+=","+assetId+"$"+bundleId;
 			   }
 		   });
+		if(malformed > 0){
+			// A checkbox whose value does not carry its bundle cannot be deleted safely - deleting
+			// by asset alone would clear it from every bundle. Say so rather than dropping it.
+			alert("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_delete_malformed_selection")) %>");
+
+			return;
+		}
+
 		if(ids != ""){
 			url+="&delete="+ids.substring(1);
 		}
@@ -222,6 +250,12 @@
 		refreshQueueList(url);
    }
 </script>
+
+<%if(malformedDeleteEntries > 0){%>
+		<dl>
+			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_delete_malformed_selection") %></dt>
+		</dl>
+<%}%>
 
 <%if(UtilMethods.isSet(nastyError)){%>
 		<dl>

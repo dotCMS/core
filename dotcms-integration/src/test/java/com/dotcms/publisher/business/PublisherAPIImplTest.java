@@ -4,6 +4,12 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionableProxy;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
@@ -295,10 +301,12 @@ public class PublisherAPIImplTest {
 
         final java.util.Map<String, PublishQueueElement> firstElementByBundle =
                 new java.util.LinkedHashMap<>();
+        final List<Contentlet> seededAssets = new java.util.ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
             final Contentlet contentlet = new ContentletDataGen(contentType.id())
                     .languageId(language.getId()).host(host).modeDate(new Date()).nextPersisted();
+            seededAssets.add(contentlet);
 
             final Bundle bundle = new BundleDataGen()
                     .setSavePublishQueueElements(true)
@@ -311,9 +319,24 @@ public class PublisherAPIImplTest {
             firstElementByBundle.put(bundle.getId(), elements.get(0));
         }
 
-        final List<User> users = list(
-                APILocator.systemUser(),
-                com.dotcms.datagen.TestUserUtils.getJoeContributorUser(host));
+        // A role and user created for this test alone. TestUserUtils.getJoeContributorUser() is
+        // deliberately NOT used: it returns the shared, pre-existing joe@dotcms.com whenever one
+        // exists, skipping the role grant for this test's fresh host - so joe would hold nothing
+        // on any seeded asset and the comparison would be empty-vs-empty.
+        final Role limitedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+        // The PARTIAL grant that makes this assertion load-bearing: PUBLISH on the FIRST seeded
+        // asset only. Saving an individual permission also breaks inheritance from the host and
+        // content type, so nothing ambient can widen the result.
+        final String firstBundleId = firstElementByBundle.keySet().iterator().next();
+        final Contentlet firstAsset = seededAssets.get(0);
+        APILocator.getPermissionAPI().save(
+                new Permission(firstAsset.getPermissionId(), limitedRole.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH, true),
+                firstAsset, APILocator.systemUser(), false);
+
+        final List<User> users = list(APILocator.systemUser(), limitedUser);
 
         for (final User user : users) {
             final java.util.Set<String> expected = new java.util.HashSet<>();
@@ -321,15 +344,14 @@ public class PublisherAPIImplTest {
             for (final java.util.Map.Entry<String, PublishQueueElement> entry
                     : firstElementByBundle.entrySet()) {
                 final PublishQueueElement element = entry.getValue();
-                final com.dotmarketing.beans.PermissionableProxy proxy =
-                        new com.dotmarketing.beans.PermissionableProxy();
+                final PermissionableProxy proxy = new PermissionableProxy();
                 proxy.setIdentifier(element.getAsset());
                 proxy.setType(element.getType());
                 proxy.setInode(element.getAsset());
 
-                // The exact call the JSP used to make, including its respectFrontendRoles=true default.
+                // The exact call the JSP used to make, including its respectFrontendRoles default.
                 if (APILocator.getPermissionAPI().doesUserHavePermission(
-                        proxy, com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH, user)) {
+                        proxy, PermissionAPI.PERMISSION_PUBLISH, user)) {
                     expected.add(entry.getKey());
                 }
             }
@@ -342,6 +364,18 @@ public class PublisherAPIImplTest {
                             + user.getUserId(),
                     expected, actual);
         }
+
+        // Parity alone is not enough: the system user is permitted on everything and both paths
+        // short-circuit for it, so an implementation returning "all" or "none" would still satisfy
+        // the loop above. These pin the limited user to a STRICT, NON-EMPTY SUBSET - one bundle of
+        // three - which neither a `return keySet()` nor a `return emptySet()` stub can produce.
+        final java.util.Set<String> limitedResult =
+                PublishQueuePermissionFilter.permittedBundleIds(firstElementByBundle, limitedUser);
+
+        Assert.assertEquals("the limited user must see exactly the one bundle it was granted",
+                1, limitedResult.size());
+        Assert.assertTrue("the granted bundle must be the one whose head asset carries the grant",
+                limitedResult.contains(firstBundleId));
     }
 
     /**

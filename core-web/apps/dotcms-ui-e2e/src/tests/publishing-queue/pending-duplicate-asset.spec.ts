@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { pushPublishIntoSeparateBundles } from '@requests/bundles';
+import { deleteBundle, pushPublishIntoSeparateBundles } from '@requests/bundles';
 import { Contentlet, createContentlet, deleteContentlets } from '@requests/contentlets';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 
@@ -44,6 +44,16 @@ test.describe('Publishing Queue → Pending — asset queued in multiple bundles
     });
 
     test.afterEach(async ({ request }) => {
+        // Bundles first, and this is not optional. Deleting the contentlet leaves the bundle and
+        // its publishing_queue row behind with a future publish_date, so PublisherQueueJob would
+        // eventually attempt a REAL push; and leaked bundles sort ahead of later runs' on the
+        // Pending tab (10 per page, ordered by publish_date), eventually pushing a run's own
+        // bundles off page one and failing its assertions for an unrelated-looking reason.
+        for (const bundleId of seededBundleIds) {
+            await deleteBundle(request, bundleId);
+        }
+        seededBundleIds = [];
+
         if (contentlet) {
             await deleteContentlets(request, [contentlet.identifier]);
             contentlet = null;

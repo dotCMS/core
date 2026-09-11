@@ -7,10 +7,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,8 +38,28 @@ import java.util.Set;
  */
 public final class PublishQueuePermissionFilter {
 
-    /** Matches the 3-arg {@code doesUserHavePermission} overload the portlet used to call. */
-    private static final boolean RESPECT_FRONTEND_ROLES = true;
+    /**
+     * {@code false} here reproduces what the portlet's old 3-arg
+     * {@code doesUserHavePermission(p, PERMISSION_PUBLISH, user)} call did, even though that
+     * overload passes {@code respectFrontendRoles = true}. The two APIs do not interpret the flag
+     * the same way:
+     * <ul>
+     *   <li>The scalar path ({@code PermissionBitAPIImpl.filterUserRoles}) seeds the role set from
+     *       {@code loadRolesForUser} and, when the flag is {@code false}, only <b>removes</b> the
+     *       anonymous and Logged-In-Site roles. It never adds a role the user does not hold.</li>
+     *   <li>The batched path <b>adds</b> both of those roles unconditionally when the flag is
+     *       {@code true}.</li>
+     * </ul>
+     * So passing {@code true} here would <em>widen</em> access: a backend-only user would inherit
+     * any grant made to Logged In Site User and could see - and delete queue entries for - bundles
+     * that were previously invisible to them. Passing {@code false} leaves the role set as
+     * "exactly the roles this user holds", which is what the scalar call effectively resolved to.
+     */
+    private static final boolean RESPECT_FRONTEND_ROLES = false;
+
+    /** What {@link PermissionableProxy#setType(String)} maps {@code "folder"} to. */
+    private static final String FOLDER_PERMISSION_TYPE =
+            PermissionAPI.PermissionableType.FOLDERS.getCanonicalName();
 
     private PublishQueuePermissionFilter() {
         throw new IllegalStateException("Utility class");
@@ -94,12 +115,40 @@ public final class PublishQueuePermissionFilter {
             return permitted;
         }
 
+        // Folders carry no PUBLISH bit - the scalar doesUserHavePermission substitutes EDIT for
+        // them ("Folders do not have PUBLISH, use EDIT instead", PermissionBitAPIImpl:196-201).
+        // filterCollection takes one permission type for the whole collection and never inspects
+        // the permissionable's type, so the collection is split and each half asked for the bit
+        // that actually applies. Still batched: two queries at most, not one per bundle.
+        final List<PermissionableProxy> folderProxies = new ArrayList<>();
+        final List<PermissionableProxy> otherProxies = new ArrayList<>();
+
+        for (final PermissionableProxy proxy : proxiesByPermissionId.values()) {
+            if (FOLDER_PERMISSION_TYPE.equals(proxy.getPermissionType())) {
+                folderProxies.add(proxy);
+            } else {
+                otherProxies.add(proxy);
+            }
+        }
+
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        final Collection<PermissionableProxy> allowed = permissionAPI.filterCollection(
-                proxiesByPermissionId.values(),
-                PermissionAPI.PERMISSION_PUBLISH,
-                user,
-                RESPECT_FRONTEND_ROLES);
+        final List<PermissionableProxy> allowed = new ArrayList<>();
+
+        if (!otherProxies.isEmpty()) {
+            allowed.addAll(permissionAPI.filterCollection(
+                    otherProxies,
+                    PermissionAPI.PERMISSION_PUBLISH,
+                    user,
+                    RESPECT_FRONTEND_ROLES));
+        }
+
+        if (!folderProxies.isEmpty()) {
+            allowed.addAll(permissionAPI.filterCollection(
+                    folderProxies,
+                    PermissionAPI.PERMISSION_EDIT,
+                    user,
+                    RESPECT_FRONTEND_ROLES));
+        }
 
         for (final PermissionableProxy proxy : allowed) {
             permitted.addAll(

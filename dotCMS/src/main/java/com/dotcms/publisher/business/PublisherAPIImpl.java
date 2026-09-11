@@ -893,8 +893,11 @@ public class PublisherAPIImpl extends PublisherAPI{
 					+ " from bundle " + bundleId + " :" + e.getMessage(), e);
 		}
 
-		final List<PublishQueueElement> remaining = Try.of(() -> getQueueElementsByBundleId(bundleId))
-				.getOrElse(Collections::emptyList);
+		// Deliberately NOT wrapped in Try: an empty result and a failed lookup are not the same
+		// thing, and treating them alike would delete the audit status of a bundle that still has
+		// queued assets. bundleId is validated above, so there is nothing benign left to swallow -
+		// let the exception propagate and @WrapInTransaction roll the delete back with it.
+		final List<PublishQueueElement> remaining = getQueueElementsByBundleId(bundleId);
 
 		if (remaining.isEmpty()) {
 			APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
