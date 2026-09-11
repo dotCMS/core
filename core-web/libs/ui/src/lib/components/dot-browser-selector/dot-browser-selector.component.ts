@@ -70,6 +70,17 @@ export class DotBrowserSelectorComponent implements OnInit {
     $uploadDisabled = computed(() => this.$folderParams().hostFolderId === '');
 
     /**
+     * Whether uploading belongs in this browser at all: only a caller that turned both files and
+     * assets off is browsing something unuploadable — pages, or links. Anything else keeps the
+     * button, so a caller that says nothing about either is unaffected.
+     */
+    $canUpload = computed(() => {
+        const { showFiles, showDotAssets } = this.$folderParams();
+
+        return !(showFiles === false && showDotAssets === false);
+    });
+
+    /**
      * Derives the file input accept attribute from the mimeTypes in folderParams.
      * e.g. ['image'] → 'image/*', [] → '*'
      */

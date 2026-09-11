@@ -20,6 +20,7 @@ import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SplitterModule } from 'primeng/splitter';
+import type { SplitterPassThrough } from 'primeng/types/splitter';
 
 import {
     DotContentletService,
@@ -31,7 +32,8 @@ import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
-    DotContentDriveItem,
+    DotContentDriveBrowseItem,
+    DotContentDriveFolder,
     DotContentDrivePaginateEvent,
     TreeNodeData
 } from '@dotcms/dotcms-models';
@@ -47,8 +49,15 @@ import {
     WARNING_MESSAGE_LIFE
 } from './constants';
 import { DotAssetPickerLocation, writeLastAssetLocation } from './last-asset-path';
+import { provideAssetPickerFieldFilterHost } from './store/asset-picker-field-filter-host';
+import { provideAssetPickerFilterFacade } from './store/asset-picker-filter-facade';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
+import {
+    buildUploadAccept,
+    isUploadAllowed,
+    resolveUploadRestrictionLabel
+} from './upload-restriction';
 
 import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../dialog/fullscreen-dialog';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
@@ -59,6 +68,7 @@ import {
     DotDialogFooterComponent,
     DotDialogHeaderComponent
 } from '../dot-dialog';
+import { DotFilterChipError } from '../dot-filter-bar/filter-facade.token';
 import { DotFolderListViewComponent } from '../dot-folder-list-view/dot-folder-list-view.component';
 import { DotToastComponent } from '../dot-toast/dot-toast.component';
 import { DotUploadDropzoneComponent } from '../dot-upload-dropzone/dot-upload-dropzone.component';
@@ -93,7 +103,17 @@ import {
     // the failure: it transitively needs `DotAlertConfirmService`, `DotRouterService` -> `Router` and
     // `DotEventsSocket`, and that host has no `Router` at all. The store reports failures as state
     // instead and this component toasts them — see the `requestError` effect.
-    providers: [DotAssetPickerStore, MessageService, DotContentTypeService],
+    providers: [
+        DotAssetPickerStore,
+        // Exposes this dialog's store to the shared filter chips. Alongside the store, never in
+        // `root`: two custom fields can each hold an open picker.
+        provideAssetPickerFilterFacade(),
+        // The field-filter chips' own seam: which chips are shown, plus the field metadata the
+        // "More" overflow fetches and `$request` reshapes values with.
+        provideAssetPickerFieldFilterHost(),
+        MessageService,
+        DotContentTypeService
+    ],
     imports: [
         ButtonModule,
         DialogModule,
@@ -148,8 +168,10 @@ export class DotAssetPickerComponent implements OnInit {
      * The legacy theme gives `.p-splitter` a gray border and a radius, which read as a stray box
      * inside a dialog that already has its own chrome. The gutter keeps its own styling.
      */
-    protected readonly splitterPt = {
+    protected readonly splitterPt: SplitterPassThrough = {
         root: { class: 'border-0! rounded-none!' },
+        // PrimeNG types `panel` as required, so it has to be listed even with nothing to pass.
+        panel: {},
         gutterHandle: {
             'aria-label': this.#dotMessageService.get('dot.asset.picker.splitter.aria')
         }
@@ -201,6 +223,28 @@ export class DotAssetPickerComponent implements OnInit {
     /** Holds the chosen type while the OS file picker is open (Upload-button flow only). */
     readonly $activeSelection = signal<DotUploadSelection | undefined>(undefined);
 
+    /**
+     * Pre-filters the OS file dialog to what the entry point can hold.
+     *
+     * `null` in the unrestricted modes, which removes the attribute — the File field and `browse`
+     * must keep offering every file. A hint only: the dialog lets the user switch back to "all
+     * files", which is why `#refuseDisallowedUpload` still has to stand behind it.
+     */
+    protected readonly $uploadAccept = computed(() =>
+        buildUploadAccept(this.store.config()?.mimeTypes)
+    );
+
+    /**
+     * What the restriction is called, for the Asset/File prompt and the refusal toast. Empty when
+     * nothing is restricted, which is what makes the prompt render its default copy.
+     */
+    protected readonly $uploadRestrictionLabel = computed(
+        () =>
+            resolveUploadRestrictionLabel(this.store.config()?.mimeTypes, (key) =>
+                this.#dotMessageService.get(key)
+            ) ?? ''
+    );
+
     ngOnInit(): void {
         const config = this.#dialogConfig?.data;
 
@@ -215,8 +259,8 @@ export class DotAssetPickerComponent implements OnInit {
      * The list always emits an array, even in single-selection mode. Double-click routes here too:
      * it marks the row and nothing else — confirming stays an explicit action.
      */
-    protected onSelect(items: DotContentDriveItem[]): void {
-        const asset = items?.[0] as DotCMSContentlet | undefined;
+    protected onSelect(items: DotContentDriveBrowseItem[]): void {
+        const asset = items?.[0];
 
         if (asset) {
             this.store.setSelectedAsset(asset);
@@ -226,14 +270,25 @@ export class DotAssetPickerComponent implements OnInit {
     }
 
     /**
-     * Returns the asset to the caller. The row carries only what the list needs, so it is re-fetched
-     * with its full content before closing.
+     * Returns the selection to the caller.
+     *
+     * A contentlet row carries only what the list needs, so it is re-fetched with its full content
+     * before closing. A folder and a menu link are **not** contentlets: there is nothing richer to
+     * fetch, and asking the contentlet endpoint for one 404s — which would toast "confirm error"
+     * and leave the picker open, making folders and links impossible to select.
      */
     protected confirm(): void {
         const asset = this.store.selectedAsset();
 
         // The button is disabled without a selection, but a programmatic call must not throw.
         if (!asset) {
+            return;
+        }
+
+        if (!isContentlet(asset)) {
+            writeLastAssetLocation(this.#resolveAssetLocation(asset));
+            this.#dialogRef.close(asset);
+
             return;
         }
 
@@ -262,6 +317,18 @@ export class DotAssetPickerComponent implements OnInit {
             });
     }
 
+    /**
+     * A filter chip could not load its options.
+     *
+     * Routed to the same toast the store's own failures use, which is this dialog's only error
+     * channel: `DotHttpErrorManagerService` cannot be injected here at all (it transitively needs
+     * `Router`, and the legacy Dojo host has none), and the dialog must stay open and operable
+     * with the affected control simply offering nothing (FR-015).
+     */
+    protected onFilterError(error: DotFilterChipError): void {
+        this.#reportRequestError(error.messageKey);
+    }
+
     /** Toasts a failed request. `messageKey` comes from {@link ASSET_PICKER_ERROR_KEYS}. */
     #reportRequestError(messageKey: string): void {
         this.#messageService.add({
@@ -280,15 +347,24 @@ export class DotAssetPickerComponent implements OnInit {
      *
      * `DotCMSContentlet.folder` is the folder's *identifier*, not a path, so it is no help here.
      */
-    #resolveAssetLocation(asset: DotCMSContentlet): DotAssetPickerLocation | undefined {
+    #resolveAssetLocation(item: DotContentDriveBrowseItem): DotAssetPickerLocation | undefined {
         const site = this.store.browsingSite();
 
         if (!site) {
             return undefined;
         }
 
-        const lastSlash = asset.url?.lastIndexOf('/') ?? -1;
-        const path = lastSlash >= 0 ? asset.url.slice(0, lastSlash + 1) : this.store.path();
+        // A folder IS a location — its own path, not the folder its url sits in.
+        if (isFolder(item)) {
+            return { siteId: site.identifier, hostname: site.hostname, path: item.path };
+        }
+
+        // No cast: after `isFolder`, the union is `DotCMSContentlet | DotContentDriveLink` and both
+        // declare `url: string`. Reading it directly means a future browse item without a `url`
+        // fails to compile here instead of silently reading `undefined`.
+        const url = item.url;
+        const lastSlash = url?.lastIndexOf('/') ?? -1;
+        const path = lastSlash >= 0 ? url.slice(0, lastSlash + 1) : this.store.path();
 
         return { siteId: site.identifier, hostname: site.hostname, path };
     }
@@ -389,6 +465,13 @@ export class DotAssetPickerComponent implements OnInit {
 
     /** Drag-and-drop: the files are already known, so a pinned base type uploads immediately. */
     protected onRequestUpload({ files, targetFolder }: DotUploadFiles): void {
+        // Judged here as well as at `#resolveFilesUpload`, which is the actual guarantee. Without
+        // this the user would be asked to choose a storage type for a file that was never eligible,
+        // and only then be refused.
+        if (this.#refuseDisallowedUpload(files)) {
+            return;
+        }
+
         const baseType = this.#resolvePreferredBaseType(targetFolder);
 
         if (baseType) {
@@ -485,8 +568,51 @@ export class DotAssetPickerComponent implements OnInit {
         }
     }
 
+    /**
+     * Refuses a file the entry point cannot hold, and says which types it can.
+     *
+     * The restriction is `config.mimeTypes` — the same value that narrows what the list shows, so
+     * an Image field cannot upload something it would then be unable to display. Returns whether
+     * the upload was refused.
+     *
+     * This is the guarantee, not the filter: `accept` on the file input only *suggests* a type to
+     * the OS dialog, and the user can switch it off from the dialog itself. Judged on the file that
+     * would actually be uploaded, since a multi-file selection already warns and uploads only the
+     * first.
+     */
+    #refuseDisallowedUpload(files?: FileList | null): boolean {
+        const mimeTypes = this.store.config()?.mimeTypes;
+        const file = files?.[0];
+
+        if (!file || isUploadAllowed(file, mimeTypes)) {
+            return false;
+        }
+
+        const allowed = resolveUploadRestrictionLabel(mimeTypes, (key) =>
+            this.#dotMessageService.get(key)
+        );
+
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('dot.asset.picker.upload.rejected'),
+            detail: this.#dotMessageService.get(
+                'dot.asset.picker.upload.rejected.detail',
+                allowed ?? ''
+            ),
+            life: ERROR_MESSAGE_LIFE
+        });
+
+        return true;
+    }
+
     #resolveFilesUpload({ files, targetFolder, baseType }: DotUploadSelection): void {
         if (!files?.length) {
+            return;
+        }
+
+        // The one gate every upload route converges on — the Upload button, drag-and-drop, and a
+        // folder whose settings pin a base type and skip the prompt entirely.
+        if (this.#refuseDisallowedUpload(files)) {
             return;
         }
 
@@ -549,4 +675,28 @@ export class DotAssetPickerComponent implements OnInit {
                 }
             });
     }
+}
+
+/**
+ * A folder row, told apart by the discriminant the browse response stamps on it.
+ *
+ * Deliberately local rather than shared with the bridge's own `kindOf`: that one maps onto the
+ * *public* selection kinds a VTL template sees, which is a different vocabulary that should be free
+ * to change without dragging the picker's internals with it.
+ */
+function isFolder(item: DotContentDriveBrowseItem): item is DotContentDriveFolder {
+    return (item as DotContentDriveFolder).type === 'folder';
+}
+
+/**
+ * Whether the row is a contentlet — the only kind with more content to fetch.
+ *
+ * Defined as "neither a folder nor a link" rather than by sniffing for a contentlet field, so a new
+ * non-contentlet row type fails closed: it would skip hydration rather than 404 against the
+ * contentlet endpoint.
+ */
+function isContentlet(item: DotContentDriveBrowseItem): item is DotCMSContentlet {
+    const row = item as { type?: string; extension?: string };
+
+    return row.type !== 'folder' && row.type !== 'link' && row.extension !== 'link';
 }

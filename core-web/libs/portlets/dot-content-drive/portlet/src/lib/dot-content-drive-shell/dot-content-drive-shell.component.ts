@@ -1,15 +1,15 @@
 import { signalMethod } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { of, SubscriptionLike } from 'rxjs';
 
 import { Location, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
     effect,
     ElementRef,
     inject,
+    OnDestroy,
     signal,
     untracked,
     viewChild
@@ -18,6 +18,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -57,6 +58,9 @@ import {
     DotFolderListViewComponent,
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
+    DotKeyboardShortcutService,
+    DotKeyboardShortcutUnregister,
+    hasOverlayAbove,
     DotMessagePipe,
     DotToastComponent,
     DotUploadDropzoneComponent,
@@ -90,6 +94,9 @@ import {
     DotContentDriveUploadSelectorPayload
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
+import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
+import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
+import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
 
@@ -117,6 +124,18 @@ import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
     ],
     providers: [
         DotContentDriveStore,
+        // Exposes the store to the shared filter chips through a store-agnostic seam, so a chip
+        // written once serves this toolbar and the AssetPicker's. Must sit alongside the store, not
+        // in `root`: the facade closes over whichever store instance this shell owns.
+        provideContentDriveFilterFacade(),
+        // The field-filter chips' own seam: which chips are shown, and the field metadata one fetch
+        // feeds to the chips, this shell's results table and the store's request builder.
+        provideContentDriveFieldFilterHost(),
+        // The optional capability the shared field filter needs for Relationship fields. Content
+        // Drive can supply it — `DotSelectExistingContentComponent` lives in a library this portlet
+        // may import and `@dotcms/ui` may not — so the drive keeps exactly today's behaviour.
+        DialogService,
+        provideContentDriveRelationshipPicker(),
         // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
         // the side-panel feature flag; shared with the child components in this shell's subtree.
         DotContentDriveNavigationService,
@@ -135,7 +154,7 @@ import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
         class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
     }
 })
-export class DotContentDriveShellComponent {
+export class DotContentDriveShellComponent implements OnDestroy {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
@@ -143,7 +162,14 @@ export class DotContentDriveShellComponent {
 
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
-    readonly #destroyRef = inject(DestroyRef);
+
+    readonly #shortcuts = inject(DotKeyboardShortcutService);
+
+    /** Withdraws the portlet-level shortcut claims. Released in {@link ngOnDestroy}. */
+    #withdrawShortcuts?: DotKeyboardShortcutUnregister;
+
+    /** Browser history subscription for the edit-panel guard. Released in {@link ngOnDestroy}. */
+    #locationSubscription?: SubscriptionLike;
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
@@ -363,6 +389,10 @@ export class DotContentDriveShellComponent {
     });
 
     constructor() {
+        // Called rather than assigned: its only purpose is the side effect, and a private field
+        // nothing reads is exactly what `no-unused-private-class-members` is for.
+        this.#registerShortcuts();
+
         this.#syncDialog(this.#store.dialog);
 
         // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
@@ -414,7 +444,7 @@ export class DotContentDriveShellComponent {
                 this.$sidePanel()?.requestClose();
             }
         });
-        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
+        this.#locationSubscription = locationSubscription;
     }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
@@ -695,6 +725,94 @@ export class DotContentDriveShellComponent {
             this.#store.setPath(data.path);
         }
     });
+
+    /**
+     * Claims the portlet-level shortcuts (issue #32591).
+     *
+     * Registered as one batch so there is a single withdrawal to hold, and withdrawn when the shell
+     * is destroyed — which is what lets a dialog opening over the portlet take a combination and
+     * hand it back on close.
+     */
+    #registerShortcuts(): void {
+        this.#withdrawShortcuts = this.#shortcuts.register([
+            {
+                combination: 'escape',
+                label: 'content-drive.shortcut.escape',
+                handler: () => this.#onEscape()
+            },
+            {
+                combination: 'mod+b',
+                label: 'content-drive.shortcut.toggle-tree',
+                handler: () => this.#onToggleTree()
+            }
+        ]);
+    }
+
+    /**
+     * One teardown path for the whole shell.
+     *
+     * Both of these outlive Angular's own cleanup if left alone: the shortcut claims sit in a
+     * root-provided registry, and the history subscription is a plain RxJS one. Withdrawing the
+     * claims here is also what lets a dialog that shadowed a combination get it handed back.
+     */
+    ngOnDestroy(): void {
+        this.#withdrawShortcuts?.();
+        this.#locationSubscription?.unsubscribe();
+    }
+
+    /**
+     * Collapses or expands the folder tree.
+     *
+     * Stands down while an overlay is above the portlet, for the same reason Escape does: a dialog
+     * covers the tree, so the toggle would rearrange a layout the user cannot see and they would
+     * find it changed when the dialog closes. Declining also leaves the combination free for
+     * whatever is on top, which may want it — a rich text surface inside a dialog reads Cmd+B as
+     * bold.
+     */
+    #onToggleTree(): boolean {
+        if (hasOverlayAbove()) {
+            return false;
+        }
+
+        this.#store.setIsTreeExpanded(!this.#store.isTreeExpanded());
+
+        return true;
+    }
+
+    /**
+     * Clears the selection, and nothing else.
+     *
+     * Deliberately does *not* clear filters, though an earlier revision did. Escape is a
+     * high-frequency "back out" key and an assembled filter set is expensive to rebuild by hand, so
+     * putting a destructive, hard-to-undo action behind a single stray keypress is the wrong trade.
+     * Clearing filters stays on the toolbar's "Clear all" control, which is visible, labelled, and
+     * only offered when there is something to clear.
+     *
+     * Declines when there is no selection, so Escape keeps whatever meaning it has elsewhere instead
+     * of being silently swallowed here.
+     */
+    #onEscape(): boolean {
+        // Stand down while any overlay is above this listing. PrimeNG keeps its own `closeOnEscape`
+        // handling — a `<p-dialog>` binds its own document listener and closes on a z-index
+        // comparison, never consulting `defaultPrevented` — so without this both fire: Escape
+        // dismisses the dialog *and* silently wipes every active filter, or wipes the very selection
+        // the Action Center is operating on.
+        //
+        // Asked of the z-index stack rather than a list of visibility signals, so confirm popups,
+        // select panels and any dialog added later are covered without anyone remembering to extend
+        // a list. The side panel asks the same question against its own container.
+        if (hasOverlayAbove()) {
+            return false;
+        }
+
+        if (this.#store.selectedItems().length) {
+            this.#store.setSelectedItems([]);
+
+            return true;
+        }
+
+        return false;
+    }
 
     protected onPaginate(event: DotContentDrivePaginateEvent) {
         // Explicit check because it can potentially be 0

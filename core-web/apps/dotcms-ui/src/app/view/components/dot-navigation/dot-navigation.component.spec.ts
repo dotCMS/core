@@ -1,5 +1,11 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -151,7 +157,7 @@ describe('DotNavigationComponent collapsed', () => {
         it('should reload portlet and hide overlay', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jest.fn();
+            const stopPropSpy = vi.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -171,7 +177,7 @@ describe('DotNavigationComponent collapsed', () => {
         it('should NOT reload portlet', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jest.fn();
+            const stopPropSpy = vi.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -314,7 +320,7 @@ describe('DotNavigationComponent expanded', () => {
         it('should reload portlet and hide overlay', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jest.fn();
+            const stopPropSpy = vi.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {
@@ -334,7 +340,7 @@ describe('DotNavigationComponent expanded', () => {
         it('should NOT reload portlet', () => {
             spectator.detectChanges();
 
-            const stopPropSpy = jest.fn();
+            const stopPropSpy = vi.fn();
 
             spectator.component.onItemClick({
                 originalEvent: {

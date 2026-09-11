@@ -278,6 +278,35 @@ export const RelationshipFieldStore = signalStore(
                 }
             },
             /**
+             * Replaces one item in place, matched by identifier — identifiers are stable across
+             * saves, so this finds the row even though a save mints a new inode. Used when a
+             * related content is edited elsewhere (e.g. in a side panel) and comes back saved, so
+             * its row shows the new title and status.
+             *
+             * Deliberately not `setData`, for two reasons:
+             * - it keeps the current page, like {@link reorderData}: the user is looking at the row
+             *   that changed, and snapping back to page 1 would lose their place;
+             * - it marks the change as `'load'`, because the relationship itself did not change —
+             *   only the version of one entry — so this must never dirty the form.
+             *
+             * A no-op when the identifier is not in the list.
+             *
+             * @param {DotCMSContentlet} contentlet - The saved contentlet to put in place of its row.
+             */
+            refreshItem(contentlet: DotCMSContentlet) {
+                const data = store.data();
+                const index = data.findIndex((item) => item.identifier === contentlet.identifier);
+
+                if (index === -1) {
+                    return;
+                }
+
+                patchState(store, {
+                    data: data.map((item, i) => (i === index ? contentlet : item)),
+                    lastChangeSource: 'load'
+                });
+            },
+            /**
              * Reorders the data without resetting the current pagination.
              * Used after drag-and-drop row reorder to preserve the current page.
              * @param {DotCMSContentlet[]} data - The reordered data array.

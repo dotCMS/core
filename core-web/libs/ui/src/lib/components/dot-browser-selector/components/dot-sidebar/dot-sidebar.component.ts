@@ -4,37 +4,33 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
-import { Tooltip } from 'primeng/tooltip';
 import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
 import { DotFolderNamePipe } from '../../../../pipes/dot-folder-name/dot-folder-name.pipe';
 import { DotFolderTreeComponent } from '../../../dot-folder-tree/dot-folder-tree.component';
+import { DotTruncatedLabelComponent } from '../../../dot-truncated-label/dot-truncated-label.component';
 import { SYSTEM_HOST_ID } from '../../store/browser.store';
 
 @Component({
     selector: 'dot-sidebar',
-    imports: [DotFolderTreeComponent, DotFolderNamePipe, SkeletonModule, Tooltip],
+    imports: [
+        DotFolderTreeComponent,
+        DotFolderNamePipe,
+        SkeletonModule,
+        DotTruncatedLabelComponent
+    ],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSideBarComponent {
     /**
-     * Match Host Folder site tooltips: keep long hostnames on one line in the overlay.
-     */
-    protected readonly nodeTooltipPt = {
-        root: { style: { maxWidth: 'none' } },
-        text: { style: { whiteSpace: 'nowrap', wordBreak: 'normal' } }
-    };
-
-    /**
-     * Constrain tree node layout so label `truncate` can ellipsis instead of wrapping.
+     * Horizontal clipping for the panel itself. The node-level guards that let a long label
+     * shrink instead of widening its row belong to `dot-folder-tree` now (#37363).
      */
     protected readonly treePt = {
         root: { class: 'w-full h-full min-w-0 overflow-x-hidden' },
-        wrapper: { class: 'min-w-0 overflow-x-hidden' },
-        nodeContent: { class: 'min-w-0' },
-        nodeLabel: { class: 'min-w-0 overflow-hidden' }
+        wrapper: { class: 'min-w-0 overflow-x-hidden' }
     };
 
     /**
@@ -50,6 +46,13 @@ export class DotSideBarComponent {
      * @type {boolean}
      */
     $loading = input.required<boolean>({ alias: 'loading' });
+
+    /**
+     * Folder the tree starts on. Defaults to System Host, which is where the browser itself starts,
+     * so a caller that opens it somewhere else — a site, a folder — is highlighted there instead of
+     * on a node whose contents are not the ones on screen.
+     */
+    $selectedId = input<string>(SYSTEM_HOST_ID, { alias: 'selectedId' });
 
     /**
      * Signal that generates an array of strings representing percentages.
@@ -84,13 +87,15 @@ export class DotSideBarComponent {
     readonly #userSelected = signal<TreeNode | null>(null);
 
     /**
-     * Selected node for the shared tree. Defaults to SYSTEM_HOST when present and
-     * the user has not selected another node yet.
+     * Selected node for the shared tree: what the user picked, or else the folder the browser was
+     * opened on.
      */
     readonly $selectedNode = computed(() => {
+        const selectedId = this.$selectedId();
+
         return (
             this.#userSelected() ??
-            this.$folders().find((folder) => folder.data?.id === SYSTEM_HOST_ID) ??
+            this.$folders().find((folder) => folder.data?.id === selectedId) ??
             null
         );
     });

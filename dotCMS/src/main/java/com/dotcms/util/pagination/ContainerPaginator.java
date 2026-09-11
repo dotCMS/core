@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -159,11 +160,29 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
         return sortedByHostContainers;
     }
 
+    /**
+     * Returns the name of the Site that a given Container belongs to, used here only as a sorting
+     * key.
+     * <p>This must not be resolved through {@code getParentPermissionable()}. That method returns
+     * the Permissionable a Container inherits its permissions from, which for a
+     * {@link com.dotmarketing.portlets.containers.model.FileAssetContainer} is the Container
+     * <b>folder</b>, not a Site. Both Container types know their own Site already, so ask them.</p>
+     *
+     * @param container The {@link Container} whose Site name will be returned.
+     *
+     * @return The name of the Site, or an empty String when it cannot be determined. A Container
+     * must never be dropped from the list -- or take the whole list down with it -- just because its
+     * Site name could not be resolved.
+     */
     private String hostname (final Container container) {
 
         try {
-            return Host.class.cast(container.getParentPermissionable()).getHostname();
-        } catch (DotDataException e) {
+            final String hostName = container.getHostName();
+            return UtilMethods.isSet(hostName) ? hostName : StringPool.BLANK;
+        } catch (final Exception e) {
+            Logger.warn(this, () -> String.format(
+                    "Unable to determine the Site name of Container '%s': %s",
+                    container.getIdentifier(), e.getMessage()));
             return StringPool.BLANK;
         }
     }

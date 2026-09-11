@@ -15,14 +15,17 @@
 | [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) | NgRx Signal Store, `rxMethod`, `patchState` — **prefer over manual state** |
 | [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) | Tailwind CSS, PrimeNG theme, BEM (when needed), SCSS variables |
 | [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md) | Strict types, inference, `unknown`, `as const`, `#` private |
-| [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) | Writing tests: Spectator, Jest, `byTestId`, `setInput`, `data-testid` |
+| [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) | Writing tests: Spectator, Vitest, `byTestId`, `setInput`, `data-testid` |
 | [TESTING_REVIEW_RULES.md](./TESTING_REVIEW_RULES.md) | **Reviewing** test files: condensed violation checklist, severity-ranked |
+| [TESTING_PERFORMANCE.md](./TESTING_PERFORMANCE.md) | Suite **run time**: `pnpm test:profile`, the five-phase breakdown, which Vitest options are measured regressions, `isolate` policy |
 | [BREADCRUMBS.md](./BREADCRUMBS.md) | GlobalStore breadcrumbs: `addNewBreadcrumb`, `setBreadcrumbs`, `id`/`url` for tabs, duplicate prevention |
+| [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) | Shortcut registry: per-combination last-in-wins, bubble phase, adding one, selection semantics, event-synthesis testing hazards |
 
 ## Picking between the two testing docs
 
 - **Writing or fixing a test** → `TESTING_FRONTEND.md` (full patterns and examples)
 - **Reviewing someone else's test** → `TESTING_REVIEW_RULES.md` (condensed pass/fail rules)
+- **Making the suite faster** → `TESTING_PERFORMANCE.md` (measure first; several obvious knobs are measured regressions)
 
 ## Cross-cutting conventions
 
@@ -32,7 +35,7 @@ These hold across every doc here — if you see a violation, it is a defect rega
 - **Change detection**: `OnPush` is the Angular v22 default — never set `changeDetection` on a new component; leave existing `Eager` components alone — ANGULAR_STANDARDS
 - **Components**: three separate files (`.ts` / `.html` / `.scss`); reuse `libs/ui` then PrimeNG before creating a new one — ANGULAR_STANDARDS, COMPONENT_ARCHITECTURE
 - **State**: NgRx Signal Store for feature state; avoid manual signal soup — STATE_MANAGEMENT, COMPONENT_ARCHITECTURE
-- **Testing**: Jest + `@openng/spectator`, `byTestId`, `setInput` — TESTING_FRONTEND, TESTING_REVIEW_RULES, ANGULAR_STANDARDS
+- **Testing**: Vitest + `@openng/spectator`, `byTestId`, `setInput` — TESTING_FRONTEND, TESTING_REVIEW_RULES, ANGULAR_STANDARDS
 - **TypeScript**: strict, no `any`, `as const`, `#` private — TYPESCRIPT_STANDARDS
 - **Commands**: `pnpm nx …` — Nx is not installed globally and the package manager is pnpm — ANGULAR_STANDARDS
 

@@ -41,6 +41,18 @@ export const dotExperimentsListPageEvents = eventGroup({
         sortChanged: type<DotExperimentsListSortChange>(),
         hydratedFromUrl: type<DotExperimentsListViewState>(),
 
+        /**
+         * Drops the page narrowing, whichever way it arrived — by identifier or by path.
+         *
+         * The narrowing otherwise has exactly one writer, the address (`hydratedFromUrl`), and no
+         * control on the screen widens a page filter that is *working*: the page-scoped empty state
+         * offers to create an experiment for the page instead, which is the help that case wants.
+         * This exists for the other case — a narrowing that matched nothing, where the list is a
+         * dead end and clearing it is the only way out. The empty state's own button is the only
+         * caller.
+         */
+        pageNarrowingCleared: type<void>(),
+
         // Site
         siteChanged: type<string | null>(),
 

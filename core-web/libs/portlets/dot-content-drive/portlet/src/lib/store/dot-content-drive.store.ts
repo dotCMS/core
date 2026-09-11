@@ -155,12 +155,27 @@ export const DotContentDriveStore = signalStore(
                             folderCursor: page.folderCursor ?? 0,
                             maxResults: paginationSignal?.limit,
                             sortBy: sort()?.field + ':' + sort()?.order,
-                            archived: false,
+                            // Sent only when non-empty: an absent key leaves the request
+                            // byte-identical to one that never mentioned status, which is what
+                            // keeps the unfiltered drive exactly as it was. The `archived: false`
+                            // pin that used to sit here is gone — the endpoint already defaults it,
+                            // and pinning it would contradict an Archived selection.
+                            status: filters()?.status?.length ? filters()?.status : undefined,
                             showFolders:
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
                                 !filters()?.workflow?.length &&
+                                // Folders carry no status, so any status selection hides them.
+                                //
+                                // This rule lives HERE, not in the endpoint. `POST /drive/search`
+                                // honours whatever `showFolders` it is sent — deliberately, so the
+                                // response always matches the request and the folder cursors never
+                                // describe a query the caller did not make. Keeping the policy on
+                                // the client also means that if we ever add a control for folder
+                                // visibility, honouring it is a change to this line and nothing
+                                // else: no backend refactor, no API contract change.
+                                !filters()?.status?.length &&
                                 // A field-based filter narrows to content, so hide folders too —
                                 // consistent with the other filters above.
                                 !userSearchable

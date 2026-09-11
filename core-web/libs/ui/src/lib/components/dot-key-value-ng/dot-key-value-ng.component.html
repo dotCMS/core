@@ -1,29 +1,141 @@
-@let variableList = $variableList();
+@let showHiddenField = $showHiddenField();
+@let readOnly = $readOnly();
 
-<p-table [value]="variableList()" #table dataKey="key" (onRowReorder)="reorderVariables()">
-    <ng-template #header let-columns>
-        <dot-key-value-table-header-row
-            (save)="saveVariable($event)"
-            [showHiddenField]="$showHiddenField()"
-            [dragAndDrop]="$dragAndDrop()"
-            [forbiddenkeys]="$forbiddenkeys()" />
-    </ng-template>
-    <ng-template #body let-variable let-rowIndex="rowIndex">
-        <dot-key-value-table-row
-            (delete)="deleteVariable(rowIndex)"
-            (save)="updateKeyValue($event, rowIndex)"
-            [showHiddenField]="$showHiddenField()"
-            [variable]="variable"
-            [index]="rowIndex"
-            [dragAndDrop]="$dragAndDrop()"
-            #tableRow />
-    </ng-template>
-    <ng-template #emptymessage let-variables>
+<!--
+    PrimeNG gives cells their separators but the table no outer frame, so the border
+    is ours; the last body row's separator is then suppressed, or it lands a second
+    line just inside that frame. Framing matches `dot-relationship-field`.
+-->
+<p-table
+    [value]="$variableList()"
+    #table
+    dataKey="key"
+    class="overflow-hidden rounded-lg border border-solid border-(--p-inputtext-border-color) transition-colors hover:border-(--p-inputtext-hover-border-color) [&_table]:table-fixed [&_tbody_tr:last-child_td]:border-b-0!"
+    [rowHover]="true"
+    [scrollable]="true"
+    (onRowReorder)="onRowReorder()">
+    <!--
+        `table-fixed` so the columns keep their proportions whatever the rows hold. Left
+        to size themselves, a long key widens its own column and squeezes the value's —
+        measured at 308/308 with short keys and 366/250 with one long one. Key and value
+        declare no width, which under this layout splits what the two fixed columns leave
+        evenly between them.
+    -->
+    <ng-template #header>
         <tr>
-            <td [attr.colspan]="$colspan()">
-                <div class="flex p-2 gap-2 justify-center" data-testId="no-rows">
-                    <i class="pi pi-folder-open"></i>
-                    <p class="text-surface-500 dark:text-surface-300">
+            <th class="w-8.5 min-w-8.5 pr-0! pl-4!" scope="col"></th>
+            <th scope="col">{{ 'keyValue.key_header.label' | dm }}</th>
+            <th scope="col">{{ 'keyValue.value_header.label' | dm }}</th>
+            @if (!readOnly) {
+                <th class="w-21 min-w-21" scope="col">
+                    <span class="sr-only">{{ 'keyValue.actions_header.label' | dm }}</span>
+                </th>
+            }
+        </tr>
+        <!-- `td` not `th`, so this row keeps the plain background instead of the header band. -->
+        @if (!readOnly) {
+            <tr
+                dotKeyValueTableHeaderRow
+                (save)="saveVariable($event)"
+                (saveMany)="saveVariables($event)"
+                [showHiddenField]="showHiddenField"
+                [forbiddenkeys]="$forbiddenkeys()"></tr>
+        }
+    </ng-template>
+
+    <!--
+        The table is bound to the WHOLE list and rows are withheld here instead.
+        PrimeNG's row reorder mutates the very array given to `[value]`, so binding a
+        shortened copy would drop the move; and because only a prefix is rendered,
+        `rowIndex` stays a true index into the full list for every handler below.
+    -->
+    <ng-template #body let-variable let-rowIndex="rowIndex">
+        @if (rowIndex < $visibleCount()) {
+            <tr
+                dotKeyValueTableRow
+                [pReorderableRow]="rowIndex"
+                [pReorderableRowDisabled]="readOnly"
+                (delete)="deleteVariable(rowIndex)"
+                (save)="updateKeyValue($event, rowIndex)"
+                [showHiddenField]="showHiddenField"
+                [readOnly]="readOnly"
+                [forbiddenkeys]="$forbiddenkeys()"
+                [variable]="variable"
+                [index]="rowIndex"
+                #tableRow></tr>
+        }
+    </ng-template>
+
+    <!--
+        Present from the first row onwards: an empty list has nothing to clear and
+        nothing to page through, so the whole foot goes rather than sitting there
+        disabled. With rows, only the paging control is conditional.
+    -->
+    <ng-template #footer>
+        @if ($variableList().length && ($remaining() > 0 || !readOnly)) {
+            <tr data-testId="dot-key-value-footer-row">
+                <!--
+                    The separator is this row's top border: the last body row has its own
+                    suppressed, so that it never doubles up with the table's outer frame.
+                -->
+                <td
+                    [attr.colspan]="$colspan()"
+                    class="border-t border-t-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3">
+                    <div class="flex items-center justify-between gap-4">
+                        @if ($remaining() > 0) {
+                            <button
+                                (click)="loadMore()"
+                                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
+                                data-testId="dot-key-value-load-more"
+                                type="button">
+                                <span
+                                    class="material-symbols-outlined text-base!"
+                                    aria-hidden="true">
+                                    add_circle
+                                </span>
+                                {{ 'keyValue.action.load_more' | dm }}
+                            </button>
+                        } @else {
+                            <!-- Holds the left half so Clear All stays put as rows are revealed. -->
+                            <span></span>
+                        }
+
+                        @if (!readOnly) {
+                            <button
+                                (click)="confirmClearAll()"
+                                [text]="true"
+                                class="shrink-0"
+                                data-testId="dot-key-value-clear-all"
+                                pButton
+                                size="small"
+                                type="button">
+                                {{ 'keyValue.action.clear_all' | dm }}
+                            </button>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
+    </ng-template>
+
+    <!--
+        Follows the empty state the list portlets use (dot-tags, dot-users, dot-plugins):
+        the icon carries the muted tone and the message does not. `text-color` rather
+        than their literal `text-gray-800`, so it holds up in dark mode too.
+    -->
+    <ng-template #emptymessage>
+        <tr class="hover:bg-transparent!">
+            <td [attr.colspan]="$colspan()" class="border-none text-center">
+                <div
+                    class="flex flex-col items-center justify-center gap-4 p-6"
+                    data-testId="no-rows">
+                    <span
+                        class="material-symbols-outlined text-4xl! text-surface-500"
+                        aria-hidden="true"
+                        data-testId="dot-key-value-empty-icon">
+                        key
+                    </span>
+                    <p class="m-0 text-base leading-6 text-color">
                         {{ 'keyValue.value_no_rows.label' | dm }}
                     </p>
                 </div>
@@ -31,3 +143,6 @@
         </tr>
     </ng-template>
 </p-table>
+
+<!-- Keyed, so it answers only this editor's Clear All. See CLEAR_ALL_KEY. -->
+<p-confirmDialog [key]="CLEAR_ALL_KEY" [style]="{ width: '400px' }" />

@@ -37,20 +37,22 @@
                     (input)="datatable.filterGlobal(searchInput.value, 'contains')" />
             </p-iconField>
 
-            <input
-                #fileInput
-                data-testid="file-input"
-                type="file"
-                [attr.accept]="$accept()"
-                class="hidden"
-                (change)="onFileSelected($event)" />
-            <p-button
-                data-testid="upload-btn"
-                [rounded]="true"
-                variant="outlined"
-                [disabled]="$uploadDisabled()"
-                [label]="'dot.file.field.dialog.select.existing.file.actions.upload' | dm"
-                (click)="fileInput.click()" />
+            @if ($showUpload()) {
+                <input
+                    #fileInput
+                    data-testid="file-input"
+                    type="file"
+                    [attr.accept]="$accept()"
+                    class="hidden"
+                    (change)="onFileSelected($event)" />
+                <p-button
+                    data-testid="upload-btn"
+                    [rounded]="true"
+                    variant="outlined"
+                    [disabled]="$uploadDisabled()"
+                    [label]="'dot.file.field.dialog.select.existing.file.actions.upload' | dm"
+                    (click)="fileInput.click()" />
+            }
         </div>
         @if (errorMessage && data.length > 0) {
             <p-message

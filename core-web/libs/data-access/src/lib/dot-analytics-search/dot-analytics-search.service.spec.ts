@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { AnalyticsQueryType } from '@dotcms/dotcms-models';
 
@@ -12,27 +12,32 @@ describe('DotAnalyticsSearchService', () => {
 
     beforeEach(() => (spectator = createHttp()));
 
-    it('should perform a POST request to the base URL and return results', (done) => {
-        spectator.service.get(query).subscribe((results) => {
-            expect(results).toEqual(mockResponse.entity);
-            done();
-        });
+    it('should perform a POST request to the base URL and return results', () =>
+        new Promise<void>((done) => {
+            spectator.service.get(query).subscribe((results) => {
+                expect(results).toEqual(mockResponse.entity);
+                done();
+            });
 
-        const req = spectator.expectOne('/api/v1/analytics/content/_query', HttpMethod.POST);
-        req.flush(mockResponse);
+            const req = spectator.expectOne('/api/v1/analytics/content/_query', HttpMethod.POST);
+            req.flush(mockResponse);
 
-        expect(req.request.body).toEqual({ ...query });
-    });
+            expect(req.request.body).toEqual({ ...query });
+        }));
 
-    it('should perform a POST request to the cube URL and return results', (done) => {
-        spectator.service.get(query, AnalyticsQueryType.CUBE).subscribe((results) => {
-            expect(results).toEqual(mockResponse.entity);
-            done();
-        });
+    it('should perform a POST request to the cube URL and return results', () =>
+        new Promise<void>((done) => {
+            spectator.service.get(query, AnalyticsQueryType.CUBE).subscribe((results) => {
+                expect(results).toEqual(mockResponse.entity);
+                done();
+            });
 
-        const req = spectator.expectOne('/api/v1/analytics/content/_query/cube', HttpMethod.POST);
-        req.flush(mockResponse);
+            const req = spectator.expectOne(
+                '/api/v1/analytics/content/_query/cube',
+                HttpMethod.POST
+            );
+            req.flush(mockResponse);
 
-        expect(req.request.body).toEqual({ ...query });
-    });
+            expect(req.request.body).toEqual({ ...query });
+        }));
 });

@@ -18,7 +18,7 @@ import {
   listStandardReleaseTags,
   findPreviousTag,
   fetchCommitRange,
-  extractPRNumbers,
+  resolvePRNumbers,
   fetchPRDetails,
 } from './github';
 import { processChanges } from './categorize';
@@ -127,10 +127,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Extract PR numbers from commit messages
-  const prNumbers = extractPRNumbers(commits);
+  // Resolve PR numbers via the commits→pulls API (see resolvePRNumbers)
+  const prNumbers = await resolvePRNumbers(octokit, owner, repo, commits);
   process.stderr.write(
-    `Extracted ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
+    `Resolved ${prNumbers.length} merged PRs from ${commits.length} commits.\n`
   );
 
   // Fetch PR details

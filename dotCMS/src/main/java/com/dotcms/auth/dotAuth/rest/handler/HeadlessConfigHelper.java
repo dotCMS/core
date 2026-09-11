@@ -30,6 +30,7 @@ public final class HeadlessConfigHelper {
     public static final String KEY_LOGOUT_URL             = "logoutUrl";
     public static final String KEY_GROUPS_CLAIM           = "groupsClaim";
     public static final String KEY_GROUPS_URL             = "groupsUrl";
+    public static final String KEY_GROUPS_RESPONSE_PATH   = "groupsResponsePath";
     public static final String KEY_EXTRA_ROLES            = "extraRoles";
     public static final String KEY_BUILD_ROLES_STRATEGY   = "buildRolesStrategy";
     public static final String KEY_CALLBACK_URL           = "callbackUrl";
@@ -52,6 +53,7 @@ public final class HeadlessConfigHelper {
             KEY_LOGOUT_URL,
             KEY_GROUPS_CLAIM,
             KEY_GROUPS_URL,
+            KEY_GROUPS_RESPONSE_PATH,
             KEY_EXTRA_ROLES,
             KEY_BUILD_ROLES_STRATEGY,
             KEY_CALLBACK_URL,

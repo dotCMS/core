@@ -2,27 +2,34 @@
 
 ## Health Check Endpoints
 
+These are served by `HealthProbeServlet` on the separate **management port** (default `8090`,
+see `management.port` in `parent/pom.xml`), not the main application port — see
+`com.dotcms.health.config.HealthEndpointConstants`.
+
 ### Kubernetes Probes (Public)
 ```bash
 # Liveness probe - minimal text response
-curl http://localhost:8080/livez
+curl http://localhost:8090/dotmgt/livez
 
 # Readiness probe - minimal text response  
-curl http://localhost:8080/readyz
+curl http://localhost:8090/dotmgt/readyz
 ```
 
 ### Detailed Health API (Authenticated)
 ```bash
 # Comprehensive health information (requires authentication)
 curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
-  http://localhost:8080/api/v1/health
+  http://localhost:8090/dotmgt/health
 ```
 
 ## Health Check Implementation
 
 ### Creating Custom Health Checks
+`HealthStatus` has four values — `UP`, `DOWN`, plus `DEGRADED` (functional but impaired;
+doesn't fail liveness/readiness probes) and `UNKNOWN` (not yet determined). The example
+below only uses `UP`/`DOWN` for simplicity.
 ```java
-@Component
+@ApplicationScoped
 public class MyCustomHealthCheck implements HealthCheck {
     
     @Override
@@ -39,13 +46,13 @@ public class MyCustomHealthCheck implements HealthCheck {
             if (isHealthy) {
                 return HealthCheckResult.builder()
                     .name(getName())
-                    .status(HealthStatus.HEALTHY)
+                    .status(HealthStatus.UP)
                     .message("Service is running normally")
                     .build();
             } else {
                 return HealthCheckResult.builder()
                     .name(getName())
-                    .status(HealthStatus.UNHEALTHY)
+                    .status(HealthStatus.DOWN)
                     .message("Service is experiencing issues")
                     .build();
             }
@@ -53,7 +60,7 @@ public class MyCustomHealthCheck implements HealthCheck {
         } catch (Exception e) {
             return HealthCheckResult.builder()
                 .name(getName())
-                .status(HealthStatus.UNHEALTHY)
+                .status(HealthStatus.DOWN)
                 .message("Health check failed: " + e.getMessage())
                 .build();
         }
@@ -67,40 +74,44 @@ public class MyCustomHealthCheck implements HealthCheck {
 ```
 
 ### Health Check Registration
+A health check marked `@ApplicationScoped` (like the example above) is discovered and
+registered automatically by `HealthCheckRegistry` via CDI — no manual registration
+step is needed for the common case. Multiple related checks can also be grouped
+behind a `HealthCheckProvider` bean, which the registry discovers the same way.
+
+For dynamic/conditional registration, inject `HealthCheckRegistry` directly:
 ```java
-@ApplicationScoped
-public class HealthCheckRegistry {
-    
-    @PostConstruct
-    public void registerHealthChecks() {
-        // Register custom health checks
-        HealthCheckLocator.registerHealthCheck(new MyCustomHealthCheck());
-        HealthCheckLocator.registerHealthCheck(new DatabaseHealthCheck());
-        HealthCheckLocator.registerHealthCheck(new ElasticsearchHealthCheck());
-    }
+@Inject
+private HealthCheckRegistry healthCheckRegistry;
+
+public void registerDynamicCheck(HealthCheck check) {
+    healthCheckRegistry.registerHealthCheck(check);
 }
 ```
 
 ## Configuration
 
 ### Health Check Properties
+Per-check settings follow the convention `health.check.{check-name}.{property}`
+(see `HealthCheckBase`'s Javadoc) — there's no `health.checks.*.enabled` flag; setting
+a check's `mode` to `DISABLED` is how you turn one off.
 ```properties
-# Health check configuration
-health.checks.enabled=true
-health.checks.database.enabled=true
-health.checks.database.timeout-seconds=30
-health.checks.elasticsearch.enabled=true
-health.checks.elasticsearch.timeout-seconds=10
-health.monitoring.include-system-details=true
+# Global settings (see HealthCheckConfig.java)
+health.include.system-details=true
+health.check.interval-seconds=30
+
+# Per-check settings (health.check.{check-name}.{property})
+health.check.database.mode=PRODUCTION
+health.check.database.timeout.seconds=2
+health.check.elasticsearch.mode=PRODUCTION
 ```
 
 ### Environment Variables
 ```bash
 # Health check configuration via environment variables
-DOT_HEALTH_CHECKS_ENABLED=true
-DOT_HEALTH_CHECKS_DATABASE_ENABLED=true
-DOT_HEALTH_CHECKS_DATABASE_TIMEOUT_SECONDS=30
-DOT_HEALTH_MONITORING_INCLUDE_SYSTEM_DETAILS=true
+DOT_HEALTH_INCLUDE_SYSTEM_DETAILS=true
+DOT_HEALTH_CHECK_DATABASE_MODE=PRODUCTION
+DOT_HEALTH_CHECK_DATABASE_TIMEOUT_SECONDS=2
 ```
 
 ## Dynamic Log Level Management
@@ -131,6 +142,7 @@ curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
 ```
 
 ### Valid Log Levels
+- `ALL` - Most verbose (log4j2's broadest level)
 - `TRACE` - Most verbose
 - `DEBUG` - Debug information
 - `INFO` - General information
@@ -143,7 +155,7 @@ curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
 
 ### Database Health Check
 ```java
-@Component
+@ApplicationScoped
 public class DatabaseHealthCheck implements HealthCheck {
     
     @Override
@@ -160,14 +172,14 @@ public class DatabaseHealthCheck implements HealthCheck {
             
             return HealthCheckResult.builder()
                 .name(getName())
-                .status(HealthStatus.HEALTHY)
+                .status(HealthStatus.UP)
                 .message("Database connection is healthy")
                 .build();
                 
         } catch (Exception e) {
             return HealthCheckResult.builder()
                 .name(getName())
-                .status(HealthStatus.UNHEALTHY)
+                .status(HealthStatus.DOWN)
                 .message("Database connection failed: " + e.getMessage())
                 .build();
         }
@@ -177,7 +189,7 @@ public class DatabaseHealthCheck implements HealthCheck {
 
 ### Elasticsearch Health Check
 ```java
-@Component
+@ApplicationScoped
 public class ElasticsearchHealthCheck implements HealthCheck {
     
     @Override
@@ -188,28 +200,30 @@ public class ElasticsearchHealthCheck implements HealthCheck {
     @Override
     public HealthCheckResult check() {
         try {
-            // Check Elasticsearch connection
-            ESClient esClient = new ESClient();
-            ClusterHealthResponse health = esClient.admin().cluster().health().get();
+            // Real connectivity test — see the actual implementation in
+            // com.dotcms.health.checks.cdi.ElasticsearchHealthCheck for the
+            // full version (it extends HealthCheckBase for timing/tolerance)
+            var esAPI = APILocator.getESIndexAPI();
+            var clusterStats = esAPI.getClusterStats();
             
-            if (health.getStatus() == ClusterHealthStatus.RED) {
+            if (clusterStats == null) {
                 return HealthCheckResult.builder()
                     .name(getName())
-                    .status(HealthStatus.UNHEALTHY)
+                    .status(HealthStatus.DOWN)
                     .message("Elasticsearch cluster is RED")
                     .build();
             }
             
             return HealthCheckResult.builder()
                 .name(getName())
-                .status(HealthStatus.HEALTHY)
+                .status(HealthStatus.UP)
                 .message("Elasticsearch is healthy")
                 .build();
                 
         } catch (Exception e) {
             return HealthCheckResult.builder()
                 .name(getName())
-                .status(HealthStatus.UNHEALTHY)
+                .status(HealthStatus.DOWN)
                 .message("Elasticsearch check failed: " + e.getMessage())
                 .build();
         }
@@ -219,51 +233,31 @@ public class ElasticsearchHealthCheck implements HealthCheck {
 
 ## Monitoring Integration
 
-### Metrics Collection
+`HealthService` already aggregates and queries health checks — there's no need to
+build a custom collector or aggregator on top of `HealthCheckLocator` (which doesn't
+exist). Inject it directly:
+
 ```java
-@Component
-public class HealthMetricsCollector {
+@Inject
+private HealthService healthService;
+
+public void collectHealthMetrics() {
+    List<HealthCheckResult> results = healthService.getAllHealthChecks();
     
-    @Scheduled(fixedDelay = 30000) // Every 30 seconds
-    public void collectHealthMetrics() {
-        List<HealthCheckResult> results = HealthCheckLocator.getAllHealthChecks()
-            .stream()
-            .map(HealthCheck::check)
-            .collect(Collectors.toList());
-            
-        // Send metrics to monitoring system
-        sendMetrics(results);
-    }
-    
-    private void sendMetrics(List<HealthCheckResult> results) {
-        // Implementation for sending metrics to monitoring system
-        // (e.g., Prometheus, DataDog, etc.)
-    }
+    // Send metrics to monitoring system (e.g., Prometheus, DataDog, etc.)
+    sendMetrics(results);
+}
+
+public boolean isSystemHealthy() {
+    // getOverallHealth() already aggregates every registered check into a
+    // single HealthResponse — no need to hand-roll the allMatch/aggregation logic
+    HealthResponse overallHealth = healthService.getOverallHealth();
+    return healthService.isReady();
 }
 ```
 
-### Health Status Aggregation
-```java
-@Component
-public class HealthStatusAggregator {
-    
-    public OverallHealth getOverallHealth() {
-        List<HealthCheckResult> results = HealthCheckLocator.getAllHealthChecks()
-            .stream()
-            .map(HealthCheck::check)
-            .collect(Collectors.toList());
-            
-        boolean allHealthy = results.stream()
-            .allMatch(result -> result.getStatus() == HealthStatus.HEALTHY);
-            
-        return OverallHealth.builder()
-            .status(allHealthy ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY)
-            .checks(results)
-            .timestamp(new Date())
-            .build();
-    }
-}
-```
+Hook `collectHealthMetrics()` into whatever periodic-task mechanism the caller
+already uses — dotCMS doesn't use Spring's `@Scheduled`.
 
 ## Location Information
 - **Health servlets**: Located in `com.dotcms.health.servlet.*`

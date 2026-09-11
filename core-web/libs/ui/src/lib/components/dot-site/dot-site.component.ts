@@ -167,6 +167,15 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     onChange = output<string | null>();
 
     /**
+     * The selected site itself, rather than just its identifier.
+     *
+     * Additive alongside {@link onChange}, which stays the primary output. Consumers that need the
+     * hostname — the AssetPicker sidebar builds its tree root and asset path from it — would
+     * otherwise have to re-fetch a site the component already holds.
+     */
+    siteChange = output<DotSite | null>();
+
+    /**
      * Output event emitted when the select dropdown overlay is shown.
      * Can be used by parent components to respond to overlay display (e.g., for analytics, UI adjustments).
      */
@@ -189,6 +198,25 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
      * Can be customized; defaults to an empty string.
      */
     id = input<string>('');
+
+    /**
+     * Optional icon class rendered beside the selected hostname inside the closed control
+     * (e.g. `'pi pi-globe'`).
+     *
+     * Additive and off by default: with no icon the control renders exactly as it always has, so
+     * existing consumers are unaffected. Added for the AssetPicker sidebar, whose design shows a
+     * globe there.
+     */
+    icon = input<string>('');
+
+    /**
+     * Class applied to the dropdown overlay panel (e.g. `'mt-1'` to sit it off the trigger).
+     *
+     * Exists because the overlay is appended to `body`: a consumer cannot reach it from its own
+     * component styles, so the class has to travel through here. Additive and empty by default, so
+     * existing consumers render unchanged.
+     */
+    panelStyleClass = input<string>('');
 
     /**
      * Reactive state of the component including loaded sites, loading status, total results, and active filter.
@@ -355,6 +383,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         this.value.set(identifier);
         this.onTouchedCallback();
         this.onChange.emit(identifier);
+        this.siteChange.emit(site);
     }
 
     /**

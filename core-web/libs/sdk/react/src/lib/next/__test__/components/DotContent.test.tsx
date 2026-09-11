@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { BlockEditorNode } from '@dotcms/types';
 
@@ -20,7 +21,7 @@ const mockNode: BlockEditorNode = {
 
 describe('DotContent Component', () => {
     it('should show the no data message when there is no data', () => {
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
             /* empty function */
         });
         render(<DotContent customRenderers={mockCustomRenderers} node={{} as BlockEditorNode} />);
@@ -41,7 +42,7 @@ describe('DotContent Component', () => {
     });
 
     it('should show a warning and render nothing when there is no component in production mode', () => {
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
             /* empty function */
         });
         const { container } = render(

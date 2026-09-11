@@ -1,6 +1,6 @@
-import { expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator';
 import { of } from 'rxjs';
+import { Mock, MockInstance, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -39,7 +39,7 @@ import {
     ROWS_MOCK
 } from './utils/mocks';
 
-global.structuredClone = jest.fn((val) => {
+global.structuredClone = vi.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
@@ -52,7 +52,7 @@ const mockRect = {
     height: 240,
     right: 586,
     left: 146,
-    toJSON: jest.fn()
+    toJSON: vi.fn()
 };
 
 describe('TemplateBuilderComponent', () => {
@@ -60,8 +60,8 @@ describe('TemplateBuilderComponent', () => {
     let store: DotTemplateBuilderStore;
     let dialog: DialogService;
     let dotContainersService: DotContainersService;
-    let openDialogMock: jest.SpyInstance;
-    let defaultContainerSpy: jest.SpyInstance;
+    let openDialogMock: MockInstance;
+    let defaultContainerSpy: MockInstance;
     const mockContainer = containersMock[0];
 
     const createComponent = createComponentFactory({
@@ -125,15 +125,15 @@ describe('TemplateBuilderComponent', () => {
 
         store = spectator.inject(DotTemplateBuilderStore, true);
         dialog = spectator.inject(DialogService);
-        openDialogMock = jest.spyOn(dialog, 'open');
+        openDialogMock = vi.spyOn(dialog, 'open');
         dotContainersService = spectator.inject(DotContainersService, true);
-        defaultContainerSpy = jest.spyOn(dotContainersService.defaultContainer$, 'pipe');
+        defaultContainerSpy = vi.spyOn(dotContainersService.defaultContainer$, 'pipe');
         spectator.detectChanges();
     });
 
     it('should not trigger a template change when store is initialized', () => {
         // Store init is called on init
-        const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        const changeMock = vi.spyOn(spectator.component.templateChange, 'emit');
         expect(changeMock).not.toHaveBeenCalled();
     });
 
@@ -144,8 +144,8 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it("should call updateOldRows from the store when the layout changes and it's not the first time", () => {
-        const updateOldRowsMock = jest.spyOn(store, 'updateOldRows');
-        const templateUpdateMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        const updateOldRowsMock = vi.spyOn(store, 'updateOldRows');
+        const templateUpdateMock = vi.spyOn(spectator.component.templateChange, 'emit');
 
         spectator.setInput('layout', {
             body: FULL_DATA_MOCK,
@@ -182,70 +182,75 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.queryAll(byTestId(/builder-box-\d+/)).length).toBe(totalBoxes);
     });
 
-    it('should trigger removeColumn on store when triggering removeColumn', (done) => {
-        jest.spyOn(store, 'removeColumn');
-        jest.spyOn(spectator.component, 'removeColumn');
+    it('should trigger removeColumn on store when triggering removeColumn', () =>
+        new Promise<void>((done) => {
+            vi.spyOn(store, 'removeColumn');
+            vi.spyOn(spectator.component, 'removeColumn');
 
-        const builderBox1 = spectator.debugElement.query(By.css('[data-testId="builder-box-1"]'));
-
-        spectator.triggerEventHandler(builderBox1, 'deleteColumn', undefined);
-        expect(spectator.component.removeColumn).toHaveBeenCalled();
-
-        // Wait for GridStack to be initialized via requestAnimationFrame
-        requestAnimationFrame(() => {
-            const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
-            const rowId = box1.nativeElement
-                .closest('dotcms-template-builder-row')
-                .getAttribute('gs-id');
-
-            const box1Id = box1.nativeElement.getAttribute('gs-id');
-
-            spectator.component.removeColumn(
-                { id: box1Id, parentId: rowId },
-                box1.nativeElement,
-                rowId
+            const builderBox1 = spectator.debugElement.query(
+                By.css('[data-testId="builder-box-1"]')
             );
-            expect(store.removeColumn).toHaveBeenCalledWith({
-                ...{ id: box1Id, parentId: rowId },
-                parentId: rowId
+
+            spectator.triggerEventHandler(builderBox1, 'deleteColumn', undefined);
+            expect(spectator.component.removeColumn).toHaveBeenCalled();
+
+            // Wait for GridStack to be initialized via requestAnimationFrame
+            requestAnimationFrame(() => {
+                const box1 = spectator.debugElement.query(By.css('[data-testId="box-1"]'));
+                const rowId = box1.nativeElement
+                    .closest('dotcms-template-builder-row')
+                    .getAttribute('gs-id');
+
+                const box1Id = box1.nativeElement.getAttribute('gs-id');
+
+                spectator.component.removeColumn(
+                    { id: box1Id, parentId: rowId },
+                    box1.nativeElement,
+                    rowId
+                );
+                expect(store.removeColumn).toHaveBeenCalledWith({
+                    ...{ id: box1Id, parentId: rowId },
+                    parentId: rowId
+                });
+                done();
             });
-            done();
-        });
-    });
+        }));
 
-    it('should call addContainer from store when triggering addContainer', (done) => {
-        const addContainerMock = jest.spyOn(store, 'addContainer');
+    it('should call addContainer from store when triggering addContainer', () =>
+        new Promise<void>((done) => {
+            const addContainerMock = vi.spyOn(store, 'addContainer');
 
-        let widgetToAddContainer: DotGridStackWidget;
-        let rowId: string;
+            let widgetToAddContainer: DotGridStackWidget;
+            let rowId: string;
 
-        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-            widgetToAddContainer = items[0].subGridOpts.children[0];
-            rowId = items[0].id as string;
+            store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
+                widgetToAddContainer = items[0].subGridOpts!.children[0];
+                rowId = items[0].id as string;
 
-            spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
+                spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
 
-            expect(addContainerMock).toHaveBeenCalled();
-            done();
-        });
-    });
+                expect(addContainerMock).toHaveBeenCalled();
+                done();
+            });
+        }));
 
-    it('should call deleteContainer from store when triggering deleteContainer', (done) => {
-        const deleteContainerMock = jest.spyOn(store, 'deleteContainer');
+    it('should call deleteContainer from store when triggering deleteContainer', () =>
+        new Promise<void>((done) => {
+            const deleteContainerMock = vi.spyOn(store, 'deleteContainer');
 
-        let widgetToDeleteContainer: DotGridStackWidget;
-        let rowId: string;
+            let widgetToDeleteContainer: DotGridStackWidget;
+            let rowId: string;
 
-        store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
-            widgetToDeleteContainer = items[0].subGridOpts.children[0];
-            rowId = items[0].id as string;
+            store.state$.pipe(take(1)).subscribe(({ rows: items }) => {
+                widgetToDeleteContainer = items[0].subGridOpts!.children[0];
+                rowId = items[0].id as string;
 
-            spectator.component.deleteContainer(widgetToDeleteContainer, rowId, 0);
+                spectator.component.deleteContainer(widgetToDeleteContainer, rowId, 0);
 
-            expect(deleteContainerMock).toHaveBeenCalled();
-            done();
-        });
-    });
+                expect(deleteContainerMock).toHaveBeenCalled();
+                done();
+            });
+        }));
 
     it('should open a dialog when clicking on row-style-class-button ', () => {
         const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
@@ -285,7 +290,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should trigger fixGridStackNodeOptions when triggering mousemove on main div', () => {
-        const fixGridStackNodeOptionsMock = jest.spyOn(
+        const fixGridStackNodeOptionsMock = vi.spyOn(
             spectator.component,
             'fixGridStackNodeOptions'
         );
@@ -305,7 +310,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it("should trigger deleteSection on header when clicking on 'Delete Section' button", () => {
-        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const deleteSectionMock = vi.spyOn(spectator.component, 'deleteSection');
         const headerComponent = spectator.query(byTestId('template-builder-header'));
         const deleteSectionButton = headerComponent.querySelector(
             '[data-testId="delete-section-button"]'
@@ -318,7 +323,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it("should trigger deleteSection on footer when clicking on 'Delete Section' button", () => {
-        const deleteSectionMock = jest.spyOn(spectator.component, 'deleteSection');
+        const deleteSectionMock = vi.spyOn(spectator.component, 'deleteSection');
         const footerComponent = spectator.query(byTestId('template-builder-footer'));
         const deleteSectionButton = footerComponent.querySelector(
             '[data-testId="delete-section-button"]'
@@ -331,7 +336,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it("should emit changes with a not null layout when the theme is changed and layoutProperties or rows weren't touched", () => {
-        const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        const layoutChangeMock = vi.spyOn(spectator.component.templateChange, 'emit');
 
         // Theme changes are routed through TemplateBuilderActions -> TemplateBuilderComponent.updateTheme()
         spectator.component.updateTheme('test-123');
@@ -350,41 +355,80 @@ describe('TemplateBuilderComponent', () => {
     });
 
     describe('layoutChange', () => {
-        it('should emit layoutChange when the store changes', (done) => {
-            const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        it('should emit layoutChange when the store changes', () =>
+            new Promise<void>((done) => {
+                const layoutChangeMock = vi.spyOn(spectator.component.templateChange, 'emit');
+
+                spectator.detectChanges();
+
+                store.setState({
+                    ...INITIAL_STATE_MOCK,
+                    rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
+                    layoutProperties: {
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            containers: [],
+                            location: 'left',
+                            width: 'small'
+                        }
+                    }
+                });
+
+                store.vm$
+                    .pipe(
+                        map((x) => x?.rows),
+                        take(1)
+                    )
+                    .subscribe(() => {
+                        expect(layoutChangeMock).toHaveBeenCalledWith({
+                            layout: {
+                                body: FULL_DATA_MOCK,
+                                header: true,
+                                footer: true,
+                                sidebar: {
+                                    containers: [],
+                                    location: 'left',
+                                    width: 'small'
+                                },
+                                width: 'Mobile',
+                                title: 'Test Title'
+                            },
+                            themeId: '123'
+                        });
+                        done();
+                    });
+            }));
+    });
+
+    it('should emit layoutChange when the layoutProperties changes', () =>
+        new Promise<void>((done) => {
+            const LAYOUT_PROPERTIES_MOCK = {
+                header: false,
+                footer: true,
+                sidebar: {
+                    containers: [],
+                    location: 'right',
+                    width: 'medium'
+                }
+            };
+
+            const layoutChangeMock = vi.spyOn(spectator.component.templateChange, 'emit');
+
+            store.updateLayoutProperties(LAYOUT_PROPERTIES_MOCK);
 
             spectator.detectChanges();
 
-            store.setState({
-                ...INITIAL_STATE_MOCK,
-                rows: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
-                layoutProperties: {
-                    header: true,
-                    footer: true,
-                    sidebar: {
-                        containers: [],
-                        location: 'left',
-                        width: 'small'
-                    }
-                }
-            });
-
             store.vm$
                 .pipe(
-                    map((x) => x?.items),
+                    map((x) => x?.layoutProperties),
                     take(1)
                 )
                 .subscribe(() => {
                     expect(layoutChangeMock).toHaveBeenCalledWith({
                         layout: {
+                            ...LAYOUT_PROPERTIES_MOCK,
                             body: FULL_DATA_MOCK,
-                            header: true,
-                            footer: true,
-                            sidebar: {
-                                containers: [],
-                                location: 'left',
-                                width: 'small'
-                            },
                             width: 'Mobile',
                             title: 'Test Title'
                         },
@@ -392,43 +436,237 @@ describe('TemplateBuilderComponent', () => {
                     });
                     done();
                 });
+        }));
+
+    describe('disabled input', () => {
+        it('should not render the disabled overlay by default', () => {
+            expect(spectator.query(byTestId('template-builder-disabled-overlay'))).toBeFalsy();
+        });
+
+        it('should render the disabled overlay when disabled is set to true', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('template-builder-disabled-overlay'))).toBeTruthy();
+        });
+
+        it('should hide the disabled overlay when disabled is set back to false', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+            spectator.setInput('disabled', false);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('template-builder-disabled-overlay'))).toBeFalsy();
+        });
+
+        describe('grid interactions', () => {
+            let mockGrid: {
+                disable: Mock;
+                enable: Mock;
+                load: Mock;
+                save: Mock;
+                el: { querySelectorAll: Mock };
+            };
+
+            beforeEach(() => {
+                mockGrid = {
+                    disable: vi.fn(),
+                    enable: vi.fn(),
+                    load: vi.fn(),
+                    save: vi.fn().mockReturnValue([{ id: 'row-1', x: 0, y: 0, w: 12, h: 1 }]),
+                    el: { querySelectorAll: vi.fn().mockReturnValue([]) }
+                };
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                spectator.component.grid = mockGrid as any;
+            });
+
+            it('should call grid.disable() when disabled becomes true', () => {
+                spectator.setInput('disabled', true);
+                expect(mockGrid.disable).toHaveBeenCalled();
+            });
+
+            it('should dispatch a synthetic mouseup to terminate an in-progress drag before locking the grid', () => {
+                const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                expect(dispatchSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: 'mouseup' })
+                );
+                expect(mockGrid.disable).toHaveBeenCalled();
+
+                dispatchSpy.mockRestore();
+            });
+
+            it('should restore the pre-drag layout with grid.load() to undo the committed drag position', () => {
+                const savedState = [{ id: 'row-1', x: 0, y: 0, w: 12, h: 1 }];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = savedState;
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                expect(mockGrid.load).toHaveBeenCalledWith(savedState);
+            });
+
+            it('should NOT call grid.load() when there is no pre-drag state (external drag-in)', () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = null;
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                expect(mockGrid.load).not.toHaveBeenCalled();
+            });
+
+            it('should call load() on preDragGrid (not main grid) when cancelling a column drag', () => {
+                const savedState = [{ id: 'col-1', x: 0, y: 0, w: 6, h: 1 }];
+                const subGridLoad = vi.fn();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = savedState;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragGrid = { load: subGridLoad };
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                expect(subGridLoad).toHaveBeenCalledWith(savedState);
+                expect(mockGrid.load).not.toHaveBeenCalled();
+            });
+
+            it('should reset suppressStoreUpdates to false after cancelling an in-progress drag', () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = [
+                    { id: 'row-1', x: 0, y: 0, w: 12, h: 1 }
+                ];
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                expect((spectator.component as any).suppressStoreUpdates).toBe(false);
+            });
+
+            it('should NOT dispatch mouseup when disabled becomes true with no active drag', () => {
+                const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
+                spectator.component.draggingElement = null;
+
+                spectator.setInput('disabled', true);
+
+                const mouseupCalls = dispatchSpy.mock.calls.filter(
+                    ([event]) => (event as Event).type === 'mouseup'
+                );
+                expect(mouseupCalls).toHaveLength(0);
+                expect(mockGrid.disable).toHaveBeenCalled();
+
+                dispatchSpy.mockRestore();
+            });
+
+            it('should dispatch Escape to close open PrimeNG panels when disabled becomes true', () => {
+                const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
+
+                spectator.setInput('disabled', true);
+
+                expect(dispatchSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: 'keydown', key: 'Escape' })
+                );
+
+                dispatchSpy.mockRestore();
+            });
+
+            it('should call grid.enable() when disabled becomes false', () => {
+                spectator.setInput('disabled', true);
+                spectator.setInput('disabled', false);
+                expect(mockGrid.enable).toHaveBeenCalled();
+            });
+
+            it('should disable all subgrids when disabled becomes true', () => {
+                const subGridDisable = vi.fn();
+                const subGridEnable = vi.fn();
+                mockGrid.el.querySelectorAll.mockReturnValue([
+                    { gridstack: { disable: subGridDisable, enable: subGridEnable } }
+                ]);
+
+                spectator.setInput('disabled', true);
+                expect(subGridDisable).toHaveBeenCalled();
+            });
+
+            it('should enable all subgrids when disabled becomes false', () => {
+                const subGridDisable = vi.fn();
+                const subGridEnable = vi.fn();
+                mockGrid.el.querySelectorAll.mockReturnValue([
+                    { gridstack: { disable: subGridDisable, enable: subGridEnable } }
+                ]);
+
+                spectator.setInput('disabled', true);
+                spectator.setInput('disabled', false);
+                expect(subGridEnable).toHaveBeenCalled();
+            });
+
+            it('should not call grid methods if grid is not yet initialized', () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                spectator.component.grid = undefined as any;
+                expect(() => spectator.setInput('disabled', true)).not.toThrow();
+            });
         });
     });
 
-    it('should emit layoutChange when the layoutProperties changes', (done) => {
-        const LAYOUT_PROPERTIES_MOCK = {
-            header: false,
-            footer: true,
-            sidebar: {
-                containers: [],
-                location: 'right',
-                width: 'medium'
-            }
+    describe('setSubGridEvent — dropped handler', () => {
+        let handlers: Record<string, (...args: unknown[]) => void>;
+        let mockSubGrid: {
+            on: Mock;
+            removeWidget: Mock;
         };
+        let store: DotTemplateBuilderStore;
 
-        const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+        beforeEach(() => {
+            store = spectator.inject(DotTemplateBuilderStore, true); // true = component injector (DotTemplateBuilderStore is component-scoped)
+            handlers = {};
+            mockSubGrid = {
+                removeWidget: vi.fn(),
+                on: vi.fn().mockImplementation(function (this: unknown, event, cb) {
+                    handlers[event as string] = cb;
 
-        store.updateLayoutProperties(LAYOUT_PROPERTIES_MOCK);
+                    return this; // fluent chain
+                })
+            };
 
-        spectator.detectChanges();
+            spectator.component.setSubGridEvent(mockSubGrid as never);
+        });
 
-        store.vm$
-            .pipe(
-                map((x) => x?.layoutProperties),
-                take(1)
-            )
-            .subscribe(() => {
-                expect(layoutChangeMock).toHaveBeenCalledWith({
-                    layout: {
-                        ...LAYOUT_PROPERTIES_MOCK,
-                        body: FULL_DATA_MOCK,
-                        width: 'Mobile',
-                        title: 'Test Title'
-                    },
-                    themeId: '123'
-                });
-                done();
-            });
+        it('should call store.subGridOnDropped and onDragStop when not suppressed', () => {
+            const subGridOnDroppedSpy = vi.spyOn(store, 'subGridOnDropped');
+            const onDragStopSpy = vi.spyOn(spectator.component, 'onDragStop');
+            const el = document.createElement('div');
+            const newNode = { el, grid: mockSubGrid };
+
+            handlers['dropped']({}, {}, newNode);
+
+            expect(subGridOnDroppedSpy).toHaveBeenCalled();
+            expect(onDragStopSpy).toHaveBeenCalled();
+            expect(mockSubGrid.removeWidget).not.toHaveBeenCalled();
+        });
+
+        it('should removeWidget and skip store.subGridOnDropped when suppressStoreUpdates is true', () => {
+            const subGridOnDroppedSpy = vi.spyOn(store, 'subGridOnDropped');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (spectator.component as any).suppressStoreUpdates = true;
+
+            const el = document.createElement('div');
+            const newNode = { el, grid: mockSubGrid };
+
+            handlers['dropped']({}, {}, newNode);
+
+            expect(mockSubGrid.removeWidget).toHaveBeenCalledWith(el, true, false);
+            expect(subGridOnDroppedSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not throw when newNode.el is null during cancel window', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (spectator.component as any).suppressStoreUpdates = true;
+            const newNode = { el: null, grid: mockSubGrid };
+
+            expect(() => handlers['dropped']({}, {}, newNode)).not.toThrow();
+        });
     });
 
     describe('Scroll on Drag', () => {
@@ -447,16 +685,13 @@ describe('TemplateBuilderComponent', () => {
         });
 
         it('should scroll up if the element is close to the top of the container', () => {
-            const spy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
+            const spy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
             spectator.component.draggingElement = document.createElement('div');
-            jest.spyOn(
-                spectator.component.draggingElement,
-                'getBoundingClientRect'
-            ).mockReturnValue({
+            vi.spyOn(spectator.component.draggingElement, 'getBoundingClientRect').mockReturnValue({
                 ...mockRect,
                 top: 0
             });
-            jest.spyOn(
+            vi.spyOn(
                 spectator.component.templateContaniner,
                 'getBoundingClientRect'
             ).mockReturnValue({
@@ -470,17 +705,14 @@ describe('TemplateBuilderComponent', () => {
         });
 
         it('should scroll down if the element is close to the bottom of the container', () => {
-            const spy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
+            const spy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
             spectator.component.draggingElement = document.createElement('div');
-            jest.spyOn(
-                spectator.component.draggingElement,
-                'getBoundingClientRect'
-            ).mockReturnValue({
+            vi.spyOn(spectator.component.draggingElement, 'getBoundingClientRect').mockReturnValue({
                 ...mockRect,
                 top: 500,
                 bottom: 0
             });
-            jest.spyOn(
+            vi.spyOn(
                 spectator.component.templateContaniner,
                 'getBoundingClientRect'
             ).mockReturnValue({

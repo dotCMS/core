@@ -92,19 +92,36 @@ export class DotPropertiesService {
         }
 
         const flag$ = this.getKey(key).pipe(
-            map((value) => {
-                if (typeof value === 'boolean') {
-                    return value;
-                }
-
-                return value === FEATURE_FLAG_NOT_FOUND ? true : value.toLowerCase() === 'true';
-            }),
+            map((value) => this.normalizeFlagValue(value)),
             shareReplay(1)
         );
 
         this.featureFlagCache.set(key, flag$);
 
         return flag$;
+    }
+
+    /**
+     * Same normalization as {@link getFeatureFlag}, but bypasses the process-lifetime cache —
+     * every call re-fetches from the server. Use only where a stale value would be wrong (e.g. a
+     * route guard gating a screen an admin flips on/off from Maintenance without a full page
+     * reload); prefer the cached {@link getFeatureFlag}/{@link getFeatureFlags} for anything
+     * checked repeatedly within the same page (e.g. on every render).
+     *
+     * @param {FeaturedFlags} key
+     * @return {*}  {Observable<boolean>}
+     * @memberof DotPropertiesService
+     */
+    getFreshFeatureFlag(key: FeaturedFlags): Observable<boolean> {
+        return this.getKey(key).pipe(map((value) => this.normalizeFlagValue(value)));
+    }
+
+    private normalizeFlagValue(value: string | boolean): boolean {
+        if (typeof value === 'boolean') {
+            return value;
+        }
+
+        return value === FEATURE_FLAG_NOT_FOUND ? true : value.toLowerCase() === 'true';
     }
 
     /**

@@ -1,8 +1,7 @@
 import {
     ComponentStatus,
-    DotCMSContentlet,
-    DotContentDriveItem,
-    DotSite,
+    DotCMSContentTypeField,
+    DotContentDriveBrowseItem,
     TreeNodeItem
 } from '@dotcms/dotcms-models';
 
@@ -18,14 +17,68 @@ import {
  * - **Image field**: the same, plus `baseTypes: [DOTASSET, FILEASSET]` pre-selected and
  *   `mimeTypes: ['image/*']`.
  */
+/**
+ * The browse capabilities a host can opt into.
+ *
+ * Absent, the picker behaves exactly as it always has: assets only, no links. That is the point of
+ * nesting these rather than flattening the flags onto {@link DotAssetPickerConfig} — a File-field
+ * change cannot set `showLinks` by accident, and the opt-in is visible at every call site.
+ *
+ * **Folders are not among the capabilities**, by design: the picker's list carries content only and
+ * folders are reached through the sidebar tree, so there is no flag a host could set to put one in
+ * the list (#37366).
+ *
+ * **Neither is content condition.** `showArchived` used to live here; the Status filter is its one
+ * representation now, so a caller seeds `status` and the editor can clear it (FR-014b). Both
+ * removals landed independently and compose: what is left is genuinely about *what the list may
+ * contain*, plus the version state and sort it opens with.
+ *
+ * Only the `browse` entry point (`openBrowserModal`) sets this today.
+ */
+export interface DotAssetPickerBrowseOptions {
+    /**
+     * List menu links alongside assets, and allow one to be returned.
+     *
+     * Unsatisfiable together with {@link DotAssetPickerConfig.mimeTypes}: the browse endpoint drops
+     * links whenever a mimetype filter is set, because a link has no file metadata.
+     */
+    showLinks?: boolean;
+
+    /**
+     * Which versions to browse, as the endpoint understands it.
+     *
+     * Three states, and the omitted one is not the restrictive one: **omit** and the endpoint's own
+     * default applies, which *includes* working versions; **`true`** is the same thing said
+     * explicitly; **`false`** is the only value that narrows to live-only (the request then carries
+     * `live: true`).
+     */
+    showWorking?: boolean;
+
+    /** Sort descending rather than ascending. */
+    sortByDesc?: boolean;
+
+    /**
+     * Field to sort by, e.g. `modDate` or `title`.
+     *
+     * Seeds the picker's initial sort alongside {@link sortByDesc}; omit for the picker's default.
+     * Both are a starting point, not a lock — the editor can re-sort from the table header.
+     */
+    sortField?: string;
+}
+
 export interface DotAssetPickerConfig {
     /**
      * Site the picker was opened from — the editor's current site.
      *
-     * Also the upload fallback when no folder is selected. `SYSTEM_HOST` is not browsable and
-     * suppresses the search.
+     * **Optional, and only a starting point.** {@link browseSite} (the remembered location) wins
+     * over it, and the sidebar can move the picker elsewhere afterwards. Omit it and the picker
+     * resolves the current site itself; pass it when the caller already has one in hand, to save
+     * the request.
+     *
+     * Narrowed to id + hostname because that is all the picker ever reads — a caller holding those
+     * two strings does not need to fetch a whole `DotSite` to open a dialog.
      */
-    site: DotSite;
+    site?: DotAssetPickerSite;
 
     /**
      * Site to open on, when it differs from {@link site} — the remembered last-used site.
@@ -79,24 +132,70 @@ export interface DotAssetPickerConfig {
      * filter bag makes that structural rather than a convention a future component could break.
      */
     mimeTypes?: string[];
+
+    /**
+     * Content conditions that start **selected** — `ARCHIVED`, `UNPUBLISHED`, `LOCKED`.
+     *
+     * A seed, not a restriction: it lands in the filter bag beside {@link baseTypes} and
+     * {@link languageId}, shows up in the Status chip, and "Clear all" returns to it. `browse`
+     * mode's `status: 'archived'` is what sets it today (FR-014b).
+     *
+     * Which conditions the chip may *offer* is a different question, bounded by the caller's
+     * version state rather than by this (FR-014d) — see the toolbar's `$allowedStatuses`.
+     */
+    status?: string[];
+
+    /**
+     * Browse capabilities beyond plain asset picking — folders, menu links, version state and
+     * sorting.
+     *
+     * Omit for today's behaviour. See {@link DotAssetPickerBrowseOptions}.
+     */
+    browse?: DotAssetPickerBrowseOptions;
 }
 
 /**
- * The filters the editor can see and change.
+ * The filters the editor can see and change, by their known keys.
  *
  * Base types are held by **name**, unlike Content Drive, which encodes them as numbers so they
  * survive a round-trip through the URL. The picker has no URL, so it skips that encoding entirely.
  */
-export interface DotAssetPickerFilters {
+export interface DotKnownAssetPickerFilters {
     /** Free-text search term. */
-    title?: string;
+    title: string;
     /** Selected language ids. */
-    languageId?: string[];
+    languageId: string[];
     /** Selected content-type variables. */
-    contentType?: string[];
+    contentType: string[];
     /** Selected base-type names. */
-    baseType?: string[];
+    baseType: string[];
+    /**
+     * Whether assets shared across every site (SYSTEM_HOST content) are included.
+     *
+     * `'true'` / `'false'` rather than a boolean, so it reads identically to Content Drive's, whose
+     * values have to survive a URL. Written explicitly on both transitions — an absent key means
+     * state that predates the toggle, not a deliberate opt-out.
+     */
+    sharedAssets: string;
+    /** Selected content conditions — `ARCHIVED`, `UNPUBLISHED`, `LOCKED`. OR-combined. */
+    status: string[];
 }
+
+/**
+ * The filter bag.
+ *
+ * Known keys stay named so they keep their types and their autocompletion; the index signature
+ * admits the ones that cannot be enumerated — the `us_<variable>` keys the "More" overflow mints
+ * per content-type field. Same shape Content Drive uses for the same reason
+ * (`DotContentDriveFilters`), which is what lets one shared chip write to either surface.
+ *
+ * Note what is **not** here: `mimeTypes` and `allowedBaseTypes` are caller restrictions, not
+ * filters, and keeping them out of this type is what makes that structural rather than a
+ * convention. See {@link DotAssetPickerConfig.mimeTypes}.
+ */
+export type DotAssetPickerFilters = Partial<DotKnownAssetPickerFilters> & {
+    [key: string]: string | string[];
+};
 
 /** Sort order for the asset list. */
 export type DotAssetPickerSortOrder = 'asc' | 'desc';
@@ -117,12 +216,20 @@ export interface DotAssetPickerPagination {
  * Cursor bookmark for one visited page.
  *
  * The drive API pages by cursor, not offset, so reaching page N means having walked pages 1..N-1.
- * Only the content cursor is tracked: the picker always sends `showFolders: false`, so the folder
- * cursor never advances.
+ * Contentlets and menu links each page independently, so a bookmark has to record both cursors —
+ * one cursor cannot reconstruct a page of a mixed list.
+ *
+ * No folder cursor: the picker never asks for folders, so the endpoint's folder stream is always
+ * empty for it and its cursor would be a permanent 0.
+ *
+ * The link cursor stays at 0 while its stream is switched off, which is the case for every entry
+ * point that does not opt into {@link DotAssetPickerBrowseOptions}.
  */
 export interface DotAssetPickerPage {
     contentCursor: number;
     hasMoreContent: boolean;
+    linkCursor: number;
+    hasMoreLinks: boolean;
 }
 
 /** Site the list is currently scoped to. */
@@ -172,10 +279,27 @@ export interface DotAssetPickerState {
      * split as the image editor's `withView`.
      */
     isFullscreen: boolean;
+    /**
+     * Filterable fields of the single selected content type, as the "More" overflow published them.
+     *
+     * One fetch, two readers: the chips (which control each field renders) and `$request` (which
+     * reshapes a raw `us.*` string into the `userSearchable` payload). Empty whenever 0 or more than
+     * one content type is selected — the overflow is only offered for exactly one.
+     */
+    userSearchableFields: DotCMSContentTypeField[];
+    /**
+     * Field variables with a chip on screen, in the order the editor added them.
+     *
+     * Deliberately **not** in `filters`: a chip is added before it filters anything, so that adding
+     * one does not reload the list on the way in, and an empty `us.*` entry in the bag would be a
+     * filter that filters nothing — the state the facade contract forbids (O3). Content Drive keeps
+     * the same split for the same reason.
+     */
+    userSearchableActive: string[];
 }
 
 export interface DotAssetPickerBrowseState {
-    items: DotContentDriveItem[];
+    items: DotContentDriveBrowseItem[];
     status: ComponentStatus;
     pagination: DotAssetPickerPagination;
     sort: DotAssetPickerSort;
@@ -186,19 +310,57 @@ export interface DotAssetPickerBrowseState {
 }
 
 export interface DotAssetPickerFolderTreeState {
-    /** Tree roots: one node per site the user can browse, each expandable into its folders. */
+    /**
+     * Tree roots. Exactly one: the browsed site's root, rendered as `All`.
+     *
+     * Sites used to be the roots, which is how the editor changed site — by expanding a different
+     * one. The site is now chosen explicitly in the sidebar's own selector, so the tree shows one
+     * site's folders and nothing else.
+     */
     folders: TreeNodeItem[];
-    /** Highlighted node — a site root or a folder. `null` until the tree resolves. */
+    /** Highlighted node — the `All` root or a folder. `null` until the tree resolves. */
     selectedNode: TreeNodeItem | null;
     foldersStatus: ComponentStatus;
     /**
-     * Sidebar "Search sites & folders" term. Separate from `filters.title`, which searches assets:
-     * this one narrows what the *tree* shows.
+     * Sidebar "Search folders..." term. Narrows the *folders* of the browsed site — never the
+     * sites, which have their own search inside the selector, and never the assets, which are
+     * `filters.title`.
      */
-    treeSearch: string;
+    folderSearch: string;
+    /**
+     * Flat, recursive matches for `folderSearch`, replacing the tree while a term is active.
+     *
+     * `null` and `[]` mean different things and both are load-bearing: `null` is "not searching",
+     * `[]` is "searched, nothing matched". Collapsing them fires the empty state before the editor
+     * has typed anything.
+     */
+    searchResults: TreeNodeItem[] | null;
+    /**
+     * Status of the *search* request, deliberately separate from `foldersStatus`.
+     *
+     * A failed search and a failed tree load render differently; one shared field makes a failure
+     * indistinguishable from an empty result, which is the bug the old sidebar had.
+     */
+    searchStatus: ComponentStatus;
+    /**
+     * Whether more matches exist than the one page shown.
+     *
+     * Only the response's pagination knows this — nothing in `searchResults` records it. It drives
+     * a "narrow your search" hint rather than a "load more": the results come from a recursive
+     * query, and paging one would silently page the non-recursive query the tree uses.
+     */
+    searchHasMore: boolean;
 }
 
 export interface DotAssetPickerSelectionState {
-    /** The single asset the editor has picked, or `null`. */
-    selectedAsset: DotCMSContentlet | null;
+    /**
+     * The single item the editor has picked, or `null`.
+     *
+     * Widened from `DotCMSContentlet` because the list can return menu links, which are not
+     * contentlets. What follows from that: only a contentlet can be re-fetched with its full
+     * content before the picker closes — see `DotAssetPickerComponent.confirm`.
+     *
+     * Folders are no longer part of the reason: the list never carries one.
+     */
+    selectedAsset: DotContentDriveBrowseItem | null;
 }

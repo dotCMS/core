@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import type { Injector } from '@angular/core';
 
 import { Extension, flattenExtensions, getSchema } from '@tiptap/core';
@@ -6,8 +8,13 @@ import { Node as PMNode } from '@tiptap/pm/model';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createEditorExtensions } from './editor-extensions';
+import { DotLink } from './link.extension';
 
-import { UNKNOWN_BLOCK_NODE_NAME } from '../utils/unknown-block.utils';
+import {
+    preserveUnknownNodesInDocument,
+    UNKNOWN_BLOCK_MARK_NAME,
+    UNKNOWN_BLOCK_NODE_NAME
+} from '../utils/unknown-block.utils';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
@@ -25,7 +32,7 @@ import type { SlashMenuService } from '../components/slash-menu/slash-menu.servi
 describe('createEditorExtensions', () => {
     // A restricted list keeps table/codeBlock/image out, so the injector is never touched
     // during assembly — a bare stub is enough.
-    const injector = { get: jest.fn() } as unknown as Injector;
+    const injector = { get: vi.fn() } as unknown as Injector;
     const menuService = {} as SlashMenuService;
     const messageService = { get: (key: string) => key } as unknown as DotMessageService;
 
@@ -47,7 +54,7 @@ describe('createEditorExtensions', () => {
     });
 
     it('drops a remote extension whose name collides with a built-in and warns', () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         const remoteUnderline = Extension.create({ name: 'underline' });
 
         const names = build([remoteUnderline]);
@@ -170,14 +177,30 @@ describe('createEditorExtensions', () => {
             expect(doc.firstChild?.firstChild?.type.name).toBe('emoji');
         });
 
-        // The schema keeps the extensions so stored content loads; these flags are what
-        // actually enforce the restriction, alongside the toolbar's `@if (isAllowed(...))`.
-        it('disables the implicit authoring paths when the block is not allowed', () => {
+        // The schema keeps the extensions so stored content loads; for `link`, these flags are
+        // what actually enforce the restriction, alongside the toolbar's `@if (isAllowed(...))`.
+        it('disables the implicit LINK authoring paths when the block is not allowed', () => {
             const extensions = restricted();
 
             expect(byName(extensions, 'link')?.options.autolink).toBe(false);
             expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(false);
-            expect(byName(extensions, 'emoji')?.options.enableEmoticons).toBe(false);
+        });
+
+        /**
+         * #37340 AC-008 — this assertion is the INVERSE of what it was, deliberately.
+         *
+         * `emoji` is not selectable in Allowed Blocks: the option list comes from
+         * `getEditorBlockOptions()`, which offers block nodes only, and `link`/`emoji`/`youtube`
+         * were excluded by #37175 itself. So `has('emoji')` was true ONLY on a field with no
+         * restriction at all — meaning restricting ANY block silently removed `:)` (and the
+         * toolbar's emoji button) from that field, with no admin having chosen it.
+         *
+         * That is not a restriction anyone configured; it is a gate that could only misfire. And
+         * since emoji are now plain characters an author can always type, there is nothing left
+         * for it to restrict even in principle.
+         */
+        it('keeps emoticon entry on a restricted field, because emoji cannot be restricted', () => {
+            expect(byName(restricted(), 'emoji')?.options.enableEmoticons).toBe(true);
         });
 
         it('keeps the implicit authoring paths on an unrestricted field', () => {
@@ -186,6 +209,139 @@ describe('createEditorExtensions', () => {
             expect(byName(extensions, 'link')?.options.autolink).toBe(true);
             expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(true);
             expect(byName(extensions, 'emoji')?.options.enableEmoticons).toBe(true);
+        });
+    });
+
+    /**
+     * #37175 AC5 — the failure mode the two registered marks only papered over. Any mark the
+     * schema does not declare aborts `Node.fromJSON` for the WHOLE document, so registering
+     * `link` and `highlight` fixed the two known offenders, not the class of bug. The realistic
+     * sources are content that did not come from this editor: an API write, a migration from
+     * another CMS (`textStyle`, `color`, `fontFamily` are the usual suspects), or a version
+     * downgrade.
+     */
+    describe('unknown marks no longer abort the document (#37175 AC5)', () => {
+        const RESTRICTED = ['bulletList', 'orderedList', 'codeBlock'];
+
+        const schema = () =>
+            getSchema(createEditorExtensions(menuService, RESTRICTED, injector, messageService));
+
+        /** Two paragraphs so a partial load is distinguishable from a total abort. */
+        const storedDoc = (mark: Record<string, unknown>) => ({
+            type: 'doc',
+            content: [
+                {
+                    type: 'paragraph',
+                    content: [{ type: 'text', marks: [mark], text: 'imported copy' }]
+                },
+                {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: 'plain sibling' }]
+                }
+            ]
+        });
+
+        const knownNames = (target: ReturnType<typeof schema>) => ({
+            nodes: new Set(Object.keys(target.nodes)),
+            marks: new Set(Object.keys(target.marks))
+        });
+
+        it('registers the unsupported-mark placeholder', () => {
+            expect(Object.keys(schema().marks)).toContain(UNKNOWN_BLOCK_MARK_NAME);
+        });
+
+        it('is the exact throw the fix has to prevent', () => {
+            expect(() => PMNode.fromJSON(schema(), storedDoc({ type: 'textStyle' }))).toThrow(
+                /no mark type textStyle/
+            );
+        });
+
+        it('loads the whole document once the unknown mark is preserved', () => {
+            const target = schema();
+            const { nodes, marks } = knownNames(target);
+
+            const doc = PMNode.fromJSON(
+                target,
+                preserveUnknownNodesInDocument(
+                    storedDoc({ type: 'textStyle', attrs: { color: '#ff0000' } }),
+                    nodes,
+                    marks
+                )
+            );
+
+            // Before the fix this was an empty doc: 0 characters, both paragraphs gone.
+            expect(doc.childCount).toBe(2);
+            expect(doc.textContent).toBe('imported copyplain sibling');
+        });
+
+        it('keeps the decorated text editable, carrying the payload for the save path', () => {
+            const target = schema();
+            const { nodes, marks } = knownNames(target);
+            const original = { type: 'textStyle', attrs: { color: '#ff0000' } };
+
+            const doc = PMNode.fromJSON(
+                target,
+                preserveUnknownNodesInDocument(storedDoc(original), nodes, marks)
+            );
+            const [mark] = doc.firstChild?.firstChild?.marks ?? [];
+
+            expect(mark.type.name).toBe(UNKNOWN_BLOCK_MARK_NAME);
+            expect(mark.attrs['originalMark']).toEqual(original);
+        });
+
+        it('survives a mark with no attrs at all', () => {
+            const target = schema();
+            const { nodes, marks } = knownNames(target);
+
+            const doc = PMNode.fromJSON(
+                target,
+                preserveUnknownNodesInDocument(storedDoc({ type: 'someUnknownMark' }), nodes, marks)
+            );
+
+            expect(doc.textContent).toBe('imported copyplain sibling');
+        });
+    });
+
+    /**
+     * #37175 AC3 — `linkOnPaste: false` alone did not close the link-on-paste path: TipTap's
+     * Link returns its URL paste rule ungated, so pasting text containing a URL still created
+     * a link mark on a field where `link` is not allowed. `DotLink` overrides `addPasteRules`.
+     */
+    describe('link-on-paste follows the authoring gate (#37175 AC3)', () => {
+        const pasteRulesFor = (allowedBlocks: string[] | undefined) => {
+            const link = flattenExtensions(
+                createEditorExtensions(menuService, allowedBlocks, injector, messageService)
+            ).find((ext) => ext.name === 'link');
+
+            return link?.config.addPasteRules?.call({
+                options: link.options,
+                parent: () => [{ find: /url/, handler: () => undefined }]
+            });
+        };
+
+        it('drops the URL paste rule when link is not an allowed block', () => {
+            expect(pasteRulesFor(['bulletList', 'orderedList'])).toEqual([]);
+        });
+
+        it('keeps the URL paste rule on an unrestricted field', () => {
+            expect(pasteRulesFor(undefined)).toHaveLength(1);
+        });
+
+        /**
+         * The rule being suppressed is the auto-link-on-paste rule, so it follows `autolink`
+         * too — not `linkOnPaste` alone. `createEditorExtensions()` sets both from the same
+         * `has('link')` and cannot produce this combination, which is exactly why it needs
+         * pinning: nothing else would catch the gate silently killing the linkifying.
+         */
+        it('keeps the URL paste rule when only autolink is enabled', () => {
+            const link = DotLink.configure({ autolink: true, linkOnPaste: false });
+
+            expect(
+                link.config.addPasteRules?.call({
+                    options: link.options,
+                    parent: () => [{ find: /url/, handler: () => undefined }]
+                })
+            ).toHaveLength(1);
         });
     });
 });

@@ -18,11 +18,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
-import { ZIndexUtils } from 'primeng/utils';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
-import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
+import {
+    ASSET_PICKER_LAUNCHER,
+    AngularAssetPickerLauncher,
+    DotKeyboardShortcutService,
+    DotMessagePipe,
+    hasOverlayAbove
+} from '@dotcms/ui';
 
 import {
     AngularImageEditorLauncher,
@@ -103,11 +108,13 @@ function writeExpandedPreference(expanded: boolean): void {
     ],
     templateUrl: './dot-edit-content-side-panel.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // ESC and click-outside close the panel through the unsaved-changes guard. Both are bound at
-    // document level because `appendTo="body"` moves the drawer (and its mask) out of this
-    // component's DOM subtree, so template listeners would never receive the events.
+    // Click-outside closes the panel through the unsaved-changes guard, bound at document level
+    // because `appendTo="body"` moves the drawer (and its mask) out of this component's DOM subtree,
+    // so a template listener would never receive it.
+    //
+    // ESC used to be bound the same way. It now goes through the shared shortcut registry instead —
+    // see the registration in the constructor for why.
     host: {
-        '(document:keydown.escape)': 'onEscape()',
         '(document:click)': 'onMaskClick($event)'
     }
 })
@@ -115,6 +122,10 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
     readonly #navController = inject(DotSidePanelNavController);
+    readonly #shortcuts = inject(DotKeyboardShortcutService);
+
+    /** Withdraws the Escape claim; called from `ngOnDestroy` alongside the other teardown. */
+    #withdrawShortcuts: () => void = () => undefined;
 
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
@@ -160,6 +171,17 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         // Give the editor a clean form-bridge slot; restore the previous one on close.
         pushFormBridge();
 
+        // ESC goes through the shared registry rather than a document listener of this component's
+        // own. Two independent document listeners cannot arbitrate: `preventDefault` does not stop
+        // the other one, so the portlet behind would clear its selection at the same moment this
+        // panel closed. The registry gives the key to the most recent claim, and the panel opens
+        // after the portlet, so it wins for exactly as long as it is open.
+        this.#withdrawShortcuts = this.#shortcuts.register({
+            combination: 'escape',
+            label: 'edit.content.side-panel.shortcut.close',
+            handler: () => this.#onEscape()
+        });
+
         // Collapse the main navigation while the panel is open (restored on close), and register
         // this panel on the stack so ESC only closes the frontmost one. In afterNextRender so the
         // store mutation lands after the current render, not during it.
@@ -180,34 +202,41 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     }
 
     /**
-     * ESC handler. Only the frontmost stacked panel responds — both stacked panels share a
-     * document-level listener, so without this guard a single ESC would close the whole stack
-     * instead of one panel at a time.
+     * ESC handler, invoked by the shared shortcut registry rather than a document listener of this
+     * component's own.
+     *
+     * Always **consumes** the key while a panel is open, whether or not it closes. A panel is a modal
+     * surface, so ESC must never fall through to the portlet behind it and act on a listing the user
+     * cannot even see — which is exactly what would happen with two independent document listeners,
+     * since `preventDefault` does not stop other listeners on the same node.
+     *
+     * The `isTop` guard was originally needed because stacked panels shared one document listener and
+     * a single ESC would collapse the whole stack. The registry makes that structurally impossible —
+     * only the most recent claim on a combination is called, and the frontmost panel registered last.
+     * It is kept as a second line of defence, not because it is still load-bearing.
      */
-    protected onEscape(): void {
+    #onEscape(): boolean {
+        // An overlay above owns the key. Consumed, not declined, so it cannot reach the portlet.
         if (this.#hasOverlayAbove()) {
-            return;
+            return true;
         }
 
         if (this.#navController.isTop(this)) {
             this.requestClose();
         }
+
+        return true;
     }
 
     /**
      * Whether another PrimeNG overlay is stacked on top of this panel — the image editor dialog, a
      * confirm popup, an open select panel, or a second side panel.
      *
-     * Such an overlay owns the ESC key, but it is appended to `body` outside this component's DOM,
-     * so the document-level listener would still fire and close the panel underneath it. Every
-     * PrimeNG overlay registers itself in the shared `ZIndexUtils` stack when it opens, so comparing
-     * the top of that stack against this drawer's own z-index answers "is something above me?"
-     * without matching on overlay class names, which differ per component and change across versions.
+     * Delegates to the shared helper in `@dotcms/ui`: the portlet shell asks the same question for
+     * its own dialogs, and two copies of a z-index comparison would drift.
      */
     #hasOverlayAbove(): boolean {
-        const container = this.$drawer()?.container;
-
-        return !!container && ZIndexUtils.getCurrent() > ZIndexUtils.get(container);
+        return hasOverlayAbove(this.$drawer()?.container);
     }
 
     /**
@@ -286,5 +315,8 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         popFormBridge();
         // Restore the main navigation once the last panel closes.
         this.#navController.release(this);
+        // Withdrawn here rather than through `DestroyRef` so every teardown this component owns is
+        // in one place. `DestroyRef` stays for `takeUntilDestroyed` on the `saved$` subscription.
+        this.#withdrawShortcuts();
     }
 }

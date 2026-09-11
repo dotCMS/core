@@ -1,13 +1,18 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState } from '@ngrx/signals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MenuItemCommandEvent, MessageService } from 'primeng/api';
+import { MenuItem, MenuItemCommandEvent, MessageService } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -37,7 +42,11 @@ import {
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { DotJspIframeDialogComponent } from '@dotcms/ui';
-import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
+import {
+    createFakeContentlet,
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    mockWorkflowsActionsWithMove
+} from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
@@ -45,6 +54,48 @@ import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+
+/**
+ * Finds a menu entry by label at any depth. Index-free and depth-free, so regrouping the workflow
+ * actions cannot silently retarget these assertions.
+ */
+const find = (items: MenuItem[], label: string): MenuItem | undefined => {
+    for (const item of items) {
+        if (item.label === label) {
+            return item;
+        }
+
+        const nested = item.items && find(item.items, label);
+
+        if (nested) {
+            return nested;
+        }
+    }
+
+    return undefined;
+};
+
+/**
+ * The menu as an ordered list of labels, with separators rendered as `SEPARATOR`.
+ *
+ * Separators carry grouping meaning here — they are what holds the destructive actions apart from
+ * the rest — so they belong in the assertion rather than being filtered out, and a bare
+ * `.map(item => item.label)` would render them as an unreadable `undefined`.
+ */
+const SEPARATOR = '\u2014 separator \u2014';
+const labels = (items: MenuItem[]): string[] =>
+    items.map((item) => (item.separator ? SEPARATOR : item.label));
+
+/** Invokes a menu entry by label, wherever it lives in the tree. */
+const invoke = (items: MenuItem[], label: string) => {
+    const item = find(items, label);
+
+    if (!item?.command) {
+        throw new Error(`No command found on menu item "${label}"`);
+    }
+
+    item.command({} as unknown as MenuItemCommandEvent);
+};
 
 describe('DotFolderListViewContextMenuComponent', () => {
     let spectator: Spectator<DotFolderListViewContextMenuComponent>;
@@ -76,31 +127,31 @@ describe('DotFolderListViewContextMenuComponent', () => {
         componentProviders: [DotContentDriveStore, DialogService],
         providers: [
             mockProvider(DotContentDriveService, {
-                search: jest
+                search: vi
                     .fn()
                     .mockReturnValue(
                         of({ list: [], contentTotalCount: 0, folderCount: 0, contentCount: 0 })
                     )
             }),
             mockProvider(DotWorkflowsActionsService, {
-                getByInode: jest.fn().mockReturnValue(of(mockWorkflowActions))
+                getByInode: vi.fn().mockReturnValue(of(mockWorkflowActions))
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn()
+                editContent: vi.fn()
             }),
             mockProvider(MessageService, {
-                add: jest.fn()
+                add: vi.fn()
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),
             mockProvider(DotWorkflowActionsFireService, {
-                fireTo: jest.fn().mockReturnValue(of({}))
+                fireTo: vi.fn().mockReturnValue(of({}))
             }),
             // Required by the store's `withActionExecution`, which routes fire failures through it.
             mockProvider(DotHttpErrorManagerService),
@@ -108,14 +159,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
             mockProvider(AddToBundleService),
             mockProvider(PushPublishService, {
                 // Reads the mutable on every call rather than being re-programmed per test:
-                // `mockProvider` builds this `jest.fn` once for the whole file, and the `afterEach`
+                // `mockProvider` builds this `vi.fn` once for the whole file, and the `afterEach`
                 // `clearAllMocks` drops any `mockReturnValue` set on it.
-                getEnvironments: jest.fn(() => of(pushPublishEnvironments))
+                getEnvironments: vi.fn(() => of(pushPublishEnvironments))
             }),
-            mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
-            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
+            mockProvider(DotPushPublishDialogService, { open: vi.fn() }),
+            mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
             mockProvider(DotWorkflowEventHandlerService, {
-                open: jest.fn()
+                open: vi.fn()
             }),
             mockProvider(ActivatedRoute, {
                 snapshot: {
@@ -123,20 +174,25 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 }
             }),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'user-123', admin: true }))
+                getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-123', admin: true }))
             }),
             mockProvider(DotWizardService, {
-                open: jest.fn().mockReturnValue(of({}))
+                open: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([])),
+                // getFolderHierarchyByPath() pipes this per tree level; without it the
+                // hierarchy load dereferenced undefined inside a forkJoin.
+                searchFolders: vi
+                    .fn()
+                    .mockReturnValue(of({ folders: [], pagination: { totalEntries: 0 } }))
             }),
             mockProvider(DotContentletService, {
-                canLock: jest.fn().mockReturnValue(of(createMockCanLock(true, false))),
-                lockContent: jest.fn().mockReturnValue(of(mockContentlet)),
-                unlockContent: jest.fn().mockReturnValue(of(mockContentlet))
+                canLock: vi.fn().mockReturnValue(of(createMockCanLock(true, false))),
+                lockContent: vi.fn().mockReturnValue(of(mockContentlet)),
+                unlockContent: vi.fn().mockReturnValue(of(mockContentlet))
             }),
             provideHttpClient(),
             provideHttpClientTesting()
@@ -157,7 +213,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('rendering', () => {
@@ -214,8 +270,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 mockContentlet.inode,
                 DotRenderMode.LISTING
             );
-            // Edit + Lock/Unlock + 3 workflow actions + Push Publish + Add to Bundle
-            expect(component.$items()).toHaveLength(7);
+            // Actions caption + Edit + Lock/Unlock + Push Publish + Add to Bundle, then a
+            // separator, the Workflows caption and the fixture's 3 non-Move actions beneath it.
+            expect(component.$items()).toHaveLength(10);
         });
 
         it('should fetch canLock data when building menu items', async () => {
@@ -227,19 +284,39 @@ describe('DotFolderListViewContextMenuComponent', () => {
         it('should build correct menu items for contentlet', async () => {
             await component.getMenuItems(mockContextMenuData);
 
+            const items = component.$items();
             // Asserted as one ordered list rather than index by index: this test is about the
             // order, so the positions have to stay pinned, but an inserted item then fails once
             // with the whole list in the diff instead of pointing at whichever index shifted.
-            expect(component.$items().map((item) => item.label)).toEqual([
+            //
+            // Built-in items first, then the Workflows caption with its actions inline beneath it.
+            expect(labels(items)).toEqual([
+                'content-drive.context-menu.actions',
                 'content-drive.context-menu.edit-content',
                 'content-drive.context-menu.lock',
-                'Assign Workflow',
-                'Save',
-                'Save / Publish',
                 // Suffixed, because the default fixture has no reachable environment.
                 'content-drive.context-menu.push-publish.no-environment',
-                'contenttypes.content.add_to_bundle'
+                'contenttypes.content.add_to_bundle',
+                SEPARATOR,
+                'content-drive.context-menu.workflows',
+                'Assign Workflow',
+                'Save',
+                'Save / Publish'
             ]);
+
+            const workflows = items.find(
+                (item) => item.label === 'content-drive.context-menu.workflows'
+            );
+
+            // A caption, not an entry: it names the group, so it must not be invocable and must not
+            // open a flyout. `disabled` is what keeps it out of keyboard navigation.
+            expect(workflows?.command).toBeUndefined();
+            expect(workflows?.items).toBeUndefined();
+            expect(workflows?.disabled).toBe(true);
+            // PrimeNG's own group-label class, not a local approximation of it. Asserted by name
+            // because swapping it for bespoke styling is the regression worth catching here; the
+            // utilities alongside it are free to change.
+            expect(workflows?.styleClass).toContain('p-menu-submenu-label');
         });
 
         it('should build correct menu items for Pages contentlet', async () => {
@@ -252,14 +329,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(pageContextMenuData);
 
             const items = component.$items();
-            expect(items[0].label).toBe('content-drive.context-menu.edit-page');
+            expect(find(items, 'content-drive.context-menu.edit-page')).toBeTruthy();
         });
 
         it('should call navigation service when edit action is triggered', async () => {
             await component.getMenuItems(mockContextMenuData);
 
             const items = component.$items();
-            items[0].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'content-drive.context-menu.edit-content');
 
             expect(navigationService.editContent).toHaveBeenCalledWith(mockContentlet);
         });
@@ -267,12 +344,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
         it('should call setShowAddToBundle when add to bundle is triggered', async () => {
             await component.getMenuItems(mockContextMenuData);
 
-            // Found by label rather than index: the push group grew, and an index here would
-            // silently point at Push Publish instead.
-            component
-                .$items()
-                .find((item) => item.label === 'contenttypes.content.add_to_bundle')
-                ?.command?.({} as unknown as MenuItemCommandEvent);
+            // By label, not index: the push group grew AND the workflow actions are nested now,
+            // so an index here would silently point at Push Publish instead.
+            invoke(component.$items(), 'contenttypes.content.add_to_bundle');
 
             expect(store.contextMenu().showAddToBundle).toBe(true);
         });
@@ -289,12 +363,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
             // First call
             // Mock the contextMenu viewChild
             const mockContextMenu = {
-                show: jest.fn(),
-                hide: jest.fn(),
-                visible: jest.fn().mockReturnValue(false)
+                show: vi.fn(),
+                hide: vi.fn(),
+                visible: vi.fn().mockReturnValue(false)
             } as unknown as ContextMenu;
 
-            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+            vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
 
             await component.getMenuItems(mockContextMenuData);
             const firstCallCount = workflowsActionsService.getByInode.mock.calls.length;
@@ -303,7 +377,63 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-            expect(component.$items()).toHaveLength(7);
+            // Both captions + Edit + Lock/Unlock + Push Publish + Add to Bundle + separator + 3
+            expect(component.$items()).toHaveLength(10);
+        });
+
+        it.each([
+            ['hasArchiveActionlet' as const, 'Retire this blog'],
+            ['hasDeleteActionlet' as const, 'Send to trash'],
+            ['hasDestroyActionlet' as const, 'Purge']
+        ])('should hold a %s action apart from the Workflows group', async (flag, actionName) => {
+            // Named nothing like "Archive" or "Delete" on purpose: the split reads the action's
+            // actual sub-actionlets, so a custom scheme's wording must not decide the grouping.
+            // `mockReturnValueOnce`, not `mockReturnValue`: the spy is shared, `getByInode` is
+            // called once per `getMenuItems`, and a persistent override leaks this fixture into
+            // every test that runs after this one.
+            workflowsActionsService.getByInode.mockReturnValueOnce(
+                of([
+                    { ...mockWorkflowActions[0], id: 'keep', name: 'Save' },
+                    {
+                        ...mockWorkflowActions[0],
+                        id: 'destructive',
+                        name: actionName,
+                        [flag]: true
+                    }
+                ])
+            );
+
+            await component.getMenuItems(mockContextMenuData);
+
+            const items = component.$items();
+
+            expect(labels(items).slice(-5)).toEqual([
+                SEPARATOR,
+                'content-drive.context-menu.workflows',
+                'Save',
+                SEPARATOR,
+                actionName
+            ]);
+
+            // The separator is the whole point: it is what stops the destructive action being
+            // clicked by momentum after the one above it.
+            expect(items.at(-2)?.separator).toBe(true);
+        });
+
+        it('should not open a separator-led menu when every action is destructive', async () => {
+            workflowsActionsService.getByInode.mockReturnValueOnce(
+                of([{ ...mockWorkflowActions[0], name: 'Purge', hasDestroyActionlet: true }])
+            );
+
+            await component.getMenuItems(mockContextMenuData);
+
+            const items = component.$items();
+
+            // With no non-destructive action there is no Workflows caption, so the separator must
+            // still land after the built-in items rather than opening the menu.
+            expect(find(items, 'content-drive.context-menu.workflows')).toBeUndefined();
+            expect(labels(items)[0]).toBe('content-drive.context-menu.actions');
+            expect(labels(items).slice(-2)).toEqual([SEPARATOR, 'Purge']);
         });
 
         it('should not include move to folder workflow action', async () => {
@@ -351,7 +481,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 // Delete needs EDIT_PERMISSIONS too, matching `FolderAPIImpl.delete`.
-                expect(component.$items().map((item) => item.label)).toEqual([
+                expect(labels(component.$items())).toEqual([
+                    'content-drive.context-menu.actions',
                     'content-drive.context-menu.edit-folder'
                 ]);
             });
@@ -369,11 +500,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             it('should open folder dialog when edit folder action is triggered', async () => {
-                jest.spyOn(store, 'setDialog');
+                vi.spyOn(store, 'setDialog');
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 const items = component.$items();
-                items[0].command?.({} as unknown as MenuItemCommandEvent);
+                invoke(items, 'content-drive.context-menu.edit-folder');
 
                 expect(store.setDialog).toHaveBeenCalledWith({
                     type: DIALOG_TYPE.FOLDER,
@@ -384,12 +515,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             it('should show context menu for folders', async () => {
                 const mockContextMenu = {
-                    show: jest.fn(),
-                    hide: jest.fn(),
-                    visible: jest.fn().mockReturnValue(false)
+                    show: vi.fn(),
+                    hide: vi.fn(),
+                    visible: vi.fn().mockReturnValue(false)
                 } as unknown as ContextMenu;
 
-                jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+                vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
 
                 await component.getMenuItems(mockFolderContextMenuData);
 
@@ -400,17 +531,18 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(component.$memoizedMenuItems()[mockFolder.identifier]).toBeDefined();
-                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(1);
+                // The Actions caption plus the one permitted entry.
+                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(2);
             });
 
             it('should use memoized folder menu items on second call', async () => {
                 const mockContextMenu = {
-                    show: jest.fn(),
-                    hide: jest.fn(),
-                    visible: jest.fn().mockReturnValue(false)
+                    show: vi.fn(),
+                    hide: vi.fn(),
+                    visible: vi.fn().mockReturnValue(false)
                 } as unknown as ContextMenu;
 
-                jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+                vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
 
                 // First call
                 await component.getMenuItems(mockFolderContextMenuData);
@@ -420,7 +552,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-                expect(component.$items()).toHaveLength(1);
+                // The Actions caption plus the one permitted entry.
+                expect(component.$items()).toHaveLength(2);
             });
 
             it('should build empty menu when folder has no permissions', async () => {
@@ -439,12 +572,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             it('should not show context menu when folder has no applicable permissions', async () => {
                 const mockContextMenu = {
-                    show: jest.fn(),
-                    hide: jest.fn(),
-                    visible: jest.fn().mockReturnValue(false)
+                    show: vi.fn(),
+                    hide: vi.fn(),
+                    visible: vi.fn().mockReturnValue(false)
                 } as unknown as ContextMenu;
 
-                jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+                vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
 
                 const folderNoPermissions: DotContentDriveFolder = {
                     ...mockFolder,
@@ -483,7 +616,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 beforeEach(() => {
                     dialogService = spectator.inject(DialogService, true);
-                    jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
+                    vi.spyOn(dialogService, 'open').mockReturnValue(null as never);
                     component.$memoizedMenuItems.set({});
                 });
 
@@ -546,7 +679,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 beforeEach(() => {
                     dialogService = spectator.inject(DialogService, true);
-                    jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
+                    vi.spyOn(dialogService, 'open').mockReturnValue(null as never);
                     component.$memoizedMenuItems.set({});
                 });
 
@@ -604,11 +737,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
             // reachable by opening one menu and then right-clicking something with no actions.
             it('should close an open menu when the next item has no actions', async () => {
                 const menu = {
-                    show: jest.fn(),
-                    hide: jest.fn(),
-                    visible: jest.fn().mockReturnValue(true)
+                    show: vi.fn(),
+                    hide: vi.fn(),
+                    visible: vi.fn().mockReturnValue(true)
                 } as unknown as ContextMenu;
-                jest.spyOn(component, 'contextMenu').mockReturnValue(menu);
+                vi.spyOn(component, 'contextMenu').mockReturnValue(menu);
 
                 // A contentlet first, which does have actions.
                 await component.getMenuItems(mockContextMenuData);
@@ -726,7 +859,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(pushPublishItem()?.disabled).toBe(true);
 
                     withEnvironments();
-                    spectator.flushEffects();
+                    spectator.detectChanges();
 
                     await component.getMenuItems(folderContextMenuWithPublish);
 
@@ -777,7 +910,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // The shell renders the bundle dialog off the context menu's own target, keyed on
                 // identifier, which is the one id a folder from the sidebar tree always carries.
                 it('should flag the shell to show the bundle dialog', async () => {
-                    jest.spyOn(store, 'setShowAddToBundle');
+                    vi.spyOn(store, 'setShowAddToBundle');
 
                     await component.getMenuItems(folderContextMenuWithPublish);
                     addToBundleItem()?.command?.({} as unknown as MenuItemCommandEvent);
@@ -809,7 +942,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 beforeEach(() => {
                     alertConfirmService = spectator.inject(DotAlertConfirmService);
                     folderService = spectator.inject(DotFolderService);
-                    folderService.deleteFolder = jest.fn().mockReturnValue(of(true));
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(of(true));
                     // The delete path is built from the browsed site, so it has to be a real one
                     // rather than the store's SYSTEM_HOST default.
                     store.initContentDrive({
@@ -874,11 +1007,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // The sidebar tree listed the folder too, and `reloadContentDrive` only reloads the
                 // grid, so the tree keeps showing a folder that no longer exists without this.
                 it('should refetch the folder tree once the delete succeeds', async () => {
-                    jest.spyOn(store, 'loadFolders');
+                    vi.spyOn(store, 'loadFolders');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(store.loadFolders).toHaveBeenCalled();
                 });
@@ -887,11 +1020,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // than an error. Narrow (there is normally a browsed site) but it must not be silent.
                 it('should report rather than silently skip when no site is resolved', async () => {
                     patchState(store, { currentSite: undefined } as never);
-                    jest.spyOn(messageService, 'add');
+                    vi.spyOn(messageService, 'add');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(folderService.deleteFolder).not.toHaveBeenCalled();
                     expect(messageService.add).toHaveBeenCalledWith(
@@ -900,25 +1033,25 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not refetch the folder tree when the delete fails', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
-                    jest.spyOn(store, 'loadFolders');
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
+                        throwError(() => new Error('nope'))
+                    );
+                    vi.spyOn(store, 'loadFolders');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(store.loadFolders).not.toHaveBeenCalled();
                 });
 
                 it('should delete by path once confirmed, and reload the drive', async () => {
-                    jest.spyOn(store, 'reloadContentDrive');
+                    vi.spyOn(store, 'reloadContentDrive');
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
                     // Run whatever the confirm was armed with, as accepting the dialog would.
-                    const confirmArgs = (alertConfirmService.confirm as jest.Mock).mock.lastCall[0];
+                    const confirmArgs = (alertConfirmService.confirm as Mock).mock.lastCall![0];
                     confirmArgs.accept();
 
                     expect(folderService.deleteFolder).toHaveBeenCalledWith(
@@ -928,14 +1061,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not reload the drive when the delete fails', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
-                    jest.spyOn(store, 'reloadContentDrive');
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
+                        throwError(() => new Error('nope'))
+                    );
+                    vi.spyOn(store, 'reloadContentDrive');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(store.reloadContentDrive).not.toHaveBeenCalled();
                 });
@@ -947,22 +1080,22 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 describe('when the deleted folder contains the one being browsed', () => {
                     it('should move to the site root', async () => {
                         store.setPath(`${folderWithEdit.path}nested/`);
-                        jest.spyOn(store, 'setPath');
+                        vi.spyOn(store, 'setPath');
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                         expect(store.setPath).toHaveBeenCalledWith('/');
                     });
 
                     it('should move to the site root when browsing the deleted folder itself', async () => {
                         store.setPath(folderWithEdit.path);
-                        jest.spyOn(store, 'setPath');
+                        vi.spyOn(store, 'setPath');
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                         expect(store.setPath).toHaveBeenCalledWith('/');
                     });
@@ -971,11 +1104,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     // moving would throw the user out of where they were working for no reason.
                     it('should stay put when the deleted folder is elsewhere', async () => {
                         store.setPath('/somewhere-else/');
-                        jest.spyOn(store, 'setPath');
+                        vi.spyOn(store, 'setPath');
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                         expect(store.setPath).not.toHaveBeenCalled();
                     });
@@ -985,13 +1118,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // `handle(error)` call entirely would keep them green while the delete failed in
                 // total silence. This is the AC clause that says a failure reaches the user.
                 it('should surface a failed delete through the HTTP error handler', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
+                        throwError(() => new Error('nope'))
+                    );
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
 
                     expect(
                         spectator.inject(DotHttpErrorManagerService, true).handle
@@ -1018,12 +1151,15 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         showAddToBundle: false
                     });
 
-                    expect(component.$items().map((item) => item.label)).toEqual([
+                    expect(labels(component.$items())).toEqual([
+                        'content-drive.context-menu.actions',
                         'content-drive.context-menu.edit-folder',
                         'Edit-Permissions',
                         'contenttypes.content.push_publish',
                         'contenttypes.content.add_to_bundle',
                         'content-drive.context-menu.push-history',
+                        // Delete is held apart, the same way the destructive workflow actions are.
+                        SEPARATOR,
                         'content-drive.context-menu.delete-folder'
                     ]);
                 });
@@ -1084,8 +1220,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 );
 
                 expect(lockItem).toBeUndefined();
-                // Edit + 3 workflow actions + Push Publish + Add to Bundle (no lock/unlock)
-                expect(items).toHaveLength(6);
+                // Both captions + Edit + Push Publish + Add to Bundle + separator + 3, no lock
+                expect(items).toHaveLength(9);
             });
 
             it('should call lockContent when lock action is triggered on unlocked content', async () => {
@@ -1131,7 +1267,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             it('should show success message when lock action succeeds', async () => {
-                jest.useFakeTimers();
+                vi.useFakeTimers();
                 dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
                 dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
 
@@ -1148,7 +1284,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 lockItem?.command?.({} as unknown as MenuItemCommandEvent);
 
-                jest.advanceTimersByTime(0);
+                vi.advanceTimersByTime(0);
 
                 expect(messageService.add).toHaveBeenCalledWith({
                     severity: 'success',
@@ -1156,11 +1292,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     detail: 'content-drive.toast.lock-success-detail'
                 });
 
-                jest.useRealTimers();
+                vi.useRealTimers();
             });
 
             it('should show success message when unlock action succeeds', async () => {
-                jest.useFakeTimers();
+                vi.useFakeTimers();
                 dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
                 dotContentletService.unlockContent.mockReturnValue(of(mockContentlet));
 
@@ -1177,7 +1313,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 unlockItem?.command?.({} as unknown as MenuItemCommandEvent);
 
-                jest.advanceTimersByTime(0);
+                vi.advanceTimersByTime(0);
 
                 expect(messageService.add).toHaveBeenCalledWith({
                     severity: 'success',
@@ -1185,7 +1321,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     detail: 'content-drive.toast.unlock-success-detail'
                 });
 
-                jest.useRealTimers();
+                vi.useRealTimers();
             });
         });
 
@@ -1265,11 +1401,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
     describe('closeOnContextMenuReset', () => {
         it('should hide context menu when contentlet is null and menu is visible', () => {
             const mockContextMenu = {
-                hide: jest.fn(),
-                visible: jest.fn().mockReturnValue(true)
+                hide: vi.fn(),
+                visible: vi.fn().mockReturnValue(true)
             } as unknown as ContextMenu;
 
-            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+            vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
 
             store.patchContextMenu({
                 contentlet: null,
@@ -1284,11 +1420,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
         it('should not hide context menu when contentlet is null and menu is not visible', () => {
             const mockContextMenu = {
-                hide: jest.fn(),
-                visible: jest.fn().mockReturnValue(false)
+                hide: vi.fn(),
+                visible: vi.fn().mockReturnValue(false)
             } as unknown as ContextMenu;
 
-            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+            vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
 
             store.patchContextMenu({
                 contentlet: null,
@@ -1303,11 +1439,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
         it('should not hide context menu when contentlet exists', () => {
             const mockContextMenu = {
-                hide: jest.fn(),
-                visible: jest.fn().mockReturnValue(true)
+                hide: vi.fn(),
+                visible: vi.fn().mockReturnValue(true)
             } as unknown as ContextMenu;
 
-            jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+            vi.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
 
             store.patchContextMenu({
                 contentlet: mockContentlet,
@@ -1333,7 +1469,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             const items = component.$items();
 
             // Assign Workflow (now at index 2 because of lock/unlock at index 1)
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Assign Workflow');
 
             expect(dotWizardService.open).toHaveBeenCalled();
         });
@@ -1348,7 +1484,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             const items = component.$items();
 
             // Assign Workflow (now at index 2 because of lock/unlock at index 1)
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Assign Workflow');
 
             dotWizardService.open.mockReturnValue(of({}));
 
@@ -1376,8 +1512,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             const items = component.$items();
-            // Save action is at index 2 (Edit at 0, Lock/Unlock at 1, Save at 2)
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Save');
 
             expect(dotWizardService.open).not.toHaveBeenCalled();
             expect(workflowsActionsFireService.fireTo).toHaveBeenCalledWith({
@@ -1388,7 +1523,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
         });
 
         it('should show success message when workflow action succeeds', async () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const mockWorkflowWithoutInputs = [
                 {
                     ...mockWorkflowActions[1],
@@ -1406,20 +1541,20 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             const items = component.$items();
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Save');
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'success',
                 summary: 'content-drive.toast.workflow-executed'
             });
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should show error message when workflow action fails', async () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const mockWorkflowWithoutInputs = [
                 {
                     ...mockWorkflowActions[1],
@@ -1438,9 +1573,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             const items = component.$items();
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Save');
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',
@@ -1448,11 +1583,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 life: 4500
             });
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should set status to LOADED when workflow action fails', async () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const mockWorkflowWithoutInputs = [
                 {
                     ...mockWorkflowActions[1],
@@ -1471,24 +1606,24 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             const items = component.$items();
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Save');
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(store.status()).toBe(DotContentDriveStatus.LOADED);
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should reload content drive when workflow action succeeds', async () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const mockWorkflowWithoutInputs = [
                 {
                     ...mockWorkflowActions[1],
                     actionInputs: []
                 }
             ];
-            const reloadSpy = jest.spyOn(store, 'reloadContentDrive');
+            const reloadSpy = vi.spyOn(store, 'reloadContentDrive');
 
             workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
             workflowsActionsFireService.fireTo.mockReturnValue(of(mockContentlet));
@@ -1500,13 +1635,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             const items = component.$items();
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Save');
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(reloadSpy).toHaveBeenCalled();
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should set status to LOADING when workflow action is triggered', async () => {
@@ -1527,7 +1662,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
 
             const items = component.$items();
-            items[2].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'Save');
 
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
         });
@@ -1537,7 +1672,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
         const mockEvent = new MouseEvent('contextmenu');
 
         it('should show error message when lock action fails', async () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const mockError = new Error('Lock failed');
 
             dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
@@ -1554,7 +1689,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             lockItem?.command?.({} as unknown as MenuItemCommandEvent);
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',
@@ -1563,11 +1698,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 life: 4500
             });
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should show error message when unlock action fails', async () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const mockError = new Error('Unlock failed');
 
             dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
@@ -1586,7 +1721,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             unlockItem?.command?.({} as unknown as MenuItemCommandEvent);
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',
@@ -1595,12 +1730,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 life: 4500
             });
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should reload content drive when lock succeeds', async () => {
-            jest.useFakeTimers();
-            const reloadSpy = jest.spyOn(store, 'reloadContentDrive');
+            vi.useFakeTimers();
+            const reloadSpy = vi.spyOn(store, 'reloadContentDrive');
 
             dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
             dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
@@ -1616,16 +1751,16 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             lockItem?.command?.({} as unknown as MenuItemCommandEvent);
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(reloadSpy).toHaveBeenCalled();
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('should reload content drive when unlock succeeds', async () => {
-            jest.useFakeTimers();
-            const reloadSpy = jest.spyOn(store, 'reloadContentDrive');
+            vi.useFakeTimers();
+            const reloadSpy = vi.spyOn(store, 'reloadContentDrive');
 
             dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
             dotContentletService.unlockContent.mockReturnValue(of(mockContentlet));
@@ -1643,11 +1778,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             unlockItem?.command?.({} as unknown as MenuItemCommandEvent);
 
-            jest.advanceTimersByTime(0);
+            vi.advanceTimersByTime(0);
 
             expect(reloadSpy).toHaveBeenCalled();
 
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 });

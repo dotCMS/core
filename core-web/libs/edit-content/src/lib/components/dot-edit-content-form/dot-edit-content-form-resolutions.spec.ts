@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSClazzes,
@@ -9,10 +11,11 @@ import { createFakeContentlet, createFakeSelectField } from '@dotcms/utils-testi
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { attachOrderedFields, parsePreservingKeyOrder } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
-jest.mock('../../utils/relationshipFromContentlet', () => ({
-    getRelationshipFromContentlet: jest.fn()
+vi.mock('../../utils/relationshipFromContentlet', () => ({
+    getRelationshipFromContentlet: vi.fn()
 }));
 
 // Ensure resolutionValue is properly initialized before each test
@@ -75,7 +78,7 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Restore resolutionValue to its original state before each test
         // This prevents test contamination from other tests
@@ -386,7 +389,7 @@ describe('DotEditContentFormResolutions', () => {
         const mockRelationships = [{ identifier: 'id1' }, { identifier: 'id2' }];
 
         beforeEach(() => {
-            (getRelationshipFromContentlet as jest.Mock).mockReturnValue(mockRelationships);
+            (getRelationshipFromContentlet as Mock).mockReturnValue(mockRelationships);
         });
 
         it('should join relationship identifiers with commas', () => {
@@ -403,7 +406,7 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         it('should handle empty relationships', () => {
-            (getRelationshipFromContentlet as jest.Mock).mockReturnValue([]);
+            (getRelationshipFromContentlet as Mock).mockReturnValue([]);
             const result = resolutionValue[FIELD_TYPES.RELATIONSHIP](mockContentlet, mockField);
             expect(result).toBe('');
         });
@@ -482,7 +485,7 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.CUSTOM_FIELD,
                 FIELD_TYPES.HIDDEN,
                 FIELD_TYPES.JSON,
-                FIELD_TYPES.KEY_VALUE,
+                // KEY_VALUE has its own resolver — it recovers the response's key order.
                 FIELD_TYPES.MULTI_SELECT,
                 FIELD_TYPES.RADIO,
                 FIELD_TYPES.TAG,
@@ -610,5 +613,54 @@ describe('DotEditContentFormResolutions', () => {
                 expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBeNull();
             });
         });
+    });
+});
+
+describe('KEY_VALUE resolution', () => {
+    const resolve = (contentlet: unknown, variable = 'keyValue') =>
+        resolutionValue[FIELD_TYPES.KEY_VALUE](
+            contentlet as DotCMSContentlet,
+            { variable, defaultValue: null } as unknown as DotCMSContentTypeField,
+            undefined,
+            false
+        );
+
+    /** A contentlet as `getContentById` hands it over. */
+    const loaded = (raw: string) => {
+        const { entity } = JSON.parse(raw);
+        const ordered = parsePreservingKeyOrder(raw) as { entity: unknown };
+
+        return attachOrderedFields(entity, ordered.entity);
+    };
+
+    it('should hand the form the order the response carried, not the object order', () => {
+        const raw = '{"entity":{"keyValue":{"orden 1":"a","123":"b","zzz":"c"}}}';
+
+        // The plain object has already hoisted `123`; the resolver must not use it.
+        expect(Object.keys(JSON.parse(raw).entity.keyValue)[0]).toBe('123');
+        expect(resolve(loaded(raw))).toBe('{"orden 1":"a","123":"b","zzz":"c"}');
+    });
+
+    it('should fall back to the stored value when nothing was recovered', () => {
+        // Contentlets reaching the form by another path carry no recovered copy.
+        const plain = { keyValue: { a: '1' } };
+
+        expect(resolve(plain)).toEqual({ a: '1' });
+    });
+
+    it('should resolve only its own field', () => {
+        const raw = '{"entity":{"first":{"9":"a","b":"c"},"second":{"z":"1"}}}';
+
+        expect(resolve(loaded(raw), 'first')).toBe('{"9":"a","b":"c"}');
+        expect(resolve(loaded(raw), 'second')).toBe('{"z":"1"}');
+    });
+
+    it('should leave a binary field alone even though it is reachable', () => {
+        // Only the declared field type routes here, which is the whole point: a
+        // shape-based guess used to rewrite `metaData` and break file previews.
+        const raw = '{"entity":{"metaData":{"name":"f.txt","fileSize":42}}}';
+        const contentlet = loaded(raw);
+
+        expect(contentlet.metaData).toEqual({ name: 'f.txt', fileSize: 42 });
     });
 });

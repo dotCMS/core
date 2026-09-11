@@ -9,12 +9,12 @@ import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotRolesService
 } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { DotMessageSeverity, DotMessageType, DotRole } from '@dotcms/dotcms-models';
 
 import {
-    DotRoleView,
     DotUserFormPayload,
     DotUserListItem,
     DotUsersService
@@ -66,6 +66,7 @@ export const DotUsersListStore = signalStore(
     withState<DotUsersListState>(initialState),
     withMethods((store) => {
         const usersService = inject(DotUsersService);
+        const rolesService = inject(DotRolesService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const messageDisplayService = inject(DotMessageDisplayService);
         const messageService = inject(DotMessageService);
@@ -106,14 +107,14 @@ export const DotUsersListStore = signalStore(
                                 }
 
                                 const roleFetches = response.entity.map((user) =>
-                                    usersService.getUserRoles(user.userId).pipe(
+                                    rolesService.getForUser(user.userId).pipe(
                                         map((roles) => ({ userId: user.userId, roles })),
                                         // A per-user failure shouldn't kill the
                                         // whole batch; empty the row's roles.
                                         catchError(() =>
                                             of({
                                                 userId: user.userId,
-                                                roles: [] as DotRoleView[]
+                                                roles: [] as DotRole[]
                                             })
                                         )
                                     )

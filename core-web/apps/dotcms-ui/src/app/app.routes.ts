@@ -176,10 +176,43 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-auth/portlet').then((m) => m.dotAuthRoutes)
     },
     {
-        path: 'experiments',
+        // Must stay literally `dotai`: DotRouterService.getPortletId takes the first URL
+        // segment (after filtering '', '#' and 'c') and matches it against /api/v1/menu,
+        // where the portlet id is `dotai`. Renaming the path breaks MenuGuardService.
+        //
+        // No DotEnterpriseLicenseResolver, unlike es-search and velocity-playground:
+        // nothing in com.dotcms.ai.rest checks license level. Access is gated on
+        // configuration and role, in the store, so Config Values stays reachable while
+        // unconfigured — which is exactly when it is needed.
+        //
+        // Deliberately NO `data: { reuseRoute: false }`. Route data is inherited, and
+        // DotCustomReuseStrategyService reuses a route only when `data.reuseRoute !== false`,
+        // so that flag would tear down the shell — and the store hung off it — on every tab
+        // change. Measured with it set: three tab switches fired three config requests and
+        // the chat draft did not survive a round trip.
+        path: 'dotai',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: { reuseRoute: false },
+        loadChildren: () => import('@dotcms/portlets/dot-ai/portlet').then((m) => m.dotAiRoutes)
+    },
+    {
+        path: 'experiments',
+        // No `MenuGuardService`, deliberately — same as `/analytics` above.
+        //
+        // The guard validates the first URL segment against `/api/v1/menu`, and the Experiments
+        // portlet is opt-in: it is declared in `portlet.xml` but no UpgradeTask adds it to a
+        // layout, so an operator who wants it registers it themselves. With the guard in place,
+        // every instance that has not registered it answered the UVE Experiments entry point by
+        // ejecting the editor out of UVE to the first portlet in the menu (#37005) — a switch that
+        // is on but unusable, with nothing on screen to explain it.
+        //
+        // No `reuseRoute: false` here, same reasoning as `/content` above: the Configure screen
+        // REUSES its component across the `experiments/new → experiments/:id/configuration` swap
+        // that follows creation, so the in-flight autosaves and the just-created experiment
+        // survive it. `shouldReuseRoute` is evaluated per level and route `data` is inherited, so
+        // this flag on the parent would recreate the whole subtree regardless of what the child
+        // route asks for. Moving between the list and Configure is still not reused — they are
+        // different route configs.
         loadChildren: () =>
             import('@dotcms/portlets/dot-experiments/portlet').then(
                 (m) => m.dotExperimentsPortletRoutes
@@ -209,12 +242,20 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-agents/portlet').then((m) => m.dotAgentsRoutes)
     },
     {
-        path: 'users',
+        path: 'users-beta',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-users/portlet').then((m) => m.dotUsersRoutes)
+    },
+    {
+        path: 'roles-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-roles/portlet').then((m) => m.dotRolesRoutes)
     },
     {
         path: 'query-tool',

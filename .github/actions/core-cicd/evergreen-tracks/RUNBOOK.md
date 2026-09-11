@@ -38,9 +38,11 @@ from eligibility, so no track will advance onto it.
    | `repo` | `dotcms/dotcms` |
    | `action` | `taint` |
    | `version` | the bad GA version, e.g. `26.07.06-3` |
-   | `apply` | `false` ← **dry-run first** |
-2. Read the output, confirm it targets the version you intended.
-3. Re-run with `apply` = `true`.
+   | `mode` | `dry-run` ← **the default; changes nothing** |
+2. Read the output, confirm it targets the version you intended. A dry-run logs
+   `DRY-RUN would point ...` and the run is titled `DRY-RUN (no changes)`.
+3. Re-dispatch with `mode` = `apply`. Only then does the marker actually get pushed
+   (`pointing ... -> sha256:...`).
 
 ### Verify
 
@@ -82,9 +84,42 @@ skips the track and self-heals the floating tag back to the held digest if it dr
    | `action` | `hold` |
    | `track` | `standard`, `trailing`, or `latest` |
    | `version` | the version to freeze on, e.g. `26.06.22-03` |
-   | `apply` | `false` → then `true` |
-2. Holding onto a **tainted** version is refused unless you also set `force` = `true`. Don't,
-   unless you're deliberately choosing the least-bad option and have said so in the ticket.
+   | `mode` | `dry-run` → then `apply` |
+2. Holding onto a **tainted** version is refused unless you also set `force` = `true`.
+   See [`force`](#force--holding-onto-a-tainted-version) below before you do.
+
+### `force` — holding onto a tainted version
+
+`force` lifts exactly one guard: the check that stops `hold` pointing a track at a version
+carrying a `<version>_tainted` marker. It does nothing for `taint`, `untaint`, or
+`release-hold` — on those actions the checkbox is inert.
+
+**Why it exists.** Taint and hold answer different questions. Taint says *"no track may
+advance onto this."* Hold says *"this track sits here, now."* Those only collide in one
+situation: **every candidate is bad and you have to pick the least-bad one.** A track is on a
+release that is actively breaking customers, and the only older release you can retreat to is
+itself already tainted for something milder. Retreating is still correct. `force` is how you
+say so out loud.
+
+**What it costs.** The `_tainted` marker stays, but it stops protecting *this* track. A held
+track bypasses the planner completely — the planner is the only thing that reads taint markers
+— and promote instead reconciles the floating tag back to the hold digest on every run. So the
+track is not merely parked on a known-bad release; it is **actively re-pinned there** until
+someone runs `release-hold`. Other tracks are unaffected: the marker still excludes that
+version for them.
+
+**Rules**
+
+- Never for convenience. If any untainted version is acceptable, hold onto that instead.
+- Record why in the incident ticket, naming **both** defects — the one you fled and the one
+  you knowingly accepted.
+- Treat it as temporary. Exit by `release-hold` once a good release exists — **not** by
+  untainting the version to make the warning go away.
+
+> **The guard is a one-time check, at hold time.** If you hold onto a good version and it is
+> tainted *later*, the hold survives and promote keeps reconciling the track onto it. Nothing
+> re-validates, and no notification fires. **Tainting a version does not release a hold that
+> already points at it** — so whenever you taint, check the holds.
 
 ### Verify
 
@@ -180,6 +215,9 @@ Plus the Argo CD UI (Application = the **customer**, not the env) for Synced / H
   without Redis session sharing enabled) — they will not roll even when subscribed.
 - **Registry and env state are separate.** A track hold (2) does not pause an environment, and
   an env pause (3) does not stop the track from moving for everyone else.
+- **Taint does not override an existing hold.** The tainted check runs only when a hold is
+  created. A track already held onto a version you later taint stays there and is re-pinned
+  every promote run. After tainting, confirm no `<track>_hold` marker points at that version.
 - **Dry-run is the default** on both `evergreen-tracks-promote` and `evergreen-tracks-admin`.
   Use it every time; the plan output is cheap and the mistakes are not.
 - **Update the CX "Maintenance Pause List & Evergreen Tracks" sheet** when you pause or
@@ -196,6 +234,7 @@ Plus the Argo CD UI (Application = the **customer**, not the env) for Synced / H
 | Advance them off-cycle / review a plan first | `evergreen-tracks-promote` | dispatch → approve gate (break-glass) |
 | Stop any track landing on a bad release | `evergreen-tracks-admin` | `taint` |
 | Freeze a track / pull it off a bad release | `evergreen-tracks-admin` | `hold` |
+| Retreat a track onto a release that is itself tainted | `evergreen-tracks-admin` | `hold` + `force` — [last resort](#force--holding-onto-a-tainted-version) |
 | Resume a frozen track | `evergreen-tracks-admin` | `release-hold` |
 | Stop one env from updating | IaC manifest PR | add `maintenance-pause: 'true'` |
 | Move one env to a different track | IaC manifest PR | change `evergreen-track` value |

@@ -18,6 +18,9 @@
           }
         }
       },
+      "content_raw": {
+        "type": "text"
+      },
       "host": {
         "type": "keyword",
         "doc_values" : true

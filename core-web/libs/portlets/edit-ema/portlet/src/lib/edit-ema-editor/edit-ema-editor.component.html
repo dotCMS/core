@@ -258,7 +258,22 @@
                         @if ($editorPanelActiveTab() === 1) {
                             <div
                                 class="flex-column justify-content-center align-items-center flex size-full gap-2">
-                                @if ($styleSchema()) {
+                                @if (!$canEditSelectedContentlet()) {
+                                    <!-- Neither panel tab may modify a contentlet the user has no
+                                         edit permission on; the quick-edit tab shows the same
+                                         message through its own no-permission mode. -->
+                                    <div
+                                        data-testId="style-editor-no-permission"
+                                        class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
+                                        <span
+                                            class="material-symbols-outlined text-[5rem]! text-gray-300">
+                                            lock
+                                        </span>
+                                        <p class="m-0 text-sm text-gray-800">
+                                            {{ 'uve.contentlet.no.edit.permission' | dm }}
+                                        </p>
+                                    </div>
+                                } @else if ($styleSchema()) {
                                     <dot-uve-style-editor-form [schema]="$styleSchema()!" />
                                 } @else {
                                     <dot-uve-style-editor-empty-state

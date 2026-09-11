@@ -116,10 +116,8 @@ public class JVMInfoResource implements Serializable {
 
         SystemTable systemTable =APILocator.getSystemAPI().getSystemTable();
 
-        resultMap.putAll(systemTable.all());
-
-
-
+        systemTable.all().forEach((key, value) ->
+                resultMap.put(key, obfuscateIfNeeded(key, value)));
 
         return resultMap;
     }

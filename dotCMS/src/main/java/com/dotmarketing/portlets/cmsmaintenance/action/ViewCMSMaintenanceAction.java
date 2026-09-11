@@ -499,7 +499,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	@CloseDBIfOpened
 	private void downloadRemainingRecordsAsCsv(final HttpServletResponse response) {
 		final String fileName = "failed_reindex_records" + new java.util.Date().getTime();
-		final String[] fileColumns = new String[] { "ID", "Identifier To Index", "Priority", "Cause" };
+		final String[] fileColumns = new String[] { "ID", "Identifier To Index", "Operation", "Priority", "Cause" };
 		PrintWriter pr = null;
 		try {
 			response.setContentType("application/octet-stream; charset=UTF-8");
@@ -515,6 +515,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					final StringBuilder entry = new StringBuilder();
 					entry.append(row.getId()).append(", ");
 					entry.append(row.getIdentToIndex()).append(", ");
+					// A parked removal has no contentlet left to look up; saying so here is what
+					// keeps the row actionable rather than reading as an empty reindex (#37276).
+					entry.append(row.isDelete() ? "delete" : "reindex").append(", ");
 					entry.append(row.getPriority()).append(",");
                     entry.append(row.getLastResult());
 					pr.print(entry.toString());

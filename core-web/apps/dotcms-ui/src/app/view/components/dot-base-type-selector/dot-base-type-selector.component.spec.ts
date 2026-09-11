@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -14,7 +15,7 @@ import { DotBaseTypeSelectorComponent } from './dot-base-type-selector.component
 const allContentTypesItem: SelectItem = { label: 'Any Content Type', value: '' };
 
 class MockDotContentTypeService {
-    getAllContentTypes = jest.fn().mockReturnValue(
+    getAllContentTypes = vi.fn().mockReturnValue(
         observableOf([
             { name: 'FORM', label: 'Form' },
             { name: 'WIDGET', label: 'Widget' }
@@ -44,8 +45,8 @@ describe('DotBaseTypeSelectorComponent', () => {
     it('should emit the selected content type', () => {
         spectator.detectChanges();
         const pSelect = spectator.debugElement.query(By.css('p-select'));
-        jest.spyOn(spectator.component.selected, 'emit');
-        jest.spyOn(spectator.component, 'change');
+        vi.spyOn(spectator.component.selected, 'emit');
+        vi.spyOn(spectator.component, 'change');
         const selectChangeEvent = { value: allContentTypesItem.value };
         pSelect.triggerEventHandler('onChange', selectChangeEvent);
 
@@ -55,14 +56,15 @@ describe('DotBaseTypeSelectorComponent', () => {
         expect(spectator.component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
-    it('should add All Content Types option as first position', (done) => {
-        spectator.detectChanges();
+    it('should add All Content Types option as first position', () =>
+        new Promise<void>((done) => {
+            spectator.detectChanges();
 
-        spectator.component.options.subscribe((options) => {
-            expect(options[0]).toEqual(allContentTypesItem);
-            done();
-        });
-    });
+            spectator.component.options.subscribe((options) => {
+                expect(options[0]).toEqual(allContentTypesItem);
+                done();
+            });
+        }));
 
     it('should set fixed width to dropdown', () => {
         spectator.detectChanges();

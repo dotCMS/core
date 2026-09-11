@@ -122,7 +122,7 @@ test.describe('Block Editor — insert an image through the AssetPicker', () => 
 
         await picker.expectTitle('Add Image');
         await expect(picker.sidebar).toBeVisible();
-        await expect(picker.treeSearch).toBeVisible();
+        await expect(picker.folderSearch).toBeVisible();
         // A row here exists to be picked, not managed.
         await picker.expectNoRowActions();
     });

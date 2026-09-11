@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { PushPublishService } from '@dotcms/data-access';
 import { DotEnvironment } from '@dotcms/dotcms-models';
@@ -39,7 +39,7 @@ describe('withPushPublishEnvironments', () => {
     let store: InstanceType<typeof pushPublishEnvironmentsStoreMock>;
 
     // Shared across store creations so a test can set the answer before the store initialises.
-    const getEnvironments = jest.fn();
+    const getEnvironments = vi.fn();
 
     const createService = createServiceFactory({
         service: pushPublishEnvironmentsStoreMock,

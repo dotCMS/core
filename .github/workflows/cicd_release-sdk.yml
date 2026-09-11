@@ -119,7 +119,7 @@ jobs:
       # can't be resolved on an empty runner workspace, so without this the Slack step
       # would silently no-op instead of ever sending the failure notice.
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: 'Slack Notification (Pre-check failure)'
         continue-on-error: true
@@ -143,7 +143,7 @@ jobs:
       # The composite action re-checks-out internally at the correct ref for the actual
       # build/publish; this checkout only needs to make the action definition resolvable.
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.precheck.outputs.REF }}
 

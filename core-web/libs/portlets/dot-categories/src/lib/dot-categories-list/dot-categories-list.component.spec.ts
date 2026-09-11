@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -56,15 +62,15 @@ describe('DotCategoriesListComponent', () => {
     beforeAll(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -73,33 +79,33 @@ describe('DotCategoriesListComponent', () => {
         component: DotCategoriesListComponent,
         componentProviders: [
             mockProvider(DotCategoriesListStore, {
-                categories: jest.fn().mockReturnValue(MOCK_CATEGORIES),
-                selectedCategories: jest.fn().mockReturnValue(MOCK_CATEGORIES),
-                filter: jest.fn().mockReturnValue(''),
-                page: jest.fn().mockReturnValue(1),
-                rows: jest.fn().mockReturnValue(25),
-                totalRecords: jest.fn().mockReturnValue(100),
-                status: jest.fn().mockReturnValue('loaded'),
-                sortField: jest.fn().mockReturnValue('category_name'),
-                sortOrder: jest.fn().mockReturnValue('ASC'),
-                breadcrumbs: jest.fn().mockReturnValue([]),
-                parentInode: jest.fn().mockReturnValue(null),
-                setFilter: jest.fn(),
-                setPagination: jest.fn(),
-                setSort: jest.fn(),
-                setSelectedCategories: jest.fn(),
-                createCategory: jest.fn(),
-                updateCategory: jest.fn(),
-                deleteCategories: jest.fn(),
-                exportCategories: jest.fn(),
-                importCategories: jest.fn(),
-                loadCategories: jest.fn(),
-                navigateToChildren: jest.fn(),
-                navigateToBreadcrumb: jest.fn(),
-                updateSortOrder: jest.fn(),
-                showAddToBundle: jest.fn().mockReturnValue(false),
-                openAddToBundle: jest.fn(),
-                closeAddToBundle: jest.fn()
+                categories: vi.fn().mockReturnValue(MOCK_CATEGORIES),
+                selectedCategories: vi.fn().mockReturnValue(MOCK_CATEGORIES),
+                filter: vi.fn().mockReturnValue(''),
+                page: vi.fn().mockReturnValue(1),
+                rows: vi.fn().mockReturnValue(25),
+                totalRecords: vi.fn().mockReturnValue(100),
+                status: vi.fn().mockReturnValue('loaded'),
+                sortField: vi.fn().mockReturnValue('category_name'),
+                sortOrder: vi.fn().mockReturnValue('ASC'),
+                breadcrumbs: vi.fn().mockReturnValue([]),
+                parentInode: vi.fn().mockReturnValue(null),
+                setFilter: vi.fn(),
+                setPagination: vi.fn(),
+                setSort: vi.fn(),
+                setSelectedCategories: vi.fn(),
+                createCategory: vi.fn(),
+                updateCategory: vi.fn(),
+                deleteCategories: vi.fn(),
+                exportCategories: vi.fn(),
+                importCategories: vi.fn(),
+                loadCategories: vi.fn(),
+                navigateToChildren: vi.fn(),
+                navigateToBreadcrumb: vi.fn(),
+                updateSortOrder: vi.fn(),
+                showAddToBundle: vi.fn().mockReturnValue(false),
+                openAddToBundle: vi.fn(),
+                closeAddToBundle: vi.fn()
             }),
             mockProvider(DialogService),
             ConfirmationService
@@ -109,38 +115,38 @@ describe('DotCategoriesListComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
             },
-            mockProvider(DotMessageDisplayService, { push: jest.fn() })
+            mockProvider(DotMessageDisplayService, { push: vi.fn() })
         ]
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         spectator = createComponent();
         store = spectator.inject(DotCategoriesListStore, true);
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('Search', () => {
         it('should debounce search by 300ms', () => {
             spectator.component.onSearch('test');
-            jest.advanceTimersByTime(299);
+            vi.advanceTimersByTime(299);
             expect(store.setFilter).not.toHaveBeenCalled();
 
-            jest.advanceTimersByTime(1);
+            vi.advanceTimersByTime(1);
             expect(store.setFilter).toHaveBeenCalledWith('test');
         });
 
         it('should reset debounce timer on rapid typing', () => {
             spectator.component.onSearch('a');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('ab');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('abc');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(store.setFilter).toHaveBeenCalledTimes(1);
             expect(store.setFilter).toHaveBeenCalledWith('abc');
@@ -182,7 +188,7 @@ describe('DotCategoriesListComponent', () => {
     describe('Button Interactions', () => {
         describe('Add Split Button', () => {
             it('should call openCreateDialog when main button clicked', () => {
-                const spy = jest.spyOn(spectator.component, 'openCreateDialog');
+                const spy = vi.spyOn(spectator.component, 'openCreateDialog');
                 const btnHost = spectator.query(byTestId('category-add-split-btn'));
                 const button = btnHost?.querySelector('button');
                 spectator.click(button!);
@@ -190,7 +196,7 @@ describe('DotCategoriesListComponent', () => {
             });
 
             it('should have Import menu item that calls openImportDialog', () => {
-                const spy = jest.spyOn(spectator.component, 'openImportDialog');
+                const spy = vi.spyOn(spectator.component, 'openImportDialog');
                 const menuItems = spectator.component.addCategoryMenuItems;
                 expect(menuItems).toHaveLength(1);
                 expect(menuItems[0].label).toBe('categories.import');
@@ -218,21 +224,21 @@ describe('DotCategoriesListComponent', () => {
             });
 
             it('should hide Delete button when no categories are selected', () => {
-                (store.selectedCategories as jest.Mock).mockReturnValue([]);
+                (store.selectedCategories as unknown as Mock).mockReturnValue([]);
                 spectator.detectChanges();
 
                 const deleteBtn = spectator.query(byTestId('category-delete-btn'));
 
                 expect(deleteBtn).toBeFalsy();
 
-                (store.selectedCategories as jest.Mock).mockReturnValue(MOCK_CATEGORIES);
+                (store.selectedCategories as unknown as Mock).mockReturnValue(MOCK_CATEGORIES);
             });
         });
 
         describe('Button Actions', () => {
             it('should call confirmDelete when Delete button clicked', () => {
                 spectator.detectChanges();
-                const spy = jest.spyOn(spectator.component, 'confirmDelete');
+                const spy = vi.spyOn(spectator.component, 'confirmDelete');
                 const btnHost = spectator.query(byTestId('category-delete-btn'));
                 expect(btnHost).toBeTruthy();
                 const button = btnHost?.querySelector('button');
@@ -276,21 +282,21 @@ describe('DotCategoriesListComponent', () => {
         });
 
         it('should call openEditDialog from edit menu item', () => {
-            const spy = jest.spyOn(spectator.component, 'openEditDialog');
+            const spy = vi.spyOn(spectator.component, 'openEditDialog');
             spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
             spectator.component.rowMenuItems[0].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
         it('should call openPermissionsDialog with category from permissions menu item', () => {
-            const spy = jest.spyOn(spectator.component, 'openPermissionsDialog');
+            const spy = vi.spyOn(spectator.component, 'openPermissionsDialog');
             spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
             spectator.component.rowMenuItems[1].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
         it('should call confirmDeleteSingle from delete menu item', () => {
-            const spy = jest.spyOn(spectator.component, 'confirmDeleteSingle');
+            const spy = vi.spyOn(spectator.component, 'confirmDeleteSingle');
             spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
             spectator.component.rowMenuItems[3].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
@@ -300,7 +306,7 @@ describe('DotCategoriesListComponent', () => {
     describe('confirmDeleteSingle', () => {
         it('should show confirmation dialog and delete on accept', () => {
             const confirmationService = spectator.inject(ConfirmationService, true);
-            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+            const confirmSpy = vi.spyOn(confirmationService, 'confirm');
 
             spectator.component.confirmDeleteSingle(MOCK_CATEGORIES[0]);
 
@@ -326,7 +332,7 @@ describe('DotCategoriesListComponent', () => {
     describe('openPermissionsDialog', () => {
         it('should open dialog with DotJspIframeDialogComponent and correct config', () => {
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue(null as never);
 
             spectator.component.openPermissionsDialog(MOCK_CATEGORIES[0]);
 
@@ -345,7 +351,7 @@ describe('DotCategoriesListComponent', () => {
 
         it('should build url with categoryInode', () => {
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue(null as never);
 
             spectator.component.openPermissionsDialog(MOCK_CATEGORIES[0]);
 
@@ -360,9 +366,9 @@ describe('DotCategoriesListComponent', () => {
         it('should open dialog with closable and closeOnEscape options', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
 
@@ -379,14 +385,14 @@ describe('DotCategoriesListComponent', () => {
         });
 
         it('should pass parentName to dialog when navigated into a parent', () => {
-            (store.breadcrumbs as jest.Mock).mockReturnValue([
+            (store.breadcrumbs as unknown as Mock).mockReturnValue([
                 { label: 'Parent Category', id: 'parent-inode' }
             ]);
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
 
@@ -396,15 +402,15 @@ describe('DotCategoriesListComponent', () => {
                     data: { parentName: 'Parent Category' }
                 })
             );
-            (store.breadcrumbs as jest.Mock).mockReturnValue([]);
+            (store.breadcrumbs as unknown as Mock).mockReturnValue([]);
         });
 
         it('should open dialog and call store.createCategory on close', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next({ categoryName: 'New Category', key: 'new-cat' });
@@ -419,9 +425,9 @@ describe('DotCategoriesListComponent', () => {
         it('should not call store.createCategory when dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next(undefined);
@@ -435,9 +441,9 @@ describe('DotCategoriesListComponent', () => {
         it('should open dialog with closable and closeOnEscape options', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const category = MOCK_CATEGORIES[0];
             spectator.component.openEditDialog(category);
@@ -457,9 +463,9 @@ describe('DotCategoriesListComponent', () => {
         it('should open dialog and call store.updateCategory on close', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const category = MOCK_CATEGORIES[0];
             spectator.component.openEditDialog(category);
@@ -477,9 +483,9 @@ describe('DotCategoriesListComponent', () => {
         it('should not call store.updateCategory when dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openEditDialog(MOCK_CATEGORIES[0]);
             onClose.next(undefined);
@@ -491,7 +497,7 @@ describe('DotCategoriesListComponent', () => {
 
     describe('Export Button', () => {
         it('should call exportCategories when Export button clicked', () => {
-            const spy = jest.spyOn(spectator.component, 'exportCategories');
+            const spy = vi.spyOn(spectator.component, 'exportCategories');
             spectator.detectChanges();
             const btnHost = spectator.query(byTestId('category-export-btn'));
             const button = btnHost?.querySelector('button');
@@ -515,9 +521,9 @@ describe('DotCategoriesListComponent', () => {
         it('should open dialog with correct config', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
 
@@ -536,7 +542,9 @@ describe('DotCategoriesListComponent', () => {
         it('should call store.loadCategories and show success toast when import succeeds', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
             const messageDisplayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
@@ -552,7 +560,9 @@ describe('DotCategoriesListComponent', () => {
         it('should call store.loadCategories and show warning toast when import has failures', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
             const messageDisplayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
@@ -568,7 +578,9 @@ describe('DotCategoriesListComponent', () => {
         it('should not call store.loadCategories when dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
             onClose.next(undefined);
@@ -602,7 +614,7 @@ describe('DotCategoriesListComponent', () => {
         it('should clear pending value after blur so a second blur does nothing', () => {
             spectator.component.onSortOrderInput(MOCK_CATEGORIES[0], 99);
             spectator.component.onSortOrderBlur(MOCK_CATEGORIES[0]);
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.component.onSortOrderBlur(MOCK_CATEGORIES[0]);
             expect(store.updateSortOrder).not.toHaveBeenCalled();
@@ -612,7 +624,7 @@ describe('DotCategoriesListComponent', () => {
     describe('confirmDelete', () => {
         it('should show confirmation dialog with closable and closeOnEscape options', () => {
             const confirmationService = spectator.inject(ConfirmationService, true);
-            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+            const confirmSpy = vi.spyOn(confirmationService, 'confirm');
 
             spectator.component.confirmDelete();
 
@@ -631,7 +643,7 @@ describe('DotCategoriesListComponent', () => {
 
         it('should call store.deleteCategories on accept', () => {
             const confirmationService = spectator.inject(ConfirmationService, true);
-            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+            const confirmSpy = vi.spyOn(confirmationService, 'confirm');
 
             spectator.component.confirmDelete();
 

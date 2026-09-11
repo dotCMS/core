@@ -240,6 +240,83 @@ public class ContentDriveWorkflowArchiveStepTest extends IntegrationTestBase {
      * Mixed filter (normal step + archive step): archived rows are admitted only in the archive-step
      * branch; the normal-step branch stays live-only.
      */
+    /**
+     * An {@code ARCHIVED} status combined with an archive-target step filter must still return the
+     * archived content — the exact interaction {@code admitsArchived} exists to protect.
+     *
+     * <p>Both rules have an opinion about {@code cvi.deleted}. {@code appendWorkflowQuery} owns it
+     * per branch when an archive-target step is selected, forcing {@code deleted = false} on the
+     * live branch; the status group asserts {@code deleted = true}. If {@code selectQuery} did not
+     * suppress the archive-step reconciliation when {@code ARCHIVED} is selected
+     * ({@code admitsArchived}), the two would contradict and collapse to an empty result.</p>
+     *
+     * <p>Nothing pinned this before: neither suite combined a status with a workflow filter, so the
+     * guard was reasoned about but never executed. Raised by @oidacra reviewing #37216.</p>
+     */
+    @Test
+    public void testArchivedStatusWithArchiveStepStillReturnsArchivedContent()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .workflow(List.of(WorkflowFilterForm.builder()
+                        .scheme(scheme.getId()).step(archiveStep.getId()).build()))
+                .status(List.of("ARCHIVED"))
+                .build());
+
+        assertTrue("ARCHIVED plus an archive-target step must not collapse to empty",
+                inodes.contains(archivedAtArchiveStep.getInode()));
+    }
+
+    /**
+     * An {@code UNPUBLISHED} status alongside the same archive-step filter still returns the
+     * archived content, because archived content <em>is</em> unpublished and the archive-step
+     * branch admits it.
+     *
+     * <p>The first version of this test asserted the opposite, reasoning that only {@code ARCHIVED}
+     * lifts the archived baseline. That is true of the <em>global</em> baseline and false here: an
+     * archive-target step makes {@code appendWorkflowQuery} admit {@code cvi.deleted = true} rows
+     * within that branch on its own, with no status involved at all — which is what
+     * {@link #testMixedFilterScopesArchivedToArchiveBranch()} already pins. {@code archive()}
+     * unpublishes, so the row also satisfies {@code cvi.live_inode is null}: both clauses match,
+     * and returning it is correct. Asking for a step and getting what is at that step is the whole
+     * point of the filter.</p>
+     *
+     * <p>See {@link #testUnpublishedStatusKeepsTheGlobalArchivedBaseline()} for the case that does
+     * guard the baseline.</p>
+     */
+    @Test
+    public void testUnpublishedStatusWithArchiveStepStillReturnsArchivedContent()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .workflow(List.of(WorkflowFilterForm.builder()
+                        .scheme(scheme.getId()).step(archiveStep.getId()).build()))
+                .status(List.of("UNPUBLISHED"))
+                .build());
+
+        assertTrue("Archived content at the archive step is unpublished, so UNPUBLISHED keeps it",
+                inodes.contains(archivedAtArchiveStep.getInode()));
+    }
+
+    /**
+     * The real complement: with no archive-target step selected, nothing lifts the global archived
+     * baseline, so an {@code UNPUBLISHED} status must not drag archived content in.
+     *
+     * <p>{@code archivedInPlaceAtNormalStep} is the discriminating fixture — archived, therefore
+     * unpublished, but sitting at a normal step. If {@code UNPUBLISHED} were resolved without the
+     * baseline still applying, this row would come back.</p>
+     */
+    @Test
+    public void testUnpublishedStatusKeepsTheGlobalArchivedBaseline()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .workflow(List.of(WorkflowFilterForm.builder()
+                        .scheme(scheme.getId()).step(normalStep.getId()).build()))
+                .status(List.of("UNPUBLISHED"))
+                .build());
+
+        assertFalse("UNPUBLISHED must not lift the archived baseline on a non-archive step",
+                inodes.contains(archivedInPlaceAtNormalStep.getInode()));
+    }
+
     @Test
     public void testMixedFilterScopesArchivedToArchiveBranch()
             throws DotDataException, DotSecurityException {

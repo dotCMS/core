@@ -200,6 +200,10 @@ public class ESIndexResource {
             failure.put("serverId", row.getServerId());
             failure.put("failureReason", row.getLastResult());
             failure.put("priority", row.getPriority());
+            // What the index still owes for this identifier. A parked removal has no contentlet
+            // left to resolve, so without this the row reads as a reindex with a blank title and
+            // sends the operator looking for content that was deliberately destroyed (#37276).
+            failure.put("operation", row.isDelete() ? "delete" : "reindex");
             if(contentlet!=null) {
                 try {
                     failure.put("title", contentlet.getTitle());

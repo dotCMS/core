@@ -339,7 +339,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
 
             final OIDCProvider provider = new OIDCProvider(
                     effectiveIssuer, effectiveClientId, effectiveSecret,
-                    effectiveGroupsClaim, effectiveGroupsUrl);
+                    effectiveGroupsClaim, effectiveGroupsUrl, config.groupsResponsePath);
 
             // Core security step: signature-verify against JWKS, check iss/aud/exp/nonce.
             final Map<String, Object> claims;

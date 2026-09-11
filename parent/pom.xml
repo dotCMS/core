@@ -18,8 +18,11 @@
         <!-- default load from .sdkmanrc file -->
         <!--suppress UnresolvedMavenProperty -->
         <sdkman.java.version>${ext.java}</sdkman.java.version>
-        <!-- allows for override version of base for docker container separate from build -->
-        <runtime.docker.sdkman.java.version>${sdkman.java.version}</runtime.docker.sdkman.java.version>
+        <!-- allows for override version of base for docker container separate from build.
+             Docker-tag-safe form of sdkman.java.version: docker tags cannot contain '+',
+             so the SDKMAN id (e.g. 25.0.4+1-ms) is written 25.0.4-1-ms. Keep in sync
+             with .sdkmanrc when bumping the java version. -->
+        <runtime.docker.sdkman.java.version>25.0.4-1-ms</runtime.docker.sdkman.java.version>
 
         <!-- this is the version of source we support in source must be same or less that running version
          run version is set by .sdkmanrc file in project root should update only after downstream plugins and projects

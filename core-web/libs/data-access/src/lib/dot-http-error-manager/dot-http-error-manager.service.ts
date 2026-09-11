@@ -39,6 +39,7 @@ export class DotHttpErrorManagerService {
                 [HttpCode.FORBIDDEN]: this.handleForbidden.bind(this),
                 [HttpCode.SERVER_ERROR]: this.handleServerError.bind(this),
                 [HttpCode.BAD_REQUEST]: this.handleBadRequestError.bind(this),
+                [HttpCode.CONFLICT]: this.handleConflictError.bind(this),
                 [HttpCode.NO_CONTENT]: this.handleNotContentError.bind(this)
             };
         }
@@ -141,6 +142,20 @@ export class DotHttpErrorManagerService {
         const message =
             this.getErrorMessage(response) ||
             this.dotMessageService.get('dot.common.http.error.400.message');
+
+        this.showErrorMessage(message, header);
+
+        return false;
+    }
+
+    private handleConflictError(response?: HttpErrorResponse): boolean {
+        const header = this.dotMessageService.get('dot.common.http.error.409.header');
+        // 409s carry the actionable reason in the body (e.g. "Role has child
+        // roles and cannot be deleted", "duplicate roleKey"). Surface the BE
+        // message when present; fall back to a generic string otherwise.
+        const message =
+            this.getErrorMessage(response) ||
+            this.dotMessageService.get('dot.common.http.error.409.message');
 
         this.showErrorMessage(message, header);
 

@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { Route, Router } from '@angular/router';
@@ -30,7 +31,7 @@ describe('DynamicRouteService', () => {
                 provide: Router,
                 useValue: {
                     config: [mockMainRoute],
-                    resetConfig: jest.fn()
+                    resetConfig: vi.fn()
                 }
             }
         ]
@@ -150,7 +151,7 @@ describe('DynamicRouteService', () => {
         });
 
         it('should reset router config after unregistration', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             service.unregisterRoute('removable-portlet');
 
             expect(router.resetConfig).toHaveBeenCalled();

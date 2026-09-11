@@ -5,7 +5,7 @@
 ### Parameter Validation Pattern
 ```java
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rest.ResponseUtil;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 
 public class MyResource {
     
@@ -95,7 +95,11 @@ public class MySecureForm {
 ### Authentication Check Pattern
 ```java
 public Response secureEndpoint(HttpServletRequest request, HttpServletResponse response) {
-    InitDataObject initData = webResource.init(request, response, true);
+    InitDataObject initData = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requestAndResponse(request, response)
+            .rejectWhenNoUser(true)
+            .init();
     User user = initData.getUser();
     
     // Verify user is authenticated
@@ -121,7 +125,6 @@ public Response secureEndpoint(HttpServletRequest request, HttpServletResponse r
 ```java
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
 
 public class MySecureService {
     
@@ -135,7 +138,7 @@ public class MySecureService {
         
         // Check read permission
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
             throw new DotSecurityException("Read permission denied for entity: " + entityId);
         }
         
@@ -149,7 +152,7 @@ public class MySecureService {
         MyEntity entity = findById(entityId);
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.EDIT)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_EDIT, user)) {
             throw new DotSecurityException("Edit permission denied for entity: " + entityId);
         }
         
@@ -168,7 +171,7 @@ public class MySecureService {
         MyEntity entity = findById(entityId);
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.EDIT_PERMISSIONS)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
             throw new DotSecurityException("Delete permission denied for entity: " + entityId);
         }
         
@@ -180,7 +183,11 @@ public class MySecureService {
 ### Admin Permission Check
 ```java
 public Response adminOnlyEndpoint(HttpServletRequest request, HttpServletResponse response) {
-    InitDataObject initData = webResource.init(request, response, true);
+    InitDataObject initData = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requestAndResponse(request, response)
+            .rejectWhenNoUser(true)
+            .init();
     User user = initData.getUser();
     
     // Check if user is admin
@@ -252,7 +259,7 @@ public List<MyEntity> unsafeFind(String name) throws DotDataException {
 
 ### Output Encoding Pattern
 ```java
-import org.springframework.web.util.HtmlUtils;
+import com.liferay.util.Xss;
 
 public class MyResponseBuilder {
     
@@ -260,8 +267,8 @@ public class MyResponseBuilder {
         Map<String, Object> response = new HashMap<>();
         
         // Encode HTML content for safe display
-        response.put("name", HtmlUtils.htmlEscape(entity.getName()));
-        response.put("description", HtmlUtils.htmlEscape(entity.getDescription()));
+        response.put("name", Xss.encodeForHTML(entity.getName()));
+        response.put("description", Xss.encodeForHTML(entity.getDescription()));
         
         // Safe content (already validated)
         response.put("id", entity.getId());
@@ -273,21 +280,14 @@ public class MyResponseBuilder {
 ```
 
 ### Input Sanitization Pattern
+
+> **Don't hand-roll HTML sanitization with regex** — stripping `<script>`/`javascript:`/`on*=`
+> patterns is well-known to be bypassable (case variation, malformed tags, encodings, event
+> handlers this list doesn't cover). Use the real `Xss.encodeForHTML(...)` pattern from
+> **XSS Prevention** above instead — that's the correct, maintained answer.
+
 ```java
 public class InputSanitizer {
-    
-    public String sanitizeHtml(String input) {
-        if (!UtilMethods.isSet(input)) {
-            return null;
-        }
-        
-        // Remove script tags and dangerous attributes
-        return input
-            .replaceAll("<script[^>]*>.*?</script>", "")
-            .replaceAll("javascript:", "")
-            .replaceAll("on\\w+\\s*=", "")
-            .replaceAll("<iframe[^>]*>.*?</iframe>", "");
-    }
     
     public String sanitizeForDatabase(String input) {
         if (!UtilMethods.isSet(input)) {
