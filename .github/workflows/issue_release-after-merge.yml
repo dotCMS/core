@@ -1,0 +1,164 @@
+#
+# Auto Release After Merge
+#
+# Fires when a PR labeled "PR: Release after merge" is merged into main.
+# Computes the next release version from the repo's release tags using the
+# yy.mm.dd-## formula (e.g. v26.09.02-01 -> v26.09.02-02), then dispatches the
+# standard Release Process workflow (cicd_6-release.yml) with that version.
+#
+# Version calculation is "release-aware": before incrementing, it inspects
+#   1. today's existing release tags (v{yy.mm.dd}-##), and
+#   2. release runs already queued or in flight, parsed from their run names
+#      ("Release <version>", set by cicd_6-release.yml's run-name)
+# and picks max(counter) + 1, so it never collides with a release that has
+# already been cut (tag exists) or is currently running.
+#
+# NOTES:
+# - Label must be present at merge time (labels added after close don't fire).
+# - Only PRs merged into main are released; the Release workflow hard-fails on
+#   non-main refs anyway (verify-branch job).
+# - Dispatch uses CI_MACHINE_TOKEN, NOT github.token: events created with the
+#   default GITHUB_TOKEN do not trigger other workflow runs (GitHub's
+#   recursive-workflow prevention), so a github.token dispatch would silently
+#   no-op.
+# - Serialized via a single concurrency group so two labeled PRs merging at the
+#   same moment cannot compute the same next version.
+#
+
+name: 'Auto Release After Merge'
+run-name: "Auto-release trigger: PR #${{ github.event.pull_request.number }}"
+
+on:
+  pull_request:
+    types: [closed]
+
+# One auto-release computation/dispatch at a time. cancel-in-progress: false so
+# the second PR waits its turn and gets its own (higher) version.
+concurrency:
+  group: auto-release-after-merge
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+  pull-requests: write
+
+jobs:
+  trigger-release:
+    name: Queue Release
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      contains(github.event.pull_request.labels.*.name, 'PR: Release after merge')
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Compute next version and dispatch release
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+          REPO: ${{ github.repository }}
+          SDK_BREAKING: ${{ contains(github.event.pull_request.labels.*.name, 'SDK Breaking Change') }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::secrets.CI_MACHINE_TOKEN is not set. The release dispatch MUST use a PAT — events created with the default GITHUB_TOKEN do not trigger other workflow runs."
+            exit 1
+          fi
+
+          # Tag formula: v{yy.mm.dd}-## (UTC date, two-digit zero-padded counter)
+          TODAY=$(date -u +%y.%m.%d)
+          echo "Today (UTC): ${TODAY}"
+
+          # 1) Highest counter already cut as a tag for today's date.
+          #    ls-remote (not git fetch --tags) keeps this cheap on a shallow checkout.
+          LAST_TAG_COUNTER=0
+          for ref in $(git ls-remote --tags origin "refs/tags/v${TODAY}-*" | awk '{print $2}'); do
+            tag="${ref#refs/tags/}"
+            counter=$((10#${tag##*-}))
+            if [ "${counter}" -gt "${LAST_TAG_COUNTER}" ]; then
+              LAST_TAG_COUNTER="${counter}"
+            fi
+          done
+          echo "Last tagged counter for ${TODAY}: ${LAST_TAG_COUNTER}"
+
+          # 2) Releases already queued or running: read their versions from the run
+          #    name ("Release <version>", optionally suffixed for java variants) and
+          #    stay above them, even though their tag doesn't exist yet.
+          RUNNING_COUNTER=0
+          for status in queued in_progress; do
+            while IFS= read -r title; do
+              [ -z "${title}" ] && continue
+              if [[ "${title}" =~ ^Release\ ([0-9]{2}\.[0-9]{2}\.[0-9]{2})-([0-9]{1,2}) ]]; then
+                run_date="${BASH_REMATCH[1]}"
+                run_counter=$((10#${BASH_REMATCH[2]}))
+                if [ "${run_date}" = "${TODAY}" ] && [ "${run_counter}" -gt "${RUNNING_COUNTER}" ]; then
+                  RUNNING_COUNTER="${run_counter}"
+                fi
+              fi
+            done < <(gh run list --repo "${REPO}" --workflow cicd_6-release.yml --status "${status}" --json displayTitle --jq '.[].displayTitle')
+          done
+          echo "Highest counter among queued/in-flight releases for ${TODAY}: ${RUNNING_COUNTER}"
+
+          # 3) Next version = max(tag, in-flight) + 1, verified against the remote so
+          #    we never hand release-prepare (which force-overwrites colliding tags/
+          #    branches) a version that already exists.
+          COUNTER=$(( LAST_TAG_COUNTER > RUNNING_COUNTER ? LAST_TAG_COUNTER : RUNNING_COUNTER ))
+          while true; do
+            COUNTER=$(( COUNTER + 1 ))
+            if [ "${COUNTER}" -gt 99 ]; then
+              echo "::error::Counter exhausted for ${TODAY} (>99 releases in one day). Refusing to compute a version."
+              exit 1
+            fi
+            NEXT_VERSION=$(printf '%s-%02d' "${TODAY}" "${COUNTER}")
+            if [ -z "$(git ls-remote --tags origin "refs/tags/v${NEXT_VERSION}")" ]; then
+              break
+            fi
+            echo "Tag v${NEXT_VERSION} already exists (raced with another cut) — incrementing."
+          done
+          echo "Next release version: ${NEXT_VERSION}"
+
+          # Propagate the merged PR's SDK-breaking flag; the Release workflow's own
+          # verify-branch gate re-scans ALL merged PRs since the last tag and fails
+          # loudly if a breaking PR shipped without bump_min_sdk_version=true, so
+          # anything this flag misses still blocks the auto-release rather than
+          # shipping silently.
+          BUMP_MIN_SDK=false
+          [ "${SDK_BREAKING}" = "true" ] && BUMP_MIN_SDK=true
+
+          gh workflow run cicd_6-release.yml \
+            --repo "${REPO}" \
+            --ref main \
+            -f release_version="${NEXT_VERSION}" \
+            -f bump_min_sdk_version="${BUMP_MIN_SDK}"
+          echo "Dispatched Release Process for ${NEXT_VERSION} (bump_min_sdk_version=${BUMP_MIN_SDK})"
+          echo "next_version=${NEXT_VERSION}" >> "${GITHUB_ENV}"
+
+      - name: Comment on PR with queued release
+        # Best-effort observability: never fail the workflow over a comment.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          sleep 20
+          RUN_URL=$(gh run list --repo "${REPO}" \
+            --workflow cicd_6-release.yml \
+            --event workflow_dispatch \
+            --limit 5 \
+            --json displayTitle,url \
+            --jq ".[] | select(.displayTitle | startswith(\"Release ${NEXT_VERSION}\")) | .url" | head -1 || true)
+          if [ -n "${RUN_URL}" ]; then
+            gh pr comment "${PR_NUMBER}" --repo "${REPO}" \
+              --body "🚀 Merged with the \`PR: Release after merge\` label — auto-release \`${NEXT_VERSION}\` has been queued. Track it here: ${RUN_URL}"
+          else
+            gh pr comment "${PR_NUMBER}" --repo "${REPO}" \
+              --body "🚀 Merged with the \`PR: Release after merge\` label — auto-release \`${NEXT_VERSION}\` has been queued (couldn't resolve the run URL; see the [Actions tab](${GITHUB_SERVER_URL}/${REPO}/actions))."
+          fi
