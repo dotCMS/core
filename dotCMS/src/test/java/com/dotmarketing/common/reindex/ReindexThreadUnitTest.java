@@ -822,6 +822,64 @@ public class ReindexThreadUnitTest extends UnitTestBase {
                 "SHUTDOWN", currentState(thread));
     }
 
+    /**
+     * Review finding 6 — repeated immediate deaths must back the restart off.
+     *
+     * <p>A worker that dies on arrival every time it starts (e.g. a {@code LinkageError} from a
+     * broken OSGi bundle) was restarted by <em>every</em> {@code ReindexQueueFactory.unpause()} —
+     * one per journal write — while the recovery notice was throttled to once a minute. Continuous
+     * churn with the cause largely invisible.</p>
+     *
+     * <p>Also asserts the back-off is self-healing: it is a deadline, not a latch, and the counter
+     * resets the moment a worker survives the window, so a single bad batch cannot wedge indexing.</p>
+     */
+    @Test
+    public void repeatedImmediateDeathsBackOffTheRestart() throws Exception {
+        final AtomicInteger polls = new AtomicInteger();
+        final ReindexQueueAPI queueApi = mock(ReindexQueueAPI.class);
+        when(queueApi.findContentToReindex()).thenAnswer(inv -> {
+            polls.incrementAndGet();
+            throw new OutOfMemoryError("dies on arrival");
+        });
+
+        final ReindexThread thread = newThread(queueApi, mockIndexApi());
+        final AtomicBoolean liveness = requireLiveness(thread);
+        final int maxDeaths = intConstant("MAX_CONSECUTIVE_IMMEDIATE_DEATHS");
+
+        try {
+            // Drive the threshold through the real runnable, not by poking the counter.
+            for (int i = 0; i < maxDeaths; i++) {
+                setStateRunning(thread);
+                liveness.set(true);
+                final Thread runner = startRunnable(thread);
+                runner.join(3_000);
+                assertFalse("worker " + i + " should have died on arrival", runner.isAlive());
+            }
+            final int pollsAtThreshold = polls.get();
+            assertTrue("precondition: each start should have polled once", pollsAtThreshold >= maxDeaths);
+
+            // A further recovery request must now be refused rather than restarting again.
+            setState(thread, "PAUSED");
+            liveness.set(false);
+            unpauseImpl();
+            Thread.sleep(1_500);
+
+            assertEquals("after " + maxDeaths + " immediate deaths the restart must be backed off; "
+                            + "otherwise every journal write restarts a worker that cannot run",
+                    pollsAtThreshold, polls.get());
+            assertFalse("a refused restart must not strand the liveness claim", liveness.get());
+        } finally {
+            ReindexThread.stopThread();
+        }
+    }
+
+    /** Reads a private static int constant, so the test tracks the production default. */
+    private static int intConstant(final String name) throws Exception {
+        final Field f = ReindexThread.class.getDeclaredField(name);
+        f.setAccessible(true);
+        return f.getInt(null);
+    }
+
     // ================================================================================
     // Phase 2 scaffolding (T004-T007) — shared test infrastructure for issue #36922.
     // No production behavior is asserted here; each helper exists so the US1-US3 tests

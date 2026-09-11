@@ -33,6 +33,8 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.felix.framework.OSGISystem;
 
@@ -193,6 +195,15 @@ public class ReindexThread {
     private final AtomicBoolean workerAlive = new AtomicBoolean(false);
 
     /**
+     * Consecutive worker starts that died inside {@link #IMMEDIATE_DEATH_WINDOW_MILLIS}. Reset the
+     * moment a worker survives that window, so a single bad batch never arms the back-off.
+     */
+    private final AtomicInteger consecutiveImmediateDeaths = new AtomicInteger();
+
+    /** Epoch millis before which {@link #startWorker(boolean)} refuses to start a worker. */
+    private final AtomicLong restartBlockedUntil = new AtomicLong();
+
+    /**
      * Single constant for the shutdown notice, used by every site that can observe shutdown, so
      * the "at most once per shutdown" guarantee holds across all of them.
      */
@@ -208,6 +219,25 @@ public class ReindexThread {
 
     /** Throttle key for the "a worker is already alive" notice. Compile-time constant (AC-019). */
     private static final String WORKER_ALREADY_LIVE_MESSAGE_KEY = "reindex-thread-worker-already-live";
+
+    /** Throttle key for the restart back-off notice. Compile-time constant (AC-019). */
+    private static final String RESTART_BACKOFF_MESSAGE_KEY = "reindex-thread-restart-backed-off";
+
+    /**
+     * A worker that exits within this window of starting is treated as an <em>immediate death</em>:
+     * it never got as far as doing useful work, so restarting it straight away just repeats the
+     * failure.
+     */
+    private static final long IMMEDIATE_DEATH_WINDOW_MILLIS =
+            Config.getLongProperty("REINDEX_THREAD_IMMEDIATE_DEATH_WINDOW_MILLIS", 5000);
+
+    /** Consecutive immediate deaths tolerated before restarts are backed off. */
+    private static final int MAX_CONSECUTIVE_IMMEDIATE_DEATHS =
+            Config.getIntProperty("REINDEX_THREAD_MAX_CONSECUTIVE_IMMEDIATE_DEATHS", 5);
+
+    /** How long restarts are refused once the immediate-death threshold is reached. */
+    private static final long RESTART_BACKOFF_MILLIS =
+            Config.getLongProperty("REINDEX_THREAD_RESTART_BACKOFF_MILLIS", 30000);
 
     private static final int DEAD_WORKER_LOG_INTERVAL_MS = 60000;
 
@@ -245,6 +275,7 @@ public class ReindexThread {
 
 
     private final Runnable ReindexThreadRunnable = () -> {
+        final long startedAt = System.currentTimeMillis();
         Logger.info(this.getClass(),
                 "---  ReindexThread is starting, background indexing will begin");
         try {
@@ -275,6 +306,7 @@ public class ReindexThread {
             // requestStop() moves RUNNING/PAUSED to the restartable STOPPED and preserves the
             // terminal SHUTDOWN.
             requestStop();
+            recordWorkerExit(startedAt);
             Logger.warn(this.getClass(),
                     "---  ReindexThread is stopping, background indexing will not take place");
         }
@@ -627,6 +659,38 @@ public class ReindexThread {
     }
 
     /**
+     * Tracks how long a worker lived and arms the restart back-off when workers keep dying on
+     * arrival.
+     *
+     * <p>Without this, a worker that dies instantly on every start — say a {@code LinkageError}
+     * from a broken OSGi bundle escaping {@code createBulkProcessor()}, which the outer
+     * {@code catch (Throwable)} turns into immediate termination — is restarted by
+     * <em>every</em> {@code ReindexQueueFactory.unpause()}, i.e. once per journal write. That is
+     * continuous restart churn under normal save traffic, with the cause visible at most once a
+     * minute because the recovery notice is throttled while the restart itself was not.</p>
+     *
+     * <p>Self-healing by construction: the counter resets as soon as a worker survives the window,
+     * and the block is a deadline rather than a latch, so indexing resumes on its own. Each further
+     * immediate death simply re-arms it — at most one restart attempt per
+     * {@link #RESTART_BACKOFF_MILLIS} while the worker keeps failing on arrival.</p>
+     */
+    private void recordWorkerExit(final long startedAt) {
+        if (System.currentTimeMillis() - startedAt >= IMMEDIATE_DEATH_WINDOW_MILLIS) {
+            consecutiveImmediateDeaths.set(0);
+            return;
+        }
+        final int deaths = consecutiveImmediateDeaths.incrementAndGet();
+        if (deaths >= MAX_CONSECUTIVE_IMMEDIATE_DEATHS) {
+            restartBlockedUntil.set(System.currentTimeMillis() + RESTART_BACKOFF_MILLIS);
+            Logger.errorEvery(ReindexThread.class, RESTART_BACKOFF_MESSAGE_KEY,
+                    "--- ReindexThread has died on arrival " + deaths + " times in a row; backing "
+                            + "restarts off for " + RESTART_BACKOFF_MILLIS + "ms. Content queued "
+                            + "for indexing on this node is NOT being processed — check the "
+                            + "preceding stack traces for the cause.", (int) RESTART_BACKOFF_MILLIS);
+        }
+    }
+
+    /**
      * The single place a {@link #ReindexThreadRunnable} is submitted, shared by the cold-start
      * ({@code STOPPED}) and dead-worker-recovery ({@code PAUSED} with no live runnable) paths.
      *
@@ -653,6 +717,15 @@ public class ReindexThread {
         }
 
         final ReindexThread inst = getInstance();
+
+        final long blockedUntil = inst.restartBlockedUntil.get();
+        if (blockedUntil > System.currentTimeMillis()) {
+            Logger.errorEvery(ReindexThread.class, RESTART_BACKOFF_MESSAGE_KEY,
+                    "--- Not starting a ReindexThread worker: restarts are backed off for another "
+                            + (blockedUntil - System.currentTimeMillis()) + "ms after repeated "
+                            + "immediate failures.", (int) RESTART_BACKOFF_MILLIS);
+            return false;
+        }
 
         // Invariant I1: claim before submit. Losing the CAS means a worker is already live — which
         // is a real state even when `state == STOPPED`, because requestStop() only sets a flag and
