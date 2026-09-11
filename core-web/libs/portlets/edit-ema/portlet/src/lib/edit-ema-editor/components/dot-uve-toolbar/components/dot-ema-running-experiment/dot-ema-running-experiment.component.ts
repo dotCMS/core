@@ -14,7 +14,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmaRunningExperimentComponent {
-    readonly runningExperiment = input.required<DotExperiment>();
+    readonly $runningExperiment = input.required<DotExperiment>({ alias: 'runningExperiment' });
 
     protected runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 }

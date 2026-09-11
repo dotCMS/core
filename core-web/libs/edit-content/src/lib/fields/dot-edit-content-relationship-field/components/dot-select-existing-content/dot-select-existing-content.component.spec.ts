@@ -1,7 +1,8 @@
 import { patchState, WritableStateSource } from '@ngrx/signals';
-import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
@@ -70,7 +71,7 @@ describe('DotSelectExistingContentComponent', () => {
         providers: [
             ExistingContentStore,
             mockProvider(ExistingContentService, {
-                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
+                getColumnsAndContent: vi.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
             { provide: DynamicDialogConfig, useValue: mockDialogConfig }
@@ -93,7 +94,7 @@ describe('DotSelectExistingContentComponent', () => {
     describe('Initialization', () => {
         describe('with valid configuration', () => {
             it('should initialize with required configuration', () => {
-                const spy = jest.spyOn(store, 'initLoad');
+                const spy = vi.spyOn(store, 'initLoad');
                 spectator.component.ngOnInit();
                 expect(spy).toHaveBeenCalledWith({
                     contentTypeId: 'test-content-type-id',
@@ -324,7 +325,7 @@ describe('DotSelectExistingContentComponent when selectionMode is missing', () =
         componentProviders: [ExistingContentStore],
         providers: [
             mockProvider(ExistingContentService, {
-                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
+                getColumnsAndContent: vi.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
             {
@@ -355,7 +356,7 @@ describe('DotSelectExistingContentComponent when contentTypeId is missing', () =
         componentProviders: [ExistingContentStore],
         providers: [
             mockProvider(ExistingContentService, {
-                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
+                getColumnsAndContent: vi.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
             {

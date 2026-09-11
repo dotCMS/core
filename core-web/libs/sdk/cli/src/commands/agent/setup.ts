@@ -1,0 +1,393 @@
+import { confirmConnection } from './connect';
+import { protectFromVersionControl, type GitignoreOutcome } from './gitignore';
+import { installSkills } from './skills';
+import { getTarget, detectTargets, TARGETS, TARGET_IDS } from './targets/registry';
+import { WRITERS } from './targets/writers';
+
+import { mintToken, verifyToken } from '../../shared/auth';
+import { ENV_KEYS, readEnv } from '../../shared/env';
+import {
+    ConflictingAuthError,
+    CredentialsRejectedError,
+    TokenRejectedError,
+    UnknownTargetError
+} from '../../shared/errors';
+import {
+    checkReachable,
+    compatibilityWarning,
+    insecureTransportWarning
+} from '../../shared/instance';
+import { promptForAuth, resolveInstanceUrl, resolveRequiredInputs } from '../../shared/prompts';
+import { TOOL_VERSION } from '../../shared/version';
+
+import type { TargetId } from './targets/types';
+import type { RunOptions, TargetOutcome, Token } from '../../shared/types';
+
+/** Three, matching FR-007. A fourth prompt after three refusals is nagging, not helping. */
+const MAX_AUTH_ATTEMPTS = 3;
+
+export interface SetupResult {
+    outcomes: TargetOutcome[];
+    /** Non-fatal notices, e.g. the ADR-0019 instance-version warning (FR-005a). */
+    warnings: string[];
+    /** Present only for folder scope, which is the default and therefore the common case. */
+    versionControl?: GitignoreOutcome;
+    connection: 'ok' | 'failed' | 'skipped';
+    connectionReason?: string;
+    /** `--skip-skills` was honoured — the summary has to say so. */
+    skillsSkipped: boolean;
+    exitCode: 0 | 1 | 2;
+}
+
+/**
+ * Exactly two authentication modes, and they are alternatives rather than a fallback chain
+ * (FR-003a/b). Supplying both is a usage error rather than a silent preference: silent
+ * precedence hides a mistake in exactly the scripted runs these options exist for.
+ */
+function resolveAuthMode(opts: Partial<RunOptions>): {
+    token?: string;
+    user?: string;
+    password?: string;
+} {
+    const token = opts.authToken ?? readEnv(ENV_KEYS.authToken);
+    const password = opts.password ?? readEnv(ENV_KEYS.password);
+    const user = opts.user;
+
+    if (token && (user || password)) {
+        // Name the source the developer actually used, flag or environment variable.
+        const tokenSource = opts.authToken ? '--authToken' : ENV_KEYS.authToken;
+        const credentialSource = opts.user
+            ? '--user'
+            : opts.password
+              ? '--password'
+              : ENV_KEYS.password;
+        throw new ConflictingAuthError(tokenSource, credentialSource);
+    }
+    return { token, user, password };
+}
+
+function resolveTargets(opts: Partial<RunOptions>): TargetId[] {
+    if (!opts.agents?.length) return [];
+    for (const id of opts.agents) {
+        if (!TARGET_IDS.includes(id as TargetId)) throw new UnknownTargetError(id, TARGET_IDS);
+    }
+    return opts.agents as TargetId[];
+}
+
+/**
+ * The flow, in the order fixed by contracts/cli-interface.md.
+ *
+ * The ordering is the load-bearing part: NOTHING touches the filesystem until the token has
+ * been verified (FR-008a). A failure before that point leaves no file, no directory and no
+ * skills install, so a bad token cannot produce seven configurations that fail confusingly
+ * later. `--yes` / `--force` govern confirmation prompts only and cannot disable it (FR-008c).
+ */
+export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> {
+    // 1. Usage errors first — before any network call or filesystem touch.
+    const auth = resolveAuthMode(opts);
+    const explicitTargets = resolveTargets(opts);
+    const scope = opts.scope ?? 'folder';
+
+    /** Every outcome shares seven fields and differs in three. Written out four times, the
+     *  defaults drifted: `permissionsApplied: false` was copy-pasted rather than observed. */
+    const outcome = (
+        targetId: TargetId,
+        path: string | null,
+        result: TargetOutcome['result'],
+        reason: string | null = null,
+        extra: Partial<TargetOutcome> = {}
+    ): TargetOutcome => ({
+        targetId,
+        scope,
+        path,
+        result,
+        reason,
+        permissionsApplied: false,
+        skillsInstalled: 'no',
+        ...extra
+    });
+
+    const step = opts.onProgress ?? (() => undefined);
+    const warnings: string[] = [];
+
+    // 2. The address first, and CHECKED first. Only once the instance is confirmed to be a
+    //    real dotCMS is anyone asked for a credential: a password typed against a wrong
+    //    address is wasted effort, and the failure would land after the work rather than
+    //    before it.
+    const url = await resolveInstanceUrl(opts, opts.promptPort);
+    step(`Checking ${url}`);
+    const instance = await checkReachable(url);
+
+    // FR-005a / ADR-0019. The version and the comparison both existed and were unit-tested,
+    // but nothing joined them: `checkReachable`'s result was discarded, so the warning could
+    // never reach a developer. Fail-open by construction — `compatibilityWarning` returns null
+    // for an absent or unparseable version, and this never throws or blocks.
+    const warning = compatibilityWarning(instance.version, TOOL_VERSION);
+    if (warning) {
+        warnings.push(warning);
+        opts.onWarning?.(warning);
+    }
+
+    const insecure = insecureTransportWarning(url);
+    if (insecure) {
+        warnings.push(insecure);
+        opts.onWarning?.(insecure);
+    }
+
+    // 3. Now the credential — prompting only for what is missing, and only where there is a
+    //    terminal to ask on (FR-003i, FR-003k).
+    let inputs = await resolveRequiredInputs(
+        { ...opts, url, authToken: auth.token, user: auth.user, password: auth.password },
+        opts.promptPort
+    );
+
+    // 4. Authenticate and verify, retrying a REJECTION up to three times (FR-007).
+    //
+    // Both halves are inside the loop on purpose. A supplied token that the instance refuses is
+    // the same user error as a mistyped password — asking again is obviously right, and failing
+    // outright after one bad paste is not. A rejection is retried; anything else (unreachable
+    // instance, TLS, a 500) is not, because re-typing a credential cannot fix it.
+    let token: Token;
+    for (let attempt = 1; ; attempt++) {
+        try {
+            if (inputs.authToken) {
+                token = { value: inputs.authToken, origin: 'supplied', verified: false };
+            } else {
+                step('Minting an access token');
+                token = await mintToken({
+                    url,
+                    user: inputs.user as string,
+                    password: inputs.password as string
+                });
+            }
+
+            // Past this line, and only past it, may anything be written.
+            step('Verifying the token');
+            token = await verifyToken(url, token);
+            break;
+        } catch (error) {
+            const rejected =
+                error instanceof TokenRejectedError || error instanceof CredentialsRejectedError;
+            if (!rejected || !opts.promptPort || attempt >= MAX_AUTH_ATTEMPTS) throw error;
+
+            opts.onAuthRetry?.((error as Error).message, attempt, MAX_AUTH_ATTEMPTS);
+            // ASK — do not resolve. `resolveRequiredInputs` consults options and the
+            // environment first, so a credential that came from DOTCMS_AUTH_TOKEN or
+            // DOTCMS_PASSWORD was re-read unchanged and re-submitted until the attempts ran
+            // out, without ever prompting. For a credential the instance has just rejected,
+            // the only useful source is the human.
+            const fresh = await promptForAuth(opts.promptPort);
+            inputs = { url, ...fresh };
+        }
+    }
+
+    // Targets: explicit --agent wins. Otherwise ASK when there is someone to ask (FR-010),
+    // and fall back to every detected editor when there is not (FR-003j). Defaulting silently
+    // in an interactive run would write to editors the developer never chose.
+    let targets;
+    if (explicitTargets.length) {
+        targets = explicitTargets.map(getTarget);
+    } else {
+        // Use the objects detection returned, never re-derive them from the registry by id:
+        // that silently replaces whatever the caller resolved, which is a real bug and not
+        // only a testing inconvenience.
+        const detected = await detectTargets();
+        const detectedById = new Map(detected.map((t) => [t.id as string, t]));
+        if (opts.promptPort) {
+            const chosen = await opts.promptPort.multiSelect(
+                'Which editors should we configure?',
+                TARGETS.map((t) => ({
+                    name: t.displayName,
+                    value: t.id,
+                    checked: detectedById.has(t.id)
+                }))
+            );
+            targets = chosen.map((id) => detectedById.get(id) ?? getTarget(id as TargetId));
+        } else {
+            targets = detected;
+        }
+    }
+
+    // 5. Write — unless asked not to. `--skip-mcp` skips WRITING, nothing else: the flags are
+    //    documented as independent, and returning here also skipped the skills install and the
+    //    summary, so `--skip-mcp` alone did nothing at all and said nothing about it.
+    //    The connection check is skipped implicitly, since there is no configuration to prove
+    //    (FR-024b). One target's failure never stops the others and never rolls back what already
+    //    succeeded (FR-020a, FR-020d) — a half-configured machine the developer can read beats
+    //    an all-or-nothing unwind.
+    // 7. Deduplicate BEFORE counting: `--agent cursor --agent cursor` announced two editors
+    //    and wrote one, and two targets can legitimately resolve to the same file.
+    const byId = new Map(targets.map((t) => [t.id as string, t]));
+    const plan: { target: (typeof targets)[number]; file: string }[] = [];
+    const seen = new Set<string>();
+    for (const target of targets) {
+        const file = target.configPath(scope, opts.cwd);
+        if (!file || seen.has(file)) continue;
+        seen.add(file);
+        plan.push({ target, file });
+    }
+
+    // Configuring nothing is not success. Silently exiting 0 here is exactly what the spec's
+    // Edge Cases forbid: say so, name what the developer can pick — AND fail. Warning while
+    // still reporting success is not saying so.
+    const configuredNothing = !plan.length && !opts.skipMcp;
+    if (configuredNothing) {
+        const noEditors =
+            `No editor was configured. None of the supported editors was detected, and none was ` +
+            `named. Re-run with --agent <id>, choosing from: ${TARGET_IDS.join(', ')}.`;
+        warnings.push(noEditors);
+        opts.onWarning?.(noEditors);
+    }
+
+    const outcomes: TargetOutcome[] = [];
+    if (opts.skipMcp) {
+        // Say so. Returning an empty summary made `--skip-mcp` look like a no-op run.
+        for (const { target, file } of plan) {
+            outcomes.push(
+                outcome(target.id, file, 'skipped', 'configuration writing skipped (--skip-mcp)')
+            );
+        }
+    } else if (plan.length) {
+        step(`Writing configuration for ${plan.length} editor${plan.length === 1 ? '' : 's'}`);
+    }
+
+    for (const { target, file } of opts.skipMcp ? [] : plan) {
+        try {
+            // Ask BEFORE replacing (FR-017). --force and --yes skip the question, never the
+            // token verification that already happened above.
+            const writer = WRITERS[target.format];
+            const existing = await writer.hasEntry(file, target);
+            if (existing && !opts.force && !opts.yes && opts.confirmOverwrite) {
+                const proceed = await opts.confirmOverwrite(file);
+                if (!proceed) {
+                    outcomes.push(
+                        outcome(target.id, file, 'skipped', 'left the existing entry in place')
+                    );
+                    continue;
+                }
+            }
+
+            // The registry's `format` selects the writer; the flow branches on nothing
+            // target-specific (FR-013).
+            const written = await writer.write({
+                target,
+                scope,
+                url,
+                token: token.value,
+                cwd: opts.cwd
+            });
+
+            outcomes.push(
+                outcome(
+                    target.id,
+                    written.path,
+                    written.replacedExisting ? 'replaced' : 'written',
+                    null,
+                    { permissionsApplied: written.permissionsApplied }
+                )
+            );
+        } catch (error) {
+            outcomes.push(outcome(target.id, file, 'failed', (error as Error).message));
+        }
+    }
+
+    // 6. Version-control safety. Folder scope is the default, so a token has just landed in a
+    //    working directory on almost every run — naming the files is not optional (FR-023).
+    //    `--yes` takes the SAFE answer here rather than skipping the step: this is the one
+    //    confirmation where the conventional meaning of -y would be actively harmful.
+    let versionControl: GitignoreOutcome | undefined;
+    // Only files actually written. `skipped` outcomes carry a path so the summary can name
+    // them, and including those made --skip-mcp announce "these files now contain an access
+    // token" about files that were never created.
+    const written = outcomes
+        .filter((o) => (o.result === 'written' || o.result === 'replaced') && o.path)
+        .map((o) => o.path as string);
+    if (scope === 'folder' && written.length) {
+        // A throw here would escape runSetup and take the whole summary with it — including the
+        // list of files that now hold a token, which is precisely what the developer needs at
+        // that moment. Degrade to a warning instead (FR-023a).
+        try {
+            versionControl = await protectFromVersionControl({
+                files: written,
+                // Which of them a project would normally commit is the registry's to say, not a
+                // basename set inside the gitignore module.
+                committedByConvention: plan
+                    .filter(({ target }) => target.folderConfigIsCommitted)
+                    .map(({ file }) => file),
+                cwd: opts.cwd ?? process.cwd(),
+                confirmExclude: opts.yes ? async () => true : opts.confirmExclude
+            });
+        } catch (error) {
+            const vcFailed =
+                `Could not update .gitignore — ${(error as Error).message}. These files hold an ` +
+                `access token and are NOT excluded from version control:\n      ${written.join('\n      ')}`;
+            warnings.push(vcFailed);
+            opts.onWarning?.(vcFailed);
+        }
+    }
+
+    // 7. Skills — non-fatal by design (FR-026).
+    if (!opts.skipSkills) {
+        // Driven by the SELECTED targets, not by successful writes. Deriving it from writes
+        // meant `--skip-mcp` silently installed nothing, even though the two flags are
+        // independent. A target whose write failed is still excluded — its editor is not
+        // configured, so skills for it would be half a job.
+        const eligible = opts.skipMcp
+            ? plan.map((p) => p.target)
+            : outcomes
+                  .filter((o) => o.result !== 'failed')
+                  .map((o) => byId.get(o.targetId))
+                  .filter((t): t is NonNullable<typeof t> => Boolean(t));
+        const ids = eligible
+            .filter((t) => Boolean(t.skillsAgentId))
+            .map((t) => t.skillsAgentId as string);
+        if (ids.length) {
+            step('Installing the dotCMS skills');
+            const skills = await installSkills({ agentIds: ids, global: scope === 'global' });
+            if (!skills.ok) {
+                // FR-026 requires the developer be handed the command to finish the job. The
+                // reason and the command were both computed and then dropped on the floor, so
+                // a failed install was completely silent.
+                const failed =
+                    `Skills were not installed${skills.reason ? ` — ${skills.reason}` : ''}. ` +
+                    `Run this when the problem is fixed:\n      ${skills.command}`;
+                warnings.push(failed);
+                opts.onWarning?.(failed);
+            }
+            for (const o of outcomes) {
+                if (o.result === 'failed') continue;
+                // FR-027: never claim skills landed where the editor is not confirmed to read
+                // them. Driven by the registry rather than a hardcoded editor id.
+                const target = byId.get(o.targetId);
+                o.skillsInstalled = !skills.ok
+                    ? 'no'
+                    : target?.skillsLocationVerified
+                      ? 'yes'
+                      : 'unverified';
+            }
+        }
+    }
+
+    // 8. Prove the agent connects (FR-024a).
+    let connection: SetupResult['connection'] = 'skipped';
+    let connectionReason: string | undefined;
+    if (!opts.skipVerify && !opts.skipMcp) {
+        step(
+            'Starting the server to confirm it responds (this can take a minute on a cold npx cache)'
+        );
+        const result = await confirmConnection({ url, token: token.value });
+        connection = result.ok ? 'ok' : 'failed';
+        if (!result.ok) connectionReason = `${result.cause}: ${result.detail}`;
+    }
+
+    const anyFailed = outcomes.some((o) => o.result === 'failed') || connection === 'failed';
+    return {
+        outcomes,
+        versionControl,
+        warnings,
+        connection,
+        connectionReason,
+        skillsSkipped: Boolean(opts.skipSkills),
+        exitCode: anyFailed || configuredNothing ? 1 : 0
+    };
+}

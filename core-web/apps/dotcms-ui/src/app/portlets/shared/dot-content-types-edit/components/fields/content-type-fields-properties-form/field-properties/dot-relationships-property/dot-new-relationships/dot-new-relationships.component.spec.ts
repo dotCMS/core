@@ -1,6 +1,12 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -69,7 +75,7 @@ describe('DotNewRelationshipsComponent', () => {
         providers: [
             mockProvider(DotContentTypeService),
             mockProvider(DotRelationshipService, {
-                loadCardinalities: jest.fn().mockReturnValue(of(mockCardinalities))
+                loadCardinalities: vi.fn().mockReturnValue(of(mockCardinalities))
             }),
             { provide: FormGroupDirective, useValue: formGroupDirectiveMock },
             { provide: DotMessageService, useValue: messageServiceMock },
@@ -191,7 +197,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should update contentType and emit switch event', fakeAsync(() => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.component.currentCardinalityIndex = 1;
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
@@ -209,7 +215,7 @@ describe('DotNewRelationshipsComponent', () => {
         }));
 
         it('should handle null variable', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.component.currentCardinalityIndex = 0;
 
             spectator.component.onContentTypeChange(null);
@@ -223,7 +229,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should prioritize velocityVar input over contentType variable when emitting', fakeAsync(() => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.setInput('velocityVar', 'CustomVar');
             spectator.component.currentCardinalityIndex = 2;
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
@@ -246,7 +252,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should update currentCardinalityIndex and emit switch event', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.setInput('velocityVar', 'Blog');
             spectator.component.contentType = mockContentType;
             spectator.detectChanges();
@@ -261,7 +267,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should use contentType variable when velocityVar is not set', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.component.contentType = mockContentType;
             spectator.fixture.detectChanges(false);
 
@@ -274,7 +280,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should handle undefined velocityVar and contentType', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
 
             spectator.component.cardinalityChanged(0);
 
@@ -291,7 +297,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should emit switch event with velocityVar input when available', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.setInput('velocityVar', 'CustomVar');
             spectator.component.currentCardinalityIndex = 2;
             spectator.detectChanges();
@@ -305,7 +311,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should emit switch event with contentType variable when velocityVar is not set', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.component.contentType = mockContentType;
             spectator.component.currentCardinalityIndex = 1;
             spectator.fixture.detectChanges(false);
@@ -319,7 +325,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should emit switch event with undefined velocityVar when neither input nor contentType is set', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.component.currentCardinalityIndex = 0;
             spectator.detectChanges();
 
@@ -384,7 +390,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should handle content type change from dot-content-type component', fakeAsync(() => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.component.currentCardinalityIndex = 1;
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
 
@@ -399,7 +405,7 @@ describe('DotNewRelationshipsComponent', () => {
         }));
 
         it('should handle cardinality change from dot-cardinality-selector component', () => {
-            const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.switch, 'emit');
             spectator.setInput('velocityVar', 'Blog');
             spectator.component.contentType = mockContentType;
             spectator.detectChanges();

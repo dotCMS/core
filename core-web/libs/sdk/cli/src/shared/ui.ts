@@ -1,0 +1,140 @@
+import cfonts from 'cfonts';
+import chalk from 'chalk';
+
+import type { TargetOutcome } from './types';
+
+/**
+ * The `dotcms agent setup` banner.
+ *
+ * Deliberately NOT claiming to match `create-app`'s `printWelcomeScreen()` — it does not (that
+ * one is `DOTCMS`, system colours, letter-spaced), and a must-match relationship with no shared
+ * owner is a promise nothing can keep. If the two should ever be identical, the banner needs a
+ * shared module first.
+ */
+export function printBanner(): void {
+    cfonts.say('dotCMS', { font: 'block', align: 'left', colors: ['red', 'white'], space: false });
+    process.stdout.write('  Connect your AI coding agent to a dotCMS instance\n\n');
+}
+
+export interface VersionControlSummary {
+    files: string[];
+    inRepository: boolean;
+    excluded: boolean;
+    warnings: string[];
+}
+
+export interface SummaryInput {
+    outcomes: TargetOutcome[];
+    /** Non-fatal notices, e.g. the instance being older than this tool (FR-005a). */
+    warnings?: string[];
+    /** True when `--skip-skills` was passed. A step the developer asked to skip must be
+     *  reported as skipped, not rendered as nothing at all (FR-032a). */
+    skillsSkipped?: boolean;
+    versionControl?: VersionControlSummary;
+    connection: 'ok' | 'failed' | 'skipped';
+    connectionReason?: string;
+    nextStep?: string;
+}
+
+const RESULT_MARK: Record<TargetOutcome['result'], string> = {
+    written: chalk.green('✓ written '),
+    replaced: chalk.green('✓ replaced'),
+    skipped: chalk.dim('· skipped '),
+    failed: chalk.red('✗ failed  ')
+};
+
+/**
+ * The end-of-run summary (FR-028).
+ *
+ * With no status command and no verbose mode, this is most of what the developer ever sees, so
+ * it must never overstate: never "ready" unless the connection was actually confirmed
+ * (FR-024e), never "skills installed" for a location we have not verified (FR-027), and never
+ * silence about permissions we could not apply (research R5).
+ */
+export function renderSummary(input: SummaryInput): string {
+    const lines: string[] = [];
+
+    // Derived, not tuned to the longest id that happens to exist today.
+    const idWidth = Math.max(...input.outcomes.map((o) => o.targetId.length), 0);
+    for (const o of input.outcomes) {
+        const bits = [
+            `  ${RESULT_MARK[o.result]}`,
+            o.targetId.padEnd(idWidth),
+            o.scope.padEnd(7),
+            o.path ?? '—'
+        ];
+        lines.push(bits.join('  '));
+        if (o.result === 'failed' && o.reason) lines.push(`      ${o.reason}`);
+        // Only where a file was actually written. A failed target has permissionsApplied
+        // false because nothing was written at all, not because the platform refused — saying
+        // otherwise blamed macOS for a permission error of our own making.
+        if (!o.permissionsApplied && o.path && o.result !== 'failed' && o.result !== 'skipped') {
+            lines.push('      could not restrict file permissions on this platform');
+        }
+        if (o.skillsInstalled === 'unverified') {
+            lines.push(
+                '      skills location unverified for this editor — not confirmed installed'
+            );
+        }
+    }
+
+    for (const w of input.warnings ?? []) {
+        lines.push(chalk.yellow(`  ! ${w}`));
+    }
+
+    if (input.versionControl?.files.length) {
+        const vc = input.versionControl;
+        lines.push('');
+        lines.push('  These files now contain an access token:');
+        for (const f of vc.files) lines.push(`      ${f}`);
+        if (vc.excluded) lines.push(chalk.green('  ✓ added to .gitignore'));
+        else if (vc.inRepository) lines.push(chalk.yellow('  ! not excluded from version control'));
+        for (const w of vc.warnings) lines.push(chalk.yellow(`  ! ${w}`));
+    }
+
+    if (input.skillsSkipped) {
+        lines.push('  · skills installation skipped (--skip-skills)');
+    }
+
+    lines.push('');
+    if (input.connection === 'ok') {
+        lines.push(chalk.green('  ✓ server responded'));
+    } else if (input.connection === 'skipped') {
+        lines.push('  · connection check skipped');
+    } else {
+        // Deliberately avoids the word "ready" — the run did not reach that state.
+        lines.push(chalk.red(`  ✗ ${input.connectionReason ?? 'the server did not start'}`));
+        lines.push('    Configuration was written and left in place; the server did not come up.');
+    }
+
+    // "Ready" claims that everything asked for actually happened — so it excludes SKIPPED, not
+    // just failed. A declined replacement leaves the previous configuration in place, which may
+    // name a different instance and which nothing here verified. `[].every()` is also true, so
+    // requiring at least one outcome is what stops a run that configured nothing from claiming
+    // success (spec Edge Cases).
+    const done = (o: TargetOutcome) => o.result === 'written' || o.result === 'replaced';
+    const left = input.outcomes.filter((o) => !done(o) && o.result !== 'failed');
+    const allGood =
+        input.connection === 'ok' && input.outcomes.length > 0 && input.outcomes.every(done);
+    lines.push('');
+    if (allGood) {
+        lines.push(`  Ready — ${input.nextStep ?? 'open your editor and start using dotCMS.'}`);
+    } else if (left.length && input.connection === 'ok') {
+        // Not an error, so do not colour it as one — but do not let it pass as success either.
+        lines.push(
+            `  ${left.length} editor${left.length === 1 ? ' was' : 's were'} left unchanged; ` +
+                `what they already point at was not verified.`
+        );
+    }
+
+    return lines.join('\n');
+}
+
+/**
+ * The summary is the product's primary output, not a debug log — but the workspace lint rule
+ * reserves `console` for warn/error. Writing to stdout directly says what is meant: this is
+ * the command's result, and it belongs on stdout so it can be piped.
+ */
+export function writeOut(text: string): void {
+    process.stdout.write(`${text}\n`);
+}

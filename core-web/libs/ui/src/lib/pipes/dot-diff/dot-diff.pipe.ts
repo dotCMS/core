@@ -1,3 +1,4 @@
+/// <reference path="./htmldiff-js.d.ts" />
 import HtmlDiff from 'htmldiff-js';
 
 import { Pipe, PipeTransform } from '@angular/core';

@@ -19,8 +19,7 @@ import {
     PageScannerA11yResponse,
     buildA11yGroups
 } from '@dotcms/portlets/dot-ema/ui';
-
-import { SubscriptionSlot } from './subscription-slot';
+import { SubscriptionSlot } from '@dotcms/store';
 
 import {
     impactToSeverity,

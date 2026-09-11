@@ -1,7 +1,7 @@
+import { of, Subject } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-console */
-
-import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -65,15 +65,15 @@ import { DotTemplateListComponent } from './dot-template-list.component';
 // Mock window.matchMedia (required by PrimeNG ContextMenu)
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query: string) => ({
+    value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
@@ -84,10 +84,10 @@ const originalConsoleWarn = console.warn;
 const originalConsoleError = console.error;
 
 beforeAll(() => {
-    console.info = jest.fn();
-    console.debug = jest.fn();
-    console.warn = jest.fn();
-    console.error = jest.fn();
+    console.info = vi.fn();
+    console.debug = vi.fn();
+    console.warn = vi.fn();
+    console.error = vi.fn();
 });
 
 afterAll(() => {
@@ -374,7 +374,7 @@ type DotTemplatesServiceSpy = {
     [K in keyof Pick<
         DotTemplatesService,
         'archive' | 'unArchive' | 'publish' | 'unPublish' | 'copy' | 'delete' | 'getFiltered'
-    >]: jest.Mock;
+    >]: Mock;
 };
 
 describe('DotTemplateListComponent', () => {
@@ -383,16 +383,16 @@ describe('DotTemplateListComponent', () => {
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotRouterService: {
-        gotoPortlet: jest.Mock;
-        goToEditTemplate: jest.Mock;
-        goToSiteBrowser: jest.Mock;
+        gotoPortlet: Mock;
+        goToEditTemplate: Mock;
+        goToSiteBrowser: Mock;
     };
-    let dialogService: { open: jest.Mock };
+    let dialogService: { open: Mock };
 
     let comp: DotTemplateListComponent;
     let dotAlertConfirmService: DotAlertConfirmService;
-    let dotSiteBrowserService: { setSelectedFolder: jest.Mock };
-    let mockGoToFolder: jest.SpyInstance;
+    let dotSiteBrowserService: { setSelectedFolder: Mock };
+    let mockGoToFolder: MockInstance;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -406,28 +406,28 @@ describe('DotTemplateListComponent', () => {
     beforeEach(async () => {
         // Create spies for services that will be injected
         const dotTemplatesServiceSpy = {
-            archive: jest.fn(),
-            unArchive: jest.fn(),
-            publish: jest.fn(),
-            unPublish: jest.fn(),
-            copy: jest.fn(),
-            delete: jest.fn(),
-            getFiltered: jest
+            archive: vi.fn(),
+            unArchive: vi.fn(),
+            publish: vi.fn(),
+            unPublish: vi.fn(),
+            copy: vi.fn(),
+            delete: vi.fn(),
+            getFiltered: vi
                 .fn()
                 .mockReturnValue(
                     of({ templates: templatesMock, totalRecords: templatesMock.length })
                 )
         };
         const dotSiteBrowserServiceSpy = {
-            setSelectedFolder: jest.fn().mockReturnValue(of(null))
+            setSelectedFolder: vi.fn().mockReturnValue(of(null))
         };
         const dotRouterServiceSpy = {
-            gotoPortlet: jest.fn(),
-            goToEditTemplate: jest.fn(),
-            goToSiteBrowser: jest.fn()
+            gotoPortlet: vi.fn(),
+            goToEditTemplate: vi.fn(),
+            goToSiteBrowser: vi.fn()
         };
         const dialogServiceSpy = {
-            open: jest.fn()
+            open: vi.fn()
         };
 
         await TestBed.configureTestingModule({
@@ -463,7 +463,7 @@ describe('DotTemplateListComponent', () => {
                 DotPushPublishDialogService,
                 {
                     provide: PushPublishService,
-                    useValue: { getEnvironments: jest.fn().mockReturnValue(of([])) }
+                    useValue: { getEnvironments: vi.fn().mockReturnValue(of([])) }
                 },
                 { provide: GlobalStore, useValue: globalStoreMock }
             ],
@@ -524,13 +524,13 @@ describe('DotTemplateListComponent', () => {
             fixture.detectChanges();
             tick(1);
             fixture.detectChanges();
-            jest.spyOn(dotPushPublishDialogService, 'open');
+            vi.spyOn(dotPushPublishDialogService, 'open');
 
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: dialogRefClose
             } as any);
 
-            mockGoToFolder = jest.spyOn(comp, 'goToFolder');
+            mockGoToFolder = vi.spyOn(comp, 'goToFolder');
         }));
 
         // Helper: ensure getFiltered and loadEnvironments have completed; table has data. Call only from within fakeAsync().
@@ -781,8 +781,8 @@ describe('DotTemplateListComponent', () => {
         describe('row actions command', () => {
             beforeEach(fakeAsync(() => {
                 loadTableData();
-                jest.spyOn(dotMessageDisplayService, 'push');
-                jest.spyOn(comp, 'loadCurrentPage');
+                vi.spyOn(dotMessageDisplayService, 'push');
+                vi.spyOn(comp, 'loadCurrentPage');
             }));
 
             const getActionIndex = (labels: (string | undefined)[], label: string) =>
@@ -895,7 +895,7 @@ describe('DotTemplateListComponent', () => {
             });
             it('should call delete api, send notification and reload current page', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
-                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept!();
                 });
                 openRowContextMenu('123Archived');
@@ -913,7 +913,7 @@ describe('DotTemplateListComponent', () => {
 
             it('should handle error request', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockSingleResponseFail));
-                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept!();
                 });
                 openRowContextMenu('123Archived');
@@ -955,8 +955,8 @@ describe('DotTemplateListComponent', () => {
                 comp.selectedTemplates = [templatesMock[0], templatesMock[1]];
                 comp.onSelectionChange();
                 fixture.detectChanges();
-                jest.spyOn(dotMessageDisplayService, 'push');
-                jest.spyOn(comp, 'loadCurrentPage');
+                vi.spyOn(dotMessageDisplayService, 'push');
+                vi.spyOn(comp, 'loadCurrentPage');
             }));
 
             const bulkActionIndex = (label: string) =>
@@ -1041,7 +1041,7 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute Delete action', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
-                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept!();
                 });
                 getBulkActions()[bulkActionIndex('Delete')].command!({
@@ -1098,7 +1098,7 @@ describe('DotTemplateListComponent', () => {
                 });
                 it('should fire exception on delete', () => {
                     dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseFail));
-                    jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                    vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.accept!();
                     });
                     getBulkActions()[bulkActionIndex('Delete')].command!({

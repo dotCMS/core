@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { Tag } from 'primeng/tag';
 

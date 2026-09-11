@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { expect, describe } from '@jest/globals';
 import { Subject } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
@@ -20,21 +20,21 @@ class RouterMock {
         }
     };
 
-    // Signatures are explicit: a bare `jest.fn(() => ...)` infers zero parameters,
+    // Signatures are explicit: a bare `vi.fn(() => ...)` infers zero parameters,
     // which makes every toHaveBeenCalledWith assertion below a type error.
-    navigate = jest.fn<Promise<boolean>, [commands: unknown[], extras?: unknown]>(() => {
+    navigate = vi.fn<Promise<boolean>, [commands: unknown[], extras?: unknown]>(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    navigateByUrl = jest.fn<Promise<boolean>, [url: unknown, extras?: unknown]>(() => {
+    navigateByUrl = vi.fn<Promise<boolean>, [url: unknown, extras?: unknown]>(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    createUrlTree = jest.fn((link: unknown, _extras?: unknown) => {
+    createUrlTree = vi.fn((link: unknown, _extras?: unknown) => {
         return link;
     });
 
@@ -102,7 +102,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from Router', () => {
-        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue({
+        vi.spyOn(router, 'getCurrentNavigation').mockReturnValue({
             finalUrl: {
                 queryParams: {
                     hola: 'mundo'
@@ -116,7 +116,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from ActivatedRoute', () => {
-        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue(null);
+        vi.spyOn(router, 'getCurrentNavigation').mockReturnValue(null);
         expect(service.queryParams).toEqual({
             hello: 'world'
         });
@@ -128,7 +128,7 @@ describe('DotRouterService', () => {
     });
 
     it('should go to edit page', () => {
-        jest.spyOn(service, 'goToEditPage');
+        vi.spyOn(service, 'goToEditPage');
         service.goToMain('/about/us');
         expect(service.goToEditPage).toHaveBeenCalledWith({ url: '/about/us' });
     });
@@ -358,36 +358,39 @@ describe('DotRouterService', () => {
         });
     });
 
-    it('Should set canDeactivateRoute$ to true', (done) => {
-        service.allowRouteDeactivation();
-        service.canDeactivateRoute$.subscribe((resp) => {
-            expect(resp).toBe(true);
-            done();
-        });
-    });
+    it('Should set canDeactivateRoute$ to true', () =>
+        new Promise<void>((done) => {
+            service.allowRouteDeactivation();
+            service.canDeactivateRoute$.subscribe((resp) => {
+                expect(resp).toBe(true);
+                done();
+            });
+        }));
 
-    it('Should set canDeactivateRoute$ to false', (done) => {
-        service.forbidRouteDeactivation();
-        service.canDeactivateRoute$.subscribe((resp) => {
-            expect(resp).toBe(false);
-            done();
-        });
-    });
+    it('Should set canDeactivateRoute$ to false', () =>
+        new Promise<void>((done) => {
+            service.forbidRouteDeactivation();
+            service.canDeactivateRoute$.subscribe((resp) => {
+                expect(resp).toBe(false);
+                done();
+            });
+        }));
 
-    it('trigger pageLeaveRequest observable stream when a page leave is requested', (done) => {
-        const leavePage = jest.fn();
-        service.pageLeaveRequest$.subscribe(() => {
-            leavePage();
-            expect(leavePage).toHaveBeenCalled();
-            done();
-        });
-        service.requestPageLeave();
-    });
+    it('trigger pageLeaveRequest observable stream when a page leave is requested', () =>
+        new Promise<void>((done) => {
+            const leavePage = vi.fn();
+            service.pageLeaveRequest$.subscribe(() => {
+                leavePage();
+                expect(leavePage).toHaveBeenCalled();
+                done();
+            });
+            service.requestPageLeave();
+        }));
 
     describe('go to login', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);
-            jest.useFakeTimers().setSystemTime(mockDate);
+            vi.useFakeTimers().setSystemTime(mockDate);
         });
 
         it('should add the cache busting', () => {
@@ -395,7 +398,7 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/public/login'], {
                 queryParams: { r: 1466424490000 }
             });
-            jest.useRealTimers(); // We need to deactivate the fake timer
+            vi.useRealTimers(); // We need to deactivate the fake timer
         });
 
         it('should go to login with cache busting', () => {
@@ -405,14 +408,14 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/public/login'], {
                 queryParams: { test: 'test', r: 1466424490000 }
             });
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 
     describe('go to logout', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);
-            jest.useFakeTimers().setSystemTime(mockDate);
+            vi.useFakeTimers().setSystemTime(mockDate);
         });
 
         it('should add the cache busting', () => {
@@ -420,7 +423,7 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/dotAdmin/logout'], {
                 queryParams: { r: 1466424490000 }
             });
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 });

@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -58,7 +59,7 @@ describe('DotActionButtonComponent', () => {
     });
 
     it('should emit event on button click', () => {
-        const pressSpy = jest.spyOn(spectator.component.press, 'emit');
+        const pressSpy = vi.spyOn(spectator.component.press, 'emit');
         spectator.click(byTestId('dot-action-button'));
         expect(pressSpy).toHaveBeenCalled();
     });
@@ -75,7 +76,7 @@ describe('DotActionButtonComponent', () => {
         ];
 
         spectator.setInput('model', model);
-        const toggleSpy = jest.spyOn(spectator.component.$menu()!, 'toggle');
+        const toggleSpy = vi.spyOn(spectator.component.$menu()!, 'toggle');
 
         spectator.click(byTestId('dot-action-button'));
         expect(toggleSpy).toHaveBeenCalledTimes(1);

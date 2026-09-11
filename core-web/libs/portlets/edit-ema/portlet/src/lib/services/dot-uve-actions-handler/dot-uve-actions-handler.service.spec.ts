@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -45,9 +46,9 @@ const MOCK_UPDATED_CONTENTLET: UpdatedContentlet = {
 function buildMockStore(variantId = DEFAULT_VARIANT_ID) {
     return {
         pageVariantId: signal(variantId),
-        setEditorState: jest.fn(),
-        setUveStatus: jest.fn(),
-        pageReload: jest.fn()
+        setEditorState: vi.fn(),
+        setUveStatus: vi.fn(),
+        pageReload: vi.fn()
     };
 }
 
@@ -60,7 +61,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
         service: DotUveActionsHandlerService,
         providers: [
             mockProvider(DotWorkflowActionsFireService, {
-                saveContentlet: jest.fn().mockReturnValue(of({}))
+                saveContentlet: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService),
             mockProvider(MessageService),
@@ -73,7 +74,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
@@ -93,7 +94,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -116,7 +117,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -139,7 +140,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -158,7 +159,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -167,7 +168,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
     });
 
     it('should show an error toast when saveContentlet fails', () => {
-        jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
+        vi.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
             throwError(() => new Error('save failed'))
         );
         const messageService = spectator.inject(MessageService);
@@ -184,7 +185,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -215,7 +216,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
     });
 
     it('should call onSectionOffset with the payload when the action is SECTION_OFFSET', () => {
-        const onSectionOffset = jest.fn();
+        const onSectionOffset = vi.fn();
         const payload = { sectionIndex: 2, offsetTop: 450 };
 
         service.handleAction(
@@ -226,7 +227,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn(),
+                onCopyContent: vi.fn(),
                 onSectionOffset
             }
         );
@@ -247,14 +248,14 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     inlineEditingService: NO_INLINE_EDITING,
                     contentWindow: null,
                     host: 'http://localhost',
-                    onCopyContent: jest.fn()
+                    onCopyContent: vi.fn()
                 }
             );
         }).not.toThrow();
     });
 
     it('should call dialog.createContentletFromPalette when action is CREATE_CONTENTLET', () => {
-        const createContentletFromPalette = jest.fn();
+        const createContentletFromPalette = vi.fn();
         const mockStore = {
             ...buildMockStore(),
             pageLanguageId: signal(1)
@@ -268,7 +269,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -281,10 +282,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
 
     describe('NAVIGATION_UPDATE', () => {
         it('should call pageLoad when navigating to a different page', () => {
-            const pageLoad = jest.fn();
+            const pageLoad = vi.fn();
             const mockStore = {
                 ...buildMockStore(),
-                pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                 pageLoad
             };
 
@@ -299,7 +300,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     inlineEditingService: NO_INLINE_EDITING,
                     contentWindow: null,
                     host: 'http://localhost',
-                    onCopyContent: jest.fn()
+                    onCopyContent: vi.fn()
                 }
             );
 
@@ -310,10 +311,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
         });
 
         it('should call pageLoad when navigating to a different page with hash', () => {
-            const pageLoad = jest.fn();
+            const pageLoad = vi.fn();
             const mockStore = {
                 ...buildMockStore(),
-                pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                 pageLoad
             };
 
@@ -328,7 +329,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     inlineEditingService: NO_INLINE_EDITING,
                     contentWindow: null,
                     host: 'http://localhost',
-                    onCopyContent: jest.fn()
+                    onCopyContent: vi.fn()
                 }
             );
 
@@ -339,11 +340,11 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
 
         describe('same-page navigation', () => {
             it('should not call pageLoad for hash-only navigation on same page', () => {
-                const pageLoad = jest.fn();
-                const setEditorState = jest.fn();
+                const pageLoad = vi.fn();
+                const setEditorState = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad,
                     setEditorState
                 };
@@ -359,7 +360,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                         inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -368,10 +369,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad for hash with full path on same page', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad
                 };
 
@@ -386,7 +387,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                         inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -394,10 +395,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad for query-only navigation on same page', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad
                 };
 
@@ -412,7 +413,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                         inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -420,10 +421,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad for multiple query params on same page', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/search' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/search' }),
                     pageLoad
                 };
 
@@ -438,7 +439,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                         inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -446,12 +447,12 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad or setEditorState when both hash and query are present on same page', () => {
-                const pageLoad = jest.fn();
-                const setEditorState = jest.fn();
+                const pageLoad = vi.fn();
+                const setEditorState = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
                     setEditorState,
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad
                 };
 
@@ -466,7 +467,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                         inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -475,10 +476,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should handle root path hash navigation', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/' }),
                     pageLoad
                 };
 
@@ -493,7 +494,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                         inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -522,14 +523,14 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
     });
 
     it('should call setStyleSchemas on the store with the received schemas', () => {
         const mockSchemas = [{ variable: 'Banner', schema: { color: { type: 'color' } } }];
-        const setStyleSchemas = jest.fn();
+        const setStyleSchemas = vi.fn();
         const mockStore = { ...buildMockStore(), setStyleSchemas };
 
         service.handleAction(
@@ -543,7 +544,7 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -571,9 +572,9 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
 
     const buildClientReadyStore = (isClientReady: boolean) => ({
         ...buildMockStore(),
-        isClientReady: jest.fn().mockReturnValue(isClientReady),
-        setCustomClient: jest.fn(),
-        setIsClientReady: jest.fn()
+        isClientReady: vi.fn().mockReturnValue(isClientReady),
+        setCustomClient: vi.fn(),
+        setIsClientReady: vi.fn()
     });
 
     const CLIENT_READY_PAYLOAD = {
@@ -589,11 +590,11 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
         inlineEditingService: NO_INLINE_EDITING,
         contentWindow: null,
         host: 'http://localhost',
-        onCopyContent: jest.fn()
+        onCopyContent: vi.fn()
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
     });
@@ -676,7 +677,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             payload: { contentlet: { inode: INODE }, container: { identifier: 'container-1' } }
         }),
         pageType: signal(pageType),
-        getCurrentTreeNode: jest.fn().mockReturnValue({})
+        getCurrentTreeNode: vi.fn().mockReturnValue({})
     });
 
     const buildDataset = (inode: string) => ({
@@ -684,7 +685,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
     });
@@ -692,7 +693,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
     it('should move focus to the clicked field without re-opening the copy dialog when switching fields on the same contentlet (headless)', () => {
         const mockStore = buildInlineEditingStore(PageType.HEADLESS);
         const copyModal = spectator.inject(DotCopyContentModalService);
-        const contentWindow = { postMessage: jest.fn() } as unknown as Window;
+        const contentWindow = { postMessage: vi.fn() } as unknown as Window;
 
         service.handleAction(
             {
@@ -705,7 +706,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow,
                 host: HOST,
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -729,8 +730,8 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
         const mockStore = buildInlineEditingStore(PageType.TRADITIONAL);
         const copyModal = spectator.inject(DotCopyContentModalService);
         const inlineEditingService = {
-            setTargetInlineMCEDataset: jest.fn(),
-            initEditor: jest.fn()
+            setTargetInlineMCEDataset: vi.fn(),
+            initEditor: vi.fn()
         } as unknown as InlineEditService;
 
         service.handleAction(
@@ -744,7 +745,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
                 inlineEditingService,
                 contentWindow: null,
                 host: HOST,
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -762,7 +763,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
     it('should ignore the click when already inline-editing a different contentlet', () => {
         const mockStore = buildInlineEditingStore(PageType.HEADLESS);
         const copyModal = spectator.inject(DotCopyContentModalService);
-        const contentWindow = { postMessage: jest.fn() } as unknown as Window;
+        const contentWindow = { postMessage: vi.fn() } as unknown as Window;
 
         service.handleAction(
             {
@@ -775,7 +776,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
                 inlineEditingService: NO_INLINE_EDITING,
                 contentWindow,
                 host: HOST,
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -788,8 +789,8 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
     let spectator: SpectatorService<DotUveActionsHandlerService>;
     let service: DotUveActionsHandlerService;
     let messageService: MessageService;
-    let blockSidebar: { open: jest.Mock };
-    let inlineEditingService: { initEditor: jest.Mock };
+    let blockSidebar: { open: Mock };
+    let inlineEditingService: { initEditor: Mock };
 
     const createService = createServiceFactory({
         service: DotUveActionsHandlerService,
@@ -846,12 +847,12 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
         messageService = spectator.inject(MessageService);
-        blockSidebar = { open: jest.fn() };
-        inlineEditingService = { initEditor: jest.fn() };
+        blockSidebar = { open: vi.fn() };
+        inlineEditingService = { initEditor: vi.fn() };
     });
 
     it('should not open the block editor sidebar for a contentlet the user cannot edit', () => {

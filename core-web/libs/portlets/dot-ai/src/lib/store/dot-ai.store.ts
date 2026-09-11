@@ -1,0 +1,75 @@
+import { signalStore, withHooks, withState } from '@ngrx/signals';
+
+import { effect, inject, untracked } from '@angular/core';
+
+import { withPersistedQuery } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
+
+import { withAiChat } from './features/with-ai-chat.feature';
+import { withAiConfig } from './features/with-ai-config.feature';
+import { withAiEmbeddings } from './features/with-ai-embeddings.feature';
+import { withAiImage } from './features/with-ai-image.feature';
+import { withAiIndexes } from './features/with-ai-indexes.feature';
+import { withAiSearch } from './features/with-ai-search.feature';
+import { withDotAiPreferences } from './features/with-dot-ai-preferences.feature';
+import { withRetrievalSettings } from './features/with-retrieval-settings.feature';
+
+import { DOT_AI_INITIAL_STATE, DotAiPortletState } from '../models/dot-ai-portlet.models';
+
+/**
+ * One store for the whole portlet, provided on the shell rather than per tab.
+ *
+ * Two reasons, both structural rather than stylistic:
+ *
+ * 1. The retrieval-settings panel is shared by Search and Chat, so it needs a provider
+ *    *above* both — per-tab stores would reset it on every tab switch (FR-017).
+ * 2. The index list has two readers (the Embeddings table and the retrieval picker). One
+ *    owner means one fetch and one signal, so a mutation in one place updates the other for
+ *    free (FR-033). Split stores would mean a duplicated fetch or a third shared store.
+ *
+ * **Slice order is load-bearing**: `withAiConfig` seeds the threshold and default model, and
+ * `withAiIndexes` seeds the index name, both of which `withRetrievalSettings` then reads.
+ */
+export const DotAiStore = signalStore(
+    withState<DotAiPortletState>(DOT_AI_INITIAL_STATE),
+    withAiConfig(),
+    withAiIndexes(),
+    withRetrievalSettings(),
+    withAiSearch(),
+    withAiChat(),
+    withAiEmbeddings(),
+    withAiImage(),
+    // Gives `dotcms.devtools.dotai.lastQuery`, matching the three sibling dev-tool portlets.
+    // It can only be composed once — it contributes a `clearPersistedQuery()` method that a
+    // second instance would collide on.
+    withPersistedQuery({ portletKey: 'dotai', field: 'searchPrompt' }),
+    // The panel's ten controls, which withPersistedQuery cannot express: it holds one string
+    // field and can only be composed once (FR-018).
+    withDotAiPreferences(),
+    withHooks({
+        onInit(store) {
+            const globalStore = inject(GlobalStore);
+
+            // The dotAI app is configured per site, so the header's site selector changes
+            // which provider, models and settings apply. Reading `currentSiteId` inside an
+            // effect covers both ways it can change: the toolbar calls
+            // `switchCurrentSite()`, which patches the state directly, and a switch made in
+            // another tab arrives as a SWITCH_SITE websocket event that syncs the same
+            // field. `switchSiteEvent$()`, used by the older non-signal portlets, sees only
+            // the second.
+            //
+            // This is also the initial load — an effect runs once on creation — so there is
+            // no separate `loadConfig()` call to keep in step with it. Same shape as
+            // dot-tags.
+            effect(() => {
+                const siteId = globalStore.currentSiteId();
+
+                untracked(() => store.loadConfig(siteId));
+            });
+
+            // Not site-scoped: `indexCount` takes no site and the embeddings live in one
+            // global table, so switching sites does not change this list.
+            store.loadIndexes();
+        }
+    })
+);

@@ -46,6 +46,7 @@ import {
     emptyStatusCounts,
     fromRouteParams,
     goalTypeOfExperiment,
+    normalizePagePath,
     parseViewState,
     resolvedPageInfo,
     toQueryParams
@@ -76,6 +77,9 @@ const initialState: DotExperimentsListState = {
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    selectedPageId: null,
+    selectedPageUrl: null,
+    languageId: null,
     error: null
 };
 
@@ -152,13 +156,49 @@ export const DotExperimentsListStore = signalStore(
         });
 
         /**
-         * Counts per status over the site + search filtered set, deliberately independent of
+         * Narrowed to one page, or the whole searched set when no page filter is set (#37005).
+         *
+         * By `pageId` **equality**, deliberately not by matching the path: `searchedExperiments`
+         * above already matches the Page column as a substring, so narrowing by path would make
+         * `/about` include `/about-us`. FR-021b asks for "all of that page's experiments and no
+         * other page's", which only equality gives.
+         *
+         * Sits after the site scoping and the search, and *before* the status and goal counts, so
+         * the chips describe the set the user is actually looking at.
+         */
+        const pageAssetFilteredExperiments = computed<DotExperiment[]>(() => {
+            const pageId = store.selectedPageId();
+            // Normalised on both sides of the comparison rather than trusted from the writer: the
+            // address is one caller today, and a spelling difference would read as "no experiments
+            // on that page" — the failure this narrowing exists to avoid.
+            const pageUrl = normalizePagePath(store.selectedPageUrl());
+
+            if (!pageId && !pageUrl) {
+                return searchedExperiments();
+            }
+
+            const pageInfoByPageId = store.pageInfoByPageId();
+
+            return searchedExperiments().filter(
+                (experiment) =>
+                    (!pageId || experiment.pageId === pageId) &&
+                    // By path, against the same value the Page column renders — and by equality,
+                    // for the reason above. A path nothing matches leaves this empty, which is the
+                    // honest answer to "the experiments for that page": none, rather than all.
+                    (!pageUrl ||
+                        normalizePagePath(resolvePagePath(experiment.pageId, pageInfoByPageId)) ===
+                            pageUrl)
+            );
+        });
+
+        /**
+         * Counts per status over the site + search + page filtered set, deliberately independent of
          * `selectedStatuses` so selecting a status never changes the numbers shown in the chips.
          */
         const statusCounts = computed<Record<DotExperimentStatus, number>>(() => {
             const counts = emptyStatusCounts();
 
-            for (const experiment of searchedExperiments()) {
+            for (const experiment of pageAssetFilteredExperiments()) {
                 counts[experiment.status] = (counts[experiment.status] ?? 0) + 1;
             }
 
@@ -173,7 +213,7 @@ export const DotExperimentsListStore = signalStore(
         const goalCounts = computed<Record<GOAL_TYPES, number>>(() => {
             const counts = emptyGoalCounts();
 
-            for (const experiment of searchedExperiments()) {
+            for (const experiment of pageAssetFilteredExperiments()) {
                 const goal = goalTypeOfExperiment(experiment);
 
                 if (goal) {
@@ -192,12 +232,12 @@ export const DotExperimentsListStore = signalStore(
             // leaving an empty table whose only escape is re-picking every status.
             // Archived stays out of that default view; it is opt-in.
             if (!selectedStatuses.length) {
-                return searchedExperiments().filter(
+                return pageAssetFilteredExperiments().filter(
                     (experiment) => !OPT_IN_STATUSES.includes(experiment.status)
                 );
             }
 
-            return searchedExperiments().filter((experiment) =>
+            return pageAssetFilteredExperiments().filter((experiment) =>
                 selectedStatuses.includes(experiment.status)
             );
         });
@@ -245,6 +285,7 @@ export const DotExperimentsListStore = signalStore(
         return {
             siteScopedExperiments,
             searchedExperiments,
+            pageAssetFilteredExperiments,
             statusCounts,
             goalCounts,
             statusFilteredExperiments,
@@ -326,10 +367,32 @@ export const DotExperimentsListStore = signalStore(
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.hydratedFromUrl, ({ payload }) => ({ ...payload })),
-        // A site switch keeps search, sort and status selection but always restarts paging.
+        /**
+         * A site switch keeps search, sort and status selection but always restarts paging — and
+         * drops the page narrowing, which belongs to the site being left (#37005).
+         *
+         * The lookup behind `pageInfoByPageId` carries no host restriction, so a narrowing carried
+         * across a switch resolved to a real path on the other site: the page-scoped empty state
+         * rendered with that path and offered to create an experiment for a page the editor could
+         * no longer see. `syncUrlEffect` follows the reset, so the address loses `pageId` too.
+         */
         on(dotExperimentsListPageEvents.siteChanged, () => ({
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+            selectedPageId: null,
+            selectedPageUrl: null,
+            languageId: null,
             status: ComponentStatus.LOADING
+        })),
+        /**
+         * `languageId` goes with it: it exists only to return the editor to the version of the
+         * narrowed page they came from, so it means nothing once that page is gone.
+         * `syncUrlEffect` follows, which is what takes the params out of the address.
+         */
+        on(dotExperimentsListPageEvents.pageNarrowingCleared, () => ({
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+            selectedPageId: null,
+            selectedPageUrl: null,
+            languageId: null
         })),
         on(
             dotExperimentsListPageEvents.archiveExperiment,
@@ -404,7 +467,20 @@ export const DotExperimentsListStore = signalStore(
 
                 resolvePageInfo$: events.on(dotExperimentsApiEvents.listSucceeded).pipe(
                     switchMap(({ payload }) => {
-                        const pageIds = distinctPageIds(payload);
+                        const experimentPageIds = distinctPageIds(payload);
+                        const filteredPageId = store.selectedPageId();
+
+                        // The page the list is narrowed to resolves as well, whether or not it
+                        // has experiments of its own (FR-021c). Keyed on the experiments alone,
+                        // this lookup never asked for a page arriving from UVE with none — and
+                        // everything the filter renders is built from that url: the chip's
+                        // label, the empty state's copy, and the link back to the editor. The
+                        // chip ended up claiming the page was gone on the one page where
+                        // creating the first experiment is the point of the visit.
+                        const pageIds =
+                            filteredPageId && !experimentPageIds.includes(filteredPageId)
+                                ? [...experimentPageIds, filteredPageId]
+                                : experimentPageIds;
 
                         // Nothing to resolve, but the status still has to leave `loading`:
                         // `listSucceeded` set it there for any non-empty payload, and no other
@@ -415,14 +491,22 @@ export const DotExperimentsListStore = signalStore(
 
                         return contentSearchService
                             .get<ContentSearchEntity>({
-                                query: `+contentType:htmlpageasset +working:true +identifier:(${pageIds.join(' ')})`,
+                                // No content-type filter: the page picker offers URL-mapped
+                                // content as an experiment's page, and this is the query that has
+                                // to read it back for the Page column and its editor link
+                                // (#37005). Identifiers come from the experiments themselves.
+                                query: `+working:true +identifier:(${pageIds.join(' ')})`,
                                 limit: pageIds.length * PAGE_LOOKUP_LANGUAGE_HEADROOM
                             })
                             .pipe(
                                 mapResponse({
                                     next: (entity) =>
                                         dotExperimentsApiEvents.pageInfoSucceeded(
-                                            resolvedPageInfo(entity, pageIds)
+                                            // Only the experiments' own pages are checked for a
+                                            // shortfall: an unresolvable filtered page hides no
+                                            // experiment, and the chip has copy of its own for
+                                            // a page that really was deleted.
+                                            resolvedPageInfo(entity, experimentPageIds)
                                         ),
                                     error: toFailure(dotExperimentsApiEvents.pageInfoFailed)
                                 })
@@ -573,6 +657,9 @@ export const DotExperimentsListStore = signalStore(
                         selectedGoals: store.selectedGoals(),
                         page: store.page(),
                         perPage: store.perPage(),
+                        selectedPageId: store.selectedPageId(),
+                        selectedPageUrl: store.selectedPageUrl(),
+                        languageId: store.languageId(),
                         orderBy: store.orderBy(),
                         direction: store.direction()
                     });

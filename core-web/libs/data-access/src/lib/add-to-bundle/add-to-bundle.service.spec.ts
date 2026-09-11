@@ -4,7 +4,8 @@ import {
     mockProvider,
     SpectatorHttp,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
+import { of } from 'rxjs';
 
 import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/dotcms-models';
 
@@ -63,7 +64,6 @@ describe('AddToBundleService', () => {
 
     describe('getBundles', () => {
         beforeEach(() => {
-            const { of } = jest.requireActual('rxjs');
             dotCurrentUserService.getCurrentUser.mockReturnValue(of(mockCurrentUser));
         });
 

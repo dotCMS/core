@@ -1,7 +1,7 @@
-import { jest } from '@jest/globals';
-import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
 import { BehaviorSubject, of } from 'rxjs';
 import { Editor } from 'tinymce';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -55,7 +55,7 @@ describe('DotWysiwygTinymceComponent', () => {
         componentProviders: [
             mockProvider(DotWysiwygPluginService),
             mockProvider(DotWysiwygTinymceService, {
-                getProps: jest.fn().mockReturnValue(of(mockSystemWideConfig))
+                getProps: vi.fn().mockReturnValue(of(mockSystemWideConfig))
             })
         ]
     });
@@ -112,7 +112,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 },
                 providers: [
                     mockProvider(DotWysiwygTinymceService, {
-                        getProps: jest.fn().mockReturnValue(propsSubject)
+                        getProps: vi.fn().mockReturnValue(propsSubject)
                     })
                 ]
             }

@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, forwardRef, signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -163,11 +164,11 @@ describe('SearchComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
-                getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+                getSitesTreePath: vi.fn().mockReturnValue(of(mockSites)),
+                getFoldersTreeNode: vi.fn().mockReturnValue(of(mockFolders))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             })
         ]
     });
@@ -209,8 +210,8 @@ describe('SearchComponent', () => {
 
     describe('Active Filters', () => {
         beforeEach(() => {
-            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
-            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
+            vi.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            vi.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
         });
 
         it('should return empty filters when no active search params', () => {
@@ -290,7 +291,7 @@ describe('SearchComponent', () => {
 
     describe('removeFilter', () => {
         it('should remove language filter and trigger search', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 systemSearchableFields: { languageId: 1 }
@@ -303,7 +304,7 @@ describe('SearchComponent', () => {
         });
 
         it('should remove site filter and trigger search', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 systemSearchableFields: { siteOrFolderId: 'site:123' }
@@ -316,7 +317,7 @@ describe('SearchComponent', () => {
         });
 
         it('should remove folder filter and trigger search', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 systemSearchableFields: { siteOrFolderId: 'folder:123' }
@@ -428,7 +429,7 @@ describe('SearchComponent', () => {
 
     describe('Display Label Methods', () => {
         it('should get language display label from signal', () => {
-            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            vi.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
 
             const label = component['getLanguageDisplayLabel'](1);
             expect(label).toBe('en-US');
@@ -437,7 +438,7 @@ describe('SearchComponent', () => {
         it('should fallback to language ID when no control value', () => {
             // `viewChild.required` cannot resolve to null, but the reader uses `field?.` —
             // this forces that defensive path.
-            jest.spyOn(component, '$languageField').mockReturnValue(
+            vi.spyOn(component, '$languageField').mockReturnValue(
                 null as unknown as LanguageFieldComponent
             );
 
@@ -446,7 +447,7 @@ describe('SearchComponent', () => {
         });
 
         it('should get site display label from control value', () => {
-            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
+            vi.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe('demo.dotcms.com');
@@ -455,7 +456,7 @@ describe('SearchComponent', () => {
         it('should fallback to ID when no control value', () => {
             // `viewChild.required` cannot resolve to null, but the reader uses `field?.` —
             // this forces that defensive path.
-            jest.spyOn(component, '$siteField').mockReturnValue(
+            vi.spyOn(component, '$siteField').mockReturnValue(
                 null as unknown as SiteFieldComponent
             );
 
@@ -465,7 +466,7 @@ describe('SearchComponent', () => {
 
         it('should not truncate a label with exactly 45 characters', () => {
             const exactLabel = 'a'.repeat(45);
-            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(exactLabel));
+            vi.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(exactLabel));
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe(exactLabel);
@@ -473,7 +474,7 @@ describe('SearchComponent', () => {
 
         it('should truncate labels longer than 45 characters', () => {
             const longLabel = 'a'.repeat(46);
-            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(longLabel));
+            vi.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(longLabel));
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe(longLabel.substring(0, 45) + '...');
@@ -506,7 +507,7 @@ describe('SearchComponent', () => {
         });
 
         it('should hide overlay panel', () => {
-            const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
+            const hideSpy = vi.spyOn(component.$overlayPanel(), 'hide');
 
             component.clearForm();
 
@@ -525,7 +526,7 @@ describe('SearchComponent', () => {
         });
 
         it('should emit empty search', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.clearForm();
 
@@ -543,8 +544,8 @@ describe('SearchComponent', () => {
                 }
             };
 
-            const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const hideSpy = vi.spyOn(component.$overlayPanel(), 'hide');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 query: 'test search',
@@ -568,8 +569,8 @@ describe('SearchComponent', () => {
                 }
             };
 
-            const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const hideSpy = vi.spyOn(component.$overlayPanel(), 'hide');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 query: 'test search',
@@ -585,7 +586,7 @@ describe('SearchComponent', () => {
         });
 
         it('should emit empty values when form is in initial state', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.doSearch();
 
@@ -636,7 +637,7 @@ describe('SearchComponent', () => {
 
     describe('Debounced Search', () => {
         it('should trigger search automatically after debounce delay', fakeAsync(() => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             // Set query value
             component.form.get('query')?.setValue('test search');
@@ -654,7 +655,7 @@ describe('SearchComponent', () => {
         }));
 
         it('should include system search fields in debounced search', fakeAsync(() => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             // Set form values
             component.form.patchValue({
@@ -686,7 +687,7 @@ describe('SearchComponent', () => {
         });
 
         it('should trigger debounced search when typing in input', fakeAsync(() => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
             const queryInput = spectator.query('input[formControlName="query"]')!;
 
             spectator.typeInElement('test search', queryInput);
@@ -704,7 +705,7 @@ describe('SearchComponent', () => {
         }));
 
         it('should trigger search when search button is clicked (site)', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 query: 'test search',
@@ -732,7 +733,7 @@ describe('SearchComponent', () => {
         });
 
         it('should trigger search when search button is clicked (folder)', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 query: 'test search',
@@ -794,8 +795,8 @@ describe('SearchComponent', () => {
                 }
             });
 
-            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
-            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
+            vi.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            vi.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
 
             spectator.detectChanges();
 
@@ -804,14 +805,14 @@ describe('SearchComponent', () => {
         });
 
         it('should remove filter when chip is removed', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+            const searchSpy = vi.spyOn(component.onSearch, 'emit');
 
             component.$activeSearchParams.set({
                 query: 'test',
                 systemSearchableFields: { languageId: 1 }
             });
 
-            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            vi.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
 
             spectator.detectChanges();
 

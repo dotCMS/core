@@ -21,9 +21,6 @@
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
         "paths": {
-            "dom-autoscroller": ["./types/dom-autoscroller.d.ts"],
-            "htmldiff-js": ["./types/htmldiff-js.d.ts"],
-            "jstat": ["./types/jstat.d.ts"],
             "virtual:sdk-version": ["./types/virtual-sdk-version.d.ts"],
             "@components/*": ["./apps/dotcms-ui/src/app/view/components/*"],
             "@directives/*": ["./apps/dotcms-ui/src/app/view/directives/*"],
@@ -80,6 +77,7 @@
                 "./libs/portlets/dot-locales/data-access/src/index.ts"
             ],
             "@dotcms/portlets/dot-auth/portlet": ["./libs/portlets/dot-auth/src/index.ts"],
+            "@dotcms/portlets/dot-ai/portlet": ["./libs/portlets/dot-ai/src/index.ts"],
             "@dotcms/portlets/dot-plugins/portlet": ["./libs/portlets/dot-plugins/src/index.ts"],
             "@dotcms/portlets/dot-es-search/portlet": [
                 "./libs/portlets/dot-es-search/src/index.ts"
@@ -126,7 +124,9 @@
             "@dotcms/ai/spec": ["./libs/sdk/ai/src/spec/index.ts"],
             "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"],
             "@dotcms/portlets/dot-roles/portlet": ["./libs/portlets/dot-roles/src/index.ts"],
-            "@dotcms/portlets/dot-agents/portlet": ["./libs/portlets/dot-agents/src/index.ts"]
+            "@dotcms/portlets/dot-agents/portlet": ["./libs/portlets/dot-agents/src/index.ts"],
+            "@dotcms/http": ["./libs/http/src/index.ts"],
+            "dotcms": ["./libs/sdk/cli/src/index.ts"]
         }
     },
     "angularCompilerOptions": {

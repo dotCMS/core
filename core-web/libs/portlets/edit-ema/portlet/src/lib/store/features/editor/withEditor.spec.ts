@@ -1,7 +1,7 @@
-import { describe, expect } from '@jest/globals';
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -88,7 +88,7 @@ describe('withEditor', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+                getFeatureFlags: vi.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DotPageApiService,
@@ -96,7 +96,7 @@ describe('withEditor', () => {
                     get: () => of({}),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             },
             {
@@ -547,7 +547,7 @@ describe('withEditor', () => {
             // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
             describe.skip('page dependency', () => {
                 it('should call page when it is a headless page', () => {
-                    const spy = jest.spyOn(store, 'pageAsset');
+                    const spy = vi.spyOn(store, 'pageAsset');
                     patchStoreState(store, { pageType: PageType.HEADLESS });
                     store.$iframeURL();
 
@@ -555,7 +555,7 @@ describe('withEditor', () => {
                 });
 
                 it('should call page when it is a traditional page', () => {
-                    const spy = jest.spyOn(store, 'pageAsset');
+                    const spy = vi.spyOn(store, 'pageAsset');
 
                     patchStoreState(store, { pageType: PageType.TRADITIONAL });
 

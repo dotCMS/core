@@ -38,19 +38,20 @@ describe('DotAvatarDirective', () => {
 
         expect(element.query(By.css('img'))).toBeTruthy();
     });
-    xit('should fallback to label when the image is broken', (done) => {
-        component.image = 'https/dumyimage.om600x400/000/fff';
-        component.text = 'test';
-        fixture.detectChanges();
+    it.skip('should fallback to label when the image is broken', () =>
+        new Promise<void>((done) => {
+            component.image = 'https/dumyimage.om600x400/000/fff';
+            component.text = 'test';
+            fixture.detectChanges();
 
-        fixture.whenStable().then(() => {
-            setTimeout(() => {
-                fixture.detectChanges();
-                expect(element.query(By.css('p-avatar')).nativeElement.textContent).toBe(
-                    component.text.charAt(0).toUpperCase()
-                );
-                done();
-            }, 100);
-        });
-    });
+            fixture.whenStable().then(() => {
+                setTimeout(() => {
+                    fixture.detectChanges();
+                    expect(element.query(By.css('p-avatar')).nativeElement.textContent).toBe(
+                        component.text.charAt(0).toUpperCase()
+                    );
+                    done();
+                }, 100);
+            });
+        }));
 });

@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
@@ -34,7 +35,6 @@ class FileUploadMockComponent {
 }
 
 @Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-spinner',
     template: '<input type="file">'
 })
@@ -59,13 +59,13 @@ describe('DotUploadAssetComponent', () => {
                 {
                     provide: DotUploadFileService,
                     useValue: {
-                        publishContent: jest.fn().mockReturnValue(of())
+                        publishContent: vi.fn().mockReturnValue(of())
                     }
                 },
                 {
                     provide: DomSanitizer,
                     useValue: {
-                        bypassSecurityTrustUrl: jest.fn()
+                        bypassSecurityTrustUrl: vi.fn()
                     }
                 }
             ]
@@ -93,9 +93,9 @@ describe('DotUploadAssetComponent', () => {
 
         test('should show the image and change the status to "PREVIEW" when a image is selected', () => {
             const fileMock = new File([''], 'filename', { type: 'image/png' });
-            global.URL.createObjectURL = jest.fn();
+            global.URL.createObjectURL = vi.fn();
 
-            jest.spyOn(component, 'onSelectFile');
+            vi.spyOn(component, 'onSelectFile');
 
             fixture.detectChanges();
             const element = de.query(By.css('p-fileupload'));
@@ -181,10 +181,10 @@ describe('DotUploadAssetComponent', () => {
                 }
             ];
 
-            jest.spyOn(dotUploadFileService, 'publishContent').mockReturnValue(
+            vi.spyOn(dotUploadFileService, 'publishContent').mockReturnValue(
                 of(data as DotCMSContentlet[]).pipe(delay(500))
             );
-            const emitSpy = jest.spyOn(component.uploadedFile, 'emit');
+            const emitSpy = vi.spyOn(component.uploadedFile, 'emit');
 
             // Click on Upload Button
             const btn = de.query(By.css('[data-test-id="upload-btn"]'));

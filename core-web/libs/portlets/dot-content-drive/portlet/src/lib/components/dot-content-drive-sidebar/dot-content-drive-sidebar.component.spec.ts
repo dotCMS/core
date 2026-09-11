@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -47,7 +48,7 @@ const expectLoadMoreData = (data: DotFolderTreeNodeData | undefined): TreeNodeLo
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
-    let contentDriveStore: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let contentDriveStore: Mocked<InstanceType<typeof DotContentDriveStore>>;
 
     const mockSiteDetails = {
         hostname: 'demo.dotcms.com',
@@ -123,34 +124,34 @@ describe('DotContentDriveSidebarComponent', () => {
         imports: [DotTreeFolderComponent],
         providers: [
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(mockSiteDetails)
+                siteDetails: vi.fn().mockReturnValue(mockSiteDetails)
             }),
             mockProvider(DotContentDriveStore, {
-                initContentDrive: jest.fn(),
-                currentSite: jest.fn().mockReturnValue(mockSiteDetails),
-                isTreeExpanded: jest.fn().mockReturnValue(true),
-                removeFilter: jest.fn(),
-                getFilterValue: jest.fn(),
-                setIsTreeExpanded: jest.fn(),
-                path: jest.fn().mockReturnValue('/test/path'),
-                setItems: jest.fn(),
-                setStatus: jest.fn(),
-                setPagination: jest.fn(),
-                setSort: jest.fn(),
-                patchFilters: jest.fn(),
-                setPath: jest.fn(),
-                contextMenu: jest.fn().mockReturnValue(null),
-                folders: jest.fn().mockReturnValue(mockTreeNodes),
-                selectedNode: jest.fn().mockReturnValue(mockTreeNodes[1]),
-                sidebarLoading: jest.fn().mockReturnValue(false),
-                loadFolders: jest.fn(),
-                loadChildFolders: jest.fn(),
-                patchContextMenu: jest.fn(),
-                updateFolders: jest.fn(),
-                setSelectedNode: jest.fn()
+                initContentDrive: vi.fn(),
+                currentSite: vi.fn().mockReturnValue(mockSiteDetails),
+                isTreeExpanded: vi.fn().mockReturnValue(true),
+                removeFilter: vi.fn(),
+                getFilterValue: vi.fn(),
+                setIsTreeExpanded: vi.fn(),
+                path: vi.fn().mockReturnValue('/test/path'),
+                setItems: vi.fn(),
+                setStatus: vi.fn(),
+                setPagination: vi.fn(),
+                setSort: vi.fn(),
+                patchFilters: vi.fn(),
+                setPath: vi.fn(),
+                contextMenu: vi.fn().mockReturnValue(null),
+                folders: vi.fn().mockReturnValue(mockTreeNodes),
+                selectedNode: vi.fn().mockReturnValue(mockTreeNodes[1]),
+                sidebarLoading: vi.fn().mockReturnValue(false),
+                loadFolders: vi.fn(),
+                loadChildFolders: vi.fn(),
+                patchContextMenu: vi.fn(),
+                updateFolders: vi.fn(),
+                setSelectedNode: vi.fn()
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key) => key as string)
+                get: vi.fn().mockImplementation((key) => key as string)
             })
         ]
     });
@@ -159,7 +160,7 @@ describe('DotContentDriveSidebarComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotFolderService, {
-                    getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                    getFolders: vi.fn().mockReturnValue(of(mockFolders))
                 })
             ]
         });
@@ -301,7 +302,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             it('should set node expanded to true if it already has children or is leaf', () => {
                 // Reset the mock to clear any calls from component initialization
-                jest.clearAllMocks();
+                vi.clearAllMocks();
 
                 const nodeWithChildren: DotFolderTreeNodeItem = {
                     key: 'parent-folder',
@@ -926,7 +927,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
         it('should not load folders when currentSite is unset', () => {
             // Clear any previous calls
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Unset currentSite - the effect should return early. `undefined`, not `null`: that is
             // what the state holds before init, and the effect's guard is a falsy check either way.
@@ -957,12 +958,12 @@ describe('DotContentDriveSidebarComponent', () => {
             leaf: false
         };
 
-        let scrollIntoView: jest.Mock;
+        let scrollIntoView: Mock;
 
         beforeEach(() => {
-            scrollIntoView = jest.fn();
+            scrollIntoView = vi.fn();
             const treeFolder = spectator.query(DotTreeFolderComponent);
-            jest.spyOn(treeFolder!.elementRef.nativeElement, 'querySelector').mockReturnValue({
+            vi.spyOn(treeFolder!.elementRef.nativeElement, 'querySelector').mockReturnValue({
                 scrollIntoView
             } as unknown as Element);
         });
@@ -1021,7 +1022,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     describe('handleSelectedNodeFromTable', () => {
         it('should handle selectedNode with fromTable flag', () => {
-            const mockScrollIntoView = jest.fn();
+            const mockScrollIntoView = vi.fn();
             // Create a proper mock element that extends HTMLElement
             const mockElement = {
                 scrollIntoView: mockScrollIntoView
@@ -1032,10 +1033,10 @@ describe('DotContentDriveSidebarComponent', () => {
             const nativeElement = treeFolderComponent?.elementRef.nativeElement;
 
             // Mock querySelector to return the mock element
-            jest.spyOn(nativeElement, 'querySelector').mockReturnValue(mockElement);
+            vi.spyOn(nativeElement, 'querySelector').mockReturnValue(mockElement);
 
             // Spy on the recursiveExpandOneNode method
-            const recursiveExpandSpy = jest.spyOn(spectator.component, 'recursiveExpandOneNode');
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
 
             const nodeFromTable: DotFolderTreeNodeItem = {
                 key: 'table-node',
@@ -1093,11 +1094,11 @@ describe('DotContentDriveSidebarComponent', () => {
             const nativeElement = treeFolderComponent?.elementRef.nativeElement;
 
             if (nativeElement) {
-                jest.spyOn(nativeElement, 'querySelector').mockReturnValue(null);
+                vi.spyOn(nativeElement, 'querySelector').mockReturnValue(null);
             }
 
             // Spy on the recursiveExpandOneNode method
-            const recursiveExpandSpy = jest.spyOn(spectator.component, 'recursiveExpandOneNode');
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
 
             contentDriveStore.folders.mockReturnValue(mockTreeNodes);
             contentDriveStore.loadChildFolders.mockReturnValue(
@@ -1127,10 +1128,10 @@ describe('DotContentDriveSidebarComponent', () => {
                 leaf: false
             };
 
-            const recursiveExpandSpy = jest.spyOn(spectator.component, 'recursiveExpandOneNode');
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
             const treeFolderComponent = spectator.query(DotTreeFolderComponent);
             const nativeElement = treeFolderComponent?.elementRef.nativeElement;
-            const querySelectorSpy = jest.spyOn(nativeElement, 'querySelector');
+            const querySelectorSpy = vi.spyOn(nativeElement, 'querySelector');
 
             // Call the method with a node that doesn't have fromTable flag
             spectator.component.handleSelectedNodeFromTable(nodeWithoutFromTable);
@@ -1153,7 +1154,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     describe('recursiveExpandOneNode', () => {
         it('should recursively expand nodes based on path segments', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const testFolders: DotFolderTreeNodeItem[] = [
                 {
@@ -1187,7 +1188,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should return early when segments array is empty', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.component.recursiveExpandOneNode([], mockTreeNodes);
 
@@ -1195,7 +1196,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should return early when no matching node is found', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Try to find a node with path containing 'nonexistent'
             spectator.component.recursiveExpandOneNode(['nonexistent'], mockTreeNodes);
@@ -1204,7 +1205,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should recursively expand nested path segments', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const nestedFolders: DotFolderTreeNodeItem[] = [
                 {
@@ -1255,7 +1256,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     describe('Edge Cases', () => {
         it('should handle onNodeExpand when node is already a leaf', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const leafNode: DotFolderTreeNodeItem = {
                 key: 'leaf-folder',
@@ -1282,7 +1283,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should handle onNodeExpand when node already has children', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const nodeWithChildren: DotFolderTreeNodeItem = {
                 key: 'parent-folder',
@@ -1312,10 +1313,10 @@ describe('DotContentDriveSidebarComponent', () => {
 
     describe('right-click context menu', () => {
         beforeEach(() => {
-            // The store mock is built once by the component factory, so its jest.fn call counts
+            // The store mock is built once by the component factory, so its vi.fn call counts
             // accumulate across tests in this file. Clear them (implementations are preserved) and
             // restore the default lookup so each case starts from a known state.
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         const buildFolderData = (permissions?: PermissionType[]): DotFolderTreeNodeContentData => ({

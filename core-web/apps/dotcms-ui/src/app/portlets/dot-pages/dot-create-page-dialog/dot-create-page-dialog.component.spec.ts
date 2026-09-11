@@ -1,6 +1,7 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -43,8 +44,8 @@ const MOCK_PAGE_TYPES: DotCMSContentType[] = [
 
 describe('DotCreatePageDialogComponent', () => {
     let spectator: Spectator<DotCreatePageDialogComponent>;
-    let mockPageTypesService: jest.Mocked<DotPageTypesService>;
-    let mockRouterService: jest.Mocked<DotRouterService>;
+    let mockPageTypesService: Mocked<DotPageTypesService>;
+    let mockRouterService: Mocked<DotRouterService>;
 
     const createComponent = createComponentFactory({
         component: DotCreatePageDialogComponent,
@@ -61,14 +62,14 @@ describe('DotCreatePageDialogComponent', () => {
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         spectator = createComponent({
             providers: [
                 MockProvider(DotPageTypesService, {
-                    getPageContentTypes: jest.fn().mockReturnValue(of(MOCK_PAGE_TYPES))
+                    getPageContentTypes: vi.fn().mockReturnValue(of(MOCK_PAGE_TYPES))
                 }),
                 MockProvider(DotRouterService, {
-                    goToURL: jest.fn()
+                    goToURL: vi.fn()
                 })
             ]
         });
@@ -76,15 +77,15 @@ describe('DotCreatePageDialogComponent', () => {
 
         mockPageTypesService = spectator.inject(
             DotPageTypesService
-        ) as unknown as jest.Mocked<DotPageTypesService>;
+        ) as unknown as Mocked<DotPageTypesService>;
         mockRouterService = spectator.inject(
             DotRouterService
-        ) as unknown as jest.Mocked<DotRouterService>;
+        ) as unknown as Mocked<DotRouterService>;
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
-        jest.useRealTimers();
+        vi.clearAllMocks();
+        vi.useRealTimers();
     });
 
     it('should create', () => {
@@ -108,7 +109,7 @@ describe('DotCreatePageDialogComponent', () => {
 
         it('should initialize $searchTerm signal with empty string', () => {
             spectator.detectChanges();
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('');
         });
@@ -155,13 +156,13 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('blog');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             expect(spectator.component.$searchTerm()).toBe('blog');
 
             spectator.triggerEventHandler('p-dialog', 'onHide', null);
             expect(spectator.component.searchControl.value).toBe('');
 
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             expect(spectator.component.$searchTerm()).toBe('');
         });
     });
@@ -171,10 +172,10 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('simple');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             expect(spectator.component.$searchTerm()).toBe('');
 
-            jest.advanceTimersByTime(200);
+            vi.advanceTimersByTime(200);
             expect(spectator.component.$searchTerm()).toBe('simple');
         });
 
@@ -182,7 +183,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('  SIMPLE Page  ');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('simple page');
         });
@@ -191,7 +192,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('landing');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
@@ -202,7 +203,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('blogPost');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
@@ -213,7 +214,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('ADVANCED');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
@@ -224,7 +225,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('nonexistent');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
         });
@@ -233,11 +234,11 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('landing');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
 
             spectator.component.searchControl.setValue('');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
         });
@@ -246,7 +247,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('page');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered.length).toBeGreaterThan(1);
@@ -292,7 +293,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('nonexistent');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.detectChanges();
 
             const noResults = spectator.query('.text-center');
@@ -332,7 +333,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.setInput('visibility', true);
             spectator.detectChanges();
 
-            const goToCreatePageSpy = jest.spyOn(spectator.component, 'goToCreatePage');
+            const goToCreatePageSpy = vi.spyOn(spectator.component, 'goToCreatePage');
 
             spectator.component.goToCreatePage('simplePage');
 
@@ -376,7 +377,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('landing');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.detectChanges();
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
@@ -398,7 +399,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('nonexistent');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.detectChanges();
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
@@ -407,7 +408,7 @@ describe('DotCreatePageDialogComponent', () => {
             expect(noResults?.textContent?.trim()).toContain('No results');
 
             spectator.component.searchControl.setValue('');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.detectChanges();
 
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
@@ -421,16 +422,16 @@ describe('DotCreatePageDialogComponent', () => {
             expect(input).toBeTruthy();
 
             spectator.typeInElement('g', input);
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.typeInElement('go', input);
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.typeInElement('gon', input);
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.typeInElement('gone', input);
 
             expect(spectator.component.$searchTerm()).toBe('');
 
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('gone');
         });
@@ -457,7 +458,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('test');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.detectChanges();
 
             const rows = spectator.queryAll(
@@ -475,7 +476,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('test');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
         });
@@ -484,7 +485,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('   ');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('');
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
@@ -494,7 +495,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('simple@#$');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
         });
@@ -507,7 +508,7 @@ describe('DotCreatePageDialogComponent', () => {
             expect(spectator.component.$searchTerm()).toBe('');
 
             spectator.component.searchControl.setValue('test');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$searchTerm()).toBe('test');
         });
@@ -518,7 +519,7 @@ describe('DotCreatePageDialogComponent', () => {
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
 
             spectator.component.searchControl.setValue('simple');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
         });

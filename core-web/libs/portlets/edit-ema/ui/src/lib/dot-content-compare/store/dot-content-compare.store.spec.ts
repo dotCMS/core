@@ -724,17 +724,18 @@ describe('DotContentCompareStore', () => {
         dotContentCompareStore = TestBed.inject(DotContentCompareStore);
     });
 
-    it('should load initial data correctly', (done) => {
-        dotContentCompareStore.loadData({
-            inode: '0e45cf0f-83bb-4291-a66d-813f35c4f71a',
-            identifier: '758cb37699eae8500d64acc16ebc468e',
-            language: 'en'
-        });
-        dotContentCompareStore.vm$.subscribe((data) => {
-            expect(data).toEqual(expectedData);
-            done();
-        });
-    });
+    it('should load initial data correctly', () =>
+        new Promise<void>((done) => {
+            dotContentCompareStore.loadData({
+                inode: '0e45cf0f-83bb-4291-a66d-813f35c4f71a',
+                identifier: '758cb37699eae8500d64acc16ebc468e',
+                language: 'en'
+            });
+            dotContentCompareStore.vm$.subscribe((data) => {
+                expect(data).toEqual(expectedData);
+                done();
+            });
+        }));
 
     it('should update compare', () => {
         dotContentCompareStore.updateCompare(expectedData.data.versions[1]);

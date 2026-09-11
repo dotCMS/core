@@ -1,4 +1,5 @@
 import { Observable, of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -60,7 +61,7 @@ describe('DotSaveOnDeactivateService', () => {
     });
 
     it('should return true if there is not changes in the model', () => {
-        jest.spyOn(mockComponent, 'shouldSaveBefore').mockReturnValue(false);
+        vi.spyOn(mockComponent, 'shouldSaveBefore').mockReturnValue(false);
 
         dotSaveOnDeactivateService
             .canDeactivate(mockComponent, UNUSED_ROUTE, UNUSED_STATE)
@@ -70,8 +71,8 @@ describe('DotSaveOnDeactivateService', () => {
     });
 
     it('should return true AND call onDeactivateSave', () => {
-        jest.spyOn(mockComponent, 'onDeactivateSave');
-        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(mockComponent, 'onDeactivateSave');
+        vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept!();
         });
         dotSaveOnDeactivateService
@@ -83,8 +84,8 @@ describe('DotSaveOnDeactivateService', () => {
     });
 
     it('should return true if the user decide NOT to save the latest changes', () => {
-        jest.spyOn(mockComponent, 'onDeactivateSave');
-        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(mockComponent, 'onDeactivateSave');
+        vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.reject!();
         });
         dotSaveOnDeactivateService
@@ -96,8 +97,8 @@ describe('DotSaveOnDeactivateService', () => {
     });
 
     it('should return false if the save fails and stay in the current route', () => {
-        jest.spyOn(mockComponent, 'onDeactivateSave').mockReturnValue(observableOf(false));
-        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(mockComponent, 'onDeactivateSave').mockReturnValue(observableOf(false));
+        vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept!();
         });
 

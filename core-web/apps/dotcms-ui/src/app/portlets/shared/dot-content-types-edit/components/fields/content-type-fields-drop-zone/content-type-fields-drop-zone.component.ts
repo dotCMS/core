@@ -1,3 +1,4 @@
+/// <reference path="./dom-autoscroller.d.ts" />
 import autoScroll from 'dom-autoscroller';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';

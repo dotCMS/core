@@ -1,4 +1,5 @@
 import { of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -56,12 +57,12 @@ describe('DotReorderMenuComponent', () => {
                 {
                     provide: DotIframeService,
                     useValue: {
-                        get: jest.fn().mockReturnValue(of({})),
-                        post: jest.fn().mockReturnValue(of({})),
-                        reloaded: jest.fn().mockReturnValue(of({})),
-                        ran: jest.fn().mockReturnValue(of({})),
-                        reloadedColors: jest.fn().mockReturnValue(of({})),
-                        run: jest.fn().mockReturnValue(of({}))
+                        get: vi.fn().mockReturnValue(of({})),
+                        post: vi.fn().mockReturnValue(of({})),
+                        reloaded: vi.fn().mockReturnValue(of({})),
+                        ran: vi.fn().mockReturnValue(of({})),
+                        reloadedColors: vi.fn().mockReturnValue(of({})),
+                        run: vi.fn().mockReturnValue(of({}))
                     }
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
@@ -72,8 +73,8 @@ describe('DotReorderMenuComponent', () => {
                         overlay: new Subject<boolean>()
                     }
                 },
-                { provide: LoggerService, useValue: { debug: jest.fn() } },
-                { provide: StringUtils, useValue: { to: jest.fn() } }
+                { provide: LoggerService, useValue: { debug: vi.fn() } },
+                { provide: StringUtils, useValue: { to: vi.fn() } }
             ]
         });
     });
@@ -95,7 +96,7 @@ describe('DotReorderMenuComponent', () => {
         });
 
         it('should emit shutdown', () => {
-            jest.spyOn(component.shutdown, 'emit');
+            vi.spyOn(component.shutdown, 'emit');
             fixture.detectChanges();
             const dotIframeDialogElement = de.query(By.css('dot-iframe-dialog')).componentInstance;
             dotIframeDialogElement.shutdown.emit();

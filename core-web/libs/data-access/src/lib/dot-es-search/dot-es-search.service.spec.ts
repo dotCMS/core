@@ -1,4 +1,4 @@
-import { SpectatorHttp, createHttpFactory } from '@openng/spectator/jest';
+import { SpectatorHttp, createHttpFactory } from '@openng/spectator/vitest';
 
 import { ESSearchResponse } from '@dotcms/dotcms-models';
 
@@ -56,14 +56,15 @@ describe('DotEsSearchService', () => {
             req.flush(MOCK_SEARCH_RESPONSE);
         });
 
-        it('should emit a SyntaxError when query is not valid JSON', (done) => {
-            spectator.service.search('{invalid json}', {}).subscribe({
-                error: (err: unknown) => {
-                    expect(err).toBeInstanceOf(SyntaxError);
-                    expect((err as SyntaxError).message).toBe('Invalid JSON query');
-                    done();
-                }
-            });
-        });
+        it('should emit a SyntaxError when query is not valid JSON', () =>
+            new Promise<void>((done) => {
+                spectator.service.search('{invalid json}', {}).subscribe({
+                    error: (err: unknown) => {
+                        expect(err).toBeInstanceOf(SyntaxError);
+                        expect((err as SyntaxError).message).toBe('Invalid JSON query');
+                        done();
+                    }
+                });
+            }));
     });
 });

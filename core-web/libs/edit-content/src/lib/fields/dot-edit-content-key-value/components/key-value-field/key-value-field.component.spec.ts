@@ -1,4 +1,5 @@
-import { Spectator, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -65,13 +66,13 @@ describe('DotKeyValueFieldComponent', () => {
     });
 
     describe('writing values back', () => {
-        const sentKeys = (onChange: jest.Mock) =>
+        const sentKeys = (onChange: Mock) =>
             [...onChange.mock.calls[0][0].matchAll(/"([^"]+)":/g)].map((m) => m[1]);
 
         it('should report the pairs as JSON text, not as an object', () => {
             // The shape is the guard: an object would silently reorder the keys, so
             // if this ever regresses to `onChange({...})` the ordering is gone.
-            const onChange = jest.fn();
+            const onChange = vi.fn();
             spectator.component.registerOnChange(onChange);
 
             spectator.component.updateField([{ key: 'a', value: '1' }]);
@@ -80,7 +81,7 @@ describe('DotKeyValueFieldComponent', () => {
         });
 
         it('should report the pairs in the order given', () => {
-            const onChange = jest.fn();
+            const onChange = vi.fn();
             spectator.component.registerOnChange(onChange);
 
             spectator.component.updateField([
@@ -92,7 +93,7 @@ describe('DotKeyValueFieldComponent', () => {
         });
 
         it('should keep an integer-like key where the user put it', () => {
-            const onChange = jest.fn();
+            const onChange = vi.fn();
             spectator.component.registerOnChange(onChange);
 
             spectator.component.updateField([
@@ -105,7 +106,7 @@ describe('DotKeyValueFieldComponent', () => {
         });
 
         it('should escape keys and values the way JSON requires', () => {
-            const onChange = jest.fn();
+            const onChange = vi.fn();
             spectator.component.registerOnChange(onChange);
 
             spectator.component.updateField([{ key: 'a"b', value: 'c\\d' }]);
@@ -116,7 +117,7 @@ describe('DotKeyValueFieldComponent', () => {
         });
 
         it('should emit valid JSON for an empty list', () => {
-            const onChange = jest.fn();
+            const onChange = vi.fn();
             spectator.component.registerOnChange(onChange);
 
             spectator.component.updateField([]);
@@ -125,7 +126,7 @@ describe('DotKeyValueFieldComponent', () => {
         });
 
         it('should mark the control touched when the list changes', () => {
-            const onTouched = jest.fn();
+            const onTouched = vi.fn();
             spectator.component.registerOnTouched(onTouched);
 
             spectator.component.updateField([{ key: 'a', value: '1' }]);
@@ -135,7 +136,7 @@ describe('DotKeyValueFieldComponent', () => {
 
         it('should round-trip a populated field without loss', () => {
             const stored = { analyticsId: 'UA-4419-22', theme: 'dark' };
-            const onChange = jest.fn();
+            const onChange = vi.fn();
 
             spectator.component.writeValue(stored);
             spectator.detectChanges(); // `handleChangeValue` is a signalMethod — it runs in an effect

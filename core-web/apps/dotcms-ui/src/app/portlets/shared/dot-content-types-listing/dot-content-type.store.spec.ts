@@ -1,4 +1,5 @@
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -29,7 +30,7 @@ describe('DotContentTypeComponentStore', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jest.fn().mockReturnValue(of({}))
+                        handle: vi.fn().mockReturnValue(of({}))
                     }
                 }
             ]
@@ -58,7 +59,7 @@ describe('DotContentTypeComponentStore', () => {
 
     describe('effects', () => {
         it('should save Content Type Copy values', () => {
-            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
+            vi.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
                 of({
                     ...dotcmsContentTypeBasicMock,
                     id: '1234567890',
@@ -68,7 +69,7 @@ describe('DotContentTypeComponentStore', () => {
                 })
             );
 
-            jest.spyOn(router, 'navigate');
+            vi.spyOn(router, 'navigate');
 
             store.setAssetSelected('content-type-id');
 
@@ -99,31 +100,32 @@ describe('DotContentTypeComponentStore', () => {
             ]);
         });
 
-        it('should handler error on update template', (done) => {
-            const error = mockResponseView(400);
-            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
-                throwError(() => error)
-            );
+        it('should handler error on update template', () =>
+            new Promise<void>((done) => {
+                const error = mockResponseView(400);
+                vi.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
+                    throwError(() => error)
+                );
 
-            // Selected first, as the copy dialog does before it can be submitted — the effect no
-            // longer sends a request without an asset to copy.
-            store.setAssetSelected('content-type-id');
+                // Selected first, as the copy dialog does before it can be submitted — the effect no
+                // longer sends a request without an asset to copy.
+                store.setAssetSelected('content-type-id');
 
-            store.saveCopyDialog({
-                name: 'new-name',
-                host: 'host',
-                icon: 'icon',
-                folder: 'folder',
-                variable: 'validVariableName'
-            });
+                store.saveCopyDialog({
+                    name: 'new-name',
+                    host: 'host',
+                    icon: 'icon',
+                    folder: 'folder',
+                    variable: 'validVariableName'
+                });
 
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
 
-            store.isSaving$.subscribe((resp) => {
-                expect(resp).toBe(false);
-                done();
-            });
-        });
+                store.isSaving$.subscribe((resp) => {
+                    expect(resp).toBe(false);
+                    done();
+                });
+            }));
     });
 });

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -34,7 +36,7 @@ describe('DotCopyLinkComponent', () => {
                 {
                     provide: DotClipboardUtil,
                     useValue: {
-                        copy: jest.fn()
+                        copy: vi.fn()
                     }
                 }
             ]
@@ -48,7 +50,7 @@ describe('DotCopyLinkComponent', () => {
 
         dotClipboardUtil = de.injector.get(DotClipboardUtil);
 
-        jest.spyOn(dotClipboardUtil, 'copy').mockImplementation(() => {
+        vi.spyOn(dotClipboardUtil, 'copy').mockImplementation(() => {
             return new Promise((resolve) => {
                 resolve(true);
             });
@@ -79,7 +81,7 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should copy text to clipboard', () => {
-            const stopPropagation = jest.fn();
+            const stopPropagation = vi.fn();
 
             button.triggerEventHandler('click', {
                 stopPropagation: stopPropagation

@@ -20,6 +20,7 @@ import {
     HealthStatusTypes,
     MINIMUM_SESSIONS_TO_SHOW_CHART
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsResultsChartsComponent } from './components/dot-experiments-results-charts/dot-experiments-results-charts.component';
@@ -29,19 +30,26 @@ import { DotExperimentsResultsStatStripComponent } from './components/dot-experi
 import { DotExperimentsResultsSummaryTableComponent } from './components/dot-experiments-results-summary-table/dot-experiments-results-summary-table.component';
 
 import {
+    EXPERIMENT_ID_ROUTE_PARAM,
     EXPERIMENTS_URL,
+    LIST_TITLE_KEY,
     RESULTS_CONFIRM_DIALOG_KEY,
+    RESULTS_TITLE_KEY,
     SUCCESS_MESSAGE_LIFE
 } from '../shared/constants';
 import { dotExperimentsResultsApiEvents } from '../store/dot-experiments-results-api.events';
 import { dotExperimentsResultsPageEvents } from '../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../store/dot-experiments-results.store';
+import {
+    EXPERIMENTS_LIST_CRUMB_ID,
+    experimentResultsCrumb,
+    experimentsListCrumb,
+    putCrumbOnTrail
+} from '../util/dot-experiments-breadcrumb.util';
+import { listReturnParams } from '../util/dot-experiments-list.util';
 
 /** Route `data` key `dotAnalyticsHealthCheckResolver` publishes the analytics health under. */
 const HEALTH_STATUS_ROUTE_DATA_KEY = 'healthStatus';
-
-/** Route parameter naming the experiment being reported on. */
-const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
 
 /**
  * Shell of the Results screen, routed on `/experiments/:experimentId/results`.
@@ -91,6 +99,7 @@ export class DotExperimentsResultsComponent {
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
     readonly #confirmationService = inject(ConfirmationService);
 
@@ -196,11 +205,59 @@ export class DotExperimentsResultsComponent {
 
     constructor() {
         this.#listenForActionSuccess();
+        this.#syncBreadcrumbOnInit();
     }
 
-    /** Leaves the Results screen for the list. */
+    /**
+     * Leaves the Results screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * Read off the address rather than derived from the experiment's page: a Results screen
+     * reached from the site-wide list must go back to the site-wide list, not to the list of the
+     * one page this experiment happens to run on.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#router.navigate([EXPERIMENTS_URL], {
+            queryParams: listReturnParams(this.#route.snapshot.queryParams)
+        });
+    }
+
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * The same reasoning as the Configure screen's crumb: without one the trail ended at the
+     * list's, so the shell titled this screen "Experiments List" and left the level above it out
+     * of the path. Named after the screen, not the experiment — the header right below already
+     * names the experiment, next to its status and its page.
+     *
+     * A one-shot rather than an effect: unlike Configure, this screen is only ever reached on an
+     * experiment that exists, so neither half of its crumb can change while it is open.
+     */
+    #syncBreadcrumbOnInit(): void {
+        const experimentId = this.#route.snapshot.paramMap.get(EXPERIMENT_ID_ROUTE_PARAM);
+
+        if (!experimentId) {
+            return;
+        }
+
+        this.#syncBreadcrumb(this.#dotMessageService.get(RESULTS_TITLE_KEY), experimentId);
+    }
+
+    /**
+     * Appends this screen's crumb, and the list's above it when the trail does not already carry
+     * one — see the Configure shell's copy of this for why the guard reads the trail's contents
+     * rather than matching an id.
+     */
+    #syncBreadcrumb(label: string, experimentId: string): void {
+        const pageFilter = listReturnParams(this.#route.snapshot.queryParams);
+
+        if (!this.#globalStore.breadcrumbs().some(({ id }) => id === EXPERIMENTS_LIST_CRUMB_ID)) {
+            putCrumbOnTrail(
+                this.#globalStore,
+                experimentsListCrumb(this.#dotMessageService.get(LIST_TITLE_KEY), pageFilter)
+            );
+        }
+
+        putCrumbOnTrail(this.#globalStore, experimentResultsCrumb(label, experimentId, pageFilter));
     }
 
     /** Runs the whole load again, experiment included: a failed load left nothing behind. */

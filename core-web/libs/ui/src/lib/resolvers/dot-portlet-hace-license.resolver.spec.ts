@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -35,7 +36,7 @@ describe('formResolver', () => {
                 { url: '' } as RouterStateSnapshot
             )
         );
-        jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(true));
+        vi.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(true));
         resolver.subscribe((res) => {
             expect(res).toBe(true);
         });
@@ -48,7 +49,7 @@ describe('formResolver', () => {
                 { url: '' } as RouterStateSnapshot
             )
         );
-        jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(false));
+        vi.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(false));
         resolver.subscribe((res) => {
             expect(res).toBe(true);
         });

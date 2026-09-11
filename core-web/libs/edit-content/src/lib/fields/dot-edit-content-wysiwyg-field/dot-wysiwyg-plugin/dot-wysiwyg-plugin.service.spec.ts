@@ -1,7 +1,7 @@
-import { expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@openng/spectator';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, Subject, throwError } from 'rxjs';
+import { expect, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -65,9 +65,9 @@ class MockEditor {
         this.events[name].forEach((fn) => fn(event));
     };
 
-    insertContent = jest.fn();
+    insertContent = vi.fn();
 
-    focus = jest.fn();
+    focus = vi.fn();
 }
 
 const MOCK_IMAGE_URL_PATTERN = '/dA/{shortyId}/{name}?language_id={languageId}';
@@ -108,22 +108,22 @@ describe('DotWysiwygPluginService', () => {
             {
                 provide: DotPropertiesService,
                 useValue: {
-                    getKey: jest.fn().mockReturnValue(of(MOCK_IMAGE_URL_PATTERN))
+                    getKey: vi.fn().mockReturnValue(of(MOCK_IMAGE_URL_PATTERN))
                 }
             },
             {
                 provide: DotUploadFileService,
                 useValue: {
-                    publishContent: jest.fn()
+                    publishContent: vi.fn()
                 }
             },
             {
                 provide: DotSiteService,
-                useValue: { getCurrentSite: jest.fn(() => siteSource) }
+                useValue: { getCurrentSite: vi.fn(() => siteSource) }
             },
             {
                 provide: DotMessageService,
-                useValue: { get: jest.fn((key: string) => key) }
+                useValue: { get: vi.fn((key: string) => key) }
             },
             {
                 provide: DotEditContentStore,
@@ -139,7 +139,7 @@ describe('DotWysiwygPluginService', () => {
         // The `useValue` mocks are one object shared by every `createService()` in this file, so call
         // counts accumulate across tests unless they are cleared first. Before the service is built,
         // since its constructor is itself a call worth counting.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         siteSource = of(SITE);
         spectator = createService();
         dialogService = spectator.inject(DialogService);
@@ -160,8 +160,8 @@ describe('DotWysiwygPluginService', () => {
 
     describe('dotImagePlugin', () => {
         it('should configure the dotAddImage button', () => {
-            const spyButton = jest.spyOn(editor.ui.registry, 'addButton');
-            const spyOn = jest.spyOn(editor, 'on');
+            const spyButton = vi.spyOn(editor.ui.registry, 'addButton');
+            const spyOn = vi.spyOn(editor, 'on');
 
             spectator.service.initializePlugins(editor);
 
@@ -176,11 +176,11 @@ describe('DotWysiwygPluginService', () => {
         });
 
         it('should open the shared asset picker when the button is clicked', () => {
-            const spyDialog = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const spyDialog = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(EMPTY_CONTENTLET)
             } as DynamicDialogRef);
 
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             clickAddImage();
 
@@ -206,11 +206,11 @@ describe('DotWysiwygPluginService', () => {
         });
 
         it('should NOT insert content when the dialog is closed without selecting an image', () => {
-            const spyDialog = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const spyDialog = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(undefined)
             } as DynamicDialogRef);
 
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             clickAddImage();
 
@@ -227,7 +227,7 @@ describe('DotWysiwygPluginService', () => {
             const site$ = new Subject<DotSite>();
             siteSource = site$.asObservable();
             spectator = createService();
-            const spyDialog = jest
+            const spyDialog = vi
                 .spyOn(spectator.inject(DialogService), 'open')
                 .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
 
@@ -241,7 +241,7 @@ describe('DotWysiwygPluginService', () => {
         });
 
         it('should open again after the picker closed', () => {
-            const spyDialog = jest
+            const spyDialog = vi
                 .spyOn(dialogService, 'open')
                 .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
 
@@ -254,7 +254,7 @@ describe('DotWysiwygPluginService', () => {
         it('should not open a picker that has nothing to browse', () => {
             siteSource = throwError(() => new Error('no site'));
             spectator = createService();
-            const spyDialog = jest.spyOn(spectator.inject(DialogService), 'open');
+            const spyDialog = vi.spyOn(spectator.inject(DialogService), 'open');
 
             spectator.service.initializePlugins(editor);
             editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -285,10 +285,10 @@ describe('DotWysiwygPluginService', () => {
 
         it('should upload the image when dropped', () => {
             const uploadRespMock: unknown = [{ '1234': EMPTY_CONTENTLET }];
-            const spyUpload = jest
+            const spyUpload = vi
                 .spyOn(dotUploadFileService, 'publishContent')
                 .mockReturnValue(of(uploadRespMock as DotCMSContentlet[]));
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             spectator.service.initializePlugins(editor);
 
@@ -300,9 +300,9 @@ describe('DotWysiwygPluginService', () => {
                         }
                     ]
                 },
-                preventDefault: jest.fn(),
-                stopImmediatePropagation: jest.fn(),
-                stopPropagation: jest.fn()
+                preventDefault: vi.fn(),
+                stopImmediatePropagation: vi.fn(),
+                stopPropagation: vi.fn()
             };
 
             editor.fakeOnCall('drop', dropEvent);
@@ -321,10 +321,10 @@ describe('DotWysiwygPluginService', () => {
 
         it('should not upload the image when dropped', () => {
             const uploadRespMock: unknown = [{ '1234': EMPTY_CONTENTLET }];
-            const spyUpload = jest
+            const spyUpload = vi
                 .spyOn(dotUploadFileService, 'publishContent')
                 .mockReturnValue(of(uploadRespMock as DotCMSContentlet[]));
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             spectator.service.initializePlugins(editor);
 
@@ -336,9 +336,9 @@ describe('DotWysiwygPluginService', () => {
                         }
                     ]
                 },
-                preventDefault: jest.fn(),
-                stopImmediatePropagation: jest.fn(),
-                stopPropagation: jest.fn()
+                preventDefault: vi.fn(),
+                stopImmediatePropagation: vi.fn(),
+                stopPropagation: vi.fn()
             };
 
             editor.fakeOnCall('drop', dropEvent);

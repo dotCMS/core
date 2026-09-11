@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { FormsModule } from '@angular/forms';
 
@@ -95,7 +101,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
         });
 
         it('should emit selected workflow when workflow is selected', () => {
-            const selectSpy = jest.spyOn(spectator.component.onSelectWorkflow, 'emit');
+            const selectSpy = vi.spyOn(spectator.component.onSelectWorkflow, 'emit');
 
             spectator.setInput({
                 workflow: WORKFLOW_MOCKS.NEW,
@@ -228,7 +234,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
             });
 
             it('should emit reset action with correct ID when reset button is clicked', () => {
-                const resetSpy = jest.spyOn(spectator.component.onResetWorkflow, 'emit');
+                const resetSpy = vi.spyOn(spectator.component.onResetWorkflow, 'emit');
                 spectator.setInput({
                     isLoading: false,
                     workflow: {

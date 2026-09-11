@@ -17,7 +17,7 @@
             "options": {
                 "commands": [
                     "node scripts/check-tools-dir.mjs",
-                    "npx xmcp build",
+                    "xmcp build",
                     "cp package.json ../../dist/apps/mcp-server/",
                     "cp README.md ../../dist/apps/mcp-server/"
                 ],
@@ -35,7 +35,7 @@
                 }
             ],
             "options": {
-                "command": "npx xmcp dev",
+                "command": "xmcp dev",
                 "cwd": "apps/mcp-server"
             }
         },
@@ -46,16 +46,7 @@
                     "target": "generate-spec",
                     "projects": ["sdk-ai"]
                 }
-            ],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
+            ]
         },
         "lint": {
             "options": {

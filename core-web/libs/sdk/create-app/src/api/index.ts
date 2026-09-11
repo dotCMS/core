@@ -1,9 +1,9 @@
 import chalk from 'chalk';
 
+import { Ok, Err, httpPost, httpGet, isHttpError, type Result } from '@dotcms/http';
+
 import { DOTCMS_SITE_API, DOTCMS_EMA_CONFIG_API, DOTCMS_TOKEN_API } from '../constants';
 import { FailedToGetDefaultSiteError } from '../errors';
-import { Ok, type Result, Err } from '../result';
-import { httpPost, httpGet, isHttpError } from '../utils/http';
 
 import type { DefaultSiteResponse, GetUserTokenRequest, GetUserTokenResponse } from '../types';
 

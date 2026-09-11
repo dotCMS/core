@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -106,7 +108,7 @@ describe('DotPortletToolbarComponent', () => {
     describe('action buttons', () => {
         describe('primary', () => {
             it('should show one button and call function on click', () => {
-                const spy = jest.fn();
+                const spy = vi.fn();
                 component.actions = {
                     primary: [
                         {
@@ -161,7 +163,7 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should one button show and handle error', () => {
-                const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
                     //
                 });
 
@@ -235,7 +237,7 @@ describe('DotPortletToolbarComponent', () => {
 
         describe('cancel', () => {
             it('should show and call function on click', () => {
-                const spy = jest.fn();
+                const spy = vi.fn();
                 component.actions = {
                     primary: null,
                     cancel: spy
@@ -265,7 +267,7 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should show and handle error', () => {
-                const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
                     //
                 });
 

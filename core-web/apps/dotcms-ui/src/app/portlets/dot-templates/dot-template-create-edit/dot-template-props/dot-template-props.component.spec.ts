@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { vi } from 'vitest';
+
 import { Component, DebugElement, forwardRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -118,7 +120,7 @@ describe('DotTemplatePropsComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jest.fn()
+                        close: vi.fn()
                     }
                 },
                 {
@@ -131,8 +133,8 @@ describe('DotTemplatePropsComponent', () => {
                                 theme: '',
                                 image: ''
                             },
-                            onSave: jest.fn(),
-                            onCancel: jest.fn()
+                            onSave: vi.fn(),
+                            onCancel: vi.fn()
                         }
                     }
                 }

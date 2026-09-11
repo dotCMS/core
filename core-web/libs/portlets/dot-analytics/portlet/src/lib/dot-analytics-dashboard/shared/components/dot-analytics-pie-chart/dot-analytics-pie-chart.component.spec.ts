@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { waitForAsync } from '@angular/core/testing';
 
@@ -67,7 +68,7 @@ describe('DotAnalyticsPieChartComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn().mockReturnValue('Translated title')
+                    get: vi.fn().mockReturnValue('Translated title')
                 }
             }
         ]

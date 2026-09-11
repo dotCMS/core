@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -34,7 +35,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
     };
 
     const clipboardUtilMock = {
-        copy: jest.fn()
+        copy: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -52,7 +53,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
         dotGenerateSecurePasswordService = spectator.inject(DotGenerateSecurePasswordService);
         // DotClipboardUtil está en componentProviders, así que obtenemos la referencia del mock
         dotClipboardUtil = clipboardUtilMock as any;
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('dot-dialog', () => {
@@ -83,8 +84,8 @@ describe('DotGenerateSecurePasswordComponent', () => {
         it('should Reveal password', () => {
             expect(spectator.component.revealBtnLabel).toContain('Reveal');
             const mockEvent = {
-                stopPropagation: jest.fn(),
-                preventDefault: jest.fn()
+                stopPropagation: vi.fn(),
+                preventDefault: vi.fn()
             } as unknown as MouseEvent;
             spectator.component.revealPassword(mockEvent);
             spectator.fixture.detectChanges(false);

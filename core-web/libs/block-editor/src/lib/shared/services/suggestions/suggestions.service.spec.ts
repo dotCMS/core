@@ -39,7 +39,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'White Water',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -57,7 +57,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'Water',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -75,7 +75,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: '',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -93,7 +93,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: '   ',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -110,7 +110,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: '550e8400-e29b-41d4-a716-446655440000',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -128,7 +128,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'dead-beef',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -145,7 +145,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'White-Water Falls',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -162,7 +162,7 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'foo) +(contentType:UserContent',
                     currentLanguage: 1,
-                    contentletIdentifier: undefined
+                    contentletIdentifier: ''
                 })
                 .subscribe();
 
@@ -195,23 +195,24 @@ describe('SuggestionsService', () => {
             flushEmpty(req);
         });
 
-        it('maps the response to entity.jsonObjectView.contentlets', (done) => {
-            const contentlets = [{ identifier: '1' }, { identifier: '2' }];
+        it('maps the response to entity.jsonObjectView.contentlets', () =>
+            new Promise<void>((done) => {
+                const contentlets = [{ identifier: '1' }, { identifier: '2' }];
 
-            service
-                .getContentlets({
-                    contentType: 'Blog',
-                    filter: 'foo',
-                    currentLanguage: 1,
-                    contentletIdentifier: undefined
-                })
-                .subscribe((result) => {
-                    expect(result).toEqual(contentlets);
-                    done();
-                });
+                service
+                    .getContentlets({
+                        contentType: 'Blog',
+                        filter: 'foo',
+                        currentLanguage: 1,
+                        contentletIdentifier: ''
+                    })
+                    .subscribe((result) => {
+                        expect(result).toEqual(contentlets);
+                        done();
+                    });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush({ entity: { jsonObjectView: { contentlets } } });
-        });
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush({ entity: { jsonObjectView: { contentlets } } });
+            }));
     });
 });

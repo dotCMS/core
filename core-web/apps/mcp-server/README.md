@@ -99,6 +99,16 @@ Get up and running with the dotCMS MCP Server in minutes.
 
 The server runs on both **Node.js** (≥20) and **Bun** — the correct sandbox implementation is selected automatically at runtime.
 
+### The short way
+
+```bash
+npx dotcms agent setup
+```
+
+One command mints and verifies a token, writes this server into your editor's own configuration, installs the dotCMS skills, and confirms the server starts. It covers Claude Code, Cursor, VS Code (Copilot), Codex, Antigravity, Devin and OpenCode — merging into whatever configuration you already have rather than replacing it.
+
+The manual steps below remain accurate, and are what to reach for when you want to see exactly what is written, or you are configuring an editor the command does not cover.
+
 ### Claude Desktop Setup
 
 Add the MCP server to your Claude Desktop configuration file. The configuration file location varies by operating system:

@@ -1,4 +1,5 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
 import { Table } from 'primeng/table';
@@ -159,8 +160,8 @@ describe('DotKeyValueComponent', () => {
 
     describe('list operations', () => {
         it('should prepend a new pair and report it', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
             const newVariable = { key: 'newKey', value: 'newValue', hidden: false };
 
             spectator.component.saveVariable(newVariable);
@@ -171,8 +172,8 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should replace a pair in place and report both versions', () => {
-            const updateSpy = jest.spyOn(spectator.component.update, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const updateSpy = vi.spyOn(spectator.component.update, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
             const updated = { ...mockKeyValue[0], value: 'changed' };
 
             spectator.component.updateKeyValue(updated, 0);
@@ -186,8 +187,8 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should remove a pair and report it', () => {
-            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.deleteVariable(0);
             spectator.detectChanges();
@@ -197,7 +198,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should wire the rows so a row-level delete removes that row', () => {
-            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
+            const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
 
             spectator.click(spectator.queryAll(byTestId('dot-key-value-delete-button'))[0]);
             spectator.detectChanges();
@@ -224,7 +225,7 @@ describe('DotKeyValueComponent', () => {
         };
 
         it('should publish the list in the order PrimeNG left it', () => {
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             primengDropsRow(1, 0);
 
@@ -287,8 +288,8 @@ describe('DotKeyValueComponent', () => {
             // Field Variables persists row by row through `save`, so every pair has to
             // reach it; the other two consumers take the whole array from `updatedList`.
             create({ variables: [] });
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.saveVariables([
                 { key: 'A', value: '1' },
@@ -305,7 +306,7 @@ describe('DotKeyValueComponent', () => {
 
         it('should do nothing for an empty block', () => {
             create({ variables: [{ key: 'a', value: '1' }] });
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.saveVariables([]);
 
@@ -344,14 +345,14 @@ describe('DotKeyValueComponent', () => {
 
         /** Runs whatever the component handed the confirmation service. */
         const accept = () => {
-            const request = jest.mocked(confirmation.confirm).mock.calls[0][0];
+            const request = vi.mocked(confirmation.confirm).mock.calls[0][0];
             request.accept?.();
             spectator.detectChanges();
         };
 
         it('should ask before removing anything', () => {
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.click(byTestId('dot-key-value-clear-all'));
 
@@ -362,7 +363,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should empty the list once confirmed', () => {
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
             spectator.click(byTestId('dot-key-value-clear-all'));
 
             accept();
@@ -374,9 +375,9 @@ describe('DotKeyValueComponent', () => {
         it('should report every removed pair and the empty list once', () => {
             // Field Variables deletes row by row through `delete`; the other consumers
             // take the whole array from `updatedList`.
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
-            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
+            const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.click(byTestId('dot-key-value-clear-all'));
             accept();
@@ -391,7 +392,7 @@ describe('DotKeyValueComponent', () => {
             // itself — a consumer calling it directly must not get an empty dialog.
             create({ variables: [] });
             confirmation = spectator.inject(ConfirmationService);
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
 
             spectator.component.confirmClearAll();
 
@@ -426,7 +427,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should not publish a reorder even if one reaches the handler', () => {
-            const updated = jest.fn();
+            const updated = vi.fn();
             spectator.output('updatedList').subscribe(updated);
 
             spectator.component.onRowReorder();
@@ -535,7 +536,7 @@ describe('DotKeyValueComponent', () => {
 
         it('should still emit the whole list when a visible row is removed', () => {
             create({ variables: manyPairs(95) });
-            const spy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const spy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.deleteVariable(0);
 

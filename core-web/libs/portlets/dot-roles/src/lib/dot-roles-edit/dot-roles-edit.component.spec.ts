@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { EMPTY } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
@@ -56,19 +62,19 @@ describe('DotRolesEditComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(ConfirmationService, {
-                confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
+                confirm: vi.fn().mockImplementation((cfg) => cfg.accept?.()),
                 // p-confirmDialog subscribes to these on init
                 requireConfirmation$: EMPTY,
                 accept: EMPTY
             })
         ],
         providers: [
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotRolesStore, {
-                roleTree: jest.fn().mockReturnValue([]),
-                searchRoleTree: jest.fn().mockResolvedValue([]),
-                updateRole: jest.fn().mockResolvedValue(BASE_ROLE),
-                deleteRole: jest
+                roleTree: vi.fn().mockReturnValue([]),
+                searchRoleTree: vi.fn().mockResolvedValue([]),
+                updateRole: vi.fn().mockResolvedValue(BASE_ROLE),
+                deleteRole: vi
                     .fn()
                     .mockResolvedValue({ deleted: true, roleId: 'r-eco', usersAffected: 2 })
             }),
@@ -81,18 +87,18 @@ describe('DotRolesEditComponent', () => {
         dialogConfig.data = { role: BASE_ROLE };
         spectator = createComponent();
         const store = spectator.inject(DotRolesStore, true);
-        (store.updateRole as jest.Mock).mockClear();
-        (store.updateRole as jest.Mock).mockResolvedValue(BASE_ROLE);
-        (store.deleteRole as jest.Mock).mockClear();
-        (store.deleteRole as jest.Mock).mockResolvedValue({
+        (store.updateRole as Mock).mockClear();
+        (store.updateRole as Mock).mockResolvedValue(BASE_ROLE);
+        (store.deleteRole as Mock).mockClear();
+        (store.deleteRole as Mock).mockResolvedValue({
             deleted: true,
             roleId: 'r-eco',
             usersAffected: 2
         });
-        // `mockProvider` builds its jest.fn()s once at factory scope, so an
+        // `mockProvider` builds its vi.fn()s once at factory scope, so an
         // implementation set by one test would otherwise become every later
         // test's behaviour.
-        (store.searchRoleTree as jest.Mock).mockReset().mockResolvedValue([]);
+        (store.searchRoleTree as Mock).mockReset().mockResolvedValue([]);
     });
 
     describe('parent picker search', () => {
@@ -106,7 +112,7 @@ describe('DotRolesEditComponent', () => {
             let resolveSearch: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock).mockReturnValueOnce(
+            (store.searchRoleTree as Mock).mockReturnValueOnce(
                 new Promise<DotRoleNode[]>((resolve) => {
                     resolveSearch = resolve;
                 })
@@ -131,7 +137,7 @@ describe('DotRolesEditComponent', () => {
             let resolveFirst: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock)
+            (store.searchRoleTree as Mock)
                 .mockReturnValueOnce(
                     new Promise<DotRoleNode[]>((resolve) => {
                         resolveFirst = resolve;
@@ -196,7 +202,7 @@ describe('DotRolesEditComponent', () => {
 
     it('reparents to root when "None (Top Level)" is picked, sending null not the sentinel', async () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.updateRole as jest.Mock).mockClear();
+        (store.updateRole as Mock).mockClear();
         spectator.detectChanges();
 
         const [rootOption] = spectator.component['$parentTree']();

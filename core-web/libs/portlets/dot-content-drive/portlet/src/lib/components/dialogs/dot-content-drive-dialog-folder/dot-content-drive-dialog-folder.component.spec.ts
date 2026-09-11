@@ -1,6 +1,11 @@
-import { describe, it, expect } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { delay, of, throwError } from 'rxjs';
+import { Mock, Mocked, describe, expect, it, vi } from 'vitest';
 
 import { MessageService } from 'primeng/api';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
@@ -61,26 +66,26 @@ const editableFolder = (overrides: Partial<DotContentDriveFolder> = {}): DotCont
 describe('DotContentDriveDialogFolderComponent', () => {
     let spectator: Spectator<DotContentDriveDialogFolderComponent>;
     let component: DotContentDriveDialogFolderComponent;
-    let folderService: jest.Mocked<DotFolderService>;
-    let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
-    let messageService: jest.Mocked<MessageService>;
+    let folderService: Mocked<DotFolderService>;
+    let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let messageService: Mocked<MessageService>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveDialogFolderComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                currentSite: jest.fn().mockReturnValue(mockSite),
-                path: jest.fn().mockReturnValue('/documents'),
-                reloadContentDrive: jest.fn(),
-                loadFolders: jest.fn(),
-                closeDialog: jest.fn()
+                currentSite: vi.fn().mockReturnValue(mockSite),
+                path: vi.fn().mockReturnValue('/documents'),
+                reloadContentDrive: vi.fn(),
+                loadFolders: vi.fn(),
+                closeDialog: vi.fn()
             }),
             mockProvider(DotFolderService, {
-                createFolder: jest.fn().mockReturnValue(of({})),
-                saveFolder: jest.fn().mockReturnValue(of({}))
+                createFolder: vi.fn().mockReturnValue(of({})),
+                saveFolder: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(MessageService, {
-                add: jest.fn()
+                add: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -93,8 +98,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 })
             },
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of([])),
-                getContentTypes: jest.fn().mockReturnValue(of(mockFileAssetTypes))
+                getAllContentTypes: vi.fn().mockReturnValue(of([])),
+                getContentTypes: vi.fn().mockReturnValue(of(mockFileAssetTypes))
             })
         ]
     });
@@ -378,14 +383,14 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const input = extensionsInput();
             input!.value = text;
             input!.dispatchEvent(new Event('input', { bubbles: true }));
-            jest.advanceTimersByTime(500);
+            vi.advanceTimersByTime(500);
             spectator.detectChanges();
 
             return input;
         };
 
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should filter file extensions on autocomplete', () => {
             const event: AutoCompleteCompleteEvent = {
@@ -483,15 +488,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             // `getContentTypes` is mocked once for the whole file, so restore it or the delayed
             // observable leaks into every test that runs after this one.
             afterEach(() => {
-                (
-                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
-                ).mockReturnValue(of(mockFileAssetTypes));
+                (spectator.inject(DotContentTypeService).getContentTypes as Mock).mockReturnValue(
+                    of(mockFileAssetTypes)
+                );
             });
 
             const openWhileLoading = () => {
-                (
-                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
-                ).mockReturnValue(of(mockFileAssetTypes).pipe(delay(1000)));
+                (spectator.inject(DotContentTypeService).getContentTypes as Mock).mockReturnValue(
+                    of(mockFileAssetTypes).pipe(delay(1000))
+                );
 
                 const loading = createComponent({
                     props: {
@@ -546,7 +551,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 // down to whatever the active suggestion filter matched.
                 const loading = openWhileLoading();
 
-                jest.advanceTimersByTime(1000);
+                vi.advanceTimersByTime(1000);
                 loading.detectChanges();
 
                 const autoComplete = loading.query(AutoComplete) as AutoComplete;

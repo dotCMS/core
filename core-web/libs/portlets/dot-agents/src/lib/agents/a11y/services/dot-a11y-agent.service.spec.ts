@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { DotAgentRunService } from '@dotcms/data-access';
 import { AgentStreamEvent } from '@dotcms/dotcms-models';
@@ -26,14 +27,14 @@ const FIX_REPORT: FixReport = {
 describe('DotA11yAgentService', () => {
     let spectator: SpectatorService<DotA11yAgentService>;
     let service: DotA11yAgentService;
-    let runService: jest.Mocked<DotAgentRunService>;
+    let runService: Mocked<DotAgentRunService>;
 
     const createService = createServiceFactory({
         service: DotA11yAgentService,
         providers: [
             mockProvider(DotAgentRunService, {
-                run: jest.fn().mockReturnValue(of()),
-                stop: jest.fn().mockReturnValue(of())
+                run: vi.fn().mockReturnValue(of()),
+                stop: vi.fn().mockReturnValue(of())
             })
         ]
     });
@@ -41,7 +42,7 @@ describe('DotA11yAgentService', () => {
     beforeEach(() => {
         spectator = createService();
         service = spectator.service;
-        runService = spectator.inject(DotAgentRunService) as jest.Mocked<DotAgentRunService>;
+        runService = spectator.inject(DotAgentRunService) as Mocked<DotAgentRunService>;
     });
 
     it('fixStream delegates to the generic run service with the a11y stream endpoint', () => {

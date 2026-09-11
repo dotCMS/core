@@ -1,4 +1,5 @@
-import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import {
     DotContentSearchService,
@@ -58,13 +59,13 @@ describe('SlashMenuService — async sub-menu search', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('runs the initial (empty-query) search immediately on open', async () => {
-        const search = jest.fn().mockResolvedValue([item('A')]);
+        const search = vi.fn().mockResolvedValue([item('A')]);
 
-        service.openAsyncSubmenu(search, jest.fn());
+        service.openAsyncSubmenu(search, vi.fn());
 
         expect(search).toHaveBeenCalledTimes(1);
         expect(search).toHaveBeenCalledWith('');
@@ -76,52 +77,52 @@ describe('SlashMenuService — async sub-menu search', () => {
     });
 
     it('debounces re-queries and searches only the latest query', () => {
-        jest.useFakeTimers();
-        const search = jest.fn().mockResolvedValue([]);
-        service.openAsyncSubmenu(search, jest.fn());
+        vi.useFakeTimers();
+        const search = vi.fn().mockResolvedValue([]);
+        service.openAsyncSubmenu(search, vi.fn());
         search.mockClear();
 
         service.filterItems('bl');
         service.filterItems('blo');
         service.filterItems('blog');
 
-        jest.advanceTimersByTime(250);
+        vi.advanceTimersByTime(250);
 
         expect(search).toHaveBeenCalledTimes(1);
         expect(search).toHaveBeenCalledWith('blog');
     });
 
     it('does not re-search when the query is unchanged (dedupe)', () => {
-        jest.useFakeTimers();
-        const search = jest.fn().mockResolvedValue([]);
-        service.openAsyncSubmenu(search, jest.fn());
+        vi.useFakeTimers();
+        const search = vi.fn().mockResolvedValue([]);
+        service.openAsyncSubmenu(search, vi.fn());
         search.mockClear();
 
         service.filterItems('blog');
         service.filterItems('blog');
 
-        jest.advanceTimersByTime(250);
+        vi.advanceTimersByTime(250);
 
         expect(search).toHaveBeenCalledTimes(1);
     });
 
     it('drops a stale response that resolves after a newer query (token guard)', async () => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         const older = defer<BlockItem[]>();
         const newer = defer<BlockItem[]>();
-        const search = jest
+        const search = vi
             .fn()
             .mockResolvedValueOnce([]) // initial '' search from open
             .mockReturnValueOnce(older.promise) // 'a'
             .mockReturnValueOnce(newer.promise); // 'ab'
 
-        service.openAsyncSubmenu(search, jest.fn());
+        service.openAsyncSubmenu(search, vi.fn());
         await flush();
 
         service.filterItems('a');
-        jest.advanceTimersByTime(250);
+        vi.advanceTimersByTime(250);
         service.filterItems('ab');
-        jest.advanceTimersByTime(250);
+        vi.advanceTimersByTime(250);
 
         // Newer query resolves first and wins.
         newer.resolve([item('AB')]);
@@ -135,11 +136,11 @@ describe('SlashMenuService — async sub-menu search', () => {
     });
 
     it('ignores a search result that resolves after the menu closed', async () => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         const pending = defer<BlockItem[]>();
-        const search = jest.fn().mockReturnValueOnce(pending.promise);
+        const search = vi.fn().mockReturnValueOnce(pending.promise);
 
-        service.openAsyncSubmenu(search, jest.fn());
+        service.openAsyncSubmenu(search, vi.fn());
         service.close();
 
         pending.resolve([item('late')]);

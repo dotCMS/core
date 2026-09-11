@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -45,8 +46,8 @@ describe('DotExperimentListFilterComponent', () => {
         spectator.detectChanges();
     };
 
-    const captureSelectionChange = (): jest.Mock => {
-        const selectionChange = jest.fn();
+    const captureSelectionChange = (): Mock => {
+        const selectionChange = vi.fn();
         spectator.output('selectionChange').subscribe(selectionChange);
 
         return selectionChange;
@@ -127,7 +128,7 @@ describe('DotExperimentListFilterComponent', () => {
         it('should emit the emptied selection when the chip is cleared', () => {
             setUp(['DRAFT']);
 
-            const selectionChange = jest.fn();
+            const selectionChange = vi.fn();
             spectator.output('selectionChange').subscribe(selectionChange);
 
             spectator.click(spectator.query(byTestId('chip-remove')) as HTMLElement);

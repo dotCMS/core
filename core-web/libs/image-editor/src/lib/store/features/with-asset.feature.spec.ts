@@ -1,6 +1,7 @@
 import { signalStore, withState } from '@ngrx/signals';
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -34,7 +35,7 @@ describe('withAsset', () => {
                 {
                     provide: DotImageEditorService,
                     useValue: {
-                        loadAssetMeta: jest
+                        loadAssetMeta: vi
                             .fn()
                             .mockReturnValue(
                                 of({ naturalWidth: 800, naturalHeight: 600, originalBytes: 5000 })

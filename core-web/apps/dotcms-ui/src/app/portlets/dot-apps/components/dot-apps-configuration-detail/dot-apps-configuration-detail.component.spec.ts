@@ -1,5 +1,6 @@
 import { MarkdownService } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Injectable, Input, Output, input, output } from '@angular/core';
@@ -229,7 +230,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             component = fixture.debugElement.componentInstance;
             appsServices = TestBed.inject(DotAppsService);
             routerService = TestBed.inject(DotRouterService);
-            jest.spyOn(appsServices, 'saveSiteConfiguration');
+            vi.spyOn(appsServices, 'saveSiteConfiguration');
             fixture.detectChanges();
         }));
 
@@ -384,7 +385,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
             component = fixture.debugElement.componentInstance;
             appsServices = TestBed.inject(DotAppsService);
-            jest.spyOn(appsServices, 'saveSiteConfiguration');
+            vi.spyOn(appsServices, 'saveSiteConfiguration');
             fixture.detectChanges();
         }));
 
@@ -438,7 +439,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
             component.onSubmit();
 
-            const [, , payload] = (appsServices.saveSiteConfiguration as unknown as jest.Mock).mock
+            const [, , payload] = (appsServices.saveSiteConfiguration as unknown as Mock).mock
                 .calls[0];
             expect(payload.apiToken).toEqual({ hidden: true, value: 'secret' });
         });

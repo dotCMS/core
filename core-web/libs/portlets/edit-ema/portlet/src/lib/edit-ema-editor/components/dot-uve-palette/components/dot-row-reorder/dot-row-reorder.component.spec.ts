@@ -1,4 +1,10 @@
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    byTestId
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { computed, signal } from '@angular/core';
@@ -9,6 +15,7 @@ import { DotPageAssetLayoutRow, DotPageAssetLayoutColumn, DotCMSLayout } from '@
 import { DotRowReorderComponent } from './dot-row-reorder.component';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../../../store/features/page-api/withPageApi';
 
 const MOCK_COLUMNS: DotPageAssetLayoutColumn[] = [
     {
@@ -74,6 +81,11 @@ describe('DotRowReorderComponent', () => {
     let spectator: Spectator<DotRowReorderComponent>;
     let component: DotRowReorderComponent;
     let mockUVEStore: InstanceType<typeof UVEStore>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => mockUVEStore as unknown as WithPageApiMethods;
     let mockLayoutSignal: ReturnType<typeof signal<DotCMSLayout | null>>;
 
     const createComponent = createComponentFactory({
@@ -81,8 +93,8 @@ describe('DotRowReorderComponent', () => {
         providers: [
             mockProvider(UVEStore, {
                 pageAsset: signal(null),
-                updateLayout: jest.fn(),
-                updateRows: jest.fn()
+                updateLayout: vi.fn(),
+                updateRows: vi.fn()
             })
         ]
     });
@@ -98,16 +110,16 @@ describe('DotRowReorderComponent', () => {
                             const layout = mockLayoutSignal();
                             return layout ? { layout } : null;
                         }),
-                        updateLayout: jest.fn(),
-                        updateRows: jest.fn()
+                        updateLayout: vi.fn(),
+                        updateRows: vi.fn()
                     }
                 }
             ]
         });
         component = spectator.component;
         mockUVEStore = spectator.inject(UVEStore, true) as InstanceType<typeof UVEStore> & {
-            updateLayout: jest.Mock;
-            updateRows: jest.Mock;
+            updateLayout: Mock;
+            updateRows: Mock;
         };
         spectator.detectChanges();
     });
@@ -175,7 +187,7 @@ describe('DotRowReorderComponent', () => {
 
     describe('Row Selection', () => {
         it('should emit onRowSelect when row label is clicked', () => {
-            const onRowSelectSpy = jest.spyOn(component.onRowSelect, 'emit');
+            const onRowSelectSpy = vi.spyOn(component.onRowSelect, 'emit');
             spectator.click(spectator.queryAll(byTestId('row-label'))[0]);
             spectator.detectChanges();
 
@@ -448,7 +460,7 @@ describe('DotRowReorderComponent', () => {
                 previousContainer: { data: targetRow.columns }
             } as unknown as CdkDragDrop<DotPageAssetLayoutColumn[]>;
 
-            const updateRowsSpy = jest.spyOn(mockUVEStore, 'updateRows');
+            const updateRowsSpy = vi.spyOn(pageApi(), 'updateRows');
             spectator.triggerEventHandler(
                 '[data-testid="row-columns"]',
                 'cdkDropListDropped',

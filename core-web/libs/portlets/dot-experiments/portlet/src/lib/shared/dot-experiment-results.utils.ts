@@ -1,3 +1,4 @@
+/// <reference path="./jstat.d.ts" />
 import { ChartData } from 'chart.js';
 import { jStat } from 'jstat';
 

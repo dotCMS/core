@@ -4,7 +4,7 @@
  * package's own `package.json` version (already set to the exact dotCMS release version by the
  * deploy-javascript-sdk release pipeline before the build runs).
  *
- * Unit tests never go through rollup, so `libs/sdk/client/jest.config.ts` maps this module id to
+ * Unit tests never go through rollup, so `libs/sdk/client/vite.config.mts` aliases this module id to
  * a real stub file (`src/lib/utils/__mocks__/virtual-sdk-version.ts`) instead.
  *
  * It lives here rather than beside the importer because an ambient declaration only covers the

@@ -1,5 +1,5 @@
-import { describe, expect } from '@jest/globals';
 import { of } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -91,16 +91,16 @@ const storeMock = {
     get renderThumbnail$() {
         return of(true);
     },
-    saveFavoritePage: jest.fn(),
+    saveFavoritePage: vi.fn(),
     get closeDialog$() {
         return of(false);
     },
     get actionState$() {
         return of(null);
     },
-    setLoading: jest.fn(),
-    setLoaded: jest.fn(),
-    setInitialStateData: jest.fn(),
+    setLoading: vi.fn(),
+    setLoaded: vi.fn(),
+    setInitialStateData: vi.fn(),
     vm$: of({
         pageRenderedHtml: '',
         roleOptions: [],
@@ -157,7 +157,7 @@ describe('DotFavoritePageComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jest.fn()
+                        close: vi.fn()
                     }
                 },
                 {
@@ -168,8 +168,8 @@ describe('DotFavoritePageComponent', () => {
                                 pageState: mockRenderedPageState,
                                 pageRenderedHtml: '<p>test</p>'
                             },
-                            onSave: jest.fn(),
-                            onDelete: jest.fn()
+                            onSave: vi.fn(),
+                            onDelete: vi.fn()
                         }
                     }
                 }
@@ -290,7 +290,7 @@ describe('DotFavoritePageComponent', () => {
             });
 
             // TODO: Find a way to send the event on time
-            xit('should be valid when emitted thumbnail', fakeAsync(() => {
+            it.skip('should be valid when emitted thumbnail', fakeAsync(() => {
                 const thumbnailEvent = new CustomEvent('pageThumbnail', {
                     detail: { file: 'test' },
                     bubbles: true,
@@ -359,13 +359,13 @@ describe('DotFavoritePageComponent', () => {
 
         describe('Store state changes', () => {
             it('should call close ref event when closeDialog event is executed from store', () => {
-                jest.spyOn(store, 'closeDialog$', 'get').mockReturnValue(of(true));
+                vi.spyOn(store, 'closeDialog$', 'get').mockReturnValue(of(true));
                 fixture.detectChanges();
                 expect(dialogRef.close).toHaveBeenCalledWith(true);
             });
 
             it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
-                jest.spyOn(store, 'actionState$', 'get').mockReturnValue(
+                vi.spyOn(store, 'actionState$', 'get').mockReturnValue(
                     of(DotFavoritePageActionState.SAVED)
                 );
                 fixture.detectChanges();
@@ -373,7 +373,7 @@ describe('DotFavoritePageComponent', () => {
             });
 
             it('should call onDelete ref event when actionState event is executed from store with Deleted value', () => {
-                jest.spyOn(store, 'actionState$', 'get').mockReturnValue(
+                vi.spyOn(store, 'actionState$', 'get').mockReturnValue(
                     of(DotFavoritePageActionState.DELETED)
                 );
                 fixture.detectChanges();
@@ -394,18 +394,18 @@ describe('DotFavoritePageComponent', () => {
                 get renderThumbnail$() {
                     return of(false);
                 },
-                setRenderThumbnail: jest.fn(),
-                saveFavoritePage: jest.fn(),
-                deleteFavoritePage: jest.fn(),
+                setRenderThumbnail: vi.fn(),
+                saveFavoritePage: vi.fn(),
+                deleteFavoritePage: vi.fn(),
                 get closeDialog$() {
                     return of(false);
                 },
                 get actionState$() {
                     return of(null);
                 },
-                setLoading: jest.fn(),
-                setLoaded: jest.fn(),
-                setInitialStateData: jest.fn(),
+                setLoading: vi.fn(),
+                setLoaded: vi.fn(),
+                setInitialStateData: vi.fn(),
                 vm$: of({
                     pageRenderedHtml: 'test',
                     roleOptions: [],
@@ -479,18 +479,18 @@ describe('DotFavoritePageComponent', () => {
                 get renderThumbnail$() {
                     return of(false);
                 },
-                setRenderThumbnail: jest.fn(),
-                saveFavoritePage: jest.fn(),
-                deleteFavoritePage: jest.fn(),
+                setRenderThumbnail: vi.fn(),
+                saveFavoritePage: vi.fn(),
+                deleteFavoritePage: vi.fn(),
                 get closeDialog$() {
                     return of(false);
                 },
                 get actionState$() {
                     return of(null);
                 },
-                setLoading: jest.fn(),
-                setLoaded: jest.fn(),
-                setInitialStateData: jest.fn(),
+                setLoading: vi.fn(),
+                setLoaded: vi.fn(),
+                setInitialStateData: vi.fn(),
                 vm$: of({
                     pageRenderedHtml: '',
                     roleOptions: [],

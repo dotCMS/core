@@ -6,8 +6,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -76,7 +77,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
 
     it('should call HTTP service when button is clicked with empty input', () => {
         // Mock HTTP response
-        jest.spyOn(httpClient, 'get').mockReturnValue(of('generated-string-value'));
+        vi.spyOn(httpClient, 'get').mockReturnValue(of('generated-string-value'));
 
         spectator.detectChanges();
 
@@ -96,10 +97,10 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         // Note: These tests that query for '.p-confirm-popup-accept/reject' don't work reliably
         // with PrimeNG v17+ as the popup renders outside the component. The equivalent behavior
         // is tested in 'should handle confirmation accept/reject scenario' tests below.
-        xit('should generate new string when user confirms (YES)', async () => {
+        it.skip('should generate new string when user confirms (YES)', async () => {
             // Arrange
             const mockGeneratedValue = 'new-generated-value';
-            jest.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
+            vi.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
 
             spectator.detectChanges();
             spectator.component.$value.set('existing-value');
@@ -130,14 +131,14 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             expect(spectator.component.$value()).toBe(mockGeneratedValue);
         });
 
-        xit('should NOT generate new string when user cancels (NO)', async () => {
+        it.skip('should NOT generate new string when user cancels (NO)', async () => {
             // Arrange
             const originalValue = 'existing-value';
             spectator.detectChanges();
             spectator.component.$value.set(originalValue);
 
             // Create spy for httpClient.get to verify it's not called
-            const httpGetSpy = jest.spyOn(httpClient, 'get');
+            const httpGetSpy = vi.spyOn(httpClient, 'get');
 
             const button = generateButton();
 
@@ -166,7 +167,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         it('should bypass confirmation and generate directly when input is empty', async () => {
             // Arrange
             const mockGeneratedValue = 'generated-value';
-            jest.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
+            vi.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input
@@ -198,14 +199,14 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         it('should handle confirmation accept scenario', () => {
             // Arrange
             const mockGeneratedValue = 'accepted-generated-value';
-            jest.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
+            vi.spyOn(httpClient, 'get').mockReturnValue(of(mockGeneratedValue));
 
             const originalValue = 'original-value';
             spectator.detectChanges();
             spectator.component.$value.set(originalValue);
 
             let capturedConfig: any;
-            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
+            vi.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
                 capturedConfig = config;
 
                 return confirmationService;
@@ -234,10 +235,10 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.component.$value.set(originalValue);
 
             // Create spy for httpClient.get to verify it's not called
-            const httpGetSpy = jest.spyOn(httpClient, 'get');
+            const httpGetSpy = vi.spyOn(httpClient, 'get');
 
             let capturedConfig: any;
-            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
+            vi.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
                 capturedConfig = config;
 
                 return confirmationService;
@@ -264,7 +265,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         it('should show loading state during string generation', () => {
             // Arrange
             const responseSubject = new Subject<string>();
-            jest.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
+            vi.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
@@ -288,7 +289,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             // Arrange
             const responseSubject = new Subject<string>();
             const mockGeneratedValue = 'generated-value';
-            jest.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
+            vi.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
@@ -356,8 +357,8 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             // Arrange
             const responseSubject = new Subject<string>();
             const mockError = new Error('HTTP Error');
-            jest.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
-            jest.spyOn(console, 'error'); // Spy on console.error to avoid console output
+            vi.spyOn(httpClient, 'get').mockReturnValue(responseSubject.asObservable());
+            vi.spyOn(console, 'error'); // Spy on console.error to avoid console output
 
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation

@@ -4,7 +4,8 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -27,7 +28,7 @@ describe('DotContentDriveRelationshipFooterComponent', () => {
         component: DotContentDriveRelationshipFooterComponent,
         providers: [
             mockProvider(ExistingContentStore, { currentItems: items }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({ Cancel: 'Cancel' })

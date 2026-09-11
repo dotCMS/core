@@ -377,6 +377,9 @@ runs:
           echo "Error: .sdkmanrc file not found and no java-version override provided"
           exit 1
         fi
+        # This value is used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>),
+        # which cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
+        SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
         echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
 
     - id: build-docker-image-from-archive

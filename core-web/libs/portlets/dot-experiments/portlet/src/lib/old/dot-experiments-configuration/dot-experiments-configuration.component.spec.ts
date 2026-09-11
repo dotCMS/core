@@ -5,9 +5,10 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -133,13 +134,16 @@ describe('DotExperimentsConfigurationComponent', () => {
         dotExperimentsConfigurationStore = spectator.inject(DotExperimentsConfigurationStore, true);
 
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        // The store pipes cancelSchedule; a bare mockProvider returns undefined and it
+        // dereferences nothing, asynchronously.
+        dotExperimentsService.cancelSchedule.mockReturnValue(of(EXPERIMENT_MOCK));
 
-        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+        vi.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(vi.fn());
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
-        jest.restoreAllMocks();
+        vi.resetAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('should show the skeleton component when is loading', () => {
@@ -191,7 +195,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should show End Experiment after confirmation', () => {
-        jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
+        vi.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
         dotExperimentsService.stop.mockReturnValue(of());
 
         spectator.detectChanges();
@@ -234,7 +238,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should un schedule the experiment after confirmation', () => {
-        jest.spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
+        vi.spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
 
         spectator.detectChanges();
 

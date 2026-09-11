@@ -1,0 +1,15 @@
+<p-splitter
+    class="flex h-full min-h-0"
+    [panelSizes]="[75, 25]"
+    [minSizes]="[40, 15]"
+    [stateKey]="stateKey()"
+    stateStorage="local"
+    [pt]="splitterPt">
+    <ng-template pTemplate>
+        <ng-content />
+    </ng-template>
+
+    <ng-template pTemplate>
+        <dot-ai-settings-panel />
+    </ng-template>
+</p-splitter>

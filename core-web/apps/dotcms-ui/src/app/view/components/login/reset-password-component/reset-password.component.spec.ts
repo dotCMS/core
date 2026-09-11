@@ -1,4 +1,5 @@
 import { throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -51,7 +52,7 @@ describe('ResetPasswordComponent', () => {
         activatedRoute = TestBed.inject(ActivatedRoute);
         loginService = TestBed.inject(LoginService);
         dotRouterService = TestBed.inject(DotRouterService);
-        jest.spyOn(activatedRoute.snapshot.paramMap, 'get').mockReturnValue('test@test.com');
+        vi.spyOn(activatedRoute.snapshot.paramMap, 'get').mockReturnValue('test@test.com');
 
         fixture.detectChanges();
     });
@@ -75,7 +76,7 @@ describe('ResetPasswordComponent', () => {
 
     it('should display message if passwords do not match', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
-        jest.spyOn(loginService, 'changePassword');
+        vi.spyOn(loginService, 'changePassword');
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test2'
@@ -92,7 +93,7 @@ describe('ResetPasswordComponent', () => {
     it('should call the change password service and redirect to loging page', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
-        jest.spyOn(loginService, 'changePassword');
+        vi.spyOn(loginService, 'changePassword');
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test'
@@ -110,7 +111,7 @@ describe('ResetPasswordComponent', () => {
     it('should show error message form the service', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
-        jest.spyOn(loginService, 'changePassword').mockReturnValue(
+        vi.spyOn(loginService, 'changePassword').mockReturnValue(
             throwError(() => ({ error: { errors: [{ message: 'error message' }] } }))
         );
         component.resetPasswordForm.setValue({
@@ -168,7 +169,7 @@ describe('ResetPasswordComponent — HTTP contract', () => {
         fixture = TestBed.createComponent(ResetPasswordComponent);
         component = fixture.componentInstance;
         httpMock = TestBed.inject(HttpTestingController);
-        jest.spyOn(TestBed.inject(ActivatedRoute).snapshot.paramMap, 'get').mockReturnValue(
+        vi.spyOn(TestBed.inject(ActivatedRoute).snapshot.paramMap, 'get').mockReturnValue(
             'reset-token'
         );
         fixture.detectChanges();

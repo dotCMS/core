@@ -1,4 +1,9 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';

@@ -24,6 +24,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
+import { emojis } from '@tiptap/extension-emoji';
 import { type EditorView } from '@tiptap/pm/view';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -53,6 +54,7 @@ import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
 import { contentMatchesEditorDocument } from './utils/content-match.utils';
+import { healEmojiHtml, healEmojiNodes } from './utils/emoji-heal.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 import {
     preserveUnknownNodesInDocument,
@@ -438,13 +440,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
                 syncCharacterStatsFromEditor(editor, this.stats);
-                const currentJson = editor.getJSON();
-                const json = this.withDocStats({
-                    ...currentJson,
-                    content: restoreUnknownBlockNodes(currentJson.content ?? [])
-                });
-                this.onChange(JSON.stringify(json));
-                this.valueChange.emit(json);
+                this.emitValue(editor);
             },
             onBlur: () => {
                 this.onTouched();
@@ -476,25 +472,119 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
     }
 
     /**
-     * Replaces the editor's document with `content`, normalizing unknown node types into the
-     * `dotUnsupportedBlock` placeholder first so custom blocks survive the round trip.
+     * Pushes the editor's current document out to the host — the reactive-form control and the
+     * `valueChange` output.
+     *
+     * Shared by {@link buildEditor}'s `onUpdate` and by {@link loadContent} when the emoji heal
+     * rewrote something, so both paths emit the identical shape. They used to differ, which is
+     * how a healed document could sit in the editor while the form control still held the
+     * unhealed string.
+     */
+    private emitValue(editor: Editor): void {
+        const currentJson = editor.getJSON();
+        const json = this.withDocStats({
+            ...currentJson,
+            content: restoreUnknownBlockNodes(currentJson.content ?? [])
+        });
+
+        this.onChange(JSON.stringify(json));
+        this.valueChange.emit(json);
+    }
+
+    /**
+     * Replaces the editor's document with `content`, normalizing it first: unknown node types
+     * become the `dotUnsupportedBlock` placeholder so custom blocks survive the round trip, and
+     * legacy `emoji` nodes become the text they should always have been.
      *
      * Every load goes through here — the initial one from {@link commitEditor}, later host
      * pushes from the `value` effect, and reactive-forms writes from {@link writeValue} — so
      * there is one place where the document is replaced rather than three near-copies.
+     *
+     * **Order matters, and the heal must run LAST.** An earlier revision ran it first and claimed
+     * the order made no difference. It does: `preserveUnknownBlockNodes` swallows an unknown node
+     * whole into `attrs.originalNode`, which `unknown-block.util.ts` documents as inert data kept
+     * byte-for-byte as stored — the mark pass skips `dotUnsupportedBlock` precisely to honour that.
+     * Healing first meant rewriting `emoji` nodes nested inside a customer's custom block before
+     * that payload was stashed, so the "original" restored on save was not the original.
+     *
+     * Running the heal after makes the payload structurally unreachable — it lives in `attrs`, and
+     * `healNode` only recurses into `content` — rather than relying on a known-node-name list
+     * staying in sync.
      */
     private loadContent(editor: Editor, content: string | JSONContent): void {
         const parsed = normalizeEditorContent(content);
-        editor.commands.setContent(
-            typeof parsed === 'string'
-                ? parsed
-                : preserveUnknownNodesInDocument(
-                      parsed,
-                      getKnownNodeNames(editor),
-                      getKnownMarkNames(editor)
-                  ),
-            { emitUpdate: false }
+
+        if (typeof parsed === 'string') {
+            // A non-JSON string value is treated as HTML by `normalizeEditorContent`. dotCMS does
+            // not store Story Block fields that way, but hosts embedding the editor can pass HTML —
+            // and that markup can carry rendered emoji spans, so it needs healing too.
+            //
+            // `transformPastedHTML` does NOT cover this: it only runs on paste. Without the call
+            // below, the `fallbackImage` span's inner `<img src="cdn.jsdelivr.net/…">` is left
+            // exposed and `DotImage` claims it as a dotCMS image node.
+            const healedHtml = healEmojiHtml(parsed, emojis);
+
+            editor.commands.setContent(healedHtml, { emitUpdate: false });
+
+            // Emit for the same reason the JSON path does: without it the host keeps the unhealed
+            // string and a plain Save throws the repair away. Gated on the heal having actually
+            // rewritten something, so an HTML value with no emoji span leaves the form pristine.
+            if (healedHtml !== parsed) {
+                this.emitHealedValue(editor);
+            }
+
+            return;
+        }
+
+        const preserved = preserveUnknownNodesInDocument(
+            parsed,
+            getKnownNodeNames(editor),
+            getKnownMarkNames(editor)
         );
+        const healed = healEmojiNodes(preserved, emojis);
+
+        editor.commands.setContent(healed, { emitUpdate: false });
+
+        // `emitUpdate: false` above is deliberate: a host push or a reactive-forms write must not
+        // look like an author edit. But when the heal actually rewrote something, the document in
+        // the editor no longer matches the value the host is holding, and without an emit the
+        // repair is lost the moment the author saves without typing anything — which is exactly
+        // what they would do, having seen the © render correctly.
+        //
+        // `healEmojiNodes` returns the SAME reference when it changed nothing, so this fires only
+        // for content that actually carried an `emoji` node. Everything else is untouched and the
+        // form stays pristine.
+        //
+        // Deferred to a microtask because `writeValue` is one of this method's callers, and
+        // calling `onChange` synchronously inside it trips Angular's "value changed after it was
+        // checked" check (NG0100).
+        if (healed !== preserved) {
+            this.emitHealedValue(editor);
+        }
+    }
+
+    /**
+     * Emits after a healing load.
+     *
+     * Deferred to a microtask because `writeValue` is one of `loadContent`'s callers, and calling
+     * `onChange` synchronously inside it trips Angular's "value changed after it was checked"
+     * check (NG0100).
+     *
+     * FINDING 5: the stats sync is not incidental. `withDocStats` bails when `charCount()` is `<= 0`
+     * and `syncCharacterStatsFromEditor` runs only from `onCreate` / `onUpdate` — and this path
+     * sets content with `emitUpdate: false`, so nothing had refreshed the count. Without the sync
+     * the healed emit silently drops `charCount`, `wordCount` and `readingTime` from the stored
+     * document.
+     */
+    private emitHealedValue(editor: Editor): void {
+        queueMicrotask(() => {
+            if (editor.isDestroyed) {
+                return;
+            }
+
+            syncCharacterStatsFromEditor(editor, this.stats);
+            this.emitValue(editor);
+        });
     }
 
     /**
