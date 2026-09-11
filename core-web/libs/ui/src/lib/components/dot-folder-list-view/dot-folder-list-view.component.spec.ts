@@ -528,6 +528,47 @@ describe('DotFolderListViewComponent', () => {
             expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
         });
 
+        it('should not fire a second request from a rapid second click before loading catches up', () => {
+            // `loading` only flips to `true` after this component's `paginate` output round-trips
+            // through the caller's store, at least one microtask away. A second `onPage` call in
+            // that gap must not slip past the `$loading()` guard the way a real fast double click
+            // would (issue #37212) -- exercised here without advancing the input at all, which is
+            // the whole point: this proves the guard does not depend on `loading` having caught up.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should accept a new page change once loading reflects the first one', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            // The caller's store has now caught up and reflects the in-flight request.
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            // The caller's store has settled -- the local guard must have been released by the
+            // `loading` transition above, not still be holding from the first click.
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            spectator.component.onPage({ first: 40, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledTimes(2);
+        });
+
         it('should take the paginator out of play while loading', () => {
             spectator.setInput('items', manyItems);
             spectator.setInput('totalItems', 100);
