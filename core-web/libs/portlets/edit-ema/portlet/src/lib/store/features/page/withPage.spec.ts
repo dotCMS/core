@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -45,7 +45,7 @@ describe('withPage', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+                getFeatureFlags: vi.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DotPageApiService,
@@ -53,7 +53,7 @@ describe('withPage', () => {
                     get: () => of({}),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             }
         ]

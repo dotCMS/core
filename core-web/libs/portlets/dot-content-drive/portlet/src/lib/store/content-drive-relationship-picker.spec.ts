@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -33,16 +34,16 @@ const contentlet = (identifier: string): DotCMSContentlet =>
 describe('provideContentDriveRelationshipPicker', () => {
     let spectator: SpectatorService<unknown>;
     let picker: DotRelationshipPicker;
-    let dialogService: jest.Mocked<Pick<DialogService, 'open'>>;
+    let dialogService: Mocked<Pick<DialogService, 'open'>>;
 
     const createService = createServiceFactory({
         service: class {},
-        providers: [mockProvider(DialogService, { open: jest.fn() })]
+        providers: [mockProvider(DialogService, { open: vi.fn() })]
     });
 
     const setup = () => {
         spectator = createService({ providers: [provideContentDriveRelationshipPicker()] });
-        dialogService = spectator.inject(DialogService) as unknown as jest.Mocked<
+        dialogService = spectator.inject(DialogService) as unknown as Mocked<
             Pick<DialogService, 'open'>
         >;
         picker = spectator.inject(DOT_RELATIONSHIP_PICKER);
@@ -50,7 +51,7 @@ describe('provideContentDriveRelationshipPicker', () => {
 
     beforeEach(() => setup());
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should open the same content-selection dialog Content Drive always opened', () => {
         dialogService.open.mockReturnValue({ onClose: of(undefined) } as never);

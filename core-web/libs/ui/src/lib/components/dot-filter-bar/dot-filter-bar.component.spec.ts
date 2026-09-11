@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal, WritableSignal } from '@angular/core';
 
@@ -11,7 +12,7 @@ import { DOT_FILTER_FACADE, DotFilterFacade } from './filter-facade.token';
 describe('DotFilterBarComponent', () => {
     let spectator: SpectatorHost<DotFilterBarComponent>;
     let hasNonDefaultFilters: WritableSignal<boolean>;
-    const clearFilters = jest.fn();
+    const clearFilters = vi.fn();
 
     const createHost = createHostFactory({
         component: DotFilterBarComponent,
@@ -29,9 +30,9 @@ describe('DotFilterBarComponent', () => {
         hasNonDefaultFilters = signal(nonDefault);
 
         const facade: DotFilterFacade = {
-            getFilterValue: jest.fn(() => undefined),
-            patchFilters: jest.fn(),
-            removeFilter: jest.fn(),
+            getFilterValue: vi.fn(() => undefined),
+            patchFilters: vi.fn(),
+            removeFilter: vi.fn(),
             clearFilters,
             $hasNonDefaultFilters: hasNonDefaultFilters
         };
@@ -42,7 +43,7 @@ describe('DotFilterBarComponent', () => {
         spectator.detectChanges();
     };
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     describe('projection', () => {
         it('should render whatever chips it is given', () => {

@@ -105,6 +105,14 @@ jobs:
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
 
+      # resolve-sdk-pin runs on plain `node` with no dependencies and no build step, so
+      # this adds a pinned runtime and nothing else - the release path gains no npm install
+      # that could fail on a registry hiccup.
+      - name: 'Setup Node'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: 'core-web/.nvmrc'
+
       - name: Set Version Variables
         id: set-version
         env:
@@ -129,6 +137,38 @@ jobs:
           is_latest=false
           [[ ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts_v[0-9]{1,2}$ ]] && is_lts=true
           [[ ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}-[0-9]{1,2}$ ]] && is_latest=true
+
+          # A PATCH on an existing LTS line must be cut from that line, never from main.
+          # `release_commit` defaults to HEAD of the checked-out default branch, so leaving
+          # it blank on a patch silently produces a "release-<date>_lts_v<n>" branch built
+          # from main — main's code shipped under an LTS version. Nothing downstream can
+          # detect that, so refuse here.
+          #
+          # Only patches are guarded: the FIRST cut of a line legitimately branches off
+          # main, and is identified by there being no tag for the line yet (the counter is
+          # not a reliable signal - existing lines start at _v0 or _v1 inconsistently).
+          if [[ "${is_lts}" == "true" && -z "${RELEASE_COMMIT}" ]]; then
+            lts_line="${release_version%_lts_v*}"
+
+            # The fetch is checked on its own, not folded into a pipeline. This step declares
+            # no `shell:`, so it runs under the runner default `bash -e` WITHOUT pipefail: a
+            # pipeline's status is its last command's, so `ls-remote | wc -l | tr` reports
+            # success even when ls-remote dies. A DNS blip or rate limit would then yield an
+            # empty list, prior_tags="0", and the guard would conclude "first cut" and let a
+            # patch be branched from main -- the exact outcome it exists to prevent, and by
+            # the comment above the only place it can be caught.
+            if ! prior_tag_refs=$(git ls-remote --tags https://github.com/dotCMS/core.git "v${lts_line}_lts_v*"); then
+              echo "::error::Could not reach the remote to check for prior ${lts_line} LTS tags. Refusing to cut ${release_version} rather than risk branching a patch from main."
+              exit 1
+            fi
+            prior_tags=$(printf '%s' "${prior_tag_refs}" | grep -c . || true)
+
+            if [[ "${prior_tags}" != "0" ]]; then
+              echo "::error::${release_version} is a patch on the existing ${lts_line} LTS line (${prior_tags} prior tag(s)), but no release_commit was supplied. It would be cut from main. Re-dispatch with release_commit set to the commit on the ${lts_line} LTS lineage."
+              exit 1
+            fi
+            echo "No existing tag for the ${lts_line} LTS line - treating this as the first cut, branching from the default branch."
+          fi
 
           {
             echo "release_version=${release_version}"
@@ -239,6 +279,68 @@ jobs:
 
             echo "MinSdkVersion.VALUE bumped to ${release_version} on the release branch"
             git add "${MIN_SDK_FILE}"
+          fi
+
+          # Resolve WHICH version to pin. The decision lives in
+          # .github/scripts/resolve-sdk-pin - a dependency-free, unit-tested module - rather
+          # than inline here. As shell it could only ever be exercised by cutting a real
+          # release, and three separate defects shipped or nearly shipped that way: an
+          # existence check that aborted every normal release, an npm-`latest` lookup that
+          # gave a back-dated LTS line an SDK newer than its own server, and an LTS-shaped
+          # string that is not valid semver. Each is now a unit test.
+          #
+          # It decides from what this branch is being cut FROM, never by parsing the release
+          # version string:
+          #   already exact  -> an existing LTS lineage, already frozen at a compatible SDK.
+          #                     Left alone; moving a line is a reviewed commit, not this step.
+          #   floating, non-LTS -> the version being released (ADR-0019 date lockstep).
+          #   floating, LTS  -> the newest SDK published ON OR BEFORE this branch's code date.
+          #                     LTS releases publish no SDK of their own, and npm's `latest`
+          #                     would be ahead of the server for a line cut from older code.
+          #
+          # It refuses (exit 1) rather than guess: a non-exact pin, a version missing from
+          # npm, a pin below the server's own MinSdkVersion floor, or an LTS line predating
+          # date-lockstep publishing all fail the release here instead of shipping an example
+          # app nobody can install.
+          # Checked explicitly rather than leaning on the runner's default `bash -e`: this
+          # is the gate that stops a release from shipping an uninstallable example app, and
+          # it must not quietly become advisory if the shell options ever change.
+          if ! pin_result=$(node .github/scripts/resolve-sdk-pin/cli.js \
+            --release-version "${release_version}" \
+            --is-lts "${{ steps.set-version.outputs.is_lts }}" \
+            --commit-date "$(git log -1 --format=%cI "${release_commit}")" \
+            --examples-dir examples \
+            --min-sdk-file dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java); then
+            echo "::error::resolve-sdk-pin refused to resolve a pin for ${release_version} (see the error above). Refusing to cut the release rather than ship example apps that cannot be installed."
+            exit 1
+          fi
+          echo "resolve-sdk-pin: ${pin_result}"
+
+          sdk_pin=$(echo "${pin_result}" | jq -r '.version // ""')
+
+          if [[ -n "${sdk_pin}" ]]; then
+            while IFS= read -r pkg_json; do
+              # jq reprints the whole document, so match each manifest's existing
+              # indentation. Without this, a pin that changes four values lands as a
+              # ~120-line whole-file whitespace diff in the release commit: examples/ mixes
+              # 2-space (angular, angular-ssr, astro) and 4-space (nextjs,
+              # nextjs-experiments, vuejs) manifests, so no fixed --indent leaves them all
+              # alone.
+              if awk 'NR>1 && /^\t/ { found = 1; exit } END { exit !found }' "${pkg_json}"; then
+                indent_flag=(--tab)
+              else
+                indent=$(awk 'NR>1 && /^ +/ { match($0, /^ +/); print RLENGTH; exit }' "${pkg_json}")
+                # jq rejects --indent above 7; fall back to 2 for anything unexpected.
+                [[ "${indent}" =~ ^[1-7]$ ]] || indent=2
+                indent_flag=(--indent "${indent}")
+              fi
+
+              while IFS= read -r dep; do
+                jq "${indent_flag[@]}" --arg dep "${dep}" --arg v "${sdk_pin}" \
+                  '.dependencies[$dep] = $v' "${pkg_json}" > tmp.$$.json && mv tmp.$$.json "${pkg_json}"
+                echo "  ↳ ${pkg_json}: dependencies[\"${dep}\"] -> ${sdk_pin}"
+              done < <(jq -r '.dependencies // {} | keys[] | select(startswith("@dotcms/"))' "${pkg_json}")
+            done < <(find examples -maxdepth 2 -name package.json -not -path "*/node_modules/*" 2>/dev/null)
           fi
 
           git status

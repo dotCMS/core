@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -83,15 +89,15 @@ describe('DotToolbarComponent', () => {
             provideHttpClientTesting(),
             { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockImplementation(() => of(true))
+                getFeatureFlag: vi.fn().mockImplementation(() => of(true))
             }),
             mockProvider(GlobalStore, {
                 siteDetails: signal(siteMock),
-                switchCurrentSite: jest.fn(),
-                switchSiteEvent$: jest.fn().mockReturnValue(new Subject())
+                switchCurrentSite: vi.fn(),
+                switchSiteEvent$: vi.fn().mockReturnValue(new Subject())
             }),
             mockProvider(DotAppLifecycleEffect),
-            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
+            mockProvider(DotEventsSocket, { on: vi.fn().mockReturnValue(new Subject()) }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             {
                 provide: ActivatedRoute,
@@ -119,9 +125,9 @@ describe('DotToolbarComponent', () => {
         dotPropertiesService = spectator.inject(DotPropertiesService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
         globalStore = spectator.inject(GlobalStore);
-        jest.spyOn(spectator.component, 'siteChange');
-        jest.spyOn(iframeOverlayService, 'show');
-        jest.spyOn(iframeOverlayService, 'hide');
+        vi.spyOn(spectator.component, 'siteChange');
+        vi.spyOn(iframeOverlayService, 'show');
+        vi.spyOn(iframeOverlayService, 'hide');
         dotPropertiesService.getFeatureFlag.mockReturnValue(of(true));
     });
 
@@ -154,7 +160,7 @@ describe('DotToolbarComponent', () => {
 
     describe('siteChange()', () => {
         it(`should call switchCurrentSite and NOT navigate when not on edit page`, () => {
-            jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
+            vi.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
             spectator.detectChanges();
             spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
 
@@ -164,7 +170,7 @@ describe('DotToolbarComponent', () => {
         });
 
         it(`should call switchCurrentSite when on edit page (navigation handled by DotAppLifecycleEffect)`, () => {
-            jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
+            vi.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
             spectator.detectChanges();
             spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
 

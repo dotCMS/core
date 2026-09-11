@@ -1,5 +1,6 @@
+import { httpGet, httpPost } from '@dotcms/http';
+
 import { getUVEConfigValue } from '../utils';
-import { httpGet, httpPost } from '../utils/http';
 
 /**
  * Single owner of Universal Visual Editor configuration.

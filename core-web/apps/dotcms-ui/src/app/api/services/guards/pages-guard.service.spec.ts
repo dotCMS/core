@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -32,7 +33,7 @@ describe('PagesGuardService', () => {
 
     it('should allow access to Pages Portlets', () => {
         let result: boolean;
-        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(true));
+        vi.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(true));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
@@ -42,7 +43,7 @@ describe('PagesGuardService', () => {
 
     it('should deny access to Pages Portlets', () => {
         let result: boolean;
-        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
+        vi.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
         expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
             FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE

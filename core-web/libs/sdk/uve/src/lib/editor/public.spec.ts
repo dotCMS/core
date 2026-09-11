@@ -1,3 +1,5 @@
+import { MockInstance, vi } from 'vitest';
+
 import {
     Contentlet,
     DotCMSUVEAction,
@@ -22,31 +24,31 @@ interface TestContentlet extends DotCMSBasicContentlet {
 }
 
 describe('UVE Public Functions', () => {
-    let postMessageSpy: jest.SpyInstance;
+    let postMessageSpy: MockInstance;
 
     beforeEach(() => {
         // Mock window.parent.postMessage
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage');
+        postMessageSpy = vi.spyOn(window.parent, 'postMessage');
 
         // Mock all utility functions
-        jest.spyOn(utils, 'scrollHandler').mockImplementation(() => ({
-            destroyScrollHandler: jest.fn()
+        vi.spyOn(utils, 'scrollHandler').mockImplementation(() => ({
+            destroyScrollHandler: vi.fn()
         }));
-        jest.spyOn(utils, 'addClassToEmptyContentlets').mockImplementation();
-        jest.spyOn(utils, 'listenBlockEditorInlineEvent').mockImplementation(() => ({
-            destroyListenBlockEditorInlineEvent: jest.fn()
+        vi.spyOn(utils, 'addClassToEmptyContentlets').mockImplementation(() => undefined);
+        vi.spyOn(utils, 'listenBlockEditorInlineEvent').mockImplementation(() => ({
+            destroyListenBlockEditorInlineEvent: vi.fn()
         }));
-        jest.spyOn(utils, 'setClientIsReady').mockImplementation();
-        jest.spyOn(utils, 'registerUVEEvents').mockReturnValue({
+        vi.spyOn(utils, 'setClientIsReady').mockImplementation(() => undefined);
+        vi.spyOn(utils, 'registerUVEEvents').mockReturnValue({
             subscriptions: [
-                { unsubscribe: jest.fn(), event: 'test1' },
-                { unsubscribe: jest.fn(), event: 'test2' }
+                { unsubscribe: vi.fn(), event: 'test1' },
+                { unsubscribe: vi.fn(), event: 'test2' }
             ]
         });
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('sendMessageToUVE', () => {
@@ -133,20 +135,20 @@ describe('UVE Public Functions', () => {
         });
 
         it('should call setClientIsReady with empty config when no config is provided', () => {
-            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
+            const setClientIsReadySpy = vi.spyOn(utils, 'setClientIsReady');
             initUVE();
             expect(setClientIsReadySpy).toHaveBeenCalledWith({});
         });
 
         it('should call setClientIsReady with graphql config when provided', () => {
-            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
+            const setClientIsReadySpy = vi.spyOn(utils, 'setClientIsReady');
             const config = { graphql: { query: '{ test }', variables: {} } } as DotCMSPageResponse;
             initUVE(config);
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
         });
 
         it('should call setClientIsReady with params config when provided', () => {
-            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
+            const setClientIsReadySpy = vi.spyOn(utils, 'setClientIsReady');
             const config = { params: { depth: '1' } } as unknown as DotCMSPageResponse;
             initUVE(config);
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
@@ -154,24 +156,24 @@ describe('UVE Public Functions', () => {
 
         it('should return destroy function that unsubscribes all subscriptions', () => {
             // Create spy functions for unsubscribe
-            const unsubscribeSpy1 = jest.fn();
-            const unsubscribeSpy2 = jest.fn();
-            const destroyScrollHandler = jest.fn();
-            const destroyListenBlockEditorInlineEvent = jest.fn();
+            const unsubscribeSpy1 = vi.fn();
+            const unsubscribeSpy2 = vi.fn();
+            const destroyScrollHandler = vi.fn();
+            const destroyListenBlockEditorInlineEvent = vi.fn();
 
             // Mock registerUVEEvents with these spy functions
-            jest.spyOn(utils, 'registerUVEEvents').mockReturnValue({
+            vi.spyOn(utils, 'registerUVEEvents').mockReturnValue({
                 subscriptions: [
                     { unsubscribe: unsubscribeSpy1, event: 'test1' },
                     { unsubscribe: unsubscribeSpy2, event: 'test2' }
                 ]
             });
 
-            jest.spyOn(utils, 'scrollHandler').mockReturnValue({
+            vi.spyOn(utils, 'scrollHandler').mockReturnValue({
                 destroyScrollHandler
             });
 
-            jest.spyOn(utils, 'listenBlockEditorInlineEvent').mockReturnValue({
+            vi.spyOn(utils, 'listenBlockEditorInlineEvent').mockReturnValue({
                 destroyListenBlockEditorInlineEvent
             });
 
@@ -186,7 +188,7 @@ describe('UVE Public Functions', () => {
         });
 
         it('should handle empty subscriptions array', () => {
-            jest.spyOn(utils, 'registerUVEEvents').mockReturnValue({ subscriptions: [] });
+            vi.spyOn(utils, 'registerUVEEvents').mockReturnValue({ subscriptions: [] });
 
             const { destroyUVESubscriptions } = initUVE();
 
@@ -221,10 +223,10 @@ describe('UVE Public Functions', () => {
     });
 
     describe('enableBlockEditorInline', () => {
-        let consoleErrorSpy: jest.SpyInstance;
+        let consoleErrorSpy: MockInstance;
 
         beforeEach(() => {
-            consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+            consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         });
 
         afterEach(() => {

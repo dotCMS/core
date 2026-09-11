@@ -1,7 +1,8 @@
-import { Spectator, createComponentFactory, SpyObject } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, SpyObject } from '@openng/spectator/vitest';
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { Editor } from 'tinymce';
+import { MockInstance, Mocked, vi } from 'vitest';
 
 import { DebugElement, ElementRef, Renderer2, SecurityContext } from '@angular/core';
 import { By, DomSanitizer } from '@angular/platform-browser';
@@ -18,18 +19,18 @@ import { dotcmsContentletMock } from '../../utils/testing.utils';
 const { sendMessageToUVE } = dotCMSUVE;
 
 // Mock @dotcms/client module
-jest.mock('@dotcms/uve', () => ({
-    ...jest.requireActual('@dotcms/uve'),
-    getUVEState: jest.fn().mockImplementation(() => {
+vi.mock('@dotcms/uve', async () => ({
+    ...(await vi.importActual('@dotcms/uve')),
+    getUVEState: vi.fn().mockImplementation(() => {
         return {
             mode: UVE_MODE.EDIT,
             dotCMSHost: 'http://localhost:8080'
         };
     }),
-    sendMessageToUVE: jest.fn()
+    sendMessageToUVE: vi.fn()
 }));
 
-const mockedDotcmsClient = dotCMSUVE as jest.Mocked<typeof dotCMSUVE>;
+const mockedDotcmsClient = dotCMSUVE as Mocked<typeof dotCMSUVE>;
 
 const BASE_UVE_STATE = {
     mode: UVE_MODE.EDIT,
@@ -42,15 +43,15 @@ const BASE_UVE_STATE = {
 };
 
 const TINYMCE_EDITOR_MOCK: unknown = {
-    focus: jest.fn(),
+    focus: vi.fn(),
     getContent: (_data: unknown) => '',
     isDirty: () => false,
     hasFocus: () => false,
-    setContent: jest.fn()
+    setContent: vi.fn()
 };
 
 const TINYMCE_EDITOR_PROPERTY_MOCK = {
-    get: jest.fn(() => TINYMCE_EDITOR_MOCK as Editor)
+    get: vi.fn(() => TINYMCE_EDITOR_MOCK as Editor)
 };
 
 const mockEditorFn = (spectator: Spectator<DotCMSEditableTextComponent<DotCMSBasicContentlet>>) => {
@@ -108,7 +109,7 @@ describe('DotCMSEditableTextComponent', () => {
         let sanitizer: SpyObject<DomSanitizer>;
 
         beforeEach(() => {
-            jest.spyOn(mockedDotcmsClient, 'getUVEState').mockReturnValue(undefined);
+            vi.spyOn(mockedDotcmsClient, 'getUVEState').mockReturnValue(undefined);
             renderer2 = spectator.inject(Renderer2, true);
             elementRef = spectator.inject(ElementRef, true);
             sanitizer = spectator.inject(DomSanitizer, true);
@@ -117,11 +118,11 @@ describe('DotCMSEditableTextComponent', () => {
         describe('Template', () => {
             it('Should insert safe HTML content using innerHTML', () => {
                 const safeHtml = dotcmsContentletMock.title + 'Safe';
-                const spyRender2 = jest.spyOn(renderer2, 'setProperty');
-                const spybypassSecurityTrustHtml = jest
+                const spyRender2 = vi.spyOn(renderer2, 'setProperty');
+                const spybypassSecurityTrustHtml = vi
                     .spyOn(sanitizer, 'bypassSecurityTrustHtml')
                     .mockReturnValue(safeHtml);
-                const spySanitze = jest.spyOn(sanitizer, 'sanitize').mockReturnValue(safeHtml);
+                const spySanitze = vi.spyOn(sanitizer, 'sanitize').mockReturnValue(safeHtml);
 
                 spectator.detectChanges();
 
@@ -145,7 +146,7 @@ describe('DotCMSEditableTextComponent', () => {
 
     describe('Inside Editor', () => {
         beforeEach(() => {
-            jest.spyOn(mockedDotcmsClient, 'getUVEState').mockReturnValue(BASE_UVE_STATE);
+            vi.spyOn(mockedDotcmsClient, 'getUVEState').mockReturnValue(BASE_UVE_STATE);
         });
 
         it('should set content with the right format when the contentlet changes', () => {
@@ -153,7 +154,7 @@ describe('DotCMSEditableTextComponent', () => {
             mockEditorFn(spectator);
 
             const editorComponent = spectator.query(EditorComponent) as EditorComponent;
-            const spySetContent = jest.spyOn(editorComponent.editor, 'setContent');
+            const spySetContent = vi.spyOn(editorComponent.editor, 'setContent');
 
             spectator.setInput('contentlet', {
                 ...dotcmsContentletMock,
@@ -206,7 +207,7 @@ describe('DotCMSEditableTextComponent', () => {
             });
 
             describe('format', () => {
-                let getContentSpy: jest.SpyInstance;
+                let getContentSpy: MockInstance;
                 let editorDebugElement: DebugElement;
                 let customEvent: {
                     event: FocusEvent;
@@ -218,7 +219,7 @@ describe('DotCMSEditableTextComponent', () => {
                     mockEditorFn(spectator);
 
                     const editor = spectator.component.editorComponent.editor;
-                    getContentSpy = jest.spyOn(editor, 'getContent');
+                    getContentSpy = vi.spyOn(editor, 'getContent');
                     customEvent = {
                         event: new FocusEvent('focusout'),
                         editor: TINYMCE_EDITOR_MOCK
@@ -256,9 +257,9 @@ describe('DotCMSEditableTextComponent', () => {
             });
 
             describe('Window Message', () => {
-                let focusSpy: jest.SpyInstance;
+                let focusSpy: MockInstance;
                 beforeEach(() => {
-                    focusSpy = jest.spyOn(spectator.component.editorComponent.editor, 'focus');
+                    focusSpy = vi.spyOn(spectator.component.editorComponent.editor, 'focus');
                 });
 
                 it("should focus on the editor when the message is 'uve-copy-contentlet-inline-editing-success' and the field name matches", () => {
@@ -327,8 +328,8 @@ describe('DotCMSEditableTextComponent', () => {
                         By.directive(EditorComponent)
                     );
 
-                    jest.spyOn(event, 'stopPropagation');
-                    jest.spyOn(event, 'preventDefault');
+                    vi.spyOn(event, 'stopPropagation');
+                    vi.spyOn(event, 'preventDefault');
                 });
 
                 it('should postMessage the UVE if the content is in multiple pages', () => {
@@ -363,7 +364,7 @@ describe('DotCMSEditableTextComponent', () => {
                 });
 
                 it('should not postMessage the UVE if the editor is already focus', () => {
-                    const hasFocusSpy = jest
+                    const hasFocusSpy = vi
                         .spyOn(spectator.component.editorComponent.editor, 'hasFocus')
                         .mockReturnValue(true);
 
@@ -377,8 +378,8 @@ describe('DotCMSEditableTextComponent', () => {
             });
 
             describe('focusout', () => {
-                let isDirtySpy: jest.SpyInstance;
-                let getContentSpy: jest.SpyInstance;
+                let isDirtySpy: MockInstance;
+                let getContentSpy: MockInstance;
                 let event: FocusEvent;
                 let editorDebugElement: DebugElement;
                 let customEvent: {
@@ -388,8 +389,8 @@ describe('DotCMSEditableTextComponent', () => {
 
                 beforeEach(() => {
                     const editor = spectator.component.editorComponent.editor;
-                    isDirtySpy = jest.spyOn(editor, 'isDirty');
-                    getContentSpy = jest.spyOn(editor, 'getContent');
+                    isDirtySpy = vi.spyOn(editor, 'isDirty');
+                    getContentSpy = vi.spyOn(editor, 'getContent');
 
                     event = new FocusEvent('focusout');
                     customEvent = { event, editor: TINYMCE_EDITOR_MOCK };
@@ -451,5 +452,5 @@ describe('DotCMSEditableTextComponent', () => {
         });
     });
 
-    afterEach(() => jest.clearAllMocks()); // Clear all mocks to avoid side effects from other tests
+    afterEach(() => vi.clearAllMocks()); // Clear all mocks to avoid side effects from other tests
 });

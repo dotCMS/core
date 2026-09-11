@@ -1,5 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -124,7 +125,7 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
     });
 
     it('should register Velocity language when Monaco is loaded', () => {
-        const registerSpy = jest.spyOn(component, 'registerVelocityLanguage');
+        const registerSpy = vi.spyOn(component, 'registerVelocityLanguage');
         spectator.detectChanges();
         expect(registerSpy).toHaveBeenCalled();
     });

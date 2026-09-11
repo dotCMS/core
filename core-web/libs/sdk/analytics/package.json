@@ -24,11 +24,11 @@
         "@analytics/queue-utils": "^0.1.3",
         "@analytics/router-utils": "^0.1.1",
         "@analytics/storage-utils": "^0.4.0",
-        "@dotcms/uve": "latest",
         "analytics": "^0.8.0"
     },
     "peerDependencies": {
-        "react": "^18 || ^19"
+        "react": "^18 || ^19",
+        "@dotcms/uve": "0.0.0"
     },
     "devDependencies": {
         "@dotcms/types": "latest",

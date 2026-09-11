@@ -5,8 +5,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -323,7 +324,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     });
 
     it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', async () => {
-        jest.spyOn(store, 'setSelectedGoal');
+        vi.spyOn(store, 'setSelectedGoal');
         const expectedGoal = {
             experimentId: EXPERIMENT_MOCK.id,
             goals: {
@@ -393,7 +394,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
 
         const sidebar = spectator.query(Drawer);
-        jest.spyOn(spectator.component, 'closeSidebar');
+        vi.spyOn(spectator.component, 'closeSidebar');
 
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,
