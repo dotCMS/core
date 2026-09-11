@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -16,14 +17,14 @@ describe('DotStatusFilterComponent', () => {
 
     /** A signal, so the component's computed sees changes. */
     const storedValue = signal<string | string[] | undefined>(undefined);
-    const patchFilters = jest.fn();
-    const removeFilter = jest.fn();
+    const patchFilters = vi.fn();
+    const removeFilter = vi.fn();
 
     const facade: DotFilterFacade = {
-        getFilterValue: jest.fn(() => storedValue()),
+        getFilterValue: vi.fn(() => storedValue()),
         patchFilters,
         removeFilter,
-        clearFilters: jest.fn(),
+        clearFilters: vi.fn(),
         $hasNonDefaultFilters: signal(false)
     };
 
@@ -58,7 +59,7 @@ describe('DotStatusFilterComponent', () => {
         storedValue.set(undefined);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should identify itself for the canonical order check', () => {
         spectator = createComponent();
@@ -260,7 +261,7 @@ describe('DotStatusFilterComponent', () => {
                     return next;
                 });
             },
-            clearFilters: jest.fn(),
+            clearFilters: vi.fn(),
             $hasNonDefaultFilters: signal(false)
         });
 

@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -177,7 +178,7 @@ describe('DotAiSettingsCardComponent', () => {
     describe('changed output', () => {
         it('emits when a common field changes', () => {
             setup();
-            const changed = jest.fn();
+            const changed = vi.fn();
             spectator.output('changed').subscribe(changed);
 
             spectator.component.form.patchValue({ rolePrompt: 'new' });
@@ -187,7 +188,7 @@ describe('DotAiSettingsCardComponent', () => {
 
         it('emits when an advanced field changes', () => {
             setup();
-            const changed = jest.fn();
+            const changed = vi.fn();
             spectator.output('changed').subscribe(changed);
 
             spectator.component.advancedForm.patchValue({ debugLogging: true });
@@ -202,7 +203,7 @@ describe('DotAiSettingsCardComponent', () => {
         // stayed silent through is actually live.
         it("stays silent while hydrating, then reports the user's own edits", () => {
             spectator = createComponent({ props: { initialValue: { rolePrompt: 'saved' } } });
-            const changed = jest.fn();
+            const changed = vi.fn();
             spectator.output('changed').subscribe(changed);
 
             spectator.detectChanges();

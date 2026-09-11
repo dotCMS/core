@@ -1,4 +1,5 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
@@ -82,7 +83,7 @@ describe('TemplateBuilderSidebarComponent', () => {
     });
 
     it('should emit widthChange when a width is selected in the dropdown', () => {
-        const sidebarUpdateMock = jest.spyOn(store, 'updateSidebarWidth');
+        const sidebarUpdateMock = vi.spyOn(store, 'updateSidebarWidth');
         const dropdown = spectator.query(byTestId('select-sidebar-width'));
 
         spectator.dispatchFakeEvent(dropdown, 'onChange');
@@ -95,7 +96,7 @@ describe('TemplateBuilderSidebarComponent', () => {
     });
 
     it('should trigger addSidebarContainer when box component emits addContainer', () => {
-        const sidebarAddContainerMock = jest.spyOn(store, 'addSidebarContainer');
+        const sidebarAddContainerMock = vi.spyOn(store, 'addSidebarContainer');
 
         boxComponent.addContainer.emit();
 
@@ -103,7 +104,7 @@ describe('TemplateBuilderSidebarComponent', () => {
     });
 
     it('should trigger deleteSidebarContainer when box component emits deleteContainer', () => {
-        const sidebarAddContainerMock = jest.spyOn(store, 'deleteSidebarContainer');
+        const sidebarAddContainerMock = vi.spyOn(store, 'deleteSidebarContainer');
 
         boxComponent.deleteContainer.emit();
 

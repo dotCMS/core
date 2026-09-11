@@ -1,14 +1,13 @@
-import { afterEach, describe, expect, it, jest } from '@jest/globals';
+import { vi } from 'vitest';
 
 import { ZIndexUtils } from 'primeng/utils';
 
 import { hasOverlayAbove } from './overlay';
 
 describe('hasOverlayAbove', () => {
-    afterEach(() => jest.restoreAllMocks());
+    afterEach(() => vi.restoreAllMocks());
 
-    const stackTop = (value: number) =>
-        jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(value);
+    const stackTop = (value: number) => vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(value);
 
     const elementAt = (zIndex: number) => {
         const element = document.createElement('div');

@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
@@ -97,8 +98,8 @@ describe('DotUsersRolesTabComponent', () => {
             // fetches it and nothing else — every other node is a known leaf
             // and gets pruned.
             mockProvider(DotRolesService, {
-                getRoots: jest.fn().mockReturnValue(of(ROLE_ROOTS)),
-                getById: jest.fn().mockImplementation((id: string) =>
+                getRoots: vi.fn().mockReturnValue(of(ROLE_ROOTS)),
+                getById: vi.fn().mockImplementation((id: string) =>
                     of(
                         id === '2'
                             ? fakeRole({
@@ -115,7 +116,7 @@ describe('DotUsersRolesTabComponent', () => {
                     )
                 )
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
@@ -252,9 +253,7 @@ describe('DotUsersRolesTabComponent', () => {
     describe('service error path', () => {
         it('surfaces the error via httpErrorManager and leaves the panel empty', () => {
             const service = spectator.inject(DotRolesService, true);
-            (service.getRoots as jest.Mock).mockReturnValueOnce(
-                throwError(() => new Error('boom'))
-            );
+            (service.getRoots as Mock).mockReturnValueOnce(throwError(() => new Error('boom')));
 
             const spec2 = createComponent();
             spec2.detectChanges();

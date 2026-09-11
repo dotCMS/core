@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { expect } from '@jest/globals';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { expect, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -50,10 +50,10 @@ describe('WorkflowFeature', () => {
 
     // Post-save navigation is delegated to the EditContentHost port.
     const mockHost = {
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const createStore = createServiceFactory({

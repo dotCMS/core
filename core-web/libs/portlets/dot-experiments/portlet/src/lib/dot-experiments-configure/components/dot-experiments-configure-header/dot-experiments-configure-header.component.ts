@@ -1,7 +1,7 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -14,14 +14,16 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { EXPERIMENTS_URL, STATUS_LABEL_KEYS, STATUS_SEVERITIES } from '../../../shared/constants';
+import {
+    EXPERIMENTS_URL,
+    NEW_EXPERIMENT_TITLE_KEY,
+    STATUS_LABEL_KEYS,
+    STATUS_SEVERITIES
+} from '../../../shared/constants';
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-import { resultsCommandsOf } from '../../../util/dot-experiments-list.util';
-
-/** Title shown while the draft has no name yet. */
-const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
+import { listReturnParams, resultsCommandsOf } from '../../../util/dot-experiments-list.util';
 
 /** Subline shown while no page is selected. */
 const NO_PAGE_SELECTED_KEY = 'experiments.configure.header.no-page';
@@ -168,6 +170,7 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly $addToBundleAssetId = signal<string | null>(null);
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
+    readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -178,18 +181,32 @@ export class DotExperimentsConfigureHeaderComponent {
      *
      * Only reachable once the experiment exists — `$showResults()` already gates on the allowed
      * actions, which never include results for a draft that has not been created yet.
+     *
+     * Carries the page narrowing across, for the same reason `onBackToList` reads it off the
+     * address: Results has its own back button, and arriving there without `pageId` would send it
+     * to the site-wide list instead of the one the editor came from.
      */
     onViewResults(): void {
         const experimentId = this.store.experiment()?.id;
 
         if (experimentId) {
-            this.#router.navigate(resultsCommandsOf(experimentId));
+            this.#router.navigate(resultsCommandsOf(experimentId), {
+                queryParams: listReturnParams(this.#route.snapshot.queryParams)
+            });
         }
     }
 
-    /** Leaves the Configure screen for the list. */
+    /**
+     * Leaves the Configure screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * The narrowing is read off the address rather than held from entry: creating the draft swaps
+     * `/experiments/new` for the experiment's own URL, and this button has to answer the same way
+     * on either side of that swap.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#router.navigate([EXPERIMENTS_URL], {
+            queryParams: listReturnParams(this.#route.snapshot.queryParams)
+        });
     }
 
     /**
