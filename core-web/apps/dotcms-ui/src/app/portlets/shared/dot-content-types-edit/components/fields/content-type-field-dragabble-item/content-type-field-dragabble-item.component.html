@@ -1,13 +1,13 @@
-<i class="material-symbols-outlined text-gray-400 text-xl ml-1">drag_indicator</i>
+<i class="material-symbols-outlined ml-1 text-xl text-gray-400">drag_indicator</i>
 
 <div
-    class="h-7 min-w-12 min-h-12 bg-(--color-palette-secondary-200) flex justify-center items-center rounded-full ml-1">
-    <i class="material-symbols-outlined text-(--color-palette-secondary-500) text-lg">{{ icon }}</i>
+    class="ml-1 flex h-7 min-h-12 min-w-12 items-center justify-center rounded-full bg-(--color-palette-secondary-200)">
+    <i class="material-symbols-outlined text-lg text-(--color-palette-secondary-500)">{{ icon }}</i>
 </div>
 
-<div class="flex flex-col overflow-hidden pr-1 grow gap-2 py-3">
-    <div class="h-4 flex items-center justify-between mb-1">
-        <span class="truncate text-black font-semibold text-sm block">{{ field.name }}</span>
+<div class="flex grow flex-col gap-2 overflow-hidden py-3 pr-1">
+    <div class="mb-1 flex h-4 items-center justify-between">
+        <span class="block truncate text-sm font-semibold text-black">{{ field.name }}</span>
         @if (!field.fixed) {
             <p-button
                 (click)="removeItem($event)"
@@ -19,7 +19,7 @@
                 icon="pi pi-trash" />
         }
     </div>
-    <div class="h-4 flex items-center justify-between">
+    <div class="flex h-4 items-center justify-between">
         @if (variableToShow) {
             <dot-copy-link [label]="variableToShow" [copy]="variableToShow" />
         }
@@ -40,9 +40,9 @@
             </div>
         } @else {
             <div class="flex gap-3 text-xs">
-                <p class="text-gray-900 font-bold m-0">{{ fieldTypeLabel }}</p>
+                <p class="m-0 font-bold text-gray-900">{{ fieldTypeLabel }}</p>
                 @for (field of fieldAttributesArray; track field; let index = $index) {
-                    <p class="text-gray-700 m-0">
+                    <p class="m-0 text-gray-700">
                         {{ field }}
                     </p>
                 }
@@ -57,10 +57,10 @@
     #op
     appendTo="body"
     styleClass="contentType__overlayPanel shadow-lg rounded-md border border-gray-200">
-    <div class="flex flex-col text-black p-2 min-w-50">
-        <p class="font-bold text-sm m-0">{{ fieldTypeLabel }}</p>
+    <div class="flex min-w-50 flex-col text-black">
+        <p class="m-0 text-sm font-bold">{{ fieldTypeLabel }}</p>
         @if (fieldAttributesString.length) {
-            <p class="mt-1 text-sm m-0">
+            <p class="m-0 mt-1 text-sm">
                 {{ fieldAttributesString }}
             </p>
         }

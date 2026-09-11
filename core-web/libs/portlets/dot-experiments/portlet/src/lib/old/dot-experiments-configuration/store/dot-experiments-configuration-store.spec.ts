@@ -4,8 +4,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
@@ -140,569 +141,601 @@ describe('DotExperimentsConfigurationStore', () => {
         dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
         dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        // The store pipes both of these, and a bare mockProvider returns undefined; the
+        // tests below assert only that the call happened.
+        dotExperimentsService.start.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.cancelSchedule.mockReturnValue(of(EXPERIMENT_MOCK));
     });
 
-    it('should set initial data', (done) => {
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+    it('should set initial data', () =>
+        new Promise<void>((done) => {
+            spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
-        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-        store.state$.subscribe((state) => {
-            expect(state).toEqual(EXPECTED_INITIAL_STATE);
-            done();
-        });
-    });
-
-    it('should have isLoading$ from the store', (done) => {
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
-        store.isLoading$.subscribe((data) => {
-            expect(data).toEqual(false);
-            done();
-        });
-    });
-
-    it('should update component status to the store', (done) => {
-        store.setComponentStatus(ComponentStatus.LOADED);
-        store.isLoading$.subscribe((status) => {
-            expect(status).toEqual(false);
-            done();
-        });
-    });
-
-    it('should update sidebar status(SAVING/IDLE/DONE) to the store', (done) => {
-        store.setSidebarStatus({ status: ComponentStatus.SAVING });
-        store.state$.subscribe(({ stepStatusSidebar }) => {
-            expect(stepStatusSidebar.status).toEqual(ComponentStatus.SAVING);
-            done();
-        });
-    });
-
-    it('should update open sidebar and set the experiment step (card)', (done) => {
-        store.openSidebar(ExperimentSteps.VARIANTS);
-        store.state$.subscribe(({ stepStatusSidebar }) => {
-            expect(stepStatusSidebar.experimentStep).toEqual(ExperimentSteps.VARIANTS);
-            expect(stepStatusSidebar.isOpen).toEqual(true);
-            done();
-        });
-    });
-
-    it('should update close sidebar and initialize stepStatusSidebar', (done) => {
-        store.closeSidebar();
-        store.state$.subscribe(({ stepStatusSidebar }) => {
-            expect(stepStatusSidebar.status).toEqual(ComponentStatus.IDLE);
-            expect(stepStatusSidebar.isOpen).toEqual(false);
-            expect(stepStatusSidebar.experimentStep).toEqual(null);
-            done();
-        });
-    });
-
-    it('should set Menu items visibility when and experiment if is a DRAFT and has variants and Goal defined', (done) => {
-        dotExperimentsService.getById.mockReturnValue(
-            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.DRAFT })
-        );
-
-        spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
-
-        store.vm$.subscribe(({ menuItems }) => {
-            // Start Experiment
-            expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(true);
-            expect(menuItems[MENU_ITEMS_START_INDEX].disabled).toEqual(false);
-            expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
-            done();
-        });
-    });
-
-    it('should set Menu items visibility when experiment is RUNNING', (done) => {
-        dotExperimentsService.getById.mockReturnValue(
-            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
-        );
-
-        spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
-
-        store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(true);
-            expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(true);
-            expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
-            done();
-        });
-    });
-
-    it('should set Menu items visibility when experiment SCHEDULED ', (done) => {
-        dotExperimentsService.getById.mockReturnValue(
-            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.SCHEDULED })
-        );
-
-        spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
-
-        store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(false);
-            expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(true);
-            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
-            done();
-        });
-    });
-
-    it('should execute commands of menu items', (done) => {
-        jest.spyOn(store, 'showAddToBundle');
-        dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
-
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
-
-        store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
-            // Start Experiment
-            menuItems[MENU_ITEMS_START_INDEX].command({
-                originalEvent: createFakeEvent('click')
-            });
-            expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-
-            // Push Publish
-            menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command({
-                originalEvent: createFakeEvent('click')
-            });
-            expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
-                assetIdentifier: EXPERIMENT_MOCK.id,
-                title: 'Push Publish'
-            });
-
-            // Add to Bundle
-            menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command({
-                originalEvent: createFakeEvent('click')
-            });
-            expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-
-            // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
-            done();
-        });
-    });
-
-    it('should not show Push Publish is there is no environments', (done) => {
-        dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
-
-        spectator.service.patchState({ pushPublishEnvironments: [] });
-
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
-
-        store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
-            expect(menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(false);
-
-            done();
-        });
-    });
-
-    it('should not show Push Publish and Add to Bundle is there  no EnterpriseLicense', (done) => {
-        dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
-
-        spectator.service.patchState({ hasEnterpriseLicense: false });
-
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
-
-        store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
-            expect(menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(false);
-
-            expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(false);
-
-            done();
-        });
-    });
-
-    it('should return `Schedule Experiment` when the experiment has schedule set', (done) => {
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
-
-        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-
-        store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('schedule-experiment');
-            done();
-        });
-    });
-
-    it('should return `Run Experiment` when the experiment has schedule `null` ', (done) => {
-        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_1));
-        spectator.service.loadExperiment(EXPERIMENT_MOCK_1.id);
-
-        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
-
-        store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('Start Experiment');
-            done();
-        });
-    });
-
-    it('should return `Run Experiment` when the experiment has schedule startDate/endDate `null`', (done) => {
-        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_3));
-        spectator.service.loadExperiment(EXPERIMENT_MOCK_3.id);
-
-        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_3.id);
-
-        store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('Start Experiment');
-            done();
-        });
-    });
-
-    describe('Effects', () => {
-        it('should load experiment to store', (done) => {
-            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_1));
-
-            store.loadExperiment(EXPERIMENT_MOCK_1.id);
-            expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment).toEqual(EXPERIMENT_MOCK_1);
-                done();
-            });
-        });
-
-        it('should add a variant to the store', (done) => {
-            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_1));
-            const newVariant: { experimentId: string; name: string } = {
-                name: '333',
-                experimentId: EXPERIMENT_MOCK_1.id
-            };
-
-            const expectedExperiment = {
-                ...EXPERIMENT_MOCK_1,
-                trafficProportion: {
-                    ...EXPERIMENT_MOCK_1.trafficProportion,
-                    variants: [
-                        ...EXPERIMENT_MOCK_1.trafficProportion.variants,
-                        {
-                            name: newVariant.name,
-                            id: '222',
-                            weight: 100,
-                            promoted: false
-                        }
-                    ]
-                }
-            };
-
-            dotExperimentsService.addVariant.mockReturnValue(of(expectedExperiment));
-
-            store.loadExperiment(EXPERIMENT_MOCK.id);
-            store.addVariant(newVariant);
-
-            store.state$.subscribe(({ experiment, stepStatusSidebar }) => {
-                expect(experiment).toEqual(expectedExperiment);
-                expect(stepStatusSidebar.isOpen).toEqual(false);
-                done();
-            });
-        });
-
-        it('should edit a variant name of an experiment', (done) => {
-            const variants: Variant[] = [
-                {
-                    id: '111',
-                    name: DEFAULT_VARIANT_NAME,
-                    weight: 50,
-                    url: 'url',
-                    promoted: false
-                },
-                {
-                    id: '222',
-                    name: 'name to edit',
-                    weight: 50,
-                    url: 'url',
-                    promoted: false
-                }
-            ];
-            const variantEdited: Variant[] = [
-                {
-                    id: '111',
-                    name: DEFAULT_VARIANT_NAME,
-                    weight: 50,
-                    url: 'url',
-                    promoted: false
-                },
-                {
-                    id: '222',
-                    name: 'new name',
-                    weight: 50,
-                    url: 'url',
-                    promoted: false
-                }
-            ];
-
-            dotExperimentsService.getById.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK,
-                    trafficProportion: {
-                        ...EXPERIMENT_MOCK.trafficProportion,
-                        variants
-                    }
-                })
-            );
-            dotExperimentsService.editVariant.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK,
-                    trafficProportion: {
-                        ...EXPERIMENT_MOCK.trafficProportion,
-                        variants: variantEdited
-                    }
-                })
-            );
-
-            store.loadExperiment(EXPERIMENT_MOCK.id);
-
-            store.editVariant({
-                experimentId: EXPERIMENT_MOCK.id,
-                data: { id: variants[1].id, name: 'new name' }
-            });
-
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion.variants[1].name).toEqual(
-                    variantEdited[1].name
-                );
-                done();
-            });
-        });
-
-        it('should edit a description of an experiment', (done) => {
-            const newDescription = 'new description';
-
-            dotExperimentsService.setDescription.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK,
-                    description: newDescription
-                })
-            );
-
-            store.loadExperiment(EXPERIMENT_MOCK.id);
-
-            store.setDescription({
-                experiment: EXPERIMENT_MOCK,
-                data: { description: newDescription }
-            });
-
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment.description).toEqual(newDescription);
-                done();
-            });
-        });
-
-        it('should delete a variant from an experiment', (done) => {
-            const variants: Variant[] = [
-                { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },
-                {
-                    id: '111',
-                    name: '1111',
-                    weight: 50,
-                    promoted: false
-                }
-            ];
-
-            const experimentWithTwoVariants: DotExperiment = {
-                ...EXPERIMENT_MOCK_1,
-                trafficProportion: {
-                    ...EXPERIMENT_MOCK_1.trafficProportion,
-                    variants: [...variants]
-                }
-            };
-            const expectedResponseRemoveVariant: DotExperiment = {
-                ...EXPERIMENT_MOCK_1,
-                trafficProportion: {
-                    ...EXPERIMENT_MOCK_1.trafficProportion,
-                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false }]
-                }
-            };
-
-            dotExperimentsService.getById.mockReturnValue(of(experimentWithTwoVariants));
-            dotExperimentsService.removeVariant.mockReturnValue(of(expectedResponseRemoveVariant));
-
-            store.loadExperiment(EXPERIMENT_MOCK.id);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-
-            store.deleteVariant({
-                experimentId: EXPERIMENT_MOCK.id,
-                variant: variants[1]
-            });
-
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion.variants).toEqual(
-                    expectedResponseRemoveVariant.trafficProportion.variants
-                );
+            store.state$.subscribe((state) => {
+                expect(state).toEqual(EXPECTED_INITIAL_STATE);
                 done();
             });
-        });
+        }));
 
-        it('should set a Goal to the experiment', (done) => {
-            const expectedGoals: Goals = { ...GoalsMock };
+    it('should have isLoading$ from the store', () =>
+        new Promise<void>((done) => {
+            spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+            store.isLoading$.subscribe((data) => {
+                expect(data).toEqual(false);
+                done();
+            });
+        }));
 
+    it('should update component status to the store', () =>
+        new Promise<void>((done) => {
+            store.setComponentStatus(ComponentStatus.LOADED);
+            store.isLoading$.subscribe((status) => {
+                expect(status).toEqual(false);
+                done();
+            });
+        }));
+
+    it('should update sidebar status(SAVING/IDLE/DONE) to the store', () =>
+        new Promise<void>((done) => {
+            store.setSidebarStatus({ status: ComponentStatus.SAVING });
+            store.state$.subscribe(({ stepStatusSidebar }) => {
+                expect(stepStatusSidebar.status).toEqual(ComponentStatus.SAVING);
+                done();
+            });
+        }));
+
+    it('should update open sidebar and set the experiment step (card)', () =>
+        new Promise<void>((done) => {
+            store.openSidebar(ExperimentSteps.VARIANTS);
+            store.state$.subscribe(({ stepStatusSidebar }) => {
+                expect(stepStatusSidebar.experimentStep).toEqual(ExperimentSteps.VARIANTS);
+                expect(stepStatusSidebar.isOpen).toEqual(true);
+                done();
+            });
+        }));
+
+    it('should update close sidebar and initialize stepStatusSidebar', () =>
+        new Promise<void>((done) => {
+            store.closeSidebar();
+            store.state$.subscribe(({ stepStatusSidebar }) => {
+                expect(stepStatusSidebar.status).toEqual(ComponentStatus.IDLE);
+                expect(stepStatusSidebar.isOpen).toEqual(false);
+                expect(stepStatusSidebar.experimentStep).toEqual(null);
+                done();
+            });
+        }));
+
+    it('should set Menu items visibility when and experiment if is a DRAFT and has variants and Goal defined', () =>
+        new Promise<void>((done) => {
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.DRAFT })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ menuItems }) => {
+                // Start Experiment
+                expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(true);
+                expect(menuItems[MENU_ITEMS_START_INDEX].disabled).toEqual(false);
+                expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
+                done();
+            });
+        }));
+
+    it('should set Menu items visibility when experiment is RUNNING', () =>
+        new Promise<void>((done) => {
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ menuItems }) => {
+                expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(true);
+                expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(true);
+                expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
+                done();
+            });
+        }));
+
+    it('should set Menu items visibility when experiment SCHEDULED ', () =>
+        new Promise<void>((done) => {
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.SCHEDULED })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.vm$.subscribe(({ menuItems }) => {
+                expect(menuItems[MENU_ITEMS_START_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_END_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_ABORT_INDEX].visible).toEqual(false);
+                expect(menuItems[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible).toEqual(true);
+                expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(true);
+                done();
+            });
+        }));
+
+    it('should execute commands of menu items', () =>
+        new Promise<void>((done) => {
+            vi.spyOn(store, 'showAddToBundle');
             dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
 
-            dotExperimentsService.setGoal.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK,
-                    goals: expectedGoals
-                })
-            );
+            spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
-            store.loadExperiment(EXPERIMENT_MOCK.id);
+            store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+                // Start Experiment
+                menuItems[MENU_ITEMS_START_INDEX].command!({
+                    originalEvent: createFakeEvent('click')
+                });
+                expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
-            store.setSelectedGoal({
-                experimentId: EXPERIMENT_MOCK.id,
-                goals: expectedGoals
-            });
+                // Push Publish
+                menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].command!({
+                    originalEvent: createFakeEvent('click')
+                });
+                expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                    assetIdentifier: EXPERIMENT_MOCK.id,
+                    title: 'Push Publish'
+                });
 
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment.goals).toEqual(expectedGoals);
+                // Add to Bundle
+                menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].command!({
+                    originalEvent: createFakeEvent('click')
+                });
+                expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+                // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
                 done();
             });
-        });
+        }));
 
-        it('should remove the default conditions of type REACH_PAGE', (done) => {
-            const experimentMock = {
-                ...EXPERIMENT_MOCK,
-                goals: {
-                    primary: {
-                        name: 'default',
-                        type: GOAL_TYPES.REACH_PAGE,
-                        conditions: [
+    it('should not show Push Publish is there is no environments', () =>
+        new Promise<void>((done) => {
+            dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+
+            spectator.service.patchState({ pushPublishEnvironments: [] });
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+                expect(menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(false);
+
+                done();
+            });
+        }));
+
+    it('should not show Push Publish and Add to Bundle is there  no EnterpriseLicense', () =>
+        new Promise<void>((done) => {
+            dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+
+            spectator.service.patchState({ hasEnterpriseLicense: false });
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+                expect(menuItems[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(false);
+
+                expect(menuItems[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(false);
+
+                done();
+            });
+        }));
+
+    it('should return `Schedule Experiment` when the experiment has schedule set', () =>
+        new Promise<void>((done) => {
+            spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+            expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+            store.vm$.subscribe(({ menuItems }) => {
+                expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('schedule-experiment');
+                done();
+            });
+        }));
+
+    it('should return `Run Experiment` when the experiment has schedule `null` ', () =>
+        new Promise<void>((done) => {
+            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_1));
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_1.id);
+
+            expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+
+            store.vm$.subscribe(({ menuItems }) => {
+                expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('Start Experiment');
+                done();
+            });
+        }));
+
+    it('should return `Run Experiment` when the experiment has schedule startDate/endDate `null`', () =>
+        new Promise<void>((done) => {
+            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_3));
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_3.id);
+
+            expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_3.id);
+
+            store.vm$.subscribe(({ menuItems }) => {
+                expect(menuItems[MENU_ITEMS_START_INDEX].label).toEqual('Start Experiment');
+                done();
+            });
+        }));
+
+    describe('Effects', () => {
+        it('should load experiment to store', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_1));
+
+                store.loadExperiment(EXPERIMENT_MOCK_1.id);
+                expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+                store.state$.subscribe(({ experiment }) => {
+                    expect(experiment).toEqual(EXPERIMENT_MOCK_1);
+                    done();
+                });
+            }));
+
+        it('should add a variant to the store', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_1));
+                const newVariant: { experimentId: string; name: string } = {
+                    name: '333',
+                    experimentId: EXPERIMENT_MOCK_1.id
+                };
+
+                const expectedExperiment = {
+                    ...EXPERIMENT_MOCK_1,
+                    trafficProportion: {
+                        ...EXPERIMENT_MOCK_1.trafficProportion,
+                        variants: [
+                            ...EXPERIMENT_MOCK_1.trafficProportion.variants,
                             {
-                                parameter: GOAL_PARAMETERS.URL,
-                                operator: GOAL_OPERATORS.EQUALS,
-                                value: 'index'
-                            },
-                            {
-                                parameter: GOAL_PARAMETERS.REFERER,
-                                operator: GOAL_OPERATORS.CONTAINS,
-                                value: 'index'
+                                name: newVariant.name,
+                                id: '222',
+                                weight: 100,
+                                promoted: false
                             }
                         ]
                     }
-                }
-            };
+                };
 
-            dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
+                dotExperimentsService.addVariant.mockReturnValue(of(expectedExperiment));
 
-            store.loadExperiment(EXPERIMENT_MOCK.id);
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+                store.addVariant(newVariant);
 
-            store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions.length).toBe(1);
-                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
-                done();
-            });
-        });
-        it('should remove the default conditions of type BOUNCE_RATE', (done) => {
-            const experimentMock = {
-                ...EXPERIMENT_MOCK,
-                goals: {
-                    primary: {
-                        name: 'default',
-                        type: GOAL_TYPES.BOUNCE_RATE,
-                        conditions: [
-                            {
-                                parameter: GOAL_PARAMETERS.URL,
-                                operator: GOAL_OPERATORS.CONTAINS,
-                                value: 'index'
-                            }
-                        ]
+                store.state$.subscribe(({ experiment, stepStatusSidebar }) => {
+                    expect(experiment).toEqual(expectedExperiment);
+                    expect(stepStatusSidebar.isOpen).toEqual(false);
+                    done();
+                });
+            }));
+
+        it('should edit a variant name of an experiment', () =>
+            new Promise<void>((done) => {
+                const variants: Variant[] = [
+                    {
+                        id: '111',
+                        name: DEFAULT_VARIANT_NAME,
+                        weight: 50,
+                        url: 'url',
+                        promoted: false
+                    },
+                    {
+                        id: '222',
+                        name: 'name to edit',
+                        weight: 50,
+                        url: 'url',
+                        promoted: false
                     }
-                }
-            };
-
-            dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
-
-            store.loadExperiment(EXPERIMENT_MOCK.id);
-
-            store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions.length).toBe(0);
-                done();
-            });
-        });
-
-        it('should allow only conditions in AllowedConditionOperatorsByTypeOfGoal', (done) => {
-            const experimentMock = {
-                ...EXPERIMENT_MOCK,
-                goals: {
-                    primary: {
-                        name: 'default',
-                        type: GOAL_TYPES.URL_PARAMETER,
-                        conditions: [
-                            {
-                                parameter: 'queryParameter',
-                                operator: GOAL_OPERATORS.CONTAINS,
-                                value: 'index'
-                            },
-                            {
-                                parameter: 'invalid-parameter',
-                                operator: GOAL_OPERATORS.CONTAINS,
-                                value: 'test'
-                            }
-                        ]
+                ];
+                const variantEdited: Variant[] = [
+                    {
+                        id: '111',
+                        name: DEFAULT_VARIANT_NAME,
+                        weight: 50,
+                        url: 'url',
+                        promoted: false
+                    },
+                    {
+                        id: '222',
+                        name: 'new name',
+                        weight: 50,
+                        url: 'url',
+                        promoted: false
                     }
-                }
-            };
+                ];
 
-            dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
-
-            store.loadExperiment(EXPERIMENT_MOCK.id);
-
-            store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions.length).toBe(1);
-                done();
-            });
-        });
-
-        it('should delete a Goal from an experiment', (done) => {
-            const goalLevelToDelete: GoalsLevels = 'primary';
-            const experimentWithGoals: DotExperiment = {
-                ...EXPERIMENT_MOCK,
-                goals: { ...GoalsMock }
-            };
-
-            dotExperimentsService.getById.mockReturnValue(of({ ...experimentWithGoals }));
-
-            dotExperimentsService.deleteGoal.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK
-                })
-            );
-
-            store.loadExperiment(EXPERIMENT_MOCK.id);
-
-            store.deleteGoal({
-                experimentId: EXPERIMENT_MOCK.id,
-                goalLevel: goalLevelToDelete
-            });
-
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment.goals).toEqual(null);
-                done();
-            });
-        });
-
-        it('should set a Scheduling to the experiment', (done) => {
-            const expectedScheduling: RangeOfDateAndTime = {
-                startDate: 1,
-                endDate: 2
-            };
-
-            dotExperimentsService.setScheduling.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK,
-                    scheduling: expectedScheduling
-                })
-            );
-
-            store.setSelectedScheduling({
-                scheduling: expectedScheduling,
-                experimentId: EXPERIMENT_MOCK.id
-            });
-
-            store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.scheduling).toEqual(expectedScheduling);
-                expect(dotExperimentsService.setScheduling).toHaveBeenCalledWith(
-                    EXPERIMENT_MOCK.id,
-                    expectedScheduling
+                dotExperimentsService.getById.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK,
+                        trafficProportion: {
+                            ...EXPERIMENT_MOCK.trafficProportion,
+                            variants
+                        }
+                    })
                 );
-                done();
-            });
-        });
+                dotExperimentsService.editVariant.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK,
+                        trafficProportion: {
+                            ...EXPERIMENT_MOCK.trafficProportion,
+                            variants: variantEdited
+                        }
+                    })
+                );
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
+                store.editVariant({
+                    experimentId: EXPERIMENT_MOCK.id,
+                    data: { id: variants[1].id, name: 'new name' }
+                });
+
+                store.state$.subscribe(({ experiment }) => {
+                    expect(experiment.trafficProportion.variants[1].name).toEqual(
+                        variantEdited[1].name
+                    );
+                    done();
+                });
+            }));
+
+        it('should edit a description of an experiment', () =>
+            new Promise<void>((done) => {
+                const newDescription = 'new description';
+
+                dotExperimentsService.setDescription.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK,
+                        description: newDescription
+                    })
+                );
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
+                store.setDescription({
+                    experiment: EXPERIMENT_MOCK,
+                    data: { description: newDescription }
+                });
+
+                store.state$.subscribe(({ experiment }) => {
+                    expect(experiment.description).toEqual(newDescription);
+                    done();
+                });
+            }));
+
+        it('should delete a variant from an experiment', () =>
+            new Promise<void>((done) => {
+                const variants: Variant[] = [
+                    { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },
+                    {
+                        id: '111',
+                        name: '1111',
+                        weight: 50,
+                        promoted: false
+                    }
+                ];
+
+                const experimentWithTwoVariants: DotExperiment = {
+                    ...EXPERIMENT_MOCK_1,
+                    trafficProportion: {
+                        ...EXPERIMENT_MOCK_1.trafficProportion,
+                        variants: [...variants]
+                    }
+                };
+                const expectedResponseRemoveVariant: DotExperiment = {
+                    ...EXPERIMENT_MOCK_1,
+                    trafficProportion: {
+                        ...EXPERIMENT_MOCK_1.trafficProportion,
+                        variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false }]
+                    }
+                };
+
+                dotExperimentsService.getById.mockReturnValue(of(experimentWithTwoVariants));
+                dotExperimentsService.removeVariant.mockReturnValue(
+                    of(expectedResponseRemoveVariant)
+                );
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+                expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+                store.deleteVariant({
+                    experimentId: EXPERIMENT_MOCK.id,
+                    variant: variants[1]
+                });
+
+                store.state$.subscribe(({ experiment }) => {
+                    expect(experiment.trafficProportion.variants).toEqual(
+                        expectedResponseRemoveVariant.trafficProportion.variants
+                    );
+                    done();
+                });
+            }));
+
+        it('should set a Goal to the experiment', () =>
+            new Promise<void>((done) => {
+                const expectedGoals: Goals = { ...GoalsMock };
+
+                dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+
+                dotExperimentsService.setGoal.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK,
+                        goals: expectedGoals
+                    })
+                );
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
+                store.setSelectedGoal({
+                    experimentId: EXPERIMENT_MOCK.id,
+                    goals: expectedGoals
+                });
+
+                store.state$.subscribe(({ experiment }) => {
+                    expect(experiment.goals).toEqual(expectedGoals);
+                    done();
+                });
+            }));
+
+        it('should remove the default conditions of type REACH_PAGE', () =>
+            new Promise<void>((done) => {
+                const experimentMock = {
+                    ...EXPERIMENT_MOCK,
+                    goals: {
+                        primary: {
+                            name: 'default',
+                            type: GOAL_TYPES.REACH_PAGE,
+                            conditions: [
+                                {
+                                    parameter: GOAL_PARAMETERS.URL,
+                                    operator: GOAL_OPERATORS.EQUALS,
+                                    value: 'index'
+                                },
+                                {
+                                    parameter: GOAL_PARAMETERS.REFERER,
+                                    operator: GOAL_OPERATORS.CONTAINS,
+                                    value: 'index'
+                                }
+                            ]
+                        }
+                    }
+                };
+
+                dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
+                store.goals$.subscribe(({ primary }) => {
+                    expect(primary.conditions.length).toBe(1);
+                    expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
+                    done();
+                });
+            }));
+        it('should remove the default conditions of type BOUNCE_RATE', () =>
+            new Promise<void>((done) => {
+                const experimentMock = {
+                    ...EXPERIMENT_MOCK,
+                    goals: {
+                        primary: {
+                            name: 'default',
+                            type: GOAL_TYPES.BOUNCE_RATE,
+                            conditions: [
+                                {
+                                    parameter: GOAL_PARAMETERS.URL,
+                                    operator: GOAL_OPERATORS.CONTAINS,
+                                    value: 'index'
+                                }
+                            ]
+                        }
+                    }
+                };
+
+                dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
+                store.goals$.subscribe(({ primary }) => {
+                    expect(primary.conditions.length).toBe(0);
+                    done();
+                });
+            }));
+
+        it('should allow only conditions in AllowedConditionOperatorsByTypeOfGoal', () =>
+            new Promise<void>((done) => {
+                const experimentMock = {
+                    ...EXPERIMENT_MOCK,
+                    goals: {
+                        primary: {
+                            name: 'default',
+                            type: GOAL_TYPES.URL_PARAMETER,
+                            conditions: [
+                                {
+                                    parameter: 'queryParameter',
+                                    operator: GOAL_OPERATORS.CONTAINS,
+                                    value: 'index'
+                                },
+                                {
+                                    parameter: 'invalid-parameter',
+                                    operator: GOAL_OPERATORS.CONTAINS,
+                                    value: 'test'
+                                }
+                            ]
+                        }
+                    }
+                };
+
+                dotExperimentsService.getById.mockReturnValue(of({ ...experimentMock }));
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
+                store.goals$.subscribe(({ primary }) => {
+                    expect(primary.conditions.length).toBe(1);
+                    done();
+                });
+            }));
+
+        it('should delete a Goal from an experiment', () =>
+            new Promise<void>((done) => {
+                const goalLevelToDelete: GoalsLevels = 'primary';
+                const experimentWithGoals: DotExperiment = {
+                    ...EXPERIMENT_MOCK,
+                    goals: { ...GoalsMock }
+                };
+
+                dotExperimentsService.getById.mockReturnValue(of({ ...experimentWithGoals }));
+
+                dotExperimentsService.deleteGoal.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK
+                    })
+                );
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
+                store.deleteGoal({
+                    experimentId: EXPERIMENT_MOCK.id,
+                    goalLevel: goalLevelToDelete
+                });
+
+                store.state$.subscribe(({ experiment }) => {
+                    expect(experiment.goals).toEqual(null);
+                    done();
+                });
+            }));
+
+        it('should set a Scheduling to the experiment', () =>
+            new Promise<void>((done) => {
+                const expectedScheduling: RangeOfDateAndTime = {
+                    startDate: 1,
+                    endDate: 2
+                };
+
+                dotExperimentsService.setScheduling.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK,
+                        scheduling: expectedScheduling
+                    })
+                );
+
+                store.setSelectedScheduling({
+                    scheduling: expectedScheduling,
+                    experimentId: EXPERIMENT_MOCK.id
+                });
+
+                store.state$.pipe(take(1)).subscribe(({ experiment }) => {
+                    expect(experiment.scheduling).toEqual(expectedScheduling);
+                    expect(dotExperimentsService.setScheduling).toHaveBeenCalledWith(
+                        EXPERIMENT_MOCK.id,
+                        expectedScheduling
+                    );
+                    done();
+                });
+            }));
 
         it('should throw an error if update scheduling fails', () => {
             dotExperimentsService.setScheduling.mockReturnValue(throwError('error'));
@@ -717,30 +750,31 @@ describe('DotExperimentsConfigurationStore', () => {
             );
         });
 
-        it('should set Traffic Allocation to the experiment', (done) => {
-            const expectedTrafficAllocation = 10;
+        it('should set Traffic Allocation to the experiment', () =>
+            new Promise<void>((done) => {
+                const expectedTrafficAllocation = 10;
 
-            dotExperimentsService.setTrafficAllocation.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK,
-                    trafficAllocation: expectedTrafficAllocation
-                })
-            );
-
-            store.setSelectedAllocation({
-                trafficAllocation: expectedTrafficAllocation,
-                experimentId: EXPERIMENT_MOCK.id
-            });
-
-            store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.trafficAllocation).toEqual(expectedTrafficAllocation);
-                expect(dotExperimentsService.setTrafficAllocation).toHaveBeenCalledWith(
-                    EXPERIMENT_MOCK.id,
-                    expectedTrafficAllocation
+                dotExperimentsService.setTrafficAllocation.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK,
+                        trafficAllocation: expectedTrafficAllocation
+                    })
                 );
-                done();
-            });
-        });
+
+                store.setSelectedAllocation({
+                    trafficAllocation: expectedTrafficAllocation,
+                    experimentId: EXPERIMENT_MOCK.id
+                });
+
+                store.state$.pipe(take(1)).subscribe(({ experiment }) => {
+                    expect(experiment.trafficAllocation).toEqual(expectedTrafficAllocation);
+                    expect(dotExperimentsService.setTrafficAllocation).toHaveBeenCalledWith(
+                        EXPERIMENT_MOCK.id,
+                        expectedTrafficAllocation
+                    );
+                    done();
+                });
+            }));
 
         it('should throw an error if update Traffic Allocation fails', () => {
             dotExperimentsService.setTrafficAllocation.mockReturnValue(throwError('error'));
@@ -755,36 +789,37 @@ describe('DotExperimentsConfigurationStore', () => {
             );
         });
 
-        it('should set Traffic Proportion to the experiment', (done) => {
-            const expectedTrafficProportion: TrafficProportion = {
-                type: TrafficProportionTypes.SPLIT_EVENLY,
-                variants: [
-                    { id: '111', name: 'DEFAULT', weight: 50, promoted: false },
-                    { id: '111', name: 'A', weight: 50, promoted: false }
-                ]
-            };
+        it('should set Traffic Proportion to the experiment', () =>
+            new Promise<void>((done) => {
+                const expectedTrafficProportion: TrafficProportion = {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [
+                        { id: '111', name: 'DEFAULT', weight: 50, promoted: false },
+                        { id: '111', name: 'A', weight: 50, promoted: false }
+                    ]
+                };
 
-            dotExperimentsService.setTrafficProportion.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK,
-                    trafficProportion: expectedTrafficProportion
-                })
-            );
-
-            store.setSelectedTrafficProportion({
-                trafficProportion: expectedTrafficProportion,
-                experimentId: EXPERIMENT_MOCK.id
-            });
-
-            store.state$.pipe(take(1)).subscribe(({ experiment }) => {
-                expect(experiment.trafficProportion).toEqual(expectedTrafficProportion);
-                expect(dotExperimentsService.setTrafficProportion).toHaveBeenCalledWith(
-                    EXPERIMENT_MOCK.id,
-                    expectedTrafficProportion
+                dotExperimentsService.setTrafficProportion.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK,
+                        trafficProportion: expectedTrafficProportion
+                    })
                 );
-                done();
-            });
-        });
+
+                store.setSelectedTrafficProportion({
+                    trafficProportion: expectedTrafficProportion,
+                    experimentId: EXPERIMENT_MOCK.id
+                });
+
+                store.state$.pipe(take(1)).subscribe(({ experiment }) => {
+                    expect(experiment.trafficProportion).toEqual(expectedTrafficProportion);
+                    expect(dotExperimentsService.setTrafficProportion).toHaveBeenCalledWith(
+                        EXPERIMENT_MOCK.id,
+                        expectedTrafficProportion
+                    );
+                    done();
+                });
+            }));
 
         it('should throw an error if update Traffic Proportion fails', () => {
             dotExperimentsService.setTrafficProportion.mockReturnValue(throwError('error'));
@@ -799,53 +834,57 @@ describe('DotExperimentsConfigurationStore', () => {
             );
         });
 
-        it('should change the experiment status when Start the experiment', (done) => {
-            const experimentWithGoalsAndVariant: DotExperiment = {
-                ...EXPERIMENT_MOCK_2
-            };
-            const expectedExperiment: DotExperiment = {
-                ...EXPERIMENT_MOCK_2,
-                status: DotExperimentStatus.RUNNING
-            };
-
-            dotExperimentsService.getById.mockReturnValue(of({ ...experimentWithGoalsAndVariant }));
-
-            dotExperimentsService.start.mockReturnValue(
-                of({
-                    ...expectedExperiment
-                })
-            );
-
-            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
-
-            store.startExperiment(experimentWithGoalsAndVariant);
-
-            store.state$.subscribe(({ experiment, status }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
-                expect(status).toEqual(ComponentStatus.IDLE);
-                done();
-            });
-        });
-
-        it('should change the experiment status when Stop the experiment', (done) => {
-            dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK_2 }));
-
-            dotExperimentsService.stop.mockReturnValue(
-                of({
+        it('should change the experiment status when Start the experiment', () =>
+            new Promise<void>((done) => {
+                const experimentWithGoalsAndVariant: DotExperiment = {
+                    ...EXPERIMENT_MOCK_2
+                };
+                const expectedExperiment: DotExperiment = {
                     ...EXPERIMENT_MOCK_2,
-                    status: DotExperimentStatus.ENDED
-                })
-            );
+                    status: DotExperimentStatus.RUNNING
+                };
 
-            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+                dotExperimentsService.getById.mockReturnValue(
+                    of({ ...experimentWithGoalsAndVariant })
+                );
 
-            store.stopExperiment(EXPERIMENT_MOCK_2);
+                dotExperimentsService.start.mockReturnValue(
+                    of({
+                        ...expectedExperiment
+                    })
+                );
 
-            store.state$.subscribe(({ experiment }) => {
-                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
-                done();
-            });
-        });
+                spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+                store.startExperiment(experimentWithGoalsAndVariant);
+
+                store.state$.subscribe(({ experiment, status }) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
+                    expect(status).toEqual(ComponentStatus.IDLE);
+                    done();
+                });
+            }));
+
+        it('should change the experiment status when Stop the experiment', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK_2 }));
+
+                dotExperimentsService.stop.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK_2,
+                        status: DotExperimentStatus.ENDED
+                    })
+                );
+
+                spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+                store.stopExperiment(EXPERIMENT_MOCK_2);
+
+                store.state$.subscribe(({ experiment }) => {
+                    expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
+                    done();
+                });
+            }));
 
         it('should handle error when stopping the experiment', () => {
             dotExperimentsService.stop.mockReturnValue(throwError('error'));
@@ -857,29 +896,30 @@ describe('DotExperimentsConfigurationStore', () => {
             );
         });
 
-        it('should call the cancel experiment method when cancel scheduling', (done) => {
-            dotExperimentsService.getById.mockReturnValue(
-                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.SCHEDULED })
-            );
-
-            dotExperimentsService.cancelSchedule.mockReturnValue(
-                of({
-                    ...EXPERIMENT_MOCK_2,
-                    status: DotExperimentStatus.DRAFT
-                })
-            );
-
-            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
-
-            store.cancelSchedule(EXPERIMENT_MOCK_2);
-
-            store.state$.subscribe(() => {
-                expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledWith(
-                    EXPERIMENT_MOCK_2.id
+        it('should call the cancel experiment method when cancel scheduling', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.getById.mockReturnValue(
+                    of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.SCHEDULED })
                 );
-                done();
-            });
-        });
+
+                dotExperimentsService.cancelSchedule.mockReturnValue(
+                    of({
+                        ...EXPERIMENT_MOCK_2,
+                        status: DotExperimentStatus.DRAFT
+                    })
+                );
+
+                spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+                store.cancelSchedule(EXPERIMENT_MOCK_2);
+
+                store.state$.subscribe(() => {
+                    expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledWith(
+                        EXPERIMENT_MOCK_2.id
+                    );
+                    done();
+                });
+            }));
 
         it('should handle error when canceling the experiment', () => {
             dotExperimentsService.cancelSchedule.mockReturnValue(throwError('error'));
@@ -891,48 +931,51 @@ describe('DotExperimentsConfigurationStore', () => {
             );
         });
 
-        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft and locked by other user', (done) => {
-            dotExperimentsService.getById.mockReturnValue(
-                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
-            );
+        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft and locked by other user', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.getById.mockReturnValue(
+                    of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
+                );
 
-            ActivatedRouteMock.parent.parent.snapshot.data.content.state.lockedByAnotherUser = true;
+                ActivatedRouteMock.parent.parent.snapshot.data.content.state.lockedByAnotherUser = true;
 
-            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+                spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
-            store.vm$.subscribe(({ disabledTooltipLabel }) => {
-                // Start Experiment
-                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
-                done();
-            });
-        });
+                store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                    // Start Experiment
+                    expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                    done();
+                });
+            }));
 
-        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft', (done) => {
-            dotExperimentsService.getById.mockReturnValue(
-                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
-            );
+        it('should set EXP_CONFIG_ERROR_LABEL_CANT_EDIT when page is not Draft', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.getById.mockReturnValue(
+                    of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
+                );
 
-            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+                spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
-            store.vm$.subscribe(({ disabledTooltipLabel }) => {
-                // Start Experiment
-                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
-                done();
-            });
-        });
+                store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                    // Start Experiment
+                    expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                    done();
+                });
+            }));
 
-        it('should set EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED when page is locked by other user', (done) => {
-            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_2));
+        it('should set EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED when page is locked by other user', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_2));
 
-            ActivatedRouteMock.parent.parent.snapshot.data.content.state.lockedByAnotherUser = true;
+                ActivatedRouteMock.parent.parent.snapshot.data.content.state.lockedByAnotherUser = true;
 
-            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+                spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
-            store.vm$.subscribe(({ disabledTooltipLabel }) => {
-                // Start Experiment
-                expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
-                done();
-            });
-        });
+                store.vm$.subscribe(({ disabledTooltipLabel }) => {
+                    // Start Experiment
+                    expect(disabledTooltipLabel).toEqual(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
+                    done();
+                });
+            }));
     });
 });

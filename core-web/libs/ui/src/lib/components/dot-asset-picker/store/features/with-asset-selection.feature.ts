@@ -1,6 +1,6 @@
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotContentDriveBrowseItem } from '@dotcms/dotcms-models';
 
 import { DotAssetPickerSelectionState, DotAssetPickerState } from '../models';
 
@@ -25,7 +25,7 @@ export function withAssetSelection() {
         { state: type<DotAssetPickerState>() },
         withState<DotAssetPickerSelectionState>(initialState),
         withMethods((store) => ({
-            setSelectedAsset: (selectedAsset: DotCMSContentlet): void => {
+            setSelectedAsset: (selectedAsset: DotContentDriveBrowseItem): void => {
                 patchState(store, { selectedAsset });
             },
 

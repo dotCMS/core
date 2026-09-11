@@ -1,6 +1,7 @@
 import { createFakeEvent } from '@openng/spectator';
-import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -68,8 +69,8 @@ describe('SiteFieldComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
-                getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+                getSitesTreePath: vi.fn().mockReturnValue(of(mockSites)),
+                getFoldersTreeNode: vi.fn().mockReturnValue(of(mockFolders))
             })
         ]
     });
@@ -96,7 +97,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should load sites on init', () => {
-            const loadSitesSpy = jest.spyOn(store, 'loadSites');
+            const loadSitesSpy = vi.spyOn(store, 'loadSites');
 
             spectator.detectChanges();
 
@@ -126,7 +127,7 @@ describe('SiteFieldComponent', () => {
          * Selects a node so skipWhile(null) is satisfied, then clears the spy.
          * After this, subsequent emissions (including null) will propagate to onChange.
          */
-        function warmUpOnChange(spy: jest.Mock): void {
+        function warmUpOnChange(spy: Mock): void {
             spectator.detectChanges();
             store.chooseNode(mockNodeEvent);
             spectator.detectChanges();
@@ -134,7 +135,7 @@ describe('SiteFieldComponent', () => {
         }
 
         it('should call onChange when valueToSave changes', () => {
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             component.registerOnChange(onChangeSpy);
 
             spectator.detectChanges();
@@ -146,7 +147,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should call onChange with empty string when valueToSave is null', () => {
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             component.registerOnChange(onChangeSpy);
             warmUpOnChange(onChangeSpy);
 
@@ -161,10 +162,10 @@ describe('SiteFieldComponent', () => {
 
             const treeSelect = component.$treeSelect();
             const mockTreeViewChild = {
-                updateSerializedValue: jest.fn()
+                updateSerializedValue: vi.fn()
             };
             const mockCd = {
-                detectChanges: jest.fn()
+                detectChanges: vi.fn()
             };
 
             // Mock the treeViewChild and cd properties
@@ -245,7 +246,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should clear selection when writeValue is called with empty string', () => {
-            const clearSelectionSpy = jest.spyOn(store, 'clearSelection');
+            const clearSelectionSpy = vi.spyOn(store, 'clearSelection');
             spectator.detectChanges();
 
             component.writeValue('');
@@ -255,7 +256,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should call setInitialSelection for site pre-population', () => {
-            const setInitialSpy = jest.spyOn(store, 'setInitialSelection');
+            const setInitialSpy = vi.spyOn(store, 'setInitialSelection');
             spectator.setInput('siteContext', {
                 hostName: 'demo.dotcms.com',
                 folderPath: ''
@@ -273,7 +274,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should call setInitialSelection for folder pre-population', () => {
-            const setInitialSpy = jest.spyOn(store, 'setInitialSelection');
+            const setInitialSpy = vi.spyOn(store, 'setInitialSelection');
             spectator.setInput('siteContext', {
                 hostName: 'demo.dotcms.com',
                 folderPath: '/blog/'
@@ -291,7 +292,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should call onChange synchronously when writing a pre-populated value', () => {
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             component.registerOnChange(onChangeSpy);
             spectator.setInput('siteContext', {
                 hostName: 'demo.dotcms.com',
@@ -305,7 +306,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should not call setInitialSelection when siteContext is null', () => {
-            const setInitialSpy = jest.spyOn(store, 'setInitialSelection');
+            const setInitialSpy = vi.spyOn(store, 'setInitialSelection');
             spectator.detectChanges();
 
             component.writeValue('folder:folder1');
@@ -314,7 +315,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should register onChange callback', () => {
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             component.registerOnChange(onChangeSpy);
 
             // First detectChanges consumes the initial null emission (skipped via skipWhile(null))
@@ -337,7 +338,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should register onTouched callback', () => {
-            const onTouchedSpy = jest.fn();
+            const onTouchedSpy = vi.fn();
             component.registerOnTouched(onTouchedSpy);
 
             // Trigger touched state
@@ -379,7 +380,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should handle empty string in writeValue', () => {
-            const clearSelectionSpy = jest.spyOn(store, 'clearSelection');
+            const clearSelectionSpy = vi.spyOn(store, 'clearSelection');
 
             component.writeValue('');
 
@@ -388,7 +389,7 @@ describe('SiteFieldComponent', () => {
         });
 
         it('should not emit change when writeValue is called with same value', () => {
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             component.registerOnChange(onChangeSpy);
 
             const testValue = 'test-value';

@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AddToBundleService, DotCurrentUserService, DotMessageService } from '@dotcms/data-access';
 import { DotBundle } from '@dotcms/dotcms-models';
@@ -23,14 +29,19 @@ describe('DotContentDriveActionBundleTargetComponent', () => {
 
     // A mutable mock rather than a per-test provider override: the module is already instantiated by
     // the time a test runs, so `createComponent({ providers })` would be refused.
-    const getBundles = jest.fn();
+    const getBundles = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionBundleTargetComponent,
         providers: [
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotCurrentUserService)
         ],

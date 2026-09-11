@@ -1,9 +1,9 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotAiConfigService, DotMessageService } from '@dotcms/data-access';
 import {
     DotAiCapability,
     DotAiProviderFieldType,
@@ -23,7 +23,7 @@ describe('DotAiCapabilityCardComponent', () => {
         sectionKey: 'chat',
         title: 'apps.ai.capability.chat.title',
         description: 'apps.ai.capability.chat.description',
-        icon: 'pi pi-comments'
+        icon: 'forum'
     };
 
     const openAiProvider: DotAiProviderMetadata = {
@@ -51,7 +51,7 @@ describe('DotAiCapabilityCardComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAiCapabilityCardComponent,
         providers: [
-            mockProvider(DotAiService),
+            mockProvider(DotAiConfigService),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
         schemas: [NO_ERRORS_SCHEMA],

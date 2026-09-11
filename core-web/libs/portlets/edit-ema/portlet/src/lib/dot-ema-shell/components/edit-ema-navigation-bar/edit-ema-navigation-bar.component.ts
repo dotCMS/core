@@ -57,16 +57,33 @@ export class EditEmaNavigationBarComponent {
     navigate(item: NavigationBarItem): void {
         if (item.isDisabled) return;
 
-        if (item.href) {
-            const params = this.$params();
-
-            const urlFragments = item.href.split('/');
-            this.#router.navigate(['edit-page'].concat(urlFragments), {
-                queryParams: params,
-                queryParamsHandling: 'merge'
-            });
-        } else {
+        if (!item.href) {
             this.action.emit(item.id);
+
+            return;
         }
+
+        // A leading `/` means the destination is outside the editor's route tree, so it must not
+        // be prefixed. Every item that lives under `edit-page` — content, layout, rules/{id},
+        // experiments/{id} — is relative and keeps the prefix, which is what makes the switch-off
+        // destinations byte-identical to before (#37005, FR-016/FR-019).
+        if (item.href.startsWith('/')) {
+            // Passed whole, NOT split on `/`. Splitting `'/experiments'` yields
+            // `['', 'experiments']`, and an empty leading segment does not start with `/`, so the
+            // router treats the whole thing as a RELATIVE navigation and the item silently does
+            // nothing. A single absolute string is the only form that navigates.
+            //
+            // Its own params, replacing the editor's rather than merging: `url`, `language_id` and
+            // the persona key mean nothing outside the editor, and merging them would leave keys
+            // the destination does not recognise sitting in its address.
+            this.#router.navigate([item.href], { queryParams: item.queryParams ?? {} });
+
+            return;
+        }
+
+        this.#router.navigate(['edit-page'].concat(item.href.split('/')), {
+            queryParams: this.$params(),
+            queryParamsHandling: 'merge'
+        });
     }
 }

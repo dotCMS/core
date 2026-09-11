@@ -39,8 +39,12 @@ public abstract class ReindexEntry {
     public abstract int getPriority();
 
     /**
-     * {@code true} when the document should be deleted from the index.
-     * Defaults to {@code false} — failed-reindex records are never deletes.
+     * {@code true} when the document should be removed from the index rather than rewritten.
+     *
+     * <p>Defaults to {@code false}, so every read path must set it explicitly from the row's
+     * {@code dist_action}; a removal that silently reads back as a reindex is the #37276 failure
+     * mode. Note that a failed entry <em>can</em> be a removal — deletions have been journalled
+     * since #37276, so they retry and can exhaust their attempts like any other entry.</p>
      */
     @Value.Default
     public boolean isDelete() { return false; }

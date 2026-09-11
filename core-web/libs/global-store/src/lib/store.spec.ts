@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { defer, Subject, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import {
     DotCurrentUserService,
@@ -33,13 +34,18 @@ describe('GlobalStore', () => {
         service: GlobalStore,
         providers: [
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of(mockCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of(mockCurrentUser))
             }),
             mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(null)),
-                switchSite: jest.fn().mockReturnValue(of({} as DotSite))
+                getCurrentSite: vi.fn().mockReturnValue(of(null)),
+                switchSite: vi.fn().mockReturnValue(of({} as DotSite))
             }),
-            mockProvider(DotSystemConfigService),
+            // withSystem's onInit pipes getSystemConfig(); a bare mockProvider returns
+            // undefined and the feature dereferences it. null is the feature's own
+            // initial systemConfig, so the state is unchanged.
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: vi.fn().mockReturnValue(of(null))
+            }),
             // No session at init (`auth` null); the deferred `auth$` resolves to the current
             // per-test subject so tests control exactly when an authenticated user is signalled.
             mockProvider(LoginService, {
@@ -49,11 +55,14 @@ describe('GlobalStore', () => {
             mockProvider(DotEventsSocket, {
                 connect: () => of({}),
                 status$: () => new Subject(),
-                on: jest.fn().mockImplementation((event: string) => {
+                on: vi.fn().mockImplementation((event: string) => {
                     if (event === 'SWITCH_SITE') return switchSiteSubject.asObservable();
 
                     return new Subject();
-                })
+                }),
+                // feedLegacyEventBus() pipes messages() on init; without it the
+                // feature dereferences undefined.
+                messages: vi.fn().mockReturnValue(new Subject())
             })
         ]
     });
@@ -64,9 +73,9 @@ describe('GlobalStore', () => {
         switchSiteSubject = new Subject<DotSite>();
         authSubject = new Subject<Auth>();
         // Reset shared mock call counts each test so assertions don't depend on test order.
-        // clearAllMocks() clears recorded calls but preserves the mockReturnValue / jest.fn
+        // clearAllMocks() clears recorded calls but preserves the mockReturnValue / vi.fn
         // implementations declared in createServiceFactory.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         store = spectator.service;
     });

@@ -167,8 +167,7 @@ export class DotBrowsingService {
                 path: '',
                 type: 'site'
             },
-            expandedIcon: 'pi pi-globe',
-            collapsedIcon: 'pi pi-globe',
+            icon: 'pi pi-globe',
             leaf: false
         };
     }
@@ -207,6 +206,11 @@ export class DotBrowsingService {
 
     /**
      * Creates a TreeNodeItem from a DotFolder
+     *
+     * Keeps its per-node icons, unlike `#createFolderSearchTreeNode` (#37362). These nodes feed
+     * the relationship field's site picker, which renders them in a `p-treeSelect` — not in
+     * `DotFolderTreeComponent` — so there is nothing there to opt into the shared, state-driven
+     * icon. Strip these and that picker's folders lose their icon outright.
      *
      * @param {DotFolder} folder - The folder to create a TreeNodeItem from
      * @returns {TreeNodeItem} The TreeNodeItem created from the DotFolder
@@ -279,8 +283,6 @@ export class DotBrowsingService {
                 path,
                 type: 'folder'
             },
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder',
             leaf: flat ? true : !folder.hasChildren
         };
     }
@@ -408,8 +410,7 @@ export class DotBrowsingService {
                     path: '',
                     type: 'site'
                 },
-                expandedIcon: 'pi pi-globe',
-                collapsedIcon: 'pi pi-globe',
+                icon: 'pi pi-globe',
                 leaf: false
             }))
         );

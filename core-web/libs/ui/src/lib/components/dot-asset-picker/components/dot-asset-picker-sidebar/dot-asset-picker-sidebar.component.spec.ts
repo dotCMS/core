@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -65,12 +66,12 @@ const createMockStore = () => ({
         identifier: SITE_ROOT.data.id,
         hostname: SITE_ROOT.data.hostname
     }),
-    selectNode: jest.fn(),
-    expandNode: jest.fn(),
-    loadMore: jest.fn(),
-    setFolderSearch: jest.fn(),
-    selectSearchResult: jest.fn(),
-    setBrowsingSite: jest.fn()
+    selectNode: vi.fn(),
+    expandNode: vi.fn(),
+    loadMore: vi.fn(),
+    setFolderSearch: vi.fn(),
+    selectSearchResult: vi.fn(),
+    setBrowsingSite: vi.fn()
 });
 
 describe('DotAssetPickerSidebarComponent', () => {
@@ -306,6 +307,43 @@ describe('DotAssetPickerSidebarComponent', () => {
 
         it('should render exactly one root', () => {
             expect(tree()?.$folders()).toHaveLength(1);
+        });
+
+        it('should dress the root in a folder icon rather than a second globe (#37362)', () => {
+            // The site globe already sits in the selector above the tree, so repeating it on the
+            // root reads as a second site control. This used to need a `ROOT_ICONS` override on the
+            // node; opting into the shared tree's folder icons gets it for free, because the root
+            // declares no icon of its own.
+            expect(tree()?.$showFolderIcons()).toBe(true);
+            expect(spectator.query('.pi-globe')).toBeNull();
+
+            const icons = spectator.queryAll(byTestId('tree-node-folder-icon'));
+            // The expanded root plus its one child.
+            expect(icons).toHaveLength(2);
+            expect(icons[0].getAttribute('data-expanded')).toBe('true');
+            expect(icons[1].getAttribute('data-expanded')).toBe('false');
+        });
+
+        it('should reveal the wording the root row displays, not the hostname (#37363)', () => {
+            // FR-012: this row is the reason the tooltip reads its text from what was rendered.
+            // `node.label` still carries `demo.dotcms.com`, but the row says "All".
+            vi.useFakeTimers();
+
+            const clip = spectator.queryAll(byTestId('tree-node-label-clip'))[0] as HTMLElement;
+            Object.defineProperty(clip, 'offsetWidth', { value: 10, configurable: true });
+            Object.defineProperty(clip, 'scrollWidth', { value: 400, configurable: true });
+
+            clip.dispatchEvent(new MouseEvent('mouseenter'));
+            spectator.detectChanges();
+            vi.advanceTimersByTime(1000);
+
+            const text = document.querySelector('.p-tooltip-text')?.textContent?.trim();
+
+            expect(text).toBe('All');
+            expect(text).not.toBe('demo.dotcms.com');
+
+            document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
+            vi.useRealTimers();
         });
     });
 

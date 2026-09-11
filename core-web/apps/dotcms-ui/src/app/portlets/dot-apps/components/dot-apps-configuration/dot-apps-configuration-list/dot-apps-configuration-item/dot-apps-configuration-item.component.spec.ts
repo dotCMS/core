@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
@@ -117,10 +119,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit export action with a site', () => {
-            const stopPropagationSpy = jest.fn();
+            const stopPropagationSpy = vi.fn();
             const exportBtn = fixture.debugElement.query(By.css('[data-testId="export"]'));
 
-            jest.spyOn(component.export, 'emit');
+            vi.spyOn(component.export, 'emit');
 
             exportBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -132,14 +134,14 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit delete action', () => {
-            const stopPropagationSpy = jest.fn();
+            const stopPropagationSpy = vi.fn();
             const deleteBtn = fixture.debugElement.query(By.css('[data-testId="delete"]'));
 
-            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
+            vi.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
-            jest.spyOn(component.delete, 'emit');
+            vi.spyOn(component.delete, 'emit');
 
             deleteBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -152,10 +154,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit edit action with a site', () => {
-            const stopPropagationSpy = jest.fn();
+            const stopPropagationSpy = vi.fn();
             const editBtn = fixture.debugElement.query(By.css('[data-testId="edit"]'));
 
-            jest.spyOn(component.edit, 'emit');
+            vi.spyOn(component.edit, 'emit');
 
             editBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -167,7 +169,7 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit edit action when host component clicked', () => {
-            jest.spyOn(component.edit, 'emit');
+            vi.spyOn(component.edit, 'emit');
             fixture.debugElement.triggerEventHandler('click', {
                 stopPropagation: () => {
                     //
@@ -178,7 +180,7 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should not emit edit action when host label clicked', () => {
-            jest.spyOn(component.edit, 'emit');
+            vi.spyOn(component.edit, 'emit');
             fixture.debugElement.query(By.css('dot-copy-link')).nativeElement.click();
             expect(component.edit.emit).toHaveBeenCalledTimes(0);
         });
@@ -200,10 +202,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit edit action with No site', () => {
-            const stopPropagationSpy = jest.fn();
+            const stopPropagationSpy = vi.fn();
             const createBtn = fixture.debugElement.query(By.css('[data-testId="add"]'));
 
-            jest.spyOn(component.edit, 'emit');
+            vi.spyOn(component.edit, 'emit');
 
             createBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,

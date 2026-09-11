@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -12,7 +13,7 @@ describe('DotAnalyticsErrorComponent', () => {
     let spectator: Spectator<DotAnalyticsErrorComponent>;
 
     const messageService = {
-        get: jest.fn().mockImplementation((key: string) => `Translated ${key}`)
+        get: vi.fn().mockImplementation((key: string) => `Translated ${key}`)
     };
 
     const createComponent = createComponentFactory({

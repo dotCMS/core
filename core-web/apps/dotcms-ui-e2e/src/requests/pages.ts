@@ -55,6 +55,35 @@ export async function createPage(request: APIRequestContext, data: CreatePage): 
     return page;
 }
 
+/**
+ * Reads the page's CURRENT template identifier via the same render endpoint the UVE
+ * editor itself uses. A layout save on a non-anonymous template mints a brand-new
+ * Template with a brand-new identifier and repoints the page at it
+ * (PageResourceHelper.checkoutTemplate, dotCMS backend) — so the identifier a template was
+ * *created* with is not reliable to assert against after a save; this always resolves to
+ * whatever the page is pointing at right now.
+ */
+export async function getPageTemplateIdentifier(
+    request: APIRequestContext,
+    url: string
+): Promise<string> {
+    // Page.url already comes back with a leading slash (dotCMS stores it as a full path
+    // from site root) — used as a query VALUE elsewhere that's harmless, but here it's a
+    // PATH SEGMENT, so keeping it produces a double slash
+    // (/api/v1/page/render//foo) that dotCMS's NormalizationFilter rejects outright.
+    const normalizedUrl = url.replace(/^\/+/, '');
+    const endpoint = `/api/v1/page/render/${normalizedUrl}?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE&depth=0`;
+    const response = await request.get(endpoint, {
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+    expect(response.status()).toBe(200);
+
+    const responseData = await response.json();
+    return responseData.entity.template.identifier as string;
+}
+
 export async function executeAction(request: APIRequestContext, actionId: string, inode: string) {
     const endpoint = `/api/v1/workflow/actions/${actionId}/fire?indexPolicy=WAIT_FOR&inode=${inode}`;
     const response = await request.put(endpoint, {

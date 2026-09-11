@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -29,7 +30,7 @@ const MOCK_CATEGORY: DotCategory = {
 describe('DotCategoriesCreateComponent', () => {
     describe('create mode', () => {
         let spectator: Spectator<DotCategoriesCreateComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotCategoriesCreateComponent,
@@ -95,7 +96,7 @@ describe('DotCategoriesCreateComponent', () => {
 
     describe('create mode with parent', () => {
         let spectator: Spectator<DotCategoriesCreateComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotCategoriesCreateComponent,
@@ -130,7 +131,7 @@ describe('DotCategoriesCreateComponent', () => {
 
     describe('edit mode', () => {
         let spectator: Spectator<DotCategoriesCreateComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotCategoriesCreateComponent,

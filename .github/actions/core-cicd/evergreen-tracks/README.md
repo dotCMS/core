@@ -53,6 +53,33 @@ window. A tag moved on a Tuesday has no effect until that window. Nothing in the
 watches the tags continuously (no Argo CD Image Updater / Keel, no floating-tag references,
 no `imagePullPolicy: Always` on customer pods).
 
+## State: the three marker tags
+
+There is no database. Every decision the planner makes is derived from tags in the registry:
+
+| Tag | Written by | Means |
+|---|---|---|
+| `latest` / `standard` / `trailing` | promote | the release this track currently resolves to |
+| `<version>_tainted` | `admin --action taint` | no track may **advance** onto this version |
+| `<track>_hold` | `admin --action hold` | this track is frozen; promote reconciles the track tag to this digest instead of planning |
+
+The two markers are independent guards, and a hold is the stronger one: a held track skips the
+planner entirely, and the planner is the only thing that reads taint markers.
+
+### `force`
+
+`hold` refuses to point a track at a tainted version unless `force` is set. It is the
+last-resort control for when **every candidate is bad and you must pick the least-bad one** —
+retreating from a release that is breaking customers onto an older one already tainted for
+something milder.
+
+Because a forced hold bypasses the planner, the track is not just parked on a known-bad
+release, it is **actively re-pinned there every promote run** until someone runs
+`release-hold`. The tainted check also runs *only* at hold time — tainting a version later
+does not release a hold that already points at it.
+
+Full procedure, rules, and exit path: [RUNBOOK → `force`](RUNBOOK.md#force--holding-onto-a-tainted-version).
+
 ## Operator procedures
 
 See [RUNBOOK.md](RUNBOOK.md) for tainting a release, holding a track, and holding a single

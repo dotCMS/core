@@ -3,8 +3,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { Observable, of, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -30,10 +31,10 @@ import {
 } from '../editor.utils';
 import { EditorStore } from '../store/editor.store';
 
-jest.mock('../editor.utils', () => ({
-    insertDotImageFromContentlet: jest.fn(),
-    insertDotVideoFromContentlet: jest.fn(),
-    insertDotAudioFromContentlet: jest.fn()
+vi.mock('../editor.utils', () => ({
+    insertDotImageFromContentlet: vi.fn(),
+    insertDotVideoFromContentlet: vi.fn(),
+    insertDotAudioFromContentlet: vi.fn()
 }));
 
 const SITE: DotSite = {
@@ -56,20 +57,20 @@ describe('EditorModalService — asset pickers', () => {
     let service: EditorModalService;
     let dialogService: SpyObject<DialogService>;
     let onClose$: Subject<DotCMSContentlet | undefined>;
-    let closeSpy: jest.Mock;
+    let closeSpy: Mock;
 
     const editor = {} as Editor;
 
-    const insertImage = insertDotImageFromContentlet as jest.Mock;
-    const insertVideo = insertDotVideoFromContentlet as jest.Mock;
-    const insertAudio = insertDotAudioFromContentlet as jest.Mock;
+    const insertImage = insertDotImageFromContentlet as Mock;
+    const insertVideo = insertDotVideoFromContentlet as Mock;
+    const insertAudio = insertDotAudioFromContentlet as Mock;
 
     const createService = createServiceFactory({
         service: EditorModalService,
         providers: [
             mockProvider(DialogService),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DotSiteService, { getCurrentSite: jest.fn(() => siteSource) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DotSiteService, { getCurrentSite: vi.fn(() => siteSource) }),
             { provide: EditorStore, useValue: { languageId: signal(LANGUAGE_ID) } },
             // Angular Edit Content host: the launcher is what makes the new picker the picker.
             // Its legacy counterpart lives in `editor-modal.service.legacy-host.spec.ts`.
@@ -84,7 +85,7 @@ describe('EditorModalService — asset pickers', () => {
         dialogService = spectator.inject(DialogService);
 
         onClose$ = new Subject<DotCMSContentlet | undefined>();
-        closeSpy = jest.fn();
+        closeSpy = vi.fn();
         dialogService.open.mockReturnValue({
             onClose: onClose$.asObservable(),
             close: closeSpy
@@ -95,7 +96,7 @@ describe('EditorModalService — asset pickers', () => {
     const openedConfig = (call = 0) => dialogService.open.mock.calls[call][1];
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         siteSource = of(SITE);
     });
 

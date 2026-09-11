@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -16,9 +17,9 @@ describe('DotEditorModeSelectorComponent', () => {
         editorHasAccessToEditMode: ReturnType<typeof signal<boolean>>;
         $lockFeatureEnabled: ReturnType<typeof signal<boolean>>;
         pageParams: ReturnType<typeof signal<{ mode: UVE_MODE }>>;
-        viewClearDeviceAndSocialMedia: jest.Mock;
-        pageLoad: jest.Mock;
-        trackUVEModeChange: jest.Mock;
+        viewClearDeviceAndSocialMedia: Mock;
+        pageLoad: Mock;
+        trackUVEModeChange: Mock;
     };
 
     const createComponent = createComponentFactory({
@@ -42,15 +43,15 @@ describe('DotEditorModeSelectorComponent', () => {
         // PrimeNG overlays rely on matchMedia; JSDOM doesn't provide it by default.
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query: string) => ({
+            value: vi.fn().mockImplementation((query: string) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(), // deprecated
-                removeListener: jest.fn(), // deprecated
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(), // deprecated
+                removeListener: vi.fn(), // deprecated
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -60,9 +61,9 @@ describe('DotEditorModeSelectorComponent', () => {
             editorHasAccessToEditMode: signal(true),
             $lockFeatureEnabled: signal(false),
             pageParams: signal({ mode: UVE_MODE.EDIT }),
-            viewClearDeviceAndSocialMedia: jest.fn(),
-            pageLoad: jest.fn(),
-            trackUVEModeChange: jest.fn()
+            viewClearDeviceAndSocialMedia: vi.fn(),
+            pageLoad: vi.fn(),
+            trackUVEModeChange: vi.fn()
         };
 
         spectator = createComponent({
@@ -76,7 +77,7 @@ describe('DotEditorModeSelectorComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create', () => {

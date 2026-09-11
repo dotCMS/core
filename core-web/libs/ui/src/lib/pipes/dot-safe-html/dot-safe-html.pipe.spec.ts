@@ -1,4 +1,10 @@
-import { createPipeFactory, mockProvider, SpectatorPipe, SpyObject } from '@openng/spectator/jest';
+import {
+    createPipeFactory,
+    mockProvider,
+    SpectatorPipe,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DomSanitizer } from '@angular/platform-browser';
 
@@ -13,7 +19,7 @@ describe('DotSafeHtmlPipe', () => {
         pipe: DotSafeHtmlPipe,
         providers: [
             mockProvider(DomSanitizer, {
-                bypassSecurityTrustHtml: jest.fn().mockReturnValue(safeHtml)
+                bypassSecurityTrustHtml: vi.fn().mockReturnValue(safeHtml)
             })
         ]
     });

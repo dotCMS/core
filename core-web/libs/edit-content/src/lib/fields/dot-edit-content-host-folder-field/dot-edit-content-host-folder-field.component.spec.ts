@@ -4,8 +4,9 @@ import {
     mockProvider,
     SpectatorHost,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -48,10 +49,10 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         providers: [
             HostFolderFiledStore,
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn()
+                handle: vi.fn()
             }),
             mockProvider(DotBrowsingService, {
-                getSitesPage: jest.fn(() =>
+                getSitesPage: vi.fn(() =>
                     of({
                         sites: TREE_SELECT_SITES_MOCK,
                         pagination: {
@@ -61,12 +62,10 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                         }
                     })
                 ),
-                resolveSiteByHostname: jest.fn(() => of(null)),
-                getCurrentSiteAsTreeNodeItem: jest.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
-                buildTreeByPaths: jest.fn(() =>
-                    of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })
-                ),
-                searchFolders: jest.fn(() =>
+                resolveSiteByHostname: vi.fn(() => of(null)),
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
+                buildTreeByPaths: vi.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })),
+                searchFolders: vi.fn(() =>
                     of({
                         folders: [],
                         pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }

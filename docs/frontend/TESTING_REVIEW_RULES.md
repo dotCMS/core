@@ -4,8 +4,8 @@ Condensed rules for reviewing test files. For full patterns and tutorials, see [
 
 ## Required Framework
 
-- **Spectator** (`@openng/spectator/jest`) is required for all tests
-- **Jest** as test runner
+- **Spectator** (`@openng/spectator/vitest`) is required for all tests
+- **Vitest** as test runner
 - **`@dotcms/utils-testing`** createFake functions for domain mocks
 
 ## Critical Violations 🔴 (Must Fix)
@@ -14,7 +14,7 @@ Condensed rules for reviewing test files. For full patterns and tutorials, see [
 - **Direct input assignment**: `spectator.component.prop = value` → use `spectator.setInput('prop', value)`
 - **Missing detectChanges**: After `setInput`, `click`, or state changes, must call `spectator.detectChanges()` before assertions on DOM
 - **Wrong factory**: Using `createComponentFactory` for services, or `createServiceFactory` for components
-- **Missing mockProvider**: Dependencies not mocked → use `mockProvider(Service, { method: jest.fn() })`
+- **Missing mockProvider**: Dependencies not mocked → use `mockProvider(Service, { method: vi.fn() })`
 
 ### Broken Test Patterns
 - **No assertions**: Test body has no `expect()` calls

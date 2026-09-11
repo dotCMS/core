@@ -5,7 +5,6 @@ import static com.dotcms.auth.providers.oauth.OAuthConstants.PROVIDER_TYPE_OAUTH
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -15,7 +14,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -28,10 +26,6 @@ public class GenericOAuth2Provider implements OAuthProvider {
 
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
-    /** Same heap-bound guard as {@code OIDCProvider} — caps IdP response bodies. */
-    private static final int MAX_IDP_RESPONSE_BYTES =
-            Config.getIntProperty("OAUTH_IDP_MAX_RESPONSE_BYTES", 1024 * 1024);
-
     private final String clientId;
     private final char[] clientSecret;
     private final String authorizationUrl;
@@ -41,6 +35,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
     private final String logoutUrl;
     private final String groupsClaim;
     private final String groupsUrl;
+    private final String groupsResponsePath;
 
     public GenericOAuth2Provider(final String clientId,
                                  final char[] clientSecret,
@@ -50,7 +45,8 @@ public class GenericOAuth2Provider implements OAuthProvider {
                                  final String revocationUrl,
                                  final String logoutUrl,
                                  final String groupsClaim,
-                                 final String groupsUrl) {
+                                 final String groupsUrl,
+                                 final String groupsResponsePath) {
         if (!UtilMethods.isSet(authorizationUrl) || !UtilMethods.isSet(tokenUrl) || !UtilMethods.isSet(userinfoUrl)) {
             throw new DotRuntimeException("GenericOAuth2Provider requires authorizationUrl, tokenUrl, and userinfoUrl");
         }
@@ -63,6 +59,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
         this.logoutUrl        = logoutUrl;
         this.groupsClaim      = groupsClaim;
         this.groupsUrl        = groupsUrl;
+        this.groupsResponsePath = groupsResponsePath;
     }
 
     @Override
@@ -115,7 +112,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
                             "Accept", "application/json",
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(10000)
-                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
+                    .setMaxResponseBytes(OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -143,7 +140,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
                             "Authorization", "Bearer " + accessToken,
                             "Accept", "application/json"))
                     .setTimeout(5000)
-                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
+                    .setMaxResponseBytes(OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -163,46 +160,12 @@ public class GenericOAuth2Provider implements OAuthProvider {
     @Override
     public Collection<String> getGroups(final String accessToken, final Map<String, Object> userInfo) {
         if (UtilMethods.isSet(groupsClaim) && userInfo != null && userInfo.containsKey(groupsClaim)) {
-            return toStringList(userInfo.get(groupsClaim));
+            return OAuthGroupsFetcher.toStringList(userInfo.get(groupsClaim));
         }
         // Failures propagate — the caller must be able to tell "endpoint down" from "user has
         // no groups", otherwise an IdP outage silently strips roles during the role rebuild.
         if (UtilMethods.isSet(groupsUrl)) {
-            try {
-                return fetchGroupsFromUrl(accessToken);
-            } catch (final DotRuntimeException e) {
-                throw e;
-            } catch (final Exception e) {
-                throw new DotRuntimeException("OAuth2 groups fetch failed: " + e.getMessage(), e);
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    private Collection<String> fetchGroupsFromUrl(final String accessToken) throws Exception {
-        final CircuitBreakerUrl.Response<String> resp = CircuitBreakerUrl.builder()
-                .setUrl(groupsUrl)
-                .setMethod(CircuitBreakerUrl.Method.GET)
-                .setHeaders(ImmutableMap.of(
-                        "Authorization", "Bearer " + accessToken,
-                        "Accept", "application/json"))
-                .setTimeout(5000)
-                .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
-                .build()
-                .doResponse();
-        if (resp == null) {
-            // CircuitBreakerUrl.doResponse() maps transport failures (DNS, refused, timeout) to null
-            throw new DotRuntimeException("OAuth2 groups endpoint unreachable: " + groupsUrl);
-        }
-        if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
-            throw new DotRuntimeException("OAuth2 groups endpoint returned HTTP " + resp.getStatusCode());
-        }
-        final Object parsed = MAPPER.readValue(resp.getResponse(), Object.class);
-        if (parsed instanceof List) {
-            return toStringList(parsed);
-        }
-        if (parsed instanceof Map) {
-            return toStringList(((Map<?, ?>) parsed).get("groups"));
+            return OAuthGroupsFetcher.fetch(groupsUrl, groupsResponsePath, accessToken, userInfo, "OAuth2");
         }
         return Collections.emptyList();
     }
@@ -222,7 +185,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
                             "Authorization", OAuthCrypto.basicAuthHeader(clientId, clientSecret),
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(5000)
-                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
+                    .setMaxResponseBytes(OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
         } catch (final Exception e) {
@@ -238,15 +201,6 @@ public class GenericOAuth2Provider implements OAuthProvider {
     @Override
     public String getProviderType() {
         return PROVIDER_TYPE_OAUTH2;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Collection<String> toStringList(final Object value) {
-        if (value instanceof Collection) {
-            final Collection<Object> c = (Collection<Object>) value;
-            return c.stream().filter(java.util.Objects::nonNull).map(Object::toString).collect(java.util.stream.Collectors.toList());
-        }
-        return Collections.emptyList();
     }
 
     private static String urlEncode(final String s) {

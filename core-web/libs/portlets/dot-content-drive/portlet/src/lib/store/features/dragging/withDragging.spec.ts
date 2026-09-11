@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 import {
     DotCMSContentlet,

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@openng/spectator/jest';
+import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -170,13 +171,13 @@ describe('MainLegacyComponent', () => {
                     provide: DotPropertiesService,
                     useValue: {
                         getKeys: () => of(createFeatureFlagResponse()),
-                        getFeatureFlag: jest.fn().mockReturnValue(of(true))
+                        getFeatureFlag: vi.fn().mockReturnValue(of(true))
                     }
                 },
                 {
                     provide: LOCATION_TOKEN,
                     useValue: {
-                        reload: jest.fn()
+                        reload: vi.fn()
                     }
                 }
             ],
@@ -200,7 +201,9 @@ describe('MainLegacyComponent', () => {
         fixture.detectChanges();
     });
     it('should have basic layout elements', () => {
-        expect(de.query(By.css('dot-alert-confirm')) !== null).toBe(true);
+        // No dot-alert-confirm: app.component.html renders one at the root for every route.
+        // Having a second host here made every alert and confirm render twice.
+        expect(de.query(By.css('dot-alert-confirm'))).toBeNull();
         expect(de.query(By.css('dot-toolbar')) !== null).toBe(true);
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
@@ -222,7 +225,7 @@ describe('MainLegacyComponent', () => {
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
-            jest.spyOn(dotCustomEventHandlerService, 'handle');
+            vi.spyOn(dotCustomEventHandlerService, 'handle');
             const mockEvent = {
                 detail: {
                     name: 'create-contentlet',

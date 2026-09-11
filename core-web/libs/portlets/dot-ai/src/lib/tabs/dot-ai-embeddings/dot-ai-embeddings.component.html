@@ -1,0 +1,174 @@
+<section class="flex h-full min-w-0 flex-col overflow-hidden">
+    <p-toolbar class="shrink-0">
+        <ng-template pTemplate="start">
+            <dot-search-input
+                [placeholder]="'dotai.embeddings.filter.placeholder'"
+                (search)="store.setIndexFilter($event)"
+                data-testid="dotai-embeddings-filter" />
+        </ng-template>
+
+        <ng-template pTemplate="end">
+            <div class="flex items-center gap-2">
+                <p-button
+                    severity="danger"
+                    [outlined]="true"
+                    [label]="'dotai.embeddings.rebuild' | dm"
+                    (onClick)="confirmRebuild()"
+                    data-testid="dotai-embeddings-rebuild" />
+                <p-button
+                    [label]="'dotai.index.create.action' | dm"
+                    [disabled]="!store.isConfigured()"
+                    (onClick)="openCreateDialog()"
+                    data-testid="dotai-embeddings-new-index" />
+            </div>
+        </ng-template>
+    </p-toolbar>
+
+    @if (store.indexBuildNotice(); as notice) {
+        <!-- Build outcomes land here rather than in a modal: the dialog has already closed by
+             the time the answer arrives, and the shared error handler would render a malformed
+             query as "Unknown Error" with the index name lost. -->
+        <p-message
+            class="block shrink-0 px-4 pb-2"
+            [severity]="noticeSeverity(notice.kind)"
+            [closable]="true"
+            (onClose)="store.dismissBuildNotice()"
+            data-testid="dotai-embeddings-build-notice">
+            @switch (notice.kind) {
+                @case ('built') {
+                    {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
+                }
+                @case ('empty') {
+                    {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
+                }
+                @default {
+                    {{
+                        'dotai.embeddings.build.failed'
+                            | dm: [notice.indexName, notice.detail ?? '']
+                    }}
+                }
+            }
+        </p-message>
+    }
+
+    <div class="min-h-0 flex-1 overflow-hidden">
+        @if (store.indexesForbidden()) {
+            <!-- indexCount requires CMS_ADMINISTRATOR_ROLE while portlet access does not, so
+                 this is a normal state for a non-admin, not an error (FR-049, FR-050). -->
+            <dot-ai-empty-state
+                [title]="'dotai.index.admin-required' | dm"
+                [subtitle]="'dotai.index.admin-required.sub' | dm"
+                data-testid="dotai-embeddings-forbidden" />
+        } @else {
+            <p-table
+                [value]="store.filteredIndexes()"
+                [rowHover]="true"
+                [scrollable]="true"
+                scrollHeight="flex"
+                sortMode="single"
+                dataKey="name"
+                [pt]="tablePt"
+                data-testid="dotai-embeddings-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="name">
+                            {{ 'dotai.embeddings.column.index' | dm }}
+                            <p-sortIcon field="name" />
+                        </th>
+                        <th pSortableColumn="fragments" class="w-32">
+                            {{ 'dotai.embeddings.column.chunks' | dm }}
+                            <p-sortIcon field="fragments" />
+                        </th>
+                        <th pSortableColumn="contents" class="w-32">
+                            {{ 'dotai.embeddings.column.contents' | dm }}
+                            <p-sortIcon field="contents" />
+                        </th>
+                        <th pSortableColumn="tokenTotal" class="w-36">
+                            {{ 'dotai.embeddings.column.tokens' | dm }}
+                            <p-sortIcon field="tokenTotal" />
+                        </th>
+                        <th class="w-32">{{ 'dotai.embeddings.column.status' | dm }}</th>
+                        <th class="w-24"></th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-index>
+                    <tr data-testid="dotai-embeddings-row">
+                        <td>
+                            <span class="block truncate font-medium">{{ index.name }}</span>
+                            <!-- The design asked for "Updated <date>" here, but nothing stores a
+                                 timestamp for an index. Content types are real data that the
+                                 legacy screen buried in a title attribute. -->
+                            <span
+                                class="block truncate text-sm text-muted-color"
+                                data-testid="dotai-embeddings-content-types">
+                                {{
+                                    index.contentTypes.join(', ') ||
+                                        ('dotai.embeddings.no-types' | dm)
+                                }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ index.fragments }}</td>
+                        <td class="text-sm">{{ index.contents }}</td>
+                        <td class="text-sm">{{ index.tokenTotal }}</td>
+                        <td>
+                            @if (store.indexStatuses()[index.name] === statuses.BUILDING) {
+                                <p-tag
+                                    severity="warn"
+                                    [value]="'dotai.embeddings.status.building' | dm" />
+                            } @else {
+                                <p-tag
+                                    severity="success"
+                                    [value]="'dotai.embeddings.status.ready' | dm" />
+                            }
+                        </td>
+                        <td class="text-right">
+                            <!-- Same shape as the row-action buttons in dot-plugins and
+                                 dot-locales: text + rounded + secondary, with the square
+                                 forced by `styleClass` and the glyph's line box collapsed.
+                                 Both parts are load-bearing — `w-8 h-8 p-0` because
+                                 PrimeNG's icon-only token sets a width but leaves the height
+                                 to padding plus content, and `leading-none` because the
+                                 glyph's own line-height is what was inflating that content.
+                                 Without them this measured 28x37.
+
+                                 Secondary, not danger: a red control on every row reads as a
+                                 warning about the row itself. The destructive step is the
+                                 confirm dialog, whose accept button is `p-button-danger`. -->
+                            <p-button
+                                [text]="true"
+                                [rounded]="true"
+                                severity="secondary"
+                                size="small"
+                                styleClass="w-8 h-8 p-0"
+                                [ariaLabel]="'dotai.embeddings.delete' | dm"
+                                (onClick)="confirmDeleteIndex(index)"
+                                data-testid="dotai-embeddings-delete">
+                                <span
+                                    class="material-symbols-outlined text-lg! leading-none!"
+                                    aria-hidden="true">
+                                    delete
+                                </span>
+                            </p-button>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="6">
+                            <dot-ai-empty-state
+                                [title]="'dotai.embeddings.empty.title' | dm"
+                                [subtitle]="'dotai.embeddings.empty.sub' | dm"
+                                data-testid="dotai-embeddings-empty" />
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
+</section>
+
+<!-- closeAriaLabel: PrimeNG's own hook. Without it the header's X is announced with no
+     name at all, on both the delete and the rebuild confirmation. -->
+<p-confirmDialog [draggable]="false" [closeAriaLabel]="'close' | dm" [style]="{ width: '500px' }" />

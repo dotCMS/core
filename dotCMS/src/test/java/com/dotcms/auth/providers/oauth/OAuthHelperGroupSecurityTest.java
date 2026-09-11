@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.oauth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -26,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -127,6 +129,25 @@ class OAuthHelperGroupSecurityTest {
         verify(roles.api, never()).addRoleToUser(any(Role.class), any(User.class));
     }
 
+    @Test
+    void groupsFetchContext_carriesResolvedEmail_notLiteralEmailClaim() throws Exception {
+        final RoleApiMocks roles = roleApiMocks(role("dotcms-editor"));
+        // Entra-style tenant: email comes from upn; the IdP emits no "email" claim at all.
+        final OAuthAppConfig config = ssoConfig(Map.of(
+                "buildRolesStrategy", "ALL",
+                "emailClaim", "upn"));
+        final Map<String, Object> userInfo = Map.of("sub", "subject-1", "upn", "jane@corp.example");
+
+        final OAuthProvider provider = runExchange(roles, config, Set.of(), userInfo, "jane@corp.example");
+
+        // The {email} placeholder in groupsUrl reads the "email" key of the map handed to
+        // getGroups, so the helper must populate it with the address it resolved for the user.
+        final ArgumentCaptor<Map<String, Object>> context = ArgumentCaptor.forClass(Map.class);
+        verify(provider).getGroups(eq("access-token"), context.capture());
+        assertEquals("jane@corp.example", context.getValue().get("email"));
+        assertEquals("subject-1", context.getValue().get("sub"), "original claims must be preserved");
+    }
+
     // ---------- harness ----------
 
     private static final class RoleApiMocks {
@@ -157,6 +178,17 @@ class OAuthHelperGroupSecurityTest {
     private static void runExchange(final RoleApiMocks roles,
                                     final OAuthAppConfig config,
                                     final Collection<String> providerGroups) throws Exception {
+        runExchange(roles, config, providerGroups,
+                Map.of("sub", "subject-1", "email", "user@example.com", "email_verified", true),
+                null);
+    }
+
+    /** Returns the provider mock so callers can inspect what the helper handed to it. */
+    private static OAuthProvider runExchange(final RoleApiMocks roles,
+                                             final OAuthAppConfig config,
+                                             final Collection<String> providerGroups,
+                                             final Map<String, Object> userInfo,
+                                             final String resolvedUserEmail) throws Exception {
         final OAuthHelper helper = new OAuthHelper();
         final OAuthProvider provider = mock(OAuthProvider.class);
         when(provider.getProviderType()).thenReturn("OIDC");
@@ -167,14 +199,10 @@ class OAuthHelperGroupSecurityTest {
         final User user = mock(User.class);
         when(user.getUserId()).thenReturn("subject-user");
         when(user.isActive()).thenReturn(true);
+        when(user.getEmailAddress()).thenReturn(resolvedUserEmail);
         when(userAPI.loadByUserByEmail(anyString(), any(User.class), anyBoolean())).thenReturn(null);
         when(userAPI.loadUserById(anyString())).thenReturn(user);
         when(userAPI.loadUserById(anyString(), any(User.class), anyBoolean())).thenReturn(user);
-
-        final Map<String, Object> userInfo = Map.of(
-                "sub", "subject-1",
-                "email", "user@example.com",
-                "email_verified", true);
 
         try (MockedStatic<APILocator> api = Mockito.mockStatic(APILocator.class);
              MockedStatic<Config> cfg = Mockito.mockStatic(Config.class)) {
@@ -188,6 +216,7 @@ class OAuthHelperGroupSecurityTest {
                     provider, "access-token", userInfo, config, true);
             assertSame(user, resolved);
         }
+        return provider;
     }
 
     /** Build a real SSO {@link OAuthAppConfig} via its private secrets constructor. */

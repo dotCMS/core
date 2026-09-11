@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { UIChart } from 'primeng/chart';
 
@@ -51,7 +52,7 @@ describe('DotA11yScoreComponent', () => {
     beforeEach(() => {
         // Report reduced-motion so the count-up snaps to its final value synchronously
         // (no requestAnimationFrame timing in the DOM assertions).
-        window.matchMedia = jest
+        window.matchMedia = vi
             .fn()
             .mockReturnValue({ matches: true }) as unknown as typeof matchMedia;
     });
@@ -105,20 +106,20 @@ describe('DotA11yScoreComponent', () => {
             // Without reduced motion the number is animated across frames, so it must
             // still END on the open count — an easing that never reaches 1 would park
             // the ring one short forever.
-            window.matchMedia = jest
+            window.matchMedia = vi
                 .fn()
                 .mockReturnValue({ matches: false }) as unknown as typeof matchMedia;
-            jest.useFakeTimers();
+            vi.useFakeTimers();
 
             render();
             expect(spectator.query(byTestId('studio-score-count'))).toHaveText('0');
 
             // Past the 600ms duration → the final frame clamps t to 1.
-            jest.advanceTimersByTime(700);
+            vi.advanceTimersByTime(700);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 

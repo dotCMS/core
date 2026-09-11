@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -80,7 +81,7 @@ describe('DotDownloadBundleDialogComponent', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn(mockFiltersService, 'get');
+        vi.spyOn(mockFiltersService, 'get');
         spectator = createComponent();
         component = spectator.component;
         dotDownloadBundleDialogService = spectator.inject(DotDownloadBundleDialogService);
@@ -88,7 +89,7 @@ describe('DotDownloadBundleDialogComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should hide by default', () => {
@@ -175,12 +176,10 @@ describe('DotDownloadBundleDialogComponent', () => {
                 let anchor: HTMLAnchorElement;
 
                 beforeEach(() => {
-                    (window as any).fetch = jest
-                        .fn()
-                        .mockReturnValue(Promise.resolve(mockResponse));
+                    (window as any).fetch = vi.fn().mockReturnValue(Promise.resolve(mockResponse));
                     anchor = document.createElement('a');
-                    jest.spyOn(anchor, 'click');
-                    jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
+                    vi.spyOn(anchor, 'click');
+                    vi.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
                 });
 
                 it('should disable buttons and change to label to downloading...', () => {
@@ -191,7 +190,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                 });
 
                 it('should fetch to the correct url when publish', fakeAsync(() => {
-                    (dotUtils.getDownloadLink as jest.Mock).mockClear();
+                    (dotUtils.getDownloadLink as Mock).mockClear();
 
                     component.handleSubmit();
                     tick(0);
@@ -227,7 +226,7 @@ describe('DotDownloadBundleDialogComponent', () => {
 
             describe('on error', () => {
                 beforeEach(() => {
-                    (window as any).fetch = jest
+                    (window as any).fetch = vi
                         .fn()
                         .mockReturnValue(Promise.reject(new Error('error')));
                 });

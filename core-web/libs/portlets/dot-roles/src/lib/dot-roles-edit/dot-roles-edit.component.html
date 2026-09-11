@@ -1,7 +1,3 @@
-<header class="mb-4">
-    <h2 class="m-0 text-lg font-semibold">{{ 'roles.edit.title' | dm }}</h2>
-</header>
-
 @if (readOnly) {
     <p
         class="m-0 mb-4 rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-800"
@@ -12,13 +8,14 @@
 
 <form [formGroup]="form" (ngSubmit)="onSave()" class="form flex flex-col gap-4">
     <div class="field">
-        <label for="roleName">{{ 'roles.form.name' | dm }} *</label>
+        <label dotFieldRequired for="roleName">{{ 'roles.form.name' | dm }}</label>
         <input
             pInputText
             id="roleName"
             formControlName="roleName"
             data-testid="input-role-name"
             [attr.aria-required]="true" />
+        <dot-field-validation-message [field]="form.get('roleName')" />
     </div>
 
     <div class="field">
@@ -28,13 +25,26 @@
 
     <div class="field">
         <label for="parentRoleId">{{ 'roles.form.parent' | dm }}</label>
-        <p-select
+        <!--
+            A tree rather than a flat indented list: the hierarchy is the whole
+            point of picking a parent, and indentation alone gets ambiguous
+            past two levels. "None (Top Level)" is pinned as the first entry so
+            reparenting to root is an explicit pick; clearing the field means
+            the same thing, and `showClear` stays as the shortcut for it.
+        -->
+        <p-treeSelect
             id="parentRoleId"
-            formControlName="parentRoleId"
-            [options]="$parentOptions()"
-            optionLabel="label"
-            optionValue="value"
+            class="w-full"
+            formControlName="parent"
+            [options]="$parentTree()"
+            [showClear]="true"
+            [filter]="true"
+            [loading]="$searching()"
+            (onNodeExpand)="onNodeExpand($event)"
+            (onNodeCollapse)="onNodeCollapse($event)"
+            (onFilter)="onFilter($event)"
             appendTo="body"
+            [placeholder]="'roles.form.parent.placeholder' | dm"
             data-testid="select-parent" />
     </div>
 
@@ -86,20 +96,21 @@
             data-testid="input-description"></textarea>
     </div>
 
-    @if ($error()) {
-        <p class="m-0 text-red-700" data-testid="edit-error">{{ $error() | dm }}</p>
-    }
-
     <p-confirmDialog
         [draggable]="false"
         [style]="{ width: '500px' }"
         data-testid="delete-confirm-dialog" />
 
-    <footer class="mt-2 flex justify-between gap-2">
+    <!--
+        Save is never disabled by validation, so the footer carries the reason a
+        submit did nothing — sitting to the right of Delete, per design.
+        `ml-auto` on the button group keeps Cancel/Save right-aligned whether or
+        not the message is present.
+    -->
+    <footer class="mt-2 flex items-center gap-2">
         <button
             pButton
             type="button"
-            severity="danger"
             [outlined]="true"
             (click)="onDelete()"
             [disabled]="readOnly || $submitting()"
@@ -108,11 +119,15 @@
             {{ 'roles.action.delete' | dm }}
         </button>
 
-        <div class="flex gap-2">
+        @if ($error()) {
+            <p class="m-0 text-sm text-red-700" data-testid="edit-error">{{ $error() | dm }}</p>
+        }
+
+        <div class="ml-auto flex gap-2">
             <button
                 pButton
                 type="button"
-                [outlined]="true"
+                [text]="true"
                 (click)="onCancel()"
                 data-testid="btn-cancel">
                 {{ 'roles.action.cancel' | dm }}
@@ -120,7 +135,7 @@
             <button
                 pButton
                 type="submit"
-                [disabled]="form.invalid || $submitting() || readOnly"
+                [disabled]="readOnly"
                 [loading]="$submitting()"
                 [pTooltip]="readOnly ? ('roles.edit.readonly' | dm) : ''"
                 data-testid="btn-save">

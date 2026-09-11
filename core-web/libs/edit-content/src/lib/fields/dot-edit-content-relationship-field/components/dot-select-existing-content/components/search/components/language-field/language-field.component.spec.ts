@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
@@ -21,7 +22,7 @@ describe('LanguageFieldComponent', () => {
         componentProviders: [LanguageFieldStore],
         providers: [
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             { provide: DotMessageService, useValue: messageServiceMock }
         ]
@@ -41,7 +42,7 @@ describe('LanguageFieldComponent', () => {
 
     describe('Initialization', () => {
         it('should load languages on init', () => {
-            const spyLoadLanguages = jest.spyOn(store, 'loadLanguages');
+            const spyLoadLanguages = vi.spyOn(store, 'loadLanguages');
             spectator.detectChanges();
             expect(spyLoadLanguages).toHaveBeenCalled();
         });
@@ -53,7 +54,7 @@ describe('LanguageFieldComponent', () => {
 
     describe('ControlValueAccessor Implementation', () => {
         it('should write value and update control', () => {
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+            const spySetSelectedLanguage = vi.spyOn(store, 'setSelectedLanguage');
             spectator.detectChanges();
 
             const languageId = 1;
@@ -64,7 +65,7 @@ describe('LanguageFieldComponent', () => {
         });
 
         it('should handle null value in writeValue', () => {
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+            const spySetSelectedLanguage = vi.spyOn(store, 'setSelectedLanguage');
             spectator.detectChanges();
 
             component.writeValue(null);
@@ -74,7 +75,7 @@ describe('LanguageFieldComponent', () => {
         });
 
         it('should handle non-existent language id in writeValue by setting pending', () => {
-            const spySetPending = jest.spyOn(store, 'setPendingLanguageId');
+            const spySetPending = vi.spyOn(store, 'setPendingLanguageId');
             spectator.detectChanges();
             component.writeValue(999);
 
@@ -83,7 +84,7 @@ describe('LanguageFieldComponent', () => {
 
         it('should register onChange callback', () => {
             spectator.detectChanges();
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             component.registerOnChange(onChangeSpy);
 
             component.handleLanguageChange();
@@ -95,7 +96,7 @@ describe('LanguageFieldComponent', () => {
 
         it('should register onTouched callback', () => {
             spectator.detectChanges();
-            const onTouchedSpy = jest.fn();
+            const onTouchedSpy = vi.fn();
             component.registerOnTouched(onTouchedSpy);
 
             component.handleLanguageChange();
@@ -106,8 +107,8 @@ describe('LanguageFieldComponent', () => {
 
     describe('Language Selection', () => {
         it('should emit selected language on change', () => {
-            const languageChangeSpy = jest.spyOn(component.languageChange, 'emit');
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+            const languageChangeSpy = vi.spyOn(component.languageChange, 'emit');
+            const spySetSelectedLanguage = vi.spyOn(store, 'setSelectedLanguage');
             spectator.detectChanges();
 
             component.languageControl.setValue(mockLocales[0]);
@@ -118,8 +119,8 @@ describe('LanguageFieldComponent', () => {
         });
 
         it('should handle null selection', () => {
-            const languageChangeSpy = jest.spyOn(component.languageChange, 'emit');
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+            const languageChangeSpy = vi.spyOn(component.languageChange, 'emit');
+            const spySetSelectedLanguage = vi.spyOn(store, 'setSelectedLanguage');
             spectator.detectChanges();
 
             component.languageControl.setValue(null);
@@ -147,7 +148,7 @@ describe('LanguageFieldComponent', () => {
         it('should not emit changes when disabled', () => {
             spectator.detectChanges();
 
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             component.registerOnChange(onChangeSpy);
             component.setDisabledState(true);
 
@@ -178,7 +179,7 @@ describe('LanguageFieldComponent', () => {
         });
 
         it('should handle writeValue(-1) before languages load without setting pending', () => {
-            const spySetPending = jest.spyOn(store, 'setPendingLanguageId');
+            const spySetPending = vi.spyOn(store, 'setPendingLanguageId');
             component.writeValue(-1);
 
             expect(spySetPending).not.toHaveBeenCalled();
@@ -188,8 +189,8 @@ describe('LanguageFieldComponent', () => {
 
     describe('Edge Cases', () => {
         it('should handle rapid language changes', () => {
-            const languageChangeSpy = jest.spyOn(component.languageChange, 'emit');
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+            const languageChangeSpy = vi.spyOn(component.languageChange, 'emit');
+            const spySetSelectedLanguage = vi.spyOn(store, 'setSelectedLanguage');
 
             spectator.detectChanges();
 
@@ -203,7 +204,7 @@ describe('LanguageFieldComponent', () => {
         });
 
         it('should handle undefined language value', () => {
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+            const spySetSelectedLanguage = vi.spyOn(store, 'setSelectedLanguage');
             spectator.detectChanges();
             component.writeValue(null);
 

@@ -1,5 +1,6 @@
 import { createServiceFactory, SpectatorService } from '@openng/spectator';
 import { of, Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -32,9 +33,9 @@ class MockEditor {
         }
     };
 
-    on = jest.fn();
-    insertContent = jest.fn();
-    focus = jest.fn();
+    on = vi.fn();
+    insertContent = vi.fn();
+    focus = vi.fn();
 }
 
 /**
@@ -52,7 +53,7 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
     let spectator: SpectatorService<DotWysiwygPluginService>;
     let dialogService: DialogService;
     let editor: MockEditor;
-    let closeSpy: jest.Mock;
+    let closeSpy: Mock;
 
     const createService = createServiceFactory({
         service: DotWysiwygPluginService,
@@ -60,30 +61,30 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
             DialogService,
             {
                 provide: DotPropertiesService,
-                useValue: { getKey: jest.fn().mockReturnValue(of(MOCK_IMAGE_URL_PATTERN)) }
+                useValue: { getKey: vi.fn().mockReturnValue(of(MOCK_IMAGE_URL_PATTERN)) }
             },
-            { provide: DotUploadFileService, useValue: { publishContent: jest.fn() } },
-            { provide: DotSiteService, useValue: { getCurrentSite: jest.fn() } },
-            { provide: DotMessageService, useValue: { get: jest.fn((key: string) => key) } }
+            { provide: DotUploadFileService, useValue: { publishContent: vi.fn() } },
+            { provide: DotSiteService, useValue: { getCurrentSite: vi.fn() } },
+            { provide: DotMessageService, useValue: { get: vi.fn((key: string) => key) } }
             // ASSET_PICKER_LAUNCHER intentionally not provided (legacy host).
             // DotEditContentStore is absent too, as it is in the legacy Dojo pages.
         ]
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         dialogService = spectator.inject(DialogService);
         editor = new MockEditor();
-        closeSpy = jest.fn();
+        closeSpy = vi.fn();
     });
 
     /** Mocks `DialogService.open` to close with `asset`, then clicks the toolbar button. */
     const clickAddImage = (asset?: unknown) => {
-        jest.spyOn(dialogService, 'open').mockReturnValue({
+        vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(asset),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -131,11 +132,11 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
     });
 
     it('should not stack a second dialog while one is open', () => {
-        const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+        const openSpy = vi.spyOn(dialogService, 'open').mockReturnValue({
             // Never emits: the dialog stays open for the duration of the test.
             onClose: new Subject(),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         const button = editor.ui.registry.getAll().buttons['dotAddImage'];
@@ -155,10 +156,10 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
     it('should close an open dialog when the field is destroyed', () => {
         // PrimeNG never closes dialogs on service teardown (`DialogService` has no `ngOnDestroy`),
         // so the service has to do it or the dialog outlives the field that opened it.
-        jest.spyOn(dialogService, 'open').mockReturnValue({
+        vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: new Subject(),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
         editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -171,7 +172,7 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         // The busy flag is only ever cleared by the picker's `onClose`, and an open that threw
         // wired no close handler — so without an explicit release the toolbar button would be dead
         // for the rest of the session.
-        jest.spyOn(dialogService, 'open').mockImplementationOnce(() => {
+        vi.spyOn(dialogService, 'open').mockImplementationOnce(() => {
             throw new Error('dialog exploded');
         });
 
@@ -180,10 +181,10 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
 
         expect(() => button.onAction()).toThrow('dialog exploded');
 
-        jest.spyOn(dialogService, 'open').mockReturnValue({
+        vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(undefined),
             close: closeSpy
-        } as DynamicDialogRef);
+        } as unknown as DynamicDialogRef);
         button.onAction();
 
         expect(dialogService.open).toHaveBeenCalledTimes(2);
@@ -197,7 +198,7 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
          */
         const openWithRealisticRef = () => {
             const onClose = new Subject<unknown>();
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose,
                 close: (result?: unknown) => onClose.next(result)
             } as unknown as DynamicDialogRef);

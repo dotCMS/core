@@ -1,4 +1,4 @@
-import { SpectatorPipe, createPipeFactory } from '@openng/spectator/jest';
+import { SpectatorPipe, createPipeFactory } from '@openng/spectator/vitest';
 
 import { DotLanguage } from '@dotcms/dotcms-models';
 

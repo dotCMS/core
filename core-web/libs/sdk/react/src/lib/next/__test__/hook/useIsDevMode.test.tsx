@@ -1,4 +1,5 @@
 import { renderHook } from '@testing-library/react';
+import { Mock, vi } from 'vitest';
 
 import { UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
@@ -15,12 +16,12 @@ const Wrapper = ({ children, mode = 'production' }: any) => {
     );
 };
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 describe('useIsDevMode', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
     beforeEach(() => getUVEStateMock.mockReset());
 
     describe('when outside editor', () => {

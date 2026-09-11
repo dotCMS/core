@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { BlockEditorNode } from '@dotcms/types';
 import * as blockValidator from '@dotcms/uve/internal';
@@ -27,13 +28,13 @@ describe('DotCMSBlockEditorRenderer', () => {
     };
 
     beforeEach(() => {
-        jest.spyOn(console, 'error').mockImplementation(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {
             /* empty */
         });
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render the block content correctly', () => {
@@ -67,12 +68,14 @@ describe('DotCMSBlockEditorRenderer', () => {
         );
 
         expect(container.firstChild).toHaveClass('test-class');
-        expect(container.firstChild).toHaveStyle('color: red');
+        // rgb(), not the keyword: the DOM normalises a colour keyword on assignment,
+        // so the inline style serialises back as rgb(255, 0, 0).
+        expect(container.firstChild).toHaveStyle({ color: 'rgb(255, 0, 0)' });
     });
 
     describe('Error Handling', () => {
         it('should show error message in dev mode when blocks object is not defined', () => {
-            jest.spyOn(blockValidator, 'isValidBlocks').mockReturnValue({
+            vi.spyOn(blockValidator, 'isValidBlocks').mockReturnValue({
                 error: 'Error: Blocks object is not defined'
             });
 
@@ -90,7 +93,7 @@ describe('DotCMSBlockEditorRenderer', () => {
         });
 
         it('should show error message in dev mode when blocks object is invalid', () => {
-            jest.spyOn(blockValidator, 'isValidBlocks').mockReturnValue({
+            vi.spyOn(blockValidator, 'isValidBlocks').mockReturnValue({
                 error: 'Error: Blocks must be an object, but received: string'
             });
 
@@ -110,7 +113,7 @@ describe('DotCMSBlockEditorRenderer', () => {
         });
 
         it('should not render error message in production mode when blocks are invalid', () => {
-            jest.spyOn(blockValidator, 'isValidBlocks').mockReturnValue({
+            vi.spyOn(blockValidator, 'isValidBlocks').mockReturnValue({
                 error: 'Error: Blocks content is empty'
             });
 
@@ -125,7 +128,7 @@ describe('DotCMSBlockEditorRenderer', () => {
 
     describe('Block validation', () => {
         it('should validate blocks on mount', () => {
-            const isValidBlocksSpy = jest
+            const isValidBlocksSpy = vi
                 .spyOn(blockValidator, 'isValidBlocks')
                 .mockReturnValue({ error: null });
 
@@ -135,7 +138,7 @@ describe('DotCMSBlockEditorRenderer', () => {
         });
 
         it('should validate updated blocks on rerender', () => {
-            const isValidBlocksSpy = jest
+            const isValidBlocksSpy = vi
                 .spyOn(blockValidator, 'isValidBlocks')
                 .mockReturnValue({ error: null });
 

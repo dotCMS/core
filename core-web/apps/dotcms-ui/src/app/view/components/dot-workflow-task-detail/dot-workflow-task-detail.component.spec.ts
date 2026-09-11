@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -74,10 +75,10 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 id: '123'
             });
 
-            jest.spyOn(spectator.component, 'onClose');
-            jest.spyOn(dotWorkflowTaskDetailService, 'clear');
-            jest.spyOn(spectator.component.shutdown, 'emit');
-            jest.spyOn(spectator.component.custom, 'emit');
+            vi.spyOn(spectator.component, 'onClose');
+            vi.spyOn(dotWorkflowTaskDetailService, 'clear');
+            vi.spyOn(spectator.component.shutdown, 'emit');
+            vi.spyOn(spectator.component.custom, 'emit');
             spectator.detectChanges();
         });
 

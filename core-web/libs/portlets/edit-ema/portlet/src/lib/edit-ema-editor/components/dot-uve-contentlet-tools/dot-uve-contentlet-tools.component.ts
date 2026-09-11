@@ -235,6 +235,59 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
+     * Whether the current user holds EDIT permission on the hovered contentlet.
+     * Sourced from `data-dot-can-edit`, which the container renderer stamps on
+     * every contentlet in EDIT mode from a WRITE-level check against the
+     * contentlet instance.
+     *
+     * Fail-open by design: a missing value means allowed. Headless and
+     * SDK-rendered pages build their own wrappers and never emit the
+     * attribute, so denying on absence would grey out the toolbar on all of
+     * them.
+     */
+    readonly canEditContentlet = computed(
+        () => this.contentContext()?.contentlet?.canEdit !== false
+    );
+
+    /**
+     * Tooltip key for the edit button. When the user lacks edit permission on
+     * this contentlet the tooltip explains why; otherwise it just labels the
+     * action, matching the other toolbar tooltips.
+     */
+    protected readonly editButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.full';
+    });
+
+    /**
+     * Tooltip key for the quick-edit button. Shares the edit button's
+     * permission message — the quick-edit form writes the same contentlet, so
+     * the same explanation applies.
+     */
+    protected readonly quickEditButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.quick';
+    });
+
+    /**
+     * Tooltip key for the style button. Style properties describe how this
+     * contentlet presents itself, so they follow contentlet permission.
+     */
+    protected readonly styleButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.style';
+    });
+
+    /**
      * Tooltip key for the delete button. When the button is disabled
      * (e.g. on personalization), the tooltip explains why; otherwise
      * it just labels the action ("Remove") to match the other toolbar
@@ -307,6 +360,7 @@ export class DotUveContentletToolsComponent {
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.quick'),
             icon: 'pi pi-bolt',
+            disabled: !this.canEditContentlet(),
             command: () => {
                 this.promoteHoverToSelected();
                 this.openQuickEdit.emit();
@@ -317,6 +371,7 @@ export class DotUveContentletToolsComponent {
             items.push({
                 label: this.#dotMessageService.get('uve.tooltip.edit.style'),
                 icon: 'pi pi-palette',
+                disabled: !this.canEditContentlet(),
                 command: () => {
                     this.promoteHoverToSelected();
                     this.selectContent.emit(context);
@@ -327,6 +382,7 @@ export class DotUveContentletToolsComponent {
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.full'),
             icon: 'pi pi-pencil',
+            disabled: !this.canEditContentlet(),
             command: () => this.openFullEditor.emit(context)
         });
 

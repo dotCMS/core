@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -65,7 +67,7 @@ describe('DotAccountService', () => {
     });
 
     it('should handle error on addStarterPage and return null', () => {
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        vi.spyOn(dotHttpErrorManagerService, 'handle');
 
         service.addStarterPage().subscribe((response) => {
             expect(response).toBeNull();
@@ -88,7 +90,7 @@ describe('DotAccountService', () => {
     });
 
     it('should handle error on removeStarterPage and return null', () => {
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        vi.spyOn(dotHttpErrorManagerService, 'handle');
 
         service.removeStarterPage().subscribe((response) => {
             expect(response).toBeNull();

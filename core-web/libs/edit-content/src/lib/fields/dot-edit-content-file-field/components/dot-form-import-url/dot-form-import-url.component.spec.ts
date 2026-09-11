@@ -1,6 +1,12 @@
 import { patchState } from '@ngrx/signals';
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -76,8 +82,8 @@ describe('DotFormImportUrlComponent', () => {
 
         it('should disable and enable the form when isLoading is truthy', () => {
             spectator.detectChanges();
-            const disableSpy = jest.spyOn(spectator.component.form, 'disable');
-            const enableSpy = jest.spyOn(spectator.component.form, 'enable');
+            const disableSpy = vi.spyOn(spectator.component.form, 'disable');
+            const enableSpy = vi.spyOn(spectator.component.form, 'enable');
 
             patchState(store, {
                 status: ComponentStatus.LOADING
@@ -99,7 +105,7 @@ describe('DotFormImportUrlComponent', () => {
 
     describe('ngOnInit', () => {
         it('should set upload type and accepted files', () => {
-            const initSetupSpy = jest.spyOn(store, 'initSetup');
+            const initSetupSpy = vi.spyOn(store, 'initSetup');
 
             spectator.detectChanges();
 
@@ -112,7 +118,7 @@ describe('DotFormImportUrlComponent', () => {
 
     describe('onSubmit', () => {
         it('should not call uploadFileByUrl when form is invalid', () => {
-            const uploadFileByUrlSpy = jest.spyOn(store, 'uploadFileByUrl');
+            const uploadFileByUrlSpy = vi.spyOn(store, 'uploadFileByUrl');
 
             spectator.detectChanges();
             spectator.component.form.get('url').setValue('');
@@ -123,7 +129,7 @@ describe('DotFormImportUrlComponent', () => {
         });
 
         it('should call uploadFileByUrl when form is valid', () => {
-            const uploadFileByUrlSpy = jest.spyOn(store, 'uploadFileByUrl');
+            const uploadFileByUrlSpy = vi.spyOn(store, 'uploadFileByUrl');
             uploadService.uploadFile.mockReturnValue(
                 of({ source: 'contentlet', file: NEW_FILE_MOCK.entity })
             );
@@ -175,7 +181,7 @@ describe('DotFormImportUrlComponent without data', () => {
 
     describe('ngOnInit', () => {
         it('should set upload type and accepted files', () => {
-            const initSetupSpy = jest.spyOn(store, 'initSetup');
+            const initSetupSpy = vi.spyOn(store, 'initSetup');
 
             spectator.detectChanges();
 
@@ -221,7 +227,7 @@ describe('DotFormImportUrlComponent Binary input type', () => {
 
     describe('ngOnInit', () => {
         it('should set upload type and accepted files', () => {
-            const initSetupSpy = jest.spyOn(store, 'initSetup');
+            const initSetupSpy = vi.spyOn(store, 'initSetup');
 
             spectator.detectChanges();
 

@@ -1,12 +1,13 @@
 import { renderHook } from '@testing-library/react-hooks';
 import { ReactNode, useContext } from 'react';
+import { vi } from 'vitest';
 
 import DotExperimentsContext from './DotExperimentsContext';
 
 import { DotExperiments } from '../dot-experiments';
 
-jest.mock('../dot-experiments', () => {
-    return jest.fn().mockImplementation(() => {
+vi.mock('../dot-experiments', () => {
+    return vi.fn().mockImplementation(() => {
         return {};
     });
 });

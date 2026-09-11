@@ -51,7 +51,15 @@ public class ContentDriveResource {
                      "• dotCMS does not provide support tickets for this endpoint\n" +
                      "• Use at your own risk for custom implementations\n\n" +
                      "**Functionality:** Search and browse content assets using drive-like functionality " +
-                     "with filtering, navigation, and content type filtering capabilities.",
+                     "with filtering, navigation, and content type filtering capabilities.\n\n" +
+                     "**Status filter:** the optional `status` array narrows by content state — " +
+                     "`ARCHIVED`, `UNPUBLISHED` or `LOCKED`. Entries combine with **OR**, so " +
+                     "selecting more statuses returns more content and adding one never shrinks " +
+                     "the result set. Archived content is excluded by default and only `ARCHIVED` " +
+                     "admits it, so `[\"UNPUBLISHED\"]` means \"unpublished and not archived\". " +
+                     "An empty or omitted array applies no status filtering at all; an " +
+                     "unrecognized value is rejected with a 400. It has no side effects on other " +
+                     "fields \u2014 `showFolders` is honoured as sent.",
         tags = {"Internal APIs"}
     )
     @ApiResponses(value = {

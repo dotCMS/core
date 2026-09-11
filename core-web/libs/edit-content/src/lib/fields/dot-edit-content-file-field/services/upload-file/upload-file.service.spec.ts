@@ -1,5 +1,10 @@
-import { createHttpFactory, mockProvider, SpectatorHttp, SpyObject } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import {
+    createHttpFactory,
+    mockProvider,
+    SpectatorHttp,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { firstValueFrom, of } from 'rxjs';
 
 import { DotContentletService, DotUploadFileService, DotUploadService } from '@dotcms/data-access';
 import { createFakeContentlet } from '@dotcms/utils-testing';
@@ -187,19 +192,21 @@ describe('DotFileFieldUploadService', () => {
                 });
         });
 
-        it('should throw error when file type is not accepted', () => {
+        it('should throw error when file type is not accepted', async () => {
             const tempFile = { ...TEMP_FILE_MOCK, mimeType: 'application/pdf' };
             tempFileService.uploadFile.mockResolvedValue(tempFile);
 
             const file = new File([''], 'test.pdf', { type: 'application/pdf' });
             const acceptedFiles: string[] = ['image/png', 'image/jpeg'];
 
-            spectator.service.uploadTempFile(file, acceptedFiles).subscribe({
-                next: () => fail('should have thrown an error'),
-                error: (error) => {
-                    expect(error).toEqual(new Error('Invalid file type'));
-                }
-            });
+            // Awaited via firstValueFrom, not a fire-and-forget subscribe. The temp
+            // upload is promise-backed, so the error arrives after the test body has
+            // returned and the subscriber is already closed — rxjs then routes it to
+            // reportUnhandledError instead of the error callback. Jest dropped that;
+            // Vitest counts it as an unhandled error.
+            await expect(
+                firstValueFrom(spectator.service.uploadTempFile(file, acceptedFiles))
+            ).rejects.toThrow('Invalid file type');
         });
 
         it('should accept file when acceptedFiles is empty', () => {
@@ -231,7 +238,7 @@ describe('DotFileFieldUploadService', () => {
             });
         });
 
-        it('should throw error when file type is not accepted', () => {
+        it('should throw error when file type is not accepted', async () => {
             const mockContentlet = createFakeContentlet({
                 mimeType: 'application/pdf',
                 asset: '/dA/test-id/asset/test.pdf'
@@ -241,17 +248,19 @@ describe('DotFileFieldUploadService', () => {
             const file = new File([''], 'test.pdf', { type: 'application/pdf' });
             const acceptedFiles: string[] = ['image/png', 'image/jpeg'];
 
-            spectator.service.uploadDotAssetByFile(file, acceptedFiles).subscribe({
-                next: () => fail('should have thrown an error'),
-                error: (error) => {
-                    expect(error).toEqual(new Error('Invalid file type'));
-                }
-            });
+            // Awaited via firstValueFrom, not a fire-and-forget subscribe. The temp
+            // upload is promise-backed, so the error arrives after the test body has
+            // returned and the subscriber is already closed — rxjs then routes it to
+            // reportUnhandledError instead of the error callback. Jest dropped that;
+            // Vitest counts it as an unhandled error.
+            await expect(
+                firstValueFrom(spectator.service.uploadDotAssetByFile(file, acceptedFiles))
+            ).rejects.toThrow('Invalid file type');
         });
     });
 
     describe('uploadDotAssetByUrl', () => {
-        it('should upload a file by URL as dotAsset', () => {
+        it('should upload a file by URL as dotAsset', async () => {
             const mockContentlet = createFakeContentlet({
                 mimeType: 'image/png',
                 asset: '/dA/test-id/asset/test.png'
@@ -260,21 +269,27 @@ describe('DotFileFieldUploadService', () => {
             tempFileService.uploadFile.mockResolvedValue(TEMP_FILE_MOCK);
 
             const file = 'temp-file-id';
-            const acceptedFiles: string[] = ['image/png'];
+            // TEMP_FILE_MOCK is a PDF, so 'image/png' made the mime check reject it and
+            // this observable errored instead of emitting: every assertion below sat in
+            // a `next` handler that never ran, and the throw surfaced as an unhandled
+            // rxjs error that Jest dropped. Awaited so the test can actually fail.
+            const acceptedFiles: string[] = ['application/pdf'];
 
-            spectator.service.uploadDotAssetByUrl(file, acceptedFiles).subscribe((result) => {
-                expect(result).toBe(mockContentlet);
-                expect(tempFileService.uploadFile).toHaveBeenCalledWith({
-                    file,
-                    signal: undefined
-                });
-                expect(dotUploadFileService.uploadDotAssetWithContent).toHaveBeenCalledWith(
-                    TEMP_FILE_MOCK.id
-                );
+            const result = await firstValueFrom(
+                spectator.service.uploadDotAssetByUrl(file, acceptedFiles)
+            );
+
+            expect(result).toBe(mockContentlet);
+            expect(tempFileService.uploadFile).toHaveBeenCalledWith({
+                file,
+                signal: undefined
             });
+            expect(dotUploadFileService.uploadDotAssetWithContent).toHaveBeenCalledWith(
+                TEMP_FILE_MOCK.id
+            );
         });
 
-        it('should upload a file by URL with abort signal', () => {
+        it('should upload a file by URL with abort signal', async () => {
             const abortSignal = new AbortController().signal;
             const mockContentlet = createFakeContentlet({
                 mimeType: 'image/png',
@@ -284,35 +299,38 @@ describe('DotFileFieldUploadService', () => {
             tempFileService.uploadFile.mockResolvedValue(TEMP_FILE_MOCK);
 
             const file = 'temp-file-id';
-            const acceptedFiles: string[] = ['image/png'];
+            // See the previous test: TEMP_FILE_MOCK is a PDF.
+            const acceptedFiles: string[] = ['application/pdf'];
 
-            spectator.service
-                .uploadDotAssetByUrl(file, acceptedFiles, abortSignal)
-                .subscribe((result) => {
-                    expect(result).toBe(mockContentlet);
-                    expect(tempFileService.uploadFile).toHaveBeenCalledWith({
-                        file,
-                        signal: abortSignal
-                    });
-                    expect(dotUploadFileService.uploadDotAssetWithContent).toHaveBeenCalledWith(
-                        TEMP_FILE_MOCK.id
-                    );
-                });
+            const result = await firstValueFrom(
+                spectator.service.uploadDotAssetByUrl(file, acceptedFiles, abortSignal)
+            );
+
+            expect(result).toBe(mockContentlet);
+            expect(tempFileService.uploadFile).toHaveBeenCalledWith({
+                file,
+                signal: abortSignal
+            });
+            expect(dotUploadFileService.uploadDotAssetWithContent).toHaveBeenCalledWith(
+                TEMP_FILE_MOCK.id
+            );
         });
 
-        it('should throw error when file type is not accepted', () => {
+        it('should throw error when file type is not accepted', async () => {
             const tempFile = { ...TEMP_FILE_MOCK, mimeType: 'application/pdf' };
             tempFileService.uploadFile.mockResolvedValue(tempFile);
 
             const file = 'temp-file-id';
             const acceptedFiles: string[] = ['image/png', 'image/jpeg'];
 
-            spectator.service.uploadDotAssetByUrl(file, acceptedFiles).subscribe({
-                next: () => fail('should have thrown an error'),
-                error: (error) => {
-                    expect(error).toEqual(new Error('Invalid file type'));
-                }
-            });
+            // Awaited via firstValueFrom, not a fire-and-forget subscribe. The temp
+            // upload is promise-backed, so the error arrives after the test body has
+            // returned and the subscriber is already closed — rxjs then routes it to
+            // reportUnhandledError instead of the error callback. Jest dropped that;
+            // Vitest counts it as an unhandled error.
+            await expect(
+                firstValueFrom(spectator.service.uploadDotAssetByUrl(file, acceptedFiles))
+            ).rejects.toThrow('Invalid file type');
         });
     });
 

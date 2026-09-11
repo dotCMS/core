@@ -663,6 +663,53 @@ describe('DotMyFeatureComponent', () => {
 });
 ```
 
+## Shared Components Over Different Stores (the filter-facade pattern)
+
+A component in `libs/ui/` that needs state cannot inject a store: each consumer owns a different
+one. Injecting one makes the component that consumer's, and the next surface re-implements it —
+which is how Content Drive's filter chips and the Asset Picker's toolbar drifted apart.
+
+The pattern: the component declares what it needs as an injection token, and each surface provides
+an implementation over its own store.
+
+```ts
+// libs/ui/src/lib/components/dot-filter-bar/filter-facade.token.ts
+export interface DotFilterFacade {
+    getFilterValue(key: string): string | string[] | undefined;
+    patchFilters(patch: Record<string, string | string[]>): void;
+    removeFilter(key: string): void;
+    clearFilters(): void;
+    readonly $hasNonDefaultFilters: Signal<boolean>;
+}
+
+export const DOT_FILTER_FACADE = new InjectionToken<DotFilterFacade>('DOT_FILTER_FACADE');
+```
+
+Each surface provides it **at the component that owns its store**, never in `root` — two open
+pickers each need their own:
+
+```ts
+providers: [DotAssetPickerStore, provideAssetPickerFilterFacade()]
+```
+
+Three rules make it work in practice:
+
+1. **The facade carries values, never caller restrictions.** A restriction (an allowed base type, a
+   pinned version state) is part of what the surface *is*; it reaches a control as an `input()`,
+   so no interaction can widen past it.
+2. **A shared component reports failures; it does not announce them.** `DotHttpErrorManagerService`
+   transitively needs `Router`, which `libs/ui/` cannot assume — it is bundled into a legacy host
+   that has none. So a control that loads options exposes `error = output<...>()` and each surface
+   routes it to whatever channel it has.
+3. **A capability only some surfaces can supply is optional.** Inject it with `{ optional: true }`
+   and degrade the one thing that needs it, saying so — see `DOT_RELATIONSHIP_PICKER`, which
+   Content Drive supplies and the Asset Picker does not.
+
+**Adding a filter chip**, in full: one connected component under `dot-filter-bar/chips/` carrying
+`data-filter-chip="<id>"`, one id in `dot-filter-bar/constants.ts`, and one element in each
+toolbar that opts in. Ordering is asserted per toolbar against `DOT_CANONICAL_FILTER_ORDER` rather
+than enforced by machinery, so a surface may omit a chip but not reorder one.
+
 ## See also
 - [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Syntax, signals, change detection defaults
 - [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) — NgRx Signal Store for feature state

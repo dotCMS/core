@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -79,7 +80,7 @@ describe('DotAssetSearchComponent', () => {
     });
 
     it('should call store nextBatch', fakeAsync(() => {
-        const spy = jest.spyOn(store, 'nextBatch');
+        const spy = vi.spyOn(store, 'nextBatch');
         spectator.triggerEventHandler(DotAssetCardListComponent, 'nextBatch', 10);
         tick(1000);
         expect(spy).toHaveBeenCalledWith({
@@ -91,14 +92,14 @@ describe('DotAssetSearchComponent', () => {
     }));
 
     it('should call addAsset Output', fakeAsync(() => {
-        const spy = jest.spyOn(spectator.component.addAsset, 'emit');
+        const spy = vi.spyOn(spectator.component.addAsset, 'emit');
         spectator.triggerEventHandler(DotAssetCardListComponent, 'selectedItem', EMPTY_CONTENTLET);
         tick(1000);
         expect(spy).toHaveBeenCalledWith(EMPTY_CONTENTLET);
     }));
 
     it('should call store searchContentlet', fakeAsync(() => {
-        const spy = jest.spyOn(store, 'searchContentlet');
+        const spy = vi.spyOn(store, 'searchContentlet');
         const inputElement = spectator.query(byTestId('input-search')) as HTMLInputElement;
 
         inputElement.value = 'search';

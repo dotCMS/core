@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/vitest';
 
 import { DotSidebarAccordionTabComponent } from './dot-sidebar-accordion-tab.component';
 

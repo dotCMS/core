@@ -205,6 +205,41 @@
                         [ngModel]="oidc().scopes"
                         (ngModelChange)="onChange('scopes', $event)" />
                 </div>
+                <div class="field full">
+                    <label>
+                        {{ 'dotauth.field.groupsUrl' | dm }}
+                        {{ 'dotauth.field.optional' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.groupsUrl' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <input
+                        pInputText
+                        data-testid="groups-url"
+                        [ngModel]="oidc().groupsUrl"
+                        (ngModelChange)="onChange('groupsUrl', $event)"
+                        placeholder="https://idp.example.com/groups?user={email}" />
+                    <small class="text-(--text-color-secondary)">
+                        {{ 'dotauth.help.groupsUrl' | dm }}
+                    </small>
+                </div>
+                <div class="field full">
+                    <label>
+                        {{ 'dotauth.field.groupsResponsePath' | dm }}
+                        {{ 'dotauth.field.optional' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.groupsResponsePath' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <input
+                        pInputText
+                        data-testid="groups-response-path"
+                        [ngModel]="oidc().groupsResponsePath"
+                        (ngModelChange)="onChange('groupsResponsePath', $event)"
+                        placeholder="memberships[].groupKey.id" />
+                </div>
             </div>
         }
     </div>

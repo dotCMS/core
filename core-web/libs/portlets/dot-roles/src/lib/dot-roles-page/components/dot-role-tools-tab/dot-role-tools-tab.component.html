@@ -1,0 +1,109 @@
+<!--
+    Same full-height flex column as the Users tab: the table owns its own
+    scroll region via `flex-1 min-h-0 overflow-hidden` + `scrollHeight="flex"`,
+    so the header row stays pinned and the tab never grows the page.
+-->
+<div class="flex h-full flex-col">
+    @if (!store.canEditRoleLayouts()) {
+        <div class="bg-amber-100 px-6 py-3 text-sm text-amber-800" data-testid="cannot-edit-notice">
+            {{ 'roles.tools.cannot-edit' | dm }}
+        </div>
+    }
+
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        @if (store.toolGroupsStatus() === 'LOADING' || store.selectedRoleStatus() === 'LOADING') {
+            <p-table
+                [value]="[0, 1, 2, 3, 4]"
+                [scrollable]="true"
+                scrollHeight="flex"
+                data-testid="tools-loading-skeleton">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th class="w-12"></th>
+                        <th>{{ 'roles.tools.column.group' | dm }}</th>
+                        <th>{{ 'roles.tools.column.included' | dm }}</th>
+                        <!-- Included Tools is greedy; without a floor here the
+                             chip wraps a two-word role name onto two lines. -->
+                        <th class="w-44 min-w-44">
+                            {{ 'roles.tools.column.granted-from' | dm }}
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body">
+                    <tr>
+                        <td><p-skeleton shape="square" size="1rem" /></td>
+                        <td><p-skeleton height="1rem" width="40%" /></td>
+                        <td><p-skeleton height="1rem" width="70%" /></td>
+                        <td class="w-44"><p-skeleton height="1.25rem" width="70%" /></td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        } @else if (store.toolGroupsStatus() === 'ERROR') {
+            <p class="m-0 px-6 text-sm text-red-700" data-testid="tools-error">
+                {{ 'roles.error.load-failed' | dm }}
+            </p>
+        } @else if (store.toolGroups().length === 0) {
+            <dot-empty-container
+                [configuration]="$emptyToolGroupsConfig()"
+                [hideContactUsLink]="true"
+                data-testid="tools-empty" />
+        } @else {
+            <p-table
+                [value]="store.toolGroups()"
+                dataKey="id"
+                [rowTrackBy]="trackByGroupId"
+                [scrollable]="true"
+                scrollHeight="flex"
+                data-testid="tools-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th class="w-12"></th>
+                        <th>{{ 'roles.tools.column.group' | dm }}</th>
+                        <th>{{ 'roles.tools.column.included' | dm }}</th>
+                        <!-- Included Tools is greedy; without a floor here the
+                             chip wraps a two-word role name onto two lines. -->
+                        <th class="w-44 min-w-44">
+                            {{ 'roles.tools.column.granted-from' | dm }}
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-group>
+                    @let direct = isDirectGrant(group);
+                    <tr [attr.data-testid]="'tool-group-row-' + group.id">
+                        <td class="w-12">
+                            <p-checkbox
+                                [binary]="true"
+                                [ngModel]="group.granted"
+                                [disabled]="isLocked(group)"
+                                (onChange)="onToggle(group, $event.checked)"
+                                [attr.data-testid]="'tool-group-checkbox-' + group.id"
+                                [attr.aria-label]="group.name" />
+                        </td>
+                        <td class="font-medium">{{ group.name }}</td>
+                        <td class="text-sm text-gray-500">{{ includedTools(group) }}</td>
+                        <td>
+                            <!--
+                                Fixed-height slot. The tag renders only on
+                                granted rows, so without a reserved line box
+                                the row grows the instant a checkbox is
+                                ticked. `h-6` is the line box of the tallest
+                                plain-text cell, and the tag is flattened to
+                                the same height so ticking never shifts the
+                                row.
+                            -->
+                            <div class="flex h-6 items-center">
+                                @if (group.granted) {
+                                    <p-tag
+                                        class="whitespace-nowrap"
+                                        styleClass="h-6! py-0! leading-none!"
+                                        [value]="group.grantedFromRoleName"
+                                        [severity]="direct ? 'info' : 'secondary'" />
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
+</div>

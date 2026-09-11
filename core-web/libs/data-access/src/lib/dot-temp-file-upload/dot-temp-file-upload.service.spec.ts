@@ -1,5 +1,5 @@
-import { expect, it, describe } from '@jest/globals';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -23,7 +23,7 @@ describe('DotTempFileUploadService', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jest.fn().mockReturnValue(
+                        handle: vi.fn().mockReturnValue(
                             of({
                                 status: {
                                     toString: () => ''
@@ -43,83 +43,85 @@ describe('DotTempFileUploadService', () => {
         httpMock.verify();
     });
 
-    it('should upload a file by url', (done) => {
-        service.upload('https://dotcms.com/image.jpg').subscribe((res) => {
-            expect(res).toEqual([
-                {
-                    fileName: 'fileName',
-                    folder: 'folder',
-                    id: 'id',
-                    image: true,
-                    length: 10,
-                    mimeType: 'mimeType',
-                    referenceUrl: 'referenceUrl',
-                    thumbnailUrl: 'thumbnailUrl'
-                }
-            ]);
-            done();
-        });
+    it('should upload a file by url', () =>
+        new Promise<void>((done) => {
+            service.upload('https://dotcms.com/image.jpg').subscribe((res) => {
+                expect(res).toEqual([
+                    {
+                        fileName: 'fileName',
+                        folder: 'folder',
+                        id: 'id',
+                        image: true,
+                        length: 10,
+                        mimeType: 'mimeType',
+                        referenceUrl: 'referenceUrl',
+                        thumbnailUrl: 'thumbnailUrl'
+                    }
+                ]);
+                done();
+            });
 
-        const req = httpMock.expectOne('/api/v1/temp/byUrl');
-        expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual({
-            remoteUrl: 'https://dotcms.com/image.jpg'
-        });
+            const req = httpMock.expectOne('/api/v1/temp/byUrl');
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toEqual({
+                remoteUrl: 'https://dotcms.com/image.jpg'
+            });
 
-        req.flush({
-            tempFiles: [
-                {
-                    fileName: 'fileName',
-                    folder: 'folder',
-                    id: 'id',
-                    image: true,
-                    length: 10,
-                    mimeType: 'mimeType',
-                    referenceUrl: 'referenceUrl',
-                    thumbnailUrl: 'thumbnailUrl'
-                }
-            ]
-        });
-    });
+            req.flush({
+                tempFiles: [
+                    {
+                        fileName: 'fileName',
+                        folder: 'folder',
+                        id: 'id',
+                        image: true,
+                        length: 10,
+                        mimeType: 'mimeType',
+                        referenceUrl: 'referenceUrl',
+                        thumbnailUrl: 'thumbnailUrl'
+                    }
+                ]
+            });
+        }));
 
-    it('should upload a file by file', (done) => {
-        const file = new File([''], 'filename', { type: 'text/html' });
+    it('should upload a file by file', () =>
+        new Promise<void>((done) => {
+            const file = new File([''], 'filename', { type: 'text/html' });
 
-        service.upload(file).subscribe((res) => {
-            expect(res).toEqual([
-                {
-                    fileName: 'fileName',
-                    folder: 'folder',
-                    id: 'id',
-                    image: true,
-                    length: 10,
-                    mimeType: 'mimeType',
-                    referenceUrl: 'referenceUrl',
-                    thumbnailUrl: 'thumbnailUrl'
-                }
-            ]);
-            done();
-        });
+            service.upload(file).subscribe((res) => {
+                expect(res).toEqual([
+                    {
+                        fileName: 'fileName',
+                        folder: 'folder',
+                        id: 'id',
+                        image: true,
+                        length: 10,
+                        mimeType: 'mimeType',
+                        referenceUrl: 'referenceUrl',
+                        thumbnailUrl: 'thumbnailUrl'
+                    }
+                ]);
+                done();
+            });
 
-        const req = httpMock.expectOne('/api/v1/temp');
-        expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(expect.any(FormData));
+            const req = httpMock.expectOne('/api/v1/temp');
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toEqual(expect.any(FormData));
 
-        req.flush({
-            tempFiles: [
-                {
-                    fileName: 'fileName',
-                    folder: 'folder',
-                    id: 'id',
-                    image: true,
-                    length: 10,
-                    mimeType: 'mimeType',
-                    referenceUrl: 'referenceUrl',
-                    thumbnailUrl: 'thumbnailUrl'
-                }
-            ]
-        });
-    });
+            req.flush({
+                tempFiles: [
+                    {
+                        fileName: 'fileName',
+                        folder: 'folder',
+                        id: 'id',
+                        image: true,
+                        length: 10,
+                        mimeType: 'mimeType',
+                        referenceUrl: 'referenceUrl',
+                        thumbnailUrl: 'thumbnailUrl'
+                    }
+                ]
+            });
+        }));
 
     it('should handle error', () => {
         service.upload('https://dotcms.com/image.jpg').subscribe();

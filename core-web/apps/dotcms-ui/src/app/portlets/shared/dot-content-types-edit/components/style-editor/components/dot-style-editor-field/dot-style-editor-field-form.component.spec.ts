@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -236,7 +242,7 @@ describe('DotStyleEditorFieldFormComponent', () => {
 
         it('should emit fieldChange with the reordered options', () => {
             setup(DROPDOWN_FIELD);
-            jest.spyOn(spectator.component.fieldChange, 'emit');
+            vi.spyOn(spectator.component.fieldChange, 'emit');
 
             const downBtns = spectator.queryAll(byTestId('move-option-down-btn'));
             downBtns[0]?.querySelector('button')?.click();
@@ -256,7 +262,7 @@ describe('DotStyleEditorFieldFormComponent', () => {
     describe('Output events', () => {
         it('should emit fieldChange with updated label when the label input changes', () => {
             setup();
-            jest.spyOn(spectator.component.fieldChange, 'emit');
+            vi.spyOn(spectator.component.fieldChange, 'emit');
 
             typeInInput('input[placeholder="New Field"]', 'Updated Label');
 
@@ -267,7 +273,7 @@ describe('DotStyleEditorFieldFormComponent', () => {
 
         it('should emit delete when the delete button is clicked', () => {
             setup();
-            jest.spyOn(spectator.component.delete, 'emit');
+            vi.spyOn(spectator.component.delete, 'emit');
 
             spectator.query(byTestId('delete-field-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
@@ -277,7 +283,7 @@ describe('DotStyleEditorFieldFormComponent', () => {
 
         it('should emit moveUp when the move-up button is clicked', () => {
             setup();
-            jest.spyOn(spectator.component.moveUp, 'emit');
+            vi.spyOn(spectator.component.moveUp, 'emit');
 
             spectator.query(byTestId('move-up-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
@@ -287,7 +293,7 @@ describe('DotStyleEditorFieldFormComponent', () => {
 
         it('should emit moveDown when the move-down button is clicked', () => {
             setup();
-            jest.spyOn(spectator.component.moveDown, 'emit');
+            vi.spyOn(spectator.component.moveDown, 'emit');
 
             spectator.query(byTestId('move-down-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();

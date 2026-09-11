@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -48,14 +49,14 @@ describe('EmaFormSelectorComponent', () => {
             },
             {
                 provide: DotHttpErrorManagerService,
-                useValue: { handle: jest.fn() }
+                useValue: { handle: vi.fn() }
             }
         ],
         componentProviders: [
             {
                 provide: DotContentTypeService,
                 useValue: {
-                    getContentTypesWithPagination: jest
+                    getContentTypesWithPagination: vi
                         .fn()
                         .mockReturnValue(
                             of({ contentTypes: mockForms, pagination: mockPagination })
@@ -66,13 +67,13 @@ describe('EmaFormSelectorComponent', () => {
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         spectator = createComponent();
         spectator.detectChanges();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('should have table headers', () => {
@@ -86,7 +87,7 @@ describe('EmaFormSelectorComponent', () => {
     });
 
     it('should emit selected event when button is clicked', () => {
-        jest.spyOn(spectator.component.selected, 'emit');
+        vi.spyOn(spectator.component.selected, 'emit');
         const btn = spectator.query('[data-testid="form-select-button"]')?.querySelector('button');
         spectator.click(btn as HTMLElement);
         expect(spectator.component.selected.emit).toHaveBeenCalledWith('1');
@@ -98,9 +99,9 @@ describe('EmaFormSelectorComponent', () => {
 
     it('should call getContentTypesWithPagination with filter after debounce', () => {
         const service = spectator.debugElement.injector.get(DotContentTypeService);
-        (service.getContentTypesWithPagination as jest.Mock).mockClear();
+        (service.getContentTypesWithPagination as Mock).mockClear();
         spectator.component.searchControl.setValue('test form');
-        jest.advanceTimersByTime(300);
+        vi.advanceTimersByTime(300);
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ filter: 'test form', page: 1 })
         );
@@ -108,9 +109,9 @@ describe('EmaFormSelectorComponent', () => {
 
     it('should reset to page 1 and re-fetch when search changes', () => {
         const service = spectator.debugElement.injector.get(DotContentTypeService);
-        (service.getContentTypesWithPagination as jest.Mock).mockClear();
+        (service.getContentTypesWithPagination as Mock).mockClear();
         spectator.component.searchControl.setValue('form');
-        jest.advanceTimersByTime(300);
+        vi.advanceTimersByTime(300);
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ filter: 'form', page: 1 })
         );
@@ -122,7 +123,7 @@ describe('EmaFormSelectorComponent', () => {
 
     it('should show empty state when no forms are returned', () => {
         const service = spectator.debugElement.injector.get(DotContentTypeService);
-        (service.getContentTypesWithPagination as jest.Mock).mockReturnValue(
+        (service.getContentTypesWithPagination as Mock).mockReturnValue(
             of({ contentTypes: [], pagination: { totalEntries: 0, currentPage: 1, perPage: 40 } })
         );
         spectator.component['fetch$'].next();
@@ -132,7 +133,7 @@ describe('EmaFormSelectorComponent', () => {
 
     it('should fetch page 2 and update $first when paginator changes', () => {
         const service = spectator.debugElement.injector.get(DotContentTypeService);
-        (service.getContentTypesWithPagination as jest.Mock).mockClear();
+        (service.getContentTypesWithPagination as Mock).mockClear();
         spectator.component['onPageChange']({ page: 1, first: 40, rows: 40, pageCount: 3 });
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ page: 2 })
@@ -143,7 +144,7 @@ describe('EmaFormSelectorComponent', () => {
     it('should handle HTTP errors without terminating the stream', () => {
         const service = spectator.debugElement.injector.get(DotContentTypeService);
         const errorManager = spectator.inject(DotHttpErrorManagerService);
-        (service.getContentTypesWithPagination as jest.Mock).mockReturnValue(
+        (service.getContentTypesWithPagination as Mock).mockReturnValue(
             throwError(() => new Error('Network error'))
         );
         spectator.component['fetch$'].next();
@@ -151,7 +152,7 @@ describe('EmaFormSelectorComponent', () => {
         expect(errorManager.handle).toHaveBeenCalled();
 
         // Stream must still be alive: a subsequent fetch with a good response should work
-        (service.getContentTypesWithPagination as jest.Mock).mockReturnValue(
+        (service.getContentTypesWithPagination as Mock).mockReturnValue(
             of({ contentTypes: mockForms, pagination: mockPagination })
         );
         spectator.component['fetch$'].next();

@@ -5,7 +5,6 @@ import {
     Component,
     DestroyRef,
     OnInit,
-    computed,
     effect,
     inject,
     signal,
@@ -16,11 +15,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { map } from 'rxjs/operators';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService
@@ -31,7 +31,7 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
 
 import {
@@ -44,18 +44,24 @@ import { CAPABILITY_META } from './dot-ai-config.constants';
 @Component({
     selector: 'dot-ai-config-detail',
     templateUrl: './dot-ai-config-detail.component.html',
-    host: { class: 'flex h-full w-full flex-col overflow-hidden bg-white' },
+    // `bg-surface-0` is the tokenized white the rest of this screen's chrome is built from. It has
+    // to be declared here: the wrapper this route renders into (`main-legacy.component.html`) sets
+    // no background, and neither does `html`/`body` — without it the page only looks right by
+    // falling back to the browser's default canvas.
+    host: { class: 'flex h-full w-full flex-col overflow-hidden bg-surface-0' },
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ButtonModule,
         DotAiCapabilityCardComponent,
         DotAiSettingsCardComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotSpinnerComponent,
+        MessageModule
     ]
 })
 export class DotAiConfigDetailComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
-    private readonly dotAiService = inject(DotAiService);
+    private readonly dotAiService = inject(DotAiConfigService);
     private readonly dotRouterService = inject(DotRouterService);
     private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
     private readonly dotMessageService = inject(DotMessageService);
@@ -73,10 +79,6 @@ export class DotAiConfigDetailComponent implements OnInit {
     readonly initialSections = signal<Record<string, DotAiCapabilitySectionValue | null>>({});
     readonly initialSettings = signal<Record<string, unknown> | null>(null);
     readonly providers = signal<DotAiProviderMetadata[]>([]);
-
-    /** The site this configuration applies to — already resolved by the route (see the
-     *  `dotAiConfigDetailResolver`), just never surfaced in the redesigned page. */
-    readonly siteName = computed(() => this.app()?.sites?.[0]?.name ?? null);
 
     private readonly capabilityCards = viewChildren(DotAiCapabilityCardComponent);
     private readonly settingsCard = viewChild(DotAiSettingsCardComponent);

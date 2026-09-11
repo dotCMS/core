@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { DotSiteService, SiteParams, BASE_SITE_URL } from './dot-site.service';
 
@@ -50,49 +50,52 @@ describe('DotSiteService', () => {
     });
 
     describe('getSites()', () => {
-        it('should return a list of sites', (doneFn) => {
-            service.getSites().subscribe(({ sites }) => {
-                expect(sites.length).toBe(2);
-                expect(sites).toEqual(expectedNormalizedSites);
-                doneFn();
-            });
+        it('should return a list of sites', () =>
+            new Promise<void>((doneFn) => {
+                service.getSites().subscribe(({ sites }) => {
+                    expect(sites.length).toBe(2);
+                    expect(sites).toEqual(expectedNormalizedSites);
+                    doneFn();
+                });
 
-            const url = `${BASE_SITE_URL}?per_page=10&page=1&filter=*&archive=false&live=true&system=true`;
-            const req = spectator.expectOne(url, HttpMethod.GET);
-            spectator.flushAll([req], [{ entity: mockSiteEntities }]);
-        });
+                const url = `${BASE_SITE_URL}?per_page=10&page=1&filter=*&archive=false&live=true&system=true`;
+                const req = spectator.expectOne(url, HttpMethod.GET);
+                spectator.flushAll([req], [{ entity: mockSiteEntities }]);
+            }));
 
-        it('should set the query params correctly', (doneFn) => {
-            const searchParams: SiteParams = {
-                archived: true,
-                live: false,
-                system: true
-            };
+        it('should set the query params correctly', () =>
+            new Promise<void>((doneFn) => {
+                const searchParams: SiteParams = {
+                    archived: true,
+                    live: false,
+                    system: true
+                };
 
-            service.searchParam = searchParams;
+                service.searchParam = searchParams;
 
-            const url = `${BASE_SITE_URL}?per_page=15&page=1&filter=demo&archive=true&live=false&system=true`;
+                const url = `${BASE_SITE_URL}?per_page=15&page=1&filter=demo&archive=true&live=false&system=true`;
 
-            service.getSites({ filter: 'demo', per_page: 15 }).subscribe(() => doneFn());
+                service.getSites({ filter: 'demo', per_page: 15 }).subscribe(() => doneFn());
 
-            const req = spectator.expectOne(url, HttpMethod.GET);
-            spectator.flushAll([req], [{ entity: mockSiteEntities }]);
-        });
+                const req = spectator.expectOne(url, HttpMethod.GET);
+                spectator.flushAll([req], [{ entity: mockSiteEntities }]);
+            }));
     });
 
     describe('getCurrentSite()', () => {
-        it('should return a list of sites', (doneFn) => {
-            const expectedSite = expectedNormalizedSites[0];
-            const mockSiteEntity = mockSiteEntities[0];
+        it('should return a list of sites', () =>
+            new Promise<void>((doneFn) => {
+                const expectedSite = expectedNormalizedSites[0];
+                const mockSiteEntity = mockSiteEntities[0];
 
-            service.getCurrentSite().subscribe((site) => {
-                expect(site).toEqual(expectedSite);
-                doneFn();
-            });
+                service.getCurrentSite().subscribe((site) => {
+                    expect(site).toEqual(expectedSite);
+                    doneFn();
+                });
 
-            const url = `${BASE_SITE_URL}/currentSite`;
-            const req = spectator.expectOne(url, HttpMethod.GET);
-            spectator.flushAll([req], [{ entity: mockSiteEntity }]);
-        });
+                const url = `${BASE_SITE_URL}/currentSite`;
+                const req = spectator.expectOne(url, HttpMethod.GET);
+                spectator.flushAll([req], [{ entity: mockSiteEntity }]);
+            }));
     });
 });

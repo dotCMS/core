@@ -1,15 +1,6 @@
 import { Subject, of } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    computed,
-    effect,
-    inject,
-    signal,
-    untracked
-} from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -26,29 +17,31 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRoleUserResult
+} from '@dotcms/data-access';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotRoleMember } from '../../../models/dot-roles.models';
-import {
-    DotRolesPortletService,
-    DotRoleUserFilterResult
-} from '../../../services/dot-roles-portlet.service';
+import { DotRolesPortletService } from '../../../services/dot-roles-portlet.service';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 /** How long the "just granted" row highlight stays before fading out. */
 const GRANT_HIGHLIGHT_DURATION_MS = 3000;
 
-// Members are paginated client-side against a single bulk fetch — the
-// service passes `per_page=USER_FILTER_PAGE_SIZE` to bypass the endpoint's
-// default 40-cap. Switch to `[lazy]="true"` + server-driven paging when
-// #37070 (`GET /v1/roles/{roleId}/users`) ships.
+// Members are paginated client-side. `GET /v1/roles/{roleId}/users` (#37070)
+// is server-paged, but the rows shown here are the *union* of the selected
+// role's direct grants and everything inherited from its ancestors, merged
+// and de-duplicated in the store. A server page of one ancestor is not a page
+// of that union, so each ancestor is pulled whole (`ROLE_MEMBERS_PAGE_SIZE`)
+// and `p-table` pages the merged array. See the note on that constant.
 const MEMBERS_ROWS_PER_PAGE_OPTIONS = [20, 40, 60] as const;
 const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
 
 @Component({
     selector: 'dot-role-users-tab',
-    standalone: true,
     imports: [
         FormsModule,
         AvatarModule,
@@ -60,12 +53,12 @@ const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
         TooltipModule,
         ConfirmDialogModule,
         SkeletonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotEmptyContainerComponent
     ],
     providers: [ConfirmationService],
     templateUrl: './dot-role-users-tab.component.html',
-    host: { class: 'block h-full' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'block h-full' }
 })
 export class DotRoleUsersTabComponent {
     protected readonly store = inject(DotRolesStore);
@@ -75,15 +68,24 @@ export class DotRoleUsersTabComponent {
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #destroyRef = inject(DestroyRef);
 
+    // `hideContactUsLink` is set at every call site: this is an internal admin
+    // screen, not a licensing dead-end, so the contact link would be noise.
+    protected readonly $emptyMembersConfig = computed<PrincipalConfiguration>(() => ({
+        title: this.#messageService.get('roles.users.empty.title'),
+        subtitle: this.#messageService.get('roles.users.empty.copy'),
+        icon: 'group',
+        iconStyle: 'material-symbols-rounded'
+    }));
+
     protected readonly rowsPerPageOptions = MEMBERS_ROWS_PER_PAGE_OPTIONS;
     protected readonly defaultRowsPerPage = MEMBERS_DEFAULT_ROWS_PER_PAGE;
 
-    protected readonly $userSuggestions = signal<DotRoleUserFilterResult[]>([]);
+    protected readonly $userSuggestions = signal<DotRoleUserResult[]>([]);
     protected readonly $suggestionsLoading = signal(false);
 
     // Hide users already granted to this role (direct or inherited) — the BE
     // grant call is idempotent so re-adding would be a silent no-op.
-    protected readonly $filteredSuggestions = computed<DotRoleUserFilterResult[]>(() => {
+    protected readonly $filteredSuggestions = computed<DotRoleUserResult[]>(() => {
         const alreadyGranted = new Set(this.store.members().map((m) => m.userId));
 
         return this.$userSuggestions().filter((u) => !alreadyGranted.has(u.userId));
@@ -105,12 +107,7 @@ export class DotRoleUsersTabComponent {
             if (!selectedRole) {
                 return;
             }
-            untracked(() =>
-                this.store.loadMembers({
-                    id: selectedRole.id,
-                    roleKey: selectedRole.roleKey ?? null
-                })
-            );
+            untracked(() => this.store.loadMembers({ id: selectedRole.id }));
         });
 
         // `catchError → of([])` keeps the outer subscription alive after a
@@ -131,7 +128,7 @@ export class DotRoleUsersTabComponent {
                             // instead of masquerading as "No users found".
                             this.#httpErrorManager.handle(error);
 
-                            return of<DotRoleUserFilterResult[]>([]);
+                            return of<DotRoleUserResult[]>([]);
                         }),
                         tap(() => this.$suggestionsLoading.set(false))
                     )
@@ -167,7 +164,7 @@ export class DotRoleUsersTabComponent {
 
     // Restart (don't stack) the highlight timer on back-to-back grants —
     // last grant wins the fade window.
-    protected onGrantUser(user: DotRoleUserFilterResult, panel: Popover): void {
+    protected onGrantUser(user: DotRoleUserResult, panel: Popover): void {
         panel.hide();
         this.store.grantUserToRole(user.userId).then((result) => {
             // If the user navigated away between the click and the response,
@@ -209,6 +206,13 @@ export class DotRoleUsersTabComponent {
             }
         });
     }
+
+    // See the note on `trackByGroupId` in the Tools tab: PrimeNG tracks rows
+    // by object identity, so re-fetching members after a grant/remove would
+    // otherwise tear down and rebuild every row — dropping the `just-granted`
+    // highlight's transition and re-triggering row animations.
+    protected readonly trackByUserId = (_index: number, member: DotRoleMember): string =>
+        member.userId;
 
     /** Direct grants only — inherited rows must be revoked at the ancestor. */
     protected isDirectGrant(member: DotRoleMember): boolean {

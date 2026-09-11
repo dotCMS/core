@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
@@ -124,8 +125,8 @@ describe('DotEditRelationshipsComponent', () => {
     let cachedContentType: DotCMSContentType = { id: 'test-content-type-id' } as DotCMSContentType;
 
     const dotEditContentTypeCacheServiceMock = {
-        get: jest.fn().mockImplementation(() => cachedContentType),
-        set: jest.fn().mockImplementation((contentType: DotCMSContentType) => {
+        get: vi.fn().mockImplementation(() => cachedContentType),
+        set: vi.fn().mockImplementation((contentType: DotCMSContentType) => {
             cachedContentType = contentType;
         })
     };
@@ -152,21 +153,21 @@ describe('DotEditRelationshipsComponent', () => {
         de = fixture.debugElement;
 
         paginatorService = de.injector.get(PaginatorService);
-        jest.spyOn(paginatorService, 'setExtraParams');
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of(mockRelationships));
+        vi.spyOn(paginatorService, 'setExtraParams');
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of(mockRelationships));
 
         dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
     }));
 
     it('should set url to get relationships', () => {
         fixture.detectChanges();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         expect(paginatorService.url).toBe('v1/relationships');
     });
 
     it('should has a dot-searchable-dropdown and it should has the right attributes values', () => {
         fixture.detectChanges();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
 
@@ -190,7 +191,7 @@ describe('DotEditRelationshipsComponent', () => {
         dotEditContentTypeCacheService.set(contentTypeMock);
 
         fixture.detectChanges();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
         dotSearchableDropdown.triggerEventHandler('filterChange', newFilter);
@@ -227,7 +228,7 @@ describe('DotEditRelationshipsComponent', () => {
         dotEditContentTypeCacheService.set(contentTypeMock);
 
         fixture.detectChanges();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
         dotSearchableDropdown.triggerEventHandler('pageChange', event);
@@ -254,21 +255,22 @@ describe('DotEditRelationshipsComponent', () => {
         ]);
     });
 
-    it('should tigger change event', (done) => {
-        fixture.detectChanges();
-        jest.clearAllMocks();
+    it('should tigger change event', () =>
+        new Promise<void>((done) => {
+            fixture.detectChanges();
+            vi.clearAllMocks();
 
-        comp.switch.subscribe((relationshipSelect: any) => {
-            expect(relationshipSelect).toEqual({
-                cardinality: 1,
-                velocityVar: 'a'
+            comp.switch.subscribe((relationshipSelect: any) => {
+                expect(relationshipSelect).toEqual({
+                    cardinality: 1,
+                    velocityVar: 'a'
+                });
+                done();
             });
-            done();
-        });
 
-        const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        dotSearchableDropdown.triggerEventHandler('switch', {
-            relationship: mockRelationships[0]
-        });
-    });
+            const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
+            dotSearchableDropdown.triggerEventHandler('switch', {
+                relationship: mockRelationships[0]
+            });
+        }));
 });

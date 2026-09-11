@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
+import { vi } from 'vitest';
 
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 
@@ -12,14 +13,14 @@ const MOCK_DOM_RECT = {
     bottom: 0,
     x: 0,
     y: 0,
-    toJSON: jest.fn()
+    toJSON: vi.fn()
 };
 
 const TestComponent = ({ height }: { height: number }) => {
     const ref = useRef<HTMLDivElement>(null);
     const haveContent = useCheckVisibleContent(ref);
 
-    jest.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
         ...MOCK_DOM_RECT,
         height
     });

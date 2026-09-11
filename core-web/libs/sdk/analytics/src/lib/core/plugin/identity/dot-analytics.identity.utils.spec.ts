@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasUTMChanged } from './dot-analytics.identity.utils';
 
@@ -6,16 +6,16 @@ import { SESSION_UTM_KEY } from '../../shared/constants/dot-analytics.constants'
 import { extractUTMParameters, safeSessionStorage } from '../../shared/utils/dot-analytics.utils';
 
 // Mock the safeSessionStorage dependency but keep other exports
-jest.mock('../../shared/utils/dot-analytics.utils', () => {
-    const actual = jest.requireActual('../../shared/utils/dot-analytics.utils') as Record<
+vi.mock('../../shared/utils/dot-analytics.utils', async () => {
+    const actual = (await vi.importActual('../../shared/utils/dot-analytics.utils')) as Record<
         string,
         unknown
     >;
     return {
         ...actual,
         safeSessionStorage: {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         }
     };
 });
@@ -24,8 +24,8 @@ describe('DotAnalytics Identity Utils', () => {
     let mockLocation: Location;
 
     beforeAll(() => {
-        jest.useFakeTimers({ doNotFake: [] });
-        jest.setSystemTime(new Date('2024-01-01T12:00:00Z'));
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2024-01-01T12:00:00Z'));
     });
 
     beforeEach(() => {
@@ -40,16 +40,16 @@ describe('DotAnalytics Identity Utils', () => {
             origin: 'https://example.com'
         } as Location;
 
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
         // Clear mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterAll(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('extractUTMParameters', () => {
@@ -118,7 +118,7 @@ describe('DotAnalytics Identity Utils', () => {
     });
 
     describe('hasUTMChanged', () => {
-        const mockSafeSessionStorage = safeSessionStorage as jest.Mocked<typeof safeSessionStorage>;
+        const mockSafeSessionStorage = safeSessionStorage as Mocked<typeof safeSessionStorage>;
 
         beforeEach(() => {
             mockSafeSessionStorage.getItem.mockClear();

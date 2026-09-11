@@ -1,8 +1,21 @@
 import { DotExperiment, DotExperimentStatus, GOAL_TYPES } from '@dotcms/dotcms-models';
 
-import { comparatorFor } from './dot-experiments-list-store.util';
+import {
+    comparatorFor,
+    parseViewState,
+    QueryParamReader,
+    toQueryParams
+} from './dot-experiments-list-store.util';
 
-import { DotExperimentPageInfo } from '../shared/models';
+import {
+    DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    DEFAULT_EXPERIMENTS_LIST_GOALS,
+    DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+    DEFAULT_EXPERIMENTS_LIST_PAGE,
+    DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+    DEFAULT_EXPERIMENTS_LIST_STATUSES
+} from '../shared/constants';
+import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
 
 const experiment = (partial: Partial<DotExperiment>): DotExperiment =>
     ({ id: 'id', pageId: 'page-1', name: 'Experiment', ...partial }) as DotExperiment;
@@ -139,5 +152,140 @@ describe('comparatorFor', () => {
 
             expect(sortedBy('modDate', experiments)).toEqual(['old', 'new']);
         });
+    });
+});
+
+/**
+ * The page filter's URL round-trip (#37005, US3, FR-021a).
+ *
+ * The switch-on entry point lands on the site-wide list narrowed to the page the editor came from,
+ * and that narrowing has to survive a reload and a shared link like every other filter.
+ *
+ * The param is `pageId`, deliberately **not** `page`: `page` is already the pagination cursor in
+ * this very function, so reusing it would silently collide with `?page=2`. `pageId` is also the
+ * name Configure's own prefill answers on, so one address shape serves both screens.
+ */
+describe('page filter view state', () => {
+    const reader = (params: Record<string, string | string[]>): QueryParamReader => ({
+        get: (key) => {
+            const value = params[key];
+
+            return (Array.isArray(value) ? value[0] : value) ?? null;
+        },
+        getAll: (key) => {
+            const value = params[key];
+
+            return value == null ? [] : Array.isArray(value) ? value : [value];
+        }
+    });
+
+    const DEFAULTS: DotExperimentsListViewState = {
+        filter: '',
+        selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+        selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+        page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+        perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+        orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+        direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+        selectedPageId: null,
+        selectedPageUrl: null,
+        languageId: null
+    };
+
+    describe('parseViewState', () => {
+        it('should read the page filter from ?pageId=', () => {
+            expect(parseViewState(reader({ pageId: 'page-1' })).selectedPageId).toBe('page-1');
+        });
+
+        it('should default to no page filter when the param is absent', () => {
+            expect(parseViewState(reader({})).selectedPageId).toBeNull();
+        });
+
+        // The language the editor was on, carried so a return to the editor can land on that
+        // version of the page instead of assuming the default one.
+        it('should read the language from ?language_id=', () => {
+            expect(parseViewState(reader({ language_id: '2' })).languageId).toBe(2);
+        });
+
+        it('should treat a missing or unusable ?language_id= as no language', () => {
+            expect(parseViewState(reader({})).languageId).toBeNull();
+            expect(parseViewState(reader({ language_id: 'abc' })).languageId).toBeNull();
+        });
+
+        /**
+         * `?url=` is how the Universal Visual Editor names a page, so a UVE address pasted into
+         * the list has to narrow rather than be ignored — the list used to answer it with every
+         * experiment on the site.
+         */
+        it('should read the page filter from ?url=', () => {
+            expect(parseViewState(reader({ url: '/destinations/index' })).selectedPageUrl).toBe(
+                '/destinations/index'
+            );
+        });
+
+        // The two ways the same path gets spelled, settled on the way in so the comparison against
+        // the resolved Page column is not making them up on each side.
+        it.each([
+            ['destinations/index', '/destinations/index'],
+            ['/destinations/index/', '/destinations/index'],
+            ['  /destinations/index  ', '/destinations/index'],
+            ['/', '/']
+        ])('should normalise ?url=%s to %s', (raw, expected) => {
+            expect(parseViewState(reader({ url: raw })).selectedPageUrl).toBe(expected);
+        });
+
+        it('should treat an empty ?url= as no filter', () => {
+            expect(parseViewState(reader({ url: '' })).selectedPageUrl).toBeNull();
+            expect(parseViewState(reader({})).selectedPageUrl).toBeNull();
+        });
+
+        // Case is left alone: dotCMS paths are not case-insensitive, and folding it here would
+        // claim a match the backend would not make.
+        it('should not fold the case of a path', () => {
+            expect(parseViewState(reader({ url: '/Destinations/Index' })).selectedPageUrl).toBe(
+                '/Destinations/Index'
+            );
+        });
+
+        it('should treat an empty ?pageId= as no filter, not as a page named ""', () => {
+            expect(parseViewState(reader({ pageId: '' })).selectedPageId).toBeNull();
+        });
+
+        // The collision this param name exists to avoid. `?page=2` is pagination; it must not be
+        // read as a page filter, and `?pageId=` must not move the cursor.
+        it('should keep ?page= and ?pageId= independent', () => {
+            const view = parseViewState(reader({ page: '2', pageId: 'page-1' }));
+
+            expect(view.page).toBe(2);
+            expect(view.selectedPageId).toBe('page-1');
+        });
+    });
+
+    describe('toQueryParams', () => {
+        it('should write the page filter as pageId', () => {
+            expect(toQueryParams({ ...DEFAULTS, selectedPageId: 'page-1' })).toMatchObject({
+                pageId: 'page-1'
+            });
+        });
+
+        // The util's existing rule: a value equal to its default is written as `null`, which
+        // removes the param — so a pristine list carries no query string at all.
+        it('should omit the param when there is no page filter', () => {
+            expect(toQueryParams(DEFAULTS)['pageId']).toBeNull();
+        });
+
+        it('should not write the filter into the pagination key', () => {
+            const params = toQueryParams({ ...DEFAULTS, selectedPageId: 'page-1' });
+
+            expect(params['page']).toBeNull();
+        });
+    });
+
+    it('should round-trip through both directions unchanged', () => {
+        const written = toQueryParams({ ...DEFAULTS, selectedPageId: 'page-1' });
+
+        expect(parseViewState(reader({ pageId: String(written['pageId']) })).selectedPageId).toBe(
+            'page-1'
+        );
     });
 });

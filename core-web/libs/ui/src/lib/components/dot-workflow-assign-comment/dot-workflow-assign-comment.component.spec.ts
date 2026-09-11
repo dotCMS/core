@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotMessageService, DotRolesService } from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
@@ -17,13 +23,13 @@ const ROLES: DotRole[] = [
 describe('DotWorkflowAssignCommentComponent', () => {
     let spectator: Spectator<DotWorkflowAssignCommentComponent>;
 
-    const get = jest.fn();
+    const get = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotWorkflowAssignCommentComponent,
         providers: [
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             })
         ],
         componentProviders: [mockProvider(DotRolesService, { get })],
@@ -32,7 +38,7 @@ describe('DotWorkflowAssignCommentComponent', () => {
 
     beforeEach(() => {
         // `get` is shared across tests, so calls would otherwise accumulate into the next assertion.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         get.mockReturnValue(of(ROLES));
     });
 

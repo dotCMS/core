@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -13,7 +14,7 @@ describe('DotLargeMessageDisplayComponent', () => {
     let spectator: Spectator<DotLargeMessageDisplayComponent>;
     const largeMessageSubject = new Subject<unknown>();
     const mockDotEventsSocket = {
-        on: jest.fn().mockReturnValue(largeMessageSubject.asObservable())
+        on: vi.fn().mockReturnValue(largeMessageSubject.asObservable())
     };
 
     const createComponent = createComponentFactory({

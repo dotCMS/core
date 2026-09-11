@@ -11,7 +11,7 @@ import { pipe, switchMap, tap } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { DotAiService, DotLanguagesService } from '@dotcms/data-access';
+import { DotAiConfigService, DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
 interface EditorState {
@@ -73,7 +73,7 @@ export const EditorStore = signalStore(
         (
             store,
             languageService = inject(DotLanguagesService),
-            aiService = inject(DotAiService)
+            aiService = inject(DotAiConfigService)
         ) => ({
             setLanguageId(languageId: number): void {
                 patchState(store, { languageId });

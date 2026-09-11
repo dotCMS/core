@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import { patchState } from '@ngrx/signals';
 import {
     byTestId,
@@ -6,8 +5,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { DebugElement } from '@angular/core';
@@ -103,8 +103,8 @@ describe('DotContentTypeFilterComponent', () => {
         component: DotContentTypeFilterComponent,
         providers: [
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of(BASE_TYPES)),
-                getContentTypesWithPagination: jest.fn().mockReturnValue(
+                getAllContentTypes: vi.fn().mockReturnValue(of(BASE_TYPES)),
+                getContentTypesWithPagination: vi.fn().mockReturnValue(
                     of({
                         contentTypes: CONTENT_TYPES,
                         pagination: {
@@ -204,8 +204,8 @@ describe('DotContentTypeFilterComponent', () => {
         spectator.detectChanges();
     };
 
-    beforeAll(() => jest.useFakeTimers());
-    afterAll(() => jest.useRealTimers());
+    beforeAll(() => vi.useFakeTimers());
+    afterAll(() => vi.useRealTimers());
 
     beforeEach(() => {
         spectator = createComponent();
@@ -232,8 +232,8 @@ describe('DotContentTypeFilterComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllTimers();
-        jest.clearAllMocks();
+        vi.clearAllTimers();
+        vi.clearAllMocks();
     });
 
     describe('Initialization', () => {
@@ -420,7 +420,7 @@ describe('DotContentTypeFilterComponent', () => {
         });
 
         it('refetches immediately with the focused base type as the type param', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             triggerFocusChange('FILEASSET');
 
             expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
@@ -430,7 +430,7 @@ describe('DotContentTypeFilterComponent', () => {
 
         it('refetches without a type param when focus is ALL_CONTENT', () => {
             triggerFocusChange('FILEASSET');
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             triggerFocusChange('__ALL_CONTENT__');
 
@@ -493,7 +493,7 @@ describe('DotContentTypeFilterComponent', () => {
             // checkbox mousedown and never resets it (the click is
             // stopPropagation'd), leaving this popover open when another chip
             // is clicked.
-            const event = { stopPropagation: jest.fn() };
+            const event = { stopPropagation: vi.fn() };
 
             spectator.triggerEventHandler(
                 '[data-testid="base-type-checkbox-CONTENT"]',
@@ -596,11 +596,11 @@ describe('DotContentTypeFilterComponent', () => {
         });
 
         it('debounces filter changes and calls the service with the latest value', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             triggerSearchInput('b');
             triggerSearchInput('bl');
             triggerSearchInput('blog');
-            jest.advanceTimersByTime(600);
+            vi.advanceTimersByTime(600);
 
             const calls = contentTypeService.getContentTypesWithPagination.mock.calls;
             const last = calls[calls.length - 1]?.[0] as { filter?: string };
@@ -617,9 +617,9 @@ describe('DotContentTypeFilterComponent', () => {
             contentTypeService.getContentTypesWithPagination.mockReturnValue(
                 throwError(() => new Error('boom'))
             );
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             triggerSearchInput('blog');
-            jest.advanceTimersByTime(600);
+            vi.advanceTimersByTime(600);
 
             expect(spectator.component.$state.contentTypes()).toEqual([]);
             expect(spectator.component.$state.loading()).toBe(false);
@@ -666,7 +666,7 @@ describe('DotContentTypeFilterComponent', () => {
 
         it('does not load when canLoadMore is false', () => {
             patchState(spectator.component.$state, { canLoadMore: false });
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             triggerLazyLoad({ first: 0, last: 40 });
             expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
         });
@@ -685,7 +685,7 @@ describe('DotContentTypeFilterComponent', () => {
         it('toggles the popover when the chip is clicked', () => {
             const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
             const popover = popoverDe.componentInstance as Popover;
-            const toggleSpy = jest.spyOn(popover, 'toggle');
+            const toggleSpy = vi.spyOn(popover, 'toggle');
 
             const chipDe = spectator.fixture.debugElement.query(
                 By.directive(DotChipFilterComponent)
@@ -765,7 +765,7 @@ describe('DotContentTypeFilterComponent', () => {
                 contentTypeService.getContentTypesWithPagination.mockClear();
 
                 triggerSearchInput('logo');
-                jest.advanceTimersByTime(600);
+                vi.advanceTimersByTime(600);
 
                 expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith(
                     expect.objectContaining({ type: 'DOTASSET,FILEASSET', filter: 'logo' })

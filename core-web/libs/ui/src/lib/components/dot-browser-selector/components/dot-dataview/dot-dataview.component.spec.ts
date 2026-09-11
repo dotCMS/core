@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotDataViewComponent } from './dot-dataview.component';
 
@@ -51,7 +52,7 @@ describe('DotDataViewComponent - Upload File', () => {
 
         it('should trigger file input click when upload button is clicked', () => {
             const fileInput = spectator.query<HTMLInputElement>('[data-testid="file-input"]');
-            const clickSpy = jest.spyOn(fileInput!, 'click');
+            const clickSpy = vi.spyOn(fileInput!, 'click');
 
             const btn = spectator
                 .query<HTMLElement>('[data-testid="upload-btn"]')
@@ -64,7 +65,7 @@ describe('DotDataViewComponent - Upload File', () => {
 
     describe('onFileSelected', () => {
         it('should emit onUploadFile with the selected file', () => {
-            const emitSpy = jest.spyOn(spectator.component.onUploadFile, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.onUploadFile, 'emit');
             const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
 
             const fileInput = spectator.query<HTMLInputElement>('[data-testid="file-input"]')!;
@@ -81,7 +82,7 @@ describe('DotDataViewComponent - Upload File', () => {
         });
 
         it('should not emit onUploadFile when no file is selected', () => {
-            const emitSpy = jest.spyOn(spectator.component.onUploadFile, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.onUploadFile, 'emit');
 
             const fileInput = spectator.query<HTMLInputElement>('[data-testid="file-input"]')!;
             Object.defineProperty(fileInput, 'files', {

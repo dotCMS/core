@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { discardPeriodicTasks, fakeAsync } from '@angular/core/testing';
 
@@ -28,7 +34,7 @@ describe('DotCategoryFieldSearchComponent', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     it('should show only the search icon', () => {
@@ -40,7 +46,7 @@ describe('DotCategoryFieldSearchComponent', () => {
     });
 
     it('should emit "term" with correct value on input change', fakeAsync(() => {
-        const termSpy = jest.spyOn(spectator.component.term, 'emit');
+        const termSpy = vi.spyOn(spectator.component.term, 'emit');
         const input = spectator.query(byTestId('search-input')) as HTMLInputElement;
 
         spectator.typeInElement(TERM_TO_SEARCH, input);
@@ -53,7 +59,7 @@ describe('DotCategoryFieldSearchComponent', () => {
     }));
 
     it('should clear input and emit "changeMode" when clear icon is clicked', fakeAsync(() => {
-        const changeModeSpy = jest.spyOn(spectator.component.changeMode, 'emit');
+        const changeModeSpy = vi.spyOn(spectator.component.changeMode, 'emit');
         const input = spectator.query(byTestId('search-input')) as HTMLInputElement;
         spectator.typeInElement(TERM_TO_SEARCH, input);
         spectator.tick(DEBOUNCE_TIME + 100);

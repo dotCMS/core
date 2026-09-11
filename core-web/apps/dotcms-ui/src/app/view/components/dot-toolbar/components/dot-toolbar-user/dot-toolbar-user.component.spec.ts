@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -53,25 +54,25 @@ describe('DotToolbarUserComponent', () => {
                 {
                     provide: DotNavigationService,
                     useValue: {
-                        goToFirstPortlet: jest.fn().mockResolvedValue(true)
+                        goToFirstPortlet: vi.fn().mockResolvedValue(true)
                     }
                 },
-                { provide: LoggerService, useValue: { error: jest.fn() } },
+                { provide: LoggerService, useValue: { error: vi.fn() } },
                 { provide: DotMessageService, useValue: { get: (key: string) => key } },
-                { provide: DotGlobalMessageService, useValue: { success: jest.fn() } },
+                { provide: DotGlobalMessageService, useValue: { success: vi.fn() } },
                 {
                     provide: DotHttpErrorManagerService,
-                    useValue: { handle: jest.fn(() => of({})) }
+                    useValue: { handle: vi.fn(() => of({})) }
                 },
                 {
                     provide: DotReportIssueService,
-                    useValue: { reportIssue: jest.fn(() => of('')) }
+                    useValue: { reportIssue: vi.fn(() => of('')) }
                 },
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getKey: jest.fn(() => of('true')),
-                        getFeatureFlag: jest.fn(() => of(true))
+                        getKey: vi.fn(() => of('true')),
+                        getFeatureFlag: vi.fn(() => of(true))
                     }
                 },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
@@ -90,7 +91,7 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should have correct href in logout link', () => {
-        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+        vi.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
             callback({
                 user: {
                     emailAddress: 'admin@dotcms.com',
@@ -107,8 +108,13 @@ describe('DotToolbarUserComponent', () => {
             getTime: () => 1466424490000
         };
         const originalDate = global.Date;
-        global.Date = jest.fn(() => mockDate) as any;
-        global.Date.now = jest.fn(() => 1466424490000);
+        // A function expression, not an arrow: the component calls `new Date()`, and
+        // an arrow is not constructible. Vitest even warns about it — "The vi.fn() mock
+        // did not use 'function' or 'class' in its implementation".
+        global.Date = vi.fn(function () {
+            return mockDate;
+        }) as any;
+        global.Date.now = vi.fn(() => 1466424490000);
 
         // Recreate the component with the mocked Date
         fixture = TestBed.createComponent(DotToolbarUserComponent);
@@ -133,7 +139,7 @@ describe('DotToolbarUserComponent', () => {
         global.Date = originalDate;
     });
     it('should have correct target in logout link', () => {
-        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+        vi.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
             callback({
                 user: {
                     emailAddress: 'admin@dotcms.com',
@@ -171,13 +177,13 @@ describe('DotToolbarUserComponent', () => {
             isLoginAs: true
         };
 
-        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+        vi.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
             callback(mockAuth);
         });
 
-        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockResolvedValue(true);
-        jest.spyOn(locationService, 'reload');
-        jest.spyOn(loginService, 'logoutAs').mockReturnValue(of(true));
+        vi.spyOn(dotNavigationService, 'goToFirstPortlet').mockResolvedValue(true);
+        vi.spyOn(locationService, 'reload');
+        vi.spyOn(loginService, 'logoutAs').mockReturnValue(of(true));
 
         fixture.detectChanges();
 
@@ -195,7 +201,7 @@ describe('DotToolbarUserComponent', () => {
     }));
 
     it('should hide login as link', () => {
-        jest.spyOn(loginService, 'getCurrentUser').mockReturnValue(
+        vi.spyOn(loginService, 'getCurrentUser').mockReturnValue(
             of({
                 email: 'admin@dotcms.com',
                 givenName: 'Admin',
@@ -249,7 +255,7 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should open the report issue dialog from the menu item command', fakeAsync(() => {
-        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+        vi.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
             callback({
                 user: {
                     emailAddress: 'admin@dotcms.com',
@@ -288,7 +294,7 @@ describe('DotToolbarUserComponent', () => {
 
     it('should hide the report issue menu item when the feature flag is disabled', fakeAsync(() => {
         const dotPropertiesService = TestBed.inject(DotPropertiesService);
-        (dotPropertiesService.getFeatureFlag as jest.Mock).mockReturnValue(of(false));
+        (dotPropertiesService.getFeatureFlag as Mock).mockReturnValue(of(false));
 
         // Rebuild the component so the new mock value is what vm$ sees.
         fixture = TestBed.createComponent(DotToolbarUserComponent);

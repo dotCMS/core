@@ -1,0 +1,112 @@
+<dot-ai-workspace stateKey="dotai-chat-splitter">
+    <section class="flex h-full min-w-0 flex-col overflow-hidden">
+        <div #answer class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-chat-answer">
+            <div class="container mx-auto">
+                @if (store.chatAnswer(); as current) {
+                    <!-- One 70ch column for the whole answer, so the thinking indicator
+                         starts exactly where the text will appear and nothing shifts
+                         sideways when one replaces the other. The stopped note and the
+                         error line share it for the same reason. -->
+                    <div class="mx-auto max-w-[70ch]" data-testid="dotai-chat-column">
+                        @if (current.state === states.STREAMING && !current.content) {
+                            <dot-agent-thinking
+                                [text]="'dotai.chat.thinking' | dm"
+                                data-testid="dotai-chat-thinking" />
+                        } @else {
+                            <!-- Answers come back as markdown, so they are rendered as
+                                     markdown rather than shown as literal `##` and `*`.
+                                     ngx-markdown is the house renderer and is already provided
+                                     app-wide by MarkdownModule.forRoot(); it sanitizes by
+                                     default, which matters because this is model output being
+                                     turned into HTML.
+
+                                     `prose` comes from @tailwindcss/typography, already loaded
+                                     in style.css — without it Tailwind's preflight leaves
+                                     headings and list markers stripped. max-w-none because
+                                     prose would otherwise re-cap itself at 65ch inside the
+                                     70ch column above. -->
+                            <div class="prose max-w-none" data-testid="dotai-chat-answer-text">
+                                <markdown [data]="current.content" />
+                            </div>
+                        }
+
+                        @if (current.state === states.STOPPED) {
+                            <p
+                                class="mt-1 text-xs text-muted-color"
+                                data-testid="dotai-chat-stopped">
+                                {{ 'dotai.chat.stopped' | dm }}
+                            </p>
+                        }
+
+                        @if (current.state === states.ERROR) {
+                            <!-- Inline, never a dialog over a live stream. Through `dm` so the
+                                 client's own keys resolve; a server message is not a key, and
+                                 `dm` returns anything it does not recognise unchanged. -->
+                            <p class="mt-1 text-sm text-red-500" data-testid="dotai-chat-error">
+                                {{ current.error | dm }}
+                            </p>
+                        }
+                    </div>
+                } @else {
+                    <!-- The subtitle deliberately does not promise sources: only the
+                         non-streaming mode returns them, and this tab streams. -->
+                    <dot-ai-empty-state
+                        [title]="'dotai.chat.empty.title' | dm"
+                        [subtitle]="'dotai.chat.empty.sub' | dm"
+                        data-testid="dotai-chat-empty" />
+                }
+            </div>
+        </div>
+        <!-- Composer last in the DOM as well as visually, so focus order matches what you
+             read: answer, then the box you type in. No border here — dot-ai-prompt-input
+             draws its own card, and a rule above it read as a second box around the first. -->
+        <div class="shrink-0 p-4">
+            <dot-ai-prompt-input
+                class="container mx-auto"
+                [value]="$draft()"
+                (valueChange)="$draft.set($event)"
+                (submitted)="onSend()"
+                [disabled]="!store.isConfigured()"
+                [ariaLabel]="'dotai.chat.input.aria' | dm"
+                [placeholder]="'dotai.chat.placeholder' | dm">
+                @if (store.isStreaming()) {
+                    <!-- The spinner rides on Stop rather than on Submit, because Submit is
+                         not on screen while streaming — this button takes its slot. It is
+                         hand-rolled rather than PrimeNG's `[loading]`: that input renders
+                         `[disabled]="disabled || loading"`, so it would grey out the one
+                         control that cancels the request (FR-012).
+
+                         `progress_activity` + `animate-spin` is the house spinner (five
+                         other uses, incl. dot-agent-thinking next door). text-base! because
+                         material-symbols-outlined sets its own 24px on the class and a plain
+                         size utility loses to it at equal specificity. -->
+                    <p-button
+                        promptEnd
+                        severity="secondary"
+                        [outlined]="true"
+                        [label]="'dotai.chat.stop' | dm"
+                        (onClick)="store.stopChat()"
+                        data-testid="dotai-chat-stop">
+                        <ng-template #icon>
+                            <i
+                                class="material-symbols-outlined animate-spin text-base!"
+                                aria-hidden="true"
+                                data-testid="dotai-chat-stop-spinner">
+                                progress_activity
+                            </i>
+                        </ng-template>
+                    </p-button>
+                } @else {
+                    <!-- A labelled button, matching Image's Generate. No ariaLabel needed
+                         now: the visible label is the button's accessible name (FR-056). -->
+                    <p-button
+                        promptEnd
+                        [label]="'dotai.chat.send' | dm"
+                        [disabled]="!$canSend()"
+                        (onClick)="onSend()"
+                        data-testid="dotai-chat-send" />
+                }
+            </dot-ai-prompt-input>
+        </div>
+    </section>
+</dot-ai-workspace>

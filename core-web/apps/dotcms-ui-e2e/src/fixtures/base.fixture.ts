@@ -7,14 +7,20 @@ import { getCurrentSite, getDefaultSite, type Site } from '../requests/sites';
  * Shared Playwright fixtures used across portlet/field e2e suites.
  * Feature fixtures should `import { test as base } from './base.fixture'` and extend.
  */
+/**
+ * The shared API helpers, named so a spec can pass them to a seeding function of its own instead of
+ * restating their shape inline.
+ */
+export interface BaseApiHelpers {
+    createFolders: (siteName: string, paths: string[]) => Promise<void>;
+    getDefaultSite: () => Promise<Site>;
+    getCurrentSite: () => Promise<Site>;
+}
+
 export const test = base.extend<{
     adminPage: Page;
     testSuffix: string;
-    apiHelpers: {
-        createFolders: (siteName: string, paths: string[]) => Promise<void>;
-        getDefaultSite: () => Promise<Site>;
-        getCurrentSite: () => Promise<Site>;
-    };
+    apiHelpers: BaseApiHelpers;
 }>({
     adminPage: async ({ page }, use) => {
         await use(page);

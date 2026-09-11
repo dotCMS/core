@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
 import { buildManifest, MAX_INCLUDED_HTML_CHARS, verifyPage } from './page-verify';
@@ -248,7 +250,7 @@ describe('verifyPage', () => {
 
     function fakeRuntime(over?: { render?: unknown; sites?: unknown[]; renderThrows?: unknown }) {
         const calls: Array<{ path: string; query?: unknown }> = [];
-        const request = jest.fn(async (options: RequestOptions) => {
+        const request = vi.fn(async (options: RequestOptions) => {
             calls.push({ path: options.path, query: options.query });
             if (options.path.startsWith('/api/v1/page/render')) {
                 if (over?.renderThrows) {
@@ -260,7 +262,7 @@ describe('verifyPage', () => {
             }
             return {};
         });
-        const loadContext = jest.fn(async () => ({
+        const loadContext = vi.fn(async () => ({
             contentTypes: [],
             sites: over?.sites ?? [DEMO_SITE, OTHER_SITE],
             languages: [],

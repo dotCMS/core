@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { DeferBlockState } from '@angular/core/testing';
@@ -112,7 +118,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                 }
             },
             mockProvider(DotMessageService, {
-                get: jest
+                get: vi
                     .fn()
                     .mockImplementation((key: string, ...args: string[]) =>
                         args.length ? `${key}[${args.join(',')}]` : key
@@ -122,7 +128,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockKpis.set({
             status: ComponentStatus.LOADED,
             data: MOCK_KPIS,

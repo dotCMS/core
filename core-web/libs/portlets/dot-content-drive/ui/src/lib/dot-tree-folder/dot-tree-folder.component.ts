@@ -14,7 +14,12 @@ import { TreeNode } from 'primeng/api';
 import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
 import { isTreeNodeContentData } from '@dotcms/dotcms-models';
-import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotFolderTreeComponent,
+    DotFolderNamePipe,
+    DotMessagePipe,
+    DotTruncatedLabelComponent
+} from '@dotcms/ui';
 
 import {
     DotFolderTreeNodeData,
@@ -30,7 +35,13 @@ import {
  */
 @Component({
     selector: 'dot-tree-folder',
-    imports: [DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe, JsonPipe],
+    imports: [
+        DotFolderTreeComponent,
+        DotFolderNamePipe,
+        DotMessagePipe,
+        JsonPipe,
+        DotTruncatedLabelComponent
+    ],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,7 +69,6 @@ export class DotTreeFolderComponent {
 
     protected readonly treePt = {
         root: { class: 'w-full h-full border-none overflow-y-auto' },
-        nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' },
         /**
          * The node icon (a globe on the site row, a folder on the rest) has never had dotCMS styling.
          * `dotcms-theme/components/_tree.scss` is meant to own it, but that theme is not in the build

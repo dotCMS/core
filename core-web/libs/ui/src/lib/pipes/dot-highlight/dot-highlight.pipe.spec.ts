@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createPipeFactory, SpectatorPipe } from '@openng/spectator/jest';
+import { createPipeFactory, SpectatorPipe } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Injector, runInInjectionContext } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -25,13 +26,13 @@ describe('DotHighlightPipe', () => {
             }
         });
         sanitizer = spectator.inject(DomSanitizer);
-        jest.spyOn(sanitizer, 'bypassSecurityTrustHtml');
+        vi.spyOn(sanitizer, 'bypassSecurityTrustHtml');
         const injector = spectator.inject(Injector);
         pipe = runInInjectionContext(injector, () => new DotHighlightPipe());
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create', () => {

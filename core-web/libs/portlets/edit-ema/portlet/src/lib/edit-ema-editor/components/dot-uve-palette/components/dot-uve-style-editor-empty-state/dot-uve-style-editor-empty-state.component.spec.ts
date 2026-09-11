@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Router } from '@angular/router';
 
@@ -29,7 +35,7 @@ describe('DotUveStyleEditorEmptyStateComponent', () => {
                 useValue: new MockDotMessageService(messagesMock)
             },
             mockProvider(Router, {
-                navigate: jest.fn().mockResolvedValue(true)
+                navigate: vi.fn().mockResolvedValue(true)
             })
         ]
     });

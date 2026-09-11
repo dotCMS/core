@@ -1,4 +1,5 @@
-import { SpectatorDirective, createDirectiveFactory } from '@openng/spectator/jest';
+import { SpectatorDirective, createDirectiveFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Table, TableModule } from 'primeng/table';
 
@@ -16,7 +17,7 @@ describe('DotStateRestoreDirective', () => {
     const savedState = { sortField: 'name', sortOrder: 1 };
 
     it('should apply the saved state from localStorage', () => {
-        jest.spyOn(localStorage, 'getItem').mockReturnValue(JSON.stringify(savedState));
+        vi.spyOn(localStorage, 'getItem').mockReturnValue(JSON.stringify(savedState));
         spectator = createDirective(
             `<p-table stateStorage="local" stateKey="test-key"  dotStateRestore></p-table>`
         );
@@ -28,7 +29,7 @@ describe('DotStateRestoreDirective', () => {
     });
 
     it('should apply the saved state from sessionStorage', () => {
-        jest.spyOn(sessionStorage, 'getItem').mockReturnValue(JSON.stringify(savedState));
+        vi.spyOn(sessionStorage, 'getItem').mockReturnValue(JSON.stringify(savedState));
 
         spectator = createDirective();
 
@@ -44,8 +45,8 @@ describe('DotStateRestoreDirective', () => {
         localStorage.clear();
 
         // Mock storage getItem to explicitly return null
-        jest.spyOn(sessionStorage, 'getItem').mockReturnValue(null);
-        jest.spyOn(localStorage, 'getItem').mockReturnValue(null);
+        vi.spyOn(sessionStorage, 'getItem').mockReturnValue(null);
+        vi.spyOn(localStorage, 'getItem').mockReturnValue(null);
 
         spectator = createDirective(
             `<p-table stateStorage="session" stateKey="no-key"  dotStateRestore></p-table>`
@@ -59,7 +60,7 @@ describe('DotStateRestoreDirective', () => {
     });
 
     it('should warn if the stateStorage or stateKey is not found', () => {
-        const consoleSpy = jest.spyOn(console, 'warn');
+        const consoleSpy = vi.spyOn(console, 'warn');
 
         spectator = createDirective(`<div dotStateRestore></div>`, {
             providers: [{ provide: Table, useValue: null }]

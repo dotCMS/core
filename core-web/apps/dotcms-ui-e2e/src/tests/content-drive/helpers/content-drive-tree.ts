@@ -86,4 +86,35 @@ export class ContentDriveTree {
         });
         await expect(node).toBeVisible({ timeout: 10000 });
     }
+
+    /**
+     * The state-aware folder icon the shared tree renders on a folder row (#37362).
+     *
+     * Its `data-expanded` attribute is the assertion surface rather than the glyph class, so a
+     * change of icon set does not break these tests.
+     */
+    folderIcon(name: string): Locator {
+        return this.folderNode(name).getByTestId('tree-node-folder-icon');
+    }
+
+    async expectFolderIconVisible(name: string) {
+        await expect(this.folderIcon(name)).toBeVisible({ timeout: 15000 });
+    }
+
+    async expectFolderIconExpanded(name: string, expanded: boolean) {
+        await expect(this.folderIcon(name)).toHaveAttribute(
+            'data-expanded',
+            expanded ? 'true' : 'false'
+        );
+    }
+
+    /**
+     * Collapses an expanded folder via its toggler. No response to await — the children are
+     * already loaded, so collapsing is purely local.
+     */
+    async collapseFolder(name: string) {
+        const node = this.folderNode(name);
+        await node.waitFor({ state: 'visible', timeout: 15000 });
+        await node.locator('.p-tree-node-toggle-button').first().click();
+    }
 }

@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Mock, vi } from 'vitest';
+
 import { DotCMSClickTracker } from './dot-analytics.click-tracker';
 import * as clickUtils from './dot-analytics.click.utils';
 
@@ -8,37 +10,40 @@ import { DotCMSAnalyticsConfig } from '../../shared/models';
 import * as sharedUtils from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
-jest.mock('./dot-analytics.click.utils', () => {
-    const actual = jest.requireActual('./dot-analytics.click.utils') as Record<string, unknown>;
-    return {
-        ...actual,
-        handleContentletClick: jest.fn()
-    };
-});
-jest.mock('../../shared/utils/dot-analytics.utils', () => {
-    const actual = jest.requireActual('../../shared/utils/dot-analytics.utils') as Record<
+vi.mock('./dot-analytics.click.utils', async () => {
+    const actual = (await vi.importActual('./dot-analytics.click.utils')) as Record<
         string,
         unknown
     >;
     return {
         ...actual,
-        createPluginLogger: jest.fn(() => ({
-            debug: jest.fn(),
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn(),
-            log: jest.fn()
+        handleContentletClick: vi.fn()
+    };
+});
+vi.mock('../../shared/utils/dot-analytics.utils', async () => {
+    const actual = (await vi.importActual('../../shared/utils/dot-analytics.utils')) as Record<
+        string,
+        unknown
+    >;
+    return {
+        ...actual,
+        createPluginLogger: vi.fn(() => ({
+            debug: vi.fn(),
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            log: vi.fn()
         })),
-        findContentlets: jest.fn(() => []),
-        createContentletObserver: jest.fn(),
-        isBrowser: jest.fn(() => true)
+        findContentlets: vi.fn(() => []),
+        createContentletObserver: vi.fn(),
+        isBrowser: vi.fn(() => true)
     };
 });
 
 describe('DotCMSClickTracker', () => {
     let tracker: DotCMSClickTracker;
     let mockConfig: DotCMSAnalyticsConfig;
-    let mockCallback: jest.Mock;
+    let mockCallback: Mock;
 
     const createMockContentletElement = (identifier: string): HTMLElement => {
         const element = document.createElement('div');
@@ -50,15 +55,15 @@ describe('DotCMSClickTracker', () => {
         element.dataset.dotAnalyticsBasetype = 'CONTENT';
 
         // Mock addEventListener to track calls
-        element.addEventListener = jest.fn(element.addEventListener.bind(element));
-        element.removeEventListener = jest.fn(element.removeEventListener.bind(element));
+        element.addEventListener = vi.fn(element.addEventListener.bind(element));
+        element.removeEventListener = vi.fn(element.removeEventListener.bind(element));
 
         return element;
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        jest.useFakeTimers();
+        vi.clearAllMocks();
+        vi.useFakeTimers();
 
         mockConfig = {
             server: 'https://test.com',
@@ -66,15 +71,15 @@ describe('DotCMSClickTracker', () => {
             debug: false
         };
 
-        mockCallback = jest.fn();
+        mockCallback = vi.fn();
 
         // Reset isBrowser to return true by default
-        (sharedUtils.isBrowser as jest.Mock).mockReturnValue(true);
-        (sharedUtils.findContentlets as jest.Mock).mockReturnValue([]);
+        (sharedUtils.isBrowser as Mock).mockReturnValue(true);
+        (sharedUtils.findContentlets as Mock).mockReturnValue([]);
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('Constructor', () => {
@@ -120,7 +125,7 @@ describe('DotCMSClickTracker', () => {
 
     describe('initialize()', () => {
         it('should skip initialization if not in browser environment', () => {
-            (sharedUtils.isBrowser as jest.Mock).mockReturnValue(false);
+            (sharedUtils.isBrowser as Mock).mockReturnValue(false);
 
             tracker = new DotCMSClickTracker(mockConfig);
             const logger = (tracker as any).logger;
@@ -133,7 +138,7 @@ describe('DotCMSClickTracker', () => {
 
         it('should run initial scan after delay', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
@@ -142,7 +147,7 @@ describe('DotCMSClickTracker', () => {
             expect(sharedUtils.findContentlets).not.toHaveBeenCalled();
 
             // After timeout
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             expect(sharedUtils.findContentlets).toHaveBeenCalled();
         });
 
@@ -167,13 +172,13 @@ describe('DotCMSClickTracker', () => {
     describe('attachClickListener()', () => {
         it('should attach click listener to new contentlet', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             expect(mockElement.addEventListener).toHaveBeenCalledWith(
                 'click',
@@ -183,17 +188,17 @@ describe('DotCMSClickTracker', () => {
 
         it('should NOT attach duplicate listener to same element', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             expect(mockElement.addEventListener).toHaveBeenCalledTimes(1);
 
             // Clear and trigger second scan
-            (mockElement.addEventListener as jest.Mock).mockClear();
+            (mockElement.addEventListener as Mock).mockClear();
             (tracker as any).findAndAttachListeners();
 
             // Should NOT attach again
@@ -202,13 +207,13 @@ describe('DotCMSClickTracker', () => {
 
         it('should track element in WeakSet after attaching', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             const trackedElements = (tracker as any).trackedElements as WeakSet<HTMLElement>;
             expect(trackedElements.has(mockElement)).toBe(true);
@@ -216,13 +221,13 @@ describe('DotCMSClickTracker', () => {
 
         it('should store handler in WeakMap for cleanup', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             const elementHandlers = (tracker as any).elementHandlers as WeakMap<
                 HTMLElement,
@@ -236,16 +241,16 @@ describe('DotCMSClickTracker', () => {
     describe('Click Handler & Subscription', () => {
         it('should call handleContentletClick when contentlet is clicked', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             // Get the click handler that was attached
-            const clickHandler = (mockElement.addEventListener as jest.Mock).mock.calls.find(
+            const clickHandler = (mockElement.addEventListener as Mock).mock.calls.find(
                 (call) => call[0] === 'click'
             )?.[1];
 
@@ -265,7 +270,7 @@ describe('DotCMSClickTracker', () => {
 
         it('should notify subscribers when click is valid', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             // Mock handleContentletClick to call the callback with valid payload structure
             const mockPayload = {
@@ -277,7 +282,7 @@ describe('DotCMSClickTracker', () => {
                 },
                 element: { attributes: [] }
             };
-            (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
+            (clickUtils.handleContentletClick as Mock).mockImplementation(
                 (event, element, callback) => {
                     callback('content.click', mockPayload);
                 }
@@ -288,10 +293,10 @@ describe('DotCMSClickTracker', () => {
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             // Get and trigger click handler
-            const clickHandler = (mockElement.addEventListener as jest.Mock).mock.calls.find(
+            const clickHandler = (mockElement.addEventListener as Mock).mock.calls.find(
                 (call) => call[0] === 'click'
             )?.[1];
             clickHandler(new MouseEvent('click'));
@@ -301,7 +306,7 @@ describe('DotCMSClickTracker', () => {
 
         it('should apply throttling to prevent duplicate clicks', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             const mockPayload = {
                 content: {
@@ -312,7 +317,7 @@ describe('DotCMSClickTracker', () => {
                 },
                 element: { attributes: [] }
             };
-            (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
+            (clickUtils.handleContentletClick as Mock).mockImplementation(
                 (event, element, callback) => {
                     callback('content.click', mockPayload);
                 }
@@ -322,9 +327,9 @@ describe('DotCMSClickTracker', () => {
             tracker.onClick(mockCallback);
             tracker.initialize();
 
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
-            const clickHandler = (mockElement.addEventListener as jest.Mock).mock.calls[0][1];
+            const clickHandler = (mockElement.addEventListener as Mock).mock.calls[0][1];
 
             // First click
             clickHandler(new MouseEvent('click'));
@@ -335,7 +340,7 @@ describe('DotCMSClickTracker', () => {
             expect(mockCallback).toHaveBeenCalledTimes(1); // Still 1
 
             // Advance past throttle
-            jest.advanceTimersByTime(500);
+            vi.advanceTimersByTime(500);
 
             // Third click should work
             clickHandler(new MouseEvent('click'));
@@ -344,7 +349,7 @@ describe('DotCMSClickTracker', () => {
 
         it('should NOT notify unsubscribed callbacks', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             const mockPayload = {
                 content: {
@@ -355,7 +360,7 @@ describe('DotCMSClickTracker', () => {
                 },
                 element: { attributes: [] }
             };
-            (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
+            (clickUtils.handleContentletClick as Mock).mockImplementation(
                 (event, element, callback) => {
                     callback('content.click', mockPayload);
                 }
@@ -365,9 +370,9 @@ describe('DotCMSClickTracker', () => {
             const subscription = tracker.onClick(mockCallback);
             tracker.initialize();
 
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
-            const clickHandler = (mockElement.addEventListener as jest.Mock).mock.calls[0][1];
+            const clickHandler = (mockElement.addEventListener as Mock).mock.calls[0][1];
 
             // Click before unsubscribe
             clickHandler(new MouseEvent('click'));
@@ -377,7 +382,7 @@ describe('DotCMSClickTracker', () => {
             subscription.unsubscribe();
 
             // Click after unsubscribe should NOT call callback
-            jest.advanceTimersByTime(500);
+            vi.advanceTimersByTime(500);
             clickHandler(new MouseEvent('click'));
             expect(mockCallback).toHaveBeenCalledTimes(1); // Still 1
         });
@@ -388,17 +393,13 @@ describe('DotCMSClickTracker', () => {
             const element1 = createMockContentletElement('test-1');
             const element2 = createMockContentletElement('test-2');
             const element3 = createMockContentletElement('test-3');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([
-                element1,
-                element2,
-                element3
-            ]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([element1, element2, element3]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             expect(element1.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
             expect(element2.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
@@ -407,14 +408,14 @@ describe('DotCMSClickTracker', () => {
 
         it('should log info when new listeners are attached', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             const logger = (tracker as any).logger;
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             expect(logger.info).toHaveBeenCalledWith(
                 expect.stringContaining('Attached 1 new click listeners')
@@ -422,14 +423,14 @@ describe('DotCMSClickTracker', () => {
         });
 
         it('should handle empty contentlet list gracefully', () => {
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             const logger = (tracker as any).logger;
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             // Should not log attachment message (0 attached)
             expect(logger.info).not.toHaveBeenCalledWith(expect.stringContaining('Attached'));
@@ -439,28 +440,28 @@ describe('DotCMSClickTracker', () => {
     describe('MutationObserver', () => {
         it('should call findAndAttachListeners when new contentlets are added', () => {
             let observerCallback: (() => void) | undefined;
-            (sharedUtils.createContentletObserver as jest.Mock).mockImplementation((callback) => {
+            (sharedUtils.createContentletObserver as Mock).mockImplementation((callback) => {
                 observerCallback = callback;
                 return {
-                    observe: jest.fn(),
-                    disconnect: jest.fn()
+                    observe: vi.fn(),
+                    disconnect: vi.fn()
                 };
             });
 
             const element1 = createMockContentletElement('test-1');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([element1]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([element1]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             expect(element1.addEventListener).toHaveBeenCalledTimes(1);
 
             // Simulate new contentlet added
             const element2 = createMockContentletElement('test-2');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([element1, element2]);
-            (element1.addEventListener as jest.Mock).mockClear();
+            (sharedUtils.findContentlets as Mock).mockReturnValue([element1, element2]);
+            (element1.addEventListener as Mock).mockClear();
 
             // Trigger mutation callback
             observerCallback?.();
@@ -475,13 +476,13 @@ describe('DotCMSClickTracker', () => {
         it('should remove all click listeners', () => {
             const element1 = createMockContentletElement('test-1');
             const element2 = createMockContentletElement('test-2');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([element1, element2]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([element1, element2]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
 
             // Trigger initial scan to attach listeners
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             // Cleanup
             tracker.cleanup();
@@ -498,10 +499,10 @@ describe('DotCMSClickTracker', () => {
 
         it('should disconnect MutationObserver', () => {
             const mockObserver = {
-                observe: jest.fn(),
-                disconnect: jest.fn()
+                observe: vi.fn(),
+                disconnect: vi.fn()
             };
-            (sharedUtils.createContentletObserver as jest.Mock).mockReturnValue(mockObserver);
+            (sharedUtils.createContentletObserver as Mock).mockReturnValue(mockObserver);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
@@ -513,11 +514,11 @@ describe('DotCMSClickTracker', () => {
 
         it('should clear internal state', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             tracker.cleanup();
 
@@ -545,7 +546,7 @@ describe('DotCMSClickTracker', () => {
     describe('Integration - Full Flow', () => {
         it('should handle complete lifecycle: subscribe → init → track clicks → cleanup', () => {
             const mockElement = createMockContentletElement('test-123');
-            (sharedUtils.findContentlets as jest.Mock).mockReturnValue([mockElement]);
+            (sharedUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             // Mock handleContentletClick to invoke callback with valid payload structure
             const mockPayload = {
@@ -557,7 +558,7 @@ describe('DotCMSClickTracker', () => {
                 },
                 element: { attributes: [] }
             };
-            (clickUtils.handleContentletClick as jest.Mock).mockImplementation(
+            (clickUtils.handleContentletClick as Mock).mockImplementation(
                 (event, element, callback) => {
                     callback('content.click', mockPayload);
                 }
@@ -567,7 +568,7 @@ describe('DotCMSClickTracker', () => {
             tracker = new DotCMSClickTracker(mockConfig);
             const subscription = tracker.onClick(mockCallback);
             tracker.initialize();
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             // Verify listener attached
             expect(mockElement.addEventListener).toHaveBeenCalledWith(
@@ -576,7 +577,7 @@ describe('DotCMSClickTracker', () => {
             );
 
             // Simulate click
-            const clickHandler = (mockElement.addEventListener as jest.Mock).mock.calls[0][1];
+            const clickHandler = (mockElement.addEventListener as Mock).mock.calls[0][1];
             clickHandler(new MouseEvent('click'));
 
             // Verify callback was called

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
 
 describe('alignOverlayLeftToTrigger', () => {
@@ -10,7 +12,7 @@ describe('alignOverlayLeftToTrigger', () => {
         const trigger = document.createElement('button');
         const container = document.createElement('div');
 
-        jest.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+        vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
             left: 120,
             top: 0,
             right: 420,
@@ -32,7 +34,7 @@ describe('alignOverlayLeftToTrigger', () => {
         const trigger = document.createElement('button');
         const container = document.createElement('div');
 
-        jest.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+        vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
             left: 900,
             top: 0,
             right: 1200,
@@ -56,7 +58,7 @@ describe('alignOverlayLeftToTrigger', () => {
         const container = document.createElement('div');
 
         Object.defineProperty(window, 'scrollX', { value: 200, configurable: true });
-        jest.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+        vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
             left: 120,
             top: 0,
             right: 420,
@@ -80,7 +82,7 @@ describe('alignOverlayLeftToTrigger', () => {
 
         Object.defineProperty(window, 'scrollX', { value: 200, configurable: true });
         Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true });
-        jest.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+        vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
             left: 900,
             top: 0,
             right: 1200,
@@ -103,7 +105,7 @@ describe('alignOverlayLeftToTrigger', () => {
         const container = document.createElement('div');
 
         Object.defineProperty(window, 'scrollX', { value: 100, configurable: true });
-        jest.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+        vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
             left: -30,
             top: 0,
             right: 270,

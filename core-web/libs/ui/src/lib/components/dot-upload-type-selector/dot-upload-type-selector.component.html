@@ -1,4 +1,6 @@
 <div class="flex flex-col">
+    @let restrictionLabel = $restrictionLabel();
+
     @for (option of options; track option.baseType) {
         <button
             type="button"
@@ -22,7 +24,11 @@
                     }
                 </span>
                 <span class="text-sm leading-snug text-gray-600">
-                    {{ option.descriptionKey | dm }}
+                    {{
+                        restrictionLabel
+                            ? (option.scopedDescriptionKey | dm: [restrictionLabel])
+                            : (option.descriptionKey | dm)
+                    }}
                 </span>
             </span>
         </button>

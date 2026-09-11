@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -16,11 +18,11 @@ describe('DotMenuComponent', () => {
 
     const menuItems = [
         {
-            command: jest.fn(),
+            command: vi.fn(),
             label: 'Add'
         },
         {
-            command: jest.fn(),
+            command: vi.fn(),
             label: 'Remove',
             disabled: true
         }
@@ -64,7 +66,7 @@ describe('DotMenuComponent', () => {
 
     it('should show the menu list on click', () => {
         const event = new MouseEvent('click');
-        jest.spyOn(event, 'stopPropagation');
+        vi.spyOn(event, 'stopPropagation');
 
         component.toggle(event);
         fixture.detectChanges();

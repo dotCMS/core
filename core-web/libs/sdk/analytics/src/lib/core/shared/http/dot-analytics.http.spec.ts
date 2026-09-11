@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { MockedFunction, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sendAnalyticsEvent } from './dot-analytics.http';
 
@@ -13,19 +13,19 @@ import {
 type DotCMSTrackRequestBody = DotCMSCustomEventRequestBody;
 
 // Mock fetch globally
-const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+const mockFetch = vi.fn() as MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 // Mock console methods to avoid noise in tests
-const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {
+const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {
     // do nothing
 });
 
-const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {
+const mockConsoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {
     // do nothing
 });
 
-const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation(() => {
+const mockConsoleInfo = vi.spyOn(console, 'info').mockImplementation(() => {
     // do nothing
 });
 
@@ -35,7 +35,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
     beforeEach(() => {
         // Reset all mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockFetch.mockClear();
         mockConsoleError.mockClear();
         mockConsoleWarn.mockClear();
@@ -208,7 +208,7 @@ describe('DotAnalytics HTTP Utils', () => {
                     ok: false,
                     status: 400,
                     statusText: 'Bad Request',
-                    json: jest.fn().mockResolvedValue({ message: errorMessage })
+                    json: vi.fn().mockResolvedValue({ message: errorMessage })
                 } as unknown as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);
@@ -227,7 +227,7 @@ describe('DotAnalytics HTTP Utils', () => {
                     ok: false,
                     status: 500,
                     statusText: 'Internal Server Error',
-                    json: jest.fn().mockResolvedValue({ error: 'some error', code: 'ERR_500' })
+                    json: vi.fn().mockResolvedValue({ error: 'some error', code: 'ERR_500' })
                 } as unknown as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);
@@ -246,7 +246,7 @@ describe('DotAnalytics HTTP Utils', () => {
                     ok: false,
                     status: 400,
                     statusText: 'Bad Request',
-                    json: jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+                    json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
                 } as unknown as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);

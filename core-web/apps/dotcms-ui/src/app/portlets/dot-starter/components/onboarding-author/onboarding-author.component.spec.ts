@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator, mockProvider } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -58,8 +59,8 @@ describe('DotOnboardingAuthorComponent', () => {
             imports: [DotMessagePipe],
             componentProviders: [
                 mockProvider(DotAccountService, {
-                    addStarterPage: jest.fn().mockReturnValue(of('')),
-                    removeStarterPage: jest.fn().mockReturnValue(of(''))
+                    addStarterPage: vi.fn().mockReturnValue(of('')),
+                    removeStarterPage: vi.fn().mockReturnValue(of(''))
                 })
             ],
             providers: [
@@ -98,21 +99,22 @@ describe('DotOnboardingAuthorComponent', () => {
         });
 
         it('should emit reset-user-profile on resetUserProfile', () => {
-            const emitSpy = jest.spyOn(spectator.component.eventEmitter, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.eventEmitter, 'emit');
             spectator.component.resetUserProfile();
             expect(emitSpy).toHaveBeenCalledWith('reset-user-profile');
         });
 
-        it('should show main links when user has write permissions', (done) => {
-            spectator.component.userData$.subscribe((user) => {
-                expect(user.showCreateDataModelLink).toBe(true);
-                expect(user.showCreateContentLink).toBe(true);
-                expect(user.showCreateTemplateLink).toBe(true);
-                expect(user.showCreatePageLink).toBe(true);
-                expect(user.username).toBe('Admin');
-                done();
-            });
-        });
+        it('should show main links when user has write permissions', () =>
+            new Promise<void>((done) => {
+                spectator.component.userData$.subscribe((user) => {
+                    expect(user.showCreateDataModelLink).toBe(true);
+                    expect(user.showCreateContentLink).toBe(true);
+                    expect(user.showCreateTemplateLink).toBe(true);
+                    expect(user.showCreatePageLink).toBe(true);
+                    expect(user.username).toBe('Admin');
+                    done();
+                });
+            }));
     });
 
     describe('Without user write permissions', () => {
@@ -123,8 +125,8 @@ describe('DotOnboardingAuthorComponent', () => {
             imports: [DotMessagePipe],
             componentProviders: [
                 mockProvider(DotAccountService, {
-                    addStarterPage: jest.fn().mockReturnValue(of('')),
-                    removeStarterPage: jest.fn().mockReturnValue(of(''))
+                    addStarterPage: vi.fn().mockReturnValue(of('')),
+                    removeStarterPage: vi.fn().mockReturnValue(of(''))
                 })
             ],
             providers: [
@@ -144,14 +146,15 @@ describe('DotOnboardingAuthorComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should not show main links when user lacks write permissions', (done) => {
-            spectator.component.userData$.subscribe((user) => {
-                expect(user.showCreateDataModelLink).toBe(false);
-                expect(user.showCreateContentLink).toBe(false);
-                expect(user.showCreateTemplateLink).toBe(false);
-                expect(user.showCreatePageLink).toBe(false);
-                done();
-            });
-        });
+        it('should not show main links when user lacks write permissions', () =>
+            new Promise<void>((done) => {
+                spectator.component.userData$.subscribe((user) => {
+                    expect(user.showCreateDataModelLink).toBe(false);
+                    expect(user.showCreateContentLink).toBe(false);
+                    expect(user.showCreateTemplateLink).toBe(false);
+                    expect(user.showCreatePageLink).toBe(false);
+                    done();
+                });
+            }));
     });
 });

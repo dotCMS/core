@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { Component, Input } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -35,12 +36,12 @@ export class DotCMSBlockEditorRendererCustomComponent {
     @Input() node: BlockEditorNode | undefined;
 }
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 describe('DotCMSBlockEditorRendererBlockComponent', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
 
     let spectator: Spectator<DotCMSBlockEditorItemComponent>;
     const createComponent = createComponentFactory({
@@ -53,7 +54,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Block Rendering', () => {

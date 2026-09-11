@@ -7,7 +7,7 @@ import {
     mockProvider,
     SpectatorHost,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';

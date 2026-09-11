@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { SEO_MEDIA_TYPES } from '@dotcms/dotcms-models';

@@ -1,0 +1,315 @@
+{
+  "capturedAt": "2026-09-07T22:15:55.533Z",
+  "nodeVersion": "v22.22.3",
+  "projects": {
+    "ai-ui": {
+      "tests": 23,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 3
+    },
+    "content-drive-ui": {
+      "tests": 58,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 1
+    },
+    "data-access": {
+      "tests": 864,
+      "skipped": 11,
+      "failures": 0,
+      "errors": 0,
+      "suites": 87
+    },
+    "dot-rules": {
+      "tests": 12,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 3
+    },
+    "dotcms-binary-field-builder": {
+      "tests": 1,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 1
+    },
+    "dotcms-ui": {
+      "tests": 2278,
+      "skipped": 32,
+      "failures": 0,
+      "errors": 0,
+      "suites": 228
+    },
+    "edit-content": {
+      "tests": 2341,
+      "skipped": 2,
+      "failures": 0,
+      "errors": 0,
+      "suites": 116
+    },
+    "edit-content-bridge": {
+      "tests": 124,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 2
+    },
+    "edit-ema-ui": {
+      "tests": 354,
+      "skipped": 1,
+      "failures": 0,
+      "errors": 0,
+      "suites": 20
+    },
+    "global-store": {
+      "tests": 187,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 6
+    },
+    "image-editor": {
+      "tests": 355,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 30
+    },
+    "mcp-server": {
+      "tests": 165,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 10
+    },
+    "new-block-editor": {
+      "tests": 158,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 16
+    },
+    "portlets-content-drive": {
+      "tests": 1411,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 34
+    },
+    "portlets-dot-agents-portlet": {
+      "tests": 249,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 16
+    },
+    "portlets-dot-analytics": {
+      "tests": 333,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 26
+    },
+    "portlets-dot-analytics-data-access": {
+      "tests": 217,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 8
+    },
+    "portlets-dot-auth-portlet": {
+      "tests": 103,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 5
+    },
+    "portlets-dot-categories-portlet": {
+      "tests": 109,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 4
+    },
+    "portlets-dot-es-search-portlet": {
+      "tests": 83,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 2
+    },
+    "portlets-dot-experiments-data-access": {
+      "tests": 3,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 2
+    },
+    "portlets-dot-experiments-portlet": {
+      "tests": 938,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 52
+    },
+    "portlets-dot-locales-portlet": {
+      "tests": 20,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 5
+    },
+    "portlets-dot-plugins-portlet": {
+      "tests": 81,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 4
+    },
+    "portlets-dot-publishing-queue-portlet": {
+      "tests": 255,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 12
+    },
+    "portlets-dot-query-tool-portlet": {
+      "tests": 49,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 3
+    },
+    "portlets-dot-roles-portlet": {
+      "tests": 174,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 10
+    },
+    "portlets-dot-tags-portlet": {
+      "tests": 102,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 4
+    },
+    "portlets-dot-usage": {
+      "tests": 21,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 1
+    },
+    "portlets-dot-users-portlet": {
+      "tests": 158,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 11
+    },
+    "portlets-dot-velocity-playground-portlet": {
+      "tests": 119,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 6
+    },
+    "portlets-edit-ema-portlet": {
+      "tests": 1411,
+      "skipped": 5,
+      "failures": 0,
+      "errors": 0,
+      "suites": 64
+    },
+    "sdk-ai": {
+      "tests": 68,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 6
+    },
+    "sdk-analytics": {
+      "tests": 314,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 15
+    },
+    "sdk-angular": {
+      "tests": 246,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 21
+    },
+    "sdk-client": {
+      "tests": 299,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 15
+    },
+    "sdk-create-app": {
+      "tests": 166,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 12
+    },
+    "sdk-experiments": {
+      "tests": 48,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 9
+    },
+    "sdk-react": {
+      "tests": 138,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 18
+    },
+    "sdk-uve": {
+      "tests": 103,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 5
+    },
+    "sdk-vue": {
+      "tests": 0,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 0,
+      "note": "no specs"
+    },
+    "template-builder": {
+      "tests": 168,
+      "skipped": 2,
+      "failures": 0,
+      "errors": 0,
+      "suites": 16
+    },
+    "ui": {
+      "tests": 1717,
+      "skipped": 14,
+      "failures": 0,
+      "errors": 0,
+      "suites": 112
+    },
+    "utils": {
+      "tests": 111,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "suites": 3
+    }
+  }
+}

@@ -5,18 +5,5 @@
     "sourceRoot": "libs/block-editor/src",
     "prefix": "dotcms",
     "tags": ["skip:test", "skip:lint"],
-    "targets": {
-        "test": {
-            "outputs": ["{workspaceRoot}/coverage/libs/block-editor"],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        }
-    }
+    "targets": {}
 }

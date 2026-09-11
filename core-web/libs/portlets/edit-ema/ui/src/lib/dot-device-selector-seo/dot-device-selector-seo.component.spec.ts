@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, Component, DebugElement } from '@angular/core';
@@ -89,7 +89,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
         de = deHost.query(By.css('dot-device-selector-seo'));
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
-        jest.spyOn(component, 'getOptions').mockReturnValue(of(mockDotDevices));
+        vi.spyOn(component, 'getOptions').mockReturnValue(of(mockDotDevices));
 
         fixtureHost.detectChanges();
         const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
@@ -99,7 +99,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     it('should emit selected device on change', async () => {
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
-        jest.spyOn(component.selected, 'emit');
+        vi.spyOn(component.selected, 'emit');
         const selectorOptions = fixtureHost.debugElement.queryAll(
             By.css('[data-testId="device-selector-option"] > .device-list__button')
         );
@@ -180,7 +180,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should trigger the changeSeoMedia', () => {
-        jest.spyOn(component, 'changeSeoMediaEvent');
+        vi.spyOn(component, 'changeSeoMediaEvent');
         fixtureHost.detectChanges();
 
         const buttonMedia = de.query(By.css('[data-testId="device-list-button-media"]'));
@@ -191,7 +191,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should emit hideOverlayPanel event when onHideDeviceSelector is called', () => {
-        jest.spyOn(component.hideOverlayPanel, 'emit');
+        vi.spyOn(component.hideOverlayPanel, 'emit');
         component.onHideDeviceSelector();
         expect(component.hideOverlayPanel.emit).toHaveBeenCalled();
     });

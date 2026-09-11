@@ -1,4 +1,4 @@
-import { createPipeFactory, SpectatorPipe } from '@openng/spectator/jest';
+import { createPipeFactory, SpectatorPipe } from '@openng/spectator/vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';

@@ -3,8 +3,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -28,10 +29,10 @@ import {
 } from '../editor.utils';
 import { EditorStore } from '../store/editor.store';
 
-jest.mock('../editor.utils', () => ({
-    insertDotImageFromContentlet: jest.fn(),
-    insertDotVideoFromContentlet: jest.fn(),
-    insertDotAudioFromContentlet: jest.fn()
+vi.mock('../editor.utils', () => ({
+    insertDotImageFromContentlet: vi.fn(),
+    insertDotVideoFromContentlet: vi.fn(),
+    insertDotAudioFromContentlet: vi.fn()
 }));
 
 /**
@@ -52,34 +53,34 @@ describe('EditorModalService — legacy Dojo host (no asset-picker launcher)', (
     let dialogService: SpyObject<DialogService>;
     let siteService: SpyObject<DotSiteService>;
     let onClose$: Subject<DotCMSContentlet | undefined>;
-    let closeSpy: jest.Mock;
+    let closeSpy: Mock;
 
     const editor = {} as Editor;
 
-    const insertImage = insertDotImageFromContentlet as jest.Mock;
-    const insertVideo = insertDotVideoFromContentlet as jest.Mock;
-    const insertAudio = insertDotAudioFromContentlet as jest.Mock;
+    const insertImage = insertDotImageFromContentlet as Mock;
+    const insertVideo = insertDotVideoFromContentlet as Mock;
+    const insertAudio = insertDotAudioFromContentlet as Mock;
 
     const createService = createServiceFactory({
         service: EditorModalService,
         providers: [
             mockProvider(DialogService),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DotSiteService, { getCurrentSite: jest.fn(() => of(null)) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DotSiteService, { getCurrentSite: vi.fn(() => of(null)) }),
             { provide: EditorStore, useValue: { languageId: signal(1) } }
             // ASSET_PICKER_LAUNCHER intentionally not provided (legacy host).
         ]
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
         dialogService = spectator.inject(DialogService);
         siteService = spectator.inject(DotSiteService);
 
         onClose$ = new Subject<DotCMSContentlet | undefined>();
-        closeSpy = jest.fn();
+        closeSpy = vi.fn();
         dialogService.open.mockReturnValue({
             onClose: onClose$.asObservable(),
             close: closeSpy

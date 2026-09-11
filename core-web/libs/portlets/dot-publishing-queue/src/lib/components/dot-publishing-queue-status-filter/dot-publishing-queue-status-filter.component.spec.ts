@@ -1,4 +1,5 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
@@ -44,7 +45,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
         componentProviders: [
             mockProvider(DotPublishingQueueStore, {
                 statusFilter,
-                setStatusFilter: jest.fn((codes: PublishAuditStatus[]) => statusFilter.set(codes))
+                setStatusFilter: vi.fn((codes: PublishAuditStatus[]) => statusFilter.set(codes))
             })
         ],
         providers: [

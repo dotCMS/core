@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -190,10 +191,10 @@ describe('HistoryFeature', () => {
 
     // Restore navigation is delegated to the EditContentHost port.
     const mockHost = {
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const withTest = () =>
@@ -278,6 +279,22 @@ describe('HistoryFeature', () => {
             };
             return messages[key] || key;
         });
+
+        // The withHooks onInit effect calls loadVersions() and
+        // loadPushPublishHistory() the moment it flushes, and spectator's auto-mocks
+        // return undefined — the rxMethod then pipes undefined and throws. rxjs
+        // reports that asynchronously, so Jest dropped it while Vitest counts it as an
+        // unhandled error, two per test. Empty responses keep the effect harmless;
+        // tests that care about the payload set their own return value.
+        dotEditContentService.getVersions.mockReturnValue(
+            of({ ...mockVersionsResponse, entity: [] })
+        );
+        dotEditContentService.getPushPublishHistory.mockReturnValue(
+            of({ ...mockPushPublishHistoryResponse, entity: [] })
+        );
+        // Same reason: viewing a version pipes getContentletByInode(), and the effect
+        // can fire from a state change rather than from an explicit call.
+        dotContentletService.getContentletByInode.mockReturnValue(of(mockContentlet));
     });
 
     describe('Store Initialization', () => {

@@ -1,6 +1,7 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockComponent, MockInstance, MockProvider } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
@@ -78,19 +79,19 @@ describe('DotPagesComponent', () => {
         $totalRecords: ReturnType<typeof signal<number>>;
         $showBundleDialog: ReturnType<typeof signal<boolean>>;
         $assetIdentifier: ReturnType<typeof signal<string>>;
-        searchPages: jest.Mock;
-        filterByLanguage: jest.Mock;
-        filterByArchived: jest.Mock;
-        onLazyLoad: jest.Mock;
-        hideBundleDialog: jest.Mock;
-        updateFavoritePageNode: jest.Mock;
-        updatePageNode: jest.Mock;
+        searchPages: Mock;
+        filterByLanguage: Mock;
+        filterByArchived: Mock;
+        onLazyLoad: Mock;
+        hideBundleDialog: Mock;
+        updateFavoritePageNode: Mock;
+        updatePageNode: Mock;
     };
     let events$: Subject<DotEvent<SavePageEventData>>;
-    let mockDotRouterService: jest.Mocked<Pick<DotRouterService, 'goToEditPage'>>;
-    let mockDotMessageDisplayService: jest.Mocked<Pick<DotMessageDisplayService, 'push'>>;
-    let mockDotEventsService: jest.Mocked<Pick<DotEventsService, 'listen'>>;
-    let mockDotPageActionsService: jest.Mocked<Pick<DotPageActionsService, 'getItems'>>;
+    let mockDotRouterService: Mocked<Pick<DotRouterService, 'goToEditPage'>>;
+    let mockDotMessageDisplayService: Mocked<Pick<DotMessageDisplayService, 'push'>>;
+    let mockDotEventsService: Mocked<Pick<DotEventsService, 'listen'>>;
+    let mockDotPageActionsService: Mocked<Pick<DotPageActionsService, 'getItems'>>;
     let mockGlobalStore: {
         systemConfig: ReturnType<typeof signal<{ languages: unknown[] } | null>>;
     };
@@ -134,21 +135,21 @@ describe('DotPagesComponent', () => {
             $showBundleDialog: signal<boolean>(false),
             $assetIdentifier: signal<string>(''),
 
-            searchPages: jest.fn(),
-            filterByLanguage: jest.fn(),
-            filterByArchived: jest.fn(),
-            onLazyLoad: jest.fn(),
-            hideBundleDialog: jest.fn(),
-            updateFavoritePageNode: jest.fn(),
-            updatePageNode: jest.fn()
+            searchPages: vi.fn(),
+            filterByLanguage: vi.fn(),
+            filterByArchived: vi.fn(),
+            onLazyLoad: vi.fn(),
+            hideBundleDialog: vi.fn(),
+            updateFavoritePageNode: vi.fn(),
+            updatePageNode: vi.fn()
         };
 
         events$ = new Subject<DotEvent<SavePageEventData>>();
 
-        mockDotRouterService = { goToEditPage: jest.fn() };
-        mockDotMessageDisplayService = { push: jest.fn() };
-        mockDotEventsService = { listen: jest.fn().mockReturnValue(events$.asObservable()) };
-        mockDotPageActionsService = { getItems: jest.fn().mockReturnValue(of([])) };
+        mockDotRouterService = { goToEditPage: vi.fn() };
+        mockDotMessageDisplayService = { push: vi.fn() };
+        mockDotEventsService = { listen: vi.fn().mockReturnValue(events$.asObservable()) };
+        mockDotPageActionsService = { getItems: vi.fn().mockReturnValue(of([])) };
         mockGlobalStore = { systemConfig: signal({ languages: [] }) };
 
         spectator = createComponent({
@@ -166,7 +167,7 @@ describe('DotPagesComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         events$.complete();
     });
 
@@ -233,10 +234,10 @@ describe('DotPagesComponent', () => {
         it('toggleMenu should close when already visible (triggered by dot-pages-table openMenu)', () => {
             const menu = spectator.component.menu() as unknown as MenuStubComponent;
             menu.visible = true;
-            const closeSpy = jest.spyOn(spectator.component, 'closeMenu');
+            const closeSpy = vi.spyOn(spectator.component, 'closeMenu');
 
             spectator.triggerEventHandler('dot-pages-table', 'openMenu', {
-                originalEvent: { stopPropagation: jest.fn() } as unknown as MouseEvent,
+                originalEvent: { stopPropagation: vi.fn() } as unknown as MouseEvent,
                 data: mockContentlet({ identifier: 'p1' })
             } satisfies DotActionsMenuEventParams);
 
@@ -247,8 +248,8 @@ describe('DotPagesComponent', () => {
             const menu = spectator.component.menu() as unknown as MenuStubComponent;
             menu.visible = false;
 
-            const showSpy = jest.spyOn(menu, 'show');
-            const stopPropagation = jest.fn();
+            const showSpy = vi.spyOn(menu, 'show');
+            const stopPropagation = vi.fn();
             const anchor = document.createElement('button');
             const items: MenuItem[] = [{ label: 'Edit' }];
             mockDotPageActionsService.getItems.mockReturnValueOnce(of(items));
@@ -273,7 +274,7 @@ describe('DotPagesComponent', () => {
 
     describe('template wiring', () => {
         it('should call scrollToTop when dot-pages-table emits pageChange', () => {
-            const spy = jest.spyOn(spectator.component, 'scrollToTop').mockImplementation(() => {
+            const spy = vi.spyOn(spectator.component, 'scrollToTop').mockImplementation(() => {
                 // We only care that the output is wired to the handler, not DOM scrolling support in jsdom.
             });
             spectator.triggerEventHandler('dot-pages-table', 'pageChange', null);

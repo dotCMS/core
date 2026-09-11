@@ -83,6 +83,8 @@ public class BrowserQuery {
     final Set<String> workflowStepIds;
     /** Per-field value filters (Content Drive only); empty for the legacy Site Browser path. */
     final List<FieldSearchCriteria> fieldCriteria;
+    /** Content states to filter by, OR'd together; empty means no status filtering. */
+    final Set<ContentStatus> contentStatuses;
 
     /**
      * Returns the primary language ID for backward compatibility.
@@ -113,6 +115,14 @@ public class BrowserQuery {
         return fieldCriteria;
     }
 
+    /**
+     * Returns the content states to filter by, OR'd together. Never null; empty means no status
+     * filtering, in which case no status clause is emitted at all.
+     */
+    public Set<ContentStatus> getContentStatuses() {
+        return contentStatuses;
+    }
+
     @Override
     public String toString() {
         return "BrowserQuery {user:" + user + ", respectFronEndRoles:" + respectFrontEndRoles +
@@ -132,6 +142,7 @@ public class BrowserQuery {
                 + ", baseTypes:" + StringUtils.join(baseTypes)
                 + ", contentTypes:" + StringUtils.join(contentTypeIds)
                 + ", fieldCriteria:" + StringUtils.join(fieldCriteria)
+                + ", contentStatuses:" + contentStatuses
                 + "}";
     }
 
@@ -152,7 +163,19 @@ public class BrowserQuery {
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
         this.maxResults = Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST);
-        this.showWorking = builder.showWorking || builder.showArchived;
+        // ARCHIVED and UNPUBLISHED rows have no live version by definition, so the working inode
+        // must be the one joined (see selectQuery) or the join can never match and the filter
+        // silently returns nothing. LOCKED does not need this — a locked item may well be live.
+        //
+        // Note the join is chosen for the WHOLE query, not per disjunct. So a mixed request such as
+        // {live: true, status: [LOCKED, ARCHIVED]} resolves the LOCKED disjunct against
+        // working_inode as well, and a live locked item with pending edits comes back carrying its
+        // working version's fields rather than the live ones the caller asked for. Unreachable from
+        // the Content Drive UI (the form's live() defaults to false); it only affects direct API
+        // callers who combine live:true with ARCHIVED or UNPUBLISHED.
+        this.showWorking = builder.showWorking || builder.showArchived
+                || builder.contentStatuses.contains(ContentStatus.ARCHIVED)
+                || builder.contentStatuses.contains(ContentStatus.UNPUBLISHED);
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
         this.showContent = builder.showContent;
@@ -172,6 +195,7 @@ public class BrowserQuery {
         this.workflowSchemeIds = Set.copyOf(builder.workflowSchemeIds);
         this.workflowStepIds = Set.copyOf(builder.workflowStepIds);
         this.fieldCriteria = List.copyOf(builder.fieldCriteria);
+        this.contentStatuses = Set.copyOf(builder.contentStatuses);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder = siteAndFolder._2;
@@ -296,6 +320,7 @@ public class BrowserQuery {
         private Set<String> workflowSchemeIds = new LinkedHashSet<>();
         private Set<String> workflowStepIds = new LinkedHashSet<>();
         private List<FieldSearchCriteria> fieldCriteria = new ArrayList<>();
+        private Set<ContentStatus> contentStatuses = new LinkedHashSet<>();
         private Builder() {
         }
 
@@ -330,6 +355,7 @@ public class BrowserQuery {
             this.workflowSchemeIds = new LinkedHashSet<>(browserQuery.workflowSchemeIds);
             this.workflowStepIds = new LinkedHashSet<>(browserQuery.workflowStepIds);
             this.fieldCriteria = new ArrayList<>(browserQuery.fieldCriteria);
+            this.contentStatuses = new LinkedHashSet<>(browserQuery.contentStatuses);
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
@@ -637,6 +663,21 @@ public class BrowserQuery {
         public Builder withFieldCriteria(@Nonnull List<FieldSearchCriteria> fieldCriteria) {
             this.fieldCriteria.clear();
             this.fieldCriteria.addAll(fieldCriteria);
+            return this;
+        }
+
+        /**
+         * Content states to filter by ({@link ContentStatus}). The selected statuses are OR'd into
+         * one group and that group is AND'd against the archived baseline, which only
+         * {@link ContentStatus#ARCHIVED} lifts. Empty means no status filtering and emits no clause
+         * at all. Not used by the legacy Site Browser.
+         *
+         * @param contentStatuses the states to match
+         * @return this
+         */
+        public Builder withContentStatuses(@Nonnull Set<ContentStatus> contentStatuses) {
+            this.contentStatuses.clear();
+            this.contentStatuses.addAll(contentStatuses);
             return this;
         }
 

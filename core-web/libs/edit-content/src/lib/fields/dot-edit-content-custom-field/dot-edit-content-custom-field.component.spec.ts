@@ -1,4 +1,5 @@
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -49,7 +50,7 @@ describe('DotEditContentCustomFieldComponent', () => {
             {
                 provide: DotEditContentStore,
                 useValue: {
-                    setFieldVisibility: jest.fn()
+                    setFieldVisibility: vi.fn()
                 }
             }
         ]
@@ -341,7 +342,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 {
                     provide: DotEditContentStore,
                     useValue: {
-                        setFieldVisibility: jest.fn()
+                        setFieldVisibility: vi.fn()
                     }
                 }
             ]

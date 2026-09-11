@@ -14,6 +14,7 @@ export * from './lib/dot-http-error-manager.service.mock';
 export * from './lib/dot-language.mock';
 export * from './lib/dot-languages-service.mock';
 export * from './lib/dot-license-service.mock';
+export * from './lib/dot-system-config.service.mock';
 export * from './lib/dot-message-mock.pipe';
 export * from './lib/dot-message-service.mock';
 export * from './lib/dot-not-licensed.component.mock';

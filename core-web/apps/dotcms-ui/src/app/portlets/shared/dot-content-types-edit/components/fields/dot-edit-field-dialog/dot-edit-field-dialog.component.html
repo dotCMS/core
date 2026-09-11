@@ -74,6 +74,8 @@
         }
         <p-tabpanel [value]="variablesTabIndex">
             <dot-content-type-fields-variables
+                (changeControls)="changesDialogActions($event)"
+                (save)="onSettingsSaved()"
                 [showTable]="activeTab === variablesTabIndex"
                 [field]="currentField" />
         </p-tabpanel>
@@ -85,7 +87,7 @@
             <p-button
                 [label]="cancelBtn.label"
                 [disabled]="cancelBtn.disabled"
-                severity="secondary"
+                [text]="true"
                 (click)="cancelBtn.action()"
                 data-testId="dotDialogCancelAction" />
         }

@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotColorIconComponent } from '@dotcms/ui';
@@ -82,7 +83,7 @@ describe('DotA11yActionsComponent', () => {
             ['published', 'studio-allpages-btn', (c: DotA11yActionsComponent) => c.allPages]
         ])('%s: %s emits its action', (phase, testId, pickOutput) => {
             render({ phase: phase as StudioPhase });
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             pickOutput(spectator.component).subscribe(emitted);
 
             click(testId);
@@ -92,7 +93,7 @@ describe('DotA11yActionsComponent', () => {
 
         it('emits the skip-css choice rather than owning it', () => {
             render({ phase: 'scanned' as StudioPhase });
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             spectator.component.skipCssChange.subscribe(emitted);
 
             spectator.triggerEventHandler('p-toggleswitch', 'ngModelChange', true);

@@ -2,6 +2,9 @@ import { DotAuthConfig, DotAuthConfigView, DotAuthDiscoveryView } from '@dotcms/
 
 import {
     DEFAULT_CONFIG,
+    GOOGLE_GROUPS_SCOPE,
+    GOOGLE_GROUPS_URL,
+    applyGoogleGroupsPreset,
     applyOidcDiscovery,
     applyTrustedDiscovery,
     clone,
@@ -414,24 +417,27 @@ describe('dot-auth-config.mappers', () => {
             expect(payload.values.buildRolesStrategy).toBe('idp');
         });
 
-        it('round-trips revocationUrl and groupsUrl so a save never deletes the stored secrets', () => {
+        it('round-trips revocationUrl, groupsUrl and groupsResponsePath so a save never deletes the stored secrets', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'oidc';
             config.oidc.revocationUrl = 'https://idp.example/revoke';
             config.oidc.groupsUrl = 'https://idp.example/groups';
+            config.oidc.groupsResponsePath = 'memberships[].groupKey.id';
 
             const payload = toPayload(config, 'test-site-id');
             expect(payload.values.revocationUrl).toBe('https://idp.example/revoke');
             expect(payload.values.groupsUrl).toBe('https://idp.example/groups');
+            expect(payload.values.groupsResponsePath).toBe('memberships[].groupKey.id');
         });
 
-        it('omits revocationUrl and groupsUrl when unset', () => {
+        it('omits revocationUrl, groupsUrl and groupsResponsePath when unset', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'oidc';
 
             const payload = toPayload(config, 'test-site-id');
             expect(payload.values.revocationUrl).toBeUndefined();
             expect(payload.values.groupsUrl).toBeUndefined();
+            expect(payload.values.groupsResponsePath).toBeUndefined();
         });
 
         it('serializes group-security fields (allowUnmappedGroups / groupFilterPattern)', () => {
@@ -668,6 +674,38 @@ describe('dot-auth-config.mappers', () => {
             config.oidc.issuer = 'https://original.example';
             const result = applyOidcDiscovery(config, {});
             expect(result.oidc.issuer).toBe('https://original.example');
+        });
+    });
+
+    describe('applyGoogleGroupsPreset', () => {
+        it('fills the Google groups URL and response path when both are empty', () => {
+            const config = clone(DEFAULT_CONFIG);
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.groupsUrl).toBe(GOOGLE_GROUPS_URL);
+            expect(result.oidc.groupsResponsePath).toBe('memberships[].groupKey.id');
+            expect(config.oidc.groupsUrl).toBe('');
+        });
+
+        it('leaves a customized groups URL and response path untouched', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.oidc.groupsUrl = 'https://custom.example/groups';
+            config.oidc.groupsResponsePath = 'items[].name';
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.groupsUrl).toBe('https://custom.example/groups');
+            expect(result.oidc.groupsResponsePath).toBe('items[].name');
+        });
+
+        it('appends the cloud-identity scope when absent', () => {
+            const config = clone(DEFAULT_CONFIG);
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.scopes).toBe(`openid email profile ${GOOGLE_GROUPS_SCOPE}`);
+        });
+
+        it('does not duplicate the cloud-identity scope when already present', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.oidc.scopes = `openid ${GOOGLE_GROUPS_SCOPE} email`;
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.scopes).toBe(`openid ${GOOGLE_GROUPS_SCOPE} email`);
         });
     });
 

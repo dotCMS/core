@@ -1,0 +1,15 @@
+// Same zero-height wrapper UVE hangs its autosave bar in: the bar overlays the seam under the
+// header instead of pushing the body down every time a save starts.
+.progress-bar-wrapper {
+    position: relative;
+    z-index: 10;
+    height: 0;
+
+    > * {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: block;
+    }
+}

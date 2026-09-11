@@ -83,9 +83,11 @@ describe('A11yMarkerService', () => {
         const markers = Array.from(
             iframe.contentDocument?.querySelectorAll<HTMLElement>(MARKER_SELECTOR) ?? []
         );
-        // error → orange, warning → red
-        expect(markers[0].style.border).toContain('#f59e0b');
-        expect(markers[2].style.border).toContain('#dc2626');
+        // error → orange, warning → red. Asserted in rgb(): the DOM normalises a hex
+        // colour on assignment, so `style.border` serialises back as
+        // "2px solid rgb(245, 158, 11)" and never contains the literal the service set.
+        expect(markers[0].style.border).toContain('rgb(245, 158, 11)');
+        expect(markers[2].style.border).toContain('rgb(220, 38, 38)');
     });
 
     it('does not draw overlay boxes for landmark/structural rules (region)', () => {

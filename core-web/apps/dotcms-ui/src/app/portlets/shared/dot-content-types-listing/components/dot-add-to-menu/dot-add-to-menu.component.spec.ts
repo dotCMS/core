@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -138,7 +139,7 @@ describe('DotAddToMenuComponent', () => {
         dotAddToMenuService = TestBed.inject(DotAddToMenuService);
         dotMenuService = TestBed.inject(DotMenuService);
 
-        jest.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
+        vi.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
             of([
                 {
                     id: '123',
@@ -238,9 +239,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogAcceptAction"]')
         );
 
-        jest.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
-        jest.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
-        jest.spyOn(component.cancel, 'emit');
+        vi.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
+        vi.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
+        vi.spyOn(component.cancel, 'emit');
 
         addButton.nativeElement.click();
 
@@ -262,7 +263,7 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogCancelAction"]')
         );
 
-        jest.spyOn(component.cancel, 'emit');
+        vi.spyOn(component.cancel, 'emit');
         cancelButton.nativeElement.click();
 
         expect(component.cancel.emit).toHaveBeenCalledTimes(1);

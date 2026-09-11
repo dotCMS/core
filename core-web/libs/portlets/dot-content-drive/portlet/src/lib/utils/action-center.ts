@@ -49,8 +49,18 @@ export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
  * Unlike the others, eligibility does not depend on row state: reindexing applies to live, archived and
  * locked content alike, because none of those affect whether the index copy is correct.
  *
- * Not gated client-side, though the endpoint requires CMS Power User or CMS Administrator — see
- * {@link QUICK_ACTIONS}.
+ * Gated on the CMS Administrator role, which is the whole of what the endpoint enforces even though
+ * `BulkRefreshHelper.canRefresh` reads as two checks. The first, `doesUserHaveRole(user,
+ * loadRoleByKey(Role.CMS_POWER_USER))`, resolves the role *key* `"CMS Power User"`, and no role ships
+ * with that key: `loadRoleByKey` answers null and `RoleFactoryImpl` returns false for a null role. So
+ * the surviving half is `doesUserHaveRole(user, loadCMSAdminRole())`, which is the same expression as
+ * `User.isAdmin()` and therefore the same answer as {@link DotActionCenterContext.isAdmin}, which is
+ * fed from the current user's `admin` flag.
+ *
+ * That equivalence is what makes gating here safe: the row cannot disable an action the endpoint
+ * would have allowed. The one exception is an install that has hand-created a role keyed
+ * `"CMS Power User"`, where the server would allow a non-admin holder and this row would not — worth
+ * knowing, but it is not something dotCMS ships.
  */
 export const REFRESH_ACTION_ID = 'REFRESH';
 
@@ -103,6 +113,14 @@ export interface DotActionCenterQuickAction {
      * *configuration*, and the fix is an administrator's rather than ours. The row says which.
      */
     missingEnvironments: boolean;
+    /**
+     * Wired, but this user is not a CMS Administrator, which is what the endpoint requires.
+     *
+     * Distinct from {@link missingEnvironments}: that one is a gap in the instance's configuration
+     * that an administrator can close, this one is about *who is asking* and no configuration
+     * changes it. Same disabled treatment either way, different tooltip.
+     */
+    missingAdminRole: boolean;
 }
 
 /** Caller state predicates need beyond row data. */
@@ -152,6 +170,8 @@ interface DotActionCenterQuickActionDef {
     comingSoon?: boolean;
     /** Needs at least one push publish environment before it can run. */
     requiresEnvironments?: boolean;
+    /** Needs the CMS Administrator role before it can run. See {@link REFRESH_ACTION_ID}. */
+    requiresAdmin?: boolean;
     /**
      * Runs on folders as well as contentlets.
      *
@@ -244,12 +264,10 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         // No row state disqualifies a reindex. Live, archived, locked — none of them change whether
         // the index copy of a contentlet is stale, which is the only thing this fixes.
         //
-        // Deliberately not role-gated here either, even though the endpoint requires CMS Power User or
-        // CMS Administrator. The client knows whether the user is an admin but has no idea whether they
-        // are a Power User, so the only gate available would hide Refresh from exactly the users the
-        // legacy button was written for. A visible action that answers 403 is a better failure than a
-        // capability silently withheld from people who have it.
-        eligibleWhen: () => true
+        // Role-gated, because the endpoint is. See {@link REFRESH_ACTION_ID} for why `isAdmin` is
+        // the whole gate and not half of it.
+        eligibleWhen: () => true,
+        requiresAdmin: true
     }
 ];
 
@@ -334,7 +352,8 @@ export const getQuickActions = (
             warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
             comingSoon: !!quickAction.comingSoon,
             missingEnvironments:
-                !!quickAction.requiresEnvironments && !context.hasPushPublishEnvironments
+                !!quickAction.requiresEnvironments && !context.hasPushPublishEnvironments,
+            missingAdminRole: !!quickAction.requiresAdmin && !context.isAdmin
         };
     });
 };

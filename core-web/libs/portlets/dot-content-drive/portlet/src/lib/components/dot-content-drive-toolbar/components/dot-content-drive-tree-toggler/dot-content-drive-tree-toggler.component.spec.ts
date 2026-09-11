@@ -1,5 +1,10 @@
-import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
-import { byTestId, Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    byTestId,
+    Spectator,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -10,7 +15,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 
 describe('DotContentDriveTreeTogglerComponent', () => {
     let spectator: Spectator<DotContentDriveTreeTogglerComponent>;
-    let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
 
     /** The real `<button>` PrimeNG renders, which is what the user actually interacts with. */
     const button = () =>
@@ -20,10 +25,10 @@ describe('DotContentDriveTreeTogglerComponent', () => {
         component: DotContentDriveTreeTogglerComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                isTreeExpanded: jest.fn().mockReturnValue(true),
-                isTreeVisuallyExpanded: jest.fn().mockReturnValue(true),
-                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
-                setIsTreeExpanded: jest.fn()
+                isTreeExpanded: vi.fn().mockReturnValue(true),
+                isTreeVisuallyExpanded: vi.fn().mockReturnValue(true),
+                isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                setIsTreeExpanded: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -42,7 +47,7 @@ describe('DotContentDriveTreeTogglerComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render the dock glyph for a left-hand panel', () => {

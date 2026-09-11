@@ -1,4 +1,5 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { GlobalStore } from '@dotcms/store';
 
@@ -10,18 +11,18 @@ describe('DotSidePanelNavController', () => {
     let spectator: SpectatorService<DotSidePanelNavController>;
     let service: DotSidePanelNavController;
     let globalStore: {
-        isNavigationCollapsed: jest.Mock;
-        collapseNavigation: jest.Mock;
-        expandNavigation: jest.Mock;
+        isNavigationCollapsed: Mock;
+        collapseNavigation: Mock;
+        expandNavigation: Mock;
     };
 
     const createService = createServiceFactory({
         service: DotSidePanelNavController,
         providers: [
             mockProvider(GlobalStore, {
-                isNavigationCollapsed: jest.fn().mockReturnValue(false),
-                collapseNavigation: jest.fn(),
-                expandNavigation: jest.fn()
+                isNavigationCollapsed: vi.fn().mockReturnValue(false),
+                collapseNavigation: vi.fn(),
+                expandNavigation: vi.fn()
             })
         ]
     });
@@ -37,9 +38,9 @@ describe('DotSidePanelNavController', () => {
     const setWideViewport = () => setViewportWidth(2560);
 
     beforeEach(() => {
-        // mockProvider's jest.fn()s are shared across tests, so call counts (and any
+        // mockProvider's vi.fn()s are shared across tests, so call counts (and any
         // per-test mockReturnValue override) would leak. Clear counts, then re-assert the default.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         sessionStorage.clear();
         // Narrow viewport by default so the collapse behavior is active for these tests.
         setViewportWidth(800);

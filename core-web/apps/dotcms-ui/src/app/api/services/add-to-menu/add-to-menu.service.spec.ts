@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -67,7 +69,7 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should throw null on create custom tool error 400', () => {
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        vi.spyOn(dotHttpErrorManagerService, 'handle');
 
         dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
             expect(response).toEqual(null);
@@ -80,7 +82,7 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should throw error 500 on create custom tool error', () => {
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        vi.spyOn(dotHttpErrorManagerService, 'handle');
 
         dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
             expect(response).toEqual(null);
@@ -113,7 +115,7 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should throw error 400 on add to layout custom portlet', () => {
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        vi.spyOn(dotHttpErrorManagerService, 'handle');
 
         const layoutData: DotCustomToolToLayout = {
             portletName: customToolData.portletName,

@@ -19,6 +19,22 @@ skeleton (marker, ownership table, four-column summary, full plan in `<details>`
 lean: no assumptions table, no per-issue coverage index, no out-of-scope list, and no completion
 block, since the ownership table already carries both statuses.
 
+## Specs
+
+When spec-driven work exists for an issue — `specs/<issue>-<slug>/spec.md` — the skill reads it in
+preference to the issue's acceptance criteria. A spec is written to be testable: its Acceptance
+Scenarios are already *Given / When / Then*, which map almost directly onto steps and expected
+results, and its user-story priorities inform risk. Cases cite the scenario they came from
+(`US1-AS3: …`) so a reviewer can check one against the other.
+
+Two limits keep it honest. The **diff still wins** where spec and code disagree — a spec is approved
+before the code exists. And because a spec covers a whole feature while a PR often implements one
+increment of it, the plan covers **what this diff built**; spec scenarios with no counterpart in the
+diff are noted in the Summary rather than turned into cases for untested behaviour.
+
+Only `spec.md` is read, bounded to 3 specs and 400 lines each. Most issues have no spec, which
+changes nothing.
+
 ## What it does *not* do
 
 - Write or run tests, or record their results.

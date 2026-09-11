@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NO_ERRORS_SCHEMA, Component, EventEmitter, Input, Output } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -34,7 +40,7 @@ class MockIframeComponent {
         nativeElement: {
             contentWindow: {
                 location: {
-                    reload: jest.fn()
+                    reload: vi.fn()
                 }
             }
         }
@@ -53,7 +59,7 @@ describe('DotTemplateBuilderComponent', () => {
         schemas: [NO_ERRORS_SCHEMA],
         providers: [
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             })
         ],
         componentImports: [
@@ -95,7 +101,7 @@ describe('DotTemplateBuilderComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotRouterService, {
-                    forbidRouteDeactivation: jest.fn(),
+                    forbidRouteDeactivation: vi.fn(),
                     pageLeaveRequest$
                 })
             ]
@@ -159,9 +165,9 @@ describe('DotTemplateBuilderComponent', () => {
             spectator.setInput('item', item);
             spectator.setInput('didTemplateChanged', true);
 
-            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-            const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
+            const updateSpy = vi.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
+            const cancelSpy = vi.spyOn(spectator.component.cancel, 'emit');
 
             spectator.detectChanges();
 
@@ -202,13 +208,13 @@ describe('DotTemplateBuilderComponent', () => {
             const item = createDesignItem({ identifier: 'id-1', theme: 't-1' });
             spectator.setInput('item', item);
 
-            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const updateSpy = vi.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             spectator.detectChanges();
 
             const reloadSpy = (spectator.component.historyIframe as any).iframeElement.nativeElement
-                .contentWindow.location.reload as jest.Mock;
+                .contentWindow.location.reload as Mock;
 
             const updated = createDesignItem({ identifier: 'id-2', theme: 't-2' });
             spectator.triggerEventHandler('dotcms-template-builder-lib', 'templateChange', updated);
@@ -246,8 +252,8 @@ describe('DotTemplateBuilderComponent', () => {
             const item = createDesignItem({ identifier: 'id-1' });
             spectator.setInput('item', item);
 
-            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const updateSpy = vi.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             spectator.detectChanges();
 
@@ -303,7 +309,7 @@ describe('DotTemplateBuilderComponent', () => {
         const item = createDesignItem();
         spectator.setInput('item', item);
 
-        const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+        const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
         spectator.detectChanges();
 

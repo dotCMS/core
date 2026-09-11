@@ -5,7 +5,8 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -32,7 +33,7 @@ describe('DotImageEditorFooterComponent', () => {
     const createComponent = createComponentFactory({
         component: DotImageEditorFooterComponent,
         imports: [DotMessagePipe],
-        providers: [mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })],
+        providers: [mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })],
         componentProviders: [Dispatcher, mockProvider(ImageEditorStore, { isBusy, saveStatus })]
     });
 
@@ -42,7 +43,7 @@ describe('DotImageEditorFooterComponent', () => {
 
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
-        jest.spyOn(dispatcher, 'dispatch');
+        vi.spyOn(dispatcher, 'dispatch');
     });
 
     it('should render the cancel, download and save actions', () => {
@@ -52,7 +53,7 @@ describe('DotImageEditorFooterComponent', () => {
     });
 
     it('should emit cancel when Cancel is clicked', () => {
-        const cancelSpy = jest.spyOn(spectator.component.$cancel, 'emit');
+        const cancelSpy = vi.spyOn(spectator.component.$cancel, 'emit');
 
         spectator.click(nativeButton(spectator, 'image-editor-cancel-btn'));
 

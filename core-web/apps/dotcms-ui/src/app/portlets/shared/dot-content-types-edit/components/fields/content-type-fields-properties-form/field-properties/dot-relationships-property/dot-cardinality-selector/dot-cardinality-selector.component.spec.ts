@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { Observable, of } from 'rxjs';
 
 import { By } from '@angular/platform-browser';
@@ -66,14 +66,15 @@ describe('DotCardinalitySelectorComponent', () => {
         expect(options).toEqual(cardinalities);
     });
 
-    it('should trigger a change event on p-select', (done) => {
-        spectator.component.switch.subscribe((change) => {
-            expect(change).toEqual(cardinalities[1].id);
-            done();
-        });
+    it('should trigger a change event on p-select', () =>
+        new Promise<void>((done) => {
+            spectator.component.switch.subscribe((change) => {
+                expect(change).toEqual(cardinalities[1].id);
+                done();
+            });
 
-        getDropdown().triggerEventHandler('onChange', {
-            value: cardinalities[1].id
-        });
-    });
+            getDropdown().triggerEventHandler('onChange', {
+                value: cardinalities[1].id
+            });
+        }));
 });

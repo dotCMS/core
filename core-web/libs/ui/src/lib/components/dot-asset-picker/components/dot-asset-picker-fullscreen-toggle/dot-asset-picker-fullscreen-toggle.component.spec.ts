@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -21,7 +22,7 @@ const createMockStore = () => {
 
     return {
         isFullscreen,
-        toggleFullscreen: jest.fn(() => isFullscreen.set(!isFullscreen()))
+        toggleFullscreen: vi.fn(() => isFullscreen.set(!isFullscreen()))
     };
 };
 

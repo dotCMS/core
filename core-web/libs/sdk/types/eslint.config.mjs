@@ -21,12 +21,16 @@ export default [
     {
         files: ['**/*.json'],
         rules: {
-            // Ignore build-tool config files (e.g. the inferred rollup config)
-            // so @nx/rollup isn't flagged as a missing runtime dependency.
+            // Ignore build-tool config files (e.g. the inferred rollup config
+            // and the Vitest config) so their dev-only imports aren't flagged
+            // as missing runtime dependencies of this types-only package.
             '@nx/dependency-checks': [
                 'error',
                 {
-                    ignoredFiles: ['{projectRoot}/rollup.config.cjs']
+                    ignoredFiles: [
+                        '{projectRoot}/rollup.config.cjs',
+                        '{projectRoot}/vite.config.mts'
+                    ]
                 }
             ]
         },

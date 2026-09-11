@@ -7,9 +7,9 @@
 dotcms-root/
 ├── parent/                    # Global properties, plugin management
 ├── bom/                      # Centralized dependency management
-├── dotCMS/                   # Core Java backend (Java 21 runtime, Java 11 compatibility)
-├── core-web/                 # Angular 18.2.3 frontend with Nx
-├── tools/dotcms-cli/         # CLI tools (full Java 21 features)
+├── dotCMS/                   # Core Java backend (see parent/pom.xml's dotcms.core.compiler.release)
+├── core-web/                 # Angular frontend with Nx (see core-web/package.json's @angular/core)
+├── tools/dotcms-cli/         # CLI tools (see tools/dotcms-cli/pom.xml's maven.compiler.release — most conservative target in the repo)
 ├── dotcms-integration/       # Integration tests
 ├── dotcms-postman/          # API testing
 ├── e2e/                     # End-to-end testing
@@ -89,7 +89,7 @@ core-web/
 ```
 
 ### Frontend Patterns
-- **Standalone components**: Angular 18+ pattern
+- **Standalone components**: current Angular pattern (see `core-web/package.json`'s `@angular/core` for the version in use)
 - **Signals**: Required for new state management
 - **Nx workspace**: Efficient builds and dependency management
 - **Domain portlets**: Feature-specific modules
@@ -108,7 +108,7 @@ parent/pom.xml              # Global properties, plugin management
 - **GraphQL**: Unified schema (`com.dotcms.graphql.*`)
 - **OSGi Plugins**: Hot-deployable extensions
 - **WebSocket**: Real-time communication
-- **CDI/Spring**: Dependency injection bridge
+- **CDI**: Dependency injection bridge (no Spring anywhere in this codebase)
 
 ### Frontend-Backend Communication
 - **REST consumption**: Angular services → JAX-RS endpoints
@@ -134,7 +134,7 @@ parent/pom.xml              # Global properties, plugin management
 ## Module Dependencies
 
 ### Backend Dependencies
-- **Spring/CDI**: Dependency injection
+- **CDI**: Dependency injection (no Spring anywhere in this codebase)
 - **OSGi**: Plugin system
 - **JAX-RS**: REST API framework
 - **PostgreSQL**: Database
@@ -142,7 +142,7 @@ parent/pom.xml              # Global properties, plugin management
 - **Docker**: Containerization
 
 ### Frontend Dependencies
-- **Angular 18.2.3**: Framework
+- **Angular**: Framework — see `core-web/package.json`'s `@angular/core` for the version
 - **Nx**: Build system
 - **TypeScript**: Language
 - **Spectator**: Testing framework

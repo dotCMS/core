@@ -1,14 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import {
     Spectator,
     SpyObject,
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -22,17 +23,27 @@ import {
     DotMessageService,
     DotTagsService
 } from '@dotcms/data-access';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DOT_FIELD_FILTER_HOST,
+    DOT_FILTER_FACADE,
+    DotFieldFilterHost,
+    DotFilterFacade,
+    DotFilterValue,
+    DotLanguageFilterChipComponent,
+    isCanonicalChipOrder
+} from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
-import { DotContentDriveActionExecution } from '../../shared/models';
+import { DotContentDriveActionExecution, DotContentDriveFilters } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
  * The creation buttons (Upload + "Add New") are driven by an animation state machine that hides
@@ -47,23 +58,59 @@ const settleToolbarAnimation = async (spectator: Spectator<DotContentDriveToolba
     spectator.detectChanges();
 };
 
+/** The bar clears through the facade, so this is what the Clear all test asserts against. */
+const clearFiltersSpy = vi.fn();
+
 describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
-    const filtersSignal = signal<Record<string, unknown>>({});
+    const filtersSignal = signal<DotContentDriveFilters>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
     const selectedNodeSignal = signal<
         { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
     >(undefined);
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    // The field-filter chips read these through DOT_FIELD_FILTER_HOST, and the toolbar reads the
+    // same pair off the store to render one chip per active field — so both point here.
+    const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
+    const userSearchableActiveSignal = signal<string[]>([]);
     const siteCanAddChildrenSignal = signal<boolean | undefined>(undefined);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
+            // The shared filter chips reach the store through this seam rather than injecting it,
+            // so the toolbar's graph needs it even though the toolbar itself does not inject it.
+            {
+                provide: DOT_FILTER_FACADE,
+                useValue: {
+                    getFilterValue: vi.fn(
+                        (key: string): DotFilterValue | undefined => filtersSignal()[key]
+                    ),
+                    patchFilters: vi.fn(),
+                    removeFilter: vi.fn(),
+                    clearFilters: clearFiltersSpy,
+                    // "Clear all" lives in the shared bar now and keys off this. In production the
+                    // facade derives it from the same filters this suite already drives, so deriving
+                    // it here too keeps these tests driving one value rather than two.
+                    $hasNonDefaultFilters: computed(() => hasNonDefaultFilters(filtersSignal(), 1))
+                } satisfies DotFilterFacade
+            },
+            // The "More" overflow's own seam. In production the shell provides it over the same
+            // store methods this suite already mocks, so it is wired to them here too.
+            {
+                provide: DOT_FIELD_FILTER_HOST,
+                useValue: {
+                    $activeFields: userSearchableActiveSignal,
+                    $fields: userSearchableFieldsSignal,
+                    addField: vi.fn(),
+                    setFields: vi.fn(),
+                    clearFields: vi.fn()
+                } satisfies DotFieldFilterHost
+            },
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
                 // The toolbar now renders from the visual (panel-aware) computed; reusing the same
@@ -71,21 +118,21 @@ describe('DotContentDriveToolbarComponent', () => {
                 // the real preference from a panel-forced override.
                 isTreeVisuallyExpanded: isTreeExpandedSignal,
                 // The toggler disables itself while the side panel holds the tree collapsed.
-                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
-                setIsTreeExpanded: jest.fn(),
-                getFilterValue: jest.fn().mockReturnValue(undefined),
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                clearFilters: jest.fn(),
+                isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                setIsTreeExpanded: vi.fn(),
+                getFilterValue: vi.fn().mockReturnValue(undefined),
+                patchFilters: vi.fn(),
+                removeFilter: vi.fn(),
+                clearFilters: vi.fn(),
                 filters: filtersSignal,
-                setDialog: jest.fn(),
+                setDialog: vi.fn(),
                 selectedItems: selectedItemsSignal,
                 selectedNode: selectedNodeSignal,
-                userSearchableFields: signal([]),
-                userSearchableActive: signal<string[]>([]),
-                setUserSearchableFields: jest.fn(),
-                addUserSearchableField: jest.fn(),
-                clearUserSearchableFilters: jest.fn(),
+                userSearchableFields: userSearchableFieldsSignal,
+                userSearchableActive: userSearchableActiveSignal,
+                setUserSearchableFields: vi.fn(),
+                addUserSearchableField: vi.fn(),
+                clearUserSearchableFilters: vi.fn(),
                 actionExecution: actionExecutionSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
@@ -102,11 +149,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 // Read by the Locale chip this toolbar renders: the store resolves the languages
                 // once and seeds the environment default into the `languageId` filter.
                 languages: signal(mockLocales),
-                defaultLanguageId: jest.fn().mockReturnValue(1)
+                defaultLanguageId: vi.fn().mockReturnValue(1)
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
-                getContentTypesWithPagination: jest.fn().mockReturnValue(
+                getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
+                getContentTypesWithPagination: vi.fn().mockReturnValue(
                     of({
                         contentTypes: MOCK_CONTENT_TYPES,
                         pagination: {
@@ -116,26 +163,26 @@ describe('DotContentDriveToolbarComponent', () => {
                         }
                     })
                 ),
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
             // The shared DotLanguageFilterComponent fetches the language list on init, so without
             // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
             // NetworkError rather than on anything it is testing.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.
             mockProvider(DotTagsService, {
-                getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [] }))
+                getTagsPaginated: vi.fn().mockReturnValue(of({ entity: [] }))
             }),
             mockProvider(DotCategoriesService, {
-                getChildrenPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getCategory: jest.fn().mockReturnValue(of(null))
+                getChildrenPaginated: vi.fn().mockReturnValue(of({ entity: [] })),
+                getCategoriesPaginated: vi.fn().mockReturnValue(of({ entity: [] })),
+                getCategory: vi.fn().mockReturnValue(of(null))
             }),
             mockProvider(DotContentletService, {
-                getContentletByInode: jest.fn().mockReturnValue(of(null))
+                getContentletByInode: vi.fn().mockReturnValue(of(null))
             }),
             {
                 provide: DotMessageService,
@@ -143,12 +190,17 @@ describe('DotContentDriveToolbarComponent', () => {
             },
             // Needed once a selection exists: that mounts the workflow-actions child, which injects
             // both of these.
-            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(MessageService, { add: vi.fn() }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn(),
-                editPage: jest.fn()
+                editContent: vi.fn(),
+                editPage: vi.fn()
             }),
-            provideHttpClient()
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         detectChanges: false
     });
@@ -160,7 +212,7 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
         selectedItemsSignal.set([]);
@@ -230,6 +282,95 @@ describe('DotContentDriveToolbarComponent', () => {
         });
     });
 
+    describe('chip row', () => {
+        it('should render all six chips', () => {
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip')
+            );
+
+            expect(chips).toEqual([
+                'sharedAssets',
+                'contentType',
+                'workflow',
+                'status',
+                'language',
+                'fieldFilters'
+            ]);
+        });
+
+        it('should present them in the canonical order', () => {
+            // FR-007. The picker asserts the same thing against the same constant, which is what
+            // makes "the two toolbars read as one" a claim a test can hold rather than a promise.
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip') as string
+            );
+
+            expect(isCanonicalChipOrder(chips)).toBe(true);
+        });
+
+        // FR-018 / SC-007: the parity the picker's toolbar is measured against. Asserted on both
+        // surfaces against the same rule, so neither can drift into being mouse-only.
+        it('should put every filter control in the tab order, in the order displayed', () => {
+            const chips = Array.from(
+                spectator.element.querySelectorAll<HTMLElement>('[data-filter-chip]')
+            );
+
+            expect(chips.length).toBe(6);
+            chips.forEach((chip) => {
+                const focusable = chip.matches('[tabindex]')
+                    ? chip
+                    : chip.querySelector<HTMLElement>('[tabindex], button');
+
+                expect(focusable).toBeTruthy();
+                expect(focusable?.getAttribute('tabindex')).not.toBe('-1');
+            });
+        });
+
+        // The wiring half of bug 5: the rule lives in the shared chip, but it only fires if this
+        // toolbar hands over the locale it re-seeds. Both halves are guarded separately because the
+        // affordance was already lost once — when the adapter that computed it was deleted.
+        it('should hand the seeded locale to the Locale chip', () => {
+            const chip = spectator.query(DotLanguageFilterChipComponent);
+
+            expect(chip?.$defaultLanguageId()).toBe(1);
+        });
+
+        it('should withhold the Locale X while the seeded locale is the only selection', () => {
+            filtersSignal.set({ languageId: ['1'] });
+            spectator.detectChanges();
+
+            // Clearing it would re-seed the same value through `withFilterDefaults`, so the X
+            // would cost the editor their page and change nothing else.
+            expect(
+                spectator
+                    .query('[data-testid="language-chip"]')
+                    ?.querySelector('[data-testid="chip-remove"]')
+            ).toBeNull();
+        });
+
+        it('should offer the Locale X once a non-seeded locale is selected', () => {
+            filtersSignal.set({ languageId: ['2'] });
+            spectator.detectChanges();
+
+            expect(
+                spectator
+                    .query('[data-testid="language-chip"]')
+                    ?.querySelector('[data-testid="chip-remove"]')
+            ).toBeTruthy();
+        });
+
+        it('should open a filter panel from the keyboard alone', () => {
+            const chip = spectator.query('[data-testid="content-type-filter-chip"]') as HTMLElement;
+
+            chip.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            spectator.detectChanges();
+
+            expect(
+                spectator.query('.p-popover, [data-pc-name="popover"]', { root: true })
+            ).toBeTruthy();
+        });
+    });
+
     describe('Clear all button', () => {
         it('should not render when no filters are applied', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
@@ -265,7 +406,7 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
         });
 
-        it('should call store.clearFilters when clicked', () => {
+        it('should clear through the facade when clicked', () => {
             filtersSignal.set({ contentType: ['Blog'] });
             spectator.detectChanges();
 
@@ -274,7 +415,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 ?.querySelector('button');
             spectator.click(clearButton as HTMLElement);
 
-            expect(store.clearFilters).toHaveBeenCalled();
+            expect(clearFiltersSpy).toHaveBeenCalled();
         });
     });
 
@@ -415,7 +556,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should emit upload when the upload button is clicked', async () => {
             await settleToolbarAnimation(spectator);
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.$upload.subscribe(emitSpy);
 
             const uploadButton = spectator
@@ -616,11 +757,10 @@ describe('DotContentDriveToolbarComponent', () => {
             // anything; the real message has to be in play for the assertion to mean something.
             const messageService = spectator.inject(DotMessageService);
 
-            jest.spyOn(messageService, 'get').mockImplementation(
-                (key: string, ...args: string[]) =>
-                    key === 'content-drive.action-center.applying'
-                        ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
-                        : key
+            vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
+                key === 'content-drive.action-center.applying'
+                    ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                    : key
             );
 
             actionExecutionSignal.set({

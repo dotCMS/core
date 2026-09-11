@@ -17,16 +17,17 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { take } from 'rxjs/operators';
+import { switchMap, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
+import { DotRole } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotRoleView, DotUsersService } from '../../../services/dot-users.service';
+import { flattenRoleHierarchy } from '../../../utils/dot-roles-hierarchy.utils';
 
 /**
  * Internal shape the shuttle renders. Keeps the visual code decoupled
- * from `DotRoleView` so the tree walker/filter logic never has to
+ * from `DotRole` so the tree walker/filter logic never has to
  * worry about optional API fields.
  */
 interface RoleOption {
@@ -77,7 +78,7 @@ interface RoleTreeNode {
     host: { class: 'flex flex-col gap-4' }
 })
 export class DotUsersRolesTabComponent {
-    readonly #usersService = inject(DotUsersService);
+    readonly #rolesService = inject(DotRolesService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -471,9 +472,15 @@ export class DotUsersRolesTabComponent {
 
     private loadRoles(): void {
         this.$isLoading.set(true);
-        this.#usersService
-            .getAllRoles()
-            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+        this.#rolesService
+            .getRoots(true)
+            .pipe(
+                switchMap((roots) =>
+                    flattenRoleHierarchy(roots, (id) => this.#rolesService.getById(id, true))
+                ),
+                take(1),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe({
                 next: (roles) => {
                     // Keep every role in the display tree — some
@@ -493,7 +500,7 @@ export class DotUsersRolesTabComponent {
     }
 }
 
-function toRoleOption(role: DotRoleView): RoleOption {
+function toRoleOption(role: DotRole): RoleOption {
     return {
         id: role.id,
         roleKey: (role.roleKey ?? '').trim(),

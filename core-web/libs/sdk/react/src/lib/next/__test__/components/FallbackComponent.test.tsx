@@ -2,17 +2,18 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { Mocked, vi } from 'vitest';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import { FallbackComponent } from '../../components/FallbackComponent/FallbackComponent';
 import * as useIsDevModeHook from '../../hooks/useIsDevMode';
 
-jest.mock('../../hooks/useIsDevMode', () => ({
-    useIsDevMode: jest.fn()
+vi.mock('../../hooks/useIsDevMode', () => ({
+    useIsDevMode: vi.fn()
 }));
 
-const { useIsDevMode } = useIsDevModeHook as jest.Mocked<typeof useIsDevModeHook>;
+const { useIsDevMode } = useIsDevModeHook as Mocked<typeof useIsDevModeHook>;
 const MOCK_DUMMY_CONTENTLET = { contentType: 'test-type' } as unknown as DotCMSBasicContentlet;
 
 const CustomNoComponent: React.FC<DotCMSBasicContentlet> = ({ contentType }) => (

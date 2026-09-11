@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -56,7 +58,7 @@ describe('DotBinaryOptionSelectorComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jest.fn()
+                        close: vi.fn()
                     }
                 },
                 {
@@ -177,7 +179,7 @@ describe('DotBinaryOptionSelectorComponent', () => {
     describe('button', () => {
         it('should close dialog with the default selected value (option 1)', () => {
             const button = de.query(By.css('[data-testId="button"]'));
-            const spy = jest.spyOn(dynamicDialogRef, 'close');
+            const spy = vi.spyOn(dynamicDialogRef, 'close');
             button.triggerEventHandler('click', null);
             expect(spy).toHaveBeenCalledWith(DATA_MOCK.option1.value);
         });
@@ -187,7 +189,7 @@ describe('DotBinaryOptionSelectorComponent', () => {
             fixture.detectChanges();
 
             const button = de.query(By.css('[data-testId="button"]'));
-            const spy = jest.spyOn(dynamicDialogRef, 'close');
+            const spy = vi.spyOn(dynamicDialogRef, 'close');
             button.triggerEventHandler('click', null);
             expect(spy).toHaveBeenCalledWith(DATA_MOCK.option2.value);
         });
@@ -215,7 +217,7 @@ describe('DotBinaryOptionSelectorComponent — with description', () => {
             imports: [DotBinaryOptionSelectorComponent, DotMessagePipe, DotAutofocusDirective],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+                { provide: DynamicDialogRef, useValue: { close: vi.fn() } },
                 {
                     provide: DynamicDialogConfig,
                     useValue: {
@@ -260,7 +262,7 @@ describe('DotBinaryOptionSelectorComponent — without icons', () => {
             imports: [DotBinaryOptionSelectorComponent, DotMessagePipe, DotAutofocusDirective],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+                { provide: DynamicDialogRef, useValue: { close: vi.fn() } },
                 {
                     provide: DynamicDialogConfig,
                     useValue: {

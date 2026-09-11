@@ -8,10 +8,10 @@ Beta. Behavior and flags may change.
 
 ## Requirements
 
-- Node.js + npm
+- Node.js 22.22.3+ and npm
 - Git
 - Docker (for `--local` or `--starter`)
-- Internet access (downloads templates and docker-compose)
+- Internet access (downloads templates; pulls Docker images)
 
 ## Which SDK Version Should I Use?
 
@@ -89,22 +89,27 @@ Flow:
 2. Checks dotCMS health at `/api/v1/appconfiguration`.
 3. Authenticates (up to 3 attempts).
 4. Reads `defaultSite` from `/api/v1/site/defaultSite`.
-5. Configures UVE via `/api/v1/apps/dotema-config-v2/{siteId}`.
+5. Configures UVE via `/api/v1/apps/dotema-config-v2/{siteId}`. **Optional** — if this fails the
+   CLI warns, explains how to finish it by hand, and carries on.
 6. Scaffolds selected frontend and runs `npm install`.
-7. Prints framework-specific env setup instructions.
+7. Writes `.env` with your host, site ID and token (see [Your `.env`](#your-env)).
 
 ### 2) Local mode (`--local`)
 
 Flow:
 
 1. Validates Docker availability.
-2. Validates required ports: `8082`, `8443`, `9200`, `9600`.
-3. Downloads docker-compose from dotCMS main repo.
-4. Runs `docker compose up -d`.
-5. Waits for local health check.
+2. Checks the ports this stack publishes: `8082`, `8443` and `8090`. A dotCMS already running on
+   `8082` is not treated as a conflict — see [If dotCMS is already running](#if-dotcms-is-already-running).
+3. Writes the **bundled** `docker-compose.yml` into the project directory (see
+   [The bundled Docker stack](#the-bundled-docker-stack)).
+4. Runs `docker compose up -d --wait`, which blocks until every service reports healthy, streaming
+   progress and elapsed time so a long first pull is never a silent spinner.
+5. Waits for readiness on `/dotmgt/readyz`, falling back to `/api/v1/appconfiguration`.
 6. Authenticates with default local credentials (`admin@dotcms.com` / `admin`).
-7. Reads `defaultSite`, configures UVE, scaffolds frontend, runs `npm install`.
-8. Prints framework-specific env setup instructions.
+7. Reads `defaultSite`, configures UVE (optional — a failure warns and continues), scaffolds the
+   frontend, runs `npm install`.
+8. Writes `.env` with your host, site ID and token (see [Your `.env`](#your-env)).
 
 ### 3) Starter-only local mode (`--starter <url>`)
 
@@ -113,13 +118,84 @@ Flow:
 Flow:
 
 1. Same Docker and port checks as local mode.
-2. Downloads docker-compose.
+2. Writes the bundled `docker-compose.yml`.
 3. Rewrites `CUSTOM_STARTER_URL` in `docker-compose.yml`.
 4. Also passes `CUSTOM_STARTER_URL` in compose environment at runtime.
 5. Starts containers and waits for health check.
 6. Skips frontend scaffold and dotCMS frontend settings flow (token, default site lookup, UVE setup).
 
 Use this when your starter is not compatible with the default frontend sample flow.
+
+## The bundled Docker stack
+
+`--local` and `--starter` write a `docker-compose.yml` that **ships inside this package**. It is
+no longer downloaded from the `dotCMS/core` repository at run time, so the stack you get is the one
+this CLI version was tested against, rather than whatever is currently on `main`.
+
+The stack is `db` (PostgreSQL), `opensearch`, and `dotcms`. `dotcms` starts only after both
+dependencies report **healthy**, and carries `restart: unless-stopped`, so it no longer races
+Postgres and exit at startup.
+
+### Published ports
+
+| Port | Binding | Purpose |
+| --- | --- | --- |
+| `8082` | all interfaces | dotCMS HTTP |
+| `8443` | all interfaces | dotCMS HTTPS |
+| `8090` | **`127.0.0.1` only** | dotCMS management endpoints |
+
+PostgreSQL and OpenSearch publish **no** ports — they are reachable only from inside the compose
+network, so running your own Postgres or OpenSearch on the usual ports does not conflict.
+
+> **Why 8090 is loopback-only.** It serves `/dotmgt/livez`, `/dotmgt/readyz`, `/dotmgt/health` and
+> `/dotmgt/metrics`, and dotCMS authorizes those purely by the port a request arrives on — there is
+> no credential check and no IP allow-list. Binding it to `0.0.0.0` would expose your instance's
+> health and metrics to everyone on your network. It is bound to `127.0.0.1` deliberately; do not
+> "fix" it to a wildcard.
+
+### Using a different compose file
+
+Set `DOTCMS_COMPOSE_URL` to fetch one from a URL instead of using the bundled file:
+
+```bash
+DOTCMS_COMPOSE_URL=https://example.com/my-compose.yml npx @dotcms/create-app my-app --local
+```
+
+This is an escape hatch for hotfixes. The file must keep a single-line `CUSTOM_STARTER_URL:` entry
+or `--starter` will fail against it.
+
+## If dotCMS is already running
+
+A dotCMS on `8082` from a previous run is not a conflict — the CLI probes it and offers a choice:
+
+```
+⚠  Found a dotCMS already running at http://localhost:8082
+   Docker project "my-app" · Up 8 minutes (healthy)
+
+? How would you like to continue?
+❯ Use this instance for my project
+  Replace it with a clean instance
+  Cancel
+```
+
+**Replace** stops that Docker project and removes its volumes (`docker compose -p <project> down -v`)
+before starting fresh. It is offered only when a Compose project owns the port — something started
+outside Compose is not the CLI's to destroy.
+
+Reuse requires the instance to pass a readiness check **and** issue a token; anything else on `8082`
+is still a hard failure.
+
+In a non-interactive run (CI, or no TTY) the CLI auto-reuses and prints a notice. It never replaces
+without being asked.
+
+## Your `.env`
+
+The CLI writes `.env` into your project with the values the scaffolded app reads — `NEXT_PUBLIC_*`
+for Next.js, `PUBLIC_*` for Astro. You do not need to copy anything by hand.
+
+An existing `.env` is never overwritten: the CLI prints the values instead so you can merge them.
+Angular has no `.env` — it reads a TypeScript `environment` object, so the values are printed for
+you to paste into the environment files.
 
 ## Examples
 
@@ -172,9 +248,10 @@ Docker not available:
 
 Ports already in use:
 
-- macOS/Linux: `lsof -i :8082`
-- Windows: `netstat -ano | findstr ":8082"`
-- Stop conflicting services or run `docker compose down`.
+- If it is a dotCMS from a previous run, the CLI offers to reuse or replace it — see
+  [If dotCMS is already running](#if-dotcms-is-already-running).
+- Otherwise, find the owner: `lsof -i :8082` (macOS/Linux) or
+  `netstat -ano | findstr ":8082"` (Windows), then stop it or run `docker compose down`.
 
 `zip END header not found` during starter load:
 
@@ -186,13 +263,19 @@ Ports already in use:
 Build:
 
 ```sh
-yarn nx build sdk-create-app --skip-nx-cache
+pnpm nx build sdk-create-app --skip-nx-cache
 ```
 
 Lint:
 
 ```sh
-yarn nx lint sdk-create-app
+pnpm nx lint sdk-create-app
+```
+
+Verify the package ships correctly (asserts the compose asset reaches `dist/` and the npm tarball):
+
+```sh
+pnpm nx verify-package sdk-create-app
 ```
 
 Dist output:

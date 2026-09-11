@@ -1,11 +1,21 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRolesService
+} from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersCreateComponent } from './dot-users-create.component';
@@ -52,17 +62,10 @@ describe('DotUsersCreateComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
-                getUser: jest.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
-                getUserRoles: jest.fn().mockReturnValue(
-                    of([
-                        { id: 'role-back', roleKey: 'DOTCMS_BACK_END_USER' },
-                        { id: 'role-personal', roleKey: 'user-42' }
-                    ])
-                ),
-                getAllRoles: jest.fn().mockReturnValue(of([])),
-                getGettingStartedState: jest.fn().mockReturnValue(of(false)),
-                setGettingStarted: jest.fn().mockReturnValue(of({})),
-                getUsersPaginated: jest.fn().mockReturnValue(
+                getUser: vi.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
+                getGettingStartedState: vi.fn().mockReturnValue(of(false)),
+                setGettingStarted: vi.fn().mockReturnValue(of({})),
+                getUsersPaginated: vi.fn().mockReturnValue(
                     of({
                         entity: [],
                         errors: [],
@@ -71,15 +74,30 @@ describe('DotUsersCreateComponent', () => {
                         i18nMessagesMap: {},
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                     })
-                )
+                ),
+                getApiTokens: vi.fn().mockReturnValue(of([])),
+                getApiTokenJwt: vi.fn().mockReturnValue(of('mock-jwt')),
+                createApiToken: vi.fn(),
+                revokeApiToken: vi.fn(),
+                deleteApiToken: vi.fn()
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotRolesService, {
+                getForUser: vi.fn().mockReturnValue(
+                    of([
+                        { id: 'role-back', name: 'Back End', roleKey: 'DOTCMS_BACK_END_USER' },
+                        { id: 'role-personal', name: 'Personal', roleKey: 'user-42' }
+                    ])
+                ),
+                getRoots: vi.fn().mockReturnValue(of([])),
+                getById: vi.fn()
+            }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
     describe('create mode', () => {
         beforeEach(() => {
-            dialogRef = { close: jest.fn() } as unknown as DynamicDialogRef;
+            dialogRef = { close: vi.fn() } as unknown as DynamicDialogRef;
             spectator = createComponent({
                 providers: [
                     { provide: DynamicDialogRef, useValue: dialogRef },
@@ -169,7 +187,7 @@ describe('DotUsersCreateComponent', () => {
 
     describe('edit mode', () => {
         beforeEach(() => {
-            dialogRef = { close: jest.fn() } as unknown as DynamicDialogRef;
+            dialogRef = { close: vi.fn() } as unknown as DynamicDialogRef;
             spectator = createComponent({
                 providers: [
                     { provide: DynamicDialogRef, useValue: dialogRef },
@@ -283,7 +301,7 @@ describe('DotUsersCreateComponent', () => {
                 })
             );
 
-            const call = (dialogRef.close as jest.Mock).mock.calls[0][0] as {
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
                 payload: { roles: string[] };
             };
             expect(call.payload.roles).not.toContain('user-42');
@@ -301,7 +319,7 @@ describe('DotUsersCreateComponent', () => {
             spectator.detectChanges();
             spectator.click(saveButton(spectator));
 
-            const call = (dialogRef.close as jest.Mock).mock.calls[0][0] as {
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
                 payload: { roles: string[] };
             };
             // Backend fix #37109 lets us send `roles: []` to actually

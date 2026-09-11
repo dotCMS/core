@@ -1,17 +1,18 @@
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
-
-setupZoneTestEnv({
-    errorOnUnknownElements: true,
-    errorOnUnknownProperties: true
-});
-
+import '@analogjs/vitest-angular/setup-zone';
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
+import { vi } from 'vitest';
+import { provideZoneChangeDetection } from '@angular/core';
 import { NgModule } from '@angular/core';
+
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // This is needed to mock the PrimeNG SplitButton component to avoid errors while running tests.
 // https://github.com/primefaces/primeng/issues/12945
 @NgModule()
 export class SplitButtonMockModule {}
 
-jest.mock('primeng/splitbutton', () => ({
+vi.mock('primeng/splitbutton', () => ({
     SplitButtonModule: SplitButtonMockModule
 }));

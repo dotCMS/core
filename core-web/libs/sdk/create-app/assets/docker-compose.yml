@@ -1,0 +1,86 @@
+# Bundled with @dotcms/create-app. Written to the project directory by the CLI.
+# Implements contracts/compose-service-contract.md C1-C8.
+services:
+    db:
+        image: pgvector/pgvector:pg18
+        command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+        environment:
+            POSTGRES_USER: 'dotcmsdbuser'
+            POSTGRES_PASSWORD: 'password'
+            POSTGRES_DB: 'dotcms'
+        volumes:
+            - dbdata:/var/lib/postgresql
+        networks: [db_net]
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U dotcmsdbuser -d dotcms -h localhost -p 5432']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+
+    opensearch:
+        image: opensearchproject/opensearch:1
+        environment:
+            cluster.name: 'elastic-cluster'
+            discovery.type: 'single-node'
+            bootstrap.memory_lock: 'true'
+            OPENSEARCH_JAVA_OPTS: '-Xmx1G'
+        ulimits:
+            memlock: { soft: -1, hard: -1 }
+            nofile: { soft: 65536, hard: 65536 }
+        volumes:
+            - opensearch-data:/usr/share/opensearch/data
+        networks: [opensearch-net]
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'curl -sk https://localhost:9200 -u admin:admin | grep -q cluster_name'
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 12
+        restart: unless-stopped
+
+    dotcms:
+        image: dotcms/dotcms:latest
+        environment:
+            CMS_JAVA_OPTS: '-Xmx1g '
+            LANG: 'C.UTF-8'
+            TZ: 'UTC'
+            DB_BASE_URL: 'jdbc:postgresql://db/dotcms'
+            DB_USERNAME: 'dotcmsdbuser'
+            DB_PASSWORD: 'password'
+            DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+            DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+            DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+            DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
+            CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260630/starter-20260630.zip'
+        depends_on:
+            db:
+                condition: service_healthy
+            opensearch:
+                condition: service_healthy
+        volumes:
+            - cms-shared:/data/shared
+        networks: [db_net, opensearch-net]
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://127.0.0.1:8090/dotmgt/livez']
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 180s
+        restart: unless-stopped
+        ports:
+            - '8082:8082'
+            - '8443:8443'
+            - '127.0.0.1:8090:8090'
+
+networks:
+    db_net:
+    opensearch-net:
+
+volumes:
+    cms-shared:
+    dbdata:
+    opensearch-data:

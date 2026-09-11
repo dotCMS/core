@@ -5,21 +5,26 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
-import { Confirmation, ConfirmationService, ConfirmEventType } from 'primeng/api';
+import { Confirmation, ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotImageEditorComponent } from './dot-image-editor.component';
 
-import { ImageEditorOpenParams } from '../../models/image-editor.models';
+import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../image-editor.constants';
+import { AssetMeta, ImageEditorOpenParams } from '../../models/image-editor.models';
+import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import {
     imageEditorHistoryEvents,
     imageEditorLifecycleEvents
@@ -50,16 +55,19 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             providers: [
                 provideNoopAnimations(),
                 Dispatcher,
-                mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-                mockProvider(DynamicDialogRef, { close: jest.fn() }),
+                mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+                mockProvider(DynamicDialogRef, { close: vi.fn() }),
                 { provide: DynamicDialogConfig, useValue: { data } }
             ],
             // `componentProviders` overrides the component's own `providers`, so
             // re-supply the real ConfirmationService (the template's
-            // `<p-confirmDialog />` subscribes to it; we spy on `confirm`) while
-            // mocking only the store.
+            // `<p-confirmDialog />` subscribes to it; we spy on `confirm`) and the
+            // MessageService backing the template's `<dot-toast />` — while mocking
+            // only the store. Host-independence of that provider is covered by the
+            // un-mocked suite at the bottom of this file, not here.
             componentProviders: [
                 ConfirmationService,
+                MessageService,
                 mockProvider(ImageEditorStore, {
                     isDirty,
                     canUndo,
@@ -110,7 +118,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             // The DynamicDialogRef `close` mock is shared across tests in this
             // describe; clear it so prior tests' close() calls don't leak into the
             // "not closed" assertions.
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             isDirty.set(false);
             canUndo.set(false);
             canRedo.set(false);
@@ -120,21 +128,21 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             // Spy before creation so the constructor's assetRequested dispatch is
             // captured (injectDispatch dispatches through Dispatcher.prototype).
-            jest.spyOn(Dispatcher.prototype, 'dispatch');
+            vi.spyOn(Dispatcher.prototype, 'dispatch');
 
             spectator = createComponent();
             dispatcher = spectator.inject(Dispatcher, true);
             dialogRef = spectator.inject(DynamicDialogRef, true);
             // Resolve the component-scoped instance and spy on its confirm method.
             confirmationService = spectator.inject(ConfirmationService, true);
-            jest.spyOn(confirmationService, 'confirm');
+            vi.spyOn(confirmationService, 'confirm');
         });
 
         afterEach(() => {
             // Restore the `Dispatcher.prototype.dispatch` and `confirm` spies (clearAllMocks
             // only resets call records, not the spied methods) so a prototype-level spy
             // never leaks across these suites.
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         it('should render the root and the four child components', () => {
@@ -181,7 +189,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
-            const confirmation = (confirmationService.confirm as jest.Mock).mock
+            const confirmation = (confirmationService.confirm as Mock).mock
                 .calls[0][0] as Confirmation;
             confirmation.reject?.(ConfirmEventType.REJECT);
 
@@ -193,7 +201,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
-            const confirmation = (confirmationService.confirm as jest.Mock).mock
+            const confirmation = (confirmationService.confirm as Mock).mock
                 .calls[0][0] as Confirmation;
             confirmation.accept?.();
 
@@ -205,7 +213,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
-            const confirmation = (confirmationService.confirm as jest.Mock).mock
+            const confirmation = (confirmationService.confirm as Mock).mock
                 .calls[0][0] as Confirmation;
             confirmation.reject?.(ConfirmEventType.CANCEL);
 
@@ -346,3 +354,194 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
 describeWith('inode', { inode: 'i1', variable: 'fileAsset', fieldName: 'fileAsset' });
 describeWith('tempId', { tempId: 'temp_x', variable: 'fileAsset', fieldName: 'fileAsset' });
+
+describe('DotImageEditorComponent — full screen', () => {
+    let spectator: Spectator<DotImageEditorComponent>;
+    const isFullscreen = signal(false);
+    const container = document.createElement('div');
+    const dialog: {
+        maximized: boolean | undefined;
+        maximize: Mock;
+        container: () => HTMLElement;
+    } = {
+        maximized: undefined,
+        maximize: vi.fn(() => (dialog.maximized = !dialog.maximized)),
+        container: () => container
+    };
+
+    const data: ImageEditorOpenParams = {
+        inode: 'i1',
+        variable: 'fileAsset',
+        fieldName: 'fileAsset'
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotImageEditorComponent,
+        providers: [
+            provideNoopAnimations(),
+            Dispatcher,
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
+            { provide: DynamicDialogConfig, useValue: { data } }
+        ],
+        componentProviders: [
+            ConfirmationService,
+            MessageService,
+            mockProvider(ImageEditorStore, {
+                isDirty: signal(false),
+                canUndo: signal(false),
+                canRedo: signal(false),
+                isFullscreen,
+                saveStatus: signal('idle'),
+                saveError: signal(null)
+            }),
+            { provide: Dialog, useValue: dialog }
+        ],
+        overrideComponents: [
+            [
+                DotImageEditorComponent,
+                {
+                    remove: {
+                        imports: [
+                            DotImageEditorFullscreenToggleComponent,
+                            DotImageEditorCanvasComponent,
+                            DotImageEditorPanelsComponent,
+                            DotImageEditorFooterComponent
+                        ]
+                    },
+                    add: {
+                        imports: [
+                            MockComponent(DotImageEditorFullscreenToggleComponent),
+                            MockComponent(DotImageEditorCanvasComponent),
+                            MockComponent(DotImageEditorPanelsComponent),
+                            MockComponent(DotImageEditorFooterComponent)
+                        ]
+                    }
+                }
+            ]
+        ]
+    });
+
+    beforeEach(() => {
+        isFullscreen.set(false);
+        container.className = '';
+        container.style.cssText = 'width: 1040px';
+        dialog.maximized = undefined;
+        dialog.maximize.mockClear();
+
+        spectator = createComponent();
+    });
+
+    it('should open windowed, not full screen', () => {
+        expect(container.classList.contains(MAXIMIZED_DIALOG_CLASS)).toBe(false);
+        expect(dialog.maximize).not.toHaveBeenCalled();
+        expect(dialog.maximized).toBeFalsy();
+    });
+
+    it('should maximize the dialog when the flag flips', () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+
+        expect(container.classList.contains(MAXIMIZED_DIALOG_CLASS)).toBe(true);
+    });
+
+    it("should keep PrimeNG's own maximized flag in step", () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+
+        expect(dialog.maximized).toBe(true);
+        expect(dialog.maximize).toHaveBeenCalledTimes(1);
+    });
+
+    it('should hand the windowed size back on exit', () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+        isFullscreen.set(false);
+        spectator.detectChanges();
+
+        expect(container.classList.contains(MAXIMIZED_DIALOG_CLASS)).toBe(false);
+        expect(dialog.maximized).toBe(false);
+        expect(container.style.width).toBe('1040px');
+    });
+
+    it('should animate the resize by default', () => {
+        expect(container.style.transition).toBe(DIALOG_SIZE_TRANSITION);
+    });
+});
+
+/**
+ * Host-independence of the editor's messaging.
+ *
+ * Unlike the suites above, this one mounts the **real** child tree: no `overrideComponents`, no
+ * `MockComponent`, and no `componentProviders` (which would replace the component's own
+ * `providers` — including the very `MessageService` under test). That is deliberate and load
+ * bearing. `DotImageEditorAddressBarComponent`, nested inside the canvas, injects PrimeNG's
+ * `MessageService` non-optionally; every other spec in this library replaces one of the components
+ * on that path with a mock, so `inject(MessageService)` never actually runs unprovided and the
+ * suite stayed green while the editor was completely broken in two of its three hosts (#37398).
+ *
+ * No `MessageService` is provided here on purpose: the editor must supply its own, so it renders in
+ * any host rather than relying on an ancestor injector happening to have one.
+ */
+describe('DotImageEditorComponent (no ambient MessageService)', () => {
+    let spectator: Spectator<DotImageEditorComponent>;
+
+    const data: ImageEditorOpenParams = {
+        inode: 'i1',
+        variable: 'fileAsset',
+        fieldName: 'fileAsset'
+    };
+
+    const assetMeta: AssetMeta = {
+        naturalWidth: 800,
+        naturalHeight: 600,
+        originalBytes: 2048
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotImageEditorComponent,
+        providers: [
+            provideNoopAnimations(),
+            Dispatcher,
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
+            { provide: DynamicDialogConfig, useValue: { data } },
+            // Stub the boundaries the real tree reaches — HTTP and server config — so the mount
+            // needs no backend. Everything else resolves from the library itself.
+            mockProvider(DotImageEditorService, {
+                loadAssetMeta: vi.fn(() => of(assetMeta)),
+                loadPreviewImage: vi.fn(() => of('blob:preview')),
+                getFileSize: vi.fn(() => of(null)),
+                triggerDownload: vi.fn(),
+                saveEditedImage: vi.fn()
+            }),
+            mockProvider(DotPropertiesService, { getKey: vi.fn(() => of('false')) })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+    });
+
+    it('should instantiate and render without an ambient MessageService', () => {
+        expect(spectator.component).toBeTruthy();
+        expect(spectator.query(byTestId('image-editor-root'))).toExist();
+    });
+
+    it('should render the real address bar, which is what injects MessageService', () => {
+        expect(spectator.query('dot-image-editor-address-bar')).toExist();
+    });
+
+    it('should provide its own MessageService rather than resolving one from the host', () => {
+        // Resolved through the component injector. Nothing in this factory's `providers`
+        // supplies one, so a successful resolution can only have come from the component's own
+        // `providers` — which is the property the host chain must no longer be asked for.
+        expect(spectator.inject(MessageService, true)).toBeTruthy();
+        // And confirm the premise: it is genuinely absent from the ambient/module injector.
+        expect(() => spectator.inject(MessageService)).toThrow();
+    });
+
+    it('should render exactly one toast outlet inside the dialog', () => {
+        expect(spectator.queryAll(byTestId('dot-toast'))).toHaveLength(1);
+    });
+});

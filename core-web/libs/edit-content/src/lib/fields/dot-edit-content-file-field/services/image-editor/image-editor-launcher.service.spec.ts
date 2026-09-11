@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -19,7 +20,7 @@ describe('LegacyDojoImageEditorLauncher', () => {
     });
 
     it('should dispatch the open-image-editor event with the asset details', () => {
-        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
 
         const sub = launcher
             .open({ inode: 'inode-1', tempId: undefined, variable, fieldName: variable })
@@ -38,8 +39,8 @@ describe('LegacyDojoImageEditorLauncher', () => {
 
     it('should resolve with the temp file emitted by the editor', () => {
         const tempFile = { id: 'edited-temp' } as DotCMSTempFile;
-        const next = jest.fn();
-        const complete = jest.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
 
         const sub = launcher
             .open({ inode: 'inode-1', variable, fieldName: variable })
@@ -58,8 +59,8 @@ describe('LegacyDojoImageEditorLauncher', () => {
     });
 
     it('should complete without emitting when the editor is closed', () => {
-        const next = jest.fn();
-        const complete = jest.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
 
         const sub = launcher
             .open({ inode: 'inode-1', variable, fieldName: variable })
@@ -77,8 +78,8 @@ describe('LegacyDojoImageEditorLauncher', () => {
 describe('LegacyDialogImageEditorLauncher', () => {
     let launcher: LegacyDialogImageEditorLauncher;
     let onClose$: Subject<unknown>;
-    let closeSpy: jest.Mock;
-    let openSpy: jest.Mock;
+    let closeSpy: Mock;
+    let openSpy: Mock;
     const variable = 'fileAsset';
 
     const postMessage = (data: unknown) =>
@@ -86,8 +87,8 @@ describe('LegacyDialogImageEditorLauncher', () => {
 
     beforeEach(() => {
         onClose$ = new Subject<unknown>();
-        closeSpy = jest.fn(() => onClose$.next(undefined));
-        openSpy = jest.fn(() => ({ onClose: onClose$.asObservable(), close: closeSpy }));
+        closeSpy = vi.fn(() => onClose$.next(undefined));
+        openSpy = vi.fn(() => ({ onClose: onClose$.asObservable(), close: closeSpy }));
 
         TestBed.configureTestingModule({
             providers: [
@@ -113,8 +114,8 @@ describe('LegacyDialogImageEditorLauncher', () => {
 
     it('should emit the temp file forwarded by the editor and close the dialog', () => {
         const tempFile = { id: 'edited-temp' } as DotCMSTempFile;
-        const next = jest.fn();
-        const complete = jest.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
 
         const sub = launcher
             .open({ inode: 'inode-1', variable, fieldName: variable })
@@ -130,7 +131,7 @@ describe('LegacyDialogImageEditorLauncher', () => {
     });
 
     it('should ignore messages from a different origin', () => {
-        const next = jest.fn();
+        const next = vi.fn();
 
         const sub = launcher
             .open({ inode: 'inode-1', variable, fieldName: variable })
@@ -154,7 +155,7 @@ describe('LegacyDialogImageEditorLauncher', () => {
     });
 
     it('should ignore messages from other sources or variables', () => {
-        const next = jest.fn();
+        const next = vi.fn();
 
         const sub = launcher
             .open({ inode: 'inode-1', variable, fieldName: variable })
@@ -174,8 +175,8 @@ describe('LegacyDialogImageEditorLauncher', () => {
     });
 
     it('should complete without emitting when the editor is closed', () => {
-        const next = jest.fn();
-        const complete = jest.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
 
         const sub = launcher
             .open({ inode: 'inode-1', variable, fieldName: variable })

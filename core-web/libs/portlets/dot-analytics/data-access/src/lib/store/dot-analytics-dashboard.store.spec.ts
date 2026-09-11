@@ -3,8 +3,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -28,8 +29,8 @@ describe('DotAnalyticsDashboardStore', () => {
         providers: [
             mockProvider(DotAnalyticsService),
             mockProvider(GlobalStore, {
-                currentSiteId: jest.fn().mockReturnValue(''),
-                addNewBreadcrumb: jest.fn()
+                currentSiteId: vi.fn().mockReturnValue(''),
+                addNewBreadcrumb: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -65,7 +66,7 @@ describe('DotAnalyticsDashboardStore', () => {
             globalStore = spectator.inject(GlobalStore);
             analyticsService = spectator.inject(DotAnalyticsService);
 
-            (globalStore.currentSiteId as jest.Mock).mockReturnValue('site-1');
+            (globalStore.currentSiteId as Mock).mockReturnValue('site-1');
             analyticsService.getSessionEngagement.mockReturnValue(engagement$);
             analyticsService.getSessionEngagementGroupBy.mockReturnValue(of([]));
 

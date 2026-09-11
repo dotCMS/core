@@ -1,8 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
+import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -23,6 +30,7 @@ import { DotBulkActionView, DotContentDriveItem, DotEnvironment } from '@dotcms/
 import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
+import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
 
 import { DotContentDriveActionExecution } from '../../../shared/models';
@@ -181,8 +189,32 @@ describe('DotContentDriveActionCenterComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionCenterComponent,
+        // The move-target picker is stubbed. Rendered for real it constructs
+        // edit-content's HostFolderFiledStore, whose init pipes DotBrowsingService —
+        // and this spec's mock of that service returns shapes the store cannot read, so
+        // the store threw inside an effect on every test. rxjs reported it
+        // asynchronously, which Jest discarded and Vitest counts as an unhandled error.
+        //
+        // Stubbing rather than completing the mock: the picker has its own spec, and
+        // teaching this one another library's store semantics was what made the
+        // difference between the seeded destination surviving and being overwritten —
+        // behaviour these tests never actually exercised, because the store had already
+        // crashed before it could emit.
+        overrideComponents: [
+            [
+                DotContentDriveActionCenterComponent,
+                {
+                    remove: { imports: [DotContentDriveActionMoveTargetComponent] },
+                    add: { imports: [MockComponent(DotContentDriveActionMoveTargetComponent)] }
+                }
+            ]
+        ],
         providers: [
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
                 items: mockItems,
@@ -192,58 +224,58 @@ describe('DotContentDriveActionCenterComponent', () => {
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
                 path: mockPath,
-                loadItems: jest.fn(),
-                setStatus: jest.fn(),
-                setSelectedItems: jest.fn(),
-                closeDialog: jest.fn(),
-                setDialogDrillDown: jest.fn(),
-                clearDialogDrillDown: jest.fn(),
-                executeQuickAction: jest.fn(),
-                executeWorkflowAction: jest.fn(),
-                executeAddToBundle: jest.fn(),
-                executePushPublish: jest.fn(),
-                executeRefresh: jest.fn()
+                loadItems: vi.fn(),
+                setStatus: vi.fn(),
+                setSelectedItems: vi.fn(),
+                closeDialog: vi.fn(),
+                setDialogDrillDown: vi.fn(),
+                clearDialogDrillDown: vi.fn(),
+                executeQuickAction: vi.fn(),
+                executeWorkflowAction: vi.fn(),
+                executeAddToBundle: vi.fn(),
+                executePushPublish: vi.fn(),
+                executeRefresh: vi.fn()
             }),
             // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
-            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(MessageService, { add: vi.fn() }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             // Pulled in by the Content Drive grid, which the action preview renders for real.
-            mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
+            mockProvider(DotLanguagesService, { get: vi.fn(() => of([])) }),
             // `DotcmsConfigServiceMock` has no `getTimeZones` (it lives in a separate mock), and the
             // push publish step loads timezones on init.
             mockProvider(DotcmsConfigService, {
                 ...new DotcmsConfigServiceMock(),
-                getTimeZones: jest.fn(() => of([]))
+                getTimeZones: vi.fn(() => of([]))
             }),
             // Backs the env selector embedded in the push publish step.
             mockProvider(PushPublishService, {
                 // Reads `pushPublishEnvironments` on every call rather than being re-programmed per
-                // test: `mockProvider` builds this `jest.fn` once for the whole file, and the
+                // test: `mockProvider` builds this `vi.fn` once for the whole file, and the
                 // `afterEach` `clearAllMocks` drops any `mockReturnValue` set on it, so only the
                 // first test in a block would see one. A closure over a mutable answer is immune.
-                getEnvironments: jest.fn(() => of(pushPublishEnvironments)),
+                getEnvironments: vi.fn(() => of(pushPublishEnvironments)),
                 lastEnvironmentPushed: null
             }),
-            mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
+            mockProvider(DotRolesService, { get: vi.fn(() => of([])) }),
             mockProvider(DotFormatDateService),
             // Pulled in by the folder picker's own store, which the move configuration step renders
             // for real. Mocked rather than stubbed out with a fake child component: whether that
             // component can actually be instantiated inside this dialog is the thing worth proving.
             mockProvider(DotHttpErrorManagerService),
             // Backs the bundle step's list of the current user's unsent bundles.
-            mockProvider(AddToBundleService, { getBundles: jest.fn(() => of([])) }),
+            mockProvider(AddToBundleService, { getBundles: vi.fn(() => of([])) }),
             mockProvider(DotCurrentUserService),
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn(() => of([])),
-                getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
+                getSitesTreePath: vi.fn(() => of([])),
+                getSitesPage: vi.fn(() => of({ sites: [], total: 0 })),
                 // Returns a real node, not `null`. This is what makes the picker's
                 // `ControlValueAccessor` actually push a value outward on load — the emission that
                 // silently overwrote a chosen destination when the step was re-created. A `null` here
                 // makes the whole class of bug invisible to these tests.
-                getCurrentSiteAsTreeNodeItem: jest.fn(() =>
+                getCurrentSiteAsTreeNodeItem: vi.fn(() =>
                     of({
                         key: 'site-1',
                         label: 'demo.dotcms.com',
@@ -282,17 +314,17 @@ describe('DotContentDriveActionCenterComponent', () => {
         store = spectator.inject(DotContentDriveStore, true);
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
 
-        jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+        vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
         );
-        jest.spyOn(store, 'closeDialog');
-        jest.spyOn(store, 'loadItems');
+        vi.spyOn(store, 'closeDialog');
+        vi.spyOn(store, 'loadItems');
     });
 
     afterEach(() => {
         // The store mock is shared across tests; without this, call counts accumulate and
         // "should not have been called" assertions see calls from earlier tests.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     /** Renders the dialog and arms the plain (no extra input) workflow action. */
@@ -452,7 +484,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should show the empty state when no scheme exposes actions', () => {
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
                 of({ schemes: [] })
             );
 
@@ -462,7 +494,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should show an inline error when the lookup fails', () => {
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
                 throwError(() => new Error('boom'))
             );
 
@@ -591,7 +623,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             }
         });
 
-        it('should render Refresh as a selectable action', () => {
+        it('should render Refresh as a selectable action for an admin', () => {
+            mockCurrentUserIsAdmin.set(true);
             spectator.detectChanges();
 
             const row = spectator.query(
@@ -601,6 +634,36 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(row).toBeTruthy();
             expect(row.disabled).toBe(false);
             expect(spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')).toBeNull();
+        });
+
+        it('should disable Refresh without the coming-soon badge for a non-admin', () => {
+            // The endpoint answers 403 for anyone who is not a CMS Administrator, and the client can
+            // see that in advance. Disabled rather than hidden, so the row still says the capability
+            // exists and why it is out of reach, the same as Push Publish with no environment.
+            spectator.detectChanges();
+
+            const row = spectator.query(
+                '[data-testid="quick-action-REFRESH"]'
+            ) as HTMLButtonElement;
+
+            expect(row).toBeTruthy();
+            expect(row.disabled).toBe(true);
+            expect(spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')).toBeNull();
+        });
+
+        it('should not open a preview for Refresh when the user is not an admin', () => {
+            spectator.detectChanges();
+
+            // Disabled, so a real click cannot land — called directly to prove the guard holds if
+            // one ever does.
+            spectator.component['onSelectQuickAction'](
+                spectator.component['$quickActions']().find((action) => action.id === 'REFRESH')!
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            expect(store.executeRefresh).not.toHaveBeenCalled();
         });
 
         it('should disable Push Publish without the coming-soon badge when no environment exists', () => {
@@ -622,7 +685,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             // Disabled, so a real click cannot land — called directly to prove the guard holds if
-            // one ever does. Push Publish has nowhere to send to; Refresh is no longer blocked.
+            // one ever does. Push Publish has nowhere to send to.
             spectator.component['onSelectQuickAction'](
                 spectator.component['$quickActions']().find(
                     (action) => action.id === 'PUSH_PUBLISH'
@@ -639,6 +702,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             // Refresh speaks inodes like Lock and Unlock but goes to a job-backed endpoint of its
             // own, so routing it through `executeQuickAction` would fire a system action that does
             // not exist.
+            mockCurrentUserIsAdmin.set(true);
             executeQuickAction('REFRESH');
 
             expect(store.executeRefresh).toHaveBeenCalledWith(expect.any(String), [
@@ -649,17 +713,19 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should send only the rows left checked in the Refresh preview', () => {
+            mockCurrentUserIsAdmin.set(true);
             openQuickActionPreview('REFRESH');
             toggleRow(0);
             spectator.click('[data-testid="action-preview-execute"]');
             spectator.detectChanges();
 
-            const [, inodes] = (store.executeRefresh as unknown as jest.Mock).mock.calls[0];
+            const [, inodes] = (store.executeRefresh as unknown as Mock).mock.calls[0];
 
             expect(inodes).toEqual(['inode-2']);
         });
 
         it('should not ask for configuration before refreshing', () => {
+            mockCurrentUserIsAdmin.set(true);
             // Nothing to collect: a reindex takes no assignee, no destination and no environments,
             // so it goes straight to the preview like Lock and Unlock do.
             openQuickActionPreview('REFRESH');
@@ -668,6 +734,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should toast at trigger that the reindex runs in the background', () => {
+            mockCurrentUserIsAdmin.set(true);
             // The only feedback the user gets now: there is no "Applying ..." indicator for a reindex,
             // because it runs for minutes and cannot report progress.
             const messageService = spectator.inject(MessageService);
@@ -683,6 +750,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should not claim a reindex started when nothing was submitted', () => {
+            mockCurrentUserIsAdmin.set(true);
             // Toasting with nothing submitted tells the user their reindex is running when it is not,
             // and the hand-off clears their selection on the way out, so they lose the rows too. With
             // the in-flight guard gone, an emptied preview is the remaining way to reach that.
@@ -718,6 +786,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should clear the grid selection when a reindex is handed off', () => {
+            mockCurrentUserIsAdmin.set(true);
             // Matters most here: a reindex runs for minutes, so without this the rows stay ticked for
             // the whole run.
             executeQuickAction('REFRESH');
@@ -796,8 +865,11 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             executeQuickAction('LOCK');
 
-            const [, , inodes] = (store.executeQuickAction as unknown as jest.Mock).mock
-                .calls[0] as [string, string, string[]];
+            const [, , inodes] = (store.executeQuickAction as unknown as Mock).mock.calls[0] as [
+                string,
+                string,
+                string[]
+            ];
 
             expect(advertised).toBe(1);
             expect(inodes).toHaveLength(advertised);
@@ -1294,7 +1366,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             const badge = spectator.query('[data-testid="action-preview-execute"] .p-badge');
             spectator.click('[data-testid="action-preview-execute"]');
 
-            const [, , contentletIds] = (store.executeWorkflowAction as unknown as jest.Mock).mock
+            const [, , contentletIds] = (store.executeWorkflowAction as unknown as Mock).mock
                 .calls[0] as [string, string, string[]];
 
             expect(contentletIds.length).toBe(Number(badge.textContent.trim()));
@@ -1622,7 +1694,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             ]);
 
             // Schemes are assigned per content type, so each group gets a different response.
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockImplementation((request) =>
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockImplementation((request) =>
                 of(
                     request.contentletIds?.includes('blog-1')
                         ? schemeFor('Blogs', 'copy-blog', 'Copy Blog')
@@ -1725,7 +1797,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should surface the lookup failure when any content type request fails', () => {
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
                 throwError(() => new HttpErrorResponse({ status: 500 }))
             );
 

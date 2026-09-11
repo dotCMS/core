@@ -1,0 +1,20 @@
+{
+  "name": "@dotcms/validate-sdk-package-shapes",
+  "version": "1.0.0",
+  "description": "Fails CI if an @dotcms/* SDK lib or example app package.json regresses to a floating version specifier, or a sibling SDK dependency reappears in the wrong field",
+  "main": "dist/index.js",
+  "bin": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.3",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

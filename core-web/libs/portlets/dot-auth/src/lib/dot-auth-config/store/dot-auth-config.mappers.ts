@@ -25,6 +25,7 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         logoutUrl: '',
         revocationUrl: '',
         groupsUrl: '',
+        groupsResponsePath: '',
         clientId: '',
         clientSecret: '',
         scopes: 'openid email profile',
@@ -144,6 +145,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         logoutUrl: String(values.logoutUrl ?? ''),
         revocationUrl: String(values.revocationUrl ?? ''),
         groupsUrl: String(values.groupsUrl ?? ''),
+        groupsResponsePath: String(values.groupsResponsePath ?? ''),
         clientId: String(values.clientId ?? ''),
         clientSecret: String(values.clientSecret ?? ''),
         scopes: String(values.scopes ?? config.oidc.scopes),
@@ -236,6 +238,7 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
             logoutUrl: config.oidc.logoutUrl,
             revocationUrl: config.oidc.revocationUrl || undefined,
             groupsUrl: config.oidc.groupsUrl || undefined,
+            groupsResponsePath: config.oidc.groupsResponsePath || undefined,
             groupsClaim: config.oidc.claimGroups,
             emailClaim: config.oidc.claimEmail || undefined,
             firstNameClaim: config.oidc.claimFirstName || undefined,
@@ -312,6 +315,28 @@ export function applyOidcDiscovery(
     draft.oidc.jwksUrl = view.jwksUri ?? draft.oidc.jwksUrl;
     draft.oidc.userinfoUrl = view.userinfoEndpoint ?? draft.oidc.userinfoUrl;
     draft.oidc.logoutUrl = view.endSessionEndpoint ?? draft.oidc.logoutUrl;
+    return draft;
+}
+
+/** Issuer Google returns from its OIDC discovery document; stable and unique to Google. */
+export const GOOGLE_ISSUER = 'https://accounts.google.com';
+export const GOOGLE_GROUPS_SCOPE = 'https://www.googleapis.com/auth/cloud-identity.groups.readonly';
+export const GOOGLE_GROUPS_URL =
+    "https://cloudidentity.googleapis.com/v1/groups/-/memberships:searchDirectGroups?query=member_key_id=='{email}'";
+
+/**
+ * Google cannot emit groups in token claims, so pre-fill the Cloud Identity groups lookup.
+ * Only empty fields are written, so re-running discovery never clobbers an admin's edits;
+ * the scope is appended once. Draft-only: nothing is persisted until the admin saves.
+ */
+export function applyGoogleGroupsPreset(config: DotAuthConfig): DotAuthConfig {
+    const draft = clone(config);
+    draft.oidc.groupsUrl ||= GOOGLE_GROUPS_URL;
+    draft.oidc.groupsResponsePath ||= 'memberships[].groupKey.id';
+    const scopes = draft.oidc.scopes.split(/\s+/).filter(Boolean);
+    if (!scopes.includes(GOOGLE_GROUPS_SCOPE)) {
+        draft.oidc.scopes = [...scopes, GOOGLE_GROUPS_SCOPE].join(' ');
+    }
     return draft;
 }
 

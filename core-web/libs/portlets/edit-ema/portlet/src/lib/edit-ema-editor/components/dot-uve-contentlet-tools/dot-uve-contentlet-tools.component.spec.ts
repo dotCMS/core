@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -111,7 +117,7 @@ describe('DotUveContentletToolsComponent', () => {
                     // promoteHoverToSelected calls setSelected on the store
                     // before emitting select/quick-edit events. Stub it so
                     // the (click) handler doesn't throw and the output fires.
-                    setSelected: jest.fn()
+                    setSelected: vi.fn()
                 })
             }
         ],
@@ -309,7 +315,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const paletteButton = spectator.query(
                     byTestId('hover-palette-button')
                 ) as HTMLElement;
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('selectContent').subscribe(handler);
                 spectator.click(paletteButton.querySelector('button') as Element);
 
@@ -322,7 +328,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('quick-edit (bolt) button', () => {
             it('should emit openQuickEdit when clicking the bolt button', () => {
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('openQuickEdit').subscribe(handler);
 
                 const boltButton = spectator.query(
@@ -336,7 +342,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('full-editor (pencil) button', () => {
             it('should emit openFullEditor with the hovered payload', () => {
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('openFullEditor').subscribe(handler);
 
                 const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
@@ -351,7 +357,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('deleteContent', () => {
             it('should emit deleteContent with context when clicking delete button', () => {
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('deleteContent').subscribe(handler);
 
                 const deleteButton = spectator.query(
@@ -374,7 +380,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the first command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[0].command?.({});
@@ -395,7 +401,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the second command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[1].command?.({});
@@ -416,7 +422,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the third command (form)
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[2].command?.({});
@@ -444,7 +450,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the first command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[0].command?.({});
@@ -464,7 +470,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the second command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[1].command?.({});
@@ -757,7 +763,7 @@ describe('DotUveContentletToolsComponent', () => {
 
     describe('Position flag behavior', () => {
         it('should emit addContent with "before" position when clicking top add button', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('addContent').subscribe(handler);
 
             const addTopButton = spectator.query(byTestId('hover-add-top-button'));
@@ -778,7 +784,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should emit addContent with "after" position when clicking bottom add button', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('addContent').subscribe(handler);
 
             const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
@@ -971,6 +977,224 @@ describe('DotUveContentletToolsComponent', () => {
         it('should return false when either area is null', () => {
             expect(spectator.component.isSameContentlet(null, MOCK_CONTENTLET_AREA)).toBe(false);
             expect(spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, null)).toBe(false);
+        });
+    });
+
+    describe('Contentlet edit permission (#37376)', () => {
+        /**
+         * Build a hovered area whose contentlet carries an explicit `canEdit`.
+         * Passing `undefined` omits the field entirely, which is what headless
+         * and SDK-rendered pages produce.
+         */
+        const areaWithPermission = (canEdit: boolean | undefined): ContentletArea => ({
+            ...MOCK_CONTENTLET_AREA,
+            payload: {
+                ...MOCK_CONTENTLET_AREA.payload,
+                contentlet: {
+                    ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                    ...(canEdit === undefined ? {} : { canEdit })
+                }
+            }
+        });
+
+        const setPermission = (canEdit: boolean | undefined) => {
+            const area = areaWithPermission(canEdit);
+            spectator.setInput('contentletArea', area);
+            editorSelected.set(toSelected(area));
+            spectator.detectChanges();
+        };
+
+        const editButton = () =>
+            (spectator.query(byTestId('hover-edit-button')) as HTMLElement)?.querySelector(
+                'button'
+            );
+
+        describe('edit button disabled state', () => {
+            it('should disable the edit button when canEdit is false', () => {
+                setPermission(false);
+
+                expect(editButton()?.disabled).toBe(true);
+            });
+
+            it('should enable the edit button when canEdit is true', () => {
+                setPermission(true);
+
+                expect(editButton()?.disabled).toBe(false);
+            });
+
+            it('should enable the edit button when canEdit is absent', () => {
+                // Headless pages never emit `data-dot-can-edit`; the gate must
+                // fail open or every pencil on them would be greyed out.
+                setPermission(undefined);
+
+                expect(editButton()?.disabled).toBe(false);
+            });
+        });
+
+        describe('edit button tooltip', () => {
+            it('should explain the missing permission when denied', () => {
+                setPermission(false);
+
+                expect(spectator.component['editButtonTooltip']()).toBe(
+                    'uve.contentlet.no.edit.permission'
+                );
+            });
+
+            it('should show the normal edit label when allowed', () => {
+                setPermission(true);
+
+                expect(spectator.component['editButtonTooltip']()).toBe('uve.tooltip.edit.full');
+            });
+        });
+
+        describe('quick edit button disabled state', () => {
+            // The quick-edit form writes contentlet fields via
+            // saveQuickEditFields, so leaving it reachable would defeat the
+            // pencil gate entirely.
+            const quickEditButton = () =>
+                (
+                    spectator.query(byTestId('hover-quick-edit-button')) as HTMLElement
+                )?.querySelector('button');
+
+            it('should disable the quick edit button when canEdit is false', () => {
+                setPermission(false);
+
+                expect(quickEditButton()?.disabled).toBe(true);
+            });
+
+            it('should enable the quick edit button when canEdit is true', () => {
+                setPermission(true);
+
+                expect(quickEditButton()?.disabled).toBe(false);
+            });
+
+            it('should enable the quick edit button when canEdit is absent', () => {
+                setPermission(undefined);
+
+                expect(quickEditButton()?.disabled).toBe(false);
+            });
+
+            it('should explain the missing permission in the quick edit tooltip', () => {
+                setPermission(false);
+
+                expect(spectator.component['quickEditButtonTooltip']()).toBe(
+                    'uve.contentlet.no.edit.permission'
+                );
+            });
+
+            it('should show the normal quick edit label when allowed', () => {
+                setPermission(true);
+
+                expect(spectator.component['quickEditButtonTooltip']()).toBe(
+                    'uve.tooltip.edit.quick'
+                );
+            });
+        });
+
+        describe('collapsed overflow menu', () => {
+            const editMenuItem = () =>
+                spectator.component.actionsMenuItems().find((item) => item.icon === 'pi pi-pencil');
+
+            it('should disable the Edit entry when canEdit is false', () => {
+                setPermission(false);
+
+                expect(editMenuItem()?.disabled).toBe(true);
+            });
+
+            it('should keep the Edit entry enabled when canEdit is true', () => {
+                setPermission(true);
+
+                expect(editMenuItem()?.disabled).toBe(false);
+            });
+
+            const quickEditMenuItem = () =>
+                spectator.component.actionsMenuItems().find((item) => item.icon === 'pi pi-bolt');
+
+            it('should disable the Quick Edit entry when canEdit is false', () => {
+                setPermission(false);
+
+                expect(quickEditMenuItem()?.disabled).toBe(true);
+            });
+
+            it('should keep the Quick Edit entry enabled when canEdit is true', () => {
+                setPermission(true);
+
+                expect(quickEditMenuItem()?.disabled).toBe(false);
+            });
+        });
+
+        describe('style editor button disabled state', () => {
+            // Style properties describe how this contentlet presents itself, so
+            // they follow contentlet permission rather than page permission.
+            const paletteButton = () =>
+                (spectator.query(byTestId('hover-palette-button')) as HTMLElement)?.querySelector(
+                    'button'
+                );
+
+            beforeEach(() => {
+                spectator.setInput('showStyleEditorOption', true);
+                spectator.detectChanges();
+            });
+
+            it('should disable the style button when canEdit is false', () => {
+                setPermission(false);
+
+                expect(paletteButton()?.disabled).toBe(true);
+            });
+
+            it('should enable the style button when canEdit is true', () => {
+                setPermission(true);
+
+                expect(paletteButton()?.disabled).toBe(false);
+            });
+
+            it('should disable the Style entry in the overflow menu when canEdit is false', () => {
+                setPermission(false);
+
+                const styleItem = spectator.component
+                    .actionsMenuItems()
+                    .find((item) => item.icon === 'pi pi-palette');
+
+                expect(styleItem?.disabled).toBe(true);
+            });
+        });
+
+        describe('structural page actions stay ungated', () => {
+            // A user allowed into the page editor may change the page's
+            // composition. Contentlet permission governs the contentlet's
+            // content, and nothing else.
+            it('should keep the delete button enabled for a contentlet the user cannot edit', () => {
+                setPermission(false);
+
+                const deleteButton = (
+                    spectator.query(byTestId('hover-delete-button')) as HTMLElement
+                )?.querySelector('button');
+
+                expect(deleteButton?.disabled).toBe(false);
+            });
+
+            it('should keep the drag handle rendered for a contentlet the user cannot edit', () => {
+                setPermission(false);
+
+                expect(spectator.query(byTestId('hover-drag-button'))).toBeTruthy();
+            });
+
+            it('should keep the add-content buttons rendered for a contentlet the user cannot edit', () => {
+                setPermission(false);
+
+                expect(spectator.query(byTestId('hover-add-top-button'))).toBeTruthy();
+            });
+        });
+
+        describe('empty container', () => {
+            it('should not gate an empty container, whose sentinel carries no permission', () => {
+                spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
+                editorSelected.set(toSelected(MOCK_EMPTY_CONTENTLET_AREA));
+                spectator.detectChanges();
+
+                expect(spectator.component.isContainerEmpty()).toBe(true);
+                expect(spectator.component['canEditContentlet']()).toBe(true);
+            });
         });
     });
 });

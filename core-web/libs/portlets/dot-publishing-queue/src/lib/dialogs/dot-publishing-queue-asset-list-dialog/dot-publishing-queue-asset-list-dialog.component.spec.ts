@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -22,8 +28,8 @@ const ASSETS: BundleAssetView[] = [
 describe('DotPublishingQueueAssetListDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueAssetListDialogComponent>;
     let store: ReturnType<typeof storeStub>;
-    let confirmationService: jest.Mocked<ConfirmationService>;
-    let dialogRef: jest.Mocked<DynamicDialogRef>;
+    let confirmationService: Mocked<ConfirmationService>;
+    let dialogRef: Mocked<DynamicDialogRef>;
 
     const selectedAssets = signal<BundleAssetView[]>([]);
     const assetListStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loading');
@@ -34,7 +40,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             selectedAssets,
             assetListStatus,
             selectedBundleId,
-            removeBundleAsset: jest.fn()
+            removeBundleAsset: vi.fn()
         };
     }
 
@@ -43,9 +49,9 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         componentProviders: [mockProvider(DotPublishingQueueStore, storeStub())],
         providers: [
             ConfirmationService,
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: jest.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+                resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
             }),
             {
                 provide: DotMessageService,
@@ -76,15 +82,13 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof storeStub
         >;
-        confirmationService = spectator.inject(
-            ConfirmationService
-        ) as jest.Mocked<ConfirmationService>;
-        dialogRef = spectator.inject(DynamicDialogRef) as jest.Mocked<DynamicDialogRef>;
-        jest.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
+        confirmationService = spectator.inject(ConfirmationService) as Mocked<ConfirmationService>;
+        dialogRef = spectator.inject(DynamicDialogRef) as Mocked<DynamicDialogRef>;
+        vi.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
             cfg.accept?.();
             return confirmationService;
         });
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('reserves a fixed-height shell + always-mounted table header (no resize jank)', () => {
@@ -133,7 +137,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         });
 
         it('opens the resolved contentlet URL in a new tab', () => {
-            const openSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
             // First asset is a contentlet with a resolved URL (see mock in providers).
             spectator.component.onAssetRowClick(ASSETS[0]);
             expect(openSpy).toHaveBeenCalledWith('/dotAdmin/#/edit/inode/i1', '_blank', 'noopener');
@@ -141,7 +145,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         });
 
         it('is a no-op for non-contentlet assets (no URL resolved)', () => {
-            const openSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
             spectator.component.onAssetRowClick(ASSETS[1]);
             expect(openSpy).not.toHaveBeenCalled();
             openSpy.mockRestore();
@@ -212,7 +216,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         });
 
         it('filters rows by title or type when search is set', () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             try {
                 selectedAssets.set(manyAssets);
                 assetListStatus.set('loaded');
@@ -220,14 +224,14 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
                 expect(spectator.queryAll(byTestId('pq-asset-list-row')).length).toBe(15);
 
                 spectator.component.onSearch('template');
-                jest.advanceTimersByTime(300);
+                vi.advanceTimersByTime(300);
                 spectator.detectChanges();
 
                 // Half the assets have type 'template' (every odd index) — 7 of 15
                 const rows = spectator.queryAll(byTestId('pq-asset-list-row'));
                 expect(rows.length).toBe(7);
             } finally {
-                jest.useRealTimers();
+                vi.useRealTimers();
             }
         });
 
@@ -274,14 +278,14 @@ describe('DotPublishingQueueAssetListDialogComponent — read-only (allowRemove=
                 selectedAssets,
                 assetListStatus,
                 selectedBundleId,
-                removeBundleAsset: jest.fn()
+                removeBundleAsset: vi.fn()
             })
         ],
         providers: [
             ConfirmationService,
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: jest.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+                resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
             }),
             { provide: DynamicDialogConfig, useValue: { data: { allowRemove: false } } },
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }

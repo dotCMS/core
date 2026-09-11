@@ -1,5 +1,5 @@
-import { expect } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
+import { expect } from 'vitest';
 
 import { DotPageAssetLayoutColumn } from '@dotcms/types';
 import { DOT_SECTION_ID_PREFIX } from '@dotcms/uve/internal';

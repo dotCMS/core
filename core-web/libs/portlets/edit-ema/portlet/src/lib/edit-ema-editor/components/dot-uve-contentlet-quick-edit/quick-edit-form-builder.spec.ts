@@ -1,4 +1,4 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FormBuilder } from '@angular/forms';
 
@@ -311,7 +311,7 @@ describe('quick-edit-form-builder', () => {
         });
 
         it('drops invalid regex and warns instead of throwing', () => {
-            const warn = jest.spyOn(console, 'warn').mockImplementation(jest.fn());
+            const warn = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
             const validators = buildValidators(field({ regexCheck: '[' }));
             expect(validators).toEqual([]);
             expect(warn).toHaveBeenCalled();

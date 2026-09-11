@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -65,8 +66,8 @@ describe('DotContainerListResolverService', () => {
     });
 
     it('should set pagination params, get first page, check license and publish environments', () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
-        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+        vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
             of([
                 {
                     id: '1',

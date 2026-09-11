@@ -1,4 +1,5 @@
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { TemplateBuilderSectionComponent } from './template-builder-section.component';
 
@@ -27,7 +28,7 @@ describe('TemplateBuilderSectionComponent', () => {
     });
 
     it('should emit deleteSection event', () => {
-        const deleteSection = jest.fn();
+        const deleteSection = vi.fn();
         spectator.component.deleteSection.subscribe(deleteSection);
         spectator.detectChanges();
         const deleteButtonComponent = spectator.query('[data-testId="delete-section-button"]');

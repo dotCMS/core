@@ -1,6 +1,7 @@
 import { patchState, signalStore, withState } from '@ngrx/signals';
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -26,7 +27,7 @@ describe('withPreview - isDirty with focal point', () => {
 
     beforeEach(() => {
         // The debounced `resolveSize$` effect schedules timers; isolate them.
-        jest.useFakeTimers();
+        vi.useFakeTimers();
 
         TestBed.configureTestingModule({
             providers: [
@@ -34,7 +35,7 @@ describe('withPreview - isDirty with focal point', () => {
                 Dispatcher,
                 {
                     provide: DotImageEditorService,
-                    useValue: { getFileSize: jest.fn().mockReturnValue(of(1000)) }
+                    useValue: { getFileSize: vi.fn().mockReturnValue(of(1000)) }
                 }
             ]
         });
@@ -52,7 +53,7 @@ describe('withPreview - isDirty with focal point', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('is not dirty when the focal point matches the seeded baseline', () => {

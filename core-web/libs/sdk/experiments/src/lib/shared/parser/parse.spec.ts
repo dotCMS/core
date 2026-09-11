@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { parseData, parseDataForAnalytics } from './parser';
 
 import {
@@ -102,12 +104,12 @@ describe('Parsers', () => {
     });
 
     describe('parseData For Store', () => {
-        const mockNow = jest.spyOn(Date, 'now');
+        const mockNow = vi.spyOn(Date, 'now');
 
         mockNow.mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should handle case where only NEW data is available', () => {

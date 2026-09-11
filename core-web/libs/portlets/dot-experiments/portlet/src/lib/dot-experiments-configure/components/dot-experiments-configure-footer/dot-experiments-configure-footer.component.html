@@ -1,0 +1,31 @@
+@if ($hint(); as hint) {
+    <span
+        class="truncate text-sm font-medium"
+        [class.text-surface-500]="!hint.isError"
+        [class.text-red-600]="hint.isError"
+        [attr.role]="hint.isError ? 'alert' : null"
+        data-testid="experiments-configure-footer-hint">
+        {{ hint.key | dm: hint.args }}
+    </span>
+}
+
+<div class="flex flex-none items-center gap-2">
+    @if ($showSave()) {
+        <p-button
+            [outlined]="true"
+            severity="secondary"
+            [label]="'experiments.configure.action.save-draft' | dm"
+            [disabled]="$isSaveDisabled()"
+            (onClick)="onSaveDraft()"
+            data-testid="experiments-configure-save-btn" />
+    }
+
+    @if ($showStart()) {
+        <!-- Never disabled, not even while a start is in flight: pressing it on an incomplete
+             form is the only thing that reveals the missing fields (AC28). -->
+        <p-button
+            [label]="$startLabelKey() | dm"
+            (onClick)="onStart()"
+            data-testid="experiments-configure-start-btn" />
+    }
+</div>

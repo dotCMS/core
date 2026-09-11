@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -34,7 +35,7 @@ import {
 
 import { DotExperimentsConfigurationGoalsComponent } from './dot-experiments-configuration-goals.component';
 
-import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
+import { DotExperimentsDetailsTableComponent } from '../../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
 
@@ -159,7 +160,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         });
 
         test('should call openSelectGoalSidebar if you click the add goal button', () => {
-            jest.spyOn(store, 'openSidebar');
+            vi.spyOn(store, 'openSidebar');
 
             const addButton = spectator.query(byTestId('goals-add-button'));
             // Find the actual button element inside the p-button component
@@ -196,8 +197,8 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.detectChanges();
         });
         test('should show a confirmation to delete a goal', () => {
-            jest.spyOn(store, 'deleteGoal');
-            jest.spyOn(confirmationService, 'confirm');
+            vi.spyOn(store, 'deleteGoal');
+            vi.spyOn(confirmationService, 'confirm');
 
             // Configure vm$ with goals that have no conditions to show the delete button
             spectator.component.vm$ = of({
@@ -230,7 +231,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             expect(confirmationService.confirm).toHaveBeenCalled();
 
             // Get the confirm options and call accept to verify store method is called
-            const confirmOptions = (confirmationService.confirm as jest.Mock).mock.calls[0][0];
+            const confirmOptions = (confirmationService.confirm as Mock).mock.calls[0][0];
             confirmOptions.accept();
 
             expect(store.deleteGoal).toHaveBeenCalledWith({

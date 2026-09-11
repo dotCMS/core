@@ -11,6 +11,7 @@
 
 **Companion documents** (deeper detail, load when you need it):
 
+- [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) — the operator runbook: how to actually migrate a customer, end to end.
 - [`OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATION.md) — the full architecture and design of the migration.
 - [`OPENSEARCH_CLIENT_CONFIGURATION.md`](OPENSEARCH_CLIENT_CONFIGURATION.md) — every configuration property.
 - [`OPENSEARCH_MIGRATION_TEST_PLAN.md`](OPENSEARCH_MIGRATION_TEST_PLAN.md) — the full, numbered test cases.
@@ -155,7 +156,7 @@ docker compose up -d
 | Source engine (OpenSearch 1.3) | "old" engine | https://localhost:9200 | HTTPS + auth. |
 | Source dashboards | inspect source indices | http://localhost:5601 | Login `admin` / `admin`. |
 | Target engine (OpenSearch 3.8) | "new" engine | https://localhost:9201 | HTTPS + auth. |
-| Target dashboards | inspect target indices | http://localhost:5602 | Login `admin` / `Dev!Search3-Kx9mP-2026`. |
+| Target dashboards | inspect target indices | http://localhost:5602 | Login `admin` / `$OS_ADMIN_PW` (see *Credentials*). |
 | Glowroot | JVM profiler | http://localhost:4000 | Optional. |
 | PostgreSQL | database | *(not published to host)* | Reach it via `docker compose exec db …` — see §6. |
 
@@ -165,30 +166,43 @@ docker compose up -d
 2. Provisioning containers wait for health checks, then create the `dotcms-es-user` account on both engines.
 3. dotCMS starts once both provisioners finish.
 
+### Credentials
+
+These are throwaway dev values, but this page does not print them — **`docker-compose.yml` is the
+only place they live**, so a copy of this guide never carries a password and you never work from a
+stale one. Export them once, in the shell you will run the rest of the guide from:
+
+```bash
+cd docker/docker-compose-examples/single-node-os-migration
+export OS_ADMIN_PW=$(grep OPENSEARCH_INITIAL_ADMIN_PASSWORD docker-compose.yml | head -1 | cut -d'"' -f2)
+export ES_USER_PW=$(grep DOT_ES_AUTH_BASIC_PASSWORD  docker-compose.yml | head -1 | cut -d"'" -f2)
+echo "${OS_ADMIN_PW:?not found}" "${ES_USER_PW:?not found}" >/dev/null && echo "credentials loaded"
+```
+
+| Where | User | Password | Where it comes from |
+|---|---|---|---|
+| dotCMS admin UI / REST | `admin` | `admin` | `DOT_INITIAL_ADMIN_PASSWORD` |
+| Source engine — admin | `admin` | `admin` | `opensearch.password`, source provisioner |
+| Target engine — admin | `admin` | `$OS_ADMIN_PW` | `OPENSEARCH_INITIAL_ADMIN_PASSWORD` |
+| Both engines — the account dotCMS uses | `dotcms-es-user` | `$ES_USER_PW` | `DOT_ES_AUTH_BASIC_PASSWORD` |
+
+Every `curl` below assumes those two variables are exported. If a command comes back `401`, that is
+the first thing to check.
+
+> The dashboard consoles (`5601` / `5602`) show a login page — use the matching engine's **admin**
+> credentials (source → `admin`/`admin`, target → `admin`/`$OS_ADMIN_PW`). The `dotcms-es-user`
+> account is dotCMS's service account and also works for direct engine `curl` calls, but log into the
+> consoles as `admin`.
+>
+> Some older copies of the stack's `README.md` quote a different target admin password. Ignore it —
+> `docker-compose.yml` is authoritative, which is why the block above reads from it.
+
 > **Wait for the engines to be healthy before trusting dotCMS.** Health-check both clusters (auth
 > required, self-signed cert so use `-k`):
 > ```bash
-> curl -sk -u admin:admin https://localhost:9200/_cluster/health | jq .status              # source
-> curl -sk -u admin:'Dev!Search3-Kx9mP-2026' https://localhost:9201/_cluster/health | jq .status  # target
+> curl -sk -u admin:admin https://localhost:9200/_cluster/health | jq .status                # source
+> curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/_cluster/health | jq .status        # target
 > ```
-
-### Credentials
-
-| Where | User | Password |
-|---|---|---|
-| dotCMS admin UI / REST | `admin` | `admin` |
-| Source engine — admin | `admin` | `admin` |
-| Target engine — admin | `admin` | `Dev!Search3-Kx9mP-2026` |
-| Both engines — the account dotCMS uses | `dotcms-es-user` | `Dev!dotcms-EsUser-2026` |
-
-> The dashboard consoles (`5601` / `5602`) show a login page — use the matching engine's **admin**
-> credentials above (source → `admin`/`admin`, target → `admin`/`Dev!Search3-Kx9mP-2026`). The
-> `dotcms-es-user` account is dotCMS's service account and also works for direct engine `curl` calls,
-> but log into the consoles as `admin`.
->
-> Some older copies of the stack's `README.md` list the target admin password as
-> `Dev!Strong-OSAdmin-2026` — that is stale; the value the container actually runs with is
-> `Dev!Search3-Kx9mP-2026` (from `OPENSEARCH_INITIAL_ADMIN_PASSWORD` in `docker-compose.yml`).
 
 The default phase in this stack is **Phase 1** (`DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE: '1'`). To test a
 different phase, edit that value in `docker-compose.yml` and restart dotCMS
@@ -217,7 +231,7 @@ built-in default). Keep them in two mental buckets:
 | Variable | Purpose |
 |---|---|
 | `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE` | `0`/`1`/`2`/`3` — how far the migration runs. The switch most tests toggle. |
-| `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` | Role **key** whose members can see the `.os` indices in the dotCMS UI / `/api/v1/esindex` before Phase 3 (default `os_migration_qa`). See §6 — without it, `.os` indices are hidden from those views in phases 0–2. |
+| `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` | Role **key** required — in addition to CMS Admin — to read the migration-readiness endpoint `GET /api/v1/index/migration/readiness` (default `os_migration_qa`). It no longer controls index visibility in the UI: since #36360 that is purely phase-based (hidden in phases 0–2, shown in Phase 3, for everyone). |
 
 ### Source engine (the "old" one — `DOT_ES_*`)
 
@@ -225,7 +239,7 @@ built-in default). Keep them in two mental buckets:
 |---|---|---|
 | `DOT_ES_ENDPOINTS` | `https://opensearch1:9200` | Source cluster URL. |
 | `DOT_ES_AUTH_TYPE` | `BASIC` | Auth scheme. |
-| `DOT_ES_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `Dev!dotcms-EsUser-2026` | Source credentials. |
+| `DOT_ES_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `$ES_USER_PW` | Source credentials. |
 
 ### Target engine (OpenSearch 3.x — `DOT_OS_*`)
 
@@ -233,7 +247,7 @@ built-in default). Keep them in two mental buckets:
 |---|---|---|
 | `DOT_OS_ENDPOINTS` | `https://opensearch3:9200` | Target cluster URL. **Must be a separate instance from the source** — pointing it at the source URL is exactly what the safety guards detect. |
 | `DOT_OS_AUTH_TYPE` | `BASIC` | Auth scheme. |
-| `DOT_OS_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `Dev!dotcms-EsUser-2026` | Target credentials. |
+| `DOT_OS_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `$ES_USER_PW` | Target credentials. |
 | `DOT_OS_TLS_TRUST_SELF_SIGNED` | `true` | Accept the self-signed dev certificate. |
 
 > Every target-engine key has a source-engine fallback: if a `DOT_OS_*` key is unset, dotCMS tries the
@@ -254,36 +268,42 @@ machine, so **never guess a name — list it.**
 curl -s -u admin:admin http://localhost:8082/api/v1/esindex | jq .
 
 # The exact physical names each engine holds (use THESE for direct curl / dashboards):
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9200/_cat/indices?v   # source (no .os)
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9201/_cat/indices?v   # target (ends in .os)
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9200/_cat/indices?v   # source (no .os)
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9201/_cat/indices?v   # target (ends in .os)
 ```
 
 Or in the UI: **Admin → System → Index**.
 
-> **⚠️ You may not see the `.os` indices in dotCMS until you grant a visibility role.** In phases 0, 1,
-> and 2 the two dotCMS-side views — the `/api/v1/esindex` response and **Admin → System → Index** —
-> **hide the target-engine (`.os`) indices** by default, because before Phase 3 they are a migration
-> artifact. (In Phase 3 they are always visible.) This filter applies **only** to those two dotCMS
-> views: the direct engine listing (`_cat/indices` on `:9200` / `:9201`) and the database `indicies`
-> table are **never** filtered and always show `.os`, so use those to confirm an index really exists.
+> **⚠️ You will not see the `.os` indices in dotCMS before Phase 3.** In phases 0, 1, and 2 the two
+> dotCMS-side views — the `/api/v1/esindex` response and **Admin → System → Index** — **hide the
+> target-engine (`.os`) indices from everyone**, because before Phase 3 they are a migration artifact.
+> In Phase 3 they are always visible. This is purely phase-based and consults no user or role (#36360).
+> The filter applies **only** to those two dotCMS views: the direct engine listing (`_cat/indices` on
+> `:9200` / `:9201`) and the database `indicies` table are **never** filtered and always show `.os`,
+> so use those to confirm an index really exists.
 >
-> To make the `.os` indices appear in the dotCMS UI / API for your test user:
+> **To see the migration state from inside dotCMS, use the migration-readiness endpoint instead** —
+> `GET /api/v1/index/migration/readiness`. It is the source of truth for ES↔OS mirror state in every
+> phase. It requires a user who is **both** a CMS Administrator **and** a member of the migration
+> support role:
 > 1. Decide the **role key**. The default is `os_migration_qa` — the easiest path, no config change. To
 >    use a different key, set `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` in `docker-compose.yml` and
 >    restart dotCMS.
 > 2. In dotCMS, create a Role whose **Key** matches that value exactly. It is matched on the role *key*
 >    (`Role.getRoleKey()`), **not** the display name — set the Key field, not just the name.
-> 3. Assign that role to the dotCMS user you test with.
+> 3. Assign that role to the dotCMS user you test with (who must also be a CMS Admin).
 >
-> Only then do the `.os` indices show up for that user in the UI and in `/api/v1/esindex`.
+> Anyone missing either condition gets a 403. See
+> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) R9 for how to read the report.
 
 **Which phase did the system end up in?**
 - **Startup log (most reliable):** find the line stating the migration phase. If the automatic shutdown
   fired, you will also see an error saying the migration was disabled and the phase was reset to 0.
 - **Database (reliable):** run the `indicies` query below — `.os` rows present → the migration is active.
-- **UI / `/api/v1/esindex`:** seeing `.os` indexes confirms the migration is active, but the reverse is
-  **not** reliable — in phases 1/2 these views hide `.os` unless your user holds the visibility role
-  (see the callout above), so *not* seeing `.os` could mean Phase 0 **or** just a missing role.
+- **Readiness endpoint (authoritative):** `GET /api/v1/index/migration/readiness` reports
+  `phase.current` and `phase.name` directly, in every phase.
+- **UI / `/api/v1/esindex`:** these views hide `.os` in phases 0/1/2 for everyone, so they tell you
+  nothing about whether the migration is active — seeing `.os` there only means you are in Phase 3.
 
 **Check the database directly.** Postgres is not published to the host — go through the container:
 
@@ -303,8 +323,8 @@ SELECT CASE WHEN index_name LIKE '%.os' THEN 'TARGET' ELSE 'SOURCE' END AS engin
 **Count documents in an index directly** (use the physical names from the listing above):
 
 ```bash
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9200/<source-index-name>/_count
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9201/<target-index-name.os>/_count
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9200/<source-index-name>/_count
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9201/<target-index-name.os>/_count
 ```
 
 **Recognize an automatic migration shutdown.** When the safety feature fires at startup (Phase 1 or 2),
@@ -471,10 +491,10 @@ Total: $ss.totalResults
   etc.; each result exposes `getTitle()`, `getUrl()`, `getHost()`, `getMimeType()`, `getScore()`,
   `getHighlights()`, `getMap()`. Facets come from `getAggregations(indexName, query)` (the older
   `getFacets(...)` is deprecated).
-- **This is where the Site Search operational edge in §11 becomes visible:** if the target-engine twin
+- **This is where the Site Search operational edge in §11 becomes visible:** if the target-engine counterpart
   was auto-created with a *dynamic* mapping (an incremental crawl over a Phase-0 index), term facets on
   fields like `mimeType` / `host` / `url` come back wrong or empty. Run the facet snippet against a
-  properly full-crawled index vs a dynamically-created twin to reproduce it.
+  properly full-crawled index vs a dynamically-created counterpart to reproduce it.
 
 > **Where the working example templates live.** The classic Site Search demo templates (`ss-aggs.vtl`,
 > `ss-facets.vtl`, `search-results.vtl`) are **not** in this repo — they ship inside the **dotCMS demo
@@ -611,16 +631,16 @@ ordinary content publishing. That has consequences during migration:
 
 - **Changing the phase does not create mirror indexes retroactively.** A Site Search index created in
   Phase 0 lives only on the source engine; switching to Phase 1 does **not** create its target-engine
-  twin. The twin appears only when a **full crawl runs while in a dual-write phase (1 or 2)**.
+  counterpart. It appears only when a **full crawl runs while in a dual-write phase (1 or 2)**.
 - **Before advancing a phase, let the scheduled crawls run at least once in the current phase.** The rule
   of thumb is *"transition when every Site Search crawl has run at least once in the current phase"* — not
-  merely *"the flag is set to N"*. Otherwise indexes from the previous phase have no target-engine twin
-  yet, and search in the new phase falls back or hits an incorrectly-mapped twin.
+  merely *"the flag is set to N"*. Otherwise indexes from the previous phase have no target-engine counterpart
+  yet, and search in the new phase falls back or hits an incorrectly-mapped counterpart.
 - **After moving to Phase 1, run one full (not incremental) crawl per index before trusting incrementals.**
-  A full crawl builds the target-engine twin with the correct field mapping. An incremental crawl reuses
-  the existing index and can auto-create a target-engine twin with the *wrong* (dynamic) mapping — which
+  A full crawl builds the target-engine counterpart with the correct field mapping. An incremental crawl reuses
+  the existing index and can auto-create a target-engine counterpart with the *wrong* (dynamic) mapping — which
   silently breaks term aggregations / facets.
-- **Verify the twins match:** `GET _cat/indices/*sitesearch*?v` on both engines should agree on name and
+- **Verify the counterparts match:** `GET _cat/indices/*sitesearch*?v` on both engines should agree on name and
   document count.
 
 ### Rollback during dual-write leaves the target ahead (drift)
@@ -654,11 +674,10 @@ Don't merge them into one table.
   `-k` (and always `-u <user>:<pass>`, since security is on).
 - **`/api/v1/temp` or workflow endpoints return 400 "Invalid Origin or referer".** Add
   `-H "Origin: http://localhost:8082" -H "Referer: http://localhost:8082/"` to the request.
-- **I can't see the `.os` index in the admin UI or in `/api/v1/esindex`.** In phases 0–2 those two
-  dotCMS views hide `.os` indices unless your user holds the visibility role — grant the
-  `os_migration_qa` role (or whatever `DOT_OS_MIGRATION_INDEX_VISIBILITY_ROLE_KEY` is set to) as described
-  in §6. To confirm the index exists regardless, check `_cat/indices` on the engine or the `indicies`
-  DB table.
+- **I can't see the `.os` index in the admin UI or in `/api/v1/esindex`.** Expected: in phases 0–2
+  those two dotCMS views hide `.os` indices from everyone, regardless of role. To confirm the index
+  exists, check `_cat/indices` on the engine or the `indicies` DB table — or call
+  `GET /api/v1/index/migration/readiness`, which reports both engines in every phase (§6).
 - **I set the phase but nothing changed.** The phase is re-read live for routing, but the one-time phase
   setup runs only at startup — see the restart note in §3. Content already indexed is not moved
   retroactively; new writes follow the new phase. For Site Search specifically, see §8.
@@ -670,6 +689,7 @@ Don't merge them into one table.
 
 ## 13. References
 
+- [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) — the operator runbook for a real migration.
 - [`OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATION.md) — architecture and design.
 - [`OPENSEARCH_CLIENT_CONFIGURATION.md`](OPENSEARCH_CLIENT_CONFIGURATION.md) — full configuration reference.
 - [`OPENSEARCH_MIGRATION_TEST_PLAN.md`](OPENSEARCH_MIGRATION_TEST_PLAN.md) — full numbered test cases.

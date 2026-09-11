@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { Extension } from '@tiptap/core';
 
 import type { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -25,7 +27,7 @@ describe('parseCustomBlocksField', () => {
     });
 
     it('returns empty and warns on invalid JSON', () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         expect(parseCustomBlocksField(fieldWith('{ not json'))).toEqual({ extensions: [] });
         expect(warn).toHaveBeenCalled();
@@ -34,7 +36,7 @@ describe('parseCustomBlocksField', () => {
     });
 
     it('returns empty and warns when the shape does not match the schema', () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         // `extensions` present but an entry is missing the required `url`.
         expect(
@@ -74,8 +76,8 @@ describe('parseCustomBlocksField', () => {
 
 describe('loadRemoteExtensions', () => {
     it('warns when a declared remote block name does not match a loaded extension', async () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-        const importer = jest.fn().mockResolvedValue({
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const importer = vi.fn().mockResolvedValue({
             customGalleryExtension: Extension.create({ name: 'loadedGallery' })
         });
 
@@ -112,7 +114,7 @@ describe('loadRemoteExtensions', () => {
     });
 
     it('does not warn when a declared remote block name matches a loaded extension', async () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         await loadRemoteExtensions(
             {
@@ -130,7 +132,7 @@ describe('loadRemoteExtensions', () => {
                     }
                 ]
             },
-            jest.fn().mockResolvedValue({
+            vi.fn().mockResolvedValue({
                 customGalleryExtension: Extension.create({ name: 'customGallery' })
             })
         );
@@ -141,7 +143,7 @@ describe('loadRemoteExtensions', () => {
     });
 
     it('names the offending action and the required fix when action.name is missing', async () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         await loadRemoteExtensions(
             {
@@ -158,7 +160,7 @@ describe('loadRemoteExtensions', () => {
                     }
                 ]
             },
-            jest.fn().mockResolvedValue({
+            vi.fn().mockResolvedValue({
                 customGalleryExtension: Extension.create({ name: 'customGallery' })
             })
         );

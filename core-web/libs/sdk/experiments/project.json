@@ -32,17 +32,6 @@
             "options": {
                 "packageRoot": "dist/libs/sdk/experiments"
             }
-        },
-        "test": {
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
         }
     }
 }

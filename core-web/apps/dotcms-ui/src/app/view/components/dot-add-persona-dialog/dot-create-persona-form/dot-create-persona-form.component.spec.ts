@@ -1,5 +1,6 @@
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, signal } from '@angular/core';
@@ -198,7 +199,7 @@ describe('DotCreatePersonaFormComponent', () => {
         it('should emit isValid to false when the file upload starts', () => {
             const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileupload'));
             expect(fileUpload).toBeTruthy();
-            jest.spyOn(component.isValid, 'emit');
+            vi.spyOn(component.isValid, 'emit');
             fileUpload.triggerEventHandler('onBeforeUpload', {});
             fixture.detectChanges();
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
@@ -229,7 +230,7 @@ describe('DotCreatePersonaFormComponent', () => {
         });
 
         it('should emit if form is valid after changes', () => {
-            jest.spyOn(component.isValid, 'emit');
+            vi.spyOn(component.isValid, 'emit');
             component.form.setValue({
                 photo: 'test',
                 name: 'test',
@@ -242,7 +243,7 @@ describe('DotCreatePersonaFormComponent', () => {
         });
 
         it('should emit if form is invalid after changes', () => {
-            jest.spyOn(component.isValid, 'emit');
+            vi.spyOn(component.isValid, 'emit');
             component.form.get('photo').setValue('test');
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
             expect(component.isValid.emit).toHaveBeenCalledTimes(1);

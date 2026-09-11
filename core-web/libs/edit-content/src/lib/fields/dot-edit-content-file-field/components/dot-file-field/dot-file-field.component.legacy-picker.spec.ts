@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -9,7 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageService,
     DotSiteService,
     DotWorkflowActionsFireService
@@ -49,16 +50,16 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
         providers: [
             // Deliberately NO Router and NO GlobalStore: the legacy Dojo host is a custom element
             // bootstrapped without either, so anything the field reaches for has to survive that.
-            mockProvider(DotSiteService, { getCurrentSite: jest.fn() }),
+            mockProvider(DotSiteService, { getCurrentSite: vi.fn() }),
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
             mockProvider(DialogService),
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
             mockProvider(DotWorkflowActionsFireService),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DotAiService, {
-                checkPluginInstallation: jest.fn().mockReturnValue(of(false))
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DotAiConfigService, {
+                checkPluginInstallation: vi.fn().mockReturnValue(of(false))
             }),
             provideHttpClient(),
             provideHttpClientTesting()
@@ -78,9 +79,9 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
         spectator.detectChanges();
 
         const dialogService = spectator.inject(DialogService);
-        (dialogService.open as jest.Mock).mockReturnValue({
+        (dialogService.open as Mock).mockReturnValue({
             onClose: selected === undefined ? new Subject() : of(selected),
-            close: jest.fn()
+            close: vi.fn()
         });
 
         return dialogService;
@@ -133,7 +134,7 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
     it('should write the selected asset to the store exactly as the new picker does', () => {
         const file = createFakeContentlet({ identifier: 'picked-id' });
         setup(IMAGE_FIELD_MOCK, file);
-        const setPreviewFile = jest.spyOn(spectator.component.store, 'setPreviewFile');
+        const setPreviewFile = vi.spyOn(spectator.component.store, 'setPreviewFile');
 
         spectator.component.showSelectExistingFileDialog();
 
@@ -142,7 +143,7 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
 
     it('should not touch the store when the selector is dismissed', () => {
         setup(IMAGE_FIELD_MOCK, null);
-        const setPreviewFile = jest.spyOn(spectator.component.store, 'setPreviewFile');
+        const setPreviewFile = vi.spyOn(spectator.component.store, 'setPreviewFile');
 
         spectator.component.showSelectExistingFileDialog();
 
@@ -174,15 +175,15 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
         // threw wired no close handler — so without an explicit release "Select Existing File"
         // would be dead for the rest of the session, with no toast and no log.
         const dialogService = setup(IMAGE_FIELD_MOCK);
-        (dialogService.open as jest.Mock).mockImplementationOnce(() => {
+        (dialogService.open as Mock).mockImplementationOnce(() => {
             throw new Error('dialog exploded');
         });
 
         expect(() => spectator.component.showSelectExistingFileDialog()).toThrow('dialog exploded');
 
-        (dialogService.open as jest.Mock).mockReturnValue({
+        (dialogService.open as Mock).mockReturnValue({
             onClose: of(null),
-            close: jest.fn()
+            close: vi.fn()
         });
         spectator.component.showSelectExistingFileDialog();
 
@@ -200,8 +201,8 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
 
     it('should close an open selector when the field is destroyed', () => {
         const dialogService = setup(IMAGE_FIELD_MOCK);
-        const close = jest.fn();
-        (dialogService.open as jest.Mock).mockReturnValue({ onClose: new Subject(), close });
+        const close = vi.fn();
+        (dialogService.open as Mock).mockReturnValue({ onClose: new Subject(), close });
 
         spectator.component.showSelectExistingFileDialog();
         spectator.component.ngOnDestroy();

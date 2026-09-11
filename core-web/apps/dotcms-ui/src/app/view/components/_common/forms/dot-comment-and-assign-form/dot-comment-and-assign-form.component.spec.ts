@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -34,7 +35,7 @@ describe('DotAssigneeFormComponent', () => {
     beforeEach(() => {
         spectator = createComponent({ detectChanges: false });
         dotRolesService = spectator.inject(DotRolesService);
-        jest.spyOn(dotRolesService, 'get').mockReturnValue(of(mockProcessedRoles));
+        vi.spyOn(dotRolesService, 'get').mockReturnValue(of(mockProcessedRoles));
     });
 
     it('should show only commentable field', () => {
@@ -106,8 +107,8 @@ describe('DotAssigneeFormComponent', () => {
         });
 
         it('should emit value and valid on form change', () => {
-            jest.spyOn(spectator.component.valid, 'emit');
-            jest.spyOn(spectator.component.value, 'emit');
+            vi.spyOn(spectator.component.valid, 'emit');
+            vi.spyOn(spectator.component.value, 'emit');
 
             const mockFormValue = {
                 assign: mockProcessedRoles[0].id,

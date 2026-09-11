@@ -1,27 +1,26 @@
-<div class="min-h-0 flex-1 overflow-y-auto bg-white p-6 [scrollbar-gutter:stable]">
-    <div class="mx-auto flex max-w-3xl flex-col gap-4">
+<div class="min-h-0 flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]">
+    <div class="mx-auto flex max-w-4xl flex-col gap-4">
         <div class="mb-2">
-            <h2 class="m-0 text-xl font-semibold text-gray-900">
+            <h2 class="m-0 text-2xl font-semibold text-gray-900">
                 {{ 'apps.ai.config.title' | dm }}
             </h2>
-            <p class="mt-1 mb-0 text-sm text-gray-500">
-                {{ 'apps.ai.config.subtitle' | dm }}
+            <p class="mt-1 mb-0 text-gray-600">
+                {{ 'apps.ai.config.first.subtitle' | dm }}
             </p>
-            @if (siteName()) {
-                <p class="mt-1 mb-0 text-sm text-gray-500">
-                    {{ 'apps.ai.config.site' | dm: [siteName()] }}
-                </p>
-            }
+            <p class="mt-1 mb-0 text-gray-600">
+                {{ 'apps.ai.config.second.subtitle' | dm }}
+            </p>
         </div>
 
         @if (loading()) {
-            <div class="flex items-center justify-center py-12 text-sm text-gray-400">
-                {{ 'apps.ai.loading' | dm }}
+            <div class="flex items-center justify-center py-12">
+                <dot-spinner data-testid="loading-indicator" />
             </div>
         } @else if (loadFailed()) {
-            <div class="flex items-center justify-center py-12 text-sm text-red-500">
-                {{ 'apps.ai.error.load' | dm }}
-            </div>
+            <p-message
+                severity="error"
+                [text]="'apps.ai.error.load' | dm"
+                data-testid="error-message" />
         } @else {
             @for (meta of capabilityMeta; track meta.capability) {
                 <dot-ai-capability-card
@@ -37,10 +36,9 @@
     </div>
 </div>
 
-<div
-    class="flex shrink-0 items-center justify-end gap-4 border-t border-gray-200 bg-white px-6 py-3">
+<div class="flex shrink-0 items-center justify-end gap-4 border-t border-surface px-6 py-3">
     @if (dirty()) {
-        <span class="mr-auto text-sm text-gray-500">{{ 'apps.ai.unsaved.changes' | dm }}</span>
+        <small class="mr-auto text-gray-600">{{ 'apps.ai.unsaved.changes' | dm }}</small>
         <p-button
             [label]="'apps.ai.button.cancel' | dm"
             [text]="true"

@@ -32,7 +32,7 @@ cd core-web && pnpm nx affected -t test --exclude='tag:skip:test'
 | Defining component structure, inputs/outputs, file layout | `@docs/frontend/COMPONENT_ARCHITECTURE.md` |
 | Adding or changing feature state (stores, async) | `@docs/frontend/STATE_MANAGEMENT.md` |
 | Writing or updating styles, Tailwind, BEM | `@docs/frontend/STYLING_STANDARDS.md` |
-| Writing or fixing tests (Spectator, Jest, data-testid) | `@docs/frontend/TESTING_FRONTEND.md` |
+| Writing or fixing tests (Spectator, Vitest, data-testid) | `@docs/frontend/TESTING_FRONTEND.md` |
 | **Reviewing** someone else's tests (violation checklist) | `@docs/frontend/TESTING_REVIEW_RULES.md` |
 | Using TypeScript (strict, inference, `unknown`, `as const`, `#` private) | `@docs/frontend/TYPESCRIPT_STANDARDS.md` |
 | Working on the breadcrumb trail (GlobalStore) | `@docs/frontend/BREADCRUMBS.md` |
@@ -46,7 +46,7 @@ cd core-web && pnpm nx affected -t test --exclude='tag:skip:test'
 - **Images**: Use `NgOptimizedImage` for static/asset URLs; not for inline base64.
 - **State**: Prefer NgRx Signal Store; avoid manual signal soup in components. See `@docs/frontend/STATE_MANAGEMENT.md`.
 - **Styling**: Prefer Tailwind utility classes and PrimeNG components first; PrimeFlex is deprecated/removed. Avoid custom SCSS when a Tailwind class exists. Use BEM only when custom styles are truly needed. See `@docs/frontend/STYLING_STANDARDS.md`.
-- **Testing**: Spectator + Jest/Vitest; `data-testid` on elements tests query; `byTestId()`, `spectator.setInput()`, `spectator.detectChanges()`, `spectator.click()`, `mockProvider()`; never set component inputs directly. Use `@dotcms/utils-testing` createFake functions (e.g. `createFakeContentlet`, `createFakeLanguage`) instead of manual mocks. See `@docs/frontend/TESTING_FRONTEND.md`.
+- **Testing**: Spectator + Vitest/Vitest; `data-testid` on elements tests query; `byTestId()`, `spectator.setInput()`, `spectator.detectChanges()`, `spectator.click()`, `mockProvider()`; never set component inputs directly. Use `@dotcms/utils-testing` createFake functions (e.g. `createFakeContentlet`, `createFakeLanguage`) instead of manual mocks. See `@docs/frontend/TESTING_FRONTEND.md`.
 - **TypeScript**: Strict types, no `any` (use `unknown`), `as const` instead of enums, `#` for private. See `@docs/frontend/TYPESCRIPT_STANDARDS.md`.
 - **Services**: Single responsibility; `providedIn: 'root'`; use `inject()` instead of constructor injection.
 - **Accessibility**: Aim for WCAG AA; semantic HTML and ARIA where appropriate.

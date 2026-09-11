@@ -1,0 +1,65 @@
+<p-inplace
+    [disabled]="$disabled()"
+    class="min-w-0"
+    [pt]="{ display: 'p-0!' }"
+    (onActivate)="onActivate()">
+    <div pInplaceDisplay class="flex min-w-0 items-center gap-1">
+        <span class="truncate text-sm font-semibold text-surface-900" data-testid="variant-name">
+            {{ $name() }}
+        </span>
+
+        @if (!$disabled()) {
+            <p-button
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                severity="secondary"
+                [attr.aria-label]="'experiments.configure.variants.rename' | dm"
+                data-testid="variant-name-edit-btn">
+                <span class="material-symbols-rounded text-base! leading-none!" aria-hidden="true">
+                    edit
+                </span>
+            </p-button>
+        }
+    </div>
+
+    <div pInplaceContent class="flex min-w-0 items-center gap-1">
+        <input
+            pInputText
+            dotAutofocus
+            type="text"
+            pSize="small"
+            class="min-w-0 flex-1"
+            [formField]="formTree.name"
+            [attr.aria-label]="'experiments.configure.variants.rename' | dm"
+            (keydown.enter)="save()"
+            (keydown.escape)="cancel()"
+            data-testid="variant-name-input" />
+
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            [disabled]="$isSaveDisabled()"
+            (onClick)="save()"
+            [attr.aria-label]="'dot.common.save' | dm"
+            data-testid="variant-name-save-btn">
+            <span class="material-symbols-rounded text-lg! leading-none!" aria-hidden="true">
+                check
+            </span>
+        </p-button>
+
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            severity="secondary"
+            (onClick)="cancel()"
+            [attr.aria-label]="'dot.common.cancel' | dm"
+            data-testid="variant-name-cancel-btn">
+            <span class="material-symbols-rounded text-lg! leading-none!" aria-hidden="true">
+                close
+            </span>
+        </p-button>
+    </div>
+</p-inplace>

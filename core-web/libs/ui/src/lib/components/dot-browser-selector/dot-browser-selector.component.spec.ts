@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -16,25 +17,24 @@ import { DotBrowserSelectorStore, SYSTEM_HOST_ID } from './store/browser.store';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const createMockStore = () => ({
-    folders: jest.fn().mockReturnValue({ data: [], status: ComponentStatus.INIT }),
-    content: jest.fn().mockReturnValue({ data: [], status: ComponentStatus.INIT, error: null }),
-    foldersIsLoading: jest.fn().mockReturnValue(false),
-    contentIsLoading: jest.fn().mockReturnValue(false),
-    selectedContent: jest.fn().mockReturnValue(null),
-    loadContent: jest.fn(),
-    loadFolders: jest.fn(),
-    loadChildren: jest.fn(),
-    loadMore: jest.fn(),
-    setSelectedContent: jest.fn(),
-    uploadFile: jest.fn()
+    folders: vi.fn().mockReturnValue({ data: [], status: ComponentStatus.INIT }),
+    content: vi.fn().mockReturnValue({ data: [], status: ComponentStatus.INIT, error: null }),
+    foldersIsLoading: vi.fn().mockReturnValue(false),
+    contentIsLoading: vi.fn().mockReturnValue(false),
+    selectedContent: vi.fn().mockReturnValue(null),
+    loadContent: vi.fn(),
+    loadFolders: vi.fn(),
+    loadChildren: vi.fn(),
+    loadMore: vi.fn(),
+    setSelectedContent: vi.fn(),
+    uploadFile: vi.fn()
 });
 
 const mockNode = (id: string): TreeNodeItem => ({
     key: id,
     label: id,
     data: { id, hostname: id, path: '', type: 'site' },
-    expandedIcon: 'pi pi-globe',
-    collapsedIcon: 'pi pi-globe'
+    icon: 'pi pi-globe'
 });
 
 const mockNodeSelectEvent = (id: string): TreeNodeSelectItem => ({
@@ -52,9 +52,7 @@ describe('DotBrowserSelectorComponent', () => {
         providers: [
             mockProvider(DynamicDialogRef),
             mockProvider(DotContentletService, {
-                getContentletByInodeWithContent: jest
-                    .fn()
-                    .mockReturnValue(of(createFakeContentlet()))
+                getContentletByInodeWithContent: vi.fn().mockReturnValue(of(createFakeContentlet()))
             }),
             { provide: DynamicDialogConfig, useValue: { data: null } }
         ],

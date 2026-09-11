@@ -96,7 +96,6 @@ export interface ReleaseQAReport {
 /** Raw commit from the GitHub Compare API. */
 export interface CommitInfo {
   sha: string;
-  message: string;
 }
 
 /** CLI arguments parsed from process.argv. */

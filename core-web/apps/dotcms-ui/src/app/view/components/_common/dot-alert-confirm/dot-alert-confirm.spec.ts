@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { EMPTY } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -82,7 +83,7 @@ describe('DotAlertConfirmComponent', () => {
         });
 
         it('should call onClickConfirm for reject and accept', () => {
-            const spy = jest.spyOn(spectator.component, 'onClickConfirm');
+            const spy = vi.spyOn(spectator.component, 'onClickConfirm');
             dialogService.confirm({ header: '', message: '' });
             detectChanges();
 
@@ -94,8 +95,8 @@ describe('DotAlertConfirmComponent', () => {
         });
 
         it('should call model accept and clearConfirm on accept', () => {
-            const model = { header: '', message: '', accept: jest.fn(), reject: jest.fn() };
-            const clearSpy = jest.spyOn(dialogService, 'clearConfirm');
+            const model = { header: '', message: '', accept: vi.fn(), reject: vi.fn() };
+            const clearSpy = vi.spyOn(dialogService, 'clearConfirm');
             dialogService.confirm(model);
             detectChanges();
 
@@ -106,8 +107,8 @@ describe('DotAlertConfirmComponent', () => {
         });
 
         it('should call model reject and clearConfirm on reject', () => {
-            const model = { header: '', message: '', accept: jest.fn(), reject: jest.fn() };
-            const clearSpy = jest.spyOn(dialogService, 'clearConfirm');
+            const model = { header: '', message: '', accept: vi.fn(), reject: vi.fn() };
+            const clearSpy = vi.spyOn(dialogService, 'clearConfirm');
             dialogService.confirm(model);
             detectChanges();
 
@@ -169,8 +170,8 @@ describe('DotAlertConfirmComponent', () => {
         });
 
         it('should call alertAccept and alertReject on button clicks', () => {
-            const acceptSpy = jest.spyOn(dialogService, 'alertAccept');
-            const rejectSpy = jest.spyOn(dialogService, 'alertReject');
+            const acceptSpy = vi.spyOn(dialogService, 'alertAccept');
+            const rejectSpy = vi.spyOn(dialogService, 'alertReject');
             dialogService.alert({
                 header: '',
                 message: '',

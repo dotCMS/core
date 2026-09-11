@@ -24,7 +24,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { filter, map, take } from 'rxjs/operators';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageService,
     DotSiteService,
     DotWorkflowActionsFireService
@@ -153,10 +153,10 @@ export class DotFileFieldComponent
      */
     readonly #destroyRef = inject(DestroyRef);
     /**
-     * A readonly private field that injects the `DotAiService` service.
+     * A readonly private field that injects the `DotAiConfigService` service.
      * This service is used to provide AI-related functionalities within the component.
      */
-    readonly #dotAiService = inject(DotAiService);
+    readonly #dotAiService = inject(DotAiConfigService);
     /**
      * Fetches the text content of files whose edit action opens the source-code
      * editor (SVGs), mirroring the store's editableAsText hydration.

@@ -1,5 +1,6 @@
 import { signalStore, withState } from '@ngrx/signals';
 import { Observable, Subject } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -18,7 +19,7 @@ describe('withBreadcrumbs Feature', () => {
     const TestStore = signalStore(withState({}), withBreadcrumbs(emptyMenuItemsSignal));
 
     let store: InstanceType<typeof TestStore>;
-    let sessionStorageSetItemSpy: jest.SpyInstance;
+    let sessionStorageSetItemSpy: MockInstance;
 
     const mockBreadcrumbs: MenuItem[] = [
         { label: 'Products', url: '/products' },
@@ -30,7 +31,7 @@ describe('withBreadcrumbs Feature', () => {
         sessionStorage.clear();
 
         // Setup spies
-        sessionStorageSetItemSpy = jest.spyOn(Storage.prototype, 'setItem');
+        sessionStorageSetItemSpy = vi.spyOn(Storage.prototype, 'setItem');
 
         TestBed.configureTestingModule({
             providers: [TestStore]
@@ -40,7 +41,7 @@ describe('withBreadcrumbs Feature', () => {
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('Initial State', () => {

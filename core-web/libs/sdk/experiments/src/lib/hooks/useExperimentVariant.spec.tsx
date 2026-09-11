@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react-hooks';
 import React from 'react';
+import { vi } from 'vitest';
 
 import { DotCMSPageAsset, UVE_MODE, UVEState } from '@dotcms/types';
 import * as uve from '@dotcms/uve';
@@ -13,18 +14,21 @@ interface WrapperProps {
     children: React.ReactNode;
 }
 
-const createMockDotExperimentsContext = (variantResponse: unknown) => {
-    const mockGetVariantFromHref = jest.fn().mockImplementation(() => variantResponse);
+// The context is built INSIDE the factory. `vi.mock` is hoisted above every import,
+// and the hook under test pulls this module in while its own module is evaluating —
+// before any top-level statement of this spec has run. A factory calling a top-level
+// helper therefore hit its temporal dead zone and the file died with "Cannot access
+// 'createMockDotExperimentsContext' before initialization".
+vi.mock('../contexts/DotExperimentsContext', async () => {
+    const react = await vi.importActual<typeof import('react')>('react');
 
-    return React.createContext({
-        getVariantFromHref: mockGetVariantFromHref
-    });
-};
+    const mockGetVariantFromHref = vi.fn().mockImplementation(() => ({ name: 'variant-1' }));
 
-jest.mock('../contexts/DotExperimentsContext', () => ({
-    __esModule: true,
-    default: createMockDotExperimentsContext({ name: 'variant-1' })
-}));
+    return {
+        __esModule: true,
+        default: react.createContext({ getVariantFromHref: mockGetVariantFromHref })
+    };
+});
 
 const wrapper = ({ children }: WrapperProps) => (
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -41,7 +45,7 @@ describe('useExperimentVariant', () => {
                 viewAs: { variantId: '1' }
             } as DotCMSPageAsset;
 
-            jest.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.EDIT } as UVEState);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.EDIT } as UVEState);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -56,7 +60,7 @@ describe('useExperimentVariant', () => {
                 viewAs: { variantId: '1' }
             } as DotCMSPageAsset;
 
-            jest.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.PREVIEW } as UVEState);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue({ mode: UVE_MODE.PREVIEW } as UVEState);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -66,7 +70,7 @@ describe('useExperimentVariant', () => {
         });
 
         it(' if data is undefined (e.g. waiting on the UVE editor to resolve a draft page)', () => {
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(() => useExperimentVariant(undefined));
 
@@ -78,7 +82,7 @@ describe('useExperimentVariant', () => {
                 viewAs: { variantId: EXPERIMENT_DEFAULT_VARIANT_NAME }
             } as DotCMSPageAsset;
 
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(() => useExperimentVariant(mockData));
 
@@ -88,7 +92,7 @@ describe('useExperimentVariant', () => {
         });
 
         it(' if VariantId get from `PageApi` is same of VariantAssigned', () => {
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(
                 () =>
@@ -104,7 +108,7 @@ describe('useExperimentVariant', () => {
 
         describe('shouldWaitForVariant `true`', () => {
             it(' if VariantId get from `PageApi` is different of VariantAssigned', () => {
-                jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+                vi.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
                 const { result } = renderHook(
                     () =>

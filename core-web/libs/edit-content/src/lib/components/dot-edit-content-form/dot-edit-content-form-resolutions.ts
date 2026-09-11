@@ -10,6 +10,7 @@ import {
     getSingleSelectableFieldOptions,
     parseCalendarTimestamp
 } from '../../utils/functions.util';
+import { orderedKeyValueText } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
@@ -52,6 +53,28 @@ const defaultResolutionFn: FnResolutionValue<string> = (
     }
     return isManualTranslation ? null : field.defaultValue;
 };
+
+/**
+ * Resolves a Key/Value field, preferring the key order the response actually carried.
+ *
+ * A JavaScript object cannot hold that order: integer-like keys are enumerated first,
+ * so a key such as `123` is at the front of `contentlet[variable]` however the user
+ * arranged it. `getContentById` parks an order-preserving copy on the contentlet, and
+ * this is the one place that may read it — reached by declared field type, so no other
+ * field can be mistaken for this one.
+ *
+ * Falls back to the plain value when there is nothing to recover: a contentlet loaded
+ * by some other path, or a response that could not be re-parsed.
+ */
+const keyValueResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    queryParams,
+    isManualTranslation
+) =>
+    (contentlet &&
+        orderedKeyValueText(contentlet as unknown as Record<string, unknown>, field.variable)) ||
+    defaultResolutionFn(contentlet, field, queryParams, isManualTranslation);
 
 /**
  * A function that provides a default resolution value for a contentlet field.
@@ -274,7 +297,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.HIDDEN]: defaultResolutionFn,
     [FIELD_TYPES.HOST_FOLDER]: hostFolderResolutionFn,
     [FIELD_TYPES.JSON]: defaultResolutionFn,
-    [FIELD_TYPES.KEY_VALUE]: defaultResolutionFn,
+    [FIELD_TYPES.KEY_VALUE]: keyValueResolutionFn,
     [FIELD_TYPES.MULTI_SELECT]: defaultResolutionFn,
     [FIELD_TYPES.RADIO]: defaultResolutionFn,
     [FIELD_TYPES.SELECT]: selectResolutionFn,

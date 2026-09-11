@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { TestBed } from '@angular/core/testing';
 
 import { DotMarketingConfigService, INITIAL_STATE } from './dot-marketing-config.service';
@@ -22,7 +24,7 @@ describe('DotEditorMarketingService', () => {
         const key = 'SHOW_VIDEO_THUMBNAIL';
         const value = false;
 
-        jest.spyOn(service, 'setProperty');
+        vi.spyOn(service, 'setProperty');
 
         service.setProperty(key, value);
 

@@ -1,4 +1,4 @@
-/// <reference types="jest" />
+import { MockedClass, vi } from 'vitest';
 
 import {
     DotRequestOptions,
@@ -13,11 +13,11 @@ import { FetchHttpClient } from '../../../adapters/fetch-http-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortBy } from '../../shared/types';
 
-jest.mock('../../../adapters/fetch-http-client');
+vi.mock('../../../adapters/fetch-http-client');
 
 describe('RawQueryBuilder', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const requestOptions: DotRequestOptions = {
         cache: 'no-cache'
@@ -58,12 +58,14 @@ describe('RawQueryBuilder', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        MockedFetchHttpClient.mockImplementation(
-            () =>
-                ({
-                    request: mockRequest
-                }) as Partial<FetchHttpClient> as FetchHttpClient
-        );
+        // A function expression, not an arrow: Vitest invokes a mocked class's
+        // implementation with `new`, and arrows are not constructible. Jest's automock
+        // wrapped the factory, so the arrow worked there.
+        MockedFetchHttpClient.mockImplementation(function () {
+            return {
+                request: mockRequest
+            } as Partial<FetchHttpClient> as FetchHttpClient;
+        });
         mockRequest.mockResolvedValue(mockResponseData);
     });
 
@@ -174,7 +176,7 @@ describe('RawQueryBuilder', () => {
 
         it('should call onrejected with DotErrorContent and return fallback when undefined', async () => {
             mockRequest.mockRejectedValue(new Error('Boom'));
-            const onrejected = jest.fn((_err) => undefined);
+            const onrejected = vi.fn((_err) => undefined);
 
             const result = await createRawQueryBuilder('+contentType:Blog').then(
                 undefined,

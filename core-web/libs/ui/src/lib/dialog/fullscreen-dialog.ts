@@ -18,8 +18,7 @@ export const MAXIMIZED_DIALOG_CLASS = 'p-dialog-maximized';
  * rule can't beat inline without `!important`.
  *
  * @deprecated Prefer {@link MAXIMIZED_DIALOG_CLASS}: PrimeNG's theme already declares the same sizing
- * with `!important`, so the class needs no save/restore of the windowed values. Still used by the
- * image editor.
+ * with `!important`, so the class needs no save/restore of the windowed values.
  */
 export const FULLSCREEN_DIALOG_STYLE: Record<string, string> = {
     width: '100vw',

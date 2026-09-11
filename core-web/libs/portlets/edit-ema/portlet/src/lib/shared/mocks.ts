@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
@@ -1041,6 +1042,16 @@ export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
 
 export const dotPropertiesServiceMock = {
     getFeatureFlag: () => of(false),
+    getFreshFeatureFlag: vi.fn(() => of(false)),
+    /**
+     * Uncached raw read of one key. A `vi.fn` rather than a plain arrow so a spec can drive the
+     * #37005 entry-point switch per test — `mockReturnValue(of('true'))` — without replacing the
+     * whole provider. Defaults to `'false'`, matching that switch's shipped default.
+     *
+     * The switch reads the raw key rather than a normalised flag so that a response missing it
+     * fails closed; see `readExperimentsPortletSwitch`.
+     */
+    getKey: vi.fn(() => of('false')),
     getFeatureFlags: () =>
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,

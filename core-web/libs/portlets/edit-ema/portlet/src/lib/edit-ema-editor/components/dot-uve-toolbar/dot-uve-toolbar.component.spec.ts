@@ -1,13 +1,19 @@
-import { describe, expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent, MockModule } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
+import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, computed, EventEmitter, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -20,10 +26,19 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotPersonalizeService,
+    DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    DotLanguage,
+    CONFIGURE_SECTION_PARAM,
+    CONFIGURE_SECTION_VARIANTS,
+    DEFAULT_VARIANT_ID,
+    EXPERIMENT_RETURN_PARAM,
+    EXPERIMENT_RETURN_PORTLET
+} from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
@@ -60,6 +75,7 @@ import {
 } from '../../../shared/mocks';
 import { DotPageAssetParams } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { Orientation, PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
@@ -86,9 +102,9 @@ class StubDotLanguageSelectorComponent {
 }
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
-jest.mock('../../../utils', () => ({
-    ...jest.requireActual('../../../utils'),
-    createFullURL: jest.fn((params, siteId) => {
+vi.mock('../../../utils', async () => ({
+    ...(await vi.importActual('../../../utils')),
+    createFullURL: vi.fn((params, siteId) => {
         const { url = '/', clientHost = 'http://localhost:3000' } = params;
         return `${clientHost}${url}?siteId=${siteId}&version=true`;
     })
@@ -97,6 +113,23 @@ jest.mock('../../../utils', () => ({
 const API_URL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
 const params: DotPageAssetParams = HEADLESS_BASE_QUERY_PARAMS;
+
+/**
+ * The UVE Experiments entry-point switch, as the toolbar reads it (#37005).
+ *
+ * Only the return leg's *fallback* consults it — a variant carrying an origin marker returns to
+ * where it came from at either value (FR-027) — so most tests here leave it alone.
+ */
+const $experimentsPortletSwitchSignal = signal(false);
+
+/**
+ * The URL's query params, as `ActivatedRoute` reports them.
+ *
+ * The origin marker is read from here rather than from `store.pageParams()`: `DotPageAssetParams`
+ * is a typed page-asset shape and the marker is a routing concern that only survives that type
+ * through `#getPageParams`'s `as` cast. `ActivatedRoute` is where query params actually live.
+ */
+let routeQueryParams: Record<string, string> = {};
 const url = sanitizeURL(params?.url);
 
 const pageAPIQueryParams = getFullPageURL({ url, params });
@@ -189,9 +222,9 @@ const MOCK_PAGE_LANGUAGES = [
 
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
-    viewSetDevice: jest.fn(),
-    viewSetSEO: jest.fn(),
-    viewSetOrientation: jest.fn(),
+    viewSetDevice: vi.fn(),
+    viewSetSEO: vi.fn(),
+    viewSetOrientation: vi.fn(),
     pageParams: pageParamsSignal,
     pageAsset: pageSnapshotSignal,
     // View state signal
@@ -216,7 +249,7 @@ const baseUVEState = {
     $urlContentMap: urlContentMapSignal, // Mutable for tests
     $lockOptions: toggleLockOptionsSignal, // Mutable for tests
     $lockFeatureEnabled: $lockFeatureEnabledSignal,
-    pageReload: jest.fn(),
+    pageReload: vi.fn(),
     editorPaletteOpen: signal(true),
     editorCanEditContent: signal(true),
     pageLanguages: signal(MOCK_PAGE_LANGUAGES),
@@ -226,20 +259,20 @@ const baseUVEState = {
     viewDeviceOrientation: orientationSignal,
     workflowIsLoading: signal(false),
     workflowLockIsLoading: signal(false),
-    pageLoad: jest.fn(),
+    pageLoad: vi.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
     viewParams: viewParamsSignal,
     languages: signal(MOCK_PAGE_LANGUAGES),
-    patchViewParams: jest.fn(),
+    patchViewParams: vi.fn(),
     orientation: orientationSignal, // Use the shared signal
-    viewClearDeviceAndSocialMedia: jest.fn(),
+    viewClearDeviceAndSocialMedia: vi.fn(),
     device: deviceSignal, // Use the shared signal
     lockLoading: signal(false),
-    workflowToggleLock: jest.fn(),
+    workflowToggleLock: vi.fn(),
     socialMedia: socialMediaSignal, // Use the shared signal
-    trackUVECalendarChange: jest.fn(),
+    trackUVECalendarChange: vi.fn(),
     pageType: signal(PageType.TRADITIONAL),
     isTraditionalPage: signal(true),
     experiment: signal(null),
@@ -260,7 +293,7 @@ const baseUVEState = {
         ogTags: null,
         styleSchemas: []
     }),
-    setPaletteOpen: jest.fn()
+    setPaletteOpen: vi.fn()
 };
 
 /** Creates lock options for tests. Defaults to unlocked state; pass overrides for locked/disabled cases. */
@@ -287,7 +320,7 @@ function createLockOptions(
 
 /** Extracts the accept callback from the confirmation dialog (for personalization tests). */
 function getConfirmationAcceptCallback(confirmationService: ConfirmationService): () => void {
-    return (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+    return (confirmationService.confirm as Mock).mock.calls[0][0].accept;
 }
 
 /** Shared info display props for variant/device/socialMedia tests. */
@@ -331,6 +364,11 @@ const personaEventMock = {
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
     let store: InstanceType<typeof UVEStore>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => store as unknown as WithPageApiMethods;
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
@@ -374,14 +412,14 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             mockProvider(DotContentletLockerService, {
-                unlock: jest.fn().mockReturnValue(of({}))
+                unlock: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(ConfirmationService, {
-                confirm: jest.fn()
+                confirm: vi.fn()
             }),
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: () => of([])
@@ -413,13 +451,35 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: MessageService,
                 useValue: {
-                    add: jest.fn()
+                    add: vi.fn()
+                }
+            },
+            {
+                provide: Router,
+                // `useFactory`, not `useValue`: a `useValue` object literal is evaluated once at
+                // module scope, so its `vi.fn()` would accumulate calls across every test.
+                useFactory: () => ({ navigate: vi.fn() })
+            },
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    get snapshot() {
+                        return { queryParams: routeQueryParams };
+                    }
+                }
+            },
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    // The switch reads the raw key rather than a normalised flag, so that a
+                    // response missing it fails closed — see `readExperimentsPortletSwitch`.
+                    getKey: () => of(String($experimentsPortletSwitchSignal()))
                 }
             },
             {
                 provide: DotDevicesService,
                 useValue: {
-                    get: jest.fn().mockReturnValue(of(mockDotDevices))
+                    get: vi.fn().mockReturnValue(of(mockDotDevices))
                 }
             }
         ],
@@ -427,8 +487,8 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: {
-                    getPersonalize: jest.fn(),
-                    personalized: jest.fn().mockReturnValue(of({}))
+                    getPersonalize: vi.fn(),
+                    personalized: vi.fn().mockReturnValue(of({}))
                 }
             }
         ]
@@ -448,7 +508,7 @@ describe('DotUveToolbarComponent', () => {
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should have a dot-uve-workflow-actions component', () => {
@@ -464,7 +524,7 @@ describe('DotUveToolbarComponent', () => {
                     title: 'My super awesome blog post',
                     contentType: 'Blog'
                 };
-                const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
+                const spy = vi.spyOn(spectator.component.editUrlContentMap, 'emit');
 
                 // The edit URL content map button is only rendered in EDIT mode and when the map exists
                 baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
@@ -559,7 +619,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should personalize without confirmation when page is already personalized', () => {
-                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
                     personalized: true
@@ -589,8 +649,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should handle error when personalization confirmation fails', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -612,8 +672,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should show backend message from error-message header when personalization API returns HttpErrorResponse', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -643,8 +703,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should show backend message from body error when personalization API returns HttpErrorResponse with error body', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -674,8 +734,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should show full body error when response has no colon prefix', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -704,8 +764,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should use i18n fallback when error-message header is only whitespace', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -733,8 +793,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should use i18n fallback when body error is only whitespace', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -786,7 +846,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call pageLoad with language_id when selected language has translation', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'pageLoad');
+                const spyLoadPageAsset = vi.spyOn(baseUVEState, 'pageLoad');
                 const languageWithTranslation = MOCK_PAGE_LANGUAGES[0]; // English, id 1, translated: true
 
                 spectator.triggerEventHandler(
@@ -799,7 +859,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call confirmationService.confirm when selected language has no translation', () => {
-                const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
+                const spyConfirmationService = vi.spyOn(confirmationService, 'confirm');
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
                 spectator.triggerEventHandler(
@@ -813,7 +873,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should emit translatePage with page and newLanguage when user confirms new translation', () => {
-                const translatePageSpy = jest.spyOn(spectator.component.translatePage, 'emit');
+                const translatePageSpy = vi.spyOn(spectator.component.translatePage, 'emit');
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
                 spectator.triggerEventHandler(
@@ -823,7 +883,7 @@ describe('DotUveToolbarComponent', () => {
                 );
                 spectator.detectChanges();
 
-                const acceptCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                const acceptCallback = (confirmationService.confirm as Mock).mock.calls[0][0]
                     .accept;
                 acceptCallback();
 
@@ -838,7 +898,7 @@ describe('DotUveToolbarComponent', () => {
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
                 const currentLanguage = baseUVEState.pageLanguage();
                 const languageSelector = spectator.query(StubDotLanguageSelectorComponent);
-                const valueSetSpy = jest.spyOn(languageSelector.value, 'set');
+                const valueSetSpy = vi.spyOn(languageSelector!.value, 'set');
 
                 spectator.triggerEventHandler(
                     StubDotLanguageSelectorComponent,
@@ -847,7 +907,7 @@ describe('DotUveToolbarComponent', () => {
                 );
                 spectator.detectChanges();
 
-                const rejectCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                const rejectCallback = (confirmationService.confirm as Mock).mock.calls[0][0]
                     .reject;
                 rejectCallback();
 
@@ -906,7 +966,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock when unlocked button is clicked', () => {
-                const spy = jest.spyOn(store, 'workflowToggleLock');
+                const spy = vi.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$lockOptions.set(createLockOptions({ inode: 'test-inode-unlock' }));
                 spectator.detectChanges();
@@ -918,7 +978,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock when locked button is clicked', () => {
-                const spy = jest.spyOn(store, 'workflowToggleLock');
+                const spy = vi.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$lockOptions.set(
                     createLockOptions({
@@ -955,7 +1015,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock with correct params for page locked by another user', () => {
-                const spy = jest.spyOn(store, 'workflowToggleLock');
+                const spy = vi.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$lockOptions.set(
                     createLockOptions({
@@ -1130,7 +1190,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
+                const spyLoadPageAsset = vi.spyOn(liveBaseUveState, 'pageReload');
 
                 const calendar = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-calendar"]')
@@ -1152,7 +1212,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyTrackUVECalendarChange = jest.spyOn(
+                const spyTrackUVECalendarChange = vi.spyOn(
                     liveBaseUveState,
                     'trackUVECalendarChange'
                 );
@@ -1177,7 +1237,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
+                const spyLoadPageAsset = vi.spyOn(liveBaseUveState, 'pageReload');
                 const todayButton = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
 
                 expect(todayButton).toBeTruthy();
@@ -1194,7 +1254,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyTrackUVECalendarChange = jest.spyOn(
+                const spyTrackUVECalendarChange = vi.spyOn(
                     liveBaseUveState,
                     'trackUVECalendarChange'
                 );
@@ -1537,7 +1597,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.toggleLock with correct parameters', () => {
-                        const spy = jest.spyOn(store, 'workflowToggleLock');
+                        const spy = vi.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1553,7 +1613,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should handle locked state correctly', () => {
-                        const spy = jest.spyOn(store, 'workflowToggleLock');
+                        const spy = vi.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1569,7 +1629,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should handle page locked by another user', () => {
-                        const spy = jest.spyOn(store, 'workflowToggleLock');
+                        const spy = vi.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1624,7 +1684,7 @@ describe('DotUveToolbarComponent', () => {
                 });
 
                 it('should call handleToggleLock when toggleLockClick emits', () => {
-                    const spy = jest.spyOn(spectator.component, 'handleToggleLock');
+                    const spy = vi.spyOn(spectator.component, 'handleToggleLock');
 
                     spectator.triggerEventHandler(DotToggleLockButtonComponent, 'toggleLockClick', {
                         inode: 'test-inode',
@@ -1650,7 +1710,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.viewClearDeviceAndSocialMedia when device action is triggered', () => {
-                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+                        const spy = vi.spyOn(store, 'viewClearDeviceAndSocialMedia');
 
                         spectator.triggerEventHandler(
                             DotEmaInfoDisplayComponent,
@@ -1662,7 +1722,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.viewClearDeviceAndSocialMedia when socialMedia action is triggered', () => {
-                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+                        const spy = vi.spyOn(store, 'viewClearDeviceAndSocialMedia');
 
                         spectator.triggerEventHandler(
                             DotEmaInfoDisplayComponent,
@@ -1674,7 +1734,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should not call viewClearDeviceAndSocialMedia for variant action', () => {
-                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+                        const spy = vi.spyOn(store, 'viewClearDeviceAndSocialMedia');
                         spy.mockClear(); // Clear any calls from previous tests
 
                         spectator.triggerEventHandler(
@@ -1684,6 +1744,242 @@ describe('DotUveToolbarComponent', () => {
                         );
 
                         expect(spy).not.toHaveBeenCalled();
+                    });
+
+                    /**
+                     * The inbound leg of the variant round-trip (#37005, US1/US2).
+                     *
+                     * Contract:
+                     * `specs/37005-experiments-uve-integration/contracts/navigation-destinations.md` §3.
+                     *
+                     * The destination is resolved by ORIGIN, not by the switch. A switch-only
+                     * branch makes FR-018 and FR-005/FR-027 mutually exclusive on a supported
+                     * path — switch off, portlet reached from the main navigation (FR-026),
+                     * variant opened (FR-027), return — which would land the editor on a legacy
+                     * screen they never came from. The switch is the fallback for a deep-linked
+                     * variant that carries no origin.
+                     */
+                    describe('returning from a variant', () => {
+                        const EXPERIMENT_ID = 'exp-1';
+                        const PAGE_ID = 'page-1';
+                        const CLEARED = {
+                            mode: null,
+                            variantName: null,
+                            experimentId: null
+                        };
+
+                        let navigate: MockInstance;
+
+                        const leaveVariant = () =>
+                            spectator.triggerEventHandler(
+                                DotEmaInfoDisplayComponent,
+                                'actionClicked',
+                                'variant'
+                            );
+
+                        beforeEach(() => {
+                            routeQueryParams = {};
+                            $experimentsPortletSwitchSignal.set(false);
+                            baseUVEState.pageExperiment.set({
+                                id: EXPERIMENT_ID,
+                                pageId: PAGE_ID
+                            } as DotExperiment);
+                            navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+                        });
+
+                        // #37005. Previewing the CONTROL from the portlet's Configure screen
+                        // opens UVE on the default variant, and the store's own
+                        // `$infoDisplayProps` returns null for it — so the chip, which is the only
+                        // thing that reads the origin marker and offers the way back, never
+                        // rendered. The editor arrived from a screen it cannot return to.
+                        describe('previewing the control from the portlet', () => {
+                            beforeEach(() => {
+                                infoDisplayPropsSignal.set(undefined);
+                                baseUVEState.pageExperiment.set({
+                                    id: EXPERIMENT_ID,
+                                    pageId: PAGE_ID,
+                                    trafficProportion: {
+                                        variants: [{ id: DEFAULT_VARIANT_ID, name: 'Original' }]
+                                    }
+                                } as DotExperiment);
+                            });
+
+                            it('should offer the chip, naming the control', () => {
+                                routeQueryParams = {
+                                    experimentId: EXPERIMENT_ID,
+                                    [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                                };
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toEqual(
+                                    expect.objectContaining({
+                                        id: 'variant',
+                                        info: expect.objectContaining({ args: ['Original'] })
+                                    })
+                                );
+                            });
+
+                            // The legacy in-UVE screens send the same `experimentId` but never the
+                            // marker, and #37005 must leave the switch-off path exactly as it was.
+                            it('should not offer the chip without the origin marker', () => {
+                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toBeFalsy();
+                            });
+
+                            it('should return to Configure when the chip is used', () => {
+                                routeQueryParams = {
+                                    experimentId: EXPERIMENT_ID,
+                                    [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                                };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(navigate).toHaveBeenCalledWith(
+                                    ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                    expect.anything()
+                                );
+                            });
+                        });
+
+                        // T037 / FR-005, FR-006.
+                        it('should land on the portlet when the round-trip began there', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                {
+                                    queryParams: {
+                                        ...CLEARED,
+                                        [EXPERIMENT_RETURN_PARAM]: null,
+                                        [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
+                                    }
+                                }
+                            );
+                        });
+
+                        // The Variants card is where the round-trip started, so returning to the
+                        // top of a four-card form loses the reader's place.
+                        it('should ask Configure to land on the Variants card', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                expect.anything(),
+                                expect.objectContaining({
+                                    queryParams: expect.objectContaining({
+                                        [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
+                                    })
+                                })
+                            );
+                        });
+
+                        // T037. The portlet's URL must not inherit UVE's params — `url`,
+                        // `language_id` and the persona key mean nothing to the list and its
+                        // `parseViewState` would leave them in the address indefinitely.
+                        it('should not merge UVE params into the portlet URL', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            const [, options] = navigate.mock.calls[0];
+                            expect(options.queryParamsHandling).toBeUndefined();
+                        });
+
+                        // T038 / FR-027. The case a switch-only branch gets wrong.
+                        it('should land on the portlet even with the switch off', () => {
+                            $experimentsPortletSwitchSignal.set(false);
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                expect.anything()
+                            );
+                        });
+
+                        // T039 / FR-005, SC-005. The target carries the experiment's id and no
+                        // page segment, so a page hosting two experiments returns to the right
+                        // one — US1 scenario 4.
+                        it('should key the portlet destination on the experiment, not the page', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            const [commands] = navigate.mock.calls[0];
+                            expect(commands).toContain(EXPERIMENT_ID);
+                            expect(commands).not.toContain(PAGE_ID);
+                        });
+
+                        // T040 / FR-018. No origin marker and the switch off — a pasted or
+                        // bookmarked variant URL on a default build. This is the existing code
+                        // path, byte-identical.
+                        it('should fall back to the legacy screen with no origin and the switch off', () => {
+                            $experimentsPortletSwitchSignal.set(false);
+                            routeQueryParams = {};
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                [
+                                    '/edit-page/experiments/',
+                                    PAGE_ID,
+                                    EXPERIMENT_ID,
+                                    'configuration'
+                                ],
+                                {
+                                    queryParams: CLEARED,
+                                    queryParamsHandling: 'merge'
+                                }
+                            );
+                        });
+
+                        // T040. No origin marker, switch on — the opted-in operator's deep link
+                        // lands somewhere coherent rather than on the screen they are migrating
+                        // away from.
+                        it('should fall back to the portlet with no origin and the switch on', () => {
+                            $experimentsPortletSwitchSignal.set(true);
+                            routeQueryParams = {};
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                expect.anything()
+                            );
+                        });
+
+                        it('should do nothing when there is no experiment to return to', () => {
+                            baseUVEState.pageExperiment.set(null);
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).not.toHaveBeenCalled();
+                        });
                     });
                 });
             });
@@ -1709,7 +2005,7 @@ describe('DotUveToolbarComponent', () => {
                 });
 
                 it('should call handleInfoDisplayAction when actionClicked emits', () => {
-                    const spy = jest.spyOn(spectator.component, 'handleInfoDisplayAction');
+                    const spy = vi.spyOn(spectator.component, 'handleInfoDisplayAction');
 
                     spectator.triggerEventHandler(
                         DotEmaInfoDisplayComponent,

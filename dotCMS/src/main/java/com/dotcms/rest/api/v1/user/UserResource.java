@@ -411,13 +411,25 @@ public class UserResource implements Serializable {
 	 * @param permission       The permission type that Users may have on the previous asset.
 	 * @param roleKeys         Optional Role keys -- repeatable and/or comma-separated -- that restrict the results to
 	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}.
+	 * @param includeRoles     Opt-in flag. When {@code true}, every returned User carries a {@code roles} list with
+	 *                         its <b>directly assigned</b> Roles -- inherited Roles and the User's personal Role are
+	 *                         excluded -- as {@code {id, name, roleKey}} entries. Defaults to {@code false}, in which
+	 *                         case the response is identical to the one returned before this flag existed. Reading
+	 *                         role membership requires the same privilege as {@code GET /v1/roles/users/{id}}: CMS
+	 *                         Administrator, or access to both the Roles and the Users portlets; otherwise 403.
 	 *
 	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
 	 */
 	@Operation(
 		operationId = "filterUsers",
 		summary = "Filter users",
-		description = "Returns a list of dotCMS users based on specified search criteria with pagination support"
+		description = "Returns a list of dotCMS users based on specified search criteria with pagination support. "
+				+ "Each item is the user's data map. When `includeRoles=true` is passed, each item additionally "
+				+ "carries a `roles` array listing the user's directly assigned roles as `{id, name, roleKey}` "
+				+ "objects (`roleKey` may be null for roles created without a key); roles held through the role "
+				+ "hierarchy and the user's personal role are not included. Requesting roles requires being a CMS "
+				+ "Administrator or having access to both the Roles and Users portlets (403 otherwise). Without the "
+				+ "flag the payload is unchanged."
 	)
 	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
@@ -431,7 +443,7 @@ public class UserResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403",
-					description = "Forbidden - insufficient permissions",
+					description = "Forbidden - insufficient permissions, or includeRoles=true requested without CMS Administrator / Roles+Users portlet access",
 					content = @Content(mediaType = "application/json"))
 	})
 	@GET
@@ -449,7 +461,9 @@ public class UserResource implements Serializable {
 						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
 						   @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
 						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission,
-						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys) {
+						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys,
+						   @Parameter(description = "When true, each user carries a `roles` array of its directly assigned roles as {id, name, roleKey}; inherited roles and the user's personal role are excluded. Requires CMS Administrator or Roles+Users portlet access (403 otherwise). Defaults to false (payload unchanged)") @DefaultValue("false") @QueryParam(UserPaginator.INCLUDE_ROLES_PARAM) final boolean includeRoles)
+			throws DotDataException {
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
@@ -468,10 +482,38 @@ public class UserResource implements Serializable {
 		if (UtilMethods.isSet(roles)) {
 			extraParams.put(UserPaginator.ROLES_PARAM, roles);
 		}
+		final User user = initData.getUser();
+		// Only set when requested: extra params are echoed into the Link header, and the default response must stay
+		// identical to the pre-flag one
+		if (includeRoles) {
+			if (!this.isRoleAdministrator(user)) {
+				// Same privilege as GET /v1/roles/users/{id}: role membership is not visible to every back-end user
+				final String message = USER_MSG + user.getUserId() + " does not have permissions to read user roles";
+				Logger.error(this, message);
+				throw new ForbiddenException(message);
+			}
+			extraParams.put(UserPaginator.INCLUDE_ROLES_PARAM, true);
+		}
 
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
-		final User user = initData.getUser();
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
+	}
+
+	/**
+	 * Tells whether the given User may administer Roles and Users: a CMS Administrator, or a User with access to
+	 * both the Roles and the Users portlets. This is the same gate applied by the other user-administration
+	 * endpoints in this resource and by {@code GET /v1/roles/users/{userIdOrEmail}}.
+	 *
+	 * @param user The calling {@link User}.
+	 *
+	 * @return {@code true} if the User is a Role administrator.
+	 *
+	 * @throws DotDataException An error occurred when resolving the User's portlet access.
+	 */
+	private boolean isRoleAdministrator(final User user) throws DotDataException {
+		return user.isAdmin() ||
+				(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
 	}
 
 	/**

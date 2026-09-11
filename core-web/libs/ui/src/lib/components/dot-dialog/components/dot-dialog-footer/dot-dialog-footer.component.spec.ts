@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 
 import { DotDialogFooterComponent } from './dot-dialog-footer.component';
 

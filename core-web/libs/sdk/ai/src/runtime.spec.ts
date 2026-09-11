@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { createRuntime } from './runtime';
 import { HttpError, PolicyError } from './sandbox/errors';
 
@@ -18,7 +20,7 @@ function jsonResponse(body: unknown, init?: { ok?: boolean; status?: number }): 
 }
 
 describe('createRuntime.request (direct, no worker)', () => {
-    const fetchMock = jest.fn();
+    const fetchMock = vi.fn();
 
     beforeEach(() => {
         fetchMock.mockReset();
@@ -115,7 +117,7 @@ describe('createRuntime.request (direct, no worker)', () => {
 });
 
 describe('createRuntime.run — context-load timeout', () => {
-    const fetchMock = jest.fn();
+    const fetchMock = vi.fn();
 
     beforeEach(() => {
         fetchMock.mockReset();
@@ -150,7 +152,7 @@ describe('createRuntime.run — context-load timeout', () => {
 });
 
 describe('createRuntime context freshness', () => {
-    const fetchMock = jest.fn();
+    const fetchMock = vi.fn();
 
     beforeEach(() => {
         fetchMock.mockReset();

@@ -58,8 +58,47 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
-        direction: reader.get('direction')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
+        direction: reader.get('direction')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC',
+        // `pageId`, not `page`: `page` is the pagination cursor a few lines up. The name matches
+        // the one the Configure screen already prefills from (#37003 AC-3), so one datum has one
+        // name across the portlet. An empty
+        // value is no filter rather than a page named "" — same rule as `filter` above.
+        selectedPageId: reader.get('pageId') || null,
+        selectedPageUrl: normalizePagePath(reader.get('url')),
+        /**
+         * The language the editor was standing in, when it sent us here.
+         *
+         * Not a filter: the list narrows on `pageId` alone, and an experiment belongs to a page
+         * rather than to one of its language versions. It is carried so a return to the editor
+         * can return to the version the editor came from — a page identifier cannot say which one
+         * that was, and assuming the default sent them somewhere they had not been.
+         *
+         * `null` when absent or unusable, which is what a directly typed list URL looks like.
+         */
+        languageId: parsePositiveInteger(reader.get('language_id'), null)
     };
+}
+
+/**
+ * A page path as the Page column resolves it, or `null` when there is nothing to narrow by.
+ *
+ * Both sides of the comparison come from different places — one from an address someone pasted,
+ * the other from `htmlpageasset` — so the two ways the same path can be spelled are settled here:
+ * a missing leading slash, and a trailing one. Case is left alone; dotCMS paths are not
+ * case-insensitive, and lowercasing here would claim a match the backend would not make.
+ */
+export function normalizePagePath(rawPath: string | null | undefined): string | null {
+    const path = (rawPath ?? '').trim();
+
+    if (!path) {
+        return null;
+    }
+
+    const withLeadingSlash = path.startsWith('/') ? path : `/${path}`;
+
+    return withLeadingSlash.length > 1 && withLeadingSlash.endsWith('/')
+        ? withLeadingSlash.slice(0, -1)
+        : withLeadingSlash;
 }
 
 /**
@@ -91,7 +130,10 @@ export function parseGoals(rawGoals: string[]): GOAL_TYPES[] {
         .filter((goal) => allGoals.includes(goal));
 }
 
-export function parsePositiveInteger(rawValue: string | null, fallback: number): number {
+export function parsePositiveInteger<T extends number | null>(
+    rawValue: string | null,
+    fallback: T
+): number | T {
     const parsed = Number.parseInt(rawValue ?? '', 10);
 
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -165,7 +207,12 @@ export function toQueryParams(
         goal:
             view.selectedGoals.length === DEFAULT_EXPERIMENTS_LIST_GOALS.length
                 ? null
-                : view.selectedGoals
+                : view.selectedGoals,
+        pageId: view.selectedPageId || null,
+        url: view.selectedPageUrl || null,
+        // Written back so it survives filtering, sorting and paging: `writeUrl` merges, and the
+        // back-link reads it from the address rather than from a value held only on entry.
+        language_id: view.languageId ? String(view.languageId) : null
     };
 }
 

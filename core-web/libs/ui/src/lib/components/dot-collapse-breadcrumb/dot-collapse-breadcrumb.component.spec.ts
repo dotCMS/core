@@ -1,4 +1,5 @@
-import { byTestId, createRoutingFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createRoutingFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -76,7 +77,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
         ]);
         spectator.detectChanges();
 
-        const itemClickSpy = jest.spyOn(spectator.component.onItemClick, 'emit');
+        const itemClickSpy = vi.spyOn(spectator.component.onItemClick, 'emit');
         const firstLink = spectator.query(BREADCRUMB_LINK_SELECTOR);
         expect(firstLink).toBeTruthy();
         spectator.click(firstLink as HTMLElement);
@@ -96,7 +97,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
         ]);
         spectator.detectChanges();
 
-        const itemClickSpy = jest.spyOn(spectator.component.onItemClick, 'emit');
+        const itemClickSpy = vi.spyOn(spectator.component.onItemClick, 'emit');
         const firstLink = spectator.query(BREADCRUMB_LINK_SELECTOR);
         expect(firstLink).toBeTruthy();
         spectator.click(firstLink as HTMLElement);

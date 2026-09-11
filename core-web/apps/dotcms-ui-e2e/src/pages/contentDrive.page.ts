@@ -11,11 +11,15 @@ export class ContentDrivePage {
     readonly currentSiteHostname: Locator;
     readonly listTitles: Locator;
     readonly treeNodeLabels: Locator;
+    readonly searchField: Locator;
 
     constructor(private page: Page) {
         this.toolbar = page.getByTestId('toolbar');
         this.treeSelector = page.getByTestId('tree-selector');
         this.sidebar = page.getByTestId('sidebar');
+        // The text field itself, not its `dot-content-drive-search-input` host: the shortcut under
+        // test focuses the input, and only the input can be asserted focused.
+        this.searchField = page.getByTestId('search-input-field');
         // The site is named by the tree's own root row rather than a header above it, so the
         // hostname is that row's label, and that row is the first one.
         this.currentSiteHostname = this.sidebar.getByTestId('tree-node-label').first();
@@ -76,6 +80,30 @@ export class ContentDrivePage {
                 timeout: 10000
             })
             .toBeLessThan(10);
+    }
+
+    /**
+     * Sorts the listing by its first sortable column and waits for the results it re-requests.
+     *
+     * Which column is immaterial — what matters is that a sort happened, because the table clears
+     * its own keyboard anchor as part of one, and that is the state `expectSingleTabStop()` checks
+     * afterwards. Picked by position rather than by header text so the assertion does not depend on
+     * a translated label.
+     *
+     * The listing is lazy, so this is a round trip rather than a client-side reorder.
+     */
+    async sortByFirstColumn() {
+        const search = this.page
+            .waitForResponse(
+                (r) => r.url().includes('/api/v1/drive/search') && r.status() === 200,
+                {
+                    timeout: 20000
+                }
+            )
+            .catch(() => null);
+
+        await this.page.getByTestId('header-column-sortable').first().click();
+        await search;
     }
 
     async expectListContainsTitle(title: string) {

@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -138,7 +139,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should update contentlet disabledWYSIWYG property when switching editors', () => {
             // Arrange: Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor
@@ -152,7 +153,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should call onSelectLanguageVariable when language variable is selected', () => {
             // Spy on component method
-            const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
+            const spy = vi.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Get language variable selector component
             const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
@@ -167,7 +168,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should switch to Monaco editor when user selects Code Editor option', () => {
             // Arrange: Spy on the method
-            const spy = jest.spyOn(spectator.component, 'onEditorChange');
+            const spy = vi.spyOn(spectator.component, 'onEditorChange');
 
             // Act: Simulate user selecting Monaco editor from dropdown
             spectator.component.$selectedEditorDropdown.set(AvailableEditorTextArea.PlainText); // Initial state
@@ -182,7 +183,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should handle inserting language variable when user selects it in plaintext mode', () => {
             // Mock the insertLanguageVariableInTextarea private method
-            const insertLanguageVariableInTextareaMock = jest.fn();
+            const insertLanguageVariableInTextareaMock = vi.fn();
             spectator.component['insertLanguageVariableInTextarea'] =
                 insertLanguageVariableInTextareaMock;
 
@@ -203,7 +204,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should insert language variable into Monaco editor when in Monaco mode', () => {
             // Mock the insertLanguageVariableInMonaco private method
-            const insertLanguageVariableInMonacoMock = jest.fn();
+            const insertLanguageVariableInMonacoMock = vi.fn();
             spectator.component['insertLanguageVariableInMonaco'] =
                 insertLanguageVariableInMonacoMock;
 
@@ -243,7 +244,7 @@ describe('DotEditContentTextAreaComponent', () => {
         );
         spectator.detectChanges();
 
-        const disabledWYSIWYGChangeSpy = jest.fn();
+        const disabledWYSIWYGChangeSpy = vi.fn();
         spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch to Monaco editor
@@ -282,7 +283,7 @@ describe('DotEditContentTextAreaComponent', () => {
         );
         spectator.detectChanges();
 
-        const disabledWYSIWYGChangeSpy = jest.fn();
+        const disabledWYSIWYGChangeSpy = vi.fn();
         spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch back to PlainText editor
@@ -316,7 +317,7 @@ describe('DotEditContentTextAreaComponent', () => {
         );
         spectator.detectChanges();
 
-        const disabledWYSIWYGChangeSpy = jest.fn();
+        const disabledWYSIWYGChangeSpy = vi.fn();
         spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch to Monaco editor
@@ -354,7 +355,7 @@ describe('DotEditContentTextAreaComponent', () => {
             switchSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             switchSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor
@@ -396,7 +397,7 @@ describe('DotEditContentTextAreaComponent', () => {
             switchBackSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             switchBackSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to PlainText editor
@@ -470,7 +471,7 @@ describe('DotEditContentTextAreaComponent', () => {
             preserveSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             preserveSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor for current field
@@ -508,7 +509,7 @@ describe('DotEditContentTextAreaComponent', () => {
             );
             workflowSpectator.detectChanges();
 
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             workflowSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act 1: Switch to Monaco
@@ -558,7 +559,7 @@ describe('DotEditContentTextAreaComponent', () => {
             noPropertySpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             noPropertySpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor

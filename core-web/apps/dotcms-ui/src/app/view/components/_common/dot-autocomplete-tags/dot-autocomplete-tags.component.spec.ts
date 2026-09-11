@@ -1,4 +1,5 @@
 import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -83,7 +84,7 @@ describe('DotAutocompleteTagsComponent', () => {
             ];
 
             beforeEach(() => {
-                jest.spyOn(component, 'propagateChange');
+                vi.spyOn(component, 'propagateChange');
                 component.value = [...preLoadedTags];
             });
 
@@ -127,8 +128,8 @@ describe('DotAutocompleteTagsComponent', () => {
                 });
 
                 it('should call checkForTag if user hit enter should add the tag and clear input value', () => {
-                    jest.spyOn(component, 'checkForTag');
-                    jest.spyOn(autoComplete, 'hide');
+                    vi.spyOn(component, 'checkForTag');
+                    vi.spyOn(autoComplete, 'hide');
                     autoComplete.onKeyUp.emit(newEnterEvent);
 
                     expect(component.checkForTag).toHaveBeenCalledWith(newEnterEvent);
@@ -159,7 +160,7 @@ describe('DotAutocompleteTagsComponent', () => {
             });
 
             it('should call filterTags on completeMethod and remove already selected', () => {
-                jest.spyOn(component, 'filterTags');
+                vi.spyOn(component, 'filterTags');
                 component.value.push({
                     label: 'test',
                     siteId: '',
@@ -180,7 +181,7 @@ describe('DotAutocompleteTagsComponent', () => {
             });
 
             it('should call addItem on onSelect event and place last element as first', () => {
-                jest.spyOn(component, 'addItem');
+                vi.spyOn(component, 'addItem');
                 autoComplete.onSelect.emit();
 
                 expect(component.addItem).toHaveBeenCalledTimes(1);
@@ -189,7 +190,7 @@ describe('DotAutocompleteTagsComponent', () => {
             });
 
             it('should call removeItem on onUnselect event and ', () => {
-                jest.spyOn(component, 'removeItem');
+                vi.spyOn(component, 'removeItem');
                 autoComplete.onUnselect.emit();
 
                 expect(component.removeItem).toHaveBeenCalledTimes(1);

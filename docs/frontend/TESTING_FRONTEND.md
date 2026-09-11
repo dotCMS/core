@@ -3,15 +3,15 @@
 This document follows [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): use the `$` prefix for signals in component examples, `setInput()` for inputs, `byTestId()` for selection, and Spectator as the single testing harness.
 
 ## Tech Stack for Testing
-- **Testing Framework**: Jest
-- **Testing Library**: **Spectator (required)** — use `@openng/spectator` with the `@openng/spectator/jest` entry point
-- **Coverage Tool**: Jest Coverage
-- **Mocking**: Jest + `mockProvider` from Spectator; **domain mocks** from `@dotcms/utils-testing` (createFake functions)
+- **Testing Framework**: Vitest
+- **Testing Library**: **Spectator (required)** — use `@openng/spectator` with the `@openng/spectator/vitest` entry point
+- **Coverage Tool**: Vitest Coverage
+- **Mocking**: Vitest + `mockProvider` from Spectator; **domain mocks** from `@dotcms/utils-testing` (createFake functions)
 - **E2E**: Playwright (when needed)
 
 ## Spectator API (Required)
 
-Always use Spectator with Jest via the `@openng/spectator` package. Use these APIs consistently:
+Always use Spectator with Vitest via the `@openng/spectator` package. Use these APIs consistently:
 
 | API | Use for |
 |-----|--------|
@@ -63,8 +63,8 @@ component-name/
 Use **`createComponentFactory`** to create the factory, the **`Spectator`** class to type the instance, **`mockProvider`** for mocks, **`byTestId`** for selection, **`setInput`** for inputs, **`detectChanges`** after changes, and **`click`** for user actions.
 
 ```typescript
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
-import { mockProvider } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
+import { mockProvider } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
 
 describe('DotMyComponent', () => {
@@ -76,9 +76,9 @@ describe('DotMyComponent', () => {
     imports: [CommonModule, DotTestingModule],
     providers: [
       mockProvider(MyService, {
-        getItems: jest.fn().mockReturnValue(of(mockItems)),
-        saveItem: jest.fn().mockReturnValue(of(mockItem)),
-        deleteItem: jest.fn().mockReturnValue(of(undefined))
+        getItems: vi.fn().mockReturnValue(of(mockItems)),
+        saveItem: vi.fn().mockReturnValue(of(mockItem)),
+        deleteItem: vi.fn().mockReturnValue(of(undefined))
       })
     ]
   });
@@ -96,7 +96,7 @@ describe('DotMyComponent', () => {
 });
 ```
 
-`core-web` standardizes on **Jest** — always import from `@openng/spectator/jest`, never the package root or the `/vitest` entry point.
+`core-web` standardizes on **Vitest** — always import from `@openng/spectator/vitest`, never the package root or the `/vitest` entry point.
 
 ### Required Testing Patterns
 
@@ -132,7 +132,7 @@ Use **`click`** with **`byTestId`** to trigger the action; assert on the output 
 ```typescript
 it('should emit output when item is selected', () => {
   const item = mockItems[0];
-  const emitSpy = jest.spyOn(spectator.component.$itemSelected, 'emit');
+  const emitSpy = vi.spyOn(spectator.component.$itemSelected, 'emit');
 
   spectator.click(byTestId(`item-${item.id}`));
 
@@ -300,8 +300,8 @@ it('should compute filtered items correctly', () => {
 Use **`createServiceFactory`** from Spectator for service tests so you get a typed **`SpectatorService<MyService>`** and consistent setup with **`mockProvider`**.
 
 ```typescript
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
-import { mockProvider } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { mockProvider } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
 import { MyService } from './my.service';
 import { HttpClient } from '@angular/common/http';
@@ -353,7 +353,7 @@ When not using `createServiceFactory`, still use **`mockProvider`** for dependen
 ```typescript
 beforeEach(() => {
   TestBed.configureTestingModule({
-    providers: [MyService, mockProvider(HttpClient, { get: jest.fn().mockReturnValue(of([])) })]
+    providers: [MyService, mockProvider(HttpClient, { get: vi.fn().mockReturnValue(of([])) })]
   });
   service = TestBed.inject(MyService);
 });
@@ -472,7 +472,7 @@ describe('DotFeatureContainer Integration', () => {
     ],
     providers: [
       mockProvider(FeatureService, {
-        getItems: jest.fn().mockReturnValue(of(mockItems))
+        getItems: vi.fn().mockReturnValue(of(mockItems))
       })
     ]
   });
@@ -575,7 +575,7 @@ it('should call loadData method', () => {
 
 // ✅ Test user interactions and outcomes
 it('should load data when user clicks refresh button', () => {
-    const spy = jest.spyOn(spectator.inject(DotService), 'getData');
+    const spy = vi.spyOn(spectator.inject(DotService), 'getData');
     
     spectator.click(byTestId('refresh-button'));
     
@@ -610,7 +610,7 @@ Verify how users experience error conditions:
 // ✅ Test error states from user perspective
 it('should show error message when server fails', async () => {
     const service = spectator.inject(DotService);
-    jest.spyOn(service, 'getData').mockReturnValue(throwError(() => new Error()));
+    vi.spyOn(service, 'getData').mockReturnValue(throwError(() => new Error()));
 
     spectator.click(byTestId('load-data-button'));
 
@@ -742,5 +742,5 @@ expect(element).toHaveClass('class1', 'class2');
 - **Test files**: Alongside the file under test with `.spec.ts` suffix
 - **Test utilities**: `libs/utils/src/lib/testing/`
 - **Mock data**: Use `@dotcms/utils-testing` createFake functions; fallback to `*.mock.ts` only when no createFake exists
-- **Spectator**: `@openng/spectator` (Jest: `@openng/spectator/jest`). Use **createComponentFactory**, **createDirectiveFactory**, **createPipeFactory**, **createServiceFactory**, **createHostFactory**, **createRoutingFactory**, **createHttpFactory**, **Spectator**, **byTestId**, **mockProvider**, **detectChanges**, **setInput**, **click** as documented above.
+- **Spectator**: `@openng/spectator` (Vitest: `@openng/spectator/vitest`). Use **createComponentFactory**, **createDirectiveFactory**, **createPipeFactory**, **createServiceFactory**, **createHostFactory**, **createRoutingFactory**, **createHttpFactory**, **Spectator**, **byTestId**, **mockProvider**, **detectChanges**, **setInput**, **click** as documented above.
 - **See also**: [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md), [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) (testing stores), [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md), [docs/frontend/README.md](./README.md)

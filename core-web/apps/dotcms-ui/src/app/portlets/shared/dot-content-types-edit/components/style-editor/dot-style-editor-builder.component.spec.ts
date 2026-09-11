@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -53,8 +59,8 @@ describe('DotStyleEditorBuilderComponent', () => {
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
-            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
             {
                 provide: DotMessageService,
                 useValue: {

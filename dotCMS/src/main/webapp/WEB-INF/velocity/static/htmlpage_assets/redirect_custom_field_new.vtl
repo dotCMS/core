@@ -53,21 +53,14 @@
     // Handle page selector button click
     selectLinkButton.addEventListener("click", () => {
       DotCustomFieldApi.openBrowserModal({
-        header: "Select a Page",
-        params: {
-          showLinks: true,
-          showDotAssets: false,
-          showPages: true,
-          showFiles: false,
-          showFolders: false,
-          showWorking: false,
-          showArchived: false,
-          sortByDesc: true,
-        },
-        onClose: (result) => {
-          if (result && result.url) {
-            redirectURLBox.value = result.url;
-            redirectField.setValue(result.url);
+        title: "Select a Page",
+        kinds: ["page", "link"],
+        status: "live",
+        sort: { field: "modDate", direction: "desc" },
+        onClose: (selection) => {
+          if (selection) {
+            redirectURLBox.value = selection.url;
+            redirectField.setValue(selection.url);
             updateClearButtonVisibility();
           }
         },

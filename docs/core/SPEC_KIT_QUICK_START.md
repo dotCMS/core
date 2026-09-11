@@ -6,6 +6,9 @@ the rest is reference you consult when you hit it.
 
 > 🎥 **New to this?** Watch the [walkthrough video](https://drive.google.com/file/d/1XhQBgbME2XejZ7PHc7-xNdFtaXUFOULL/view?usp=sharing) first — it covers the same
 > ground in a few minutes. This doc is what you come back to afterward.
+>
+> The video predates `/speckit-converge` becoming the closing step (§1, §9), so it ends the flow
+> one step early. Everything else in it still holds; this doc is the current source of truth.
 
 > **See also:** [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)
 > — the project law every `/speckit-*` command loads. If a command pushes back on you,
@@ -32,11 +35,32 @@ after it is the same for both.
                             │
                             ▼
                    /speckit-implement   ← TDD gates, halts for you
+                            │
+                            ▼
+                    (your corrections)   ← the part no command sees
+                            │
+                            ▼
+                   /speckit-converge    ← you run it, when you judge the work done
+                            │
+        gaps found ─────────┴───────── converged
+             │                              │
+             └──► fix, then converge again  ▼
+                                          PR 2
 ```
 
 You run these in Claude Code; each writes files into `specs/<your-feature>/` and hands off to
 the next. Because both entry points converge at `/speckit-plan`, a bug fix gets exactly the
 same ADR and legacy scrutiny as a feature.
+
+**The last step is yours to trigger, and that is deliberate.** `/speckit-converge` checks the
+code against the spec you got approved and appends anything still unbuilt to `tasks.md`. When
+implement finishes it *reminds* you to run it — it does not run it for you.
+
+Why: implement finishing is not the same as you being done. Almost always you then make manual
+corrections, and a converge run fired before those would sign off on a state that no longer
+exists. A stale `converged` is worse than none, because nobody re-reads it. **You know when
+you're finished; a hook doesn't.** So run it at the moment you'd otherwise open PR 2. See §3 for
+the gate and §9 for what converge actually looks at.
 
 ---
 
@@ -71,9 +95,9 @@ process to the work. **When in doubt, size up** — and ask a teammate rather th
 
 | Tier | Typical change | Flow |
 |------|----------------|------|
-| **0 — Trivial** | Typos, copy, config, true no-op refactors | No spec. Keep tests green. |
-| **1 — Standard** | Most bug fixes; small changes inside an existing interface | **Lean** — `specify` / `specify-fix` → `plan` → `tasks` → `implement` |
-| **2 — Significant** | New features, new or changed interfaces, data-model changes, cross-team or security-sensitive work | **Full** — `specify` / `specify-fix` → (`clarify`) → (`checklist`) → `plan` → `tasks` → (`analyze`) → `implement` |
+| **0 — Trivial** | Typos, copy, config, true no-op refactors | No spec. Keep tests green. Converge doesn't apply — with no `spec.md`/`plan.md`/`tasks.md` it has nothing to converge against. |
+| **1 — Standard** | Most bug fixes; small changes inside an existing interface | **Lean** — `specify` / `specify-fix` → `plan` → `tasks` → `implement` → `converge` |
+| **2 — Significant** | New features, new or changed interfaces, data-model changes, cross-team or security-sensitive work | **Full** — `specify` / `specify-fix` → (`clarify`) → (`checklist`) → `plan` → `tasks` → (`analyze`) → `implement` → `converge` |
 
 The entry command is a separate question from the tier: `specify` for new behavior,
 `specify-fix` for broken behavior (§1). **Tier decides how much process; new-vs-broken decides
@@ -81,8 +105,13 @@ where you start.** A bug can be Tier 2 — §6's example is one — and a small 
 inside an existing interface is Tier 1 but still starts at `specify`.
 
 **Steps in parentheses are optional.** They are judgment calls, not required stages — nothing
-blocks or complains if you skip them. The four unparenthesized commands are the flow; the rest
-are tools you pick up when they help:
+blocks or complains if you skip them. The five unparenthesized commands are the flow; the rest
+are tools you pick up when they help.
+
+`converge` is unparenthesized — it belongs on every feature — but unlike the four before it,
+**you choose the moment** rather than running it the instant the previous step ends (§1).
+
+The optional tools:
 
 - `clarify` — the spec still has open questions you'd rather resolve before planning
 - `checklist` — the change is security-, privacy-, or accessibility-sensitive and deserves a
@@ -102,7 +131,7 @@ once a reviewer approves the spec, start planning. Don't wait on the merge queue
 | | What's in it | Reviewed for | Then |
 |---|---|---|---|
 | **PR 1 — the spec** | `spec.md`, nothing else | Is this the right problem, scoped right, with measurable criteria? | **Approved** → you start planning. It merges whenever the queue gets to it. |
-| **PR 2 — the implementation** | Code, tests, and any durable design artifacts | Does it do what the approved spec said? | Merged as usual |
+| **PR 2 — the implementation** | Code, tests, and any durable design artifacts | Does it do what the approved spec said? | Opened once converge reports `converged` (or its remaining findings are accepted); merged as usual |
 
 The sequence:
 
@@ -110,8 +139,14 @@ The sequence:
 2. Push it and open **PR 1 with the spec alone.** Ask for feedback, iterate on the wording,
    get it **approved.** Leave it in the queue — you're not blocked on it merging.
 3. Branch off **your spec branch** (not `main` — the spec isn't there yet) and keep working.
-4. `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
-5. Open **PR 2** with the implementation, linking back to PR 1.
+4. `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/speckit-converge`.
+5. **Make your corrections, then converge, then open PR 2 — in that order.** When you judge the
+   work finished, run `/speckit-converge`. Fix what it reports and run it again, until it says
+   **`converged`** *or* every remaining finding is one you've consciously accepted (its task
+   ticked `[X]` — see §9). Then open **PR 2**, linking back to PR 1.
+
+   Running it earlier is fine and often useful, but the run that counts is the one on the code
+   you are actually about to push. Nothing enforces this — see the bullet below.
 
 > Until PR 1 merges, PR 2's diff also shows the spec commit — it's the shared ancestor, not a
 > duplicate. Once PR 1 lands, PR 2 collapses to just the implementation on its own.
@@ -133,6 +168,10 @@ In practice:
   measurable? What's explicitly *out* of scope? Reviewers: push back on vagueness, not style.
 - **If the spec changes after approval**, say so on PR 1 and get a re-approval. The whole
   point is that the contract everyone read is the contract you built.
+- **The convergence gate is human-judged, not enforced** — and human-*triggered* too. No CI
+  check blocks PR 2 on it and no hook runs it for you, by design: the gate belongs in your loop,
+  not in the pipeline, and only you know when your edits have stopped. "Converged, or
+  consciously accepted" is a claim you make; nobody validates it for you.
 
 > Branching again doesn't lose your place. Spec-Kit locates the spec through the local
 > `.specify/feature.json` pointer (or `SPECIFY_FEATURE_DIRECTORY`), **not** the branch name,
@@ -230,6 +269,16 @@ this is the cheapest moment to catch a wrong decomposition.
 Works through `tasks.md` in order and **halts at every `[GATE]`**. It writes tests first,
 stops for your approval, stops again to show you they fail, and only then writes code.
 
+### `/speckit-converge` — check it against the spec
+
+Nothing to type: implement fires it on its own once the task list is done. For the Roles API it
+re-reads `spec.md`, `plan.md` and `tasks.md`, looks at what you actually built, and reports what
+doesn't match — a filter parameter the spec promised and the code never gained, a `docs/` page
+still describing the old response shape, an `openapi.yaml` that no longer matches the build.
+
+Anything it finds becomes new tasks at the bottom of `tasks.md`. Run `/speckit-implement` again
+to clear them, and converge runs again. When it says `converged`, PR 2 is unblocked.
+
 ---
 
 ## 6. A worked example — fixing a bug
@@ -269,6 +318,11 @@ bounded fix from becoming a legacy rewrite.
 prove the upgrade task recreates it. Protect the type and that test starts failing. Surfacing
 that in the spec is what keeps it from being a surprise in PR 2 — and it's exactly the kind of
 thing a reviewer catches in natural language but misses in a diff.
+
+`/speckit-converge` closes this one too, and on a fix it earns its keep in a specific way: it re-reads
+*Fix Scope & Non-Goals* and flags code that drifted past the boundary the spec drew — the
+bounded fix that quietly became a legacy rewrite. It also catches the Javadoc on
+`Languagevariable` still describing the old `system = false` behavior.
 
 > **Urgent incident?** The order inverts, not the count. Ship the fix first, then send the
 > short defect spec as its own PR right after. The goal is never to leave a behavior change
@@ -327,14 +381,17 @@ If `git add tasks.md` seems to do nothing, this is why.
 
 ---
 
-## 9. The other commands
+## 9. The rest of the commands
+
+`/speckit-converge` is **not** in this table — it is part of the flow (§1), not something you
+reach for. Its subsection below explains what it does; everything in the table is genuinely
+optional.
 
 | Command | Reach for it when |
 |---------|-------------------|
 | `/speckit-clarify` | Tier 2 work — resolve open questions in the spec before planning |
 | `/speckit-checklist` | Tier 2 work — a domain-specific review checklist (security, a11y, performance) |
 | `/speckit-analyze` | After `/speckit-tasks` — audit spec, plan and tasks against each other |
-| `/speckit-converge` | Code has run ahead of `tasks.md` and you want to know what's left |
 | `/speckit-taskstoissues` | The work needs splitting across people as GitHub issues |
 | `/speckit-adr-context` | An ADR lookup outside the plan phase — usually automatic |
 | `/speckit-constitution` | You're amending project law — rare, and a team decision |
@@ -384,12 +441,66 @@ It shows you the graded findings first and writes nothing. Then it **appends** a
 task ID and putting constitution violations first. Append-only: it never rewrites or deletes
 existing tasks, and it never deletes code — even `unrequested` findings are just surfaced.
 
-Reach for it when the code and the task list have drifted apart: you hand-wrote a chunk, or
-picked up someone else's half-finished branch, and want the gap turned back into tasks
-`/speckit-implement` can finish.
+**You decide when to run it.** `/speckit-implement` finishes by *recommending* it — printing the
+command, not executing it. That is on purpose: the end of the task list is rarely the end of your
+work, and a run fired before your manual corrections would assess code you're about to change.
+
+```
+implement ──▶ your corrections ──▶ converge ──▶ fix ──▶ converge ──▶ `converged` ──▶ PR 2
+```
+
+Each pass should find less than the last. When converge reports **`converged`**, the code matches
+the spec that got approved in PR 1 and you're clear to open PR 2. Run it as often as you like
+along the way — the one that matters is the last one, on the code you're actually pushing.
+
+**When a finding is one you decline.** `unrequested` findings especially — code the spec never
+asked for that you've judged fine to keep. Converge re-derives its findings from the code every
+run, so it will raise that one again. Tick its task `[X]` to record that you looked at it and
+accepted it, and move on: the gate is **no new actionable findings**, not "converge printed
+nothing ever". Nobody validates that judgment for you (§3) — which is exactly why it should be
+a decision you could defend, not a way to make the loop stop.
+
+You can still run it by hand whenever the code and the task list have drifted — you hand-wrote
+a chunk, or picked up someone else's half-finished branch:
 
 ```
 /speckit-converge
+```
+
+### `/speckit-docs-converge` — the same question, asked of the documentation
+
+Converge checks the code. This one checks everything that *describes* the code, and it **does**
+run automatically — right after converge, as part of the same pass. You never invoke it
+separately: deciding to converge is one decision, and documentation is included in it. It exists
+because a feature can converge perfectly while `docs/` still explains the old behavior.
+
+Four surfaces:
+
+| Surface | What it looks for |
+|---------|-------------------|
+| `docs/` and `CLAUDE.md` | a page describing a behavior, command, or pattern your change altered, that no longer matches it |
+| `openapi.yaml` + REST annotations | `@Operation`/`@Parameter`/`@Schema` that don't describe what you built, or a committed yaml that has drifted from the annotations — the one CI actually fails on |
+| `spec.md` / `plan.md` | where the implementation diverged from the approved intent. **Reported, never edited** — if the spec was approved on PR 1, changing it silently would rewrite the contract your reviewer signed. It tells you to go get re-approval instead |
+| Javadoc and comments | comments still describing the old behavior of code you changed |
+
+Same classification vocabulary as converge, same append-only rule: findings become tasks in a
+`## Phase N: Documentation Convergence` section, each naming the file to edit. It never touches a
+doc itself, and it never runs the build — for a stale `openapi.yaml` it hands you the
+`./mvnw compile` command as a task.
+
+Two behaviors worth knowing:
+
+- **It stays quiet on a half-finished run.** If `tasks.md` still has unchecked non-`[GATE]` tasks,
+  implement halted rather than finished, so it reports `implementation_incomplete` and writes
+  nothing. Otherwise every gate approval would append duplicates of work already queued.
+- **It won't re-raise a finding you've already seen.** Unlike converge, it skips anything already
+  represented by a task in an earlier Convergence phase — ticked or not. That asymmetry is
+  deliberate: converge is an upstream Spec-Kit command we deliberately don't modify, so it
+  re-derives its findings every run. If converge keeps repeating itself, that's §10's first row,
+  not a bug.
+
+```
+/speckit-docs-converge
 ```
 
 ### `/speckit-taskstoissues` — one GitHub issue per task
@@ -431,6 +542,10 @@ and it never creates, edits, or commits an ADR.
 | Plan skipped the ADR step | The `before_plan` hook didn't fire | Run `.specify/scripts/bash/adr-context.sh` yourself and fill in the ADR Alignment section |
 | Commands can't find the feature after you branch again | `.specify/feature.json` is missing or stale | `export SPECIFY_FEATURE_DIRECTORY=specs/<your-dir>` — the pointer is local and untracked, never committed |
 | Reviewer says the spec is too vague to approve | The spec is doing implementation, or the criteria aren't measurable | Rewrite the acceptance criteria as observable outcomes; `/speckit-clarify` helps |
+| `/speckit-converge` keeps appending tasks and never reports `converged` | A finding you've decided not to act on (usually `unrequested`) is re-derived from the code every run | Tick its task `[X]` to record the decision. The gate is *no new* actionable findings — see §9 |
+| Converge reported a pile of `missing` work you know isn't done yet | You ran it mid-flight — the task list still has unchecked work | Expected. Finish the work, then converge on the final state; the documentation pass no-ops in this state on purpose |
+| `/speckit-implement` finished but converge never ran | **Not a bug — it never runs itself** (§1, §9). You run it when your corrections are done | Run `/speckit-converge` when you judge the work finished |
+| `/speckit-implement` finished without even *mentioning* converge | The `after_implement` recommendation didn't print — usually `.specify/extensions.yml` failed to parse, which every skill skips **silently** | `python3 -c "import yaml; yaml.safe_load(open('.specify/extensions.yml'))"` |
 
 ---
 

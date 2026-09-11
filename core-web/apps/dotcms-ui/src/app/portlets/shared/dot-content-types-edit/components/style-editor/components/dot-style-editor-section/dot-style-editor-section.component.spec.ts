@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -86,7 +92,7 @@ describe('DotStyleEditorSectionComponent', () => {
     describe('Section header actions', () => {
         it('should emit delete when the trash button is clicked', () => {
             setup();
-            jest.spyOn(spectator.component.delete, 'emit');
+            vi.spyOn(spectator.component.delete, 'emit');
 
             spectator.query(byTestId('delete-section-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
@@ -96,7 +102,7 @@ describe('DotStyleEditorSectionComponent', () => {
 
         it('should emit moveUp when the move-up button is clicked', () => {
             setup(MOCK_SECTION, false, false);
-            jest.spyOn(spectator.component.moveUp, 'emit');
+            vi.spyOn(spectator.component.moveUp, 'emit');
 
             spectator.query(byTestId('move-section-up-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
@@ -106,7 +112,7 @@ describe('DotStyleEditorSectionComponent', () => {
 
         it('should emit moveDown when the move-down button is clicked', () => {
             setup(MOCK_SECTION, false, false);
-            jest.spyOn(spectator.component.moveDown, 'emit');
+            vi.spyOn(spectator.component.moveDown, 'emit');
 
             spectator.query(byTestId('move-section-down-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
@@ -132,7 +138,7 @@ describe('DotStyleEditorSectionComponent', () => {
     describe('Title editing', () => {
         it('should emit titleChange when the title input is changed', () => {
             setup();
-            jest.spyOn(spectator.component.titleChange, 'emit');
+            vi.spyOn(spectator.component.titleChange, 'emit');
 
             const titleInput = spectator.query(
                 'input[placeholder="Section Title"]'
@@ -148,7 +154,7 @@ describe('DotStyleEditorSectionComponent', () => {
     describe('Field interactions', () => {
         it('should emit addField when the "Add Field" button is clicked', () => {
             setup();
-            jest.spyOn(spectator.component.addField, 'emit');
+            vi.spyOn(spectator.component.addField, 'emit');
 
             spectator.query(byTestId('add-field-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
@@ -158,7 +164,7 @@ describe('DotStyleEditorSectionComponent', () => {
 
         it('should emit removeField with the field uid when field delete is triggered', () => {
             setup();
-            jest.spyOn(spectator.component.removeField, 'emit');
+            vi.spyOn(spectator.component.removeField, 'emit');
 
             spectator.query(byTestId('delete-field-btn'))?.querySelector('button')?.click();
             spectator.detectChanges();
@@ -169,7 +175,7 @@ describe('DotStyleEditorSectionComponent', () => {
         it('should emit moveFieldUp with the field uid when field move-up is triggered', () => {
             // MOCK_FIELD is at index 1 (not first) so its Move-Up button is enabled
             setup(MOCK_SECTION_TWO_FIELDS);
-            jest.spyOn(spectator.component.moveFieldUp, 'emit');
+            vi.spyOn(spectator.component.moveFieldUp, 'emit');
 
             // Second field's move-up button (index 1 → enabled)
             spectator.queryAll(byTestId('move-up-btn'))[1]?.querySelector('button')?.click();
@@ -181,7 +187,7 @@ describe('DotStyleEditorSectionComponent', () => {
         it('should emit moveFieldDown with the field uid when field move-down is triggered', () => {
             // MOCK_FIELD_2 is at index 0 (not last) so its Move-Down button is enabled
             setup(MOCK_SECTION_TWO_FIELDS);
-            jest.spyOn(spectator.component.moveFieldDown, 'emit');
+            vi.spyOn(spectator.component.moveFieldDown, 'emit');
 
             // First field's move-down button (index 0 → enabled)
             spectator.queryAll(byTestId('move-down-btn'))[0]?.querySelector('button')?.click();
@@ -192,7 +198,7 @@ describe('DotStyleEditorSectionComponent', () => {
 
         it('should emit fieldChange when a field label is updated', () => {
             setup();
-            jest.spyOn(spectator.component.fieldChange, 'emit');
+            vi.spyOn(spectator.component.fieldChange, 'emit');
 
             const labelInput = spectator.query(
                 'input[placeholder="New Field"]'

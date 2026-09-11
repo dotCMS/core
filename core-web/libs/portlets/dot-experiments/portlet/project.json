@@ -5,22 +5,5 @@
     "sourceRoot": "libs/portlets/dot-experiments/portlet/src",
     "prefix": "dotcms",
     "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"],
-    "targets": {
-        "test": {
-            "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}",
-                "{workspaceRoot}/target/core-web-reports"
-            ],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "verbose": false,
-                    "coverage": true
-                }
-            }
-        }
-    }
+    "targets": {}
 }

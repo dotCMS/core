@@ -1,5 +1,6 @@
 import { signalStore, withState } from '@ngrx/signals';
 import { Subject, of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -12,16 +13,19 @@ describe('withWebSocket Feature', () => {
 
     let store: InstanceType<typeof TestStore>;
     let statusSubject: Subject<'connecting' | 'reconnecting' | 'connected' | 'closed'>;
-    let mockEventsSocket: jest.Mocked<Partial<DotEventsSocket>>;
+    let mockEventsSocket: Mocked<Partial<DotEventsSocket>>;
 
     beforeEach(() => {
         statusSubject = new Subject();
 
         mockEventsSocket = {
-            connect: jest.fn().mockReturnValue(of({})),
-            status$: jest.fn().mockReturnValue(statusSubject.asObservable()),
-            on: jest.fn().mockReturnValue(new Subject()),
-            destroy: jest.fn()
+            connect: vi.fn().mockReturnValue(of({})),
+            status$: vi.fn().mockReturnValue(statusSubject.asObservable()),
+            on: vi.fn().mockReturnValue(new Subject()),
+            // feedLegacyEventBus() pipes messages() on init; without it the
+            // feature dereferences undefined.
+            messages: vi.fn().mockReturnValue(new Subject()),
+            destroy: vi.fn()
         };
 
         TestBed.configureTestingModule({

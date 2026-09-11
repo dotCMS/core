@@ -1,5 +1,11 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -27,8 +33,8 @@ class DotToolbarBtnOverlayStubComponent {
     @Input() overlayStyleClass = '';
     @Output() onHide = new EventEmitter<void>();
 
-    hide = jest.fn();
-    show = jest.fn();
+    hide = vi.fn();
+    show = vi.fn();
 }
 
 describe('DotToolbarAnnouncementsComponent', () => {
@@ -91,7 +97,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
             { provide: DotMessageService, useValue: messageServiceMock },
             { provide: SiteService, useClass: SiteServiceMock },
             mockProvider(HttpClient, {
-                get: jest.fn().mockReturnValue(of(mockAnnouncementsData))
+                get: vi.fn().mockReturnValue(of(mockAnnouncementsData))
             })
         ]
     });
@@ -133,8 +139,8 @@ describe('DotToolbarAnnouncementsComponent', () => {
 
     describe('ngOnInit', () => {
         it('should load announcements and set about links on init', () => {
-            const loadSpy = jest.spyOn(store, 'load');
-            const getAboutLinksSpy = jest
+            const loadSpy = vi.spyOn(store, 'load');
+            const getAboutLinksSpy = vi
                 .spyOn(spectator.component, 'getAboutLinks')
                 .mockReturnValue([]);
 
@@ -149,7 +155,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
                 { title: 'Knowledge Center', items: [] },
                 { title: 'Contact Us', items: [] }
             ];
-            jest.spyOn(spectator.component, 'getAboutLinks').mockReturnValue(mockAboutLinks);
+            vi.spyOn(spectator.component, 'getAboutLinks').mockReturnValue(mockAboutLinks);
 
             spectator.component.ngOnInit();
 
@@ -159,8 +165,8 @@ describe('DotToolbarAnnouncementsComponent', () => {
 
     describe('Site Switching Subscription', () => {
         it('should reload announcements when site changes', () => {
-            const loadSpy = jest.spyOn(spectator.component.announcementsStore, 'load');
-            const getAboutLinksSpy = jest
+            const loadSpy = vi.spyOn(spectator.component.announcementsStore, 'load');
+            const getAboutLinksSpy = vi
                 .spyOn(spectator.component, 'getAboutLinks')
                 .mockReturnValue([]);
 
@@ -173,7 +179,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
 
         it('should update about links when site changes', () => {
             const mockAboutLinks = [{ title: 'Updated Links', items: [] }];
-            jest.spyOn(spectator.component, 'getAboutLinks').mockReturnValue(mockAboutLinks);
+            vi.spyOn(spectator.component, 'getAboutLinks').mockReturnValue(mockAboutLinks);
 
             spectator.detectChanges();
             siteService.setFakeCurrentSite({});
@@ -205,7 +211,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
     describe('hideOverlayPanel', () => {
         it('should call hide method on overlay panel', () => {
             const overlayPanel = spectator.component.$overlayPanel();
-            const hideSpy = jest.spyOn(overlayPanel, 'hide');
+            const hideSpy = vi.spyOn(overlayPanel, 'hide');
 
             spectator.component.hideOverlayPanel();
 
@@ -215,7 +221,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
 
     describe('markAnnouncementsAsRead', () => {
         it('should call markAnnouncementsAsRead on store', () => {
-            const markAsReadSpy = jest.spyOn(store, 'markAnnouncementsAsRead');
+            const markAsReadSpy = vi.spyOn(store, 'markAnnouncementsAsRead');
 
             spectator.component.markAnnouncementsAsRead();
 
@@ -304,7 +310,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
         });
 
         it('should hide overlay panel when clicking on announcement links', () => {
-            const hideOverlayPanelSpy = jest.spyOn(spectator.component, 'hideOverlayPanel');
+            const hideOverlayPanelSpy = vi.spyOn(spectator.component, 'hideOverlayPanel');
 
             spectator.component.hideOverlayPanel();
 
@@ -312,7 +318,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
         });
 
         it('should hide overlay panel when clicking on "Show All" link', () => {
-            const hideOverlayPanelSpy = jest.spyOn(spectator.component, 'hideOverlayPanel');
+            const hideOverlayPanelSpy = vi.spyOn(spectator.component, 'hideOverlayPanel');
 
             spectator.component.hideOverlayPanel();
 
@@ -320,7 +326,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
         });
 
         it('should hide overlay panel when clicking on about links', () => {
-            const hideOverlayPanelSpy = jest.spyOn(spectator.component, 'hideOverlayPanel');
+            const hideOverlayPanelSpy = vi.spyOn(spectator.component, 'hideOverlayPanel');
 
             spectator.component.hideOverlayPanel();
 
@@ -328,7 +334,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
         });
 
         it('should mark announcements as read when overlay is hidden', () => {
-            const markAnnouncementsAsReadSpy = jest.spyOn(store, 'markAnnouncementsAsRead');
+            const markAnnouncementsAsReadSpy = vi.spyOn(store, 'markAnnouncementsAsRead');
 
             spectator.triggerEventHandler(DotToolbarBtnOverlayStubComponent, 'onHide', void 0);
 

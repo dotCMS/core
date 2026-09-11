@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFieldValidationMessageComponent } from '@dotcms/ui';
@@ -114,7 +115,7 @@ describe('DotExperimentsInlineEditTextComponent', () => {
             });
 
             it('should not show an input if you press `ESC` in the keyboard', () => {
-                jest.spyOn(spectator.component, 'deactivateInplace');
+                vi.spyOn(spectator.component, 'deactivateInplace');
 
                 spectator.click(byTestId('text-input'));
                 expect(spectator.query(byTestId('inplace-input'))).toExist();
@@ -177,7 +178,7 @@ describe('DotExperimentsInlineEditTextComponent', () => {
             });
 
             it('should deactivate the inplace if isLoading input has `previousValue= true` and `currentValue = false` ', () => {
-                const deactivateInplaceSpy = jest.spyOn(spectator.component, 'deactivateInplace');
+                const deactivateInplaceSpy = vi.spyOn(spectator.component, 'deactivateInplace');
                 // saving
                 spectator.setInput('isLoading', true);
                 // finished saving

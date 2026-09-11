@@ -833,6 +833,88 @@ public class DeterministicIdentifierAPITest {
     }
 
     /**
+     * Method to test: {@link DeterministicIdentifierAPIImpl#resolveAssetName(Versionable)}
+     * Given Scenario: Two generic contentlets of the same content type, on the same host and
+     * folder, share the same title but differ in a non-binary field value — exactly the
+     * cross-environment collision described in issue #36855.
+     * Expected Results:
+     * 1. The two contentlets receive different deterministic identifiers.
+     * 2. Two truly identical contentlets (same type, host, folder, and all field values) still
+     *    receive the same deterministic identifier, so legitimate cross-environment matching
+     *    is not broken.
+     */
+    @Test
+    public void Test_GenericContentlet_SameTitleDifferentFieldValues_GetDifferentIds()
+            throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            // Create contentlets with deterministic IDs OFF so they get random UUIDs
+            // and won't collide with the candidate hashes we test below.
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, false);
+
+            final Host systemHost = APILocator.getHostAPI().findSystemHost();
+            final String cssWidthVar = "cssWidth" + System.currentTimeMillis();
+
+            final ContentType deviceType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(new FieldDataGen().name("Title").velocityVarName("title")
+                            .type(TextField.class).next())
+                    .field(new FieldDataGen().name("CSS Width").velocityVarName(cssWidthVar)
+                            .type(TextField.class).dataType(DataTypes.INTEGER).next())
+                    .nextPersisted();
+
+            try {
+                // Instance A: title=iphone, cssWidth=100
+                final Contentlet contentletA = new ContentletDataGen(deviceType.id())
+                        .setProperty("title", "iphone")
+                        .setProperty(cssWidthVar, 100)
+                        .nextPersisted();
+
+                // Instance B: title=iphone, cssWidth=200 (different field value)
+                final Contentlet contentletB = new ContentletDataGen(deviceType.id())
+                        .setProperty("title", "iphone")
+                        .setProperty(cssWidthVar, 200)
+                        .nextPersisted();
+
+                // Instance C: identical to A — must resolve to the same ID as A
+                final Contentlet contentletC = new ContentletDataGen(deviceType.id())
+                        .setProperty("title", "iphone")
+                        .setProperty(cssWidthVar, 100)
+                        .nextPersisted();
+
+                Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+                final String idA = defaultGenerator
+                        .generateDeterministicIdBestEffort(contentletA, systemHost);
+                final String idB = defaultGenerator
+                        .generateDeterministicIdBestEffort(contentletB, systemHost);
+                final String idC = defaultGenerator
+                        .generateDeterministicIdBestEffort(contentletC, systemHost);
+
+                assertNotEquals(
+                        "Two generic contentlets with the same title but different field values "
+                                + "must receive different deterministic identifiers",
+                        idA, idB);
+
+                assertEquals(
+                        "Two identical generic contentlets must receive the same deterministic "
+                                + "identifier so legitimate cross-environment push matching works",
+                        idA, idC);
+
+                assertTrue("Generated id must be a valid UUID", UUIDUtil.isUUID(idA));
+                assertTrue(defaultGenerator.isDeterministicId(idA));
+            } finally {
+                ContentTypeDataGen.remove(deviceType);
+            }
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
      * Method to test: {@link DeterministicIdentifierAPIImpl#resolveName(Field, Supplier)}
      * Given Scenario: Two fields share the same variable and field type but differ on data type.
      * ExpectedResult: The seed always includes the data type ({@code variable:typeName:dataType}),

@@ -358,6 +358,15 @@ export interface DotCMSBasicContentlet {
     binaryContentAsset?: string;
     binaryVersion?: string;
     contentType: string;
+    /**
+     * Whether the requesting user holds EDIT permission on this contentlet
+     * instance. Returned by the Page API and by GraphQL through `_map`.
+     *
+     * Optional and fail-open: a dotCMS release that predates the field omits
+     * it, and `undefined` must be treated as allowed so the editor keeps
+     * behaving as it does today rather than locking up.
+     */
+    canEdit?: boolean;
     file?: string;
     folder: string;
     hasLiveVersion?: boolean;

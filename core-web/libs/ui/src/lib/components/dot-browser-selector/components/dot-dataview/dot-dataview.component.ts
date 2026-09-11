@@ -96,6 +96,12 @@ export class DotDataViewComponent {
     $uploadDisabled = input<boolean>(false, { alias: 'uploadDisabled' });
 
     /**
+     * Whether picking is also a place to upload from. False for a browser that lists neither files
+     * nor assets — a page or a link cannot be uploaded, so the button would be an empty promise.
+     */
+    $showUpload = input<boolean>(true, { alias: 'showUpload' });
+
+    /**
      * Emits the `File` selected by the user via the OS file picker.
      */
     onUploadFile = output<File>();

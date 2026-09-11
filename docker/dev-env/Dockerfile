@@ -21,6 +21,10 @@ RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 COPY --from=dotcms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
 COPY --from=dotcms  /java /java
+# Tomcat Native (tcnative) built for Tomcat 9 in the java-base image and
+# shipped in the dotcms image; runtime deps (libapr1, libssl3) are in the apt
+# packages below.
+COPY --from=dotcms /usr/local/tomcat-native /usr/local/tomcat-native
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_RELEASE=jammy
@@ -33,7 +37,7 @@ RUN chmod 777 /data
 # Installing basic packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends bash zip unzip wget libtcnative-1\
+    apt-get install -y --no-install-recommends bash zip unzip wget \
     tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
     vim libarchive-tools postgresql-common libmimalloc2.0 libjemalloc2 libarchive-tools
 
@@ -65,5 +69,10 @@ RUN chmod 755 /entrypoint.sh
 
 FROM scratch
 COPY --from=dev-env-builder  / /
+
+# ENVs from dev-env-builder do not survive the flatten to scratch, so (re)declare
+# what this change needs. LD_LIBRARY_PATH makes tcnative visible to the JVM
+# (JAVA_HOME is exported by /entrypoint.sh).
+ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib"
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]

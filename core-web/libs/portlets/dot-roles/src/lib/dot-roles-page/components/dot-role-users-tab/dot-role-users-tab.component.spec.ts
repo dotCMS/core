@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { EMPTY, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -40,34 +46,34 @@ describe('DotRoleUsersTabComponent', () => {
         imports: [HttpClientTestingModule],
         componentProviders: [
             mockProvider(DotRolesStore, {
-                members: jest.fn().mockReturnValue([]),
-                membersStatus: jest.fn().mockReturnValue('LOADED'),
-                selectedRole: jest.fn().mockReturnValue({
+                members: vi.fn().mockReturnValue([]),
+                membersStatus: vi.fn().mockReturnValue('LOADED'),
+                selectedRole: vi.fn().mockReturnValue({
                     id: 'r-eco',
                     name: 'Eco Role',
                     roleKey: 'eco',
                     editUsers: true
                 }),
-                selectedRoleId: jest.fn().mockReturnValue('r-eco'),
-                selectedRoleStatus: jest.fn().mockReturnValue('LOADED'),
-                canGrantUsers: jest.fn().mockReturnValue(true),
-                loadMembers: jest.fn(),
-                grantUserToRole: jest.fn().mockResolvedValue(null),
-                removeUsersFromRole: jest.fn().mockResolvedValue(null)
+                selectedRoleId: vi.fn().mockReturnValue('r-eco'),
+                selectedRoleStatus: vi.fn().mockReturnValue('LOADED'),
+                canGrantUsers: vi.fn().mockReturnValue(true),
+                loadMembers: vi.fn(),
+                grantUserToRole: vi.fn().mockResolvedValue(null),
+                removeUsersFromRole: vi.fn().mockResolvedValue(null)
             }),
             mockProvider(ConfirmationService, {
-                confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
+                confirm: vi.fn().mockImplementation((cfg) => cfg.accept?.()),
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
                 reject: EMPTY
             }),
             mockProvider(DotRolesPortletService, {
-                searchUsers: jest.fn().mockReturnValue(of([]))
+                searchUsers: vi.fn().mockReturnValue(of([]))
             })
         ],
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
@@ -84,7 +90,7 @@ describe('DotRoleUsersTabComponent', () => {
 
     it('should render the members table when members are loaded', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.members as jest.Mock).mockReturnValue([
+        (store.members as Mock).mockReturnValue([
             {
                 userId: 'u-1',
                 firstName: 'Alan',
@@ -102,7 +108,7 @@ describe('DotRoleUsersTabComponent', () => {
 
     it('should render a per-row Remove button ONLY for direct-grant members', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.members as jest.Mock).mockReturnValue([
+        (store.members as Mock).mockReturnValue([
             {
                 userId: 'u-1',
                 firstName: 'Alan',
@@ -136,7 +142,7 @@ describe('DotRoleUsersTabComponent', () => {
             grantedFromRoleId: 'r-eco',
             grantedFromRoleName: 'Eco Role'
         };
-        (store.members as jest.Mock).mockReturnValue([member]);
+        (store.members as Mock).mockReturnValue([member]);
         spectator.detectChanges();
 
         // Click the row-level trash — PrimeNG wraps the button, so we

@@ -1,6 +1,6 @@
-import { describe, expect, it } from '@jest/globals';
-import { SpectatorService, createServiceFactory } from '@openng/spectator/jest';
+import { SpectatorService, createServiceFactory } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { describe, expect, it } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -16,6 +16,7 @@ import { DotActionUrlService } from '../../../services/dot-action-url/dot-action
 import { LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import { PAYLOAD_MOCK } from '../../../shared/mocks';
+import { ActionPayload, EditContentletPayload } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
@@ -26,6 +27,18 @@ const mockUveStore = {
     pageVariantId: signal(TEST_VARIANT),
     pageAsset: signal({ site: { identifier: TEST_SITE_ID } })
 };
+
+/**
+ * `ComponentStore.updater()` falls back to a no-payload signature when the updater's return
+ * type does not line up with the state — a pre-existing strict-mode issue in
+ * dot-ema-dialog.store.ts, not in these tests. This view restores the intended payloads.
+ */
+const updaters = (store: DotEmaDialogStore) =>
+    store as unknown as {
+        editContentlet: (payload: EditContentletPayload) => void;
+        editUrlContentMapContentlet: (payload: EditContentletPayload) => void;
+        addFormContentlet: (payload: ActionPayload) => void;
+    };
 
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
@@ -56,291 +69,305 @@ describe('DotEmaDialogStoreService', () => {
         spectator = createService();
     });
 
-    it('should update dialog status', (done) => {
-        spectator.service.setStatus(DialogStatus.LOADING);
+    it('should update dialog status', () =>
+        new Promise<void>((done) => {
+            spectator.service.setStatus(DialogStatus.LOADING);
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url: '',
-                header: '',
-                type: null,
-                status: DialogStatus.LOADING,
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: '',
+                    header: '',
+                    type: null,
+                    status: DialogStatus.LOADING,
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
             });
-            done();
-        });
-    });
+        }));
 
-    it("should set the form state to 'DIRTY'", (done) => {
-        spectator.service.setDirty();
+    it("should set the form state to 'DIRTY'", () =>
+        new Promise<void>((done) => {
+            spectator.service.setDirty();
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state.form.status).toBe(FormStatus.DIRTY);
-            done();
-        });
-    });
-
-    it("should set the form state to 'SAVED'", (done) => {
-        spectator.service.setSaved();
-
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state.form.status).toBe(FormStatus.SAVED);
-            done();
-        });
-    });
-
-    it('should reset iframe properties', (done) => {
-        spectator.service.setStatus(DialogStatus.LOADING);
-
-        spectator.service.resetDialog();
-
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url: '',
-                status: DialogStatus.IDLE,
-                header: '',
-                type: null,
-                actionPayload: undefined,
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state.form.status).toBe(FormStatus.DIRTY);
+                done();
             });
-            done();
-        });
-    });
+        }));
 
-    it('should initialize with edit iframe properties', (done) => {
-        spectator.service.editContentlet({
-            inode: '123',
-            title: 'test'
-        });
+    it("should set the form state to 'SAVED'", () =>
+        new Promise<void>((done) => {
+            spectator.service.setSaved();
 
-        const queryParams = new URLSearchParams({
-            p_p_id: 'content',
-            p_p_action: '1',
-            p_p_state: 'maximized',
-            p_p_mode: 'view',
-            _content_struts_action: '/ext/contentlet/edit_contentlet',
-            _content_cmd: 'edit',
-            inode: '123',
-            angularCurrentPortlet: 'edit-page',
-            variantName: TEST_VARIANT
-        });
-        queryParams.set('host_id', TEST_SITE_ID);
-
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url: LAYOUT_URL + '?' + queryParams.toString(),
-                status: DialogStatus.LOADING,
-                header: 'test',
-                type: 'content',
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state.form.status).toBe(FormStatus.SAVED);
+                done();
             });
-            done();
-        });
-    });
+        }));
 
-    it('should initialize with edit iframe properties and with clientAction', (done) => {
-        spectator.service.editContentlet({
-            inode: '123',
-            title: 'test',
-            clientAction: DotCMSUVEAction.EDIT_CONTENTLET
-        });
+    it('should reset iframe properties', () =>
+        new Promise<void>((done) => {
+            spectator.service.setStatus(DialogStatus.LOADING);
 
-        const queryParams = new URLSearchParams({
-            p_p_id: 'content',
-            p_p_action: '1',
-            p_p_state: 'maximized',
-            p_p_mode: 'view',
-            _content_struts_action: '/ext/contentlet/edit_contentlet',
-            _content_cmd: 'edit',
-            inode: '123',
-            angularCurrentPortlet: 'edit-page',
-            variantName: TEST_VARIANT
-        });
-        queryParams.set('host_id', TEST_SITE_ID);
+            spectator.service.resetDialog();
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url: LAYOUT_URL + '?' + queryParams.toString(),
-                status: DialogStatus.LOADING,
-                header: 'test',
-                type: 'content',
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: '',
+                    status: DialogStatus.IDLE,
+                    header: '',
+                    type: null,
+                    actionPayload: undefined,
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
+            });
+        }));
+
+    it('should initialize with edit iframe properties', () =>
+        new Promise<void>((done) => {
+            updaters(spectator.service).editContentlet({
+                inode: '123',
+                title: 'test'
+            });
+
+            const queryParams = new URLSearchParams({
+                p_p_id: 'content',
+                p_p_action: '1',
+                p_p_state: 'maximized',
+                p_p_mode: 'view',
+                _content_struts_action: '/ext/contentlet/edit_contentlet',
+                _content_cmd: 'edit',
+                inode: '123',
+                angularCurrentPortlet: 'edit-page',
+                variantName: TEST_VARIANT
+            });
+            queryParams.set('host_id', TEST_SITE_ID);
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: LAYOUT_URL + '?' + queryParams.toString(),
+                    status: DialogStatus.LOADING,
+                    header: 'test',
+                    type: 'content',
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
+            });
+        }));
+
+    it('should initialize with edit iframe properties and with clientAction', () =>
+        new Promise<void>((done) => {
+            updaters(spectator.service).editContentlet({
+                inode: '123',
+                title: 'test',
                 clientAction: DotCMSUVEAction.EDIT_CONTENTLET
             });
-            done();
-        });
-    });
 
-    it('should initialize with edit iframe properties', (done) => {
-        spectator.service.editUrlContentMapContentlet({
-            inode: '123',
-            title: 'test'
-        });
-
-        const queryParams = new URLSearchParams({
-            p_p_id: 'content',
-            p_p_action: '1',
-            p_p_state: 'maximized',
-            p_p_mode: 'view',
-            _content_struts_action: '/ext/contentlet/edit_contentlet',
-            _content_cmd: 'edit',
-            inode: '123',
-            angularCurrentPortlet: 'edit-page',
-            variantName: TEST_VARIANT
-        });
-        queryParams.set('host_id', TEST_SITE_ID);
-
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url: LAYOUT_URL + '?' + queryParams.toString() + '&isURLMap=true',
-                status: DialogStatus.LOADING,
-                header: 'test',
-                type: 'content',
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+            const queryParams = new URLSearchParams({
+                p_p_id: 'content',
+                p_p_action: '1',
+                p_p_state: 'maximized',
+                p_p_mode: 'view',
+                _content_struts_action: '/ext/contentlet/edit_contentlet',
+                _content_cmd: 'edit',
+                inode: '123',
+                angularCurrentPortlet: 'edit-page',
+                variantName: TEST_VARIANT
             });
-            done();
-        });
-    });
+            queryParams.set('host_id', TEST_SITE_ID);
 
-    it('should initialize with addA iframe properties', (done) => {
-        spectator.service.addContentlet({
-            containerId: '1234',
-            acceptTypes: 'test',
-            language_id: '1',
-            actionPayload: PAYLOAD_MOCK
-        });
-
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url:
-                    '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1&' +
-                    new URLSearchParams({ variantName: TEST_VARIANT }).toString(),
-                header: 'Search Content',
-                type: 'content',
-                status: DialogStatus.LOADING,
-                actionPayload: PAYLOAD_MOCK,
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: LAYOUT_URL + '?' + queryParams.toString(),
+                    status: DialogStatus.LOADING,
+                    header: 'test',
+                    type: 'content',
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.EDIT_CONTENTLET
+                });
+                done();
             });
-            done();
-        });
-    });
+        }));
 
-    it('should initialize with Form Iframe properties', (done) => {
-        spectator.service.addFormContentlet(PAYLOAD_MOCK);
-
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                header: 'Search Form',
-                status: DialogStatus.LOADING,
-                url: null,
-                type: 'form',
-                actionPayload: PAYLOAD_MOCK,
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+    it('should initialize with edit iframe properties', () =>
+        new Promise<void>((done) => {
+            updaters(spectator.service).editUrlContentMapContentlet({
+                inode: '123',
+                title: 'test'
             });
-            done();
-        });
-    });
 
-    it('should initialize with create iframe properties', (done) => {
-        spectator.service.createContentlet({
-            contentType: 'test',
-            url: 'some/really/long/url',
-            actionPayload: PAYLOAD_MOCK
-        });
+            const queryParams = new URLSearchParams({
+                p_p_id: 'content',
+                p_p_action: '1',
+                p_p_state: 'maximized',
+                p_p_mode: 'view',
+                _content_struts_action: '/ext/contentlet/edit_contentlet',
+                _content_cmd: 'edit',
+                inode: '123',
+                angularCurrentPortlet: 'edit-page',
+                variantName: TEST_VARIANT
+            });
+            queryParams.set('host_id', TEST_SITE_ID);
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url:
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: LAYOUT_URL + '?' + queryParams.toString() + '&isURLMap=true',
+                    status: DialogStatus.LOADING,
+                    header: 'test',
+                    type: 'content',
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
+            });
+        }));
+
+    it('should initialize with addA iframe properties', () =>
+        new Promise<void>((done) => {
+            spectator.service.addContentlet({
+                containerId: '1234',
+                acceptTypes: 'test',
+                language_id: '1',
+                actionPayload: PAYLOAD_MOCK
+            });
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url:
+                        '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1&' +
+                        new URLSearchParams({ variantName: TEST_VARIANT }).toString(),
+                    header: 'Search Content',
+                    type: 'content',
+                    status: DialogStatus.LOADING,
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
+            });
+        }));
+
+    it('should initialize with Form Iframe properties', () =>
+        new Promise<void>((done) => {
+            updaters(spectator.service).addFormContentlet(PAYLOAD_MOCK);
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    header: 'Search Form',
+                    status: DialogStatus.LOADING,
+                    url: null,
+                    type: 'form',
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
+            });
+        }));
+
+    it('should initialize with create iframe properties', () =>
+        new Promise<void>((done) => {
+            spectator.service.createContentlet({
+                contentType: 'test',
+                url: 'some/really/long/url',
+                actionPayload: PAYLOAD_MOCK
+            });
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url:
+                        'http://localhost/some/really/long/url?' +
+                        new URLSearchParams({ variantName: TEST_VARIANT }).toString(),
+                    status: DialogStatus.LOADING,
+                    header: 'Create test',
+                    type: 'content',
+                    actionPayload: PAYLOAD_MOCK,
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
+            });
+        }));
+
+    it('should update dialog state', () =>
+        new Promise<void>((done) => {
+            spectator.service.createContentlet({
+                url: 'some/really/long/url',
+                contentType: 'Blog Posts',
+                actionPayload: PAYLOAD_MOCK
+            });
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state.header).toBe('Create Blog Posts');
+                expect(state.status).toBe(DialogStatus.LOADING);
+                expect(state.url).toBe(
                     'http://localhost/some/really/long/url?' +
-                    new URLSearchParams({ variantName: TEST_VARIANT }).toString(),
-                status: DialogStatus.LOADING,
-                header: 'Create test',
-                type: 'content',
-                actionPayload: PAYLOAD_MOCK,
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+                        new URLSearchParams({ variantName: TEST_VARIANT }).toString()
+                );
+                expect(state.type).toBe('content');
+                expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
+                done();
             });
-            done();
-        });
-    });
+        }));
 
-    it('should update dialog state', (done) => {
-        spectator.service.createContentlet({
-            url: 'some/really/long/url',
-            contentType: 'Blog Posts',
-            actionPayload: PAYLOAD_MOCK
-        });
+    it('should update state to show dialog for create content from palette', () =>
+        new Promise<void>((done) => {
+            const dotActionUrlService = spectator.inject(DotActionUrlService);
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state.header).toBe('Create Blog Posts');
-            expect(state.status).toBe(DialogStatus.LOADING);
-            expect(state.url).toBe(
-                'http://localhost/some/really/long/url?' +
-                    new URLSearchParams({ variantName: TEST_VARIANT }).toString()
+            dotActionUrlService.getCreateContentletUrl.andReturn(
+                of('https://demo.dotcms.com/jsp.jsp')
             );
-            expect(state.type).toBe('content');
-            expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
-            done();
-        });
-    });
 
-    it('should update state to show dialog for create content from palette', (done) => {
-        const dotActionUrlService = spectator.inject(DotActionUrlService);
+            spectator.service.createContentletFromPalette({
+                variable: 'blogPost',
+                name: 'Blog',
+                actionPayload: PAYLOAD_MOCK,
+                language_id: 2
+            });
 
-        dotActionUrlService.getCreateContentletUrl.andReturn(of('https://demo.dotcms.com/jsp.jsp'));
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state.header).toBe('Create Blog');
+                expect(state.status).toBe(DialogStatus.LOADING);
 
-        spectator.service.createContentletFromPalette({
-            variable: 'blogPost',
-            name: 'Blog',
-            actionPayload: PAYLOAD_MOCK,
-            language_id: 2
-        });
+                expect(state.url).toBe(
+                    'https://demo.dotcms.com/jsp.jsp?' +
+                        new URLSearchParams({ variantName: TEST_VARIANT }).toString()
+                );
+                expect(state.type).toBe('content');
+                expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
+                done();
+            });
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state.header).toBe('Create Blog');
-            expect(state.status).toBe(DialogStatus.LOADING);
-
-            expect(state.url).toBe(
-                'https://demo.dotcms.com/jsp.jsp?' +
-                    new URLSearchParams({ variantName: TEST_VARIANT }).toString()
-            );
-            expect(state.type).toBe('content');
-            expect(state.actionPayload).toEqual(PAYLOAD_MOCK);
-            done();
-        });
-
-        expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost', 2);
-    });
+            expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost', 2);
+        }));
 
     it('should show an error toast when the content type variable or id is not found', () => {
         const dotActionUrlService = spectator.inject(DotActionUrlService);
@@ -363,64 +390,67 @@ describe('DotEmaDialogStoreService', () => {
         });
     });
 
-    it('should initialize with loading iframe properties', (done) => {
-        spectator.service.loadingIframe('test');
+    it('should initialize with loading iframe properties', () =>
+        new Promise<void>((done) => {
+            spectator.service.loadingIframe('test');
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
-                url: '',
-                status: DialogStatus.LOADING,
-                header: 'test',
-                type: 'content',
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: '',
+                    status: DialogStatus.LOADING,
+                    header: 'test',
+                    type: 'content',
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
             });
-            done();
-        });
-    });
+        }));
 
-    it('should update the state to show dialog with a specific URL', (done) => {
-        spectator.service.openDialogOnURL({
-            url: 'https://demo.dotcms.com/jsp.jsp',
-            title: 'test'
-        });
-
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state).toEqual({
+    it('should update the state to show dialog with a specific URL', () =>
+        new Promise<void>((done) => {
+            spectator.service.openDialogOnURL({
                 url: 'https://demo.dotcms.com/jsp.jsp',
-                status: DialogStatus.LOADING,
-                header: 'test',
-                type: 'content',
-                form: {
-                    status: FormStatus.PRISTINE,
-                    isTranslation: false
-                },
-                clientAction: DotCMSUVEAction.NOOP
+                title: 'test'
             });
-            done();
-        });
-    });
 
-    it('should reset action payload', (done) => {
-        // First set an action payload
-        spectator.service.addContentlet({
-            containerId: '1234',
-            acceptTypes: 'test',
-            language_id: '1',
-            actionPayload: PAYLOAD_MOCK
-        });
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    url: 'https://demo.dotcms.com/jsp.jsp',
+                    status: DialogStatus.LOADING,
+                    header: 'test',
+                    type: 'content',
+                    form: {
+                        status: FormStatus.PRISTINE,
+                        isTranslation: false
+                    },
+                    clientAction: DotCMSUVEAction.NOOP
+                });
+                done();
+            });
+        }));
 
-        // Then reset it
-        spectator.service.resetActionPayload();
+    it('should reset action payload', () =>
+        new Promise<void>((done) => {
+            // First set an action payload
+            spectator.service.addContentlet({
+                containerId: '1234',
+                acceptTypes: 'test',
+                language_id: '1',
+                actionPayload: PAYLOAD_MOCK
+            });
 
-        spectator.service.dialogState$.subscribe((state) => {
-            expect(state.actionPayload).toBeUndefined();
-            done();
-        });
-    });
+            // Then reset it
+            spectator.service.resetActionPayload();
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state.actionPayload).toBeUndefined();
+                done();
+            });
+        }));
 
     describe('Dialog for translation', () => {
         it('should update the state to show dialog for a translation', () => {
