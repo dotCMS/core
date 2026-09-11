@@ -139,13 +139,19 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
 
+    // "size" is bound to the candidate-inode count of the query it accompanies: every one of these
+    // queries is scoped with "+inode:(id1 OR id2 ...)", so it can never legitimately return more
+    // hits than the inodes it names. Without an explicit "size", Elasticsearch applies its own
+    // default of 10 hits, silently capping each sub-query at 10 matches regardless of how many
+    // candidates it was given (found in review).
     private static final String ES_QUERY_TEMPLATE =
             "{\n" +
                     "    \"query\": {\n" +
                     "        \"query_string\": {\n" +
                     "            \"query\": \"%s\"\n" +
                     "        }\n" +
-                    "    }\n" +
+                    "    },\n" +
+                    "    \"size\": %d\n" +
             "}";
 
     /**
@@ -353,9 +359,12 @@ public class BrowserAPIImpl implements BrowserAPI {
             final Set<String> esFiltered = processESDirectly(
                     browserQuery, new LinkedHashSet<>(candidateChunkInodes));
             if (!esFiltered.isEmpty()) {
-                // Elasticsearch returns matches in relevance/index order, and when the chunk is
-                // split into several ES sub-queries those results are merged in completion order.
-                // Everything downstream assumes DB order: findContentletsInParallel preserves the
+                // Elasticsearch returns matches in relevance/index order. When the chunk is split
+                // into several ES sub-queries, processMultipleESQueries collects those futures in
+                // submission order, so batches themselves follow DB order — the disorder comes from
+                // within each sub-query, where ES returns its own relevance/index order rather than
+                // the order its candidate inodes were given in (found in review). Everything
+                // downstream assumes DB order: findContentletsInParallel preserves the
                 // order it is handed, and generateNextContentCursor locates the last item of the
                 // page by its position inside the DB-ordered chunk. Feeding it ES order would make
                 // the next cursor land on an arbitrary row and skip or repeat items across pages.
@@ -955,7 +964,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> inodesList = new ArrayList<>(inodes);
             final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
             final String luceneQuery = inodeFilter + baseQuery;
-            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery));
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery), inodes.size());
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 

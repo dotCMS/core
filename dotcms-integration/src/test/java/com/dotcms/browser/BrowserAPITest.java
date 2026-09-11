@@ -2237,6 +2237,101 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     /**
      * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder holds 10 items. {@code BROWSER_CONTENT_CHUNK_SIZE} and
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS} are both set to 10, so the single DB chunk this request
+     *     scans lands its {@code dbOffset} exactly on the scan limit -- while the page itself is
+     *     already satisfied mid-chunk ({@code maxResults=6} &lt; the 10 items in that chunk). This
+     *     exercises the DB-only chunked path ({@code applyESFilter=false}, no text/field filter),
+     *     which is outside issue #37184's field-filter scope but shares {@code getContentByChunks}'
+     *     exit-order fix (found in review): checking {@code accumulatedContent.size() >= maxRows}
+     *     before {@code dbOffset >= scanLimit} is what lets this case exit through
+     *     {@code generateNextContentCursor} instead of the scan-limit warn path.</li>
+     *     <li><b>Expected Result:</b> Page 1 returns exactly 6 items with a cursor that lands mid-chunk
+     *     (not chunk-aligned at 10, which is what the pre-fix ordering would have produced). Paging
+     *     from that cursor recovers the 4 leftover items from the same chunk -- none skipped, none
+     *     repeated -- proving the scan-limit guard rail does not silently drop the tail of a chunk it
+     *     shares a boundary with.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_scanLimitAlignedWithChunkBoundary_doesNotSkipLeftoverItems()
+            throws Exception {
+        final int chunkAndScanLimit = 10;
+        final int itemCount = 10;
+        final int firstPageSize = 6;
+
+        Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, chunkAndScanLimit);
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, chunkAndScanLimit);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+            final Set<String> expectedIdentifiers = new HashSet<>();
+            for (int i = 0; i < itemCount; i++) {
+                final File file = FileUtil.createTemporaryFile("scan-limit-boundary-" + i, ".txt", "content " + i);
+                expectedIdentifiers.add(
+                        new FileAssetDataGen(file).folder(folder).host(host).nextPersisted().getIdentifier());
+            }
+
+            final BrowserQuery firstPageQuery = BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(host.getIdentifier())
+                    .skipFolder(true)
+                    .showFiles(true)
+                    .showWorking(true)
+                    .showFolders(false)
+                    .maxResults(firstPageSize)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents firstPage = browserAPI.getPaginatedContents(firstPageQuery);
+
+            assertEquals("Page 1 must return exactly the requested page size, not fewer",
+                    firstPageSize, firstPage.contentCount);
+            assertTrue("hasMoreContent must be true -- 4 leftover items remain in the same chunk",
+                    firstPage.hasMoreContent);
+            assertTrue("nextContentCursor must land mid-chunk (< chunk/scan-limit boundary), "
+                            + "not chunk-aligned at " + chunkAndScanLimit
+                            + " -- a chunk-aligned cursor here would mean the leftover items were "
+                            + "silently dropped by the scan-limit warn path instead of resumed",
+                    firstPage.nextContentCursor > 0 && firstPage.nextContentCursor < chunkAndScanLimit);
+
+            final BrowserQuery secondPageQuery = BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(host.getIdentifier())
+                    .skipFolder(true)
+                    .showFiles(true)
+                    .showWorking(true)
+                    .showFolders(false)
+                    .maxResults(100)
+                    .contentCursor(firstPage.nextContentCursor)
+                    .build();
+
+            final PaginatedContents secondPage = browserAPI.getPaginatedContents(secondPageQuery);
+
+            assertEquals("Page 2 must return exactly the 4 leftover items from the same chunk",
+                    itemCount - firstPageSize, secondPage.contentCount);
+            assertFalse("hasMoreContent must be false -- the folder is now fully paged through",
+                    secondPage.hasMoreContent);
+
+            final Set<String> unionIdentifiers = new HashSet<>();
+            firstPage.list.forEach(row -> unionIdentifiers.add((String) row.get("identifier")));
+            secondPage.list.forEach(row -> unionIdentifiers.add((String) row.get("identifier")));
+
+            assertEquals("The union of both pages must have no duplicates and no gaps versus "
+                            + "the full set of items in the folder",
+                    expectedIdentifiers, unionIdentifiers);
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY,
+                    BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        }
+    }
+
+    /**
+     * <ul>
      *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
      *     <li><b>Given Scenario:</b> A folder holding Pages, File Assets and a Link is browsed filtering by the
      *     synthetic {@code application/dotpage} MIME type -- the value the legacy redirect target picker sends.</li>
