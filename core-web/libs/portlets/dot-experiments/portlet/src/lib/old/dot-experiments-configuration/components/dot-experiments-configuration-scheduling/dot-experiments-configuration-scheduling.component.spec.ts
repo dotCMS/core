@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -95,7 +96,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
     });
 
     it('should open sidebar on button click', () => {
-        jest.spyOn(store, 'openSidebar');
+        vi.spyOn(store, 'openSidebar');
 
         const setupButton = spectator.query(byTestId('scheduling-setup-button'));
         const button = setupButton.querySelector('button') || setupButton;

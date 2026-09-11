@@ -1,4 +1,9 @@
-import { createHttpFactory, HttpMethod, mockProvider, SpectatorHttp } from '@openng/spectator/jest';
+import {
+    createHttpFactory,
+    HttpMethod,
+    mockProvider,
+    SpectatorHttp
+} from '@openng/spectator/vitest';
 
 import { HttpErrorResponse, HttpRequest } from '@angular/common/http';
 

@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import {
     DotAIImageContent,
@@ -47,7 +47,7 @@ describe('DotAiContentService', () => {
             const mockPrompt = 'Test prompt';
 
             spectator.service.generateContent(mockPrompt).subscribe(
-                () => fail('Expected an error, but received a response'),
+                () => expect.fail('Expected an error, but received a response'),
                 (error) => {
                     expect(error).toBe('Server Error');
                 }
@@ -110,7 +110,7 @@ describe('DotAiContentService', () => {
             const mockPrompt = 'Test prompt';
 
             spectator.service.generateAndPublishImage(mockPrompt).subscribe(
-                () => fail('Expected an error, but received a response'),
+                () => expect.fail('Expected an error, but received a response'),
                 (error) => {
                     expect(error).toBe('block-editor.extension.ai-image.api-error.missing-token');
                 }
@@ -124,7 +124,7 @@ describe('DotAiContentService', () => {
             const mockPrompt = 'Test prompt';
 
             spectator.service.generateAndPublishImage(mockPrompt).subscribe(
-                () => fail('Expected an error, but received a response'),
+                () => expect.fail('Expected an error, but received a response'),
                 (error) => {
                     expect(error).toBe("Invalid size '1792x1024' for model");
                 }
@@ -141,7 +141,7 @@ describe('DotAiContentService', () => {
             const mockPrompt = 'Test prompt';
 
             spectator.service.generateAndPublishImage(mockPrompt).subscribe(
-                () => fail('Expected an error, but received a response'),
+                () => expect.fail('Expected an error, but received a response'),
                 (error) => {
                     expect(error).toBe('Something went wrong');
                 }
@@ -158,7 +158,7 @@ describe('DotAiContentService', () => {
             const mockPrompt = 'Test prompt';
 
             spectator.service.generateAndPublishImage(mockPrompt).subscribe(
-                () => fail('Expected an error, but received a response'),
+                () => expect.fail('Expected an error, but received a response'),
                 (error) => {
                     expect(error).toBe('Direct error message');
                 }
@@ -175,7 +175,7 @@ describe('DotAiContentService', () => {
             const mockPrompt = 'Test prompt' as unknown as DotAIImageResponse;
 
             spectator.service.createAndPublishContentlet(mockPrompt).subscribe(
-                () => fail('Expected an error, but received a response'),
+                () => expect.fail('Expected an error, but received a response'),
                 (error) => {
                     expect(error).toBe(
                         'block-editor.extension.ai-image.api-error.error-publishing-ai-image'

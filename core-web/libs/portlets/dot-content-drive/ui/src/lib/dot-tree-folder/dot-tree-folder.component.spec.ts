@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -15,8 +16,8 @@ import { DotFolderTreeNodeItem } from '../shared/models';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
-    override preventDefault = jest.fn();
-    override stopPropagation = jest.fn();
+    override preventDefault = vi.fn();
+    override stopPropagation = vi.fn();
     dataTransfer: { files?: FileList | null } | null = null;
 
     constructor(type: string) {
@@ -215,7 +216,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeSelect when tree node is selected', () => {
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
             const mockEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -227,7 +228,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeExpand when tree node is expanded', () => {
-            const onNodeExpandSpy = jest.spyOn(component.onNodeExpand, 'emit');
+            const onNodeExpandSpy = vi.spyOn(component.onNodeExpand, 'emit');
             const mockEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -239,7 +240,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeCollapse when tree node is collapsed', () => {
-            const onNodeCollapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
+            const onNodeCollapseSpy = vi.spyOn(component.onNodeCollapse, 'emit');
             const mockEvent: TreeNodeCollapseEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -251,9 +252,9 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should trigger outputs through event handlers in template', () => {
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
-            const onNodeExpandSpy = jest.spyOn(component.onNodeExpand, 'emit');
-            const onNodeCollapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
+            const onNodeExpandSpy = vi.spyOn(component.onNodeExpand, 'emit');
+            const onNodeCollapseSpy = vi.spyOn(component.onNodeCollapse, 'emit');
 
             const mockSelectEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('select'),
@@ -280,8 +281,8 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should render a "Load more" button with plus icon and emit loadMore on click without selecting', () => {
-            const loadMoreSpy = jest.spyOn(component.loadMore, 'emit');
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+            const loadMoreSpy = vi.spyOn(component.loadMore, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
 
             const loadMoreNode: TreeNode = {
                 key: 'load-more:/application/',
@@ -403,24 +404,24 @@ describe('DotTreeFolderComponent', () => {
     });
 
     describe('Drag and Drop', () => {
-        let elementRefSpy: ReturnType<typeof jest.spyOn>;
-        let uploadFilesSpyEmitter: ReturnType<typeof jest.spyOn>;
-        let moveItemsSpyEmitter: ReturnType<typeof jest.spyOn>;
+        let elementRefSpy: ReturnType<typeof vi.spyOn>;
+        let uploadFilesSpyEmitter: ReturnType<typeof vi.spyOn>;
+        let moveItemsSpyEmitter: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
-            uploadFilesSpyEmitter = jest.spyOn(component.uploadFiles, 'emit');
-            moveItemsSpyEmitter = jest.spyOn(component.moveItems, 'emit');
+            uploadFilesSpyEmitter = vi.spyOn(component.uploadFiles, 'emit');
+            moveItemsSpyEmitter = vi.spyOn(component.moveItems, 'emit');
 
             // Spy on the component's elementRef nativeElement.contains method
             if (component.elementRef?.nativeElement) {
-                elementRefSpy = jest
+                elementRefSpy = vi
                     .spyOn(component.elementRef.nativeElement, 'contains')
                     .mockReturnValue(false);
             }
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         describe('dragenter', () => {
@@ -907,16 +908,16 @@ describe('DotTreeFolderComponent', () => {
 
         const rightClickOn = (target: Element) => {
             const event = new MouseEvent('contextmenu', { cancelable: true, bubbles: true });
-            jest.spyOn(event, 'preventDefault');
+            vi.spyOn(event, 'preventDefault');
             target.dispatchEvent(event);
 
             return event;
         };
 
-        let emitted: jest.Mock;
+        let emitted: Mock;
 
         beforeEach(() => {
-            emitted = jest.fn();
+            emitted = vi.fn();
             component.rightClick.subscribe(emitted);
 
             spectator.fixture.componentRef.setInput('folders', [

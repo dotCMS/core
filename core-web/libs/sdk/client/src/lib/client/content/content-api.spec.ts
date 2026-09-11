@@ -1,4 +1,4 @@
-/// <reference types="jest" />
+import { MockedClass, vi } from 'vitest';
 
 import {
     DotCMSClientConfig,
@@ -13,11 +13,11 @@ import { Content } from './content-api';
 
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
-jest.mock('../adapters/fetch-http-client');
+vi.mock('../adapters/fetch-http-client');
 
 describe('Content', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const config: DotCMSClientConfig = {
         dotcmsUrl: 'http://localhost:8080',
@@ -38,9 +38,14 @@ describe('Content', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        MockedFetchHttpClient.mockImplementation(
-            () => ({ request: mockRequest }) as Partial<FetchHttpClient> as FetchHttpClient
-        );
+        // A function expression, not an arrow: Vitest invokes a mocked class's
+        // implementation with `new`, and arrows are not constructible. Jest's automock
+        // wrapped the factory, so the arrow worked there.
+        MockedFetchHttpClient.mockImplementation(function () {
+            return {
+                request: mockRequest
+            } as Partial<FetchHttpClient> as FetchHttpClient;
+        });
         mockRequest.mockResolvedValue(mockResponseData);
     });
 

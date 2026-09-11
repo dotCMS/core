@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { Route, UrlSegment } from '@angular/router';
@@ -20,7 +21,7 @@ describe('dotAiConfigDetailMatchGuard', () => {
 
     beforeEach(() => {
         mockPropertiesService = {
-            getFreshFeatureFlag: jest.fn()
+            getFreshFeatureFlag: vi.fn()
         } as unknown as DotPropertiesService;
 
         TestBed.configureTestingModule({
@@ -28,38 +29,40 @@ describe('dotAiConfigDetailMatchGuard', () => {
         });
     });
 
-    it('should match and render the dotAI page when the feature flag is enabled', (done) => {
-        (mockPropertiesService.getFreshFeatureFlag as jest.Mock).mockReturnValue(of(true));
+    it('should match and render the dotAI page when the feature flag is enabled', () =>
+        new Promise<void>((done) => {
+            (mockPropertiesService.getFreshFeatureFlag as Mock).mockReturnValue(of(true));
 
-        TestBed.runInInjectionContext(() => {
-            const result = dotAiConfigDetailMatchGuard(mockRoute, mockSegments, mockSnapshot);
+            TestBed.runInInjectionContext(() => {
+                const result = dotAiConfigDetailMatchGuard(mockRoute, mockSegments, mockSnapshot);
 
-            if (result && typeof result === 'object' && 'subscribe' in result) {
-                result.subscribe((canMatch) => {
-                    expect(canMatch).toBe(true);
-                    done();
-                });
-            }
-        });
-    });
+                if (result && typeof result === 'object' && 'subscribe' in result) {
+                    result.subscribe((canMatch) => {
+                        expect(canMatch).toBe(true);
+                        done();
+                    });
+                }
+            });
+        }));
 
-    it('should not match, so the router falls through to the legacy dotAI screen, when the feature flag is disabled', (done) => {
-        (mockPropertiesService.getFreshFeatureFlag as jest.Mock).mockReturnValue(of(false));
+    it('should not match, so the router falls through to the legacy dotAI screen, when the feature flag is disabled', () =>
+        new Promise<void>((done) => {
+            (mockPropertiesService.getFreshFeatureFlag as Mock).mockReturnValue(of(false));
 
-        TestBed.runInInjectionContext(() => {
-            const result = dotAiConfigDetailMatchGuard(mockRoute, mockSegments, mockSnapshot);
+            TestBed.runInInjectionContext(() => {
+                const result = dotAiConfigDetailMatchGuard(mockRoute, mockSegments, mockSnapshot);
 
-            if (result && typeof result === 'object' && 'subscribe' in result) {
-                result.subscribe((canMatch) => {
-                    expect(canMatch).toBe(false);
-                    done();
-                });
-            }
-        });
-    });
+                if (result && typeof result === 'object' && 'subscribe' in result) {
+                    result.subscribe((canMatch) => {
+                        expect(canMatch).toBe(false);
+                        done();
+                    });
+                }
+            });
+        }));
 
     it('should ask for FEATURE_FLAG_DOTAI_CONFIG_UI specifically', () => {
-        (mockPropertiesService.getFreshFeatureFlag as jest.Mock).mockReturnValue(of(true));
+        (mockPropertiesService.getFreshFeatureFlag as Mock).mockReturnValue(of(true));
 
         TestBed.runInInjectionContext(() => {
             dotAiConfigDetailMatchGuard(mockRoute, mockSegments, mockSnapshot);

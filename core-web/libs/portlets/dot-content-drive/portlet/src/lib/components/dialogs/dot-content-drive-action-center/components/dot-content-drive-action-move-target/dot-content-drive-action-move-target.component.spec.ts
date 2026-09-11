@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { of } from 'rxjs';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { EMPTY, of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotBrowsingService } from '@dotcms/ui';
@@ -15,17 +21,32 @@ describe('DotContentDriveActionMoveTargetComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentDriveActionMoveTargetComponent,
         providers: [
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotHttpErrorManagerService),
             // Backs the picker's own store. The picker renders for real: this component exists only to
             // host it, so stubbing it out would leave nothing under test.
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn(() => of([])),
-                getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
-                getCurrentSiteAsTreeNodeItem: jest.fn(() => of(null))
+                getSitesTreePath: vi.fn(() => of([])),
+                // `pagination`, not `total`: the host-folder store reads
+                // `pagination.totalEntries` off this response, and the wrong shape left
+                // it dereferencing undefined inside an effect.
+                getSitesPage: vi.fn(() =>
+                    of({ sites: [], pagination: { currentPage: 1, perPage: 15, totalEntries: 0 } })
+                ),
+                // EMPTY, not `of(null)`: these tests need the current-site lookup to
+                // produce nothing, and the store dereferences `currentSite.key` without
+                // guarding the null its own return type allows — a product defect, so
+                // the fixture completes without emitting instead. Same meaning for the
+                // picker, no NPE inside the effect.
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => EMPTY)
             })
         ],
         detectChanges: false

@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -29,7 +30,7 @@ describe('DotPushPublishEnvironmentsResolver', () => {
     });
 
     it('should get a list of environments', () => {
-        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+        vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         service.resolve().subscribe(() => {
             expect(pushPublishService.getEnvironments).toHaveBeenCalled();
         });

@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -20,9 +21,9 @@ describe('DotReportIssueComponent', () => {
     let spectator: Spectator<DotReportIssueComponent>;
     let component: DotReportIssueComponent;
 
-    const reportIssueMock = jest.fn(() => of(''));
-    const successMock = jest.fn();
-    const getKeyMock = jest.fn(() => of(true as string | boolean));
+    const reportIssueMock = vi.fn(() => of(''));
+    const successMock = vi.fn();
+    const getKeyMock = vi.fn(() => of(true as string | boolean));
 
     const createComponent = createComponentFactory({
         component: DotReportIssueComponent,
@@ -145,7 +146,7 @@ describe('DotReportIssueComponent', () => {
     });
 
     it('should submit a trimmed description, close, and show success message', () => {
-        jest.spyOn(component.shutdown, 'emit');
+        vi.spyOn(component.shutdown, 'emit');
 
         component.form.get('description')?.setValue('  Broken button on editor  ');
         component.save();
@@ -169,7 +170,7 @@ describe('DotReportIssueComponent', () => {
     });
 
     it('should emit shutdown once when the dialog hides', () => {
-        jest.spyOn(component.shutdown, 'emit');
+        vi.spyOn(component.shutdown, 'emit');
 
         component.form.get('description')?.setValue('Close me');
         component.requestClose();
@@ -209,7 +210,7 @@ describe('DotReportIssueComponent', () => {
 
     it('should keep the dialog open and preserve values on error', () => {
         const screenshot = new File(['image'], 'screenshot.png', { type: 'image/png' });
-        jest.spyOn(component.shutdown, 'emit');
+        vi.spyOn(component.shutdown, 'emit');
         reportIssueMock.mockReturnValue(
             throwError(() => new HttpErrorResponse({ status: 502, statusText: 'Bad Gateway' }))
         );

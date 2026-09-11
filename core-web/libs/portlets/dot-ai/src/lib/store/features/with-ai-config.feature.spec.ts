@@ -1,6 +1,7 @@
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -44,7 +45,7 @@ describe('withAiConfig', () => {
     it('should not let the app-level embeddingsSearchThreshold override the portlet default', () => {
         // The server sends `.25` as an app default. Seeding it here made the portlet's own
         // default unreachable and overwrote the user's stored choice on every load.
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+        spectator.inject(DotAiConfigService).getResolvedConfig = vi
             .fn()
             .mockReturnValue(of(resolved({ settings: { embeddingsSearchThreshold: '0.25' } })));
 
@@ -55,7 +56,7 @@ describe('withAiConfig', () => {
 
     it('should leave the threshold alone entirely, including a value already chosen', () => {
         patchState(store, { settingsThreshold: 1.2 });
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+        spectator.inject(DotAiConfigService).getResolvedConfig = vi
             .fn()
             .mockReturnValue(of(resolved()));
 
@@ -65,7 +66,7 @@ describe('withAiConfig', () => {
     });
 
     it('should expose the chat models and default to the first', () => {
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+        spectator.inject(DotAiConfigService).getResolvedConfig = vi
             .fn()
             .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
 
@@ -77,7 +78,7 @@ describe('withAiConfig', () => {
 
     it('should keep a chosen model the provider still offers (FR-018)', () => {
         patchState(store, { settingsModel: 'second' });
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+        spectator.inject(DotAiConfigService).getResolvedConfig = vi
             .fn()
             .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
 
@@ -88,7 +89,7 @@ describe('withAiConfig', () => {
 
     it('should fall back when the chosen model is no longer offered (FR-018)', () => {
         patchState(store, { settingsModel: 'retired' });
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+        spectator.inject(DotAiConfigService).getResolvedConfig = vi
             .fn()
             .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
 
@@ -98,7 +99,7 @@ describe('withAiConfig', () => {
     });
 
     it('should be unconfigured when providerConfig is absent (FR-047)', () => {
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest.fn().mockReturnValue(
+        spectator.inject(DotAiConfigService).getResolvedConfig = vi.fn().mockReturnValue(
             of(
                 resolved({
                     providerConfig: null,
@@ -115,7 +116,7 @@ describe('withAiConfig', () => {
 
     it('should route a load failure through the error manager', () => {
         const error = new HttpErrorResponse({ status: 500 });
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+        spectator.inject(DotAiConfigService).getResolvedConfig = vi
             .fn()
             .mockReturnValue(throwError(() => error));
 
@@ -132,7 +133,7 @@ describe('withAiConfig', () => {
         });
 
         it('should be true once the config says there is no provider', () => {
-            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            spectator.inject(DotAiConfigService).getResolvedConfig = vi
                 .fn()
                 .mockReturnValue(of(resolved({ providerConfig: null, isConfigured: false })));
 
@@ -143,7 +144,7 @@ describe('withAiConfig', () => {
         });
 
         it('should stay false once the config says a provider is present', () => {
-            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            spectator.inject(DotAiConfigService).getResolvedConfig = vi
                 .fn()
                 .mockReturnValue(of(resolved()));
 
@@ -154,7 +155,7 @@ describe('withAiConfig', () => {
 
         it('should mark the config loaded even when the request fails', () => {
             // Otherwise a failed load leaves the screen waiting forever (FR-051).
-            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            spectator.inject(DotAiConfigService).getResolvedConfig = vi
                 .fn()
                 .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
 
@@ -167,7 +168,7 @@ describe('withAiConfig', () => {
             // A transient 500 leaves isConfigured false too, so the two were
             // indistinguishable — and the user was told to configure something that already
             // is configured.
-            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            spectator.inject(DotAiConfigService).getResolvedConfig = vi
                 .fn()
                 .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
 
@@ -178,12 +179,12 @@ describe('withAiConfig', () => {
         });
 
         it('should clear a previous failure once a load succeeds', () => {
-            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            spectator.inject(DotAiConfigService).getResolvedConfig = vi
                 .fn()
                 .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
             store.loadConfig();
 
-            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            spectator.inject(DotAiConfigService).getResolvedConfig = vi
                 .fn()
                 .mockReturnValue(of(resolved()));
             store.loadConfig();

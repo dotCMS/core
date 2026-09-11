@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
+import { Mocked, vi } from 'vitest';
 
 import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
 
@@ -7,7 +8,7 @@ import { EmptyContainerComponent } from './empty-container.component';
 import { DotCMSStore } from '../../../../../../store/dotcms.store';
 describe('EmptyContainerComponent', () => {
     let spectator: Spectator<EmptyContainerComponent>;
-    let dotcmsContextService: jest.Mocked<DotCMSStore>;
+    let dotcmsContextService: Mocked<DotCMSStore>;
 
     const createComponent = createComponentFactory({
         component: EmptyContainerComponent,
@@ -16,7 +17,7 @@ describe('EmptyContainerComponent', () => {
             {
                 provide: DotCMSStore,
                 useValue: {
-                    $isDevMode: jest.fn().mockReturnValue(true)
+                    $isDevMode: vi.fn().mockReturnValue(true)
                 }
             }
         ]
@@ -24,7 +25,7 @@ describe('EmptyContainerComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        dotcmsContextService = spectator.inject(DotCMSStore) as jest.Mocked<DotCMSStore>;
+        dotcmsContextService = spectator.inject(DotCMSStore) as Mocked<DotCMSStore>;
     });
 
     it('should create', () => {

@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -53,7 +54,7 @@ describe('DotShowHideFeatureDirective', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
+            vi.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
             fixture.detectChanges();
         });
 
@@ -128,7 +129,7 @@ describe('DotShowHideFeatureDirective with alternate template', () => {
 
     describe('with feature flag disabled', () => {
         beforeEach(() => {
-            jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
+            vi.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
             fixture.detectChanges();
         });
 

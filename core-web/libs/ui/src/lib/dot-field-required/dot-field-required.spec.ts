@@ -4,7 +4,7 @@ import {
     createDirectiveFactory,
     Spectator,
     SpectatorDirective
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 
 import { Component, signal } from '@angular/core';
 import {
