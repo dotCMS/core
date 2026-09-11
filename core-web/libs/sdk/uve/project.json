@@ -5,18 +5,6 @@
     "projectType": "library",
     "tags": [],
     "targets": {
-        "test": {
-            "options": {
-                "passWithNoTests": true,
-                "testEnvironment": "jsdom"
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        },
         "lint": {
             "options": {
                 "args": ["**/*.ts"]

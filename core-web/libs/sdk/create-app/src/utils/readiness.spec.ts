@@ -45,6 +45,8 @@
  * exit). Spec: spec.md AC-009.
  */
 
+import { Mock, MockInstance, vi } from 'vitest';
+
 import { probeReadiness } from './readiness';
 
 const READYZ_URL = 'http://127.0.0.1:8090/dotmgt/readyz';
@@ -52,7 +54,7 @@ const FALLBACK_URL = 'http://localhost:8082/api/v1/appconfiguration';
 
 /** A `get` that answers per-URL, so a test can say "readyz 404, fallback 200" in one line. */
 function responder(byUrl: Record<string, number | Error>) {
-    return jest.fn(async (url: string) => {
+    return vi.fn(async (url: string) => {
         const answer = byUrl[url];
 
         if (answer === undefined) {
@@ -77,16 +79,16 @@ function options(overrides: Partial<Parameters<typeof probeReadiness>[0]> = {}) 
 }
 
 describe('probeReadiness', () => {
-    let exitSpy: jest.SpyInstance;
+    let exitSpy: MockInstance;
 
     beforeEach(() => {
-        exitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+        exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
             throw new Error(`process.exit(${code}) must never be called here`);
         }) as never);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('readyz is the preferred signal', () => {
@@ -105,7 +107,7 @@ describe('probeReadiness', () => {
 
             await probeReadiness(opts);
 
-            const asked = (opts.get as jest.Mock).mock.calls.map(([url]) => url);
+            const asked = (opts.get as Mock).mock.calls.map(([url]) => url);
 
             expect(asked).toEqual([READYZ_URL]);
             expect(asked).not.toContain(FALLBACK_URL);
@@ -146,9 +148,7 @@ describe('probeReadiness', () => {
             const readiness = await probeReadiness(opts);
 
             expect(readiness.kind).toBe('not-ready');
-            expect((opts.get as jest.Mock).mock.calls.map(([url]) => url)).not.toContain(
-                FALLBACK_URL
-            );
+            expect((opts.get as Mock).mock.calls.map(([url]) => url)).not.toContain(FALLBACK_URL);
         });
     });
 
@@ -161,7 +161,7 @@ describe('probeReadiness', () => {
             const readiness = await probeReadiness(opts);
 
             expect(readiness).toEqual({ kind: 'ready' });
-            expect((opts.get as jest.Mock).mock.calls.map(([url]) => url)).toEqual([
+            expect((opts.get as Mock).mock.calls.map(([url]) => url)).toEqual([
                 READYZ_URL,
                 FALLBACK_URL
             ]);
@@ -178,7 +178,7 @@ describe('probeReadiness', () => {
             const readiness = await probeReadiness(opts);
 
             expect(readiness).toEqual({ kind: 'ready' });
-            expect((opts.get as jest.Mock).mock.calls.map(([url]) => url)).toContain(FALLBACK_URL);
+            expect((opts.get as Mock).mock.calls.map(([url]) => url)).toContain(FALLBACK_URL);
         });
 
         it('reports not-ready and names both URLs when the fallback fails too', async () => {

@@ -6,8 +6,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { Subject, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { Clipboard } from '@angular/cdk/clipboard';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -53,20 +54,20 @@ describe('DotHostFolderFieldComponent', () => {
         providers: [
             HostFolderFiledStore,
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn()
+                handle: vi.fn()
             }),
             mockProvider(DotBrowsingService, {
-                getSitesPage: jest.fn(() => of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))),
-                resolveSiteByHostname: jest.fn((hostname: string) => {
+                getSitesPage: vi.fn(() => of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))),
+                resolveSiteByHostname: vi.fn((hostname: string) => {
                     const site =
                         TREE_SELECT_SITES_MOCK.find((item) => item.label === hostname) ??
                         TREE_SELECT_MOCK.find((item) => item.label === hostname);
 
                     return of(site ?? null);
                 }),
-                getCurrentSiteAsTreeNodeItem: jest.fn(),
-                buildTreeByPaths: jest.fn(),
-                searchFolders: jest.fn(() =>
+                getCurrentSiteAsTreeNodeItem: vi.fn(),
+                buildTreeByPaths: vi.fn(),
+                searchFolders: vi.fn(() =>
                     of({
                         folders: [],
                         pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
@@ -74,13 +75,13 @@ describe('DotHostFolderFieldComponent', () => {
                 )
             }),
             mockProvider(Clipboard, {
-                copy: jest.fn().mockReturnValue(true)
+                copy: vi.fn().mockReturnValue(true)
             }),
             { provide: DotMessageService, useValue: MessageServiceMock }
         ]
     });
 
-    let overlayMock: { toggle: jest.Mock; hide: jest.Mock; container?: HTMLElement };
+    let overlayMock: { toggle: Mock; hide: Mock; container?: HTMLElement };
 
     const createToggleEvent = (offsetWidth = 320): Event => {
         const trigger = document.createElement('button');
@@ -102,7 +103,7 @@ describe('DotHostFolderFieldComponent', () => {
 
         // p-popover isn't rendered/attached in this unit test; stub it with a stable
         // reference so trigger interactions can be verified without a real overlay.
-        overlayMock = { toggle: jest.fn(), hide: jest.fn() };
+        overlayMock = { toggle: vi.fn(), hide: vi.fn() };
         Object.defineProperty(spectator.component, '$overlay', {
             value: () => overlayMock,
             writable: true
@@ -141,7 +142,7 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should select a site through the store', () => {
-        jest.spyOn(store, 'selectSite');
+        vi.spyOn(store, 'selectSite');
         const site = TREE_SELECT_SITES_MOCK[0];
 
         spectator.component.onSiteSelect(site);
@@ -150,7 +151,7 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should stage a folder selection through the store', () => {
-        jest.spyOn(store, 'setPendingNode');
+        vi.spyOn(store, 'setPendingNode');
         const node = TREE_SELECT_MOCK[0].children[0];
         const event = { originalEvent: new Event('click'), node };
 
@@ -160,7 +161,7 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should lazily expand a folder through the store', () => {
-        jest.spyOn(store, 'expandNode');
+        vi.spyOn(store, 'expandNode');
         const node = TREE_SELECT_MOCK[0].children[0];
         const event = { originalEvent: new Event('click'), node };
 
@@ -170,7 +171,7 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should forward the search input value to the store', () => {
-        jest.spyOn(store, 'search');
+        vi.spyOn(store, 'search');
         const input = document.createElement('input');
         input.value = 'foo';
         const event = { target: input } as unknown as Event;
@@ -181,7 +182,7 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should forward the sites search input value to the store', () => {
-        jest.spyOn(store, 'filterSites');
+        vi.spyOn(store, 'filterSites');
         const input = document.createElement('input');
         input.value = 'demo';
         const event = { target: input } as unknown as Event;
@@ -192,14 +193,14 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should forward sites lazy-load events to the store when near the end of the list', () => {
-        jest.spyOn(store, 'loadMoreSites');
+        vi.spyOn(store, 'loadMoreSites');
         const sites = Array.from({ length: SITE_PAGE_LIMIT }, (_, index) => ({
             ...TREE_SELECT_SITES_MOCK[0],
             key: `site-${index}`,
             label: `site-${index}.dotcms.com`
         }));
-        jest.spyOn(store, 'sites').mockReturnValue(sites);
-        jest.spyOn(store, 'sitesPagination').mockReturnValue({
+        vi.spyOn(store, 'sites').mockReturnValue(sites);
+        vi.spyOn(store, 'sitesPagination').mockReturnValue({
             page: 1,
             hasMore: true,
             loading: false,
@@ -212,9 +213,9 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should not load more sites while pagination is loading', () => {
-        jest.spyOn(store, 'loadMoreSites');
-        jest.spyOn(store, 'sites').mockReturnValue(TREE_SELECT_SITES_MOCK);
-        jest.spyOn(store, 'sitesPagination').mockReturnValue({
+        vi.spyOn(store, 'loadMoreSites');
+        vi.spyOn(store, 'sites').mockReturnValue(TREE_SELECT_SITES_MOCK);
+        vi.spyOn(store, 'sitesPagination').mockReturnValue({
             page: 1,
             hasMore: true,
             loading: true,
@@ -227,9 +228,9 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should not load more sites when the viewport is not near the end', () => {
-        jest.spyOn(store, 'loadMoreSites');
-        jest.spyOn(store, 'sites').mockReturnValue(TREE_SELECT_SITES_MOCK);
-        jest.spyOn(store, 'sitesPagination').mockReturnValue({
+        vi.spyOn(store, 'loadMoreSites');
+        vi.spyOn(store, 'sites').mockReturnValue(TREE_SELECT_SITES_MOCK);
+        vi.spyOn(store, 'sitesPagination').mockReturnValue({
             page: 1,
             hasMore: true,
             loading: false,
@@ -606,10 +607,10 @@ describe('DotHostFolderFieldComponent', () => {
 
     describe('onLoadMoreNode', () => {
         it('should load more root folders when the sentinel has no parent', () => {
-            jest.spyOn(store, 'loadMore');
+            vi.spyOn(store, 'loadMore');
             const node = { key: 'load-more:root', type: 'load-more' as const };
             const event = new Event('click');
-            jest.spyOn(event, 'stopPropagation');
+            vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onLoadMoreNode(node, event);
 
@@ -618,11 +619,11 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should load more folders for the sentinel parent level', () => {
-            jest.spyOn(store, 'loadMore');
+            vi.spyOn(store, 'loadMore');
             const parent = TREE_SELECT_MOCK[0];
             const node = { key: 'load-more:folder-1', type: 'load-more' as const, parent };
             const event = new Event('click');
-            jest.spyOn(event, 'stopPropagation');
+            vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onLoadMoreNode(node, event);
 
@@ -631,12 +632,12 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should load more search results instead of folders when a search is active', () => {
-            jest.spyOn(store, 'loadMoreSearchResults');
-            jest.spyOn(store, 'loadMore');
-            jest.spyOn(store, 'isSearching').mockReturnValue(true);
+            vi.spyOn(store, 'loadMoreSearchResults');
+            vi.spyOn(store, 'loadMore');
+            vi.spyOn(store, 'isSearching').mockReturnValue(true);
             const node = { key: 'load-more:search', type: 'load-more' as const };
             const event = new Event('click');
-            jest.spyOn(event, 'stopPropagation');
+            vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onLoadMoreNode(node, event);
 
@@ -647,7 +648,7 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should commit the pending selection and hide the overlay on Select', () => {
-        jest.spyOn(store, 'commit');
+        vi.spyOn(store, 'commit');
 
         spectator.component.onSelect();
 
@@ -670,7 +671,7 @@ describe('DotHostFolderFieldComponent', () => {
         };
 
         it('should open the overlay through the store', () => {
-            jest.spyOn(store, 'openOverlay');
+            vi.spyOn(store, 'openOverlay');
 
             spectator.component.onOverlayShow();
 
@@ -680,7 +681,7 @@ describe('DotHostFolderFieldComponent', () => {
         it('should left-align the popover to the trigger after show', async () => {
             const trigger = document.createElement('button');
             Object.defineProperty(trigger, 'offsetWidth', { value: 300 });
-            jest.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+            vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
                 left: 80,
                 top: 0,
                 right: 380,
@@ -709,12 +710,12 @@ describe('DotHostFolderFieldComponent', () => {
         it('should schedule a scroll to the selected folder once the overlay renders', async () => {
             const node = TREE_SELECT_MOCK[0].children[0];
             store.setPendingNode(node);
-            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
-            jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
+            vi.spyOn(store, 'treeSelection').mockReturnValue(node);
+            vi.spyOn(store, 'overlayOpen').mockReturnValue(true);
 
             const selectedElement = document.createElement('div');
             selectedElement.classList.add('p-tree-node-content', 'p-tree-node-selected');
-            const scrollIntoViewSpy = jest.fn();
+            const scrollIntoViewSpy = vi.fn();
             selectedElement.scrollIntoView = scrollIntoViewSpy;
 
             const treeRoot = document.createElement('div');
@@ -731,9 +732,9 @@ describe('DotHostFolderFieldComponent', () => {
         it('should not scroll when the overlay is not open', async () => {
             const node = TREE_SELECT_MOCK[0].children[0];
             store.setPendingNode(node);
-            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
-            jest.spyOn(store, 'overlayOpen').mockReturnValue(false);
-            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+            vi.spyOn(store, 'treeSelection').mockReturnValue(node);
+            vi.spyOn(store, 'overlayOpen').mockReturnValue(false);
+            const scrollIntoViewSpy = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
 
             spectator.component.onOverlayShow();
             spectator.detectChanges();
@@ -743,9 +744,9 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should not scroll when there is no selected folder', async () => {
-            jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
-            jest.spyOn(store, 'treeSelection').mockReturnValue(null);
-            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+            vi.spyOn(store, 'overlayOpen').mockReturnValue(true);
+            vi.spyOn(store, 'treeSelection').mockReturnValue(null);
+            const scrollIntoViewSpy = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
 
             spectator.component.onOverlayShow();
             spectator.detectChanges();
@@ -757,10 +758,10 @@ describe('DotHostFolderFieldComponent', () => {
         it('should retry on the next animation frame while folders are still loading', async () => {
             const node = TREE_SELECT_MOCK[0].children[0];
             store.setPendingNode(node);
-            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
-            jest.spyOn(store, 'overlayOpen').mockReturnValue(true);
-            jest.spyOn(store, 'foldersLoading').mockReturnValue(true);
-            const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
+            vi.spyOn(store, 'treeSelection').mockReturnValue(node);
+            vi.spyOn(store, 'overlayOpen').mockReturnValue(true);
+            vi.spyOn(store, 'foldersLoading').mockReturnValue(true);
+            const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
 
             spectator.component.onOverlayShow();
             spectator.detectChanges();
@@ -972,7 +973,7 @@ describe('DotHostFolderFieldComponent', () => {
 
     describe('loading states', () => {
         afterEach(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
             mockSitesPage(TREE_SELECT_SITES_MOCK);
         });
 
@@ -1011,8 +1012,8 @@ describe('DotHostFolderFieldComponent', () => {
                 spectator.query(byTestId(testId)) ??
                 document.querySelector(`[data-testid="${testId}"]`);
 
-            jest.spyOn(store, 'showSitesPanelLoading').mockReturnValue(true);
-            jest.spyOn(store, 'filteredSites').mockReturnValue([]);
+            vi.spyOn(store, 'showSitesPanelLoading').mockReturnValue(true);
+            vi.spyOn(store, 'filteredSites').mockReturnValue([]);
             spectator.detectChanges();
 
             const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
@@ -1032,10 +1033,10 @@ describe('DotHostFolderFieldComponent', () => {
                 spectator.query(byTestId(testId)) ??
                 document.querySelector(`[data-testid="${testId}"]`);
 
-            jest.spyOn(store, 'sitesLoading').mockReturnValue(false);
-            jest.spyOn(store, 'showFoldersPanelLoading').mockReturnValue(true);
-            jest.spyOn(store, 'showFolderSearch').mockReturnValue(false);
-            jest.spyOn(store, 'displayedFolders').mockReturnValue([]);
+            vi.spyOn(store, 'sitesLoading').mockReturnValue(false);
+            vi.spyOn(store, 'showFoldersPanelLoading').mockReturnValue(true);
+            vi.spyOn(store, 'showFolderSearch').mockReturnValue(false);
+            vi.spyOn(store, 'displayedFolders').mockReturnValue([]);
             spectator.detectChanges();
 
             const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
@@ -1056,12 +1057,12 @@ describe('DotHostFolderFieldComponent', () => {
                 spectator.query(byTestId(testId)) ??
                 document.querySelector(`[data-testid="${testId}"]`);
 
-            jest.spyOn(store, 'sitesLoading').mockReturnValue(false);
-            jest.spyOn(store, 'showFoldersPanelLoading').mockReturnValue(true);
-            jest.spyOn(store, 'showFolderSearch').mockReturnValue(true);
-            jest.spyOn(store, 'searchLoading').mockReturnValue(true);
-            jest.spyOn(store, 'searchTerm').mockReturnValue('ab');
-            jest.spyOn(store, 'displayedFolders').mockReturnValue([]);
+            vi.spyOn(store, 'sitesLoading').mockReturnValue(false);
+            vi.spyOn(store, 'showFoldersPanelLoading').mockReturnValue(true);
+            vi.spyOn(store, 'showFolderSearch').mockReturnValue(true);
+            vi.spyOn(store, 'searchLoading').mockReturnValue(true);
+            vi.spyOn(store, 'searchTerm').mockReturnValue('ab');
+            vi.spyOn(store, 'displayedFolders').mockReturnValue([]);
             spectator.detectChanges();
 
             const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
@@ -1094,9 +1095,9 @@ describe('DotHostFolderFieldComponent', () => {
             document.querySelector(`[data-testid="${testId}"]`);
 
         it('should show the sites search clear control when the term is not empty and not loading', () => {
-            jest.spyOn(store, 'showSitesSearch').mockReturnValue(true);
-            jest.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
-            jest.spyOn(store, 'sitesSearchLoading').mockReturnValue(false);
+            vi.spyOn(store, 'showSitesSearch').mockReturnValue(true);
+            vi.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
+            vi.spyOn(store, 'sitesSearchLoading').mockReturnValue(false);
             spectator.detectChanges();
             openOverlay();
 
@@ -1105,9 +1106,9 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should show the sites search loading spinner instead of the clear control', () => {
-            jest.spyOn(store, 'showSitesSearch').mockReturnValue(true);
-            jest.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
-            jest.spyOn(store, 'sitesSearchLoading').mockReturnValue(true);
+            vi.spyOn(store, 'showSitesSearch').mockReturnValue(true);
+            vi.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
+            vi.spyOn(store, 'sitesSearchLoading').mockReturnValue(true);
             spectator.detectChanges();
             openOverlay();
 
@@ -1116,10 +1117,10 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should clear the sites search and restore focus', async () => {
-            jest.spyOn(store, 'showSitesSearch').mockReturnValue(true);
-            jest.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
-            jest.spyOn(store, 'sitesSearchLoading').mockReturnValue(false);
-            jest.spyOn(store, 'filterSites');
+            vi.spyOn(store, 'showSitesSearch').mockReturnValue(true);
+            vi.spyOn(store, 'siteSearchTerm').mockReturnValue('demo');
+            vi.spyOn(store, 'sitesSearchLoading').mockReturnValue(false);
+            vi.spyOn(store, 'filterSites');
             spectator.detectChanges();
             openOverlay();
 
@@ -1134,9 +1135,9 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should show the folders search clear control when the term is not empty and not loading', () => {
-            jest.spyOn(store, 'showFolderSearch').mockReturnValue(true);
-            jest.spyOn(store, 'searchTerm').mockReturnValue('ab');
-            jest.spyOn(store, 'searchLoading').mockReturnValue(false);
+            vi.spyOn(store, 'showFolderSearch').mockReturnValue(true);
+            vi.spyOn(store, 'searchTerm').mockReturnValue('ab');
+            vi.spyOn(store, 'searchLoading').mockReturnValue(false);
             spectator.detectChanges();
             openOverlay();
 
@@ -1145,10 +1146,10 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should clear the folders search and restore focus', async () => {
-            jest.spyOn(store, 'showFolderSearch').mockReturnValue(true);
-            jest.spyOn(store, 'searchTerm').mockReturnValue('ab');
-            jest.spyOn(store, 'searchLoading').mockReturnValue(false);
-            jest.spyOn(store, 'search');
+            vi.spyOn(store, 'showFolderSearch').mockReturnValue(true);
+            vi.spyOn(store, 'searchTerm').mockReturnValue('ab');
+            vi.spyOn(store, 'searchLoading').mockReturnValue(false);
+            vi.spyOn(store, 'search');
             spectator.detectChanges();
             openOverlay();
 
@@ -1164,8 +1165,8 @@ describe('DotHostFolderFieldComponent', () => {
     });
 
     it('should propagate the committed value through the form control accessor', () => {
-        const onChange = jest.fn();
-        const onTouched = jest.fn();
+        const onChange = vi.fn();
+        const onTouched = vi.fn();
         spectator.component.registerOnChange(onChange);
         spectator.component.registerOnTouched(onTouched);
 
@@ -1206,7 +1207,7 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should do nothing when there is no confirmed selection', () => {
-            jest.spyOn(store, 'copyPath').mockReturnValue('');
+            vi.spyOn(store, 'copyPath').mockReturnValue('');
 
             spectator.component.copyPath();
 
@@ -1214,7 +1215,7 @@ describe('DotHostFolderFieldComponent', () => {
         });
 
         it('should show a check icon after copying and revert after a delay', () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const site = TREE_SELECT_SITES_MOCK[0];
             store.setPendingNode(site);
             store.commit();
@@ -1225,11 +1226,11 @@ describe('DotHostFolderFieldComponent', () => {
 
             expect(spectator.query(byTestId('host-folder-copy-icon'))).toHaveText('check');
 
-            jest.advanceTimersByTime(1500);
+            vi.advanceTimersByTime(1500);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('host-folder-copy-icon'))).toHaveText('content_copy');
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 });

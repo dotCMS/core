@@ -1,6 +1,12 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { Subject, of, throwError } from 'rxjs';
+import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -40,34 +46,34 @@ const MOCK_ASSETS = [
 ];
 
 // Mock the blob-download helper so the click side-effect is observable in tests.
-const mockAnchorClick = jest.fn();
-jest.mock('@dotcms/utils', () => {
-    const actual = jest.requireActual('@dotcms/utils');
+const mockAnchorClick = vi.fn();
+vi.mock('@dotcms/utils', async () => {
+    const actual = await vi.importActual('@dotcms/utils');
     return {
         ...actual,
-        getDownloadLink: jest.fn(() => ({ click: mockAnchorClick }) as unknown as HTMLAnchorElement)
+        getDownloadLink: vi.fn(() => ({ click: mockAnchorClick }) as unknown as HTMLAnchorElement)
     };
 });
 
 describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueSelectBundleDialogComponent>;
-    let service: jest.Mocked<DotPublishingQueueService>;
-    let confirmationService: jest.Mocked<ConfirmationService>;
-    let dialogRef: jest.Mocked<DynamicDialogRef>;
-    let globalMessage: jest.Mocked<DotGlobalMessageService>;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let service: Mocked<DotPublishingQueueService>;
+    let confirmationService: Mocked<ConfirmationService>;
+    let dialogRef: Mocked<DynamicDialogRef>;
+    let globalMessage: Mocked<DotGlobalMessageService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueSelectBundleDialogComponent,
         providers: [
             mockProvider(DotPublishingQueueService, {
-                getUnsendBundles: jest.fn().mockReturnValue(of(UNSENT_RESPONSE)),
-                getBundleAssets: jest.fn().mockReturnValue(of(MOCK_ASSETS)),
-                removeAssetsFromBundle: jest
+                getUnsendBundles: vi.fn().mockReturnValue(of(UNSENT_RESPONSE)),
+                getBundleAssets: vi.fn().mockReturnValue(of(MOCK_ASSETS)),
+                removeAssetsFromBundle: vi
                     .fn()
                     .mockReturnValue(of([{ assetId: 'a1', success: true, message: 'ok' }])),
-                deleteBundles: jest.fn().mockReturnValue(of({ entity: 'ok' })),
-                pushBundle: jest.fn().mockReturnValue(
+                deleteBundles: vi.fn().mockReturnValue(of({ entity: 'ok' })),
+                pushBundle: vi.fn().mockReturnValue(
                     of({
                         bundleId: 'bundle-1',
                         operation: 'publish',
@@ -77,27 +83,27 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                         filterKey: 'default.yml'
                     })
                 ),
-                generateBundle: jest
+                generateBundle: vi
                     .fn()
                     .mockReturnValue(of({ blob: new Blob(['x']), filename: 'bundle.tar.gz' }))
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest
+                getCurrentUser: vi
                     .fn()
                     .mockReturnValue(of({ userId: 'dotcms.org.1', email: 'admin@dotcms.com' }))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of({}))
+                getContentType: vi.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             // The dialog provides DotPushPublishFiltersService at the component
             // level (mirrors the legacy DotPushPublishDialogComponent). Both the
             // embedded <dot-push-publish-form> AND the inline Download menu call
             // .get() on it during ngOnInit.
             mockProvider(DotPushPublishFiltersService, {
-                get: jest.fn().mockReturnValue(
+                get: vi.fn().mockReturnValue(
                     of([
                         {
                             key: 'ForcePush.yml',
@@ -119,16 +125,16 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             }),
             // The form also calls DotcmsConfigService.getTimeZones() during ngOnInit.
             mockProvider(DotcmsConfigService, {
-                getTimeZones: jest.fn().mockReturnValue(of([]))
+                getTimeZones: vi.fn().mockReturnValue(of([]))
             }),
             // The form injects DotParseHtmlService (only used when `customCode` is in
             // data; we don't pass that, but the DI lookup happens unconditionally).
-            mockProvider(DotParseHtmlService, { parse: jest.fn() }),
+            mockProvider(DotParseHtmlService, { parse: vi.fn() }),
             // PushPublishEnvSelectorComponent (rendered inside the embedded form)
             // injects PushPublishService for the "remember last push" env list.
             mockProvider(PushPublishService, {
-                getEnvironments: jest.fn().mockReturnValue(of([])),
-                pushPublishContent: jest.fn().mockReturnValue(of({}))
+                getEnvironments: vi.fn().mockReturnValue(of([])),
+                pushPublishContent: vi.fn().mockReturnValue(of({}))
             }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
@@ -152,28 +158,26 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     beforeEach(() => {
         mockAnchorClick.mockClear();
         spectator = createComponent();
-        service = spectator.inject(
-            DotPublishingQueueService
-        ) as jest.Mocked<DotPublishingQueueService>;
-        dialogRef = spectator.inject(DynamicDialogRef) as jest.Mocked<DynamicDialogRef>;
+        service = spectator.inject(DotPublishingQueueService) as Mocked<DotPublishingQueueService>;
+        dialogRef = spectator.inject(DynamicDialogRef) as Mocked<DynamicDialogRef>;
         globalMessage = spectator.inject(
             DotGlobalMessageService
-        ) as jest.Mocked<DotGlobalMessageService>;
+        ) as Mocked<DotGlobalMessageService>;
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
         confirmationService = spectator.inject(
             ConfirmationService,
             true
-        ) as jest.Mocked<ConfirmationService>;
-        jest.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
+        ) as Mocked<ConfirmationService>;
+        vi.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
             cfg.accept?.();
             return confirmationService;
         });
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     /** Public-API helper: exercises `onCheckedChange` the way the template does
@@ -212,7 +216,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     describe('select bundle', () => {
         it('clicking a different bundle loads its assets', () => {
             spectator.detectChanges();
-            (service.getBundleAssets as jest.Mock).mockClear();
+            (service.getBundleAssets as Mock).mockClear();
 
             spectator.component.onSelectBundle({ id: 'bundle-2', name: 'Blog content sync' });
             expect(spectator.component.$activeBundleId()).toBe('bundle-2');
@@ -221,7 +225,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('clicking the already-active bundle is a no-op (no extra fetch)', () => {
             spectator.detectChanges();
-            (service.getBundleAssets as jest.Mock).mockClear();
+            (service.getBundleAssets as Mock).mockClear();
 
             spectator.component.onSelectBundle({ id: 'bundle-1', name: 'Spring campaign refresh' });
             expect(service.getBundleAssets).not.toHaveBeenCalled();
@@ -287,10 +291,10 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     });
 
     describe('asset row click → opens content editor', () => {
-        let openSpy: jest.SpyInstance;
+        let openSpy: MockInstance;
 
         beforeEach(() => {
-            openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+            openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
             spectator.detectChanges();
         });
 
@@ -330,7 +334,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     describe('remove asset', () => {
         it('confirms then calls removeAssetsFromBundle and refetches', () => {
             spectator.detectChanges();
-            (service.getBundleAssets as jest.Mock).mockClear();
+            (service.getBundleAssets as Mock).mockClear();
 
             spectator.component.onRemoveAsset({
                 asset: 'a1',
@@ -349,16 +353,16 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             // public path instead of being mutated directly. `mockReturnValueOnce`
             // scopes the empty response to this component's initial fetch only,
             // so the default mock returns the fixture for the next test.
-            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(
+            (service.getUnsendBundles as Mock).mockReturnValueOnce(
                 of({ identifier: 'id', label: 'name', items: [], numRows: 0 })
             );
             spectator = createComponent();
             service = spectator.inject(
                 DotPublishingQueueService
-            ) as jest.Mocked<DotPublishingQueueService>;
+            ) as Mocked<DotPublishingQueueService>;
             spectator.detectChanges();
 
-            (service.removeAssetsFromBundle as jest.Mock).mockClear();
+            (service.removeAssetsFromBundle as Mock).mockClear();
             spectator.component.onRemoveAsset({
                 asset: 'a1',
                 title: 'x',
@@ -370,12 +374,10 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         it('on service error: hands off to httpErrorManager', () => {
             spectator.detectChanges();
             const error = new Error('boom');
-            (service.removeAssetsFromBundle as jest.Mock).mockReturnValueOnce(
-                throwError(() => error)
-            );
+            (service.removeAssetsFromBundle as Mock).mockReturnValueOnce(throwError(() => error));
             const handler = spectator.inject(
                 DotHttpErrorManagerService
-            ) as jest.Mocked<DotHttpErrorManagerService>;
+            ) as Mocked<DotHttpErrorManagerService>;
             spectator.component.onRemoveAsset({
                 asset: 'a1',
                 title: 'x',
@@ -392,7 +394,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 { id: 'bundle-1', name: 'Spring campaign refresh' }
             ]);
             // After delete, the next list call returns only the remaining bundle.
-            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(
+            (service.getUnsendBundles as Mock).mockReturnValueOnce(
                 of({
                     identifier: 'id',
                     label: 'name',
@@ -411,7 +413,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('does not delete and surfaces the "select one" warning when nothing is checked', () => {
             spectator.detectChanges();
-            (service.deleteBundles as jest.Mock).mockClear();
+            (service.deleteBundles as Mock).mockClear();
             spectator.component.onRemoveBundles();
             expect(service.deleteBundles).not.toHaveBeenCalled();
             expect(spectator.component.$validationWarningKey()).toBe(
@@ -481,7 +483,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('toggles isDownloading around the network call', () => {
             const subject = new Subject<{ blob: Blob; filename: string }>();
-            (service.generateBundle as jest.Mock).mockReturnValueOnce(subject.asObservable());
+            (service.generateBundle as Mock).mockReturnValueOnce(subject.asObservable());
             primeDownloadableState('bundle-2');
 
             expect(spectator.component.$isDownloading()).toBe(false);
@@ -494,7 +496,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('hands errors off to DotHttpErrorManagerService and releases isDownloading', () => {
             const error = new Error('boom');
-            (service.generateBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            (service.generateBundle as Mock).mockReturnValueOnce(throwError(() => error));
             primeDownloadableState('bundle-2');
             spectator.component.onDownload();
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
@@ -513,12 +515,12 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('does not re-fire while a download is already in flight', () => {
             const pending = new Subject<{ blob: Blob; filename: string }>();
-            (service.generateBundle as jest.Mock).mockReturnValueOnce(pending.asObservable());
+            (service.generateBundle as Mock).mockReturnValueOnce(pending.asObservable());
             primeDownloadableState('bundle-2');
 
             spectator.component.onDownload();
             expect(spectator.component.$isDownloading()).toBe(true);
-            (service.generateBundle as jest.Mock).mockClear();
+            (service.generateBundle as Mock).mockClear();
 
             spectator.component.onDownload();
             expect(service.generateBundle).not.toHaveBeenCalled();
@@ -659,7 +661,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('surfaces a partial-failure toast and keeps the dialog open if any push fails', () => {
             primeSendableState(['bundle-1', 'bundle-2']);
-            (service.pushBundle as jest.Mock).mockImplementationOnce(() =>
+            (service.pushBundle as Mock).mockImplementationOnce(() =>
                 of({
                     bundleId: 'bundle-1',
                     operation: 'publish',
@@ -669,7 +671,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                     filterKey: 'default.yml'
                 })
             );
-            (service.pushBundle as jest.Mock).mockImplementationOnce(() =>
+            (service.pushBundle as Mock).mockImplementationOnce(() =>
                 throwError(() => new Error('boom'))
             );
 
@@ -704,7 +706,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('toggles isSending around the network calls', () => {
             const subject = new Subject<unknown>();
-            (service.pushBundle as jest.Mock).mockReturnValueOnce(subject.asObservable());
+            (service.pushBundle as Mock).mockReturnValueOnce(subject.asObservable());
             primeSendableState(['bundle-1']);
 
             expect(spectator.component.$isSending()).toBe(false);
@@ -776,7 +778,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         it('assetsEmptyConfig uses the "pick a bundle" copy when no bundle is active', () => {
             // Recreate with an empty response so the ngOnInit auto-select
             // doesn't run — activeBundleId stays null through the public path.
-            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(
+            (service.getUnsendBundles as Mock).mockReturnValueOnce(
                 of({ identifier: 'id', label: 'name', items: [], numRows: 0 })
             );
             spectator = createComponent();

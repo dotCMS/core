@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { TreeNodeData } from '@dotcms/dotcms-models';
@@ -51,7 +51,7 @@ describe('DotUploadTypeSelectorComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('rendering', () => {

@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
@@ -50,10 +56,15 @@ describe('DotContentDriveActionPreviewComponent', () => {
                 })
             },
             // Required by the grid this component renders for real.
-            mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
+            mockProvider(DotLanguagesService, { get: vi.fn(() => of([])) }),
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
-            provideHttpClient()
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         detectChanges: false
     });
@@ -146,7 +157,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
 
     describe('selection', () => {
         it('should emit the remaining items when a row is unchecked', () => {
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             spectator.output('selectionChange').subscribe(emitted);
 
             spectator.click(rowCheckbox(0));
@@ -159,7 +170,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
             spectator.setInput('selection', [ITEMS[1]]);
             spectator.detectChanges();
 
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             spectator.output('selectionChange').subscribe(emitted);
 
             spectator.click(rowCheckbox(0));
@@ -169,7 +180,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
         });
 
         it('should emit an empty list when the header checkbox clears everything', () => {
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             spectator.output('selectionChange').subscribe(emitted);
 
             spectator.click(spectator.query(byTestId('header-checkbox')).querySelector('input'));
@@ -188,7 +199,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
             spectator.setInput('selection', variants);
             spectator.detectChanges();
 
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             spectator.output('selectionChange').subscribe(emitted);
 
             spectator.click(rowCheckbox(0));
@@ -238,7 +249,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
 
             expect(spectator.query(DotFolderListViewComponent).$selection()).toEqual(lockedItems);
 
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             spectator.output('selectionChange').subscribe(emitted);
 
             spectator.click(rowCheckbox(1));
@@ -261,7 +272,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
             spectator.setInput('disabled', true);
             spectator.detectChanges();
 
-            const emitted = jest.fn();
+            const emitted = vi.fn();
             spectator.output('selectionChange').subscribe(emitted);
 
             spectator.click(rowCheckbox(0));

@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -75,15 +81,15 @@ describe('DotUsersListComponent', () => {
     beforeAll(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -93,28 +99,26 @@ describe('DotUsersListComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotUsersListStore, {
-                users: jest.fn().mockReturnValue(MOCK_USERS),
-                userRoles: jest.fn().mockReturnValue({}),
-                selectedUsers: jest.fn().mockReturnValue([]),
-                filter: jest.fn().mockReturnValue(''),
-                roleFilter: jest.fn().mockReturnValue(''),
-                page: jest.fn().mockReturnValue(1),
-                rows: jest.fn().mockReturnValue(20),
-                totalRecords: jest.fn().mockReturnValue(2),
-                sortField: jest.fn().mockReturnValue('lastLoginDate'),
-                sortOrder: jest.fn().mockReturnValue('DESC'),
-                status: jest.fn().mockReturnValue('loaded'),
-                setFilter: jest.fn(),
-                setRoleFilter: jest.fn(),
-                applyLazyLoad: jest.fn(),
-                setSelectedUsers: jest.fn(),
-                deleteSelectedUsers: jest.fn(),
-                loadUsers: jest.fn()
+                users: vi.fn().mockReturnValue(MOCK_USERS),
+                userRoles: vi.fn().mockReturnValue({}),
+                selectedUsers: vi.fn().mockReturnValue([]),
+                filter: vi.fn().mockReturnValue(''),
+                roleFilter: vi.fn().mockReturnValue(''),
+                page: vi.fn().mockReturnValue(1),
+                rows: vi.fn().mockReturnValue(20),
+                totalRecords: vi.fn().mockReturnValue(2),
+                sortField: vi.fn().mockReturnValue('lastLoginDate'),
+                sortOrder: vi.fn().mockReturnValue('DESC'),
+                status: vi.fn().mockReturnValue('loaded'),
+                setFilter: vi.fn(),
+                setRoleFilter: vi.fn(),
+                applyLazyLoad: vi.fn(),
+                setSelectedUsers: vi.fn(),
+                deleteSelectedUsers: vi.fn(),
+                loadUsers: vi.fn()
             }),
             mockProvider(DialogService, {
-                open: jest
-                    .fn()
-                    .mockReturnValue({ onClose: { pipe: () => ({ subscribe: jest.fn() }) } })
+                open: vi.fn().mockReturnValue({ onClose: { pipe: () => ({ subscribe: vi.fn() }) } })
             })
         ],
         providers: [
@@ -123,7 +127,7 @@ describe('DotUsersListComponent', () => {
                 useValue: new MockDotMessageService(MESSAGES)
             },
             mockProvider(DotUsersService, {
-                getUsersPaginated: jest.fn().mockReturnValue(
+                getUsersPaginated: vi.fn().mockReturnValue(
                     of({
                         entity: [],
                         errors: [],
@@ -157,7 +161,7 @@ describe('DotUsersListComponent', () => {
 
     it('should render "N selected" and the Delete button when there is a selection', () => {
         const store = spectator.inject(DotUsersListStore, true);
-        (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0], MOCK_USERS[1]]);
+        (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0], MOCK_USERS[1]]);
         spectator.detectChanges();
 
         const countLabel = spectator.query(byTestId('users-selected-count'));
@@ -216,7 +220,7 @@ describe('DotUsersListComponent', () => {
 
         it('canConfirmBulkDelete should require a replacement not in the selection', () => {
             const store = spectator.inject(DotUsersListStore, true);
-            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0]]);
             spectator.detectChanges();
 
             expect(spectator.component['$canConfirmBulkDelete']()).toBe(false);
@@ -230,7 +234,7 @@ describe('DotUsersListComponent', () => {
 
         it('confirmBulkDelete should forward the replacement id to the store and close', () => {
             const store = spectator.inject(DotUsersListStore, true);
-            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0]]);
             spectator.detectChanges();
 
             spectator.component.onBulkReplacementSelect(REPLACEMENT);
@@ -242,7 +246,7 @@ describe('DotUsersListComponent', () => {
 
         it('confirmBulkDelete should no-op when no replacement was picked', () => {
             const store = spectator.inject(DotUsersListStore, true);
-            (store.deleteSelectedUsers as jest.Mock).mockClear();
+            (store.deleteSelectedUsers as Mock).mockClear();
 
             spectator.component.confirmBulkDelete();
 

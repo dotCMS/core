@@ -1,6 +1,6 @@
-import { expect, describe, it } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
@@ -53,7 +53,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
     let spectator: Spectator<EditEmaPersonaSelectorComponent>;
     let component: EditEmaPersonaSelectorComponent;
     let button: Element;
-    let selectedSpy: jest.SpyInstance;
+    let selectedSpy: MockInstance;
 
     const createComponent = createComponentFactory({
         component: EditEmaPersonaSelectorComponent,
@@ -88,7 +88,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
         component = spectator.component;
         button = spectator.query(byTestId('persona-button'));
-        selectedSpy = jest.spyOn(component.selected, 'emit');
+        selectedSpy = vi.spyOn(component.selected, 'emit');
     });
 
     describe('dom', () => {
@@ -191,7 +191,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         it("should call onRemove when remove icon it's clicked", () => {
             spectator.click(button);
 
-            const onRemoveSpy = jest.spyOn(component, 'onRemove');
+            const onRemoveSpy = vi.spyOn(component, 'onRemove');
 
             const removeIcon = spectator.query('.p-chip-remove-icon');
             spectator.click(removeIcon);
@@ -209,7 +209,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
             component.value = CUSTOM_PERSONA;
             spectator.click(button);
 
-            const onRemoveSpy = jest.spyOn(component, 'onRemove');
+            const onRemoveSpy = vi.spyOn(component, 'onRemove');
 
             const removeIcon = spectator.query('.p-chip-remove-icon');
             spectator.click(removeIcon);
@@ -224,7 +224,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should call fetchPersonas with incremented page when clicked in paginator', () => {
-            const fetchPersonasSpy = jest.spyOn(component, 'fetchPersonas');
+            const fetchPersonasSpy = vi.spyOn(component, 'fetchPersonas');
 
             component.$personas.set({
                 items: Array(11).fill(CUSTOM_PERSONA),
@@ -241,7 +241,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should call fetchPersonas when pageId changes', () => {
-            const fetchPersonasSpy = jest.spyOn(component, 'fetchPersonas');
+            const fetchPersonasSpy = vi.spyOn(component, 'fetchPersonas');
 
             spectator.setInput('pageId', '456');
             spectator.detectChanges();

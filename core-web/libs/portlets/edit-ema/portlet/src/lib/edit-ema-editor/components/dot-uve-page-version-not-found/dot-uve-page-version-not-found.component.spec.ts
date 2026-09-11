@@ -1,5 +1,5 @@
 import { Spectator } from '@openng/spectator';
-import { createComponentFactory } from '@openng/spectator/jest';
+import { createComponentFactory } from '@openng/spectator/vitest';
 
 import { signal } from '@angular/core';
 

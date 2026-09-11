@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -19,7 +20,7 @@ class MockDotContentTypeService {
 
 @Injectable()
 class MockDotNavigationService {
-    goToFirstPortlet = jest.fn();
+    goToFirstPortlet = vi.fn();
 }
 
 describe('ValidContentletGuardService', () => {
@@ -47,16 +48,14 @@ describe('ValidContentletGuardService', () => {
         contentletGuardService = TestBed.inject(ContentletGuardService);
         dotContentletService = TestBed.inject(DotContentTypeService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-            'toString'
-        ]);
+        mockRouterStateSnapshot = { toString: vi.fn() } as unknown as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { toString: vi.fn() } as unknown as ActivatedRouteSnapshot;
     });
 
     it('should allow children access to Content Types Portlets', () => {
         let result: boolean;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
-        jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(true));
+        vi.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(true));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -68,7 +67,7 @@ describe('ValidContentletGuardService', () => {
     it('should prevent children access to Content Types Portlets', () => {
         let result: boolean;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
-        jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(false));
+        vi.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(false));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));

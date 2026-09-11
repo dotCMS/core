@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -54,9 +60,9 @@ function makeFactory(canManage = false) {
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MOCK_MESSAGES) },
             mockProvider(DotCurrentUserService, {
-                isPortletInMenu: jest.fn().mockReturnValue(of(canManage))
+                isPortletInMenu: vi.fn().mockReturnValue(of(canManage))
             }),
-            mockProvider(DotRouterService, { gotoPortlet: jest.fn() })
+            mockProvider(DotRouterService, { gotoPortlet: vi.fn() })
         ]
     });
 }
@@ -144,14 +150,14 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
         });
 
         it('should emit switchLocale when clicking a non-current locale', () => {
-            const spy = jest.spyOn(spectator.component.switchLocale, 'emit');
+            const spy = vi.spyOn(spectator.component.switchLocale, 'emit');
             const items = spectator.queryAll(byTestId('locale-item'));
             spectator.click(items[1]);
             expect(spy).toHaveBeenCalledWith(SIMPLE_LOCALES[1]);
         });
 
         it('should not emit switchLocale when clicking the current locale', () => {
-            const spy = jest.spyOn(spectator.component.switchLocale, 'emit');
+            const spy = vi.spyOn(spectator.component.switchLocale, 'emit');
             const items = spectator.queryAll(byTestId('locale-item'));
             spectator.click(items[0]);
             expect(spy).not.toHaveBeenCalled();
@@ -185,19 +191,19 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
         });
 
         it('should emit tabChange when clicking the Translated tab', () => {
-            const spy = jest.spyOn(spectator.component.tabChange, 'emit');
+            const spy = vi.spyOn(spectator.component.tabChange, 'emit');
             spectator.click(byTestId('tab-translated'));
             expect(spy).toHaveBeenCalledWith('translated');
         });
 
         it('should emit tabChange when clicking the Pending tab', () => {
-            const spy = jest.spyOn(spectator.component.tabChange, 'emit');
+            const spy = vi.spyOn(spectator.component.tabChange, 'emit');
             spectator.click(byTestId('tab-pending'));
             expect(spy).toHaveBeenCalledWith('pending');
         });
 
         it('should emit tabChange with "all" when setTab is called', () => {
-            const spy = jest.spyOn(spectator.component.tabChange, 'emit');
+            const spy = vi.spyOn(spectator.component.tabChange, 'emit');
             spectator.component.setTab('all');
             expect(spy).toHaveBeenCalledWith('all');
         });
@@ -264,14 +270,14 @@ describe('DotEditContentSidebarLocalesSelectorComponent', () => {
         });
 
         it('should emit switchLocale when clicking a locale item', () => {
-            const spy = jest.spyOn(spectator.component.switchLocale, 'emit');
+            const spy = vi.spyOn(spectator.component.switchLocale, 'emit');
             const items = spectator.queryAll(byTestId('locale-item'));
             spectator.click(items[1]);
             expect(spy).toHaveBeenCalledWith(ENHANCED_LOCALES[1]);
         });
 
         it('should not emit switchLocale when clicking the current locale', () => {
-            const spy = jest.spyOn(spectator.component.switchLocale, 'emit');
+            const spy = vi.spyOn(spectator.component.switchLocale, 'emit');
             const items = spectator.queryAll(byTestId('locale-item'));
             spectator.click(items[0]);
             expect(spy).not.toHaveBeenCalled();

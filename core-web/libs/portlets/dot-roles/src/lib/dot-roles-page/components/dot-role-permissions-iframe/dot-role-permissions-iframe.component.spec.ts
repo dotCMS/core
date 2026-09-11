@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -23,7 +29,7 @@ describe('DotRolePermissionsIframeComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotRolesStore, {
-                selectedRoleId: jest.fn().mockReturnValue(null)
+                selectedRoleId: vi.fn().mockReturnValue(null)
             })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
@@ -42,7 +48,7 @@ describe('DotRolePermissionsIframeComponent', () => {
 
     it('should render an iframe pointing at the wrapper JSP when a role is selected', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.selectedRoleId as jest.Mock).mockReturnValue('a1b2c3d4-e5f6-7788-99aa-bbccddeeff00');
+        (store.selectedRoleId as Mock).mockReturnValue('a1b2c3d4-e5f6-7788-99aa-bbccddeeff00');
         spectator.detectChanges();
 
         const iframe = spectator.query(byTestId('permissions-iframe')) as HTMLIFrameElement;

@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockModule } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
@@ -45,7 +46,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn().mockReturnValue('Translated message')
+                    get: vi.fn().mockReturnValue('Translated message')
                 }
             }
         ]

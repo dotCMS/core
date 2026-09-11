@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -49,10 +50,10 @@ const messageServiceMock = new MockDotMessageService({
 
 /** Drives the component the way the store mock used to; assertions target it directly. */
 const filterFacade = {
-    getFilterValue: jest.fn(),
-    patchFilters: jest.fn(),
-    removeFilter: jest.fn(),
-    clearFilters: jest.fn(),
+    getFilterValue: vi.fn(),
+    patchFilters: vi.fn(),
+    removeFilter: vi.fn(),
+    clearFilters: vi.fn(),
     $hasNonDefaultFilters: signal(false)
 } satisfies DotFilterFacade;
 
@@ -72,9 +73,9 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         // DotWorkflowService is provided at the component level, override it there
         componentProviders: [
             mockProvider(DotWorkflowService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SCHEMES)),
-                getSchemesByContentTypes: jest.fn().mockReturnValue(of(MOCK_SCHEMES)),
-                getSteps: jest
+                get: vi.fn().mockReturnValue(of(MOCK_SCHEMES)),
+                getSchemesByContentTypes: vi.fn().mockReturnValue(of(MOCK_SCHEMES)),
+                getSteps: vi
                     .fn()
                     .mockImplementation((schemeId: string) => of(STEPS_BY_SCHEME[schemeId] ?? []))
             })
@@ -121,17 +122,17 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         workflowService = spectator.inject(DotWorkflowService, true);
-        // Re-establish defaults each test — jest.clearAllMocks() clears call history
+        // Re-establish defaults each test — vi.clearAllMocks() clears call history
         // but not return values, so a per-test of([]) override would otherwise leak.
-        (workflowService.get as jest.Mock).mockReturnValue(of(MOCK_SCHEMES));
-        (workflowService.getSchemesByContentTypes as jest.Mock).mockReturnValue(of(MOCK_SCHEMES));
-        (workflowService.getSteps as jest.Mock).mockImplementation((schemeId: string) =>
+        (workflowService.get as Mock).mockReturnValue(of(MOCK_SCHEMES));
+        (workflowService.getSchemesByContentTypes as Mock).mockReturnValue(of(MOCK_SCHEMES));
+        (workflowService.getSteps as Mock).mockImplementation((schemeId: string) =>
             of(STEPS_BY_SCHEME[schemeId] ?? [])
         );
         stubFilters();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     describe('loading schemes', () => {
         it('should load all schemes when no content type is selected', () => {
@@ -175,7 +176,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         it('should keep the persisted filter and surface the error when schemes fail to load', () => {
             const httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
             stubFilters({ workflow: ['a'] });
-            (workflowService.get as jest.Mock).mockReturnValue(throwError(() => new Error('boom')));
+            (workflowService.get as Mock).mockReturnValue(throwError(() => new Error('boom')));
 
             spectator.detectChanges();
 
@@ -256,9 +257,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
         it('should surface the error and show an empty step column when steps fail to load', () => {
             const httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
-            (workflowService.getSteps as jest.Mock).mockReturnValue(
-                throwError(() => new Error('boom'))
-            );
+            (workflowService.getSteps as Mock).mockReturnValue(throwError(() => new Error('boom')));
             spectator.detectChanges();
             openPanel();
 
@@ -272,7 +271,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         it('should not cache an errored step load — re-focusing the scheme retries', () => {
             // Only the first getSteps call fails; the scheme must NOT be cached as
             // empty, so returning to it triggers a fresh (successful) load.
-            (workflowService.getSteps as jest.Mock).mockReturnValueOnce(
+            (workflowService.getSteps as Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
             spectator.detectChanges();
@@ -282,7 +281,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             focusScheme('b'); // move away
             focusScheme('a'); // back → retries instead of serving empty from cache
 
-            const aCalls = (workflowService.getSteps as jest.Mock).mock.calls.filter(
+            const aCalls = (workflowService.getSteps as Mock).mock.calls.filter(
                 ([id]) => id === 'a'
             ).length;
             expect(aCalls).toBe(2);
@@ -328,7 +327,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         it('should not overwrite the step column with a late response after focus changed', () => {
             const stepsA$ = new Subject<WorkflowStep[]>();
             const stepsB$ = new Subject<WorkflowStep[]>();
-            (workflowService.getSteps as jest.Mock).mockImplementation((id: string) =>
+            (workflowService.getSteps as Mock).mockImplementation((id: string) =>
                 id === 'a' ? stepsA$ : stepsB$
             );
             spectator.detectChanges();
@@ -391,7 +390,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             // is clicked.
             spectator.detectChanges();
             openPanel();
-            const event = { stopPropagation: jest.fn() };
+            const event = { stopPropagation: vi.fn() };
 
             spectator.triggerEventHandler(testId('workflow-scheme-checkbox-a'), 'mousedown', event);
 
@@ -407,7 +406,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
         it('should show the singular no-workflows message for one content type', () => {
             stubFilters({ contentType: ['ct1'] });
-            (workflowService.getSchemesByContentTypes as jest.Mock).mockReturnValue(of([]));
+            (workflowService.getSchemesByContentTypes as Mock).mockReturnValue(of([]));
             spectator.detectChanges();
             openPanel();
 
@@ -416,7 +415,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
         it('should show the plural no-workflows message for multiple content types', () => {
             stubFilters({ contentType: ['ct1', 'ct2'] });
-            (workflowService.getSchemesByContentTypes as jest.Mock).mockReturnValue(of([]));
+            (workflowService.getSchemesByContentTypes as Mock).mockReturnValue(of([]));
             spectator.detectChanges();
             openPanel();
 
@@ -424,7 +423,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         });
 
         it('should show a generic no-schemes message when no content type is selected', () => {
-            (workflowService.get as jest.Mock).mockReturnValue(of([]));
+            (workflowService.get as Mock).mockReturnValue(of([]));
             spectator.detectChanges();
             openPanel();
 
