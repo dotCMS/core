@@ -70,6 +70,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2530,5 +2531,415 @@ public class BrowserAPITest extends IntegrationTestBase {
         final File file = new File(Files.createTempDirectory("issue37050").toFile(), name);
         FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
         return file;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // issue #37229 -- folder-scoped candidate-scan CTE + ORDER BY tiebreaker.
+    //
+    // UNVALIDATED against FR-010's EXPLAIN ANALYZE gate (no live Postgres/reference dataset in
+    // this environment) -- see specs/37229-content-drive-folder-cte/tasks.md T004/T023. These
+    // tests cover correctness (result-set identity, tiebreaker determinism, permission scoping),
+    // not the query-plan/latency claim itself, which only EXPLAIN ANALYZE against real data can
+    // confirm.
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> Two contentlets in the same folder share an identical
+     *     {@code mod_date} (forced via direct SQL, since {@code mod_date} is system-managed) --
+     *     SC-003b.</li>
+     *     <li><b>Expected Result:</b> Their relative order is identical across repeated calls --
+     *     the new {@code id.id} tiebreaker (FR-001) makes tied-row order a deterministic
+     *     guarantee, not the previous planner-dependent artifact.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_tiedModDate_orderIsDeterministicAcrossRepeatedCalls()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        final Contentlet first = new FileAssetDataGen(FileUtil.createTemporaryFile("tie-a", ".txt", "a"))
+                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        final Contentlet second = new FileAssetDataGen(FileUtil.createTemporaryFile("tie-b", ".txt", "b"))
+                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        // Force an identical mod_date on both working inodes so the pre-tiebreaker ORDER BY
+        // (mod_date alone) has nothing to disambiguate them by.
+        final java.sql.Timestamp sharedModDate = new java.sql.Timestamp(System.currentTimeMillis());
+        new DotConnect().executeUpdate("update contentlet set mod_date = ? where inode = ?",
+                sharedModDate, first.getInode());
+        new DotConnect().executeUpdate("update contentlet set mod_date = ? where inode = ?",
+                sharedModDate, second.getInode());
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true)
+                .build();
+
+        final List<String> firstRunOrder = browserAPI.getPaginatedContents(query).list.stream()
+                .map(row -> (String) row.get("identifier"))
+                .filter(id -> id.equals(first.getIdentifier()) || id.equals(second.getIdentifier()))
+                .collect(Collectors.toList());
+        final List<String> secondRunOrder = browserAPI.getPaginatedContents(query).list.stream()
+                .map(row -> (String) row.get("identifier"))
+                .filter(id -> id.equals(first.getIdentifier()) || id.equals(second.getIdentifier()))
+                .collect(Collectors.toList());
+
+        assertEquals("Both tied rows must be present", 2, firstRunOrder.size());
+        assertEquals("Order among tied mod_date rows must be reproducible run-to-run",
+                firstRunOrder, secondRunOrder);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A single identifier persisted in two languages, both working
+     *     inodes forced to an identical {@code mod_date} (same technique as the tie test above) --
+     *     in this case {@code id.id} alone is identical across both rows too, so {@code (mod_date,
+     *     id.id)} has nothing left to disambiguate them by (code review, PR #37397).</li>
+     *     <li><b>Expected Result:</b> Adding {@code cvi.lang} to the tiebreaker still produces a
+     *     deterministic, reproducible order across repeated calls even in this previously
+     *     uncovered multi-language case.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_tiedModDateMultiLanguage_orderIsDeterministicAcrossRepeatedCalls()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+
+        final Contentlet defaultLangVersion = new FileAssetDataGen(
+                FileUtil.createTemporaryFile("tie-lang", ".txt", "a"))
+                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        final Contentlet secondLangVersion = ContentletDataGen.checkout(defaultLangVersion);
+        secondLangVersion.setLanguageId(secondLanguage.getId());
+        final Contentlet secondLangVersionSaved =
+                ContentletDataGen.checkin(secondLangVersion, IndexPolicy.WAIT_FOR);
+
+        // Same identifier, same id.id -- force an identical mod_date on both working inodes so
+        // neither mod_date nor id.id is left to disambiguate them; only cvi.lang can.
+        final java.sql.Timestamp sharedModDate = new java.sql.Timestamp(System.currentTimeMillis());
+        new DotConnect().executeUpdate("update contentlet set mod_date = ? where inode = ?",
+                sharedModDate, defaultLangVersion.getInode());
+        new DotConnect().executeUpdate("update contentlet set mod_date = ? where inode = ?",
+                sharedModDate, secondLangVersionSaved.getInode());
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true)
+                .withLanguageIds(List.of(defaultLangVersion.getLanguageId(), secondLanguage.getId()))
+                .build();
+
+        final List<Long> firstRunLangOrder = browserAPI.getPaginatedContents(query).list.stream()
+                .filter(row -> defaultLangVersion.getIdentifier().equals(row.get("identifier")))
+                .map(row -> ((Number) row.get("languageId")).longValue())
+                .collect(Collectors.toList());
+        final List<Long> secondRunLangOrder = browserAPI.getPaginatedContents(query).list.stream()
+                .filter(row -> defaultLangVersion.getIdentifier().equals(row.get("identifier")))
+                .map(row -> ((Number) row.get("languageId")).longValue())
+                .collect(Collectors.toList());
+
+        assertEquals("Both language versions must be present", 2, firstRunLangOrder.size());
+        assertEquals(
+                "Order among tied mod_date/id.id rows across languages must be reproducible run-to-run",
+                firstRunLangOrder, secondRunLangOrder);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> Enough contentlets in one folder to span several pages at a
+     *     small {@code maxResults}, all forced to an identical {@code mod_date} (same
+     *     {@code DotConnect} technique as the tie tests above) -- the operational risk called out
+     *     in review: {@code getContentByChunks} pages by DB offset, so a non-total {@code ORDER BY}
+     *     can return a tied boundary row twice or skip it entirely across adjacent page
+     *     requests.</li>
+     *     <li><b>Expected Result:</b> Paging through with a small {@code maxResults} and collecting
+     *     identifiers across all pages yields no duplicates, and the total collected equals the
+     *     count from a single unpaged request -- the tiebreaker makes the cursor stable across
+     *     page boundaries.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_tiedModDateDeepPagination_noDuplicatesOrGaps()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        final int totalContentlets = 35;
+        final int pageSize = 10;
+
+        final List<String> createdIdentifiers = new ArrayList<>();
+        for (int i = 0; i < totalContentlets; i++) {
+            createdIdentifiers.add(new FileAssetDataGen(
+                    FileUtil.createTemporaryFile("deep-page-" + i, ".txt", "content " + i))
+                    .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted()
+                    .getIdentifier());
+        }
+
+        // Force an identical mod_date across every contentlet in the folder so the pre-tiebreaker
+        // ORDER BY (mod_date alone) has nothing left to disambiguate any of them by.
+        final java.sql.Timestamp sharedModDate = new java.sql.Timestamp(System.currentTimeMillis());
+        final String updateSql = "update contentlet set mod_date = ? where identifier in ("
+                + createdIdentifiers.stream().map(id -> "?").collect(Collectors.joining(","))
+                + ")";
+        final List<Object> updateParams = new ArrayList<>();
+        updateParams.add(sharedModDate);
+        updateParams.addAll(createdIdentifiers);
+        new DotConnect().executeUpdate(updateSql, updateParams.toArray());
+
+        final BrowserQuery.Builder unpagedQueryBuilder = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true);
+
+        final int unpagedTotal = browserAPI.getPaginatedContents(unpagedQueryBuilder.build())
+                .list.size();
+
+        final List<String> pagedIdentifiers = new ArrayList<>();
+        int cursor = 0;
+        boolean hasMore = true;
+        while (hasMore) {
+            final PaginatedContents page = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .ignoreSiteForFolders(true)
+                    .showFiles(true)
+                    .maxResults(pageSize)
+                    .contentCursor(cursor)
+                    .build());
+
+            for (final Map<String, Object> row : page.list) {
+                pagedIdentifiers.add((String) row.get("identifier"));
+            }
+
+            hasMore = page.hasMoreContent;
+            cursor = page.nextContentCursor;
+        }
+
+        final Set<String> uniquePagedIdentifiers = new HashSet<>(pagedIdentifiers);
+        assertEquals("Paging through a tied-mod_date folder must not return duplicate identifiers",
+                pagedIdentifiers.size(), uniquePagedIdentifiers.size());
+        assertEquals(
+                "Paging through a tied-mod_date folder must not skip any identifiers versus the "
+                        + "unpaged result",
+                unpagedTotal, uniquePagedIdentifiers.size());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> FR-010/R4 -- the folder-scoping predicate the new CTE relies
+     *     on must still be backed by an index on {@code identifier(parent_path, asset_name,
+     *     host_inode)}, whatever that index is named under the current install lineage (fresh
+     *     install: {@code identifier_parent_path_asset_name_host_inode_key}; upgraded via
+     *     {@code Task00785DataModelChanges}: {@code identifier_unique_key}).</li>
+     *     <li><b>Expected Result:</b> Querying Postgres catalog tables directly (not the index
+     *     name, not `EXPLAIN` text) confirms an index exists covering exactly those three
+     *     columns, in that order, on {@code identifier}.</li>
+     * </ul>
+     */
+    @Test
+    public void test_identifierTable_hasIndexOnParentPathAssetNameHostInode_lineageIndependent()
+            throws Exception {
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(
+                "select i.relname as index_name, "
+                        // string_agg (not array_agg) so the result maps to a plain String via
+                        // JDBC's generic result mapping -- no java.sql.Array unwrapping needed.
+                        + "string_agg(a.attname, ',' order by array_position(ix.indkey, a.attnum)) as columns "
+                        + "from pg_class t "
+                        + "join pg_index ix on t.oid = ix.indrelid "
+                        + "join pg_class i on i.oid = ix.indexrelid "
+                        + "join pg_attribute a on a.attrelid = t.oid and a.attnum = any(ix.indkey) "
+                        + "where t.relname = 'identifier' "
+                        + "group by i.relname");
+        @SuppressWarnings("unchecked")
+        final List<java.util.Map<String, Object>> rows = dc.loadObjectResults();
+
+        final String expectedColumns = "parent_path,asset_name,host_inode";
+        final boolean hasExpectedIndex = rows.stream()
+                .anyMatch(row -> expectedColumns.equals(row.get("columns")));
+
+        assertTrue("identifier must have an index on (parent_path, asset_name, host_inode) "
+                        + "regardless of its name (fresh-install vs. Task00785 upgrade lineage): " + rows,
+                hasExpectedIndex);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> An empty folder and a small folder (a handful of children),
+     *     both now routed through the folder-scoping CTE -- SC-002/Edge Cases.</li>
+     *     <li><b>Expected Result:</b> Both resolve without error and return the exact same result
+     *     set as before this fix (empty list / all created items respectively).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_emptyAndSmallFolder_noRegression() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder emptyFolder = new FolderDataGen().site(site).nextPersisted();
+        final Folder smallFolder = new FolderDataGen().site(site).nextPersisted();
+
+        final List<String> expectedIdentifiers = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            expectedIdentifiers.add(new FileAssetDataGen(
+                    FileUtil.createTemporaryFile("small-" + i, ".txt", "content " + i))
+                    .folder(smallFolder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted()
+                    .getIdentifier());
+        }
+
+        final PaginatedContents emptyResult = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(emptyFolder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true)
+                .build());
+        assertTrue("Empty folder must return no results", emptyResult.list.isEmpty());
+
+        final PaginatedContents smallResult = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(smallFolder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true)
+                .build());
+        final List<String> actualIdentifiers = smallResult.list.stream()
+                .map(row -> (String) row.get("identifier"))
+                .collect(Collectors.toList());
+        assertEquals(5, smallResult.list.size());
+        assertTrue("All created items must be present", actualIdentifiers.containsAll(expectedIdentifiers));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> Site/host-scoping matrix (R3, SC-003a) -- the two most
+     *     directly reachable code paths through the public {@code BrowserQuery} builder: (1)
+     *     explicit site, folder-scoped, {@code ignoreSiteForFolders=false} (host filter applies);
+     *     (5) {@code ignoreSiteForFolders=true}, Content Drive's own path (no host filter).</li>
+     *     <li><b>Expected Result:</b> Both produce the same result set as before this fix.</li>
+     *     <li><b>Known gap</b>: R3 paths 2/3/4 (forced-system-host / {@code site == null}
+     *     combinations) were not exercised here -- {@code BrowserQuery}'s builder always resolves
+     *     {@code site} to a real {@link Host} via {@code getParents} when constructed through
+     *     {@code withHostOrFolderId} (confirmed by reading {@code BrowserQuery.java}), so
+     *     constructing a {@code site == null} instance requires a caller/construction path not
+     *     identified in this pass. Flagged for the developer rather than fabricated.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_siteScoping_explicitSiteAndIgnoreSiteForFolders_resultsUnchanged()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final String expectedIdentifier = new FileAssetDataGen(
+                FileUtil.createTemporaryFile("scoping", ".txt", "content"))
+                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted()
+                .getIdentifier();
+
+        // Path 1: explicit site, ignoreSiteForFolders=false -- host filter applies inside the CTE.
+        final PaginatedContents explicitSiteResult = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .ignoreSiteForFolders(false)
+                .showFiles(true)
+                .build());
+        assertEquals(1, explicitSiteResult.list.size());
+        assertEquals(expectedIdentifier, explicitSiteResult.list.get(0).get("identifier"));
+
+        // Path 5: ignoreSiteForFolders=true -- no host filter, Content Drive's own behavior.
+        final PaginatedContents ignoreSiteResult = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .ignoreSiteForFolders(true)
+                .showFiles(true)
+                .build());
+        assertEquals(1, ignoreSiteResult.list.size());
+        assertEquals(expectedIdentifier, ignoreSiteResult.list.get(0).get("identifier"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A permission-restricted user browsing a folder-scoped (now
+     *     CTE-routed) request, alongside content the user cannot read -- FR-005/SC-004.</li>
+     *     <li><b>Expected Result:</b> The restricted user sees exactly the permitted subset, same
+     *     as before this fix -- the CTE only reshapes candidate-set resolution, not permission
+     *     filtering, which happens afterward in {@code filterContentletsByPermissions}.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_folderScopedCte_permissionScopingUnchanged() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        // A dedicated, freshly-created user -- NOT the shared TestUserUtils.getChrisPublisherUser
+        // fixture, which is a singleton looked up by a hardcoded email across the whole suite.
+        // Granting this test's permissions on that shared user polluted a pre-existing,
+        // unrelated test in this same file that also uses it (found running this test).
+        final Role limitedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(limitedRole, TestUserUtils.getBackendRole())
+                .nextPersisted();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        permissionAPI.save(new Permission(host.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ),
+                host, APILocator.systemUser(), false);
+        permissionAPI.save(new Permission(folder.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ),
+                folder, APILocator.systemUser(), false);
+
+        // New content does not inherit READ from the folder grant above -- it needs its own
+        // explicit permission, same as the working pattern in
+        // test_exhaustive_pagination_with_permission_filtering (found running this test: the
+        // folder-only grant left doesUserHavePermission false on a freshly created contentlet).
+        final Contentlet readableContentlet = new FileAssetDataGen(
+                FileUtil.createTemporaryFile("readable", ".txt", "content"))
+                .host(host).folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        permissionAPI.save(new Permission(readableContentlet.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ),
+                readableContentlet, APILocator.systemUser(), false);
+
+        // A second, otherwise-identical contentlet with NO permission granted to limitedUser --
+        // an explicit permission entry for a role limitedUser doesn't have overrides folder
+        // inheritance, matching test_exhaustive_pagination_with_permission_filtering's proven
+        // pattern (the extra permissionIndividually() call tried here first did not actually
+        // block read access -- found running this test).
+        final Role noAccessRole = new RoleDataGen().nextPersisted();
+        final Contentlet restrictedContentlet = new FileAssetDataGen(
+                FileUtil.createTemporaryFile("restricted", ".txt", "content"))
+                .host(host).folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        permissionAPI.save(new Permission(restrictedContentlet.getPermissionId(),
+                        noAccessRole.getId(), PermissionAPI.PERMISSION_READ),
+                restrictedContentlet, APILocator.systemUser(), false);
+
+        // Diagnostic: isolate a permission-setup issue from a candidate-scan issue before
+        // asserting on getPaginatedContents' result.
+        assertTrue("Sanity check: limitedUser must have READ on readableContentlet",
+                permissionAPI.doesUserHavePermission(readableContentlet, PermissionAPI.PERMISSION_READ,
+                        limitedUser, false));
+        assertFalse("Sanity check: limitedUser must NOT have READ on restrictedContentlet",
+                permissionAPI.doesUserHavePermission(restrictedContentlet, PermissionAPI.PERMISSION_READ,
+                        limitedUser, false));
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false)
+                .withUser(limitedUser)
+                .forceSystemHost(false)
+                .showFiles(true)
+                .showWorking(true)
+                .build();
+
+        final PaginatedContents results = browserAPI.getPaginatedContents(query);
+        final List<String> visibleIdentifiers = results.list.stream()
+                .map(row -> (String) row.get("identifier"))
+                .collect(Collectors.toList());
+
+        assertTrue("The readable contentlet must be visible",
+                visibleIdentifiers.contains(readableContentlet.getIdentifier()));
+        assertFalse("The permission-restricted contentlet must not be visible",
+                visibleIdentifiers.contains(restrictedContentlet.getIdentifier()));
     }
 }
