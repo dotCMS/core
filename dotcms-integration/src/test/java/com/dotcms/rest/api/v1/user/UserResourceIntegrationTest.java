@@ -11,6 +11,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.business.Role;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -713,5 +714,175 @@ public class UserResourceIntegrationTest {
 
         assertTrue("a root role merely named 'User...' must be listed", ids.contains(userManagers.getId()));
         assertFalse("the personal role must still be excluded", ids.contains(personal.getId()));
+    }
+
+    // ==================== GET /v1/users/filter — orderby / direction (#37458) ====================
+
+    private static final long JAN_1 = 1767225600000L; // 2026-01-01T00:00:00Z
+    private static final long JAN_2 = JAN_1 + 86_400_000L;
+    private static final long JAN_3 = JAN_2 + 86_400_000L;
+
+    /**
+     * Seeds four users whose first names share a fresh unique prefix (returned, and used as the {@code query}
+     * filter so the assertions only ever see these rows):
+     * <pre>
+     *   first name    last name   email                  last login
+     *   {p}Bob        Zed         {p}3@sort.dotcms.com   2026-01-03
+     *   {p}Alice      Young       {p}4@sort.dotcms.com   2026-01-01
+     *   {p}Bob        Alpha       {p}2@sort.dotcms.com   (never)
+     *   {p}Carol      Xu          {p}1@sort.dotcms.com   2026-01-02
+     * </pre>
+     * Email order is the reverse of first-name order and one user has no last login, so sorting on the
+     * wrong column, or in the wrong direction, or with NULLs first, all fail visibly. Seeding per test (rather
+     * than once per class) keeps every test self-contained, including under failsafe re-runs.
+     */
+    private static String seedSortFixtures() throws Exception {
+        final String prefix = "srt" + System.nanoTime();
+        seedSortUser(prefix, "Bob", "Zed", "3", new Date(JAN_3));
+        seedSortUser(prefix, "Alice", "Young", "4", new Date(JAN_1));
+        seedSortUser(prefix, "Bob", "Alpha", "2", null);
+        seedSortUser(prefix, "Carol", "Xu", "1", new Date(JAN_2));
+        return prefix;
+    }
+
+    /**
+     * Persists one sort fixture. A non-null {@code lastLogin} is written to {@code lastlogindate} through
+     * {@code UserAPI.save}; {@code null} leaves the column NULL, as for a user who never logged in.
+     */
+    private static void seedSortUser(final String prefix, final String firstName, final String lastName,
+                                     final String emailOrder, final Date lastLogin) throws Exception {
+        final User seeded = new UserDataGen()
+                .firstName(prefix + firstName)
+                .lastName(lastName)
+                .emailAddress(prefix + emailOrder + "@sort.dotcms.com")
+                .nextPersisted();
+        usersToClean.add(seeded);
+        if (null != lastLogin) {
+            seeded.setLastLoginDate(lastLogin);
+            APILocator.getUserAPI().save(seeded, APILocator.systemUser(), false);
+        }
+    }
+
+    /** {@code GET /v1/users/filter} over the fixtures behind {@code prefix} with the given sort parameters. */
+    private List<Map<String, Object>> sorted(final String prefix, final String orderBy, final String direction)
+            throws Exception {
+        return items(resource.filter(mockRequest(), response, prefix, 0, 100, orderBy, direction,
+                false, false, null, 0, null, false));
+    }
+
+    /** One field of every item, in response order; {@link Date} values are reduced to epoch millis. */
+    private static List<Object> column(final List<Map<String, Object>> items, final String key) {
+        return items.stream()
+                .map(item -> item.get(key))
+                .map(value -> value instanceof Date ? (Object) ((Date) value).getTime() : value)
+                .collect(Collectors.toList());
+    }
+
+    private static List<Object> reversed(final List<Object> list) {
+        final List<Object> copy = new ArrayList<>(list);
+        Collections.reverse(copy);
+        return copy;
+    }
+
+    private static List<Object> withPrefix(final String prefix, final String... names) {
+        final List<Object> result = new ArrayList<>();
+        for (final String name : names) {
+            result.add(prefix + name);
+        }
+        return result;
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=firstName}
+     * Given Scenario: Four seeded users; the endpoint is called with {@code direction=ASC} and then {@code DESC}.
+     * Expected Result: First names come back ascending, and DESC is the exact reverse (AC-001).
+     */
+    @Test
+    public void test_filter_orderByFirstName_ascAndDescAreReverses() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> ascending = column(sorted(p, "firstName", "ASC"), "firstName");
+        assertEquals(withPrefix(p, "Alice", "Bob", "Bob", "Carol"), ascending);
+        assertEquals("DESC must reverse ASC", reversed(ascending),
+                column(sorted(p, "firstName", "DESC"), "firstName"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=emailAddress}
+     * Given Scenario: The seeded emails sort in the opposite order of the first names.
+     * Expected Result: Emails ascending, then the reverse for DESC -- proving the email column, not the name,
+     * drove the order (AC-001).
+     */
+    @Test
+    public void test_filter_orderByEmailAddress_ascAndDescAreReverses() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> ascending = column(sorted(p, "emailAddress", "ASC"), "emailAddress");
+        assertEquals(List.of(p + "1@sort.dotcms.com", p + "2@sort.dotcms.com",
+                p + "3@sort.dotcms.com", p + "4@sort.dotcms.com"), ascending);
+        assertEquals("DESC must reverse ASC", reversed(ascending),
+                column(sorted(p, "emailAddress", "DESC"), "emailAddress"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=lastLoginDate}
+     * Given Scenario: Three seeded users have staggered last logins and one has none.
+     * Expected Result: Dates ascending then the NULL; dates descending then the NULL. The user without a login
+     * is last in both directions (AC-001, AC-003).
+     */
+    @Test
+    public void test_filter_orderByLastLoginDate_nullsLastInBothDirections() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> expectedAsc = new ArrayList<>(List.of(JAN_1, JAN_2, JAN_3));
+        expectedAsc.add(null);
+        assertEquals(expectedAsc, column(sorted(p, "lastLoginDate", "ASC"), "lastLoginDate"));
+
+        final List<Object> expectedDesc = new ArrayList<>(List.of(JAN_3, JAN_2, JAN_1));
+        expectedDesc.add(null);
+        assertEquals("never-logged-in users must stay last on DESC", expectedDesc,
+                column(sorted(p, "lastLoginDate", "DESC"), "lastLoginDate"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=firstName}
+     * Given Scenario: Two seeded users share the first name Bob, with last names Alpha and Zed.
+     * Expected Result: Ties are broken by last name in the same direction, so the order is deterministic (AC-004).
+     */
+    @Test
+    public void test_filter_orderByFirstName_tiesBrokenByLastName() throws Exception {
+        final String p = seedSortFixtures();
+        assertEquals(List.of("Young", "Alpha", "Zed", "Xu"), column(sorted(p, "firstName", "ASC"), "lastName"));
+        assertEquals(List.of("Xu", "Zed", "Alpha", "Young"), column(sorted(p, "firstName", "DESC"), "lastName"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} without {@code orderby}
+     * Given Scenario: The endpoint is called with no sort field, as every pre-existing caller does.
+     * Expected Result: The order is the historical default, full name ascending -- unchanged by this fix (AC-002).
+     */
+    @Test
+    public void test_filter_noOrderBy_keepsDefaultFullNameOrder() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> fullNames = sorted(p, null, "ASC").stream()
+                .map(item -> item.get("firstName") + " " + item.get("lastName"))
+                .collect(Collectors.toList());
+        assertEquals(withPrefix(p, "Alice Young", "Bob Alpha", "Bob Zed", "Carol Xu"), fullNames);
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=mod_date desc}
+     * Given Scenario: A whitelisted SQL sort term that already carries its own direction is sent, together with
+     * the {@code direction} parameter.
+     * Expected Result: The direction is not appended a second time; the call succeeds and the four fixtures come
+     * back ordered by modification date, newest first (AC-006). Before the fix this produced
+     * {@code order by mod_date desc asc} and an SQL syntax error.
+     */
+    @Test
+    public void test_filter_sanitizedTermWithDirection_isNotDoubled() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> modDates = column(sorted(p, "mod_date desc", "ASC"), "modificationDate");
+        assertEquals("all four fixtures must be returned", 4, modDates.size());
+        for (int i = 1; i < modDates.size(); i++) {
+            assertTrue("modificationDate must be non-increasing at index " + i,
+                    (Long) modDates.get(i - 1) >= (Long) modDates.get(i));
+        }
     }
 }

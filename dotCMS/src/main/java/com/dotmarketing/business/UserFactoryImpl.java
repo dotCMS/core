@@ -39,6 +39,24 @@ public class UserFactoryImpl implements UserFactory {
     private static final String USERID_COLUMN = "userid";
     private static final String AND_DELETE_IN_PROGRESS = " AND delete_in_progress = ";
 
+    /**
+     * Sort fields accepted by {@link #getUsersByName(String, List, int, int, UserAPI.FilteringParams)}, keyed by the
+     * exact API field name the Users portlet sends, mapped to the {@code ORDER BY} expression template for the
+     * {@code user_} table ({@code %1$s} is the direction). This map is deliberately local to the user query rather
+     * than an addition to the shared {@link SQLUtil} whitelist, which sixteen unrelated factories consult: the API
+     * names are not column names ({@code firstName} vs {@code firstname}) and must not leak into other tables' SQL.
+     * <ul>
+     *     <li>{@code firstName} breaks ties on {@code lastname} so same-named users keep a stable order.</li>
+     *     <li>{@code lastLoginDate} uses {@code NULLS LAST} in both directions: PostgreSQL sorts NULL first on
+     *     DESC, which would put never-logged-in users at the top of the portlet's default view.</li>
+     * </ul>
+     * Fields not in this map fall through to {@link SQLUtil#sanitizeSortBy(String)} exactly as before.
+     */
+    private static final Map<String, String> SORTABLE_USER_FIELDS = Map.of(
+            "firstName", "firstname %1$s, lastname %1$s",
+            "emailAddress", "emailaddress %1$s",
+            "lastLoginDate", "lastlogindate %1$s NULLS LAST");
+
     private final UserCache userCache;
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
@@ -281,6 +299,57 @@ public class UserFactoryImpl implements UserFactory {
         return null;
     }
 
+    /**
+     * Builds the {@code ORDER BY} clause (without the keyword) for {@link #getUsersByName(String, List, int, int,
+     * UserAPI.FilteringParams)}:
+     * <ol>
+     *     <li>No {@code orderBy}: the default expression in the requested direction (historically full name
+     *     ascending, since the direction defaults to ASC).</li>
+     *     <li>A key of {@link #SORTABLE_USER_FIELDS}: its template with the direction substituted; the shared
+     *     sanitizer is not consulted.</li>
+     *     <li>Anything else: {@link SQLUtil#sanitizeSortBy(String)} as before. A rejected term falls back to the
+     *     default expression. The direction is appended exactly once: a term the sanitizer returns with its own
+     *     {@code asc}/{@code desc} suffix is used as is, so {@code mod_date desc} no longer becomes
+     *     {@code mod_date desc asc}.</li>
+     * </ol>
+     *
+     * @param filteringParams   The filtering params carrying {@code orderBy} and {@code orderDirection}.
+     * @param defaultExpression The expression used when no valid sort field is provided.
+     *
+     * @return The clause to append after {@code order by}.
+     */
+    private static String buildOrderByClause(final UserAPI.FilteringParams filteringParams,
+                                             final String defaultExpression) {
+        final String direction = normalizeDirection(filteringParams.orderDirection());
+        final String defaultClause = defaultExpression + StringPool.SPACE + direction;
+        final String orderBy = filteringParams.orderBy();
+        if (!UtilMethods.isSet(orderBy)) {
+            return defaultClause;
+        }
+        final String template = SORTABLE_USER_FIELDS.get(orderBy.trim());
+        if (null != template) {
+            return String.format(template, direction);
+        }
+        final String sanitized = SQLUtil.sanitizeSortBy(orderBy);
+        if (!UtilMethods.isSet(sanitized)) {
+            return defaultClause;
+        }
+        final String lowerSanitized = sanitized.toLowerCase();
+        if (lowerSanitized.endsWith(SQLUtil._ASC) || lowerSanitized.endsWith(SQLUtil._DESC)) {
+            return sanitized;
+        }
+        return sanitized + StringPool.SPACE + direction;
+    }
+
+    /**
+     * Reduces any direction spelling ({@code "DESC"}, {@code " desc"}, {@code null}) to {@link SQLUtil#ASC} or
+     * {@link SQLUtil#DESC}; anything that is not {@code desc} is ascending.
+     */
+    private static String normalizeDirection(final String direction) {
+        return UtilMethods.isSet(direction) && SQLUtil.DESC.equalsIgnoreCase(direction.trim())
+                ? SQLUtil.DESC : SQLUtil.ASC;
+    }
+
     @Override
     public List<User> getUsersByName(final String filter, final List<Role> roles, final int start,
             final int limit) throws DotDataException {
@@ -304,10 +373,7 @@ public class UserFactoryImpl implements UserFactory {
         }
         baseSql.append(AND_DELETE_IN_PROGRESS).append(DbConnectionFactory.getDBFalse());
 
-        baseSql.append(" order by ");
-        final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(filteringParams.orderBy());
-        baseSql.append(UtilMethods.isSet(sanitizedOrderBy) ? sanitizedOrderBy : userFullName);
-        baseSql.append(UtilMethods.isSet(filteringParams.orderDirection()) ? filteringParams.orderDirection() : SQLUtil._ASC);
+        baseSql.append(" order by ").append(buildOrderByClause(filteringParams, userFullName));
 
         final String sql = baseSql.toString();
         final DotConnect dotConnect = new DotConnect();

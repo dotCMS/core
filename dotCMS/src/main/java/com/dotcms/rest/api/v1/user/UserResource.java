@@ -455,7 +455,7 @@ public class UserResource implements Serializable {
 						   @Parameter(description = "Filter users by user ID, first name, last name, email address, or full name -- or parts of any of them") @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
 						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
 						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-						   @Parameter(description = "Column name for sorting results") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
+						   @Parameter(description = "Field to sort by. Supported: `firstName` (ties broken by last name), `emailAddress`, `lastLoginDate` (users without a recorded login sort last). Unsupported values fall back to the default order (full name ascending)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
 						   @Parameter(description = "Sorting direction: ASC or DESC") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
 						   @Parameter(description = "Include anonymous user in results") @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
 						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
@@ -476,7 +476,13 @@ public class UserResource implements Serializable {
 		extraParams.put(UserPaginator.PERMISSION_PARAM, permission);
 		extraParams.put(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous);
 		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
+		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
+		// UserPaginator reads ordering from the FilteringParams keys, not from the PaginationUtil orderBy/direction
+		// arguments, so the direction must be passed here too (same wiring as RoleResource#loadUsersByRoleId).
+		// The value is enum-gated above and mapped to the SQLUtil constants FilteringParams expects.
+		extraParams.put(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM,
+				OrderDirection.DESC == orderDirection ? SQLUtil._DESC : SQLUtil._ASC);
 
 		final List<Role> roles = this.resolveRoleKeys(roleKeys);
 		if (UtilMethods.isSet(roles)) {
@@ -495,7 +501,6 @@ public class UserResource implements Serializable {
 			extraParams.put(UserPaginator.INCLUDE_ROLES_PARAM, true);
 		}
 
-		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
 	}
 
