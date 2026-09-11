@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -15,8 +16,8 @@ import { DotFolderTreeNodeItem } from '../shared/models';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
-    override preventDefault = jest.fn();
-    override stopPropagation = jest.fn();
+    override preventDefault = vi.fn();
+    override stopPropagation = vi.fn();
     dataTransfer: { files?: FileList | null } | null = null;
 
     constructor(type: string) {
@@ -165,6 +166,17 @@ describe('DotTreeFolderComponent', () => {
         it('should set scrollHeight to auto', () => {
             expect(treeComponent.scrollHeight).toBe('auto');
         });
+
+        it('should enable folder icons on the shared tree', () => {
+            // The #36848 regression: Content Drive's folder rows lost their folder icon when the
+            // four trees were unified. The icon is owned by the shared component and opted into
+            // here, not reimplemented in this portlet.
+            expect(spectator.query(DotFolderTreeComponent)?.$showFolderIcons()).toBe(true);
+        });
+
+        it('should render a folder icon on each folder row', () => {
+            expect(spectator.queryAll(byTestId('tree-node-folder-icon')).length).toBeGreaterThan(0);
+        });
     });
 
     describe('selectedNode Input', () => {
@@ -204,7 +216,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeSelect when tree node is selected', () => {
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
             const mockEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -216,7 +228,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeExpand when tree node is expanded', () => {
-            const onNodeExpandSpy = jest.spyOn(component.onNodeExpand, 'emit');
+            const onNodeExpandSpy = vi.spyOn(component.onNodeExpand, 'emit');
             const mockEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -228,7 +240,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeCollapse when tree node is collapsed', () => {
-            const onNodeCollapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
+            const onNodeCollapseSpy = vi.spyOn(component.onNodeCollapse, 'emit');
             const mockEvent: TreeNodeCollapseEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -240,9 +252,9 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should trigger outputs through event handlers in template', () => {
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
-            const onNodeExpandSpy = jest.spyOn(component.onNodeExpand, 'emit');
-            const onNodeCollapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
+            const onNodeExpandSpy = vi.spyOn(component.onNodeExpand, 'emit');
+            const onNodeCollapseSpy = vi.spyOn(component.onNodeCollapse, 'emit');
 
             const mockSelectEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('select'),
@@ -269,8 +281,8 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should render a "Load more" button with plus icon and emit loadMore on click without selecting', () => {
-            const loadMoreSpy = jest.spyOn(component.loadMore, 'emit');
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+            const loadMoreSpy = vi.spyOn(component.loadMore, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
 
             const loadMoreNode: TreeNode = {
                 key: 'load-more:/application/',
@@ -337,6 +349,31 @@ describe('DotTreeFolderComponent', () => {
             const treeElement = spectator.query('p-tree');
             expect(treeElement).toBeTruthy();
         });
+
+        it('should render its projected label inside the shared clipping element', () => {
+            // #37363: long names used to wrap onto several lines here. The shared tree owns the
+            // single-line clipping now, so this consumer's label sits inside its wrapper and the
+            // consumer keeps only what a row *says*.
+            const clips = spectator.queryAll(byTestId('tree-node-label-clip'));
+
+            expect(clips).toHaveLength(2);
+            expect(clips[0]?.querySelector('[data-testid="tree-node-label"]')).toBeTruthy();
+        });
+
+        it('should keep exactly one tree-node-label per row', () => {
+            // e2e guard: `contentDrive.page.ts` counts this test id.
+            expect(spectator.queryAll(byTestId('tree-node-label'))).toHaveLength(2);
+        });
+
+        it('should keep matching the drop-highlight selector with the label wrapper in place', () => {
+            // The highlight is `.p-tree-node-content:has(span.active)` in this consumer's SCSS.
+            // `:has()` matches descendants, so the wrapper should not break it — verified rather
+            // than assumed (research.md R7).
+            component.$activeDropNode.set(mockFolders[0].data);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-tree-node-content:has(span.active)')).toBeTruthy();
+        });
     });
 
     describe('Input Changes', () => {
@@ -367,24 +404,24 @@ describe('DotTreeFolderComponent', () => {
     });
 
     describe('Drag and Drop', () => {
-        let elementRefSpy: ReturnType<typeof jest.spyOn>;
-        let uploadFilesSpyEmitter: ReturnType<typeof jest.spyOn>;
-        let moveItemsSpyEmitter: ReturnType<typeof jest.spyOn>;
+        let elementRefSpy: ReturnType<typeof vi.spyOn>;
+        let uploadFilesSpyEmitter: ReturnType<typeof vi.spyOn>;
+        let moveItemsSpyEmitter: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
-            uploadFilesSpyEmitter = jest.spyOn(component.uploadFiles, 'emit');
-            moveItemsSpyEmitter = jest.spyOn(component.moveItems, 'emit');
+            uploadFilesSpyEmitter = vi.spyOn(component.uploadFiles, 'emit');
+            moveItemsSpyEmitter = vi.spyOn(component.moveItems, 'emit');
 
             // Spy on the component's elementRef nativeElement.contains method
             if (component.elementRef?.nativeElement) {
-                elementRefSpy = jest
+                elementRefSpy = vi
                     .spyOn(component.elementRef.nativeElement, 'contains')
                     .mockReturnValue(false);
             }
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         describe('dragenter', () => {
@@ -871,16 +908,16 @@ describe('DotTreeFolderComponent', () => {
 
         const rightClickOn = (target: Element) => {
             const event = new MouseEvent('contextmenu', { cancelable: true, bubbles: true });
-            jest.spyOn(event, 'preventDefault');
+            vi.spyOn(event, 'preventDefault');
             target.dispatchEvent(event);
 
             return event;
         };
 
-        let emitted: jest.Mock;
+        let emitted: Mock;
 
         beforeEach(() => {
-            emitted = jest.fn();
+            emitted = vi.fn();
             component.rightClick.subscribe(emitted);
 
             spectator.fixture.componentRef.setInput('folders', [

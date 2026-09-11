@@ -13,27 +13,32 @@ describe('DotNavLogoService', () => {
         service = TestBed.inject(DotNavLogoService);
     });
 
-    it('should not set a new logo', (done) => {
-        service.setLogo(null);
-        service.navBarLogo$.subscribe((logo) => {
-            expect(logo).toBeNull();
-            done();
-        });
-    });
+    it('should not set a new logo', () =>
+        new Promise<void>((done) => {
+            // The company-info payload can carry a null logo; setLogo's signature
+            // does not admit it yet, so the null path is exercised through a cast.
+            service.setLogo(null as unknown as string);
+            service.navBarLogo$.subscribe((logo) => {
+                expect(logo).toBeNull();
+                done();
+            });
+        }));
 
-    it('should set a new logo', (done) => {
-        service.setLogo('/dA/id/asset/logo.png');
-        service.navBarLogo$.subscribe((logo) => {
-            expect(logo).toBe('url("/dA/id/asset/logo.png")');
-            done();
-        });
-    });
+    it('should set a new logo', () =>
+        new Promise<void>((done) => {
+            service.setLogo('/dA/id/asset/logo.png');
+            service.navBarLogo$.subscribe((logo) => {
+                expect(logo).toBe('url("/dA/id/asset/logo.png")');
+                done();
+            });
+        }));
 
-    it("should not set a logo if the logo string doesn't starts with /dA", (done) => {
-        service.setLogo('FL');
-        service.navBarLogo$.subscribe((logo) => {
-            expect(logo).toBeNull();
-            done();
-        });
-    });
+    it("should not set a logo if the logo string doesn't starts with /dA", () =>
+        new Promise<void>((done) => {
+            service.setLogo('FL');
+            service.navBarLogo$.subscribe((logo) => {
+                expect(logo).toBeNull();
+                done();
+            });
+        }));
 });

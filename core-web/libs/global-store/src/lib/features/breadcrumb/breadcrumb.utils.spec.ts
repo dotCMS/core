@@ -1,4 +1,5 @@
 import { signalStore, withState } from '@ngrx/signals';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -48,7 +49,7 @@ describe('Breadcrumb Utils - Route Handlers', () => {
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('processSpecialRoute', () => {

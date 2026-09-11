@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { Observable, of as observableOf, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -108,7 +109,7 @@ describe('DotPushPublishDialogComponent', () => {
         comp = spectator.component;
         dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
         pushPublishService = spectator.inject(PushPublishService);
-        jest.spyOn(comp.cancel, 'emit');
+        vi.spyOn(comp.cancel, 'emit');
     });
 
     describe('p-dialog', () => {
@@ -121,7 +122,7 @@ describe('DotPushPublishDialogComponent', () => {
 
         it('should run detectChanges when opened so PrimeNG OnPush dialog receives visible', () => {
             spectator.detectChanges();
-            const detectSpy = jest.spyOn(comp['cdr'], 'detectChanges');
+            const detectSpy = vi.spyOn(comp['cdr'], 'detectChanges');
             dotPushPublishDialogService.open(publishData);
             expect(detectSpy).toHaveBeenCalled();
             expect(comp.dialogShow).toBe(true);
@@ -158,7 +159,7 @@ describe('DotPushPublishDialogComponent', () => {
 
         it('should close only when visibleChange emits false', () => {
             openDialogAndStabilize();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             comp.onVisibleChange(true);
             expect(comp.cancel.emit).not.toHaveBeenCalled();
             expect(comp.dialogShow).toBe(true);
@@ -210,7 +211,7 @@ describe('DotPushPublishDialogComponent', () => {
         let acceptButton: DebugElement;
 
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             openDialogAndStabilize();
             const formDe = spectator.debugElement.query(By.css('dot-push-publish-form'));
             pushPublishForm = formDe?.componentInstance ?? null;
@@ -224,10 +225,12 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
+                vi.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                    of({ errors: 0 } as unknown as DotAjaxActionResponseView)
+                );
             });
 
-            xit('should submit on accept and hide dialog', () => {
+            it.skip('should submit on accept and hide dialog', () => {
                 acceptButton?.triggerEventHandler('click', null);
 
                 expect<any>(pushPublishService.pushPublishContent).toHaveBeenCalledWith(
@@ -269,7 +272,7 @@ describe('DotPushPublishDialogComponent', () => {
         describe('on error pushPublishContent', () => {
             const errors = ['Error 1', 'Error 2'];
             beforeEach(() => {
-                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                vi.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
                     of({ errors: errors } as unknown as DotAjaxActionResponseView)
                 );
             });

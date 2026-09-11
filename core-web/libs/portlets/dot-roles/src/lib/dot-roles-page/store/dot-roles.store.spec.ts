@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, Observable, of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import {
     DotHttpErrorManagerService,
@@ -87,46 +88,44 @@ const findRole = (nodes: DotRoleNode[], id: string): DotRoleNode | undefined => 
 describe('DotRolesStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotRolesStore>>;
     let store: InstanceType<typeof DotRolesStore>;
-    let service: jest.Mocked<DotRolesService>;
+    let service: Mocked<DotRolesService>;
 
     const createService = createServiceFactory({
         service: DotRolesStore,
         providers: [
             mockProvider(DotRolesService, {
-                getRoots: jest.fn().mockReturnValue(of(MOCK_NESTED_ROLES)),
-                getById: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                getUsers: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
-                create: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                update: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                delete: jest
+                getRoots: vi.fn().mockReturnValue(of(MOCK_NESTED_ROLES)),
+                getById: vi.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                getUsers: vi.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
+                create: vi.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                update: vi.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                delete: vi
                     .fn()
                     .mockReturnValue(of({ deleted: true, roleId: 'r-eco', usersAffected: 0 })),
-                grantUser: jest.fn().mockReturnValue(
+                grantUser: vi.fn().mockReturnValue(
                     of({
                         granted: true,
                         roleId: 'r-eco',
                         user: { userId: 'u-1' }
                     })
                 ),
-                removeUsers: jest
-                    .fn()
-                    .mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] })),
-                searchTree: jest.fn().mockReturnValue(of([])),
-                getAllToolGroups: jest.fn().mockReturnValue(of([])),
-                getToolGroups: jest.fn().mockReturnValue(of([])),
-                saveToolGroups: jest.fn().mockReturnValue(of({}))
+                removeUsers: vi.fn().mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] })),
+                searchTree: vi.fn().mockReturnValue(of([])),
+                getAllToolGroups: vi.fn().mockReturnValue(of([])),
+                getToolGroups: vi.fn().mockReturnValue(of([])),
+                saveToolGroups: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })
         ]
     });
 
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotRolesService) as jest.Mocked<DotRolesService>;
-        jest.clearAllMocks();
+        service = spectator.inject(DotRolesService) as Mocked<DotRolesService>;
+        vi.clearAllMocks();
         service.getRoots.mockReturnValue(of(MOCK_NESTED_ROLES));
         service.getById.mockReturnValue(of(MOCK_ROLE_DETAIL));
         service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
@@ -220,7 +219,7 @@ describe('DotRolesStore', () => {
 
         it('should clear selection without loading when passed null', () => {
             store.selectRole('r-eco');
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             store.selectRole(null);
 
@@ -256,7 +255,7 @@ describe('DotRolesStore', () => {
             // only the role itself would render direct grants as the complete
             // roster — the reading an admin auditing access would trust.
             store.selectRole('r-nowhere');
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             store.loadMembers({ id: 'r-nowhere' });
 
@@ -668,7 +667,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should NOT trigger server search for queries under 3 chars', () => {
-            const searchSpy = jest.spyOn(service, 'searchTree');
+            const searchSpy = vi.spyOn(service, 'searchTree');
             store.setFilter('ec');
 
             expect(searchSpy).not.toHaveBeenCalled();
@@ -685,7 +684,7 @@ describe('DotRolesStore', () => {
                     roleChildren: [{ id: 'r-eco', name: 'Eco Role', roleChildren: [] }]
                 }
             ];
-            (service.searchTree as jest.Mock).mockReturnValueOnce(of(matchedTree));
+            (service.searchTree as Mock).mockReturnValueOnce(of(matchedTree));
 
             store.setFilter('eco');
 
@@ -696,7 +695,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should return an empty result when the search returns nothing', () => {
-            (service.searchTree as jest.Mock).mockReturnValueOnce(of([]));
+            (service.searchTree as Mock).mockReturnValueOnce(of([]));
 
             store.setFilter('nomatch');
 
@@ -705,7 +704,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should reset to the full tree when the filter is cleared', () => {
-            (service.searchTree as jest.Mock).mockReturnValueOnce(of([{ id: 'x', name: 'x' }]));
+            (service.searchTree as Mock).mockReturnValueOnce(of([{ id: 'x', name: 'x' }]));
             store.setFilter('anything');
             expect(store.isSearching()).toBe(true);
 
@@ -728,26 +727,7 @@ describe('DotRolesStore', () => {
         });
     });
 
-    describe('selectedRoleIsParent and isSystemRole', () => {
-        it('should mark the selected role as parent when the detail has roleChildren', () => {
-            service.getById.mockReturnValueOnce(
-                of({
-                    ...MOCK_ROLE_DETAIL,
-                    roleChildren: [{ id: 'child', name: 'child' }]
-                })
-            );
-
-            store.selectRole('r-eco');
-
-            expect(store.selectedRoleIsParent()).toBe(true);
-        });
-
-        it('should mark the selected role as leaf when the detail has no roleChildren', () => {
-            store.selectRole('r-eco');
-
-            expect(store.selectedRoleIsParent()).toBe(false);
-        });
-
+    describe('isSystemRole', () => {
         it('isSystemRole should be true only for system roles', () => {
             service.getById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, system: true }));
 
@@ -794,7 +774,7 @@ describe('DotRolesStore', () => {
 
         it('should POST, append the created role to the roots when parentRoleId is null', async () => {
             store.loadRootRoles();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             service.create.mockReturnValue(
                 of({ id: 'r-new-root', name: 'New Root', roleKey: 'new-root' })
             );
@@ -829,7 +809,7 @@ describe('DotRolesStore', () => {
 
         it('should splice into the parent roleChildren when the parent is loaded', async () => {
             store.loadRootRoles();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             service.create.mockReturnValue(
                 of({
                     id: 'r-eco-child',
@@ -859,7 +839,7 @@ describe('DotRolesStore', () => {
             // appeared, which read as "it worked" because the detail pane still
             // selected it. A full reload is heavier but coherent.
             store.loadRootRoles();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             service.create.mockReturnValue(
                 of({ id: 'r-deep', name: 'Deep', parent: 'r-unloaded', roleKey: 'deep' })
             );

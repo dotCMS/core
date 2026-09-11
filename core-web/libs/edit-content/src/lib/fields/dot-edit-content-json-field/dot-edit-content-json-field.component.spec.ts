@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -93,7 +94,7 @@ describe('DotEditContentJsonFieldComponent', () => {
             const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent);
             // Mock $forcedLanguage signal for this test
             Object.defineProperty(monacoEditor, '$forcedLanguage', {
-                value: jest.fn().mockReturnValue(AvailableLanguageMonaco.Json),
+                value: vi.fn().mockReturnValue(AvailableLanguageMonaco.Json),
                 writable: true,
                 configurable: true
             });
@@ -102,7 +103,7 @@ describe('DotEditContentJsonFieldComponent', () => {
 
         it('should call insertLanguageVariableInMonaco when language variable is selected', () => {
             // Mock the insertLanguageVariableInMonaco private method
-            const insertLanguageVariableInMonacoMock = jest.fn();
+            const insertLanguageVariableInMonacoMock = vi.fn();
             spectator.component['insertLanguageVariableInMonaco'] =
                 insertLanguageVariableInMonacoMock;
 
@@ -116,10 +117,10 @@ describe('DotEditContentJsonFieldComponent', () => {
 
         it('should call onSelectLanguageVariable when language variable is selected', () => {
             // Spy on component method
-            const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
+            const spy = vi.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Mock insertLanguageVariableInMonaco to avoid calling real insertContent
-            spectator.component['insertLanguageVariableInMonaco'] = jest.fn();
+            spectator.component['insertLanguageVariableInMonaco'] = vi.fn();
 
             // Get language variable selector component
             const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);

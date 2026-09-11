@@ -107,9 +107,18 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 npm install @dotcms/angular@latest
 ```
 
-This will automatically install the required dependencies:
+You also need to install these packages yourself:
 - `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
 - `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
+- `@dotcms/types`: TypeScript definitions used throughout the API
+
+```bash
+npm install @dotcms/uve @dotcms/client @dotcms/types
+```
+
+> npm 7+ and pnpm install these automatically as peer dependencies alongside `@dotcms/angular`.
+> **Yarn Classic (1.x) and npm below v7 do not** — they only print a warning if one is missing,
+> so on those package managers you must add them explicitly as shown above.
 
 ## Configuration
 

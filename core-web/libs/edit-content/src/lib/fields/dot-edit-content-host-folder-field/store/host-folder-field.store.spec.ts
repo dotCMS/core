@@ -1,7 +1,8 @@
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
-import { SpyObject, mockProvider } from '@openng/spectator/jest';
-import { Subject, of, throwError } from 'rxjs';
+import { SpyObject, mockProvider } from '@openng/spectator/vitest';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
@@ -60,8 +61,7 @@ function createSiteList(count: number, prefix = 'site'): TreeNodeItem[] {
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     }));
 }
 
@@ -94,16 +94,16 @@ describe('HostFolderFiledStore', () => {
             providers: [
                 HostFolderFiledStore,
                 mockProvider(DotHttpErrorManagerService, {
-                    handle: jest.fn()
+                    handle: vi.fn()
                 }),
                 mockProvider(DotBrowsingService, {
-                    getSitesPage: jest.fn(() =>
-                        of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))
-                    ),
-                    resolveSiteByHostname: jest.fn(),
-                    getCurrentSiteAsTreeNodeItem: jest.fn(),
-                    buildTreeByPaths: jest.fn(),
-                    searchFolders: jest.fn(() => of({ folders: [], pagination: mockPagination }))
+                    getSitesPage: vi.fn(() => of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))),
+                    resolveSiteByHostname: vi.fn(),
+                    // The store pipes this when the field is required; a bare vi.fn()
+                    // returns undefined and it dereferences nothing.
+                    getCurrentSiteAsTreeNodeItem: vi.fn(() => EMPTY),
+                    buildTreeByPaths: vi.fn(),
+                    searchFolders: vi.fn(() => of({ folders: [], pagination: mockPagination }))
                 })
             ]
         });
@@ -433,8 +433,6 @@ describe('HostFolderFiledStore', () => {
                         path: '/folder1/',
                         type: 'folder'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
                     leaf: false
                 }
             ];
@@ -476,8 +474,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             };
             const mockFolders: TreeNodeItem[] = [folder];
@@ -570,8 +566,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             };
             const childFolders: TreeNodeItem[] = [
@@ -583,9 +577,7 @@ describe('HostFolderFiledStore', () => {
                         hostname: 'demo.dotcms.com',
                         path: '/folder1/child1/',
                         type: 'folder'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder'
+                    }
                 }
             ];
             service.searchFolders.mockReturnValue(
@@ -622,8 +614,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             };
             const pending$ = new Subject<{
@@ -1475,8 +1465,6 @@ describe('HostFolderFiledStore', () => {
                         path: '/folder1/',
                         type: 'folder'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
                     leaf: false
                 }
             ];
@@ -1549,8 +1537,7 @@ describe('HostFolderFiledStore', () => {
             key: label,
             label,
             data: { id: label, hostname: label, path: '', type: 'site' },
-            expandedIcon: 'pi pi-globe',
-            collapsedIcon: 'pi pi-globe'
+            icon: 'pi pi-globe'
         });
 
         it('should be false when total site count equals SITE_SEARCH_THRESHOLD', fakeAsync(() => {
@@ -1708,8 +1695,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             }
         ];

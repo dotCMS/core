@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -260,17 +260,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([{ totalEvents: 99 }]));
         });
 
-        it('should propagate HTTP errors for total-events', (done) => {
-            spectator.service.getTotalEvents({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for total-events', () =>
+            new Promise<void>((done) => {
+                spectator.service.getTotalEvents({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getUniqueVisitors', () => {
@@ -341,17 +342,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([{ uniqueVisitors: 3 }]));
         });
 
-        it('should propagate HTTP errors for unique-visitors', (done) => {
-            spectator.service.getUniqueVisitors({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for unique-visitors', () =>
+            new Promise<void>((done) => {
+                spectator.service.getUniqueVisitors({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getContentAttribution', () => {
@@ -418,17 +420,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([]));
         });
 
-        it('should propagate HTTP errors for content attribution', (done) => {
-            spectator.service.getContentAttribution({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for content attribution', () =>
+            new Promise<void>((done) => {
+                spectator.service.getContentAttribution({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getTopContent', () => {
@@ -479,17 +482,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([]));
         });
 
-        it('should propagate HTTP errors for top-content', (done) => {
-            spectator.service.getTopContent({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for top-content', () =>
+            new Promise<void>((done) => {
+                spectator.service.getTopContent({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getPageviewsByDeviceBrowser', () => {
@@ -553,22 +557,23 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should propagate HTTP errors for pageviews-by-device-browser', (done) => {
-            spectator.service
-                .getPageviewsByDeviceBrowser({
-                    range: 'last_30_days',
-                    groupBy: 'device'
-                })
-                .subscribe({
-                    error: (e) => {
-                        expect(e.status).toBe(500);
-                        done();
-                    }
-                });
+        it('should propagate HTTP errors for pageviews-by-device-browser', () =>
+            new Promise<void>((done) => {
+                spectator.service
+                    .getPageviewsByDeviceBrowser({
+                        range: 'last_30_days',
+                        groupBy: 'device'
+                    })
+                    .subscribe({
+                        error: (e) => {
+                            expect(e.status).toBe(500);
+                            done();
+                        }
+                    });
 
-            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getSessionEngagement', () => {
@@ -628,17 +633,18 @@ describe('DotAnalyticsService', () => {
             expect(result).toEqual(byDay);
         });
 
-        it('should propagate HTTP errors for session engagement', (done) => {
-            spectator.service.getSessionEngagement({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(503);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for session engagement', () =>
+            new Promise<void>((done) => {
+                spectator.service.getSessionEngagement({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(503);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
-            req.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
-        });
+                const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+                req.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
+            }));
     });
 
     describe('getSessionEngagementGroupBy', () => {
@@ -787,19 +793,20 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should propagate HTTP errors for session engagement groupBy', (done) => {
-            spectator.service
-                .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
-                .subscribe({
-                    error: (e) => {
-                        expect(e.status).toBe(500);
-                        done();
-                    }
-                });
+        it('should propagate HTTP errors for session engagement groupBy', () =>
+            new Promise<void>((done) => {
+                spectator.service
+                    .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
+                    .subscribe({
+                        error: (e) => {
+                            expect(e.status).toBe(500);
+                            done();
+                        }
+                    });
 
-            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('healthCheck', () => {

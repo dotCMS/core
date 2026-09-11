@@ -3,8 +3,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
@@ -31,7 +32,7 @@ describe('DotAppLifecycleEffect', () => {
         spectator = createService({
             providers: [
                 mockProvider(GlobalStore, {
-                    switchSiteEvent$: jest.fn().mockReturnValue(switchSiteSubject.asObservable())
+                    switchSiteEvent$: vi.fn().mockReturnValue(switchSiteSubject.asObservable())
                 })
             ]
         });
@@ -40,13 +41,13 @@ describe('DotAppLifecycleEffect', () => {
     });
 
     it('should navigate to site browser when SWITCH_SITE fires on edit page', () => {
-        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
+        vi.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
         switchSiteSubject.next(mockSites[0] as unknown as DotSite);
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
     });
 
     it('should NOT navigate when SWITCH_SITE fires on a non-edit page', () => {
-        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
+        vi.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
         switchSiteSubject.next(mockSites[0] as unknown as DotSite);
         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
     });

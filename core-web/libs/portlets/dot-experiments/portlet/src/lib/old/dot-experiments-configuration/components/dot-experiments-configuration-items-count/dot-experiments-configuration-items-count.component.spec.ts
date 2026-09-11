@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { DotExperimentsConfigurationItemsCountComponent } from './dot-experiments-configuration-items-count.component';
 

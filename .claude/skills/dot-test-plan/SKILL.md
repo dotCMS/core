@@ -204,7 +204,47 @@ publishes no Out of Scope list, so only the cases you keep appear. Still walk ev
 deliberately: silently forgetting an axis and consciously excluding it produce the same plan, and
 only one of them is right.
 
-**Acceptance criteria come first.** Before the matrix, extract every bullet from each issue's
+### The spec, when there is one
+
+dotCMS is moving to spec-driven development, and a spec is a far better source of test material than
+an issue body — it is written to be testable and it was reviewed and approved on its own. Check for
+one **before** reading acceptance criteria:
+
+```bash
+ls -d specs/<issue>-*/ 2>/dev/null      # one per issue in the set; the dir is named <issue>-<slug>
+```
+
+Read only `spec.md`. Skip `data-model.md`, `contracts/`, `plan.md` and `tasks.md` — implementation
+detail, little test value, real token cost. Most issues have no spec; that is the normal case and
+never blocks anything.
+
+What to take from it:
+
+| In the spec | Becomes |
+|---|---|
+| **Acceptance Scenarios** — *Given … When … Then …* | A case: Given/When → `Steps To Reproduce`, Then → `Expected Result` |
+| **Independent Test** on a user story | A single case proving that story stands on its own |
+| **Edge Cases** | `Edge` / `Boundary` scenario cases |
+| Story **Priority** (P1/P2/P3) | An input to `Risk` — not a mechanical mapping |
+| **Success Criteria** / measurable outcomes | What the expected result should actually assert |
+
+Cite the scenario in the case name the way AC bullets are cited — `US1-AS3: site selector lists only
+sites` — so the reviewer can check a case against the exact scenario it came from.
+
+**Two rules that matter more than the mapping:**
+
+- **The diff still wins.** The spec says what was intended; the diff says what was built. Where they
+  disagree, plan against the diff and note the gap. A spec is approved before the code exists, and
+  the code is what a person will be testing.
+- **A spec describes a whole feature; this PR may implement a slice of it.** Spec-driven work lands
+  in increments — an issue titled "4/7" is one step of an epic whose spec covers all seven. Cover
+  what **this diff** implements. Where a spec scenario has no counterpart in the diff, that is
+  **one line in the Summary**, not an invented case. Writing cases for unbuilt scenarios is the
+  fastest way to make a plan untrustworthy.
+
+Bound it: read at most **3** specs and **400 lines** each. If you truncate, say so in the Summary.
+
+**Acceptance criteria come first when there is no spec.** Extract every bullet from each issue's
 "Acceptance Criteria" / "Definition of Done" section. Every bullet describing a user-visible outcome
 must map to ≥1 case, and the case name references it (e.g. `AC-3: Content Drive shows all subfolders`).
 An AC bullet with no case is a coverage gap. The only acceptable reasons to leave one out are: it is

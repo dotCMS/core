@@ -1,0 +1,40 @@
+@if (store.configUnavailable()) {
+    <!-- Distinct from the banner below: a failed request is retryable and says nothing about
+         whether a provider is set up, so telling the user to go and configure one would be
+         wrong. Non-blocking for the same reason as the other (FR-048). -->
+    <p-message severity="error" [closable]="false" data-testid="dotai-config-unavailable">
+        {{ 'dotai.config-unavailable.message' | dm }}
+    </p-message>
+} @else if (store.showNotConfigured()) {
+    <!-- Pinned above the tab bar: the design omits this, but the legacy screen showed it and
+         without it an unconfigured instance is a silent dead end (FR-047). Deliberately
+         non-blocking — Config Values and Embeddings stay usable (FR-048).
+         Gated on showNotConfigured, never on !isConfigured: the latter is also true before
+         the config has loaded, which flashed the banner on every load. -->
+    <p-message severity="warn" [closable]="false" data-testid="dotai-not-configured">
+        {{ 'dotai.not-configured.message' | dm }}
+    </p-message>
+}
+
+<!-- The rule under the tab bar is PrimeNG's own: the theme styles
+     `.p-tablist-tab-list` with `border-width: dt('tabs.tablist.border.width')`, and the
+     dotCMS theme sets that token to 0. `[dt]` is the documented seam for overriding it, so
+     the theme's existing border colour is reused and no border is hand-drawn on the
+     element. -->
+<p-tabs [value]="$activeTab()" [dt]="tabsDt">
+    <p-tablist>
+        @for (tab of tabs; track tab.id) {
+            <p-tab
+                [value]="tab.id"
+                [routerLink]="['/dotai', tab.id]"
+                [routerLinkActive]="['bg-primary-50']"
+                [attr.data-testid]="'dotai-tab-' + tab.id">
+                {{ tab.labelKey | dm }}
+            </p-tab>
+        }
+    </p-tablist>
+</p-tabs>
+
+<div class="min-h-0 flex-1 overflow-hidden" data-testid="dotai-outlet">
+    <router-outlet />
+</div>

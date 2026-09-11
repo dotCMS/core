@@ -4,8 +4,9 @@ import {
     mockProvider,
     SpyObject,
     byTestId
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 
@@ -30,7 +31,7 @@ describe('DotFileFieldPreviewComponent', () => {
         componentProviders: [
             ConfirmationService,
             mockProvider(DotResourceLinksService, {
-                getFileResourceLinksByInode: jest.fn().mockReturnValue(
+                getFileResourceLinksByInode: vi.fn().mockReturnValue(
                     of({
                         configuredImageURL: 'testConfiguredImageURL',
                         idPath: 'testIdPath',
@@ -77,9 +78,9 @@ describe('DotFileFieldPreviewComponent', () => {
         });
 
         it('should call downloadAsset when click on the download btn', () => {
-            const downloadSpy = jest
+            const downloadSpy = vi
                 .spyOn(spectator.component, 'downloadAsset')
-                .mockImplementation(jest.fn());
+                .mockImplementation(vi.fn());
 
             const expectedUrl = `${TEMP_FILE_MOCK.referenceUrl}?force_download=true`;
 
@@ -190,9 +191,9 @@ describe('DotFileFieldPreviewComponent', () => {
         });
 
         it('should call downloadAsset when click on the proper btn', async () => {
-            const downloadSpy = jest
+            const downloadSpy = vi
                 .spyOn(spectator.component, 'downloadAsset')
-                .mockImplementation(jest.fn());
+                .mockImplementation(vi.fn());
 
             const { inode } = NEW_FILE_MOCK.entity;
 
@@ -288,9 +289,9 @@ describe('DotFileFieldPreviewComponent', () => {
         });
 
         it('should prevent download action when disabled', () => {
-            const downloadSpy = jest
+            const downloadSpy = vi
                 .spyOn(spectator.component, 'downloadAsset')
-                .mockImplementation(jest.fn());
+                .mockImplementation(vi.fn());
 
             const downloadBtnComponent = spectator.query(byTestId('download-btn'));
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');
@@ -302,9 +303,9 @@ describe('DotFileFieldPreviewComponent', () => {
         });
 
         it('should not trigger download when clicking disabled button', () => {
-            const downloadSpy = jest
+            const downloadSpy = vi
                 .spyOn(spectator.component, 'downloadAsset')
-                .mockImplementation(jest.fn());
+                .mockImplementation(vi.fn());
 
             const downloadBtnComponent = spectator.query(byTestId('download-btn'));
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');

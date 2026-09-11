@@ -1,6 +1,6 @@
-import { expect, describe } from '@jest/globals';
-import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -59,18 +59,18 @@ describe('RelationshipFieldStore', () => {
         providers: [
             RelationshipFieldService,
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of(mockContentType))
+                getContentType: vi.fn().mockReturnValue(of(mockContentType))
             }),
             mockProvider(DotFieldService),
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn()
+                handle: vi.fn()
             }),
             mockProvider(DotEditContentService, {
-                getContentById: jest.fn().mockReturnValue(of({}))
+                getContentById: vi.fn().mockReturnValue(of({}))
             }),
             // `withFlags` batch-fetches the side-panel flag on init.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest
+                getFeatureFlags: vi
                     .fn()
                     .mockReturnValue(
                         of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
@@ -249,6 +249,63 @@ describe('RelationshipFieldStore', () => {
                 expect(store.pagination().currentPage).toBe(1);
                 expect(store.pagination().offset).toBe(0);
                 expect(store.data()[0].inode).toBe('p1-inode-2');
+            });
+        });
+
+        describe('refreshItem', () => {
+            it('should replace the matching item by identifier, keeping the current page', () => {
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `refresh-inode-${i + 1}`,
+                        identifier: `refresh-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(eightItems);
+
+                // The user is on page 2, looking at the row they just edited elsewhere.
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+
+                // A save mints a new inode; the identifier is what stays stable.
+                store.refreshItem(
+                    createFakeContentlet({
+                        inode: 'inode-after-save',
+                        identifier: 'refresh-identifier-7',
+                        title: 'Edited elsewhere'
+                    })
+                );
+
+                // Snapping back to page 1 would lose the user's place — this is why the method
+                // exists instead of reusing setData.
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+                expect(store.data()[6].inode).toBe('inode-after-save');
+                expect(store.data()[6].title).toBe('Edited elsewhere');
+                expect(store.data().length).toBe(8);
+            });
+
+            it('should mark the change as a load so it never dirties the form', () => {
+                store.setData(mockData);
+                expect(store.lastChangeSource()).toBe('user');
+
+                store.refreshItem(
+                    createFakeContentlet({ inode: 'new-inode', identifier: 'identifier1' })
+                );
+
+                // The relationship itself did not change — only the version of one entry.
+                expect(store.lastChangeSource()).toBe('load');
+            });
+
+            it('should be a no-op when the identifier is not in the list', () => {
+                store.setData(mockData);
+                const before = store.data();
+
+                store.refreshItem(
+                    createFakeContentlet({ inode: 'x', identifier: 'not-related-here' })
+                );
+
+                expect(store.data()).toBe(before);
             });
         });
 
@@ -619,7 +676,7 @@ describe('RelationshipFieldStore', () => {
                 const items = [createFakeContentlet({ inode: 'inode1', identifier: 'id1' })];
                 store.setData(items);
 
-                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
                     of({
                         data: [],
                         contentType: mockContentType,
@@ -635,7 +692,7 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should skip locale resolution when dataToProcess is empty', () => {
-                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
                     of({
                         data: [],
                         contentType: mockContentType,
@@ -662,7 +719,7 @@ describe('RelationshipFieldStore', () => {
                 ];
                 store.setData(items);
 
-                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
                     of({
                         data: [],
                         contentType: mockContentType,
@@ -694,8 +751,8 @@ describe('RelationshipFieldStore', () => {
                 store.setData(items);
 
                 const fetched = createFakeContentlet({ inode: 'resolved', identifier: 'id1' });
-                jest.spyOn(dotEditContentService, 'getContentById').mockReturnValue(of(fetched));
-                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                vi.spyOn(dotEditContentService, 'getContentById').mockReturnValue(of(fetched));
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
                     of({
                         data: [],
                         contentType: mockContentType,
@@ -721,10 +778,10 @@ describe('RelationshipFieldStore', () => {
                 const original = createFakeContentlet({ inode: 'inode1', identifier: 'id1' });
                 store.setData([original]);
 
-                jest.spyOn(dotEditContentService, 'getContentById').mockReturnValue(
+                vi.spyOn(dotEditContentService, 'getContentById').mockReturnValue(
                     throwError(() => new Error('Not found'))
                 );
-                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
                     of({
                         data: [],
                         contentType: mockContentType,
@@ -750,7 +807,7 @@ describe('RelationshipFieldStore', () => {
                 ];
                 store.setData(existingItems);
 
-                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
                     of({
                         data: [],
                         contentType: mockContentType,
@@ -833,18 +890,18 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         RelationshipFieldStore,
         RelationshipFieldService,
         mockProvider(DotContentTypeService, {
-            getContentType: jest.fn().mockReturnValue(of(mockContentType))
+            getContentType: vi.fn().mockReturnValue(of(mockContentType))
         }),
         mockProvider(DotFieldService),
         mockProvider(DotHttpErrorManagerService, {
-            handle: jest.fn()
+            handle: vi.fn()
         }),
         mockProvider(DotEditContentService, {
-            getContentById: jest.fn().mockReturnValue(of({}))
+            getContentById: vi.fn().mockReturnValue(of({}))
         }),
         // `withFlags` batch-fetches the side-panel flag on init.
         mockProvider(DotPropertiesService, {
-            getFeatureFlags: jest
+            getFeatureFlags: vi
                 .fn()
                 .mockReturnValue(
                     of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })

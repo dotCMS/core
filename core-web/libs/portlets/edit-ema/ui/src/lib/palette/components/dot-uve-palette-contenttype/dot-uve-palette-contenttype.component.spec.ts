@@ -4,7 +4,8 @@ import {
     createHostFactory,
     Spectator,
     SpectatorHost
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -74,7 +75,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 provide: DotMessageService,
                 useValue: {
                     // Keep it deterministic for tests: return the key as-is
-                    get: jest.fn((key: string) => key)
+                    get: vi.fn((key: string) => key)
                 }
             }
         ]
@@ -88,7 +89,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 provide: DotMessageService,
                 useValue: {
                     // Keep it deterministic for tests: return the key as-is
-                    get: jest.fn((key: string) => key)
+                    get: vi.fn((key: string) => key)
                 }
             }
         ],
@@ -158,9 +159,8 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
     });
 
-    describe('View Input and CSS Classes', () => {
-        // NOTE: host styling is handled by $hostClass(); we don't assert on CSS classes.
-    });
+    // NOTE: host styling is handled by $hostClass(); we don't assert on CSS classes,
+    // so there is no suite for them. An empty `describe` fails the file under Vitest.
 
     describe('Template Rendering', () => {
         it('should render drag handle with correct icons', () => {
@@ -282,34 +282,36 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     });
 
     describe('Output Events', () => {
-        it('should emit selectContentType when chevron is clicked', (done) => {
-            spectator.output('onSelectContentType').subscribe((value: string) => {
-                expect(value).toBe('TestContentType');
-                done();
-            });
+        it('should emit selectContentType when chevron is clicked', () =>
+            new Promise<void>((done) => {
+                spectator.output('onSelectContentType').subscribe((value: string) => {
+                    expect(value).toBe('TestContentType');
+                    done();
+                });
 
-            const chevron = spectator.query('.chevron');
-            spectator.click(chevron as Element);
-        });
+                const chevron = spectator.query('.chevron');
+                spectator.click(chevron as Element);
+            }));
 
-        it('should emit correct variable when contentType changes and chevron is clicked', (done) => {
-            const newContentType: DotCMSPaletteContentType = {
-                ...spectator.hostComponent.contentType,
-                variable: 'NewVariableName'
-            };
+        it('should emit correct variable when contentType changes and chevron is clicked', () =>
+            new Promise<void>((done) => {
+                const newContentType: DotCMSPaletteContentType = {
+                    ...spectator.hostComponent.contentType,
+                    variable: 'NewVariableName'
+                };
 
-            spectator.hostComponent.contentType = newContentType;
-            spectator.hostFixture.changeDetectorRef.markForCheck();
-            spectator.hostFixture.detectChanges();
+                spectator.hostComponent.contentType = newContentType;
+                spectator.hostFixture.changeDetectorRef.markForCheck();
+                spectator.hostFixture.detectChanges();
 
-            spectator.output('onSelectContentType').subscribe((value: string) => {
-                expect(value).toBe('NewVariableName');
-                done();
-            });
+                spectator.output('onSelectContentType').subscribe((value: string) => {
+                    expect(value).toBe('NewVariableName');
+                    done();
+                });
 
-            const chevron = spectator.query('.chevron');
-            spectator.click(chevron as Element);
-        });
+                const chevron = spectator.query('.chevron');
+                spectator.click(chevron as Element);
+            }));
     });
 
     describe('Selectable mode', () => {
@@ -332,32 +334,34 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             expect(spectator.query('.chevron')).toBeFalsy();
         });
 
-        it('should emit onSelectContentType with the variable when host is clicked', (done) => {
-            spectator.output('onSelectContentType').subscribe((value: string) => {
-                expect(value).toBe('TestContentType');
-                done();
-            });
+        it('should emit onSelectContentType with the variable when host is clicked', () =>
+            new Promise<void>((done) => {
+                spectator.output('onSelectContentType').subscribe((value: string) => {
+                    expect(value).toBe('TestContentType');
+                    done();
+                });
 
-            spectator.click(spectator.element as Element);
-        });
+                spectator.click(spectator.element as Element);
+            }));
 
-        it('should emit the updated variable when contentType changes and host is clicked', (done) => {
-            const newContentType: DotCMSPaletteContentType = {
-                ...spectator.hostComponent.contentType,
-                variable: 'AnotherVariable'
-            };
+        it('should emit the updated variable when contentType changes and host is clicked', () =>
+            new Promise<void>((done) => {
+                const newContentType: DotCMSPaletteContentType = {
+                    ...spectator.hostComponent.contentType,
+                    variable: 'AnotherVariable'
+                };
 
-            spectator.hostComponent.contentType = newContentType;
-            spectator.hostFixture.changeDetectorRef.markForCheck();
-            spectator.hostFixture.detectChanges();
+                spectator.hostComponent.contentType = newContentType;
+                spectator.hostFixture.changeDetectorRef.markForCheck();
+                spectator.hostFixture.detectChanges();
 
-            spectator.output('onSelectContentType').subscribe((value: string) => {
-                expect(value).toBe('AnotherVariable');
-                done();
-            });
+                spectator.output('onSelectContentType').subscribe((value: string) => {
+                    expect(value).toBe('AnotherVariable');
+                    done();
+                });
 
-            spectator.click(spectator.element as Element);
-        });
+                spectator.click(spectator.element as Element);
+            }));
 
         it('should NOT emit onSelectContentType on host click when disabled', () => {
             const disabledContentType: DotCMSPaletteContentType = {
@@ -369,7 +373,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             spectator.hostFixture.changeDetectorRef.markForCheck();
             spectator.hostFixture.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.output('onSelectContentType').subscribe(emitSpy);
 
             spectator.click(spectator.element as Element);
@@ -393,7 +397,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
 
         it('should NOT emit onSelectContentType on host click when not selectable', () => {
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.output('onSelectContentType').subscribe(emitSpy);
 
             spectator.click(spectator.element as Element);
@@ -487,20 +491,21 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     });
 
     describe('Right Click Event', () => {
-        it('should emit rightClick event when component is right-clicked', (done) => {
-            spectator.output('contextMenu').subscribe((event: MouseEvent) => {
-                expect(event).toBeInstanceOf(MouseEvent);
-                done();
-            });
+        it('should emit rightClick event when component is right-clicked', () =>
+            new Promise<void>((done) => {
+                spectator.output('contextMenu').subscribe((event: MouseEvent) => {
+                    expect(event).toBeInstanceOf(MouseEvent);
+                    done();
+                });
 
-            const element = spectator.element as HTMLElement;
-            const event = new MouseEvent('contextmenu', {
-                bubbles: true,
-                cancelable: true
-            });
+                const element = spectator.element as HTMLElement;
+                const event = new MouseEvent('contextmenu', {
+                    bubbles: true,
+                    cancelable: true
+                });
 
-            element.dispatchEvent(event);
-        });
+                element.dispatchEvent(event);
+            }));
 
         it('should prevent default behavior on right-click', () => {
             const mockEvent = new MouseEvent('contextmenu', {
@@ -508,8 +513,8 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 cancelable: true
             });
 
-            const preventDefaultSpy = jest.spyOn(mockEvent, 'preventDefault');
-            const contextMenuSpy = jest.fn();
+            const preventDefaultSpy = vi.spyOn(mockEvent, 'preventDefault');
+            const contextMenuSpy = vi.fn();
             spectator.output('contextMenu').subscribe(contextMenuSpy);
 
             const element = spectator.element as HTMLElement;
@@ -519,22 +524,23 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             expect(contextMenuSpy).toHaveBeenCalled();
         });
 
-        it('should emit rightClick with correct event type', (done) => {
-            spectator.output('contextMenu').subscribe((event: MouseEvent) => {
-                expect(event).toBeInstanceOf(MouseEvent);
-                expect(event.type).toBe('contextmenu');
-                done();
-            });
+        it('should emit rightClick with correct event type', () =>
+            new Promise<void>((done) => {
+                spectator.output('contextMenu').subscribe((event: MouseEvent) => {
+                    expect(event).toBeInstanceOf(MouseEvent);
+                    expect(event.type).toBe('contextmenu');
+                    done();
+                });
 
-            const mockEvent = new MouseEvent('contextmenu', {
-                bubbles: true,
-                cancelable: true,
-                clientX: 100,
-                clientY: 200
-            });
+                const mockEvent = new MouseEvent('contextmenu', {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: 100,
+                    clientY: 200
+                });
 
-            const element = spectator.element as HTMLElement;
-            element.dispatchEvent(mockEvent);
-        });
+                const element = spectator.element as HTMLElement;
+                element.dispatchEvent(mockEvent);
+            }));
     });
 });

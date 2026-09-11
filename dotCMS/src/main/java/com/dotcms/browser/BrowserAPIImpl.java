@@ -135,6 +135,18 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private static final String DOTPAGE_MIME_TYPE = "application/dotpage";
 
+    /**
+     * Matches any file metadata anywhere under {@code fields} whose {@code contentType} contains
+     * the given value. Bound as a parameter, never concatenated into the statement.
+     *
+     * <p>Characters that are regex metacharacters in the value are left as they are rather than
+     * escaped, so the SQL this produces matches exactly what it matched before. Callers do send
+     * wildcard forms such as {@code image/*}, which is why the accepted character set includes
+     * {@code *}.</p>
+     */
+    private static final String MIME_TYPE_JSONPATH =
+            "$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")";
+
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
     private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
@@ -2167,7 +2179,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(selectQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
-            appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes);
+            appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes, parameters);
         }
         if (null != browserQuery.sortBy) {
             appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
@@ -2803,16 +2815,29 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param sqlQuery  The main SQL query.
      * @param mimeTypes The list of MIME Types specified by the client.
      */
-    private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
-        final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
-                .map(mimeType -> {
-                    if (DOTPAGE_MIME_TYPE.equals(mimeType)) {
-                        return String.format("struc.structuretype = %d", BaseContentType.HTMLPAGE.getType());
-                    }
-                    return String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType);
-                })
-                .collect(Collectors.joining(" OR ")));
-        sqlQuery.append(mimeTypesFilter);
+    private static void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes,
+            final List<Object> parameters) {
+
+        final List<String> predicates = new ArrayList<>();
+
+        for (final String mimeType : mimeTypes) {
+
+            if (DOTPAGE_MIME_TYPE.equals(mimeType)) {
+                // Pages are matched by content type rather than by file metadata. The value is an
+                // enum ordinal, not caller input.
+                predicates.add(String.format("struc.structuretype = %d", BaseContentType.HTMLPAGE.getType()));
+                continue;
+            }
+
+            // The MIME type is caller-supplied, so the JSONPath expression is bound as a parameter
+            // rather than concatenated into the statement. BrowserQuery.Builder#showMimeTypes
+            // restricts the value to MIME type characters, which keeps it from altering the
+            // JSONPath expression it sits inside.
+            predicates.add("jsonb_path_exists(c.contentlet_as_json, ?::jsonpath)");
+            parameters.add(String.format(MIME_TYPE_JSONPATH, mimeType));
+        }
+
+        sqlQuery.append(String.format(" AND (%s)", String.join(" OR ", predicates)));
     }
 
     /**

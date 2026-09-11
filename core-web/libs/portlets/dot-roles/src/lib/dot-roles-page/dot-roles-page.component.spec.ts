@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -40,37 +46,36 @@ const MESSAGES = {
  */
 function baseStoreMock(overrides: Record<string, unknown> = {}) {
     return mockProvider(DotRolesStore, {
-        roles: jest.fn().mockReturnValue([]),
-        roleTree: jest.fn().mockReturnValue([]),
-        filter: jest.fn().mockReturnValue(''),
-        filteredRoles: jest.fn().mockReturnValue([]),
-        isSearching: jest.fn().mockReturnValue(false),
-        searchStatus: jest.fn().mockReturnValue('INIT'),
-        selectedRoleId: jest.fn().mockReturnValue(null),
-        selectedRole: jest.fn().mockReturnValue(null),
-        selectedRoleStatus: jest.fn().mockReturnValue('INIT'),
-        selectedRoleIsParent: jest.fn().mockReturnValue(false),
-        activeTab: jest.fn().mockReturnValue('users'),
-        status: jest.fn().mockReturnValue('LOADED'),
-        membersStatus: jest.fn().mockReturnValue('LOADED'),
-        members: jest.fn().mockReturnValue([]),
-        toolGroups: jest.fn().mockReturnValue([]),
-        toolGroupsStatus: jest.fn().mockReturnValue('LOADED'),
-        toolGroupsSaving: jest.fn().mockReturnValue(false),
-        toolGroupCount: jest.fn().mockReturnValue(0),
-        canEditRoleLayouts: jest.fn().mockReturnValue(true),
-        memberCount: jest.fn().mockReturnValue(0),
-        isSystemRole: jest.fn().mockReturnValue(false),
-        canModifyRole: jest.fn().mockReturnValue(true),
-        fetchRoleDetail: jest.fn(),
-        canGrantUsers: jest.fn().mockReturnValue(true),
-        setFilter: jest.fn(),
-        selectRole: jest.fn(),
-        setActiveTab: jest.fn(),
-        loadRootRoles: jest.fn(),
-        loadMembers: jest.fn(),
-        loadRoleChildren: jest.fn(),
-        createRole: jest.fn(),
+        roles: vi.fn().mockReturnValue([]),
+        roleTree: vi.fn().mockReturnValue([]),
+        filter: vi.fn().mockReturnValue(''),
+        filteredRoles: vi.fn().mockReturnValue([]),
+        isSearching: vi.fn().mockReturnValue(false),
+        searchStatus: vi.fn().mockReturnValue('INIT'),
+        selectedRoleId: vi.fn().mockReturnValue(null),
+        selectedRole: vi.fn().mockReturnValue(null),
+        selectedRoleStatus: vi.fn().mockReturnValue('INIT'),
+        activeTab: vi.fn().mockReturnValue('users'),
+        status: vi.fn().mockReturnValue('LOADED'),
+        membersStatus: vi.fn().mockReturnValue('LOADED'),
+        members: vi.fn().mockReturnValue([]),
+        toolGroups: vi.fn().mockReturnValue([]),
+        toolGroupsStatus: vi.fn().mockReturnValue('LOADED'),
+        toolGroupsSaving: vi.fn().mockReturnValue(false),
+        toolGroupCount: vi.fn().mockReturnValue(0),
+        canEditRoleLayouts: vi.fn().mockReturnValue(true),
+        memberCount: vi.fn().mockReturnValue(0),
+        isSystemRole: vi.fn().mockReturnValue(false),
+        canModifyRole: vi.fn().mockReturnValue(true),
+        fetchRoleDetail: vi.fn(),
+        canGrantUsers: vi.fn().mockReturnValue(true),
+        setFilter: vi.fn(),
+        selectRole: vi.fn(),
+        setActiveTab: vi.fn(),
+        loadRootRoles: vi.fn(),
+        loadMembers: vi.fn(),
+        loadRoleChildren: vi.fn(),
+        createRole: vi.fn(),
         ...overrides
     });
 }
@@ -85,8 +90,8 @@ describe('DotRolesPageComponent', () => {
         componentProviders: [baseStoreMock(), mockProvider(DotRolesPortletService)],
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
-            mockProvider(DotAlertConfirmService, { alert: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotAlertConfirmService, { alert: vi.fn() })
         ]
     });
 
@@ -116,8 +121,8 @@ describe('DotRolesPageComponent', () => {
 
     it('should render the detail tabs when a role is selected', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.selectedRoleId as jest.Mock).mockReturnValue('r-eco');
-        (store.selectedRole as jest.Mock).mockReturnValue({ id: 'r-eco', name: 'Eco Role' });
+        (store.selectedRoleId as Mock).mockReturnValue('r-eco');
+        (store.selectedRole as Mock).mockReturnValue({ id: 'r-eco', name: 'Eco Role' });
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('empty-selection'))).toBeNull();

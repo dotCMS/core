@@ -2,7 +2,30 @@ import { FormControl, FormGroup } from '@angular/forms';
 
 import { DotAiProviderFieldType } from '@dotcms/dotcms-models';
 
-import { isFieldAlwaysVisible, requiredUnlessValidator } from './dot-ai-config.constants';
+import {
+    CAPABILITY_META,
+    isFieldAlwaysVisible,
+    requiredUnlessValidator
+} from './dot-ai-config.constants';
+
+describe('CAPABILITY_META', () => {
+    // `icon` is interpolated as the text content of a `material-symbols-outlined` span
+    // (`dot-ai-capability-card.component.html`), not bound as a CSS class. A leftover PrimeIcons
+    // value still compiles and still renders — as the literal string "pi pi-comments".
+    it('carries a Material Symbols ligature name, never a PrimeIcons class', () => {
+        CAPABILITY_META.forEach(({ capability, icon }) => {
+            expect({ capability, icon: !!icon }).toEqual({ capability, icon: true });
+            expect(icon).not.toMatch(/(^|\s)pi(-|\s|$)/);
+            expect(icon).not.toContain(' ');
+        });
+    });
+
+    it('covers every capability exactly once', () => {
+        const capabilities = CAPABILITY_META.map((meta) => meta.capability);
+
+        expect(new Set(capabilities).size).toBe(capabilities.length);
+    });
+});
 
 describe('isFieldAlwaysVisible', () => {
     it('returns true for a required field regardless of type', () => {
