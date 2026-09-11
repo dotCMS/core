@@ -114,10 +114,13 @@ makes this work non-trivial, and one of them contradicts the issue that seeded t
    A panel therefore cannot use the address for its view state at all (D3). This is the largest
    piece of work in phase 1, and it is a change to the list's state management, not to a template.
 
-2. **The full-screen list's table cannot render at panel width.** It is laid out across seven
-   sortable columns with a hard floor of 81rem (1296px) below which it stops shrinking and scrolls
-   horizontally instead. No sidebar width in the editor is close to that. The screen is reused;
-   that layout is what has to become mode-dependent (D7).
+2. **The full-screen list's table cannot be relied on to render at panel width.** It is laid out
+   across seven sortable columns with a hard floor of 81rem (1296px) below which it stops shrinking
+   and scrolls horizontally instead. The panel's width is a *proportion* of the viewport, not a fixed
+   size, so whether that floor is cleared depends on the editor's screen: at 80% the table fits only
+   above a ~1620px viewport, and not on the 1440px and 1512px laptops much of the audience is on. A
+   layout cannot be correct on some monitors and horizontally scrolling on others. The screen is
+   reused; that layout is what has to become mode-dependent (D7).
 
 3. **The list fetches every experiment on every site.** It then resolves each distinct page
    identifier through a bulk page lookup and narrows the set in the browser. A page-scoped panel
@@ -597,9 +600,11 @@ unfiltered list is reached and the editor's page is still there.
 
 - **FR-040**: The portlet's existing list and configuration screens MUST be reused for the panel and
   adapted to render in both contexts. A parallel copy of either screen MUST NOT be created.
-- **FR-041**: The presentation MUST adapt to the context rather than the behavior: at panel width the
-  list MUST NOT use the full-screen table layout, which cannot render there. The screen, its state and
-  its rules are shared; the layout is what varies.
+- **FR-041**: The presentation MUST adapt to the context rather than the behavior: in the panel the
+  list MUST NOT use the full-screen table layout. This MUST hold at every viewport size, including
+  those wide enough for the table's 81rem floor to be cleared — the panel's layout MUST NOT depend on
+  how large the editor's monitor is. The screen, its state and its rules are shared; the layout is
+  what varies.
 - **FR-042**: The full-screen portlet reached from the main navigation MUST keep its current behavior
   — its table, its columns, its address-backed view state, and its page column.
 
@@ -719,11 +724,13 @@ unfiltered list is reached and the editor's page is still there.
 
 ## Assumptions
 
-- **The panel's width, phase 1**: the width already used by the editor's right-hand panel
-  (`clamp(360px, 20vw, 500px)`) is the starting point, chosen because it is the sidebar width the
-  template already has rather than because it was measured against the panel's row. It is explicitly
-  provisional — if the row does not read well at that width, the width changes, and that change is not a
-  scope change. The widths for configuration and results are a separate, open decision — see O1.
+- **The panel's width, phase 1**: `80%` of the viewport, expanding to `100%` on demand. The editor's
+  own right-hand sidebar width was the starting point only because it was the width the template already
+  had, and nothing the panel shows reads at it. The width is percentual rather than a pixel clamp so the
+  panel keeps its proportion on any screen. Note what the width does *not* cost: the drawer's mask
+  already covers the canvas while the panel is open, so the page behind was never interactive — it stays
+  mounted and unnavigated, which is what SC-001 and FR-036 actually require. The widths for configuration
+  and results remain O1's to settle; this is what they start from.
 - **The row's content beyond name and status**: goal, schedule and last modification are expected to
   collapse into a subline or be dropped. Exactly which survive is a design detail for the plan, bounded
   by FR-009 and by the panel width above.
@@ -876,8 +883,9 @@ invisible until a user hits it. The design canvas models exactly this: its list 
 is selected by a mode flag rather than duplicated.
 
 **Cost accepted**: the screens grow a presentation mode, and the full-screen list's table layout — which
-has a hard floor of 81rem and cannot render at panel width — is the largest thing that has to become
-mode-dependent. The page column is dropped in panel mode because the panel *is* the page.
+has a hard floor of 81rem that a proportional panel width clears on some monitors and not others — is the
+largest thing that has to become mode-dependent. The page column is dropped in panel mode because the
+panel *is* the page.
 
 ### D8 — The panel contributes no breadcrumb
 
@@ -1041,7 +1049,9 @@ same way.
 
 ### O1 — The panel's width for the wide screens (phases 2 and 3)
 
-**Deliberately unresolved.** Two screens do not fit the width phase 1 uses, for related reasons:
+**Deliberately unresolved**, though the width phase 1 adopted — 80% of the viewport, 100% expanded
+— changes the question rather than leaving it where it was. Two screens are still not settled, for
+related reasons:
 
 - **Configuration** is a multi-card form — details, goal, variants, scheduling, traffic — laid out
   for a full-width column, and its variants card is a table.
@@ -1049,15 +1059,21 @@ same way.
   narrowed far enough stops being readable before it stops rendering, and FR-025e forbids answering
   that by quietly dropping a measurement.
 
-Two candidates, and the answer may differ per screen:
+What 80% settles and what it does not: on a large monitor both screens have room, and the question is
+close to moot. On the 1440px and 1512px laptops much of the audience uses, 80% is ~1150–1210px — under
+the 81rem the portlet's own tables assume — so the question survives exactly where it is hardest to
+dismiss. A proportional width does not have one answer; it has one per screen size.
 
-- **A wider panel for these screens.** There is precedent: the editor's content side panel already
-  varies its own width between two settings. Cost: the panel's width changes with what is in it,
-  which the editor sees as motion — and with three screens in rotation that motion happens more
-  often.
+The candidates, and the answer may differ per screen:
+
+- **Open these two screens expanded.** The expand toggle already exists and its preference already
+  persists, so this costs no new mechanism — it makes 100% the default for configuration and results
+  and leaves the editor free to narrow it. Cost: the panel's width changes with what is in it, which
+  the editor sees as motion, and with three screens in rotation that motion happens often.
 - **A reflow.** A single-column reflow of the configuration cards; for results, fewer series per
   chart or a stacked layout. Cost: a second layout for the portlet's two largest screens, and the
-  variants table has the same width problem the list's table has (D7).
+  variants table has the same width problem the list's table has (D7). This is the only candidate
+  that answers the laptop case without spending the whole viewport.
 
 This must be decided before phase 2 is built, and revisited for phase 3. It blocks nothing in phase
 1 — every requirement in Sections B, C, G, H, I, J and K stands regardless — which is why phase 1

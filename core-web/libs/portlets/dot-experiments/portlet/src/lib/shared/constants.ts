@@ -150,22 +150,23 @@ export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
 /**
  * Width of the Experiments panel inside the editor (#37478).
  *
- * The width the editor's own right-hand panel already uses, chosen because it is the sidebar
- * width the template has rather than because it was measured against the panel's row. Explicitly
- * provisional: if the row does not read well here the width changes, and that is not a scope
- * change. Configuration and Results are a separate, still-open decision (O1).
+ * Percentual, and most of the viewport. The editor's own right-hand sidebar width was the
+ * starting point only because it was the width the template had; nothing the panel shows reads at
+ * that width — not a row carrying a name, a status, a goal and a schedule, and least of all the
+ * configuration form and the results charts reached from it. Width spent here costs nothing that
+ * was usable: the drawer's mask already covers the canvas while the panel is open. The page stays
+ * mounted and unnavigated behind it, which is what SC-001 and FR-036 ask for.
  */
-export const PANEL_WIDTH = 'clamp(360px, 20vw, 500px)';
+export const PANEL_WIDTH = '80%';
 
 /**
  * Width of the Experiments panel once the editor widens it (#37478).
  *
- * The expand toggle exists for parity with the Edit Content side panel, and it is also the
- * cheapest answer available today to O1 — configuration is a multi-card form and Results is
- * charts, and neither reads well at {@link PANEL_WIDTH}. Whether widening on demand is the
- * *right* answer for those two screens is still O1's to decide; this is not that decision.
+ * The expand toggle exists for parity with the Edit Content side panel. From a panel that is
+ * already most of the viewport it buys the rest of it — the reading mode for the results charts
+ * that O1 has yet to settle.
  */
-export const PANEL_EXPANDED_WIDTH = '80%';
+export const PANEL_EXPANDED_WIDTH = '100%';
 /** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
 export const RESULTS_SEGMENT = 'results';
 
