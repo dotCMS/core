@@ -60,10 +60,34 @@ export class AddRelationshipsSiteChipComponent implements OnInit {
             .subscribe((value) => {
                 const scope = parseScope(value);
 
-                if (scope) {
+                if (scope && this.#isNewScope(scope)) {
                     this.#picker.setScope(scope);
                 }
             });
+    }
+
+    /**
+     * Whether this value actually moves the scope.
+     *
+     * The seeding above is silent, but `dot-host-folder-field` is a `ControlValueAccessor`: once it
+     * has resolved the current site — about 90ms in, visibly longer on a throttled connection — it
+     * echoes the value back through `onChange`, which **does** emit. Without this guard that echo
+     * calls `setScope`, which resets paging and reloads, so opening the dialog fired the same
+     * search twice with a byte-identical body. On a slow connection the first result set renders
+     * and is then replaced by an identical one.
+     *
+     * This is obligation O9 — "a chip re-emitting its current selection must not reset paging" —
+     * applied to scope. It lives here rather than in `setScope` for the same reason O9's guard
+     * lives in the filter facade and not in `patchFilters`: the store method is unconditional on
+     * purpose, so its other callers keep their semantics.
+     *
+     * @param scope The scope parsed from the control's new value.
+     * @return Whether it differs from the scope already being searched.
+     */
+    #isNewScope(scope: { hostname: string; path?: string }): boolean {
+        const current = parseScope(toBrowserValue(this.#picker.assetPath()));
+
+        return current?.hostname !== scope.hostname || current?.path !== scope.path;
     }
 }
 

@@ -76,4 +76,38 @@ describe('AddRelationshipsSiteChipComponent', () => {
 
         expect(setScope).not.toHaveBeenCalled();
     });
+
+    /**
+     * Found on a throttled connection: opening the dialog fired `/drive/search` twice, ~90ms
+     * apart, with byte-identical bodies — so the first result set rendered and was then replaced by
+     * an identical one.
+     *
+     * The seeding in `ngOnInit` is silent, but `dot-host-folder-field` is a `ControlValueAccessor`:
+     * once it has resolved the current site it echoes the value back through `onChange`, which does
+     * emit. This is obligation O9 — "a chip re-emitting its current selection must not reset paging"
+     * — applied to scope, which does not travel through the filter facade and so was never covered
+     * by it.
+     */
+    describe('the browser echoing back the scope it was seeded with', () => {
+        it('does not re-scope when the echo matches the site being searched', () => {
+            spectator.component['scopeControl'].setValue('demo.dotcms.com:/');
+
+            expect(setScope).not.toHaveBeenCalled();
+        });
+
+        it('does not re-scope on the trailing-slash-free form of the same site', () => {
+            spectator.component['scopeControl'].setValue('demo.dotcms.com:');
+
+            expect(setScope).not.toHaveBeenCalled();
+        });
+
+        it('still re-scopes when the value is genuinely different', () => {
+            spectator.component['scopeControl'].setValue('demo.dotcms.com:/blog/');
+
+            expect(setScope).toHaveBeenCalledWith({
+                hostname: 'demo.dotcms.com',
+                path: '/blog/'
+            });
+        });
+    });
 });
