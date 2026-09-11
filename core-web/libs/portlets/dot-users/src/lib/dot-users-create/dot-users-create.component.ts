@@ -11,17 +11,14 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
@@ -95,13 +92,11 @@ const PERMISSIONS_TAB = 2;
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        AvatarModule,
         ButtonModule,
         DialogModule,
         InputTextModule,
         SkeletonModule,
         TabsModule,
-        TagModule,
         TooltipModule,
         DotMessagePipe,
         DotUsersReplacementPickerComponent,
@@ -111,7 +106,6 @@ const PERMISSIONS_TAB = 2;
         DotUsersApiTokensTabComponent
     ],
     templateUrl: './dot-users-create.component.html',
-    styleUrl: './dot-users-create.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex h-full min-h-0 flex-col' },
     // Dialog-scoped store: each dialog instance gets its own hydration
@@ -122,7 +116,6 @@ export class DotUsersCreateComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #config = inject<DynamicDialogConfig<DialogData>>(DynamicDialogConfig);
     readonly #fb = inject(FormBuilder);
-    readonly #messageService = inject(DotMessageService);
     readonly #store = inject(DotUsersCreateStore);
 
     readonly user = this.#config.data?.user ?? null;
@@ -157,66 +150,6 @@ export class DotUsersCreateComponent {
             showGettingStarted: [true]
         })
     });
-
-    /**
-     * Signal mirror of `form.controls.access.valueChanges`. Drives the
-     * header `Can login to Admin UI` chip reactively — the value is
-     * derived from CMS Admin || Back-end User, so the chip appears
-     * and disappears as those toggles change without any manual
-     * change detection.
-     */
-    readonly #$accessValue = toSignal(this.form.controls.access.valueChanges, {
-        initialValue: this.form.controls.access.getRawValue()
-    });
-
-    /**
-     * Whether the user has console access. Derived on the backend as
-     * `admin OR backendUser`, so we mirror the same rule locally —
-     * lets the header chip react instantly to Access toggle changes
-     * without waiting for a save round-trip.
-     */
-    readonly $canLoginToAdmin = computed(() => {
-        const access = this.#$accessValue();
-
-        return !!access.cmsAdmin || !!access.backend;
-    });
-
-    /**
-     * Signal mirror of `form.controls.account.valueChanges`. Used to
-     * derive the header (name + initials) reactively without wiring up
-     * change detection manually. `toSignal` starts from the current
-     * form value so the very first render already reflects the reset
-     * we ran below.
-     */
-    readonly #$accountValue = toSignal(this.form.controls.account.valueChanges, {
-        initialValue: this.form.controls.account.getRawValue()
-    });
-
-    readonly $displayName = computed(() => {
-        const account = this.#$accountValue();
-        const first = (account.firstName ?? '').trim();
-        const last = (account.lastName ?? '').trim();
-        const combined = `${first} ${last}`.trim();
-
-        if (combined) {
-            return combined;
-        }
-
-        return this.isEdit
-            ? this.#messageService.get('users.dialog.untitled-user')
-            : this.#messageService.get('users.dialog.new-user');
-    });
-
-    readonly $initials = computed(() => {
-        const account = this.#$accountValue();
-        const first = (account.firstName ?? '').charAt(0);
-        const last = (account.lastName ?? '').charAt(0);
-        const value = `${first}${last}`.toUpperCase();
-
-        return value || (this.isEdit ? '?' : 'NU');
-    });
-
-    readonly $isActive = computed(() => Boolean(this.#$accountValue().active));
 
     protected readonly $activeTab = signal(0);
     protected readonly $deleteConfirmVisible = signal(false);
@@ -262,18 +195,58 @@ export class DotUsersCreateComponent {
     );
 
     /**
+     * Flips true the first time the user clicks Save with an invalid
+     * form. Stays true so `$formWarning` keeps surfacing on subsequent
+     * edits until the form actually validates — the warning updates in
+     * place through the reactive form status signal below.
+     */
+    protected readonly $saveAttempted = signal(false);
+
+    /**
+     * Signal mirror of the form's validity status. Powers the warning
+     * banner reactively without wiring up manual change detection.
+     * Seeded with the current status so the initial render already
+     * reflects whatever validators fired synchronously.
+     */
+    readonly #$formStatus = toSignal(this.form.statusChanges, {
+        initialValue: this.form.status
+    });
+
+    /**
+     * i18n key rendered on the footer warning banner. Null hides the
+     * banner. Depends on `#$formStatus` so it recomputes on every
+     * validator transition, not only when the user clicks Save. When
+     * multiple errors exist we prefer a specific message over the
+     * generic "fill required fields" — the highlighted-field inline
+     * errors still show the per-field detail.
+     */
+    protected readonly $formWarning = computed(() => {
+        // Read the form status signal so the computed recomputes on
+        // validity transitions.
+        this.#$formStatus();
+        if (!this.$saveAttempted() || this.$isSaveDisabled()) {
+            return null;
+        }
+        if (!this.form.invalid) {
+            return null;
+        }
+
+        return 'users.dialog.warning.form-errors';
+    });
+
+    /**
      * Role KEYS that hydrate the Roles tab's Granted panel. Sourced
      * from `getUserRoles` on edit-mode open; stays empty in create
      * mode.
      */
-    protected readonly initialGrantedRoleKeys = signal<string[]>([]);
+    protected readonly initialGrantedRoleIds = signal<string[]>([]);
 
     /**
      * Latest snapshot from the Roles tab. Populated on every
-     * `grantedChange` emission and used to build the outbound
-     * `roles` field on save.
+     * `grantedChange` emission (role IDs since #37218 landed) and
+     * used to build the outbound `roles` field on save.
      */
-    private readonly currentRoleKeys = signal<string[] | null>(null);
+    private readonly currentRoleIds = signal<string[] | null>(null);
 
     /**
      * ID list handed to the replacement picker so the user being
@@ -322,6 +295,23 @@ export class DotUsersCreateComponent {
         return null;
     });
 
+    /**
+     * i18n key for the delete-confirm dialog's footer warning. Reuses
+     * the per-field computeds — same rule as the save flow: one banner
+     * saying "fix highlighted fields", inline errors still explain
+     * each one.
+     */
+    protected readonly $deleteWarning = computed(() => {
+        if (!this.$deleteAttempted()) {
+            return null;
+        }
+        if (this.$replacementError() || this.$emailConfirmError()) {
+            return 'users.dialog.warning.form-errors';
+        }
+
+        return null;
+    });
+
     protected readonly $canConfirmDelete = computed(() => {
         const target = (this.user?.emailAddress ?? '').trim().toLowerCase();
         if (!target) {
@@ -365,6 +355,11 @@ export class DotUsersCreateComponent {
     protected save(): void {
         this.form.markAllAsTouched();
         if (this.form.invalid || this.$isSaveDisabled()) {
+            // Reveal the footer warning banner. The button itself stays
+            // enabled per design so users can always click and get an
+            // explanation instead of a dead trigger.
+            this.$saveAttempted.set(true);
+
             return;
         }
 
@@ -451,8 +446,8 @@ export class DotUsersCreateComponent {
         if (!detail) {
             return;
         }
-        const roleKeys = this.#store.roleKeys();
-        const roleKeySet = new Set(roleKeys);
+        const roles = this.#store.roles();
+        const roleKeySet = new Set(roles.map((role) => role.roleKey));
         const additionalInfo = this.#store.additionalInfo();
 
         this.form.patchValue({
@@ -480,13 +475,16 @@ export class DotUsersCreateComponent {
 
         // Seed the Roles-tab integration signals so the Granted panel
         // opens with the user's current membership, and save picks up
-        // the same list if the user never touches the tab.
-        this.initialGrantedRoleKeys.set(roleKeys);
-        this.currentRoleKeys.set(roleKeys);
+        // the same list if the user never touches the tab. IDs since
+        // #37218 (the backend accepts both, but IDs are the stable
+        // identifier — keyless roles round-trip cleanly).
+        const roleIds = roles.map((role) => role.id);
+        this.initialGrantedRoleIds.set(roleIds);
+        this.currentRoleIds.set(roleIds);
     }
 
-    protected onGrantedRolesChange(keys: string[]): void {
-        this.currentRoleKeys.set(keys);
+    protected onGrantedRolesChange(roleIds: string[]): void {
+        this.currentRoleIds.set(roleIds);
     }
 
     private enableCreatePasswordValidators(): void {
@@ -504,10 +502,10 @@ export class DotUsersCreateComponent {
      * `gettingStartedChange` instruction for the store to chain.
      *
      * When the Roles tab has taken ownership of role membership (via
-     * `grantedChange`, tracked in `currentRoleKeys`), its snapshot is
+     * `grantedChange`, tracked in `currentRoleIds`), its snapshot is
      * the source of truth for `payload.roles`. Otherwise we fall back
-     * to `mergeRoleKeysForSave`, which composes the outbound list
-     * from cached role keys + access-toggle deltas — safe when the
+     * to `mergeRoleIdsForSave`, which composes the outbound list from
+     * the fetched role IDs + access-toggle deltas — safe when the
      * user never opened the Roles tab.
      *
      * Password and additionalInfo are omitted when empty so the
@@ -550,14 +548,15 @@ export class DotUsersCreateComponent {
 
         payload.additionalInfo = additionalInfo;
 
-        // Compose the outbound role list from the "base" role keys
+        // Compose the outbound role list from the "base" role IDs
         // (Roles tab's Granted snapshot when the user touched it,
-        // otherwise the store's fetched roleKeys) with the current
-        // access-toggle deltas applied on top. `mergeRoleKeysForSave`
-        // strips the three access-role keys from the base and re-adds
-        // whichever toggles are ON, so an Access flip is always
-        // reflected in the payload regardless of Roles-tab state.
-        payload.roles = this.mergeRoleKeysForSave(access);
+        // otherwise the store's fetched role IDs) with the current
+        // access-toggle deltas applied on top. `mergeRoleIdsForSave`
+        // strips the three access-role IDs from the base and re-adds
+        // whichever toggles are ON (as roleKeys — the backend resolves
+        // both since #37218), so an Access flip is always reflected in
+        // the payload regardless of Roles-tab state.
+        payload.roles = this.mergeRoleIdsForSave(access);
 
         let gettingStartedChange: 'add' | 'remove' | undefined;
         if (access.showGettingStarted !== this.#store.gettingStarted()) {
@@ -568,46 +567,68 @@ export class DotUsersCreateComponent {
     }
 
     /**
-     * Strips the user's implicit personal role (roleKey === userId)
-     * from the outbound list. `UserResource#processRoles` first calls
-     * `removeAllRolesFromUser` (no `editUsers` guard) and then tries
-     * to re-add every key in the payload. Re-adding the personal role
-     * fails at `RoleAPIImpl.addRoleToUser` because it has
-     * `editUsers=false`, and the exception rolls the whole save back
-     * with `"Cannot alter users on this role"`. Leaving that key out
-     * of the payload keeps the save from tripping the guard.
+     * Strips the user's implicit personal role from the outbound list.
+     * The personal role is identified by `roleKey === userId` on the
+     * fetched membership, so we resolve its id from the store rather
+     * than trusting a specific identifier form in `entries`.
+     *
+     * `UserResource#processRoles` first calls `removeAllRolesFromUser`
+     * (no `editUsers` guard) and then tries to re-add every entry in
+     * the payload. Re-adding the personal role fails at
+     * `RoleAPIImpl.addRoleToUser` because it has `editUsers=false`,
+     * and the exception rolls the whole save back with `"Cannot alter
+     * users on this role"`. Leaving that entry out of the payload
+     * keeps the save from tripping the guard.
      */
-    private filterOutgoingRoleKeys(keys: readonly string[]): string[] {
-        const personalRoleKey = this.user?.userId ?? '';
-        if (!personalRoleKey) {
-            return [...keys];
+    private filterOutgoingPersonalRole(entries: readonly string[]): string[] {
+        const userId = this.user?.userId ?? '';
+        if (!userId) {
+            return [...entries];
         }
 
-        return keys.filter((key) => key !== personalRoleKey);
+        const personal = this.#store.roles().find((role) => role.roleKey === userId);
+        if (!personal) {
+            // Personal role isn't in the fetched membership (create
+            // mode, or an unexpected shape) — fall back to matching
+            // the roleKey directly in case anything upstream added
+            // it by key.
+            return entries.filter((entry) => entry !== userId);
+        }
+
+        return entries.filter((entry) => entry !== personal.id && entry !== personal.roleKey);
     }
 
     /**
-     * Merges the "base" role KEYS with the current Access toggles.
-     * The base is the Roles tab's Granted snapshot (`currentRoleKeys`)
-     * when the user touched it — otherwise the store's fetched keys.
-     * We strip the three access-role slots from the base list and
-     * add back whichever toggles are ON, so an Access flip is always
-     * captured on save even when the user visited the Roles tab.
+     * Merges the "base" role IDs with the current Access toggles.
+     * The base is the Roles tab's Granted snapshot (`currentRoleIds`)
+     * when the user touched it — otherwise the store's fetched IDs.
+     * We strip the three access-role IDs from the base list and add
+     * back whichever toggles are ON — as `roleKey`s, since those are
+     * constants and the backend resolves either since #37218. The
+     * resulting payload is a mixed-identifier list (IDs for custom
+     * roles, keys for the three access roles), which is exactly what
+     * the endpoint now accepts.
      */
-    private mergeRoleKeysForSave(access: {
+    private mergeRoleIdsForSave(access: {
         cmsAdmin: boolean;
         backend: boolean;
         frontend: boolean;
     }): string[] {
-        const base = this.currentRoleKeys() ?? this.#store.roleKeys();
+        const base = this.currentRoleIds() ?? this.#store.roles().map((role) => role.id);
         const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
-        const nonAccess = base.filter((key) => !accessKeys.has(key));
+        const accessRoleIds = new Set(
+            this.#store
+                .roles()
+                .filter((role) => accessKeys.has(role.roleKey))
+                .map((role) => role.id)
+        );
+        const nonAccess = base.filter((id) => !accessRoleIds.has(id));
         const merged = new Set(nonAccess);
 
         if (access.cmsAdmin) merged.add(ACCESS_ROLE_KEYS.cmsAdmin);
         if (access.backend) merged.add(ACCESS_ROLE_KEYS.backend);
         if (access.frontend) merged.add(ACCESS_ROLE_KEYS.frontend);
 
-        return this.filterOutgoingRoleKeys(Array.from(merged));
+        return this.filterOutgoingPersonalRole(Array.from(merged));
     }
 }

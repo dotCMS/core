@@ -1,43 +1,12 @@
 <div
     class="flex min-h-0 flex-1 flex-col border-t border-surface-200"
     data-testid="users-dialog-body">
-    <header
-        class="flex items-center gap-5 border-b border-surface-200 px-7 py-6"
-        data-testid="users-dialog-header">
-        <p-avatar
-            [label]="$initials()"
-            shape="circle"
-            size="xlarge"
-            styleClass="bg-primary-100 text-primary"
-            data-testid="users-dialog-avatar" />
-        <div class="flex min-w-0 flex-col gap-2">
-            <h2 class="m-0 truncate text-xl font-semibold" data-testid="users-dialog-title">
-                {{ $displayName() }}
-            </h2>
-            @if (isEdit) {
-                <div class="flex flex-wrap items-center gap-2">
-                    <p-tag
-                        [value]="
-                            ($isActive()
-                                ? 'users.dialog.status.active'
-                                : 'users.dialog.status.inactive'
-                            ) | dm
-                        "
-                        [severity]="$isActive() ? 'success' : 'secondary'"
-                        [rounded]="true"
-                        data-testid="users-dialog-header-status" />
-                    @if ($canLoginToAdmin()) {
-                        <p-tag
-                            [value]="'users.dialog.header.can-login' | dm"
-                            severity="info"
-                            [rounded]="true"
-                            data-testid="users-dialog-header-can-login" />
-                    }
-                </div>
-            }
-        </div>
-    </header>
-
+    <!--
+        No internal avatar/name/status header — design brief 2026-09-08.
+        The user's name is placed in the dialog title bar by
+        `openUserDialog` in the list component; the form + tabs claim
+        the whole tab body from the top border.
+    -->
     @if ($isLoading()) {
         <div
             class="flex min-h-0 flex-1 flex-col gap-4 px-7 py-6"
@@ -50,8 +19,20 @@
         </div>
     } @else {
         <p-tabs [(value)]="$activeTab" class="flex min-h-0 flex-1 flex-col">
-            <div class="border-b border-surface-200 px-7 pt-6">
-                <p-tablist>
+            <!--
+                Background must ride on the `.p-tablist` root itself.
+                The tablist inherits an opaque `content.background` from
+                the theme (see `libs/ui/src/lib/theme/theme.config.ts`),
+                and PrimeNG's `.p-tablist` selector wins the cascade
+                against Tailwind's `.bg-surface-50` utility, so a plain
+                class does nothing. The `!` suffix forces the utility to
+                render as `background-color: … !important`, which
+                overrides PrimeNG's own rule. `px-7` on the wrapper
+                inflates the left/right gutter so the tinted strip runs
+                edge to edge under the tabs.
+            -->
+            <div class="border-b border-surface-200 bg-surface-50! px-7">
+                <p-tablist [pt]="{ root: { class: 'bg-surface-50!' } }">
                     <p-tab [value]="0" data-testid="users-dialog-tab-profile">
                         {{ 'users.dialog.tabs.profile' | dm }}
                     </p-tab>
@@ -69,7 +50,7 @@
 
             <p-tabpanels class="flex min-h-0 flex-1 flex-col">
                 <p-tabpanel [value]="0" class="block min-h-0 flex-1 overflow-auto">
-                    <div class="px-7 pt-6 pb-7">
+                    <div class="px-7 pt-4 pb-6">
                         <dot-users-profile-tab
                             [form]="form"
                             [isEdit]="isEdit"
@@ -78,8 +59,16 @@
                             data-testid="users-dialog-profile-tab" />
                     </div>
                 </p-tabpanel>
-                <p-tabpanel [value]="1" class="block min-h-0 flex-1 overflow-auto">
-                    <div class="px-7 pt-6 pb-7">
+                <!--
+                    Roles tab owns its own scrolling — the tree + granted
+                    list handle overflow internally instead of scrolling
+                    the whole tab body. The tabpanel matches the
+                    Permissions tab (which embeds an iframe): flex column
+                    with `overflow-hidden` so children can freely claim
+                    height without cascading scrollbars.
+                -->
+                <p-tabpanel [value]="1" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <div class="flex min-h-0 flex-1 flex-col px-7 pt-4">
                         <!--
                             Defer the roles tab until the user actually
                             opens it — otherwise `loadRoles()` fires on
@@ -91,8 +80,9 @@
                         -->
                         @defer (when $activeTab() === 1) {
                             <dot-users-roles-tab
-                                [initialGrantedKeys]="initialGrantedRoleKeys()"
+                                [initialGrantedIds]="initialGrantedRoleIds()"
                                 (grantedChange)="onGrantedRolesChange($event)"
+                                class="flex min-h-0 flex-1 flex-col"
                                 data-testid="users-dialog-roles-tab" />
                         }
                     </div>
@@ -103,10 +93,16 @@
                         class="flex min-h-0 flex-1 flex-col"
                         data-testid="users-dialog-permissions-tab" />
                 </p-tabpanel>
-                <p-tabpanel [value]="3" class="block min-h-0 flex-1 overflow-auto">
-                    <div class="px-7 pt-6 pb-7">
+                <!--
+                    API Tokens tab claims the tab body the same way Roles
+                    does: only the table scrolls, header stays pinned.
+                    Same tabpanel + wrapper pair as `[value]="1"`.
+                -->
+                <p-tabpanel [value]="3" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <div class="flex min-h-0 flex-1 flex-col px-7 pt-4">
                         <dot-users-api-tokens-tab
                             [userId]="user?.userId ?? null"
+                            class="flex min-h-0 flex-1 flex-col"
                             data-testid="users-dialog-api-tokens-tab" />
                     </div>
                 </p-tabpanel>
@@ -118,9 +114,23 @@
 <footer
     class="flex items-center justify-end gap-2 border-t border-surface-200 px-6 py-4"
     data-testid="users-dialog-footer">
+    @if ($formWarning(); as key) {
+        <!--
+            Inline validation banner shares the footer row. `mr-auto`
+            pins it to the left while Cancel/Save stay right-aligned.
+            role=alert lets a screen reader announce the message the
+            moment it appears without shifting focus.
+        -->
+        <div
+            class="mr-auto flex items-center gap-2 text-sm text-orange-600"
+            role="alert"
+            data-testid="users-dialog-warning">
+            <span class="material-symbols-rounded text-lg!" aria-hidden="true">warning</span>
+            <span>{{ key | dm }}</span>
+        </div>
+    }
     <p-button
         [label]="'users.cancel' | dm"
-        severity="secondary"
         [text]="true"
         (onClick)="close()"
         data-testid="users-dialog-cancel-btn" />
@@ -175,7 +185,7 @@
                     {{ key | dm }}
                 </small>
             } @else {
-                <small class="text-color-secondary">
+                <small class="text-slate-500">
                     {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
                 </small>
             }
@@ -205,15 +215,22 @@
         </div>
     </div>
     <ng-template pTemplate="footer">
+        @if ($deleteWarning(); as key) {
+            <div
+                class="mr-auto flex items-center gap-2 text-sm text-orange-600"
+                role="alert"
+                data-testid="users-delete-confirm-warning">
+                <span class="material-symbols-rounded text-lg!" aria-hidden="true">warning</span>
+                <span>{{ key | dm }}</span>
+            </div>
+        }
         <p-button
             [label]="'users.cancel' | dm"
-            severity="secondary"
             [text]="true"
             (onClick)="closeDeleteConfirm()"
             data-testid="users-delete-confirm-cancel-btn" />
         <p-button
             [label]="'users.dialog.delete.button' | dm"
-            severity="danger"
             (onClick)="confirmDelete()"
             data-testid="users-delete-confirm-btn" />
     </ng-template>

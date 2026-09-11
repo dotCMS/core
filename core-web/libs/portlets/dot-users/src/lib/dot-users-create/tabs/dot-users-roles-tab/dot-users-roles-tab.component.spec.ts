@@ -199,7 +199,7 @@ describe('DotUsersRolesTabComponent', () => {
         });
 
         it('drops Root B once granted', () => {
-            spectator.component['$granted'].set(['ROOT_B']);
+            spectator.component['$granted'].set(['6']); // Root B is a bare grantable leaf
             const rootIds = (spectator.component['$availableTree']() as AvailableNode[]).map(
                 (node) => node.role.id
             );
@@ -207,7 +207,7 @@ describe('DotUsersRolesTabComponent', () => {
         });
 
         it('drops Root A once all three of its grantable leaves are granted', () => {
-            spectator.component['$granted'].set(['A1A', 'A1B', 'A2']);
+            spectator.component['$granted'].set(['3', '4', '5']); // A1a, A1b, A2
             const rootIds = (spectator.component['$availableTree']() as AvailableNode[]).map(
                 (node) => node.role.id
             );
@@ -215,7 +215,7 @@ describe('DotUsersRolesTabComponent', () => {
         });
 
         it('keeps Root A while at least one grantable leaf is still ungranted', () => {
-            spectator.component['$granted'].set(['A1A', 'A1B']); // A2 still ungranted
+            spectator.component['$granted'].set(['3', '4']); // A2 (id=5) still ungranted
             const rootIds = (spectator.component['$availableTree']() as AvailableNode[]).map(
                 (node) => node.role.id
             );
@@ -223,29 +223,74 @@ describe('DotUsersRolesTabComponent', () => {
         });
     });
 
+    describe('p-tree selection sync', () => {
+        it('$availableTreeNodes mirrors the pruned tree with selectable=false on non-grantable rows', () => {
+            const nodes = spectator.component['$availableTreeNodes']();
+            const rootC = nodes.find((node) => node.key === '7');
+            const c1 = rootC?.children?.find((child) => child.key === '8');
+            const c2 = rootC?.children?.find((child) => child.key === '9');
+
+            // Root C has one grantable and one non-grantable leaf — the
+            // container is still selectable (bulk-picks the grantable
+            // one), but the editUsers=false leaf itself gets locked.
+            expect(rootC?.selectable).toBe(true);
+            expect(c1?.selectable).toBe(false);
+            expect(c2?.selectable).toBe(true);
+        });
+
+        it('onTreeSelectionChange filters to grantable leaves and hydrates $selectedAvailable', () => {
+            const nodes = spectator.component['$availableTreeNodes']();
+            const rootC = nodes.find((node) => node.key === '7');
+            const c1 = rootC?.children?.find((child) => child.key === '8');
+            const c2 = rootC?.children?.find((child) => child.key === '9');
+
+            // PrimeNG's checkbox propagation surfaces every checked
+            // TreeNode in the emitted array — parents, partials, and
+            // non-selectable leaves included. onTreeSelectionChange has
+            // to drop everything but grantable leaves.
+            spectator.component['onTreeSelectionChange']([rootC!, c1!, c2!]);
+
+            expect(spectator.component['$selectedAvailable']()).toEqual(['9']);
+        });
+
+        it('onTreeSelectionChange accepts a single TreeNode object (single-mode fallback)', () => {
+            const nodes = spectator.component['$availableTreeNodes']();
+            const rootB = nodes.find((node) => node.key === '6');
+
+            spectator.component['onTreeSelectionChange'](rootB!);
+
+            expect(spectator.component['$selectedAvailable']()).toEqual(['6']);
+        });
+    });
+
     describe('grant / revoke', () => {
         it('grant() moves the selected leaves to the granted list and clears selection', () => {
             let emitted: string[] | undefined;
-            spectator.component.grantedChange.subscribe((keys) => (emitted = keys));
+            spectator.component.grantedChange.subscribe((ids) => (emitted = ids));
 
             spectator.component['$selectedAvailable'].set(['3']); // Leaf A1a
             spectator.component['grant']();
 
-            expect(spectator.component['$granted']()).toContain('A1A');
+            // Since #37218 the shuttle emits role IDs unconditionally
+            // — no more roleKey fallback for keyless roles.
+            expect(spectator.component['$granted']()).toContain('3');
             expect(spectator.component['$selectedAvailable']()).toEqual([]);
-            expect(emitted).toContain('A1A');
+            // Tree selection has to reset in lockstep — otherwise the
+            // next paint would still show the granted rows as checked.
+            expect(spectator.component['$selectedTreeNodes']()).toEqual([]);
+            expect(emitted).toContain('3');
         });
 
-        it('revoke() removes the selected granted keys and re-emits', () => {
+        it('revoke() removes the selected granted ids and re-emits', () => {
             let emitted: string[] | undefined;
-            spectator.component.grantedChange.subscribe((keys) => (emitted = keys));
+            spectator.component.grantedChange.subscribe((ids) => (emitted = ids));
 
-            spectator.component['$granted'].set(['A1A', 'A1B']);
-            spectator.component['$selectedGranted'].set(['A1B']);
+            spectator.component['$granted'].set(['3', '4']); // A1a, A1b
+            spectator.component['$selectedGranted'].set(['4']);
             spectator.component['revoke']();
 
-            expect(spectator.component['$granted']()).toEqual(['A1A']);
-            expect(emitted).toEqual(['A1A']);
+            expect(spectator.component['$granted']()).toEqual(['3']);
+            expect(emitted).toEqual(['3']);
         });
     });
 

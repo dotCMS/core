@@ -36,7 +36,7 @@ const MESSAGES = {
     'users.dialog.tokens.reveal.title': 'API token',
     'users.dialog.tokens.reveal.description': 'copy me',
     'users.dialog.tokens.reveal.loading': 'loading',
-    'users.dialog.tokens.reveal.close': 'Close',
+    'users.dialog.tokens.reveal.accept': 'Accept',
     'users.dialog.tokens.reveal.copy': 'Copy',
     'users.dialog.tokens.reveal.copied': 'Copied!',
     'users.dialog.tokens.row.reveal-hint': 'Click to reveal the JWT'
@@ -181,8 +181,12 @@ describe('DotUsersApiTokensTabComponent', () => {
             spectator.component['onShowRevokedChange'](true);
             spectator.detectChanges();
 
+            // Standard empty-state shape now renders an icon glyph + copy —
+            // scoped to the paragraph so the assertion isn't dependent on
+            // the material symbol text leaking into `textContent`.
             const empty = spectator.query(byTestId('users-api-tokens-empty'));
-            expect(empty?.textContent?.trim()).toBe('This user has no API tokens.');
+            const copy = empty?.querySelector('p');
+            expect(copy?.textContent?.trim()).toBe('This user has no API tokens.');
         });
 
         it('should reveal the JWT on row click for a valid row', () => {

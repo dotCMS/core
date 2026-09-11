@@ -1,5 +1,15 @@
-<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
-    <div class="flex w-full items-center gap-2 py-3">
+<!--
+    Two layers of vertical padding were stacking: PrimeNG's toolbar
+    theme adds 0.5rem top+bottom on `.p-toolbar`, and the inner div
+    piled another `py-3` (12px each) on top. Together that's 20px on
+    each side before the tallest child (a ~42px `<p-button>`) is even
+    counted. `[pt]` zeroes PrimeNG's contribution and the inner div
+    now owns the 17.5px design spec exactly.
+-->
+<p-toolbar
+    class="justify-start gap-1 border-x-0! border-t-0! px-3"
+    [pt]="{ root: { class: 'py-0!' } }">
+    <div class="flex w-full items-center gap-2 py-[17.5px]">
         <p-iconField iconPosition="left">
             <p-inputIcon>
                 <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
@@ -14,40 +24,129 @@
                 [placeholder]="'users.search.placeholder' | dm"
                 [attr.aria-label]="'users.search.placeholder' | dm"
                 data-testid="users-search-input"
-                class="w-80" />
+                class="w-md" />
         </p-iconField>
 
         <dot-users-filter-by data-testid="users-filter-by" />
 
-        <div class="ml-auto flex items-center gap-4">
-            @if (store.selectedUsers().length > 0) {
-                <span class="text-color-secondary text-sm" data-testid="users-selected-count">
-                    {{ 'users.selected.count' | dm: [store.selectedUsers().length.toString()] }}
-                </span>
+        <!--
+            Selection ↔ New swap with fade + slide, without the height
+            inflation the previous version had. Both branches stay
+            mounted so `transition-all` can play on enter AND exit,
+            but each collapses `max-w` AND `max-h` when hidden — the
+            previous version only collapsed `max-w`, leaving the
+            invisible buttons at full ~42px height and pushing the
+            row taller than one visible button.
+
+            Button order: primary lives at the RIGHT, secondary to
+            its left, tertiary (text delete) further left. Because
+            `flex-row-reverse` reverses the DOM iteration order, the
+            source-order below reads primary-first (top-to-bottom in
+            code), and the browser lays them out right-first on screen.
+        -->
+        <div class="ml-auto flex items-center gap-3">
+            <!-- Selection actions -->
+            <div
+                class="flex flex-row-reverse items-center gap-3 overflow-hidden transition-all duration-300 ease-out"
+                [class.opacity-100]="store.selectedUsers().length > 0"
+                [class.opacity-0]="store.selectedUsers().length === 0"
+                [class.max-w-\[600px\]]="store.selectedUsers().length > 0"
+                [class.max-w-0]="store.selectedUsers().length === 0"
+                [class.max-h-12]="store.selectedUsers().length > 0"
+                [class.max-h-0]="store.selectedUsers().length === 0"
+                [class.pointer-events-none]="store.selectedUsers().length === 0"
+                data-testid="users-selection-toolbar">
+                @if ($isPushPublishEnabled()) {
+                    <!--
+                        Source order (primary first, tertiary last) is
+                        reversed to visible order (primary rightmost,
+                        tertiary leftmost) by `flex-row-reverse` on
+                        the parent.
+                    -->
+                    <p-button
+                        [label]="'users.actions.push-publish' | dm"
+                        (onClick)="openBulkPushPublish()"
+                        data-testid="users-bulk-push-publish-btn" />
+                    <p-button
+                        [label]="'users.actions.add-to-bundle' | dm"
+                        [outlined]="true"
+                        (onClick)="openBulkAddToBundle()"
+                        data-testid="users-bulk-add-to-bundle-btn" />
+                } @else {
+                    <!--
+                        Add to Bundle promotes to primary when Push
+                        Publish is not available: on a non-EE instance
+                        it is the only bulk action besides delete, so
+                        it earns the emphasis Push Publish would
+                        otherwise take.
+                    -->
+                    <p-button
+                        [label]="'users.actions.add-to-bundle' | dm"
+                        (onClick)="openBulkAddToBundle()"
+                        data-testid="users-bulk-add-to-bundle-btn" />
+                }
                 <p-button
                     [label]="'users.delete' | dm"
-                    [outlined]="true"
+                    [text]="true"
                     (onClick)="confirmDelete()"
                     data-testid="users-delete-btn" />
-            }
-            <p-button
-                [label]="'users.new' | dm"
-                (onClick)="openCreateDialog()"
-                data-testid="users-new-btn" />
+                <span
+                    class="text-sm whitespace-nowrap text-slate-500"
+                    data-testid="users-selected-count">
+                    {{ 'users.selected.count' | dm: [store.selectedUsers().length.toString()] }}
+                </span>
+            </div>
+            <!-- Default action (New) -->
+            <div
+                class="overflow-hidden transition-all duration-300 ease-out"
+                [class.opacity-100]="store.selectedUsers().length === 0"
+                [class.opacity-0]="store.selectedUsers().length > 0"
+                [class.max-w-40]="store.selectedUsers().length === 0"
+                [class.max-w-0]="store.selectedUsers().length > 0"
+                [class.max-h-12]="store.selectedUsers().length === 0"
+                [class.max-h-0]="store.selectedUsers().length > 0"
+                [class.pointer-events-none]="store.selectedUsers().length > 0"
+                data-testid="users-new-btn-wrapper">
+                <p-button
+                    [label]="'users.new' | dm"
+                    (onClick)="openCreateDialog()"
+                    data-testid="users-new-btn" />
+            </div>
         </div>
     </div>
 </p-toolbar>
 
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="users-table-wrapper">
+    <!--
+        Paginator config mirrors dot-folder-list-view (content-drive): compact
+        report + rows-per-page dropdown, no first/last or numbered page links.
+        `paginatorDropdownAppendTo="body"` escapes the scroll container the
+        table wraps its paginator in — an inline overlay would be clipped and
+        cut off the second option on open, exactly the way it does in the drive.
+    -->
+    <!--
+        `[scrollable]="true"` + `scrollHeight="flex"` is PrimeNG's own
+        mechanism for filling a flex parent: the table root claims the
+        wrapper's height, the tbody flex-fills between the sticky
+        thead and the paginator, and the paginator pins to the bottom.
+        Column widths (percent hints on the `<th>`s below) still work
+        because we're NOT passing `[tableStyle]` — the previous
+        `tableLayout: fixed` was what interfered before.
+    -->
     <p-table
         [value]="store.users()"
         [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
+        [showFirstLastIcon]="false"
+        [showPageLinks]="false"
+        [showCurrentPageReport]="true"
+        [currentPageReportTemplate]="('Page' | dm) + ' {currentPage}'"
+        paginatorDropdownAppendTo="body"
         [rows]="store.rows()"
         [totalRecords]="store.totalRecords()"
         [first]="(store.page() - 1) * store.rows()"
-        [rowsPerPageOptions]="[20, 40, 100]"
+        [rowsPerPageOptions]="[20, 40, 60]"
         [rowHover]="true"
         [scrollable]="true"
         scrollHeight="flex"
@@ -58,11 +157,21 @@
         dataKey="userId"
         data-testid="users-table">
         <ng-template pTemplate="header">
+            <!--
+                Percentage widths on the auto-layout `<p-table>`, same
+                pattern the content-types listing uses via
+                `dot-listing-data-table`: small columns get a `%` hint
+                and the browser distributes the rest, with heavy
+                columns absorbing the leftover. No `table-layout: fixed`
+                and no `[scrollable]` — the wrapper's `overflow-auto`
+                gives us scroll on tall pages without PrimeNG's
+                scrollable table plumbing overriding the widths.
+            -->
             <tr>
                 <th style="width: 3rem">
                     <p-tableHeaderCheckbox />
                 </th>
-                <th pSortableColumn="firstName">
+                <th pSortableColumn="firstName" style="width: 22%">
                     {{ 'users.table.header.user' | dm }}
                     <p-sortIcon field="firstName" />
                 </th>
@@ -70,12 +179,13 @@
                     {{ 'users.table.header.email' | dm }}
                     <p-sortIcon field="emailAddress" />
                 </th>
-                <th>{{ 'users.table.header.roles' | dm }}</th>
-                <th>{{ 'users.table.header.access' | dm }}</th>
-                <th pSortableColumn="lastLoginDate" style="width: 12rem">
+                <th style="width: 24%">{{ 'users.table.header.roles' | dm }}</th>
+                <th style="width: 15%">{{ 'users.table.header.access' | dm }}</th>
+                <th pSortableColumn="lastLoginDate" style="width: 8%">
                     {{ 'users.table.header.last-login' | dm }}
                     <p-sortIcon field="lastLoginDate" />
                 </th>
+                <th style="width: 3rem"></th>
             </tr>
         </ng-template>
 
@@ -88,9 +198,13 @@
                     <td><p-skeleton height="1.5rem" width="50%" /></td>
                     <td><p-skeleton height="1.5rem" width="40%" /></td>
                     <td><p-skeleton height="1.5rem" width="70%" /></td>
+                    <td><p-skeleton height="1.5rem" width="1.5rem" /></td>
                 </tr>
             } @else {
-                <tr data-testid="users-row" class="cursor-pointer" (click)="openEditDialog(user)">
+                <tr
+                    data-testid="users-row"
+                    class="group cursor-pointer"
+                    (click)="openEditDialog(user)">
                     <td (click)="$event.stopPropagation()">
                         <p-tableCheckbox [value]="user" />
                     </td>
@@ -111,7 +225,7 @@
                                             data-testid="users-inactive-chip" />
                                     }
                                 </span>
-                                <span class="text-color-secondary text-xs">{{ user.userId }}</span>
+                                <span class="text-xs text-slate-500">{{ user.userId }}</span>
                             </div>
                         </div>
                     </td>
@@ -120,7 +234,7 @@
                         @if ($rolesByUserId()[user.userId]; as roles) {
                             <span>{{ roles.visible }}</span>
                             @if (roles.more > 0) {
-                                <span class="text-color-secondary italic">
+                                <span class="text-slate-500 italic">
                                     {{ 'users.roles.and-more' | dm: [roles.more.toString()] }}
                                 </span>
                             }
@@ -131,14 +245,14 @@
                             @if (user.backendUser) {
                                 <p-tag
                                     [value]="'users.access.backend' | dm"
-                                    severity="info"
+                                    severity="secondary"
                                     styleClass="whitespace-nowrap"
                                     data-testid="users-access-backend-chip" />
                             }
                             @if (user.frontendUser) {
                                 <p-tag
                                     [value]="'users.access.frontend' | dm"
-                                    severity="success"
+                                    severity="secondary"
                                     styleClass="whitespace-nowrap"
                                     data-testid="users-access-frontend-chip" />
                             }
@@ -149,13 +263,39 @@
                             {{ user.lastLoginDate | date: 'MM/dd/yyyy' }}
                         }
                     </td>
+                    <td (click)="$event.stopPropagation()" data-testid="users-cell-actions">
+                        @if ($isPushPublishEnabled()) {
+                            <p-menu
+                                #rowMenu
+                                [model]="getRowMenuItems(user)"
+                                [popup]="true"
+                                appendTo="body" />
+                            <!--
+                                Hover-reveal on the row (see `group` on the tr).
+                                Kept focusable via `focus-within` fallbacks so a
+                                keyboard user tabbing across the table can still
+                                reach the trigger; without that the button would
+                                only be interactable when the pointer hovers.
+                            -->
+                            <button
+                                type="button"
+                                pButton
+                                [rounded]="true"
+                                [text]="true"
+                                icon="pi pi-ellipsis-v"
+                                class="opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
+                                [attr.aria-label]="'users.actions.more.aria' | dm"
+                                (click)="openRowMenu($event, rowMenu)"
+                                data-testid="users-row-more-btn"></button>
+                        }
+                    </td>
                 </tr>
             }
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
             <tr class="hover:bg-transparent!">
-                <td colspan="6" class="border-none p-0 text-center">
+                <td colspan="7" class="border-none p-0 text-center">
                     <div
                         class="mx-auto flex h-full max-w-100 flex-col items-center justify-center gap-4 p-6"
                         data-testid="users-empty-state">
@@ -212,23 +352,34 @@
                     {{ key | dm }}
                 </small>
             } @else {
-                <small class="text-color-secondary">
+                <small class="text-slate-500">
                     {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
                 </small>
             }
         </div>
     </div>
     <ng-template pTemplate="footer">
+        @if ($bulkDeleteWarning(); as key) {
+            <div
+                class="mr-auto flex items-center gap-2 text-sm text-orange-600"
+                role="alert"
+                data-testid="users-bulk-delete-warning">
+                <span class="material-symbols-rounded text-lg!" aria-hidden="true">warning</span>
+                <span>{{ key | dm }}</span>
+            </div>
+        }
         <p-button
             [label]="'users.cancel' | dm"
-            severity="secondary"
             [text]="true"
             (onClick)="closeBulkDelete()"
             data-testid="users-bulk-delete-cancel-btn" />
         <p-button
             [label]="'users.delete' | dm"
-            severity="danger"
             (onClick)="confirmBulkDelete()"
             data-testid="users-bulk-delete-confirm-btn" />
     </ng-template>
 </p-dialog>
+
+@if ($addToBundleAssetId(); as assetId) {
+    <dot-add-to-bundle [assetIdentifier]="assetId" (cancel)="$addToBundleAssetId.set(null)" />
+}
