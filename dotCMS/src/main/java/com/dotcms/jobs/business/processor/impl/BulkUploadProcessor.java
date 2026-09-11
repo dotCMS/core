@@ -258,76 +258,16 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
-            // PUBLISH, and the content type's own mapping decides how.
+            // Created, then published — two steps, the way content import does it
+            // (ImportUtil#runWorkflowIfCould and #runWorkflowPublishIfCould).
             //
-            // The system action is PUBLISH because an author who drops thirty images expects
-            // thirty images, not thirty drafts to go and publish by hand. It matches the Content
-            // Search drop zone, which has fired PUBLISH per file for years. Content Drive's own
-            // single-file upload sends NEW and lands drafts, so one file and a batch do differ on
-            // that screen — a knowing divergence, settled 2026-09-11 rather than inherited.
-            //
-            // What this does NOT do is second-guess the mapping. An earlier version resolved the
-            // action and then discarded any that published, which made this the only upload
-            // surface in the product overriding an administrator's configuration and skipping
-            // their actionlets with it.
-            //
-            // The gate is the product's own for PUBLISH on new content
-            // (SystemActionApiFireCommandFactory#hasPublishValid with needSave): the mapped action
-            // has to BOTH save and publish, because one without the other cannot do the whole job
-            // from a contentlet that does not exist yet. And fireContentWorkflow with no resolved
-            // action logs, creates nothing and RETURNS NORMALLY — which once had every file
-            // recorded SUCCESS against an empty folder.
-            final Optional<WorkflowAction> mapped = APILocator.getWorkflowAPI()
-                    .findActionMappedBySystemActionContentlet(
-                            contentlet, WorkflowAPI.SystemAction.PUBLISH, user)
-                    .filter(action -> action.hasSaveActionlet() && action.hasPublishActionlet());
-
-            if (mapped.isEmpty()) {
-                // No single mapped action does both, so the two steps are taken separately — which
-                // is exactly what the product falls back to
-                // (PublishSystemActionApiFireCommandImpl#firePublishWithSave). Without this the
-                // file would be checked in and left as a draft, silently ignoring the PUBLISH the
-                // caller asked for.
-                Logger.debug(this, String.format(
-                        "No PUBLISH action both saves and publishes for [%s]; checking in and "
-                                + "publishing separately", contentType.variable()));
-
-                final Contentlet checkedIn =
-                        APILocator.getContentletAPI().checkin(contentlet, user, false);
-
-                // DISABLE_WORKFLOW around the publish, and it is load-bearing. publish() is not
-                // the direct operation it reads as: checkAndRunPublishAsWorkflow
-                // (ESContentletAPIImpl:5686) looks up the PUBLISH system action and runs it as a
-                // workflow instead — and the mapping that sent us down this branch is precisely
-                // one that does not publish. So the call would resolve that same action, fire it,
-                // and leave the file saved but not live: the run reporting success having done
-                // half the job. The flag is the guard that method itself honours.
-                //
-                // The product does the equivalent in firePublishWithSave by setting an actionId,
-                // which suppresses the same re-entry. There is no meaningful action id here — the
-                // mapped one was rejected for not publishing — so the flag is the lever that fits.
-                checkedIn.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-                APILocator.getContentletAPI().publish(checkedIn, user, false);
-                checkedIn.getMap().remove(Contentlet.DISABLE_WORKFLOW);
-
-                recordCreated(job, seq, fileName, checkedIn, createdInodes);
-                return;
-            }
-
-            final WorkflowAction action = mapped.get();
-
-            final Contentlet created = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
-                    new ContentletDependencies.Builder()
-                            .modUser(user)
-                            .workflowActionId(action.getId())
-                            .respectAnonymousPermissions(false)
-                            // DEFER, never WAIT_FOR: the per-file wait also flushes the
-                            // system-wide query cache, so a full batch would charge every other
-                            // user one flush per file. The batch resolves visibility once, at the
-                            // end, before the completion signal (FR-008a).
-                            .indexPolicy(IndexPolicy.DEFER)
-                            .indexPolicyDependencies(IndexPolicy.DEFER)
-                            .build());
+            // An earlier version fired PUBLISH directly, with a gate requiring the mapped action
+            // to both save and publish. It produced published files, and it skipped the content
+            // type's NEW action entirely — so a customer whose NEW action notifies someone or sets
+            // a field lost that, silently, because a different action did the saving. Two steps
+            // honour both mappings, which is why import is shaped this way.
+            final Contentlet created = publish(job, createWith(job, contentlet, contentType, user),
+                    user);
 
             recordCreated(job, seq, fileName, created, createdInodes);
 
@@ -343,6 +283,95 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             record(job, seq, fileName, BatchItemStatus.FAILED, reasons.classify(e),
                     e.getClass().getName() + ": " + e.getMessage(), null);
         }
+    }
+
+    /**
+     * Creates the contentlet through the content type's own {@code NEW} mapping.
+     * <p>
+     * Mirrors {@code ImportUtil#runWorkflowIfCould}: fire the mapped action when it saves,
+     * otherwise check in directly. Firing it is what runs the content type's own actionlets, which
+     * is the whole reason to ask the mapping rather than always checking in.
+     * <p>
+     * {@code DISABLE_WORKFLOW} on the fallback because {@code checkin} looks {@code NEW} up itself
+     * and would fire the very action just rejected — import's own comment on the same line calls it
+     * "needed to avoid recursive call".
+     */
+    private Contentlet createWith(final Job job, final Contentlet contentlet,
+                                  final ContentType contentType, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Optional<WorkflowAction> saveAction = APILocator.getWorkflowAPI()
+                .findActionMappedBySystemActionContentlet(
+                        contentlet, WorkflowAPI.SystemAction.NEW, user)
+                .filter(WorkflowAction::hasSaveActionlet);
+
+        if (saveAction.isEmpty()) {
+            Logger.debug(this, String.format(
+                    "No NEW action saves for [%s]; checking in directly", contentType.variable()));
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            return APILocator.getContentletAPI().checkin(contentlet, user, false);
+        }
+
+        return APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
+                new ContentletDependencies.Builder()
+                        .modUser(user)
+                        .workflowActionId(saveAction.get().getId())
+                        .respectAnonymousPermissions(false)
+                        // DEFER, never WAIT_FOR: the per-file wait also flushes the system-wide
+                        // query cache, so a full batch would charge every other user one flush per
+                        // file. The batch resolves visibility once, at the end, before the
+                        // completion signal (FR-008a).
+                        .indexPolicy(IndexPolicy.DEFER)
+                        .indexPolicyDependencies(IndexPolicy.DEFER)
+                        .build());
+    }
+
+    /**
+     * Publishes what was just created, through the content type's own {@code PUBLISH} mapping
+     * (FR-006a).
+     * <p>
+     * Mirrors {@code ImportUtil#runWorkflowPublishIfCould}: fire the mapped action when it
+     * publishes, otherwise publish directly.
+     * <p>
+     * <b>{@code DISABLE_WORKFLOW} on the direct call is not belt-and-braces.</b> {@code publish()}
+     * is not the direct operation it reads as — {@code checkAndRunPublishAsWorkflow}
+     * ({@code ESContentletAPIImpl:5686}) resolves {@code PUBLISH} and runs it as a workflow
+     * instead. This branch is entered exactly when that mapping does not publish, so without the
+     * flag the call fires the same non-publishing action and leaves the file saved but not live:
+     * a run reporting success having done half the job.
+     */
+    private Contentlet publish(final Job job, final Contentlet created, final User user)
+            throws DotDataException, DotSecurityException {
+
+        if (created == null || !UtilMethods.isSet(created.getIdentifier())) {
+            // Nothing to publish, and recordCreated will reject it in a moment with a message that
+            // names the file. Returned as-is rather than guessed at.
+            return created;
+        }
+
+        final Optional<WorkflowAction> publishAction = APILocator.getWorkflowAPI()
+                .findActionMappedBySystemActionContentlet(
+                        created, WorkflowAPI.SystemAction.PUBLISH, user)
+                .filter(WorkflowAction::hasPublishActionlet);
+
+        if (publishAction.isPresent()) {
+            return APILocator.getWorkflowAPI().fireContentWorkflow(created,
+                    new ContentletDependencies.Builder()
+                            .modUser(user)
+                            .workflowActionId(publishAction.get().getId())
+                            .respectAnonymousPermissions(false)
+                            .indexPolicy(IndexPolicy.DEFER)
+                            .indexPolicyDependencies(IndexPolicy.DEFER)
+                            .build());
+        }
+
+        Logger.debug(this, String.format(
+                "No PUBLISH action publishes for job [%s]; publishing directly", job.id()));
+
+        created.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        APILocator.getContentletAPI().publish(created, user, false);
+        created.getMap().remove(Contentlet.DISABLE_WORKFLOW);
+        return created;
     }
 
     /**

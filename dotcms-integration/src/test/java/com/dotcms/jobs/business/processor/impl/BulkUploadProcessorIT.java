@@ -939,21 +939,21 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * Given scenario: A content type whose {@code PUBLISH} system action an administrator has
      * mapped to an action that only <b>saves</b> — no publish actionlet.
      * <p>
-     * Expected result: The files are still published, by the run checking them in and publishing
-     * them as two steps.
+     * Expected result: The files are still published — the run publishes them directly once the
+     * mapped action turns out not to.
      * <p>
-     * <b>Why this is not "overriding the mapping" the way the old filter was.</b> The filter
-     * discarded a perfectly good publishing action because the code preferred drafts. This does the
-     * opposite: it honours the caller's stated intent when no single mapped action can carry it
-     * out. It is also exactly what the product does —
-     * {@code PublishSystemActionApiFireCommandImpl#firePublishWithSave} checks in and then
-     * publishes when the resolved action lacks a publish actionlet.
+     * <b>This covers the branch where {@code publish()} bites back.</b> That call is not the direct
+     * operation it reads as: {@code checkAndRunPublishAsWorkflow} resolves the {@code PUBLISH}
+     * mapping and runs it as a workflow instead — and this branch is entered precisely when that
+     * mapping does not publish. Without the {@code DISABLE_WORKFLOW} guard the call fires the same
+     * non-publishing action and the file ends saved but not live: a run reporting success having
+     * done half the job.
      * <p>
-     * Without it the file would be checked in and quietly left as a draft, which is the failure
-     * this whole area keeps producing: a run that reports success having done half the job.
+     * Mirrors {@code ImportUtil#runWorkflowPublishIfCould}, whose comment on the same line calls
+     * that flag "needed to avoid recursive call".
      */
     @Test
-    public void test_run_publishesEvenWhenTheMappedActionOnlySaves() throws Exception {
+    public void test_run_publishesDirectlyWhenTheMappedActionDoesNot() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
         final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
 
