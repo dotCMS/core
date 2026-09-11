@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     defaultRedirectFn,
@@ -25,8 +25,8 @@ describe('Analytics Utils', () => {
     let mockLocation: Location;
 
     beforeAll(() => {
-        jest.useFakeTimers({ doNotFake: [] });
-        jest.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2024-01-01T00:00:00Z'));
     });
 
     beforeEach(() => {
@@ -767,7 +767,7 @@ describe('Analytics Utils', () => {
         });
 
         it('should include timestamp in generated ID', () => {
-            jest.setSystemTime(new Date('2024-01-01T12:00:00Z'));
+            vi.setSystemTime(new Date('2024-01-01T12:00:00Z'));
             const id = generateSecureId('test');
 
             expect(id).toContain('1704110400000'); // timestamp
@@ -776,8 +776,8 @@ describe('Analytics Utils', () => {
 
     describe('getUserId', () => {
         const mockLocalStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         beforeEach(() => {
@@ -811,8 +811,8 @@ describe('Analytics Utils', () => {
 
     describe('getSessionId', () => {
         const mockSessionStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         beforeEach(() => {
@@ -887,7 +887,7 @@ describe('Analytics Utils', () => {
 
         it('should return correct offset for UTC timezone', () => {
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(0);
+            Date.prototype.getTimezoneOffset = vi.fn().mockReturnValue(0);
 
             const result = getLocalTime();
 
@@ -899,7 +899,7 @@ describe('Analytics Utils', () => {
 
         it('should return correct offset for different timezones', () => {
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(300); // UTC-5
+            Date.prototype.getTimezoneOffset = vi.fn().mockReturnValue(300); // UTC-5
 
             const result = getLocalTime();
 
@@ -911,7 +911,7 @@ describe('Analytics Utils', () => {
 
         it('should return correct offset for positive timezone', () => {
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(-120); // UTC+2
+            Date.prototype.getTimezoneOffset = vi.fn().mockReturnValue(-120); // UTC+2
 
             const result = getLocalTime();
 
@@ -1029,13 +1029,13 @@ describe('Analytics Utils', () => {
 
     describe('getAnalyticsContext', () => {
         const mockLocalStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         const mockSessionStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         beforeEach(() => {
@@ -1091,9 +1091,9 @@ describe('Analytics Utils', () => {
             search: '?utm_source=google',
             origin: 'https://example.com',
             port: '',
-            assign: jest.fn(),
-            replace: jest.fn(),
-            reload: jest.fn(),
+            assign: vi.fn(),
+            replace: vi.fn(),
+            reload: vi.fn(),
             toString: () => 'https://example.com/page',
             ancestorOrigins: {} as DOMStringList
         };

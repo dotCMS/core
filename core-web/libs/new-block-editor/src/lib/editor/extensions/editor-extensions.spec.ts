@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import type { Injector } from '@angular/core';
 
 import { Extension, flattenExtensions, getSchema } from '@tiptap/core';
@@ -30,7 +32,7 @@ import type { SlashMenuService } from '../components/slash-menu/slash-menu.servi
 describe('createEditorExtensions', () => {
     // A restricted list keeps table/codeBlock/image out, so the injector is never touched
     // during assembly — a bare stub is enough.
-    const injector = { get: jest.fn() } as unknown as Injector;
+    const injector = { get: vi.fn() } as unknown as Injector;
     const menuService = {} as SlashMenuService;
     const messageService = { get: (key: string) => key } as unknown as DotMessageService;
 
@@ -52,7 +54,7 @@ describe('createEditorExtensions', () => {
     });
 
     it('drops a remote extension whose name collides with a built-in and warns', () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         const remoteUnderline = Extension.create({ name: 'underline' });
 
         const names = build([remoteUnderline]);

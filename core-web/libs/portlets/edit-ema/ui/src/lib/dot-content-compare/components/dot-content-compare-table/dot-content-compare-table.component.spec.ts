@@ -2,6 +2,7 @@
 
 import { createFakeEvent } from '@openng/spectator';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -484,14 +485,14 @@ describe('DotContentCompareTableComponent', () => {
 
     describe('events', () => {
         it('should emit changeVersion', () => {
-            jest.spyOn(hostComponent.changeVersion, 'emit');
+            vi.spyOn(hostComponent.changeVersion, 'emit');
             const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             dropdown.onChange.emit({ value: 'test', originalEvent: createFakeEvent('click') });
 
             expect(hostComponent.changeVersion.emit).toHaveBeenCalledWith('test');
         });
         it('should emit changeDiff', () => {
-            jest.spyOn(hostComponent.changeDiff, 'emit');
+            vi.spyOn(hostComponent.changeDiff, 'emit');
             const select: SelectButton = de.query(
                 By.css('[data-testId="show-diff"]')
             ).componentInstance;
@@ -501,7 +502,7 @@ describe('DotContentCompareTableComponent', () => {
         });
 
         it('should emit bring back', () => {
-            jest.spyOn(hostComponent.bringBack, 'emit');
+            vi.spyOn(hostComponent.bringBack, 'emit');
             const button = de.query(By.css('[data-testId="table-bring-back"]'));
 
             button.triggerEventHandler('click', '');

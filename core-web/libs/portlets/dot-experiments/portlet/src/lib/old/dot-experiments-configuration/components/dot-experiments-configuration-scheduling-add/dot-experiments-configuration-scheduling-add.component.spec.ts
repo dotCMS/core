@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -69,8 +70,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     beforeEach(async () => {
-        jest.useFakeTimers();
-        jest.setSystemTime(MOCK_DATE);
+        vi.useFakeTimers();
+        vi.setSystemTime(MOCK_DATE);
         spectator = createComponent({
             detectChanges: false
         });
@@ -111,7 +112,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should save form when is valid', () => {
-        jest.spyOn(store, 'setSelectedScheduling');
+        vi.spyOn(store, 'setSelectedScheduling');
         const submitButtonWrapper = spectator.query(byTestId('add-scheduling-button'));
         const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
 
@@ -170,7 +171,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should close sidebar', () => {
-        jest.spyOn(store, 'closeSidebar');
+        vi.spyOn(store, 'closeSidebar');
         sidebar = spectator.query(Drawer);
         sidebar.hide();
 
@@ -178,6 +179,6 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 });

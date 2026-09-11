@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of, throwError } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -17,7 +18,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let service: DotWorkflowsActionsSelectorFieldService;
-    let spy: jest.SpyInstance;
+    let spy: MockInstance;
     let result: SelectItemGroup[];
 
     beforeEach(() =>
@@ -35,7 +36,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jest.fn().mockReturnValue(of({}))
+                        handle: vi.fn().mockReturnValue(of({}))
                     }
                 }
             ]
@@ -46,7 +47,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
         service = TestBed.inject(DotWorkflowsActionsSelectorFieldService);
-        spy = jest.spyOn(dotWorkflowsActionsService, 'getByWorkflows');
+        spy = vi.spyOn(dotWorkflowsActionsService, 'getByWorkflows');
 
         service.get().subscribe((actions: SelectItemGroup[]) => {
             result = actions;

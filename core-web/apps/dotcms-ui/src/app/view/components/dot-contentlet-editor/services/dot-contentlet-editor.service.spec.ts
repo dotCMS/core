@@ -1,4 +1,5 @@
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -34,7 +35,7 @@ describe('DotContentletEditorService', () => {
         dotMenuService = TestBed.inject(DotMenuService);
         dotRouterService = TestBed.inject(DotRouterService);
         httpTesting = TestBed.inject(HttpTestingController);
-        jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
+        vi.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
     });
 
     afterEach(() => {

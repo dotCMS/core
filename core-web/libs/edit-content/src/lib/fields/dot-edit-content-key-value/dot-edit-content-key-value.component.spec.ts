@@ -1,4 +1,5 @@
 import { createHostFactory, SpectatorHost } from '@openng/spectator';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -123,23 +124,26 @@ describe('DotEditContentKeyValueComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should update form value when DotKeyValueComponent emits updatedList', (done) => {
-            const control = spectator.hostComponent.formGroup.get(KEY_VALUE_FIELD_MOCK.variable);
+        it('should update form value when DotKeyValueComponent emits updatedList', () =>
+            new Promise<void>((done) => {
+                const control = spectator.hostComponent.formGroup.get(
+                    KEY_VALUE_FIELD_MOCK.variable
+                );
 
-            control.valueChanges.subscribe((value) => {
-                // JSON text, not an object, so key order survives.
-                expect(JSON.parse(value)).toEqual({ key14: 'value14' });
-                done();
-            });
+                control!.valueChanges.subscribe((value) => {
+                    // JSON text, not an object, so key order survives.
+                    expect(JSON.parse(value)).toEqual({ key14: 'value14' });
+                    done();
+                });
 
-            const dotKeyValue = spectator.query(DotKeyValueComponent);
-            dotKeyValue.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
-            expect(control.touched).toBeTruthy();
-        });
+                const dotKeyValue = spectator.query(DotKeyValueComponent);
+                dotKeyValue!.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
+                expect(control!.touched).toBeTruthy();
+            }));
 
         it('should call updateField method when DotKeyValueComponent emits updatedList', () => {
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
-            const updateFieldSpy = jest.spyOn(keyValueField, 'updateField');
+            const updateFieldSpy = vi.spyOn(keyValueField!, 'updateField');
             spectator.triggerEventHandler(DotKeyValueComponent, 'updatedList', [
                 { key: 'testKey', hidden: false, value: 'testValue' }
             ]);
@@ -260,8 +264,8 @@ describe('DotEditContentKeyValueComponent', () => {
 
         it('should report the pairs as ordered JSON and call onChange', () => {
             // Mock the callbacks
-            const mockOnChange = jest.fn();
-            const mockOnTouched = jest.fn();
+            const mockOnChange = vi.fn();
+            const mockOnTouched = vi.fn();
 
             // Register the mock callbacks
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
@@ -281,8 +285,8 @@ describe('DotEditContentKeyValueComponent', () => {
 
         it('should handle empty array correctly', () => {
             // Mock the callbacks
-            const mockOnChange = jest.fn();
-            const mockOnTouched = jest.fn();
+            const mockOnChange = vi.fn();
+            const mockOnTouched = vi.fn();
 
             // Register the mock callbacks
             const keyValueField = spectator.query(DotKeyValueFieldComponent);

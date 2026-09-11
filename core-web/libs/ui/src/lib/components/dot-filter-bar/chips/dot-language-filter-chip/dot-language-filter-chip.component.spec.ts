@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -15,14 +16,14 @@ describe('DotLanguageFilterChipComponent', () => {
     let spectator: Spectator<DotLanguageFilterChipComponent>;
 
     const stored = signal<Record<string, string | string[]>>({});
-    const patchFilters = jest.fn();
-    const removeFilter = jest.fn();
+    const patchFilters = vi.fn();
+    const removeFilter = vi.fn();
 
     const facade: DotFilterFacade = {
-        getFilterValue: jest.fn((key: string) => stored()[key]),
+        getFilterValue: vi.fn((key: string) => stored()[key]),
         patchFilters,
         removeFilter,
-        clearFilters: jest.fn(),
+        clearFilters: vi.fn(),
         $hasNonDefaultFilters: signal(false)
     };
 
@@ -30,7 +31,7 @@ describe('DotLanguageFilterChipComponent', () => {
         component: DotLanguageFilterChipComponent,
         providers: [
             { provide: DOT_FILTER_FACADE, useValue: facade },
-            mockProvider(DotLanguagesService, { get: jest.fn().mockReturnValue(of(mockLocales)) }),
+            mockProvider(DotLanguagesService, { get: vi.fn().mockReturnValue(of(mockLocales)) }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ]
     });
@@ -43,7 +44,7 @@ describe('DotLanguageFilterChipComponent', () => {
         spectator.detectChanges();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should identify itself for the canonical order check', () => {
         expect(spectator.element.getAttribute('data-filter-chip')).toBe('language');

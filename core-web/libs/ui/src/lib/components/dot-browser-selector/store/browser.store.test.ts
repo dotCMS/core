@@ -5,8 +5,9 @@ import {
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -142,9 +143,9 @@ describe('DotBrowserSelectorStore', () => {
         service: DotBrowserSelectorStore,
         providers: [
             mockProvider(DotBrowsingService, {
-                getSitesPage: jest.fn().mockReturnValue(sitesPage(TREE_SELECT_SITES_MOCK)),
-                getContentByFolder: jest.fn().mockReturnValue(of([])),
-                searchFolders: jest.fn().mockReturnValue(
+                getSitesPage: vi.fn().mockReturnValue(sitesPage(TREE_SELECT_SITES_MOCK)),
+                getContentByFolder: vi.fn().mockReturnValue(of([])),
+                searchFolders: vi.fn().mockReturnValue(
                     of({
                         folders: [],
                         pagination: {
@@ -156,7 +157,7 @@ describe('DotBrowserSelectorStore', () => {
                 )
             }),
             mockProvider(DotUploadFileService, {
-                uploadDotAsset: jest.fn().mockReturnValue(of({}))
+                uploadDotAsset: vi.fn().mockReturnValue(of({}))
             })
         ]
     });

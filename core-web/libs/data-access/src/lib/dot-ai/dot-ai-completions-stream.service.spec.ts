@@ -1,4 +1,12 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+// @vitest-environment happy-dom
+//
+// jsdom defines `window.location` as a non-configurable getter, so the `withLocation`
+// stub below dies on "Cannot redefine property: location" — jest-preset-angular's jsdom
+// allowed the redefine, this project's Vitest jsdom does not. happy-dom keeps `location`
+// configurable and records an `href` assignment instead of attempting a navigation, which
+// is exactly what these two tests assert on.
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { LoginService } from '@dotcms/dotcms-js';
 
@@ -56,7 +64,7 @@ const delta = (content: string) =>
 
 describe('DotAiCompletionsStreamService', () => {
     let spectator: SpectatorService<DotAiCompletionsStreamService>;
-    let fetchMock: jest.Mock;
+    let fetchMock: Mock;
     const originalFetch = global.fetch;
 
     const createService = createServiceFactory({
@@ -68,7 +76,7 @@ describe('DotAiCompletionsStreamService', () => {
 
     beforeEach(() => {
         spectator = createService();
-        fetchMock = jest.fn();
+        fetchMock = vi.fn();
         global.fetch = fetchMock as unknown as typeof fetch;
     });
 
@@ -176,7 +184,7 @@ describe('DotAiCompletionsStreamService', () => {
     });
 
     it('should abort the request when the subscription is torn down', async () => {
-        const cancelled = jest.fn();
+        const cancelled = vi.fn();
         fetchMock.mockResolvedValue(neverEnding(cancelled));
 
         const sub = spectator.service.stream(form).subscribe();

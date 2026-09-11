@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -30,7 +32,7 @@ function fakeRuntime(options?: FakeOptions) {
     const calls: RequestOptions[] = [];
     let uploadCount = 0;
 
-    const request = jest.fn(async (opts: RequestOptions) => {
+    const request = vi.fn(async (opts: RequestOptions) => {
         calls.push(opts);
 
         const custom = options?.onRequest?.(opts);

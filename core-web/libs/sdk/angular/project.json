@@ -20,17 +20,6 @@
                 },
                 "development": {}
             }
-        },
-        "test": {
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
         }
     }
 }

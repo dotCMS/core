@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -77,7 +77,7 @@ describe('UVEStore - Integration Tests ', () => {
                     get: () => of(MOCK_RESPONSE_HEADLESS),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             },
             {
@@ -87,8 +87,8 @@ describe('UVEStore - Integration Tests ', () => {
             {
                 provide: DotContentletLockerService,
                 useValue: {
-                    lock: jest.fn().mockReturnValue(of({})),
-                    unlock: jest.fn().mockReturnValue(of({}))
+                    lock: vi.fn().mockReturnValue(of({})),
+                    unlock: vi.fn().mockReturnValue(of({}))
                 }
             },
             {
@@ -110,14 +110,14 @@ describe('UVEStore - Integration Tests ', () => {
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             {
                 provide: DotPageLayoutService,
                 useValue: {
-                    save: jest.fn().mockReturnValue(of({})),
-                    updateFromRowToContainers: jest.fn().mockReturnValue([])
+                    save: vi.fn().mockReturnValue(of({})),
+                    updateFromRowToContainers: vi.fn().mockReturnValue([])
                 }
             },
             {
@@ -128,10 +128,10 @@ describe('UVEStore - Integration Tests ', () => {
                 getSystemConfig: () => of({})
             }),
             mockProvider(DotWorkflowActionsFireService, {
-                saveContentlet: jest.fn().mockReturnValue(of({}))
+                saveContentlet: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of({}))
+                getContentType: vi.fn().mockReturnValue(of({}))
             }),
             {
                 provide: GlobalStore,

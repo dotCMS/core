@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -203,7 +204,7 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jest.fn()
+                        close: vi.fn()
                     }
                 },
                 {
@@ -211,7 +212,7 @@ describe('DotAddVariableComponent', () => {
                     useValue: {
                         data: {
                             contentTypeVariable: 'contentType',
-                            onSave: jest.fn()
+                            onSave: vi.fn()
                         }
                     }
                 },
@@ -229,7 +230,7 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: DotContentTypeService,
                     useValue: {
-                        getContentType: jest.fn().mockReturnValue(of(mockContentTypes))
+                        getContentType: vi.fn().mockReturnValue(of(mockContentTypes))
                     }
                 },
                 DotAlertConfirmService,

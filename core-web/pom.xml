@@ -131,23 +131,19 @@
                     <environmentVariables>
                         <PATH>${node.install.dir}:${env.PATH}</PATH>
                         <!--
-                          The `unit-test` execution below passes the detectOpenHandles
-                          flag, and Jest forces runInBand whenever it sees it ("detect
-                          open handles makes no sense without runInBand"). So a project's
-                          whole suite runs in ONE Node process, with coverage on, and the
-                          heap grows suite after suite: `ui` alone peaks near 3.8GB across
-                          its 106 suites. Node's default ceiling on a 16GB runner is
-                          ~4.1GB, which left under 10% headroom and aborted the job
-                          outright: no failing test, just a heap OOM part-way through.
+                          Vitest runs each project's suite in worker processes with
+                          separate heaps, so the single-process heap growth that made
+                          this ceiling necessary under Jest (#37245: `ui:test` died at
+                          3706 MB against V8's 4144 MB default) no longer applies the
+                          same way. The ceiling is kept until worker-memory behaviour on
+                          the heaviest projects has been measured under the new runner —
+                          that failure cost a CI outage once, and assuming a different
+                          runner dissolves it is how it comes back.
 
                           6144 rather than something larger because nx.json sets
                           "parallel": 3, so up to three of these processes coexist. A
                           ceiling high enough to overcommit the runner would trade V8's
                           OOM for the kernel's, which kills the process without a stack.
-
-                          The real fix is to drop the detectOpenHandles flag so Jest goes
-                          back to workers with separate heaps. That changes how the tests
-                          run and deserves its own validation, so it is tracked separately.
                         -->
                         <NODE_OPTIONS>--max-old-space-size=6144</NODE_OPTIONS>
                     </environmentVariables>
@@ -241,6 +237,32 @@
                         <phase>test</phase>
                         <configuration>
                             <skip>${skipTests}</skip>
+                            <!--
+                              Runs one project at a time. nx.json sets "parallel": 3, which under
+                              Jest meant three node processes; Vitest gives each of those nx tasks
+                              its own coordinator process holding a Vite dev server, and on the
+                              heaviest projects that process is enormous. Measured on edit-content
+                              (116 spec files, everything under libs/ inlined via
+                              server.deps.inline): the coordinator alone peaks at ~14 GB RSS. Three
+                              of those at once do not fit a 16 GB ubuntu-24.04 runner that is also
+                              holding this build's JVM, and the job was killed by the kernel twice
+                              in a row — both times a bare "The operation was canceled." with no
+                              stack, always while edit-content, portlets-dot-experiments-portlet
+                              and template-builder (the three heaviest, which nx schedules together
+                              at the tail of the run) were in flight.
+
+                              Cheap in wall clock, because the parallelism was not buying much:
+                              on the run that died, 8.8 min of serial vitest time had finished in
+                              5.6 min, so 3 at a time returns ~1.6x on 4 vCPUs (the pool forks
+                              already saturate them) for 3x the memory.
+
+                              Not solved by NODE_OPTIONS. The plugin-level ceiling above is a V8
+                              old-space limit, and this growth is mostly outside it: the same
+                              coordinator peaks at 14.4 GB RSS under a 4096 MB ceiling and at
+                              14.8 GB under 6144, while 3072 makes it die with a real V8 heap
+                              error. Lowering that ceiling buys nothing here and breaks the suite;
+                              the number of concurrent coordinators is the lever that works.
+                            -->
                             <arguments>
                                 <argument>exec</argument>
                                 <argument>nx</argument>
@@ -249,8 +271,7 @@
                                 <argument>test</argument>
                                 <argument>--base=${git.origin.branch}</argument>
                                 <argument>--exclude=tag:skip:test</argument>
-                                <argument>--detectOpenHandles</argument>
-                                <argument>--forceExit</argument>
+                                <argument>--parallel=1</argument>
                             </arguments>
                         </configuration>
                     </execution>

@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { Subject, of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 
@@ -26,13 +27,13 @@ import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
 
 describe('DotPublishingQueueShellComponent', () => {
     let spectator: Spectator<DotPublishingQueueShellComponent>;
-    let dialogService: jest.Mocked<DialogService>;
-    let confirmationService: jest.Mocked<ConfirmationService>;
+    let dialogService: Mocked<DialogService>;
+    let confirmationService: Mocked<ConfirmationService>;
     let store: InstanceType<typeof DotPublishingQueueStore>;
 
     let onCloseSubject = new Subject<unknown>();
     const dialogRef = {
-        close: jest.fn(),
+        close: vi.fn(),
         get onClose() {
             return onCloseSubject;
         }
@@ -43,47 +44,47 @@ describe('DotPublishingQueueShellComponent', () => {
         componentProviders: [
             DotPublishingQueueStore,
             ConfirmationService,
-            mockProvider(DialogService, { open: jest.fn().mockReturnValue(dialogRef) })
+            mockProvider(DialogService, { open: vi.fn().mockReturnValue(dialogRef) })
         ],
         providers: [
             mockProvider(DotPublishingQueueService, {
-                listPublishingJobs: jest.fn().mockReturnValue(
+                listPublishingJobs: vi.fn().mockReturnValue(
                     of({
                         entity: [],
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                     })
                 ),
-                getBundleAssets: jest.fn().mockReturnValue(of([])),
-                getPublishingJobDetails: jest.fn().mockReturnValue(of({})),
-                probeBundleDownload: jest.fn().mockReturnValue(of(true)),
-                probeBundleManifest: jest.fn().mockReturnValue(of(true)),
-                getUnsendBundles: jest
+                getBundleAssets: vi.fn().mockReturnValue(of([])),
+                getPublishingJobDetails: vi.fn().mockReturnValue(of({})),
+                probeBundleDownload: vi.fn().mockReturnValue(of(true)),
+                probeBundleManifest: vi.fn().mockReturnValue(of(true)),
+                getUnsendBundles: vi
                     .fn()
                     .mockReturnValue(of({ identifier: 'id', label: 'name', items: [], numRows: 0 }))
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'user-1' }))
+                getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-1' }))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
-            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
-            mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
-            mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
+            mockProvider(DotPushPublishDialogService, { open: vi.fn() }),
+            mockProvider(DotDownloadBundleDialogService, { open: vi.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         onCloseSubject = new Subject<unknown>();
         spectator = createComponent();
-        dialogService = spectator.inject(DialogService, true) as jest.Mocked<DialogService>;
+        dialogService = spectator.inject(DialogService, true) as Mocked<DialogService>;
         confirmationService = spectator.inject(
             ConfirmationService,
             true
-        ) as jest.Mocked<ConfirmationService>;
-        jest.spyOn(confirmationService, 'confirm');
+        ) as Mocked<ConfirmationService>;
+        vi.spyOn(confirmationService, 'confirm');
         store = spectator.inject(DotPublishingQueueStore, true);
     });
 
@@ -128,7 +129,7 @@ describe('DotPublishingQueueShellComponent', () => {
 
     describe('confirmDeleteBundles', () => {
         it('does nothing when there is no selection (defensive guard)', () => {
-            jest.spyOn(store, 'deleteBundlesBulk');
+            vi.spyOn(store, 'deleteBundlesBulk');
             spectator.component.confirmDeleteBundles();
             expect(confirmationService.confirm).not.toHaveBeenCalled();
             expect(store.deleteBundlesBulk).not.toHaveBeenCalled();
@@ -142,7 +143,7 @@ describe('DotPublishingQueueShellComponent', () => {
 
         it('calls store.deleteBundlesBulk with the selected ids on accept', () => {
             store.setBundlesSelection(['b1', 'b2']);
-            const spy = jest.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
+            const spy = vi.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
             confirmationService.confirm.mockImplementation((cfg) => {
                 cfg.accept?.();
                 return confirmationService;
@@ -153,7 +154,7 @@ describe('DotPublishingQueueShellComponent', () => {
 
         it('does NOT delete on reject', () => {
             store.setBundlesSelection(['b1']);
-            const spy = jest.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
+            const spy = vi.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
             confirmationService.confirm.mockImplementation((cfg) => {
                 cfg.reject?.();
                 return confirmationService;

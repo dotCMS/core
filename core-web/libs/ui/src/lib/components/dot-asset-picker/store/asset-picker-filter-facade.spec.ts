@@ -1,7 +1,8 @@
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotContentDriveService, DotFolderService, DotSiteService } from '@dotcms/data-access';
 import {
@@ -61,13 +62,13 @@ describe('AssetPicker filter facade', () => {
         service: DotAssetPickerStore,
         providers: [
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(EMPTY_RESPONSE))
+                search: vi.fn().mockReturnValue(of(EMPTY_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                searchFolders: jest.fn().mockReturnValue(of({ folders: [], pagination: {} }))
+                searchFolders: vi.fn().mockReturnValue(of({ folders: [], pagination: {} }))
             }),
             mockProvider(DotSiteService, {
-                getSites: jest.fn().mockReturnValue(of({ sites: [], pagination: {} }))
+                getSites: vi.fn().mockReturnValue(of({ sites: [], pagination: {} }))
             })
         ]
     });

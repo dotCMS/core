@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockModule } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -44,7 +45,7 @@ describe('DotAnalyticsChartComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn().mockReturnValue('Translated message')
+                    get: vi.fn().mockReturnValue('Translated message')
                 }
             }
         ]

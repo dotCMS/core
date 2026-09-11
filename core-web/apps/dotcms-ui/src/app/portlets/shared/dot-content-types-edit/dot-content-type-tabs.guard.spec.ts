@@ -1,9 +1,17 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import {
+    ActivatedRouteSnapshot,
+    CanActivateFn,
+    GuardResult,
+    Router,
+    RouterStateSnapshot,
+    UrlTree
+} from '@angular/router';
 
 import { DotCurrentUserService, DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -21,6 +29,12 @@ function mockState(url: string): RouterStateSnapshot {
     return { url } as RouterStateSnapshot;
 }
 
+// Both guards return an Observable; CanActivateFn only promises the wider MaybeAsync union.
+const runGuard = (guard: CanActivateFn, url: string): Observable<GuardResult> =>
+    TestBed.runInInjectionContext(() =>
+        guard(mockRoute, mockState(url))
+    ) as Observable<GuardResult>;
+
 describe('styleEditorTabGuard', () => {
     let dotPropertiesService: DotPropertiesService;
     let router: Router;
@@ -31,12 +45,12 @@ describe('styleEditorTabGuard', () => {
                 HttpClient,
                 {
                     provide: DotPropertiesService,
-                    useValue: { getFeatureFlag: jest.fn().mockReturnValue(of(featureFlagEnabled)) }
+                    useValue: { getFeatureFlag: vi.fn().mockReturnValue(of(featureFlagEnabled)) }
                 },
                 {
                     provide: Router,
                     useValue: {
-                        parseUrl: jest.fn((url: string) => ({ url }) as unknown as UrlTree)
+                        parseUrl: vi.fn((url: string) => ({ url }) as unknown as UrlTree)
                     }
                 }
             ],
@@ -47,43 +61,40 @@ describe('styleEditorTabGuard', () => {
         router = TestBed.inject(Router);
     };
 
-    it('should allow access when feature flag is enabled', (done) => {
-        setup(true);
+    it('should allow access when feature flag is enabled', () =>
+        new Promise<void>((done) => {
+            setup(true);
 
-        TestBed.runInInjectionContext(() =>
-            styleEditorTabGuard(mockRoute, mockState(STYLE_EDITOR_URL))
-        ).subscribe((result) => {
-            expect(result).toBe(true);
-            expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
-                FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
-            );
-            done();
-        });
-    });
+            runGuard(styleEditorTabGuard, STYLE_EDITOR_URL).subscribe((result) => {
+                expect(result).toBe(true);
+                expect(dotPropertiesService.getFeatureFlag).toHaveBeenCalledWith(
+                    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
+                );
+                done();
+            });
+        }));
 
-    it('should redirect to fields when feature flag is disabled', (done) => {
-        setup(false);
+    it('should redirect to fields when feature flag is disabled', () =>
+        new Promise<void>((done) => {
+            setup(false);
 
-        TestBed.runInInjectionContext(() =>
-            styleEditorTabGuard(mockRoute, mockState(STYLE_EDITOR_URL))
-        ).subscribe((result) => {
-            expect(router.parseUrl).toHaveBeenCalledWith(FIELDS_URL);
-            expect(result).not.toBe(false);
-            done();
-        });
-    });
+            runGuard(styleEditorTabGuard, STYLE_EDITOR_URL).subscribe((result) => {
+                expect(router.parseUrl).toHaveBeenCalledWith(FIELDS_URL);
+                expect(result).not.toBe(false);
+                done();
+            });
+        }));
 
-    it('should preserve query params in the redirect url', (done) => {
-        setup(false);
-        const urlWithQuery = `${STYLE_EDITOR_URL}?foo=bar`;
+    it('should preserve query params in the redirect url', () =>
+        new Promise<void>((done) => {
+            setup(false);
+            const urlWithQuery = `${STYLE_EDITOR_URL}?foo=bar`;
 
-        TestBed.runInInjectionContext(() =>
-            styleEditorTabGuard(mockRoute, mockState(urlWithQuery))
-        ).subscribe(() => {
-            expect(router.parseUrl).toHaveBeenCalledWith(`${FIELDS_URL}?foo=bar`);
-            done();
-        });
-    });
+            runGuard(styleEditorTabGuard, urlWithQuery).subscribe(() => {
+                expect(router.parseUrl).toHaveBeenCalledWith(`${FIELDS_URL}?foo=bar`);
+                done();
+            });
+        }));
 });
 
 describe('permissionsTabGuard', () => {
@@ -97,13 +108,13 @@ describe('permissionsTabGuard', () => {
                 {
                     provide: DotCurrentUserService,
                     useValue: {
-                        hasAccessToPortlet: jest.fn().mockReturnValue(of(hasAccess))
+                        hasAccessToPortlet: vi.fn().mockReturnValue(of(hasAccess))
                     }
                 },
                 {
                     provide: Router,
                     useValue: {
-                        parseUrl: jest.fn((url: string) => ({ url }) as unknown as UrlTree)
+                        parseUrl: vi.fn((url: string) => ({ url }) as unknown as UrlTree)
                     }
                 }
             ],
@@ -114,39 +125,38 @@ describe('permissionsTabGuard', () => {
         router = TestBed.inject(Router);
     };
 
-    it('should allow access when user has permissions portlet access', (done) => {
-        setup(true);
+    it('should allow access when user has permissions portlet access', () =>
+        new Promise<void>((done) => {
+            setup(true);
 
-        TestBed.runInInjectionContext(() =>
-            permissionsTabGuard(mockRoute, mockState(PERMISSIONS_URL))
-        ).subscribe((result) => {
-            expect(result).toBe(true);
-            expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith('permissions');
-            done();
-        });
-    });
+            runGuard(permissionsTabGuard, PERMISSIONS_URL).subscribe((result) => {
+                expect(result).toBe(true);
+                expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith(
+                    'permissions'
+                );
+                done();
+            });
+        }));
 
-    it('should redirect to fields when user lacks permissions portlet access', (done) => {
-        setup(false);
+    it('should redirect to fields when user lacks permissions portlet access', () =>
+        new Promise<void>((done) => {
+            setup(false);
 
-        TestBed.runInInjectionContext(() =>
-            permissionsTabGuard(mockRoute, mockState(PERMISSIONS_URL))
-        ).subscribe((result) => {
-            expect(router.parseUrl).toHaveBeenCalledWith(FIELDS_URL);
-            expect(result).not.toBe(false);
-            done();
-        });
-    });
+            runGuard(permissionsTabGuard, PERMISSIONS_URL).subscribe((result) => {
+                expect(router.parseUrl).toHaveBeenCalledWith(FIELDS_URL);
+                expect(result).not.toBe(false);
+                done();
+            });
+        }));
 
-    it('should preserve query params in the redirect url', (done) => {
-        setup(false);
-        const urlWithQuery = `${PERMISSIONS_URL}?foo=bar`;
+    it('should preserve query params in the redirect url', () =>
+        new Promise<void>((done) => {
+            setup(false);
+            const urlWithQuery = `${PERMISSIONS_URL}?foo=bar`;
 
-        TestBed.runInInjectionContext(() =>
-            permissionsTabGuard(mockRoute, mockState(urlWithQuery))
-        ).subscribe(() => {
-            expect(router.parseUrl).toHaveBeenCalledWith(`${FIELDS_URL}?foo=bar`);
-            done();
-        });
-    });
+            runGuard(permissionsTabGuard, urlWithQuery).subscribe(() => {
+                expect(router.parseUrl).toHaveBeenCalledWith(`${FIELDS_URL}?foo=bar`);
+                done();
+            });
+        }));
 });
