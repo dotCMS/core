@@ -93,7 +93,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
@@ -1031,6 +1033,43 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * How many chunks may be in flight at once. Bounded by what the database can serve
+     * concurrently, not by the CPU: the loaders block on a socket, so the ceiling that matters is
+     * the connection pool.
+     */
+    private static final int MAX_CONCURRENT_CHUNKS =
+            Config.getIntProperty("browser.contentlet.load.max.concurrent.chunks", 8);
+
+    /**
+     * Splits {@code items} into chunks of {@code chunkSize}, hands each chunk to {@code loader}
+     * with at most {@code concurrency} chunks in flight, and flattens the results.
+     *
+     * <p>Two gatherers, one per concern: {@code windowFixed} cuts (emitting the short final chunk
+     * itself) and {@code mapConcurrent} runs the loaders on virtual threads while <b>preserving
+     * input order</b>, which is what a {@code parallelStream()} does not promise.</p>
+     *
+     * <p><b>Concurrency is bounded by the connection pool, not by the CPU.</b> The loader here goes
+     * to PostgreSQL, so more in-flight chunks than the pool has connections only moves the queue
+     * from this method into Hikari. That is why the limit is a parameter and not
+     * {@code availableProcessors()}.</p>
+     *
+     * <p><b>What this does not give back:</b> {@code mapConcurrent} has no timeout of any kind.
+     * The shape it replaces carried {@code orTimeout(90s)} per chunk and a 180s ceiling on the
+     * whole set. Neither survives here. Re-adding them means either putting a timeout inside the
+     * loader or reaching for {@code StructuredTaskScope}, which is still preview in Java 25 — so
+     * this is a deliberate, documented loss, not an oversight.</p>
+     */
+    static <T, R> List<R> inParallelChunks(final List<T> items, final int chunkSize,
+            final int concurrency, final Function<List<T>, List<R>> loader) {
+
+        return items.stream()
+                .gather(Gatherers.windowFixed(chunkSize))
+                .gather(Gatherers.mapConcurrent(concurrency, loader::apply))
+                .flatMap(List::stream)
+                .toList();
+    }
+
+    /**
      * Loads contentlets in a single request (for small sets).
      */
     private List<Contentlet> loadContentletsSingle(List<String> inodes, long startTime) {
@@ -1048,81 +1087,37 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     /**
      * Loads contentlets in parallel chunks for better performance and reliability.
+     *
+     * <p>See {@link #inParallelChunks(List, int, int, Function)} for what the two gatherers replace
+     * and for the per-chunk and global timeouts that this shape no longer carries.</p>
      */
-    private List<Contentlet> loadContentletsParallel(Set<String> inodes, int chunkSize, long startTime) {
+    private List<Contentlet> loadContentletsParallel(final Set<String> inodes, final int chunkSize,
+            final long startTime) {
+
         final List<String> inodesList = new ArrayList<>(inodes);
-        final int totalInodes = inodesList.size();
-
-        // Create chunks for parallel processing
-        final List<List<String>> chunks = createChunks(inodesList, chunkSize);
-        final int chunkCount = chunks.size();
-        Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes in %d chunks (chunk size: %d)",
-            totalInodes, chunkCount, chunkSize));
-
-        // Process chunks in parallel using CompletableFuture
-        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
-        final CompletableFuture<List<Contentlet>>[] futures = new CompletableFuture[chunkCount];
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-        for (int i = 0; i < chunkCount; i++) {
-            final List<String> chunk = chunks.get(i);
-            final int chunkIndex = i + 1;
 
-            futures[i] = CompletableFuture
-                .supplyAsync(() -> {
-                    final long chunkStartTime = System.currentTimeMillis();
-                    Logger.debug(BrowserAPIImpl.this, String.format("Loading contentlet chunk %d/%d: %d inodes",
-                        chunkIndex, chunkCount, chunk.size()));
-
+        final List<Contentlet> allContentlets = inParallelChunks(inodesList, chunkSize,
+                MAX_CONCURRENT_CHUNKS,
+                chunk -> {
+                    final long chunkStart = System.currentTimeMillis();
                     try {
-                        final List<Contentlet> chunkContentlets = contentletAPI.findContentlets(chunk);
-                        final long chunkDuration = System.currentTimeMillis() - chunkStartTime;
-                        Logger.debug(BrowserAPIImpl.this, String.format(
-                            "Contentlet chunk %d/%d completed: %d inodes → %d contentlets in %d ms",
-                            chunkIndex, chunkCount, chunk.size(), chunkContentlets.size(), chunkDuration));
-                        return chunkContentlets;
-                    } catch (Exception e) {
-                        Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d failed: %s",
-                            chunkIndex, e.getMessage()), e);
-                        return new ArrayList<Contentlet>();
+                        final List<Contentlet> loaded = contentletAPI.findContentlets(chunk);
+                        Logger.debug(this, String.format(
+                                "Contentlet chunk completed: %d inodes -> %d contentlets in %d ms",
+                                chunk.size(), loaded.size(), System.currentTimeMillis() - chunkStart));
+                        return loaded;
+                    } catch (final Exception e) {
+                        // Same contract as before: one bad chunk must not fail the whole load.
+                        Logger.error(this, String.format("Contentlet chunk of %d inodes failed: %s",
+                                chunk.size(), e.getMessage()), e);
+                        return List.<Contentlet>of();
                     }
-                }, submitter)
-                .orTimeout(90, TimeUnit.SECONDS) // Longer timeout for DB operations
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d timed out or failed: %s",
-                        chunkIndex, throwable.getMessage()), throwable);
-                    return new ArrayList<>();
                 });
-        }
 
-        // Collect results from all chunks
-        final List<Contentlet> allContentlets = new ArrayList<>();
-        try {
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
-            allFutures.get(180, TimeUnit.SECONDS); // Global timeout for all chunks
-
-            for (CompletableFuture<List<Contentlet>> future : futures) {
-                try {
-                    List<Contentlet> chunkContentlets = future.get();
-                    allContentlets.addAll(chunkContentlets);
-                } catch (Exception e) {
-                    Logger.warn(this, "Failed to get result from contentlet chunk future: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-            final long totalDuration = System.currentTimeMillis() - startTime;
-            Logger.debug(this, String.format(
-                "Parallel contentlet loading completed: %d inodes in %d chunks → %d contentlets in %d ms",
-                totalInodes, chunkCount, allContentlets.size(), totalDuration));
-
-        } catch (InterruptedException e) {
-            Logger.error(this, "Parallel contentlet loading interrupted: " + e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            Logger.error(this, "Parallel contentlet loading execution error: " + e.getMessage(), e);
-        } catch (TimeoutException e) {
-            Logger.error(this, "Parallel contentlet loading timed out: " + e.getMessage(), e);
-        }
+        Logger.debug(this, String.format(
+                "Parallel contentlet loading completed: %d inodes -> %d contentlets in %d ms",
+                inodesList.size(), allContentlets.size(), System.currentTimeMillis() - startTime));
 
         return allContentlets;
     }
@@ -1137,51 +1132,25 @@ public class BrowserAPIImpl implements BrowserAPI {
     private List<Map<String, Object>> hydrateContentletsInParallel(final List<Contentlet> contentlets,
                                               final BrowserQuery browserQuery,
                                               final Role[] roles) {
-        final List<Map<String, Object>> resultList = new ArrayList<>();
-        final int totalContentlets = contentlets.size();
-        final int chunkSize = Math.max(1, Math.min(10, totalContentlets / 4));
-        final List<List<Contentlet>> chunks = createChunks(contentlets, chunkSize);
 
-        final List<CompletableFuture<List<Map<String, Object>>>> futures = chunks.stream()
-            .map(chunk -> CompletableFuture.supplyAsync(() -> {
-                final List<Map<String, Object>> chunkResults = new ArrayList<>(chunk.size());
-                for (final Contentlet contentlet : chunk) {
-                    try {
-                        final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
-                        chunkResults.add(contentMap);
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.error(this, "Error hydrating contentlet " + contentlet.getInode() + ": " + e.getMessage(), e);
-                        throw new DotRuntimeException("Failed to hydrate contentlet: " + contentlet.getInode(), e);
-                    }
-                }
-                return chunkResults;
-            }, DotConcurrentFactory.getInstance().getSubmitter()))
-            .collect(Collectors.toList());
+        final int chunkSize = Math.max(1, Math.min(10, contentlets.size() / 4));
 
-        // Collect results maintaining order
-        for (final CompletableFuture<List<Map<String, Object>>> future : futures) {
-            try {
-                resultList.addAll(future.get(30, TimeUnit.SECONDS));
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                Logger.error(this, "Error in parallel hydration: " + e.getMessage(), e);
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-                throw new DotRuntimeException("Failed to hydrate contentlets in parallel", e);
-            }
-        }
-        return resultList;
-    }
-
-    /**
-     * Creates chunks from a list with the specified chunk size.
-     *
-     * @param list The list to split into chunks
-     * @param chunkSize The size of each chunk
-     * @return List of chunks, each containing at most chunkSize elements
-     */
-    private <T> List<List<T>> createChunks(List<T> list, int chunkSize) {
-        return Lists.partition(list, chunkSize);
+        // The comment this replaces read "Collect results maintaining order", and the ordering was
+        // a property of iterating the futures in creation order. mapConcurrent promises it.
+        return inParallelChunks(contentlets, chunkSize, MAX_CONCURRENT_CHUNKS,
+                chunk -> chunk.stream()
+                        .map(contentlet -> {
+                            try {
+                                return hydrate(browserQuery, contentlet, roles);
+                            } catch (final DotDataException | DotSecurityException e) {
+                                // Same contract as before: a failed hydration fails the request.
+                                Logger.error(this, "Error hydrating contentlet "
+                                        + contentlet.getInode() + ": " + e.getMessage(), e);
+                                throw new DotRuntimeException(
+                                        "Failed to hydrate contentlet: " + contentlet.getInode(), e);
+                            }
+                        })
+                        .collect(Collectors.toList()));
     }
 
     /**
