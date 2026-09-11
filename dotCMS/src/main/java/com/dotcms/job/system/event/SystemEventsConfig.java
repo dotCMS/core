@@ -58,8 +58,15 @@ public class SystemEventsConfig {
     /** How often the authored-vs-observed reconciliation runs, in minutes. */
     public static final String RECONCILE_INTERVAL_MINUTES = "SYSTEM_EVENTS_RECONCILE_INTERVAL_MINUTES";
 
-    /** The poll cadence, used only to judge whether the cursor has gone stale. */
-    public static final String POLL_INTERVAL_SECONDS = "SYSTEM_EVENTS_POLL_INTERVAL_SECONDS";
+    /**
+     * The poll cadence, used only to judge whether the cursor has gone stale.
+     *
+     * <p>This is the key {@code DotInitScheduler} passes to {@code scheduleWithFixedDelay}, so the
+     * stall detector and the scheduler cannot disagree. An earlier version read a key of its own
+     * invention, which meant slowing the poller left the stall threshold behind and a healthy node
+     * warned on every poll.
+     */
+    public static final String DELAY_SECONDS = "SYSTEM_EVENTS_DELAY_SECONDS";
 
     /**
      * How far a node with no stored cursor reaches back on its first poll. Set to 0 to disable.
@@ -74,8 +81,8 @@ public class SystemEventsConfig {
     static final int DEFAULT_LAG_WARN_THRESHOLD_PERCENT = 50;
     static final int DEFAULT_DELETE_EVENTS_OLDER_THAN_DAYS = 31;
     static final int DEFAULT_RECONCILE_INTERVAL_MINUTES = 60;
-    /** Matches the default SYSTEM_EVENTS_CRON_EXPRESSION of {@code 0/5 * * * * ?}. */
-    static final int DEFAULT_POLL_INTERVAL_SECONDS = 5;
+    /** Matches the default {@code DotInitScheduler} applies to SYSTEM_EVENTS_DELAY_SECONDS. */
+    static final int DEFAULT_DELAY_SECONDS = 5;
 
     /**
      * "Well below" retention means a real margin, not merely "not greater than". A backlog clamp
@@ -178,8 +185,8 @@ public class SystemEventsConfig {
      */
     public static long getPollIntervalMillis() {
         return TimeUnit.SECONDS.toMillis(positiveOrDefault(
-                Config.getIntProperty(POLL_INTERVAL_SECONDS, DEFAULT_POLL_INTERVAL_SECONDS),
-                DEFAULT_POLL_INTERVAL_SECONDS, POLL_INTERVAL_SECONDS));
+                Config.getIntProperty(DELAY_SECONDS, DEFAULT_DELAY_SECONDS),
+                DEFAULT_DELAY_SECONDS, DELAY_SECONDS));
     }
 
     /**

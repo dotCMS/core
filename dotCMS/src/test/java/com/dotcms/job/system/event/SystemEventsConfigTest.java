@@ -168,4 +168,42 @@ public class SystemEventsConfigTest {
             Config.setProperty(SystemEventsConfig.MAX_BACKLOG_MINUTES, null);
         }
     }
+
+    /**
+     * Method to test: {@link SystemEventsConfig#getPollIntervalMillis()}
+     * Given Scenario: An operator slows the poller down the only way that actually works —
+     * {@code SYSTEM_EVENTS_DELAY_SECONDS}, the key {@code DotInitScheduler} passes to
+     * {@code scheduleWithFixedDelay}
+     * Expected Result: The stall detector follows the real cadence.
+     *
+     * <p>The original implementation read a key of its own invention
+     * ({@code SYSTEM_EVENTS_POLL_INTERVAL_SECONDS}) that nothing else in the codebase sets or reads.
+     * Slowing the poller to 60s left the stall threshold at 5s × 6 = 30s, so a perfectly healthy node
+     * logged "This node has not been consuming the queue" on every single poll — while the key that
+     * looked like the knob changed nothing.
+     *
+     * <p>The literal key is used here rather than the constant, so this test still fails if the
+     * constant is ever repointed at another property.
+     */
+    @Test
+    public void test_poll_interval_follows_the_real_scheduler_key() {
+        Config.setProperty("SYSTEM_EVENTS_DELAY_SECONDS", 60);
+        try {
+            assertEquals(TimeUnit.SECONDS.toMillis(60), SystemEventsConfig.getPollIntervalMillis());
+        } finally {
+            Config.setProperty("SYSTEM_EVENTS_DELAY_SECONDS", null);
+        }
+    }
+
+    /**
+     * Method to test: {@link SystemEventsConfig#getPollIntervalMillis()} default
+     * Given Scenario: Nothing is configured
+     * Expected Result: 5 seconds — the same default {@code DotInitScheduler} applies, so the stall
+     * detector and the scheduler agree out of the box.
+     */
+    @Test
+    public void test_poll_interval_default_matches_the_scheduler_default() {
+        Config.setProperty("SYSTEM_EVENTS_DELAY_SECONDS", null);
+        assertEquals(TimeUnit.SECONDS.toMillis(5), SystemEventsConfig.getPollIntervalMillis());
+    }
 }

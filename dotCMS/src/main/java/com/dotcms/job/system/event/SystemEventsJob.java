@@ -45,9 +45,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * <ul>
  * <li>{@code ENABLE_SYSTEM_EVENTS} (defaults to {@code true}): Set to
  * {@code false} to NOT execute this Job.</li>
- * <li>{@code SYSTEM_EVENTS_CRON_EXPRESSION} (defaults to {@code 0/5 * * * * ?}
- * ): Set the appropriate cron expression for the execution of this Job. By
- * default, this job checks for new System Events every 5 seconds.</li>
+ * <li>{@code SYSTEM_EVENTS_DELAY_SECONDS} (defaults to {@code 5}): How often this job checks for
+ * new System Events. {@code DotInitScheduler} schedules it with {@code scheduleWithFixedDelay}, not
+ * with a cron expression — an earlier {@code SYSTEM_EVENTS_CRON_EXPRESSION} is no longer read by
+ * anything.</li>
  * <li>{@code SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS}, {@code SYSTEM_EVENTS_MAX_BACKLOG_MINUTES} — see
  * {@link SystemEventsConfig}.</li>
  * </ul>

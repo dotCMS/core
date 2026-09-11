@@ -129,14 +129,17 @@ binding the queue to PostgreSQL internals). Do not re-derive them.
 | Property | Default | Purpose |
 |---|---|---|
 | `ENABLE_SYSTEM_EVENTS` | `true` | Master switch for the poller |
-| `SYSTEM_EVENTS_CRON_EXPRESSION` | `0/5 * * * * ?` | Poll cadence |
+| `SYSTEM_EVENTS_DELAY_SECONDS` | `5` | Poll cadence — the delay between polls, passed to `scheduleWithFixedDelay` |
 | `SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS` | `120` | How far back each poll re-reads. Must exceed the longest event-bearing transaction; the dominant tuning knob. |
 | `SYSTEM_EVENTS_MAX_BACKLOG_MINUTES` | `60` | Bounds recovery after downtime; must stay well below retention |
 | `SYSTEM_EVENTS_LAG_WARN_THRESHOLD_PERCENT` | `50` | Warn when commit lag reaches this share of the window |
+| `SYSTEM_EVENTS_SEED_LOOKBACK_SECONDS` | overlap window | How far back a node with no stored cursor reaches on its first poll. `0` disables it. |
 | `SYSTEM_EVENTS_RECONCILE_INTERVAL_MINUTES` | `60` | Reconciliation cadence |
 | `systemevents.job.deleteevents.olderthan` | `31` (days) | Retention, enforced by `DeleteOldSystemEventsJob` |
 
 > **The retention key is `systemevents.job.deleteevents.olderthan`**, not `DELETE_EVENTS_OLDER_THAN` — that is the name of the Java constant, not the property. Reading the constant name as a key silently returns the default.
+>
+> **There is no `SYSTEM_EVENTS_CRON_EXPRESSION`.** The poller is scheduled with `scheduleWithFixedDelay`, not a cron trigger; that key is read by nothing. The cadence is `SYSTEM_EVENTS_DELAY_SECONDS`, and the stall detector reads the same key so the two cannot disagree.
 
 ### Hot reload
 
