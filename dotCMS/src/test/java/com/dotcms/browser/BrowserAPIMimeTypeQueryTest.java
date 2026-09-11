@@ -133,6 +133,29 @@ public class BrowserAPIMimeTypeQueryTest {
     }
 
     /**
+     * The value is substituted after {@code .*} in the JSONPath regex, so a quantifier with
+     * nothing to quantify is invalid and PostgreSQL raises it at query time. These must be
+     * refused in the builder so the caller sees a 400 rather than a 500.
+     */
+    @Test
+    public void testOrphanedQuantifiersAreRejected() {
+        for (final String rejected : new String[]{"*", "+", "+x", "*/plain", "a**", "a+*", "a*+",
+                "a++", "image/**"}) {
+            assertThrows("must reject: " + rejected, IllegalArgumentException.class,
+                    () -> BrowserQuery.builder().showMimeTypes(List.of(rejected)));
+        }
+    }
+
+    /**
+     * A quantifier that follows a character is valid and must keep working, since {@code image/*}
+     * is the wildcard form the file browser sends.
+     */
+    @Test
+    public void testQuantifiersFollowingACharacterAreAccepted() {
+        BrowserQuery.builder().showMimeTypes(List.of("image/*", "a*", "a+", "text/*"));
+    }
+
+    /**
      * A null list means "no MIME type filter". Callers on their default path pass null, and the
      * query builder treats null and empty identically, so it must not be rejected.
      */

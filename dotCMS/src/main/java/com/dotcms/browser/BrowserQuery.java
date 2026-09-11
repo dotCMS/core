@@ -329,6 +329,18 @@ public class BrowserQuery {
         private static final Pattern MIME_TYPE_PATTERN =
                 Pattern.compile("[A-Za-z0-9 !#$&^_.+*/;=~-]{1,255}");
 
+        /**
+         * The value is placed directly after {@code .*} inside the regex literal, so a quantifier
+         * with nothing to quantify is a syntax error that PostgreSQL raises when the query runs.
+         * Matching one here turns a 500 from the database into a 400 from the endpoint.
+         *
+         * <p>Catches a leading {@code *} or {@code +}, which would attach to the template's own
+         * {@code .*}, and any two adjacent quantifiers, which are invalid wherever they appear.
+         * Those are the only two shapes reachable: the grouping characters that could introduce
+         * other quantifier forms are already excluded by {@link #MIME_TYPE_PATTERN}.</p>
+         */
+        private static final Pattern ORPHANED_QUANTIFIER = Pattern.compile("^[*+]|[*+]{2}");
+
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
         private Set<String> workflowSchemeIds = new LinkedHashSet<>();
@@ -540,6 +552,10 @@ public class BrowserQuery {
                     // The rejected value is deliberately not echoed back to the caller or the log.
                     throw new IllegalArgumentException("Invalid MIME type filter at index " + i
                             + ". Allowed characters are letters, digits, space and ! # $ & ^ _ . + * / ; = ~ -");
+                }
+                if (ORPHANED_QUANTIFIER.matcher(mimeType).find()) {
+                    throw new IllegalArgumentException("Invalid MIME type filter at index " + i
+                            + ". '*' and '+' must follow the character they repeat, as in image/*");
                 }
             }
             this.mimeTypes = List.copyOf(mimeTypes);
