@@ -1,0 +1,13 @@
+{
+  "name": "@dotcms/release-scripts",
+  "private": true,
+  "description": "Release-pipeline support scripts. npm workspace root: one install, one lockfile.",
+  "workspaces": [
+    "shared",
+    "gather-release-data",
+    "release-qa-status"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present"
+  }
+}

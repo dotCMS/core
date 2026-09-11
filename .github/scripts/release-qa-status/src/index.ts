@@ -49,9 +49,8 @@ import {
   findPreviousTag,
   fetchCommitRange,
   resolvePRNumbers,
-  fetchPRDetails,
-  fetchIssueInfos,
-} from './github';
+} from '../../shared/github';
+import { fetchPRDetails, fetchIssueInfos } from './github';
 import { computePRQA } from './qa';
 import { renderMarkdown, renderSlack, renderText } from './format';
 

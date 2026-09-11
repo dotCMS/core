@@ -81,13 +81,15 @@ jobs:
         with:
           node-version: '22'
 
+      # npm workspace root — one install covers gather-release-data and the
+      # shared transport module it imports.
       - name: Install script dependencies
-        working-directory: .github/scripts/gather-release-data
+        working-directory: .github/scripts
         run: npm ci
 
-      - name: Build TypeScript
+      - name: Type-check
         working-directory: .github/scripts/gather-release-data
-        run: npx tsc
+        run: npx tsc --noEmit
 
       - name: Gather release data
         id: gather
@@ -102,7 +104,7 @@ jobs:
           else
             set --
           fi
-          if ! node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" "$@" \
+          if ! npx ts-node src/index.ts --repo "$REPO" --to-tag "$RELEASE_TAG" "$@" \
               > /tmp/release-data.json 2>/tmp/gather-stderr.log; then
             echo "::error::gather-release-data failed:"
             cat /tmp/gather-stderr.log
