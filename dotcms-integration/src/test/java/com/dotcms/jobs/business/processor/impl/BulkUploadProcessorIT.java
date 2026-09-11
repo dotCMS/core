@@ -939,20 +939,27 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: the bulk-upload processor
      * <p>
-     * Given scenario: A batch is run against a content type whose {@code NEW} system action is
-     * mapped to an action that <b>publishes</b>.
+     * Given scenario: A batch is run against a content type whose {@code NEW} system action an
+     * administrator has mapped to an action that <b>publishes</b>.
      * <p>
-     * Expected result: The files are still drafts.
+     * Expected result: The files are <b>published</b> — the run honours the mapping.
      * <p>
-     * <b>This is the case that made drafts non-deterministic.</b> Firing {@code SystemAction.NEW}
-     * only asks for whatever action the content type happens to map it to, and that differs per
-     * content type — on a real instance a dotAsset published while a fileAsset stayed working, from
-     * identical code. So the author's files were published or not according to a workflow mapping
-     * they cannot see and did not choose. The run now checks what it resolved and refuses to create
-     * a draft with an action that publishes.
+     * <b>This test used to assert the opposite, and that was the defect.</b> The processor
+     * resolved {@code NEW} and then discarded any action carrying a publish actionlet, falling
+     * back to a checkin with {@code DISABLE_WORKFLOW}. It made publish state deterministic and made
+     * this <b>the only upload surface in the product that overrides an administrator's workflow
+     * mapping</b>: the Content Search drop zone fires {@code PUBLISH} and honours what it resolves
+     * to, Content Drive's single upload fires {@code NEW} and does the same, and both run the
+     * content type's own actionlets. This one skipped them.
+     * <p>
+     * So the assertion is inverted rather than deleted: what needs guarding now is that a mapping
+     * is obeyed, which is the property the filter removed. The default outcome — drafts on a
+     * stock install — is covered by
+     * {@link #test_run_leavesEveryFileAsADraftRatherThanPublishingIt}, and comes from the seeded
+     * {@code NEW → Save} mapping rather than from anything this processor decides.
      */
     @Test
-    public void test_run_leavesFilesAsDraftsEvenWhenNewIsMappedToPublish() throws Exception {
+    public void test_run_honoursAPublishingMappingInsteadOfOverridingIt() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
         final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
 
@@ -962,16 +969,18 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
 
             final BulkUploadProcessor processor = new BulkUploadProcessor();
             processor.process(job);
-            final Map<String, Object> outcome = processor.getResultMetadata(job);
 
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
             assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
                     "the files still have to be created.\n" + describe(outcome));
 
             for (final Contentlet created :
                     APILocator.getFolderAPI().getWorkingContent(folder, admin(), false)) {
-                assertFalse(created.isLive(), String.format(
-                        "publish state must not depend on how NEW happens to be mapped; '%s' was "
-                                + "published because the mapping said so", created.getTitle()));
+                assertTrue(created.isLive(), String.format(
+                        "the administrator mapped NEW to a publishing action, so '%s' must be "
+                                + "published. Overriding that mapping is what made this endpoint "
+                                + "behave unlike every other upload surface",
+                        created.getTitle()));
             }
         } finally {
             restoreNewMapping(dotAsset);

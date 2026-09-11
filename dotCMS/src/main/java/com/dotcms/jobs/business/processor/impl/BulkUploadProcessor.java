@@ -50,11 +50,14 @@ import javax.enterprise.context.Dependent;
  * <p>
  * <b>Not marked {@code @NoRetryPolicy}, deliberately.</b> The abandoned-job sweep re-queues a
  * stalled run without consulting the retry policy, so marking this no-retry would not prevent a
- * second attempt — it would only leave that attempt unprepared for one. The run is resumable
- * instead: each item's outcome is committed as it completes, and a re-queued run skips what already
- * succeeded rather than recreating it. A re-run without that would not duplicate data — the unique
- * index on the lower-cased path rejects the second create — but it would make the report lie, which
- * is worse: the author is told 30 files failed when all 30 are in the folder.
+ * second attempt — it would only leave that attempt unprepared for one.
+ * <p>
+ * <b>A re-queued run starts over, and that is now the accepted behaviour (FR-036a).</b> The durable
+ * per-item checkpoint that used to let it skip what it had already created was removed, so an
+ * interrupted batch re-attempts every file. On {@code FILEASSET} the unique index on the
+ * lower-cased path still rejects the second create, so no duplicate exists and only the report is
+ * wrong — files this run created come back as collisions. On {@code DOTASSET} there is no such
+ * index (FR-040b), so the files are genuinely created twice.
  *
  * @author dotCMS
  */
@@ -255,59 +258,46 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
-            // Created as a DRAFT, and deterministically so.
+            // The content type's own NEW mapping decides what happens, and this does not
+            // second-guess it.
             //
-            // NEW rather than PUBLISH: the single-file endpoint checks an asset in as WORKING
-            // unless the caller explicitly asks for live (WebAssetHelper#checkinOrPublish), so
-            // firing PUBLISH made a batch publish content that the same file uploaded alone would
-            // have left as a draft — the opposite of the equivalence FR-006 requires, and a
-            // surprise with real consequences: it puts unreviewed files straight onto the live site.
+            // An earlier version resolved NEW and then FILTERED it — discarding any action that
+            // published, and falling back to a checkin with DISABLE_WORKFLOW so a mapping could
+            // not publish. That made publish state deterministic and made this **the only upload
+            // surface in the product that overrides an administrator's workflow mapping**: the
+            // Content Search drop zone fires PUBLISH and honours whatever it resolves to, Content
+            // Drive's single upload fires NEW and does the same, and both run the content type's
+            // actionlets. Ours skipped them. Removed.
             //
-            // But NEW alone is not enough, which is the part that had to be learned twice. What
-            // NEW resolves to is whatever action the CONTENT TYPE happens to map it to, and that
-            // differs per content type: on one instance a dotAsset published while a fileAsset
-            // stayed a draft, from this same code. So the mapping is consulted and then CHECKED —
-            // an action that publishes is not used to create a draft, whatever it is mapped to.
-            // Leaving that to configuration means the author's files are published or not
-            // depending on a workflow mapping they cannot see and did not choose.
+            // NEW rather than PUBLISH is the default because that is what Content Drive's own
+            // single-file upload sends, so one file and thirty behave the same way on the same
+            // screen. Whether the author should be able to CHOOSE the action — as Import Content
+            // already lets them for a CSV — is open; settling it would replace this constant.
+            //
+            // The hasSaveActionlet gate stays: it is the product's own test
+            // (SystemActionApiFireCommandFactory), and without a save actionlet firing the action
+            // would create nothing. fireContentWorkflow with no action logs, creates nothing and
+            // RETURNS NORMALLY, which once had every file recorded SUCCESS against an empty folder.
             final Optional<WorkflowAction> mapped = APILocator.getWorkflowAPI()
                     .findActionMappedBySystemActionContentlet(
-                            contentlet, WorkflowAPI.SystemAction.NEW, user);
+                            contentlet, WorkflowAPI.SystemAction.NEW, user)
+                    .filter(WorkflowAction::hasSaveActionlet);
 
-            final Optional<WorkflowAction> draftAction = mapped
-                    .filter(WorkflowAction::hasSaveActionlet)
-                    .filter(action -> !action.hasPublishActionlet());
-
-            if (draftAction.isEmpty()) {
-                // No mapped action both saves and leaves the content working. Fall back to the
-                // plain checkin, which is exactly what the single-file endpoint does for a draft —
-                // so the outcome the author sees is identical, which is the requirement. What is
-                // given up is the content type's own actionlets, and that is the right trade: a
-                // scheme with no draft-producing action has not asked for a draft path, and
-                // publishing against the author's intent is the worse failure.
+            if (mapped.isEmpty()) {
+                // No mapped action that saves — the same condition the product falls back on, and
+                // it falls back the same way. No DISABLE_WORKFLOW here: checkin looks NEW up again
+                // internally and will reach this same conclusion, so letting it is consistent
+                // rather than clever.
                 Logger.debug(this, String.format(
-                        "No NEW action leaves content working for [%s]; checking in directly",
-                        contentType.variable()));
+                        "No NEW action saves for [%s]; checking in directly", contentType.variable()));
 
-                // DISABLE_WORKFLOW is what makes this an actual fallback rather than a detour back
-                // to the same decision. checkin is NOT the plain save it reads as: it looks up the
-                // NEW system action itself (ESContentletAPIImpl:5779) and, if that action saves,
-                // fires the workflow instead of checking in — so without this flag the fallback
-                // re-enters the very mapping it exists to bypass, and a NEW mapped to Publish
-                // publishes the file anyway. The bug this whole branch was written to prevent,
-                // reintroduced by the escape hatch.
-                contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
-
-                final Contentlet checkedIn = APILocator.getContentletAPI()
-                        .checkin(contentlet, user, false);
-                recordCreated(job, seq, fileName, checkedIn, createdInodes);
+                recordCreated(job, seq, fileName,
+                        APILocator.getContentletAPI().checkin(contentlet, user, false),
+                        createdInodes);
                 return;
             }
 
-            // fireContentWorkflow with no action logs "should not have a null workflow action",
-            // creates nothing, and RETURNS NORMALLY — so a run that did no work reported every
-            // file as a success. The action is always resolved explicitly, never left null.
-            final WorkflowAction action = draftAction.get();
+            final WorkflowAction action = mapped.get();
 
             final Contentlet created = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                     new ContentletDependencies.Builder()

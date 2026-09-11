@@ -152,6 +152,27 @@ upload before is the expected shape of this, not a bug to report.
 
 ---
 
+### Publish state
+
+**Whatever the content type's `NEW` system action is mapped to** *(settled 2026-09-11)*. On a stock
+install that is the System Workflow's **Save** action, so files land as **drafts** — the same as
+Content Drive's single-file upload, which sends the same system action.
+
+It is **not** fixed by this endpoint, and deliberately so: an earlier version discarded any mapped
+action that published, which made the state predictable and made this the only upload surface in
+the product that overrode an administrator's workflow configuration — skipping their actionlets
+along with it. An operator who maps `NEW` to a publishing action gets published files here, exactly
+as they would anywhere else.
+
+**What a client can rely on**: the batch behaves like N single uploads through Content Drive. What
+it cannot rely on is a specific publish state, because that is the operator's to configure.
+
+> Whether the author should be able to **choose** the action — as Import Content already lets them
+> for a CSV, via `GET /api/v1/workflow/initialactions/contenttype/{id}` — is open. Settling it would
+> add a field here.
+
+---
+
 ## 2. Follow, cancel
 
 Existing job-framework endpoints. This feature adds none.
