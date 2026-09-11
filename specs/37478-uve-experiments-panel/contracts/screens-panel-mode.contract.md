@@ -20,7 +20,7 @@ Legend: **P** = portlet (`#panel === null`), **N** = panel (`#panel !== null`).
 | Site narrowing via `pageInfoByPageId[…].host` | yes | **bypassed** — not merely unfed | FR-029, SC-008 (see note) |
 | Analytics health gate before the first fetch | yes | **yes, identical** | FR-027, SC-005 |
 | `selectedPageId` | from `?pageId=`, clearable | the page in hand, structural | FR-006, D6 |
-| Layout | `p-table`, 7 sortable columns + kebab, `min-width: 81rem` | compact rows: name + status, goal · schedule subline, kebab on hover | FR-009, FR-041 |
+| Layout | `p-table`, 7 sortable columns + kebab, `min-width: 81rem` | compact flex rows: name (truncating) + status + goal + schedule on one line, kebab on hover. **Selected by the mode flag alone** — never by measured width, so the panel never renders the table even on a viewport wide enough to clear 81rem | FR-009, FR-041 |
 | Page column | shown | **absent** | FR-009 |
 | Breadcrumb (`syncBreadcrumbEffect`) | pushed | **not pushed** | FR-033, D8, SC-012 |
 | Row → Configure / Results | `router.navigate` | `panel.showConfigure(id)` / `panel.showResults(id)` — **phase 2/3**; until then `router.navigate` as today | FR-008, FR-013, FR-025g |
@@ -63,7 +63,7 @@ Legend: **P** = portlet (`#panel === null`), **N** = panel (`#panel !== null`).
 |---|---|---|---|
 | `experimentId` source | `route.paramMap` | `panel.experimentId()` | FR-025a |
 | `healthStatus` source | `dotAnalyticsHealthCheckResolver` on the route | supplied by the panel — already known from the list's gate | FR-027, SC-005 |
-| chart.js / `primeng/chart` load | with the route chunk | **only when results actually open**, via a nested `@defer` | FR-025f, FR-037 |
+| chart.js / `primeng/chart` load | with the route chunk | **only when results actually open**, via a nested `@defer` in the panel. `@defer` *is* available here, unlike at the shell→panel edge: results and the chart component live in this same lib, so the static import a `@defer` block needs is not a boundary crossing and `@nx/enforce-module-boundaries` never sees it | FR-025f, FR-037 |
 | Measurements shown | all | **all** — never fewer to fit the width | FR-025e |
 | Back | `router.navigate([EXPERIMENTS_URL], …)` | `panel.showConfigure(id)` when it came from configuration, else `panel.backToList()` | FR-025b |
 | Breadcrumb | pushed | **not pushed** | FR-033 |
@@ -79,7 +79,7 @@ Legend: **P** = portlet (`#panel === null`), **N** = panel (`#panel !== null`).
 | Flag read | `readExperimentsPortletSwitch` | **the same reader, unchanged** — never the batched `uveStore.flags()` | FR-005, D5 |
 | Toolbar badge (`DotEmaRunningExperimentComponent`) | `routerLink` to `/edit-page/experiments/{pageId}/{id}/reports` | emits; shell calls `panel.openResults(id)` | FR-025c, FR-025d, D14 |
 | Variant return (`handleInfoDisplayAction('variant')`) | `experimentReturn` → portlet, else flag → portlet/legacy | **new first branch**: suspended panel → `resumeFromVariant()`; the two existing branches untouched | FR-023, FR-046 |
-| Panel mount | — | `@defer (when panel.isOpen())` in the shell template, third grid track before the nav bar | FR-037, SC-006 |
+| Panel mount | — | the shell `import()`s the component on first open and `createComponent`s it into `#experimentsPanelHost`; it is a `p-drawer` with `appendTo="body"` over the canvas, **not** a grid track | FR-037, SC-006, SC-007 |
 
 ---
 

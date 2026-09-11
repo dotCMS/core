@@ -8,10 +8,7 @@
 .dot-ema-shell__body {
     display: grid;
     flex: 1 1 auto;
-    // Three tracks: the active route, the Experiments panel, the navigation bar (#37478).
-    // The panel's track collapses to nothing while it is closed, so this is the same layout
-    // it has always been until the editor asks for it.
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto;
     grid-template-rows: 100%;
     min-height: 0;
 
