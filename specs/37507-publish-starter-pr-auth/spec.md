@@ -33,15 +33,14 @@ are supplied. `actions/checkout` leaves one set of credentials configured on the
 pull-request action adds a second set, and git ends up transmitting **two** `Authorization` headers
 on the same request. GitHub rejects the request outright.
 
-> **Important correction to the original issue report.** Issue #37507 attributes the failure to the
-> Node.js 20 deprecation warning emitted by the pull-request action. Evidence from the failed run
-> (see Reproduction) shows this attribution is incorrect: the deprecation notice is a non-fatal
-> **warning**, and a second action in the very same job (`jfrog/setup-jfrog-cli@v4`) emitted the
-> identical warning and completed successfully. The Node.js notice and the failure are concurrent
-> but unrelated symptoms. Upgrading the pull-request action is still the correct remedy — but
-> because it resolves the credential conflict, not because it changes the Node.js runtime. This
-> distinction matters: a fix justified on the wrong grounds would be validated against the wrong
-> signal (absence of a warning) instead of the actual outcome (a pull request being created).
+> **On the Node.js 20 deprecation warning.** The same job emits a Node.js 20 deprecation notice
+> naming the pull-request action (see the issue description and Reproduction below). It is a
+> concurrent symptom rather than the cause: the notice is a non-fatal **warning**, and a second
+> action in the very same job (`jfrog/setup-jfrog-cli@v4`) emits the identical warning and
+> completes successfully. Upgrading the pull-request action clears both, but it unblocks the
+> workflow by resolving the credential conflict, not by changing the Node.js runtime. The
+> distinction drives verification: the fix must be validated against the actual outcome (a pull
+> request being created), not against the absence of a warning.
 
 **Severity / Impact**: Medium–High for release operations, zero for product runtime. Only the
 Empty Starter publication path is blocked; artifact deployment to Artifactory itself still
@@ -177,8 +176,8 @@ of that boundary, which is consistent with the timeline in Reproduction.
 Corollaries that follow from this being the cause rather than the Node.js runtime:
 
 - `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true` would **not** have fixed the failure. Forcing the
-  action back onto Node 20 leaves the credential conflict untouched. The issue is right to reject
-  that escape hatch, but for a different reason than it states.
+  action back onto Node 20 leaves the credential conflict untouched, so ruling that escape hatch
+  out — as the issue does — holds on these grounds too.
 - The credentials in `CI_MACHINE_TOKEN` are not implicated. The request never got far enough to be
   evaluated; it was rejected on header shape.
 
@@ -292,9 +291,9 @@ Corollaries that follow from this being the cause rather than the Node.js runtim
      non-production starter source, and confirm AC-001 through AC-004 and AC-006 from the job log
      and the resulting pull request.
   2. Run once more with `dry-run: true` to confirm AC-005.
-  3. Attach both run URLs to issue #37507 and to the implementation pull request, and record in the
+  3. Attach both run URLs to issue #37507 and to the implementation pull request, and state in the
      pull request description that the root cause was the duplicate `Authorization` header rather
-     than the Node.js runtime, so the correction to the original diagnosis is not lost.
+     than the Node.js runtime, so future readers do not re-derive it from the warning alone.
 
   [NEEDS CLARIFICATION: validating AC-001 requires `dry-run: false`, which performs a real
   Artifactory upload and opens a real pull request. Is there an accepted non-production route for
