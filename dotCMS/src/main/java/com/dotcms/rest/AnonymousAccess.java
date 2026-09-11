@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 public enum AnonymousAccess {
 
@@ -35,7 +36,16 @@ public enum AnonymousAccess {
    * @return
    */
   public static AnonymousAccess systemSetting() {
-    return from(Config.getStringProperty(CONTENT_APIS_ALLOW_ANONYMOUS,"READ"));
+    final AnonymousAccess setting = from(Config.getStringProperty(CONTENT_APIS_ALLOW_ANONYMOUS, "READ"));
+    if (setting == READ || setting == WRITE) {
+      Logger.warn(AnonymousAccess.class,
+          "SECURITY: CONTENT_APIS_ALLOW_ANONYMOUS=" + setting
+              + " — content API is accessible without authentication."
+              + " If this instance is deployed behind a CDN/WAF, ensure the origin server"
+              + " is network-restricted to trusted proxies only (e.g., CloudFront IP ranges)."
+              + " Set CONTENT_APIS_ALLOW_ANONYMOUS=NONE for fully private instances.");
+    }
+    return setting;
   }
   
   
