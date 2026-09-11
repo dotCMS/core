@@ -37,16 +37,20 @@ export function futureDate(days = 7): Date {
     return d;
 }
 
+/** Name of the environment these fixtures create when an instance has none. */
+const E2E_ENVIRONMENT_NAME = 'e2e-push-publish';
+
 /**
- * Resolves a push-publish environment id.
+ * Resolves a push-publish environment id, creating one if the instance has none.
  *
  * `POST /api/v1/publishing/push/{id}` rejects an empty `environments` list with a 400, so a real
- * environment is required. There is no v1 endpoint that lists them, so this goes through the
- * legacy `loadenvironments` action, which is keyed by the caller's role id. The first entry it
- * returns is a placeholder with an empty id — skip it.
+ * environment is required.
  *
- * Override with `E2E_PUSH_ENVIRONMENT_ID` when an instance has several and the test needs a
- * specific one.
+ * A clean instance - CI notably - has **no** environment configured, so this creates one rather
+ * than depending on state the fixture did not set up. It is left behind deliberately: the
+ * environment is shared, harmless, and re-found on later runs.
+ *
+ * Override with `E2E_PUSH_ENVIRONMENT_ID` when an instance has several and a specific one matters.
  */
 export async function resolveEnvironmentId(request: APIRequestContext): Promise<string> {
     const override = process.env['E2E_PUSH_ENVIRONMENT_ID'];
@@ -54,26 +58,58 @@ export async function resolveEnvironmentId(request: APIRequestContext): Promise<
         return override;
     }
 
+    const existing = await findEnvironmentId(request);
+    if (existing) {
+        return existing;
+    }
+
     const meResponse = await request.get('/api/v1/users/current', { headers: authHeaders() });
     expect(meResponse.status(), 'could not resolve current user').toBe(200);
     const { roleId } = await meResponse.json();
 
-    const envResponse = await request.get(`/api/environment/loadenvironments/roleId/${roleId}`, {
+    const created = await request.post('/api/environment', {
+        data: {
+            name: E2E_ENVIRONMENT_NAME,
+            pushMode: 'PUSH_TO_ALL',
+            whoCanSend: [roleId]
+        },
         headers: authHeaders()
     });
-    expect(envResponse.status(), 'could not list push-publish environments').toBe(200);
 
-    const environments: { id: string; name: string }[] = await envResponse.json();
-    const usable = environments.find((env) => env.id && env.id !== '0' && env.name);
-
-    if (!usable) {
-        throw new Error(
-            'No push-publish environment is configured on this instance. Create one under ' +
-                'Publishing → Push Publishing, or set E2E_PUSH_ENVIRONMENT_ID.'
-        );
+    if (created.ok()) {
+        return (await created.json()).entity.id;
     }
 
-    return usable.id;
+    // A parallel worker very likely won the race and created it first - the endpoint 400s on a
+    // duplicate name - so look again before giving up.
+    const afterRace = await findEnvironmentId(request);
+    if (afterRace) {
+        return afterRace;
+    }
+
+    throw new Error(
+        'Could not find or create a push-publish environment (create returned ' +
+            `${created.status()}: ${await created.text()})`
+    );
+}
+
+/**
+ * First environment on the instance, or null.
+ *
+ * Deliberately `GET /api/environment` (`findAllEnvironments` for an admin) rather than
+ * `/api/environment/loadenvironments/roleId/{id}`: the latter returns only environments that
+ * have an **endpoint** configured, so an environment this fixture just created would be invisible
+ * to it. That would work on a first run and then fail on every later one - create would 400 on the
+ * duplicate name and the re-find would come up empty.
+ */
+async function findEnvironmentId(request: APIRequestContext): Promise<string | null> {
+    const response = await request.get('/api/environment', { headers: authHeaders() });
+    expect(response.status(), 'could not list push-publish environments').toBe(200);
+
+    const environments: { id: string; name: string }[] = (await response.json()).entity ?? [];
+    const usable = environments.find((env) => env.id && env.name);
+
+    return usable ? usable.id : null;
 }
 
 /**
