@@ -1,13 +1,15 @@
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import '@analogjs/vitest-angular/setup-zone';
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
+
+import { provideZoneChangeDetection } from '@angular/core';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-setupZoneTestEnv({
-    errorOnUnknownElements: true,
-    errorOnUnknownProperties: true
-});
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
-// Polyfill structuredClone for Jest environment
+// Polyfill structuredClone (the DOM environment does not provide it)
 globalThis.structuredClone ??= <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
 const originalConsoleError = console.error;

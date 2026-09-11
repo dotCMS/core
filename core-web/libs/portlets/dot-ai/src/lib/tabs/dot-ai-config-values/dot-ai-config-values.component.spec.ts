@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAiResolvedConfig } from '@dotcms/dotcms-models';
@@ -21,9 +27,9 @@ describe('DotAiConfigValuesComponent', () => {
     let spectator: Spectator<DotAiConfigValuesComponent>;
 
     const storeMock = {
-        resolvedConfig: jest.fn().mockReturnValue(resolved()),
-        redactionFailed: jest.fn().mockReturnValue(false),
-        isConfigured: jest.fn().mockReturnValue(true)
+        resolvedConfig: vi.fn().mockReturnValue(resolved()),
+        redactionFailed: vi.fn().mockReturnValue(false),
+        isConfigured: vi.fn().mockReturnValue(true)
     };
 
     const createComponent = createComponentFactory({
@@ -34,7 +40,7 @@ describe('DotAiConfigValuesComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         storeMock.resolvedConfig.mockReturnValue(resolved());
         storeMock.redactionFailed.mockReturnValue(false);
         spectator = createComponent();

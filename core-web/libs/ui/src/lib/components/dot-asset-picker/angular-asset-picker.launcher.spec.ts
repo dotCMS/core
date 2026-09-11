@@ -1,4 +1,5 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -27,15 +28,15 @@ describe('AngularAssetPickerLauncher', () => {
         // Deliberately resolved from the injector and then *passed in*: the launcher must not reach
         // for a `DialogService` of its own — see the token's docs.
         dialogService = spectator.inject(DialogService);
-        ref = { onClose: jest.fn(), close: jest.fn() } as unknown as DynamicDialogRef;
-        (dialogService.open as jest.Mock).mockReturnValue(ref);
+        ref = { onClose: vi.fn(), close: vi.fn() } as unknown as DynamicDialogRef;
+        (dialogService.open as Mock).mockReturnValue(ref);
     });
 
     it('should open the new AssetPicker through the dialog service it is handed', () => {
         launcher.open(dialogService, { mode: 'image', site: SITE });
 
         expect(dialogService.open).toHaveBeenCalledTimes(1);
-        expect((dialogService.open as jest.Mock).mock.calls[0][0]).toBe(DotAssetPickerComponent);
+        expect((dialogService.open as Mock).mock.calls[0][0]).toBe(DotAssetPickerComponent);
     });
 
     it('should return the dialog ref so the caller keeps owning teardown', () => {
@@ -50,7 +51,7 @@ describe('AngularAssetPickerLauncher', () => {
             languageId: '2'
         });
 
-        const config = (dialogService.open as jest.Mock).mock.calls[0][1];
+        const config = (dialogService.open as Mock).mock.calls[0][1];
 
         expect(config.data).toEqual(
             expect.objectContaining({
@@ -65,7 +66,7 @@ describe('AngularAssetPickerLauncher', () => {
     it('should apply the picker dialog contract', () => {
         launcher.open(dialogService, { mode: 'image', site: SITE });
 
-        const config = (dialogService.open as jest.Mock).mock.calls[0][1];
+        const config = (dialogService.open as Mock).mock.calls[0][1];
 
         // The picker draws its own header; the flags belong to it, not to the caller.
         expect(config.showHeader).toBe(false);
@@ -75,6 +76,6 @@ describe('AngularAssetPickerLauncher', () => {
     it('should let the caller lift the dialog above a fullscreen shell', () => {
         launcher.open(dialogService, { mode: 'image', site: SITE }, { baseZIndex: 10050 });
 
-        expect((dialogService.open as jest.Mock).mock.calls[0][1].baseZIndex).toBe(10050);
+        expect((dialogService.open as Mock).mock.calls[0][1].baseZIndex).toBe(10050);
     });
 });

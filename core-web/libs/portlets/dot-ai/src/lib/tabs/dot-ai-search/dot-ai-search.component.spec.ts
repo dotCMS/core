@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -45,29 +51,29 @@ describe('DotAiSearchComponent', () => {
     let spectator: Spectator<DotAiSearchComponent>;
 
     const storeMock = {
-        searchPrompt: jest.fn().mockReturnValue(''),
-        searchResponse: jest.fn().mockReturnValue(null),
-        searchResults: jest.fn().mockReturnValue([]),
-        searchMissingIndex: jest.fn().mockReturnValue(null),
-        isSearching: jest.fn().mockReturnValue(false),
-        hasSearched: jest.fn().mockReturnValue(false),
-        isConfigured: jest.fn().mockReturnValue(true),
-        showNotConfigured: jest.fn().mockReturnValue(false),
-        setSearchPrompt: jest.fn(),
-        runSearch: jest.fn(),
+        searchPrompt: vi.fn().mockReturnValue(''),
+        searchResponse: vi.fn().mockReturnValue(null),
+        searchResults: vi.fn().mockReturnValue([]),
+        searchMissingIndex: vi.fn().mockReturnValue(null),
+        isSearching: vi.fn().mockReturnValue(false),
+        hasSearched: vi.fn().mockReturnValue(false),
+        isConfigured: vi.fn().mockReturnValue(true),
+        showNotConfigured: vi.fn().mockReturnValue(false),
+        setSearchPrompt: vi.fn(),
+        runSearch: vi.fn(),
         // Read by the settings panel, which is a real child of this component.
-        indexesForbidden: jest.fn().mockReturnValue(false),
-        indexOptions: jest.fn().mockReturnValue([]),
-        chatModels: jest.fn().mockReturnValue([]),
-        settingsIndexName: jest.fn().mockReturnValue('default'),
-        settingsThreshold: jest.fn().mockReturnValue(0.75),
-        settingsOperator: jest.fn().mockReturnValue('cosine'),
-        settingsModel: jest.fn().mockReturnValue(''),
-        settingsTemperature: jest.fn().mockReturnValue(0),
-        settingsResponseLength: jest.fn().mockReturnValue(1024),
-        settingsContentTypes: jest.fn().mockReturnValue(''),
-        settingsSite: jest.fn().mockReturnValue(null),
-        setSettings: jest.fn()
+        indexesForbidden: vi.fn().mockReturnValue(false),
+        indexOptions: vi.fn().mockReturnValue([]),
+        chatModels: vi.fn().mockReturnValue([]),
+        settingsIndexName: vi.fn().mockReturnValue('default'),
+        settingsThreshold: vi.fn().mockReturnValue(0.75),
+        settingsOperator: vi.fn().mockReturnValue('cosine'),
+        settingsModel: vi.fn().mockReturnValue(''),
+        settingsTemperature: vi.fn().mockReturnValue(0),
+        settingsResponseLength: vi.fn().mockReturnValue(1024),
+        settingsContentTypes: vi.fn().mockReturnValue(''),
+        settingsSite: vi.fn().mockReturnValue(null),
+        setSettings: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -86,7 +92,7 @@ describe('DotAiSearchComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         storeMock.searchPrompt.mockReturnValue('');
         storeMock.searchResponse.mockReturnValue(null);
         storeMock.searchResults.mockReturnValue([]);

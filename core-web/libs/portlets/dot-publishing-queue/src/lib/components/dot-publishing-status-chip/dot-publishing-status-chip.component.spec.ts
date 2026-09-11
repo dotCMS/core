@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';

@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, Component } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -10,28 +11,34 @@ import { DotTag } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-@Component({
-    selector: 'dot-site',
-    standalone: true,
-    template: '',
-    providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: MockDotSiteComponent, multi: true }]
-})
-class MockDotSiteComponent implements ControlValueAccessor {
-    writeValue(): void {
-        /* noop */
-    }
-    registerOnChange(): void {
-        /* noop */
-    }
-    registerOnTouched(): void {
-        /* noop */
-    }
-}
+// The stub is declared INSIDE the factory. `vi.mock` is hoisted above every import,
+// and the component under test pulls `DotSiteComponent` into its `imports: []` while
+// its module is evaluating — which is before any top-level statement of this spec has
+// run. A stub declared at file scope was therefore still in its temporal dead zone,
+// and the file died with "Cannot access 'MockDotSiteComponent' before initialization".
+vi.mock('@dotcms/ui', async () => {
+    const actual = await vi.importActual<typeof import('@dotcms/ui')>('@dotcms/ui');
 
-jest.mock('@dotcms/ui', () => ({
-    ...jest.requireActual('@dotcms/ui'),
-    DotSiteComponent: MockDotSiteComponent
-}));
+    @Component({
+        selector: 'dot-site',
+        standalone: true,
+        template: '',
+        providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: MockDotSiteComponent, multi: true }]
+    })
+    class MockDotSiteComponent implements ControlValueAccessor {
+        writeValue(): void {
+            /* noop */
+        }
+        registerOnChange(): void {
+            /* noop */
+        }
+        registerOnTouched(): void {
+            /* noop */
+        }
+    }
+
+    return { ...actual, DotSiteComponent: MockDotSiteComponent };
+});
 
 import { DotTagsCreateComponent } from './dot-tags-create.component';
 
@@ -46,7 +53,7 @@ const MOCK_TAG: DotTag = {
 describe('DotTagsCreateComponent', () => {
     describe('create mode', () => {
         let spectator: Spectator<DotTagsCreateComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotTagsCreateComponent,
@@ -101,7 +108,7 @@ describe('DotTagsCreateComponent', () => {
             component: DotTagsCreateComponent,
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
-                { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+                { provide: DynamicDialogRef, useValue: { close: vi.fn() } },
                 { provide: DynamicDialogConfig, useValue: { data: {} } },
                 {
                     provide: DotMessageService,
@@ -123,7 +130,7 @@ describe('DotTagsCreateComponent', () => {
 
     describe('edit mode', () => {
         let spectator: Spectator<DotTagsCreateComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotTagsCreateComponent,

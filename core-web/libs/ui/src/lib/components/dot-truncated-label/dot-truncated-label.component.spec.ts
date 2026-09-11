@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotTruncatedLabelComponent } from './dot-truncated-label.component';
 
@@ -27,7 +28,7 @@ describe('DotTruncatedLabelComponent', () => {
         // Change detection before the timers: the tooltip text is read from the rendered content
         // when the pointer arrives, and PrimeNG only reads it when the show delay elapses.
         spectator.detectChanges();
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
     };
 
     const tooltipText = (): string | null =>
@@ -71,11 +72,11 @@ describe('DotTruncatedLabelComponent', () => {
 
     describe('overflow tooltip', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
             document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
         });
 
@@ -100,7 +101,7 @@ describe('DotTruncatedLabelComponent', () => {
             hover(element);
 
             element.dispatchEvent(new MouseEvent('mouseleave'));
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
 
             expect(document.querySelector('.p-tooltip')).toBeNull();
         });

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
@@ -315,6 +316,31 @@ public class BrowserQuery {
         private boolean skipFolder = false;
         private boolean ignoreSiteForFolders = false;
         private String hostIdSystemFolder = null;
+        /**
+         * MIME types, the partial and wildcard forms the file browser sends, and the parameter
+         * forms that appear in stored metadata such as {@code text/plain; charset=iso-8859-1}.
+         *
+         * <p>Covers the RFC 6838 token characters plus {@code ;}, {@code =} and space for
+         * parameters. Deliberately excludes {@code "} and {@code \}, which are the only
+         * characters that could terminate or escape the quoted regex literal the value is placed
+         * inside, and the grouping characters {@code ( ) [ ] { } | ?}, which would allow a caller
+         * to build a pattern with catastrophic backtracking.</p>
+         */
+        private static final Pattern MIME_TYPE_PATTERN =
+                Pattern.compile("[A-Za-z0-9 !#$&^_.+*/;=~-]{1,255}");
+
+        /**
+         * The value is placed directly after {@code .*} inside the regex literal, so a quantifier
+         * with nothing to quantify is a syntax error that PostgreSQL raises when the query runs.
+         * Matching one here turns a 500 from the database into a 400 from the endpoint.
+         *
+         * <p>Catches a leading {@code *} or {@code +}, which would attach to the template's own
+         * {@code .*}, and any two adjacent quantifiers, which are invalid wherever they appear.
+         * Those are the only two shapes reachable: the grouping characters that could introduce
+         * other quantifier forms are already excluded by {@link #MIME_TYPE_PATTERN}.</p>
+         */
+        private static final Pattern ORPHANED_QUANTIFIER = Pattern.compile("^[*+]|[*+]{2}");
+
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
         private Set<String> workflowSchemeIds = new LinkedHashSet<>();
@@ -493,8 +519,46 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder showMimeTypes(@Nonnull List<String> mimeTypes) {
-            this.mimeTypes = mimeTypes;
+        /**
+         * Sets browser MIME filters: bare types such as {@code application/pdf}, partial types
+         * such as {@code image}, wildcard forms such as {@code image/*}, and parameter forms such
+         * as {@code text/plain; charset=iso-8859-1}. The parameter form matters because that is
+         * how Tika reports text files and how the value is stored in asset metadata, so a caller
+         * that reads {@code metadata.contentType} and feeds it back as a filter keeps working.
+         *
+         * <p>Each filter must be 1–255 characters drawn from {@link #MIME_TYPE_PATTERN}. This is a
+         * restricted browser filter syntax rather than a general MIME parser: a quoted parameter
+         * value such as {@code charset="utf-8"} is not accepted, since dotCMS does not produce
+         * one. Existing regex matching semantics are preserved.</p>
+         *
+         * <p>Validation is defence in depth. What prevents SQL injection is that the JSONPath
+         * expression is bound as a parameter rather than placed into the statement text, so this
+         * pattern is kept as permissive as the surrounding quoting safely allows.</p>
+         *
+         * <p>A {@code null} list means "no MIME type filter" and is normalised to an empty list.
+         * Callers such as {@code BrowserAjax} pass null on their default path, and the query
+         * builder already treats null and empty identically.</p>
+         *
+         * @throws IllegalArgumentException if any value is null or outside the filter syntax
+         */
+        public Builder showMimeTypes(final List<String> mimeTypes) {
+            if (mimeTypes == null) {
+                this.mimeTypes = List.of();
+                return this;
+            }
+            for (int i = 0; i < mimeTypes.size(); i++) {
+                final String mimeType = mimeTypes.get(i);
+                if (mimeType == null || !MIME_TYPE_PATTERN.matcher(mimeType).matches()) {
+                    // The rejected value is deliberately not echoed back to the caller or the log.
+                    throw new IllegalArgumentException("Invalid MIME type filter at index " + i
+                            + ". Allowed characters are letters, digits, space and ! # $ & ^ _ . + * / ; = ~ -");
+                }
+                if (ORPHANED_QUANTIFIER.matcher(mimeType).find()) {
+                    throw new IllegalArgumentException("Invalid MIME type filter at index " + i
+                            + ". '*' and '+' must follow the character they repeat, as in image/*");
+                }
+            }
+            this.mimeTypes = List.copyOf(mimeTypes);
             return this;
         }
 

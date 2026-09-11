@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -29,6 +30,7 @@ import {
     DotCMSContentlet,
     DotCMSWorkflowStatus
 } from '@dotcms/dotcms-models';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
 
 import { DotEditContentStore } from './edit-content.store';
 
@@ -43,13 +45,13 @@ describe('DotEditContentStore', () => {
     // drive `initialize()` (route params in prod are the host's concern, not the
     // store's).
     const mockHost = {
-        resolveIdentity: jest.fn().mockReturnValue({}),
-        reportSaved: jest.fn(),
-        reloadContent: jest.fn(),
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        resolveIdentity: vi.fn().mockReturnValue({}),
+        reportSaved: vi.fn(),
+        reloadContent: vi.fn(),
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const createService = createServiceFactory({
@@ -63,19 +65,26 @@ describe('DotEditContentStore', () => {
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(MessageService),
             mockProvider(DotMessageService),
-            mockProvider(DotContentletService),
-            mockProvider(DotLanguagesService),
-            mockProvider(DotCurrentUserService),
+            // These three are piped from the store's own onInit effects — canLock() by
+            // withLock, get() by withLocales, getCurrentUser() by withUser. A bare
+            // mockProvider returns undefined and the feature dereferences it; rxjs
+            // reports that asynchronously, so Jest dropped it while Vitest counts one
+            // unhandled error per test. Tests that assert on these set their own value.
+            mockProvider(DotContentletService, {
+                canLock: () => of({ canLock: false, locked: false, inode: 'inode' })
+            }),
+            mockProvider(DotLanguagesService, { get: () => of([]) }),
+            mockProvider(DotCurrentUserService, { getCurrentUser: () => of(null) }),
             mockProvider(DialogService),
             mockProvider(DotVersionableService),
             mockProvider(ConfirmationService),
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             { provide: EDIT_CONTENT_HOST, useValue: mockHost },
             provideHttpClient(),
             provideHttpClientTesting()

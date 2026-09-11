@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -65,12 +66,12 @@ const createMockStore = () => ({
         identifier: SITE_ROOT.data.id,
         hostname: SITE_ROOT.data.hostname
     }),
-    selectNode: jest.fn(),
-    expandNode: jest.fn(),
-    loadMore: jest.fn(),
-    setFolderSearch: jest.fn(),
-    selectSearchResult: jest.fn(),
-    setBrowsingSite: jest.fn()
+    selectNode: vi.fn(),
+    expandNode: vi.fn(),
+    loadMore: vi.fn(),
+    setFolderSearch: vi.fn(),
+    selectSearchResult: vi.fn(),
+    setBrowsingSite: vi.fn()
 });
 
 describe('DotAssetPickerSidebarComponent', () => {
@@ -326,7 +327,7 @@ describe('DotAssetPickerSidebarComponent', () => {
         it('should reveal the wording the root row displays, not the hostname (#37363)', () => {
             // FR-012: this row is the reason the tooltip reads its text from what was rendered.
             // `node.label` still carries `demo.dotcms.com`, but the row says "All".
-            jest.useFakeTimers();
+            vi.useFakeTimers();
 
             const clip = spectator.queryAll(byTestId('tree-node-label-clip'))[0] as HTMLElement;
             Object.defineProperty(clip, 'offsetWidth', { value: 10, configurable: true });
@@ -334,7 +335,7 @@ describe('DotAssetPickerSidebarComponent', () => {
 
             clip.dispatchEvent(new MouseEvent('mouseenter'));
             spectator.detectChanges();
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
 
             const text = document.querySelector('.p-tooltip-text')?.textContent?.trim();
 
@@ -342,7 +343,7 @@ describe('DotAssetPickerSidebarComponent', () => {
             expect(text).not.toBe('demo.dotcms.com');
 
             document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 

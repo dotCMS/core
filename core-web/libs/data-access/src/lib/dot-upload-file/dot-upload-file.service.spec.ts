@@ -1,4 +1,9 @@
-import { createHttpFactory, mockProvider, SpectatorHttp, SpyObject } from '@openng/spectator/jest';
+import {
+    createHttpFactory,
+    mockProvider,
+    SpectatorHttp,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 
 import { DotUploadFileService } from './dot-upload-file.service';

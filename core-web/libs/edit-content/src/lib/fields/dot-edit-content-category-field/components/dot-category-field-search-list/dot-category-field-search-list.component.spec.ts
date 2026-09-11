@@ -1,5 +1,6 @@
 import { createFakeEvent } from '@openng/spectator';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Table, TableModule } from 'primeng/table';
 
@@ -13,7 +14,7 @@ import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-conte
 import { CATEGORY_MOCK_TRANSFORMED } from '../../mocks/category-field.mocks';
 
 const mockMessageService = {
-    get: jest.fn((key: string) => `${key}`)
+    get: vi.fn((key: string) => `${key}`)
 };
 
 describe('DotCategoryFieldSearchListComponent', () => {
@@ -90,14 +91,14 @@ describe('DotCategoryFieldSearchListComponent', () => {
     });
 
     it('should emit $itemChecked event when an item is selected', async () => {
-        const itemCheckedSpy = jest.spyOn(spectator.component.itemChecked, 'emit');
+        const itemCheckedSpy = vi.spyOn(spectator.component.itemChecked, 'emit');
         spectator.detectChanges();
         spectator.triggerEventHandler(Table, 'onRowSelect', { data: CATEGORY_MOCK_TRANSFORMED[0] });
         expect(itemCheckedSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED[0]);
     });
 
     it('should emit $removeItem event when an item is unselected', () => {
-        const removeItemSpy = jest.spyOn(spectator.component.removeItem, 'emit');
+        const removeItemSpy = vi.spyOn(spectator.component.removeItem, 'emit');
         spectator.detectChanges();
         spectator.triggerEventHandler(Table, 'onRowUnselect', {
             data: CATEGORY_MOCK_TRANSFORMED[0]
@@ -106,7 +107,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
     });
 
     it('should emit $itemChecked event with all items when header checkbox is selected', () => {
-        const itemCheckedSpy = jest.spyOn(spectator.component.itemChecked, 'emit');
+        const itemCheckedSpy = vi.spyOn(spectator.component.itemChecked, 'emit');
 
         spectator.detectChanges();
         spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
@@ -118,7 +119,7 @@ describe('DotCategoryFieldSearchListComponent', () => {
     });
 
     it('should emit $removeItem event with all keys when header checkbox is unselected', () => {
-        const removeItemSpy = jest.spyOn(spectator.component.removeItem, 'emit');
+        const removeItemSpy = vi.spyOn(spectator.component.removeItem, 'emit');
         spectator.detectChanges();
         spectator.triggerEventHandler(Table, 'onHeaderCheckboxToggle', {
             originalEvent: createFakeEvent('click'),

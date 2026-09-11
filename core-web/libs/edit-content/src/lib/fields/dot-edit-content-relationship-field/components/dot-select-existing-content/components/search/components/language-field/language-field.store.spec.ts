@@ -1,5 +1,6 @@
-import { SpyObject, mockProvider } from '@openng/spectator/jest';
+import { SpyObject, mockProvider } from '@openng/spectator/vitest';
 import { Observable, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
@@ -20,7 +21,7 @@ describe('LanguageFieldStore', () => {
             providers: [
                 LanguageFieldStore,
                 mockProvider(DotLanguagesService, {
-                    get: jest.fn().mockReturnValue(of(mockLocales))
+                    get: vi.fn().mockReturnValue(of(mockLocales))
                 })
             ]
         });

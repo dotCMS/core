@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@openng/spectator/jest';
+import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -170,13 +171,13 @@ describe('MainLegacyComponent', () => {
                     provide: DotPropertiesService,
                     useValue: {
                         getKeys: () => of(createFeatureFlagResponse()),
-                        getFeatureFlag: jest.fn().mockReturnValue(of(true))
+                        getFeatureFlag: vi.fn().mockReturnValue(of(true))
                     }
                 },
                 {
                     provide: LOCATION_TOKEN,
                     useValue: {
-                        reload: jest.fn()
+                        reload: vi.fn()
                     }
                 }
             ],
@@ -224,7 +225,7 @@ describe('MainLegacyComponent', () => {
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
-            jest.spyOn(dotCustomEventHandlerService, 'handle');
+            vi.spyOn(dotCustomEventHandlerService, 'handle');
             const mockEvent = {
                 detail: {
                     name: 'create-contentlet',

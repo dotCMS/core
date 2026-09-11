@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { signal, WritableSignal } from '@angular/core';
 
@@ -49,7 +50,7 @@ const CONTENT_TYPE: DotCMSContentType = {
 } as DotCMSContentType;
 
 /** The surface, as the menu sees it: one facade for filter values, one host for the chips. */
-type FilterFacadeMock = jest.Mocked<Pick<DotFilterFacade, 'getFilterValue'>>;
+type FilterFacadeMock = Mocked<Pick<DotFilterFacade, 'getFilterValue'>>;
 type FieldFilterHostMock = Omit<DotFieldFilterHost, '$activeFields' | '$fields'> & {
     $activeFields: WritableSignal<string[]>;
     $fields: WritableSignal<DotCMSContentTypeField[]>;
@@ -58,7 +59,7 @@ type FieldFilterHostMock = Omit<DotFieldFilterHost, '$activeFields' | '$fields'>
 describe('DotFieldFilterMenuComponent', () => {
     let spectator: Spectator<DotFieldFilterMenuComponent>;
     let filters: FilterFacadeMock;
-    let host: jest.Mocked<FieldFilterHostMock>;
+    let host: Mocked<FieldFilterHostMock>;
     let contentTypeService: SpyObject<DotContentTypeService>;
 
     const createComponent = createComponentFactory({
@@ -67,7 +68,7 @@ describe('DotFieldFilterMenuComponent', () => {
             {
                 provide: DOT_FILTER_FACADE,
                 useFactory: (): FilterFacadeMock => ({
-                    getFilterValue: jest.fn().mockReturnValue(undefined)
+                    getFilterValue: vi.fn().mockReturnValue(undefined)
                 })
             },
             {
@@ -75,9 +76,9 @@ describe('DotFieldFilterMenuComponent', () => {
                 useFactory: (): FieldFilterHostMock => ({
                     $activeFields: signal<string[]>([]),
                     $fields: signal<DotCMSContentTypeField[]>([]),
-                    addField: jest.fn(),
-                    setFields: jest.fn(),
-                    clearFields: jest.fn()
+                    addField: vi.fn(),
+                    setFields: vi.fn(),
+                    clearFields: vi.fn()
                 })
             },
             {
@@ -87,7 +88,7 @@ describe('DotFieldFilterMenuComponent', () => {
         ],
         componentProviders: [
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE))
+                getContentType: vi.fn().mockReturnValue(of(CONTENT_TYPE))
             })
         ],
         detectChanges: false
@@ -96,11 +97,11 @@ describe('DotFieldFilterMenuComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         filters = spectator.inject(DOT_FILTER_FACADE) as FilterFacadeMock;
-        host = spectator.inject(DOT_FIELD_FILTER_HOST) as jest.Mocked<FieldFilterHostMock>;
+        host = spectator.inject(DOT_FIELD_FILTER_HOST) as unknown as Mocked<FieldFilterHostMock>;
         contentTypeService = spectator.inject(DotContentTypeService, true);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     const moreButton = () =>
         spectator.query(byTestId('field-filter-more-button'))?.querySelector('button');
@@ -197,7 +198,7 @@ describe('DotFieldFilterMenuComponent', () => {
         });
 
         it('should report the failure through its output rather than handling it', () => {
-            const reported = jest.fn();
+            const reported = vi.fn();
             spectator.output('error').subscribe(reported);
 
             spectator.detectChanges();

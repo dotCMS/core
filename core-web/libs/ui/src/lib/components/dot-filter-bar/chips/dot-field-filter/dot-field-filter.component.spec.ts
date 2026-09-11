@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import {
     DotCategoriesService,
@@ -34,15 +35,15 @@ const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTy
     }) as DotCMSContentTypeField;
 
 /** The chip reaches its surface only through the facade, so the whole surface is these two mocks. */
-const filterFacade = (): jest.Mocked<Pick<DotFilterFacade, 'getFilterValue' | 'patchFilters'>> => ({
-    getFilterValue: jest.fn().mockReturnValue(undefined),
-    patchFilters: jest.fn()
+const filterFacade = (): Mocked<Pick<DotFilterFacade, 'getFilterValue' | 'patchFilters'>> => ({
+    getFilterValue: vi.fn().mockReturnValue(undefined),
+    patchFilters: vi.fn()
 });
 
 describe('DotFieldFilterComponent', () => {
     let spectator: Spectator<DotFieldFilterComponent>;
     let store: ReturnType<typeof filterFacade>;
-    let relationshipPicker: jest.Mocked<DotRelationshipPicker>;
+    let relationshipPicker: Mocked<DotRelationshipPicker>;
     let contentletService: SpyObject<DotContentletService>;
     let categoriesService: SpyObject<DotCategoriesService>;
 
@@ -51,17 +52,17 @@ describe('DotFieldFilterComponent', () => {
         providers: [
             { provide: DOT_FILTER_FACADE, useFactory: filterFacade },
             mockProvider(DotTagsService, {
-                getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [{ label: 'angular' }] }))
+                getTagsPaginated: vi.fn().mockReturnValue(of({ entity: [{ label: 'angular' }] }))
             }),
             mockProvider(DotCategoriesService, {
-                getChildrenPaginated: jest
+                getChildrenPaginated: vi
                     .fn()
                     .mockReturnValue(of({ entity: [{ categoryName: 'News', inode: 'i1' }] })),
-                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getCategory: jest.fn().mockReturnValue(of({ inode: 'i1', categoryName: 'News' }))
+                getCategoriesPaginated: vi.fn().mockReturnValue(of({ entity: [] })),
+                getCategory: vi.fn().mockReturnValue(of({ inode: 'i1', categoryName: 'News' }))
             }),
             mockProvider(DotContentletService, {
-                getContentletByInode: jest
+                getContentletByInode: vi
                     .fn()
                     .mockReturnValue(of({ identifier: 'id-1', inode: 'inode-1', title: 'First' }))
             }),
@@ -75,7 +76,7 @@ describe('DotFieldFilterComponent', () => {
             }
         ],
         componentProviders: [
-            { provide: DOT_RELATIONSHIP_PICKER, useFactory: () => ({ open: jest.fn() }) }
+            { provide: DOT_RELATIONSHIP_PICKER, useFactory: () => ({ open: vi.fn() }) }
         ],
         detectChanges: false
     });
@@ -88,12 +89,12 @@ describe('DotFieldFilterComponent', () => {
         relationshipPicker = spectator.inject(
             DOT_RELATIONSHIP_PICKER,
             true
-        ) as jest.Mocked<DotRelationshipPicker>;
+        ) as Mocked<DotRelationshipPicker>;
         contentletService = spectator.inject(DotContentletService, true);
         categoriesService = spectator.inject(DotCategoriesService, true);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     /** Opens the chip popover by clicking the chip (any field-filter chip). */
     const openPopover = () => {
@@ -208,8 +209,8 @@ describe('DotFieldFilterComponent', () => {
         });
 
         describe('debounce', () => {
-            beforeEach(() => jest.useFakeTimers());
-            afterEach(() => jest.useRealTimers());
+            beforeEach(() => vi.useFakeTimers());
+            afterEach(() => vi.useRealTimers());
 
             it('should patch the filter with the typed value (debounced)', () => {
                 spectator.setInput('field', field({ variable: 'body', fieldType: 'Text' }));
@@ -218,7 +219,7 @@ describe('DotFieldFilterComponent', () => {
 
                 const input = spectator.query(byTestId('field-filter-text'), { root: true });
                 spectator.typeInElement('hello', input as HTMLInputElement);
-                jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+                vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
                 expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'hello' });
             });
@@ -226,8 +227,8 @@ describe('DotFieldFilterComponent', () => {
     });
 
     describe('key-value', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should render the input and the shorthand hint', () => {
             spectator.setInput('field', field({ variable: 'meta', fieldType: 'Key-Value' }));
@@ -249,7 +250,7 @@ describe('DotFieldFilterComponent', () => {
 
             const input = spectator.query(byTestId('field-filter-key-value'), { root: true });
             spectator.typeInElement('color:red', input as HTMLInputElement);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // The chip/URL keep the user's text; the `:`→`_` join is applied downstream.
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.meta': 'color:red' });
@@ -318,15 +319,15 @@ describe('DotFieldFilterComponent', () => {
         });
 
         it('should clear the value (keep the chip) when the chip is removed', () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             spectator.setInput('field', field({ variable: 'body' }));
             spectator.detectChanges();
 
             spectator.triggerEventHandler('dot-chip-filter', 'removed', undefined);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 
@@ -426,7 +427,7 @@ describe('DotFieldFilterComponent', () => {
         });
 
         it('should store the selected contentlet identifiers on close', () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             const onClose = new Subject<DotCMSContentlet[]>();
             relationshipPicker.open.mockReturnValue(onClose);
             spectator.setInput('field', relationshipField());
@@ -436,16 +437,16 @@ describe('DotFieldFilterComponent', () => {
             onClose.next([
                 { identifier: 'id-1', inode: 'inode-1', title: 'First' } as DotCMSContentlet
             ]);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.author': 'id-1' });
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
     });
 
     describe('time range interaction', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         // Local Dates + toLocalIsoString keep the assertions timezone-independent (the component
         // serializes with the same helper the test computes the expected value with).
@@ -466,7 +467,7 @@ describe('DotFieldFilterComponent', () => {
 
             // Still inverted: from 17:00 is after the new to 08:00.
             emitOnControl('field-filter-time-to', 'ngModelChange', new Date(2024, 0, 1, 8, 0, 0));
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).not.toHaveBeenCalled();
         });
@@ -476,7 +477,7 @@ describe('DotFieldFilterComponent', () => {
 
             const correctedTo = new Date(2024, 0, 1, 18, 0, 0);
             emitOnControl('field-filter-time-to', 'ngModelChange', correctedTo);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({
@@ -493,7 +494,7 @@ describe('DotFieldFilterComponent', () => {
             const to = new Date(2024, 0, 1, 17, 0, 0);
             emitOnControl('field-filter-time-from', 'ngModelChange', from);
             emitOnControl('field-filter-time-to', 'ngModelChange', to);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({
@@ -503,8 +504,8 @@ describe('DotFieldFilterComponent', () => {
     });
 
     describe('date-and-time interaction', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         // Existing bounds so the merge (date-part vs time-part) is deterministic.
         const seededFrom = new Date(2024, 0, 10, 8, 0, 0);
@@ -526,7 +527,7 @@ describe('DotFieldFilterComponent', () => {
                 new Date(2024, 2, 5),
                 new Date(2024, 2, 25)
             ]);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // Dates change to Mar 5 / Mar 25, but the seeded times (08:00 / 18:00) are kept.
             const expectedFrom = new Date(2024, 2, 5, 8, 0, 0);
@@ -545,7 +546,7 @@ describe('DotFieldFilterComponent', () => {
                 'ngModelChange',
                 new Date(2024, 5, 15, 10, 30, 0)
             );
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // Time changes to 10:30, the seeded from date (Jan 10) is kept; to bound unchanged.
             const expectedFrom = new Date(2024, 0, 10, 10, 30, 0);
@@ -562,7 +563,7 @@ describe('DotFieldFilterComponent', () => {
                 'ngModelChange',
                 new Date(2024, 5, 15, 20, 45, 0)
             );
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             const expectedTo = new Date(2024, 0, 20, 20, 45, 0);
             expect(store.patchFilters).toHaveBeenCalledWith({
@@ -599,8 +600,8 @@ describe('DotFieldFilterComponent', () => {
     });
 
     describe('debounce coalescing', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should patch once with the final value for rapid changes within the window', () => {
             spectator.setInput('field', field({ variable: 'body', fieldType: 'Text' }));
@@ -610,7 +611,7 @@ describe('DotFieldFilterComponent', () => {
             emitOnControl('field-filter-text', 'ngModelChange', 'a');
             emitOnControl('field-filter-text', 'ngModelChange', 'ab');
             emitOnControl('field-filter-text', 'ngModelChange', 'abc');
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'abc' });
@@ -618,8 +619,8 @@ describe('DotFieldFilterComponent', () => {
     });
 
     describe('date range (plain)', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         const openDateField = () => {
             spectator.setInput('field', field({ variable: 'body', fieldType: 'Date' }));
@@ -633,7 +634,7 @@ describe('DotFieldFilterComponent', () => {
             const from = new Date(2024, 0, 1);
             const to = new Date(2024, 0, 31);
             emitOnControl('field-filter-date', 'ngModelChange', [from, to]);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({
                 'us.body': `${toLocalIsoString(from)},${toLocalIsoString(to)}`
@@ -644,15 +645,15 @@ describe('DotFieldFilterComponent', () => {
             openDateField();
 
             emitOnControl('field-filter-date', 'ngModelChange', null);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
         });
     });
 
     describe('single- and multi-value selection', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should patch the selected value for a Select field', () => {
             spectator.setInput(
@@ -663,7 +664,7 @@ describe('DotFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-select', 'ngModelChange', 'a');
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'a' });
         });
@@ -677,7 +678,7 @@ describe('DotFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-select', 'ngModelChange', null);
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
         });
@@ -691,7 +692,7 @@ describe('DotFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-radio', 'ngModelChange', 'b');
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'b' });
         });
@@ -733,7 +734,7 @@ describe('DotFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-radio', 'ngModelChange', 'true');
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // `true`, not `1`: the backend coerces a BOOL field's value on save, so the indexed value
             // is a real boolean (verified against a running instance).
@@ -750,15 +751,15 @@ describe('DotFieldFilterComponent', () => {
 
             emitOnControl('field-filter-multi-select', 'ngModelChange', ['a', 'b']);
             emitOnControl('field-filter-multi-select', 'onChange', {});
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'a,b' });
         });
     });
 
     describe('lazy selection (Tag / Category)', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should patch the serialized values emitted by the lazy multi-select', () => {
             spectator.setInput('field', field({ variable: 'body', fieldType: 'Tag' }));
@@ -774,7 +775,7 @@ describe('DotFieldFilterComponent', () => {
                 ],
                 { root: true }
             );
-            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
+            vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'angular,nx' });
         });

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
 
 import { createPage } from './page-create';
@@ -130,7 +132,7 @@ describe('createPage', () => {
         const contentTypes = handlers.contentTypes ?? [HTMLPAGE_ASSET];
         const sites = handlers.sites ?? [DEMO_SITE];
         const calls: Array<{ method?: string; path: string; body?: unknown; query?: unknown }> = [];
-        const request = jest.fn(async (options: RequestOptions) => {
+        const request = vi.fn(async (options: RequestOptions) => {
             calls.push({
                 method: options.method,
                 path: options.path,
@@ -155,7 +157,7 @@ describe('createPage', () => {
             }
             return {};
         });
-        const loadContext = jest.fn(async () => ({
+        const loadContext = vi.fn(async () => ({
             contentTypes: contentTypes.map((c) => ({
                 id: c.id,
                 name: c.variable,

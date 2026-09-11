@@ -842,12 +842,19 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE = "DELETE FROM publishing_queue WHERE asset = ? AND language_id = ?";
 
+	/**
+	 * Bundle-scoped delete. The {@code bundle_id} predicate is what keeps the same asset queued in
+	 * other bundles intact - see issue #36861.
+	 */
+	private static final String DELETE_ELEMENT_FROM_BUNDLE_QUEUE = "DELETE FROM publishing_queue WHERE asset = ? AND bundle_id = ?";
+
 	@Override
 	public void deleteElementFromPublishQueueTable(final String identifier) throws DotPublisherException{
 		deleteElementFromPublishQueueTable(identifier, 0);
 	}
 
 	@Override
+	@Deprecated(since = "Sep 10th, 26", forRemoval = true)
 	public void deleteElementFromPublishQueueTableAndAuditStatus(final String identifier) throws DotPublisherException{
 		final List<PublishQueueElement> queueElements = getQueueElementsByAsset(identifier);
 		String bundleId = Try.of(()->queueElements.get(0).getBundleId()).getOrNull();
@@ -858,6 +865,41 @@ public class PublisherAPIImpl extends PublisherAPI{
 				.getQueueElementsByBundleId(bundleId)).getOrElse(Collections::emptyList);
 
 		if(queueElementsAfterDelete.isEmpty()) {
+			APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
+		}
+	}
+
+	@WrapInTransaction
+	@Override
+	public void deleteElementFromPublishQueueTableAndAuditStatus(final String identifier,
+			final String bundleId) throws DotPublisherException {
+
+		if (!UtilMethods.isSet(bundleId)) {
+			// Never fall back to the bundle-agnostic DELETE: that would clear the asset from every
+			// bundle holding it, which is the behaviour this overload exists to prevent.
+			throw new IllegalArgumentException(
+					"A bundle id is required to delete asset " + identifier + " from a single bundle");
+		}
+
+		try {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL(DELETE_ELEMENT_FROM_BUNDLE_QUEUE);
+			dc.addParam(identifier);
+			dc.addParam(bundleId);
+			dc.loadResult();
+		} catch (final Exception e) {
+			Logger.error(PublisherUtil.class, e.getMessage(), e);
+			throw new DotPublisherException("Unable to delete element " + identifier
+					+ " from bundle " + bundleId + " :" + e.getMessage(), e);
+		}
+
+		// Deliberately NOT wrapped in Try: an empty result and a failed lookup are not the same
+		// thing, and treating them alike would delete the audit status of a bundle that still has
+		// queued assets. bundleId is validated above, so there is nothing benign left to swallow -
+		// let the exception propagate and @WrapInTransaction roll the delete back with it.
+		final List<PublishQueueElement> remaining = getQueueElementsByBundleId(bundleId);
+
+		if (remaining.isEmpty()) {
 			APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
 		}
 	}

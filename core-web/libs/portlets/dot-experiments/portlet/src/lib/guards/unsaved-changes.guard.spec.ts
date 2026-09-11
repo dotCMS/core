@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import { TestBed } from '@angular/core/testing';
 import { RouterStateSnapshot } from '@angular/router';
 
@@ -35,7 +37,7 @@ const CONFIGURATION_URL = `/dotAdmin/#/experiments/${EXPERIMENT_ID}/configuratio
  * navigation would only obscure that.
  */
 describe('experimentsUnsavedChangesGuard', () => {
-    let confirm: jest.Mock;
+    let confirm: Mock;
     let component: DotExperimentsConfigureComponent;
     let from = stateOf(CONFIGURATION_URL);
     let to = stateOf(LIST_URL);
@@ -50,7 +52,7 @@ describe('experimentsUnsavedChangesGuard', () => {
         );
 
     beforeEach(() => {
-        confirm = jest.fn();
+        confirm = vi.fn();
         from = stateOf(CONFIGURATION_URL);
         to = stateOf(LIST_URL);
         TestBed.configureTestingModule({

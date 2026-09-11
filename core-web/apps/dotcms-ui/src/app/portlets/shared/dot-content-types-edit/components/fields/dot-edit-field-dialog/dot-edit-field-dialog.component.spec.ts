@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import { Component, input, output, Renderer2 } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -48,7 +50,7 @@ class TestContentTypeFieldsPropertiesFormComponent {
 
     form = new FormGroup({});
 
-    saveFieldProperties = jest.fn();
+    saveFieldProperties = vi.fn();
 
     public destroy(): void {
         return;
@@ -146,7 +148,7 @@ const BLOCK_EDITOR_FIELD_TYPE = {
 };
 
 function setup(data: Partial<DotEditFieldDialogData>) {
-    const refMock = { close: jest.fn() };
+    const refMock = { close: vi.fn() };
 
     TestBed.configureTestingModule({
         declarations: [DotEditFieldDialogComponent],
@@ -185,15 +187,15 @@ describe('DotEditFieldDialogComponent', () => {
         // Mock matchMedia for PrimeNG components
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -201,7 +203,7 @@ describe('DotEditFieldDialogComponent', () => {
     describe('create (field without id)', () => {
         let fixture: ComponentFixture<DotEditFieldDialogComponent>;
         let comp: DotEditFieldDialogComponent;
-        let refMock: { close: jest.Mock };
+        let refMock: { close: Mock };
 
         beforeEach(waitForAsync(() => {
             ({ fixture, comp, refMock } = setup({
@@ -278,7 +280,7 @@ describe('DotEditFieldDialogComponent', () => {
     describe('edit (field with id)', () => {
         let fixture: ComponentFixture<DotEditFieldDialogComponent>;
         let comp: DotEditFieldDialogComponent;
-        let refMock: { close: jest.Mock };
+        let refMock: { close: Mock };
 
         beforeEach(waitForAsync(() => {
             ({ fixture, comp, refMock } = setup({
@@ -346,7 +348,7 @@ describe('DotEditFieldDialogComponent', () => {
             comp.setDialogOkButtonState(true);
 
             // The Settings tab swaps the Save button (and its action) with its own control.
-            const settingsAction = jest.fn();
+            const settingsAction = vi.fn();
             comp.handleTabChange(comp.SETTINGS_TAB_INDEX);
             comp.changesDialogActions({
                 accept: { label: 'Settings Save', action: settingsAction, disabled: false },
@@ -370,7 +372,7 @@ describe('DotEditFieldDialogComponent', () => {
         });
 
         it('should take its Save from the variables tab, and give it back on leaving', () => {
-            const variablesAction = jest.fn();
+            const variablesAction = vi.fn();
             const variables = fixture.debugElement.query(
                 By.css('dot-content-type-fields-variables')
             );
@@ -419,7 +421,7 @@ describe('DotEditFieldDialogComponent', () => {
     describe('WYSIWYG field (convert to block)', () => {
         let fixture: ComponentFixture<DotEditFieldDialogComponent>;
         let comp: DotEditFieldDialogComponent;
-        let refMock: { close: jest.Mock };
+        let refMock: { close: Mock };
 
         beforeEach(waitForAsync(() => {
             ({ fixture, comp, refMock } = setup({
@@ -459,8 +461,8 @@ describe('DotEditFieldDialogComponent', () => {
 
         it('should scroll the convert-to-block section into view via scrollTo', () => {
             const rendered = fixture.debugElement.injector.get(Renderer2);
-            const scrollIntoViewSpy = jest.fn();
-            jest.spyOn(rendered, 'selectRootElement').mockReturnValue({
+            const scrollIntoViewSpy = vi.fn();
+            vi.spyOn(rendered, 'selectRootElement').mockReturnValue({
                 scrollIntoView: scrollIntoViewSpy
             });
 
