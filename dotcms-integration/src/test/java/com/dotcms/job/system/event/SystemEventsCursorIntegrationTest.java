@@ -3,8 +3,12 @@ package com.dotcms.job.system.event;
 import com.dotcms.api.system.event.SystemEventsCursor;
 import com.dotcms.api.system.event.SystemEventsCursorAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
+import com.dotcms.util.Delegate;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UUIDGenerator;
 import org.junit.BeforeClass;
@@ -167,5 +171,62 @@ public class SystemEventsCursorIntegrationTest {
         new DotConnect().setSQL("DELETE FROM system_event_cursor WHERE server_id = ?")
                 .addParam(serverId).loadResult();
         DbConnectionFactory.commit();
+    }
+
+    /**
+     * Method to test: {@link SystemEventsJob#execute(org.quartz.JobExecutionContext)} when the queue
+     * read fails
+     * Given Scenario: A poll whose delegate throws — the shape of a database outage, where every
+     * {@code getEventsSince} call fails for as long as it lasts
+     * Expected Result: The cursor is left exactly as it was, so the next poll retries the same range.
+     *
+     * <p>This is the invariant the Job's own comment claims ("Only reached when every delegate
+     * completed") and it did not hold: the Job calls {@code delegate.execute(...)}, and
+     * {@code AbstractJobDelegate.execute} catches every exception and only logs it, so control always
+     * reached {@code cursorAPI.save(...)}. A ten-minute outage therefore advanced the cursor ten
+     * minutes with nothing delivered, permanently stranding every event in that span — the exact loss
+     * class this fix exists to remove.
+     *
+     * <p>Covered at the Job level on purpose: the delegate's own test asserts only that
+     * {@code executeDelegate} throws, and the tracker's unit test exercises pure arithmetic. Neither
+     * sees the swallow in between.
+     */
+    @Test
+    public void test_cursor_is_not_advanced_when_the_read_fails() throws Exception {
+        final String serverId = APILocator.getServerAPI().readServerId();
+        final Optional<SystemEventsCursor> original = cursorAPI.findByServerId(serverId);
+        final long seeded = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5);
+
+        try {
+            cursorAPI.save(serverId, seeded);
+
+            final SystemEventsJob job = new SystemEventsJob() {
+                @Override
+                protected List<Delegate<JobDelegateDataBean>> getDelegates() {
+                    final Delegate<JobDelegateDataBean> alwaysFails = new AbstractJobDelegate() {
+                        @Override
+                        protected void executeDelegate(final JobDelegateDataBean data)
+                                throws DotDataException {
+                            throw new DotDataException("simulated read failure");
+                        }
+                    };
+                    return List.of(alwaysFails);
+                }
+            };
+
+            job.execute(null);
+
+            assertEquals("A failed read must leave the cursor untouched so the next poll retries "
+                            + "the same range", seeded,
+                    cursorAPI.findByServerId(serverId).get().getLastEventDate());
+        } finally {
+            if (original.isPresent()) {
+                cursorAPI.save(serverId, original.get().getLastEventDate());
+            } else {
+                new DotConnect().setSQL("DELETE FROM system_event_cursor WHERE server_id = ?")
+                        .addParam(serverId).loadResult();
+                DbConnectionFactory.commit();
+            }
+        }
     }
 }

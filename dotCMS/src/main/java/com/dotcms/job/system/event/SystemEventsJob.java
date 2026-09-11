@@ -112,7 +112,8 @@ public class SystemEventsJob implements Runnable, Job {
 			}
 
 			for (final Delegate<JobDelegateDataBean> delegate : delegateList) {
-				delegate.execute(new JobDelegateDataBean(jobContext, window.getReadFloor(), tracker));
+				runPropagatingFailures(delegate,
+						new JobDelegateDataBean(jobContext, window.getReadFloor(), tracker));
 			}
 
 			// Only reached when every delegate completed. A failed read must leave the cursor alone so
@@ -124,6 +125,28 @@ public class SystemEventsJob implements Runnable, Job {
 			Logger.error(this, "Error processing system events for server [" + serverId
 					+ "]; the delivery cursor was NOT advanced and this range will be retried: "
 					+ e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Runs a delegate so that a failure reaches this Job rather than being swallowed.
+	 *
+	 * <p>{@link AbstractJobDelegate#execute(JobDelegateDataBean)} catches every exception and only
+	 * logs it, so calling it here meant a failed read still fell through to
+	 * {@code cursorAPI.save(...)} and advanced the cursor over events that were never delivered. A
+	 * ten-minute database outage advanced the cursor ten minutes and stranded everything in that span
+	 * — the loss class this Job exists to prevent.
+	 *
+	 * <p>A delegate that is not an {@link AbstractJobDelegate} keeps its own contract; only the
+	 * abstract base offers a propagating entry point.
+	 */
+	private void runPropagatingFailures(final Delegate<JobDelegateDataBean> delegate,
+			final JobDelegateDataBean data) throws Exception {
+
+		if (delegate instanceof AbstractJobDelegate) {
+			((AbstractJobDelegate) delegate).executeOrThrow(data);
+		} else {
+			delegate.execute(data);
 		}
 	}
 

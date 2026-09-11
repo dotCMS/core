@@ -39,6 +39,27 @@ public abstract class AbstractJobDelegate implements Delegate<JobDelegateDataBea
 	}
 
 	/**
+	 * Runs the delegate and lets a failure propagate, instead of logging and swallowing it as
+	 * {@link #execute(JobDelegateDataBean)} does.
+	 *
+	 * <p>Callers that record progress after a delegate runs need this: with {@code execute} the
+	 * caller cannot tell a successful run from a failed one, so it commits progress over work that
+	 * never happened. {@code SystemEventsJob} persists its delivery cursor after the delegates run,
+	 * and used {@code execute}, so a failing read still advanced the cursor and permanently stranded
+	 * every event in the skipped span (issue #36827).
+	 *
+	 * <p>{@code execute} keeps its swallowing behaviour for the jobs that rely on it — a failed run
+	 * there has nothing to corrupt.
+	 *
+	 * @param data the bean containing the information the delegate needs
+	 * @throws Exception whatever the delegate threw
+	 */
+	@CloseDBIfOpened
+	public void executeOrThrow(final JobDelegateDataBean data) throws Exception {
+		executeDelegate(data);
+	}
+
+	/**
 	 * The main entry point to the execution of this delegate class.
 	 * 
 	 * @param data
