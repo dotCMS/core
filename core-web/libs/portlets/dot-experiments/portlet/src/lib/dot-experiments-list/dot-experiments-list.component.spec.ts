@@ -23,6 +23,7 @@ import {
     GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -35,7 +36,10 @@ import {
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    LIST_TABLE_STYLE,
+    PANEL_LIST_TABLE_STYLE,
     ROWS_PER_PAGE_OPTIONS,
+    SKELETON_COLUMNS,
     SEARCH_DEBOUNCE_MS
 } from '../shared/constants';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
@@ -172,6 +176,12 @@ describe('DotExperimentsListComponent', () => {
         lastBreadcrumb: Mock;
     };
     let storeMock: ReturnType<typeof createStoreMock>;
+    /**
+     * Panel mode is the *presence* of this store, so it is provided either way and holds `null`
+     * for the portlet — exactly the `#panel === null` the contract tests. A per-test provider
+     * override cannot be used: TestBed is already instantiated by the time a test runs.
+     */
+    let panelStore: { pageId: Mock; languageId: Mock } | null;
     let dispatch: MockInstance;
     let confirm: MockInstance;
     let navigate: MockInstance;
@@ -182,6 +192,7 @@ describe('DotExperimentsListComponent', () => {
         // `ConfirmationService` has to be re-declared here (`p-confirmDialog` needs it).
         componentProviders: [
             { provide: DotExperimentsListStore, useFactory: () => storeMock },
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
             ConfirmationService
         ],
         providers: [
@@ -259,6 +270,7 @@ describe('DotExperimentsListComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         globalStore = {
             addNewBreadcrumb: vi.fn(),
             setLastBreadcrumb: vi.fn(),
@@ -1360,6 +1372,219 @@ describe('DotExperimentsListComponent', () => {
 
             // Skeletons, not "no experiments" — the answer is not in yet.
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+    });
+    /**
+     * T023/T023a — the list rendered inside the UVE panel (#37478).
+     *
+     * Panel mode is the presence of `DotExperimentsPanelStore` and nothing else. The screen is the
+     * same one the portlet renders (FR-040): what changes is the layout and the two things the
+     * panel has no business doing — narrowing by a page it already is, and writing a breadcrumb
+     * for a screen the editor never navigated to.
+     */
+    describe('panel mode (#37478)', () => {
+        /** Re-creates the component with the panel store present; the branch is chosen at
+         * injection time, not from an input, so it cannot be flipped on a live component. */
+        const createInPanel = () => {
+            panelStore = {
+                pageId: vi.fn().mockReturnValue(PAGE_ID),
+                languageId: vi.fn().mockReturnValue(1)
+            };
+
+            return createComponent({ detectChanges: false });
+        };
+
+        /** Renders one row in the panel. */
+        const renderPanelRow = (status = DotExperimentStatus.DRAFT): DotExperiment => {
+            const experiment = experimentWith(status);
+            storeMock.pagedExperiments.mockReturnValue([experiment]);
+            storeMock.totalRecords.mockReturnValue(1);
+            spectator = createInPanel();
+            spectator.detectChanges();
+
+            return experiment;
+        };
+
+        describe('layout', () => {
+            /**
+             * FR-040, D7, SC-015. The panel renders the portlet's table, not a second list built
+             * beside it: same `p-table`, same rows, same paginator, sorting and lazy load. What
+             * differs is the column set and the width floor that follows from it — a presentation,
+             * which is all D7 allows to vary.
+             */
+            it('should render the same table the portlet does', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                expect(spectator.queryAll(byTestId('experiment-row'))).toHaveLength(1);
+            });
+
+            /** FR-009. The panel *is* the page, so a column repeating it on every row is noise. */
+            it('should not render the page column', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                expect(spectator.query(byTestId('experiment-name'))).not.toBeNull();
+            });
+
+            /**
+             * The floor has to follow the column set. `81rem` is what the portlet's seven data
+             * columns need; leaving it here would scroll the panel horizontally for a column it no
+             * longer renders.
+             */
+            it('should drop the portlet width floor with the column', () => {
+                renderPanelRow();
+
+                expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
+                expect(spectator.component.TABLE_STYLE['min-width']).not.toBe(
+                    LIST_TABLE_STYLE['min-width']
+                );
+            });
+
+            /** A skeleton wider than its header puts a cell outside the table while it loads. */
+            it('should match the skeleton row to the column set', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.component.SKELETON_COLUMNS).toHaveLength(
+                    SKELETON_COLUMNS.length - 1
+                );
+            });
+
+            /**
+             * T023a / FR-041 — the assertion that makes the column set a decision rather than a
+             * coincidence.
+             *
+             * `PANEL_WIDTH` is a proportion of the viewport, so the panel is wider on a large
+             * monitor than on a laptop. Nothing about what it renders may follow from that: the
+             * same build has to drop the same column at 1024px and at 2560px. Asserted from both
+             * sides of the portlet's own 81rem boundary, so a width query cannot pass.
+             */
+            it.each([
+                { label: 'far below the 81rem floor', innerWidth: 1024 },
+                { label: 'far above the 81rem floor', innerWidth: 2560 }
+            ])('should render the same columns at a viewport $label', ({ innerWidth }) => {
+                const original = window.innerWidth;
+                Object.defineProperty(window, 'innerWidth', {
+                    value: innerWidth,
+                    configurable: true
+                });
+
+                try {
+                    renderPanelRow();
+
+                    expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                    expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                    expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
+                } finally {
+                    Object.defineProperty(window, 'innerWidth', {
+                        value: original,
+                        configurable: true
+                    });
+                }
+            });
+
+            it('should keep the page column and the portlet floor in portlet mode (FR-042)', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('experiment-page'))).not.toBeNull();
+                expect(spectator.component.TABLE_STYLE).toEqual(LIST_TABLE_STYLE);
+            });
+        });
+
+        /**
+         * FR-026–FR-029 and SC-008. Four different answers, and the one that matters is that none
+         * of them is allowed to look like "this page has no experiments" — the misreport that would
+         * quietly tell an editor their work is not there.
+         */
+        describe('the four states stay distinguishable', () => {
+            it('should show skeletons, not the empty state, while loading', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-loading-row'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should report a failed load with a retry, not as an empty page', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.ERROR);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-error'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should report a misconfigured analytics app on its own', () => {
+                storeMock.isMisconfigured.mockReturnValue(true);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-misconfiguration'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should show the empty state only when the page really has none', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADED);
+                storeMock.pagedExperiments.mockReturnValue([]);
+                storeMock.totalRecords.mockReturnValue(0);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-empty-state'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-error'))).toBeNull();
+            });
+        });
+
+        /**
+         * FR-033, D8, SC-012. A breadcrumb is a record of where the editor navigated, and opening
+         * the panel is not navigation — the editor never left the page. Pushing one here would put
+         * "Experiments" on the trail of a page the editor is still standing on.
+         */
+        describe('breadcrumbs', () => {
+            it('should push no crumb in panel mode', () => {
+                renderPanelRow();
+
+                expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+            });
+
+            it('should still push one in portlet mode', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * FR-011, D9. Both dialogs are opened by the row, not by the route, so they work in the
+         * panel — where no resolver has run and no route data exists. Worth asserting because the
+         * cheap way to reach an experiment's identifier is through the route, and that way would
+         * pass in the portlet and fail silently here.
+         */
+        describe('row actions that do not need a route', () => {
+            it('should open push publish from a panel row', () => {
+                const experiment = renderPanelRow();
+                const pushPublishDialogService = spectator.inject(
+                    DotPushPublishDialogService,
+                    true
+                );
+
+                runMenuItem(MENU_ITEM.pushPublish);
+
+                expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetIdentifier: experiment.id })
+                );
+            });
+
+            it('should open add to bundle from a panel row', () => {
+                const experiment = renderPanelRow();
+
+                runMenuItem(MENU_ITEM.addToBundle);
+
+                expect(spectator.component.$addToBundleAssetId()).toBe(experiment.id);
+            });
         });
     });
 });

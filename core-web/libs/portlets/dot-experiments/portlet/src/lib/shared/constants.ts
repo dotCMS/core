@@ -108,6 +108,12 @@ export const SKELETON_ROWS: ExperimentRow[] = Array.from(
 /** One skeleton cell per table column. */
 export const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);
 
+/**
+ * The same skeleton row inside the panel, which renders one column fewer — Page is dropped there
+ * (FR-009). A skeleton wider than its header puts a cell outside the table while it loads.
+ */
+export const PANEL_SKELETON_COLUMNS = SKELETON_COLUMNS.slice(1);
+
 /** Placeholder rendered in the Goal column when no goal is configured. */
 export const NO_GOAL_PLACEHOLDER = '—';
 
@@ -129,6 +135,23 @@ export const LIST_TABLE_STYLE: Record<string, string> = {
     'min-width': '81rem'
 };
 
+/**
+ * The same table, inside the Experiments panel (#37478).
+ *
+ * One number differs, and it is not a style choice. `81rem` is what the seven data columns need at
+ * their declared widths; the panel drops the Page column (FR-009, `w-56` = 14rem) and gives the
+ * space back to the name, so the floor moves with it: 53rem of fixed columns (67 − 14) plus an
+ * 11rem floor for Name. Keep both numbers in step with the header widths.
+ *
+ * This is a scroll threshold, not a layout switch: which layout renders is decided by the mode
+ * flag alone, never by measured width (FR-041). Below this the panel scrolls horizontally exactly
+ * as the portlet does below `81rem`, which on an 80% panel means a viewport under about 1280px.
+ */
+export const PANEL_LIST_TABLE_STYLE: Record<string, string> = {
+    'table-layout': 'fixed',
+    'min-width': '64rem'
+};
+
 /** Height of the status filter's option list before it scrolls. */
 export const LISTBOX_SCROLL_HEIGHT = '320px';
 
@@ -146,6 +169,27 @@ export const CONFIGURATION_SEGMENT = 'configuration';
 
 /** Hides a `p-panel`'s footer band while its footer slot has nothing to show (see the theme). */
 export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
+
+/**
+ * Width of the Experiments panel inside the editor (#37478).
+ *
+ * Percentual, and most of the viewport. The editor's own right-hand sidebar width was the
+ * starting point only because it was the width the template had; nothing the panel shows reads at
+ * that width — not a row carrying a name, a status, a goal and a schedule, and least of all the
+ * configuration form and the results charts reached from it. Width spent here costs nothing that
+ * was usable: the drawer's mask already covers the canvas while the panel is open. The page stays
+ * mounted and unnavigated behind it, which is what SC-001 and FR-036 ask for.
+ */
+export const PANEL_WIDTH = '80%';
+
+/**
+ * Width of the Experiments panel once the editor widens it (#37478).
+ *
+ * The expand toggle exists for parity with the Edit Content side panel. From a panel that is
+ * already most of the viewport it buys the rest of it — the reading mode for the results charts
+ * that O1 has yet to settle.
+ */
+export const PANEL_EXPANDED_WIDTH = '100%';
 /** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
 export const RESULTS_SEGMENT = 'results';
 
