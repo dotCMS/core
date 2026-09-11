@@ -155,11 +155,11 @@ Representative selection, not exhaustive — new apps/libs get added independent
 
 ### Backend Naming
 ```java
-// New features (preferred) — service/API at the feature package root,
-// domain/model classes nested under a .domain sub-package
-// (real example: com.dotcms.content.index.SearchAPI + com.dotcms.content.index.domain.ContentSearchResults)
-com.dotcms.myfeature.MyFeatureService
-com.dotcms.myfeature.domain.MyFeatureEntity
+// New features (preferred) — service/API in a .business sub-package,
+// domain/model classes in a .model sub-package, both under the feature package
+// (real example: com.dotcms.contenttype.business.ContentTypeAPI + com.dotcms.contenttype.model.type.ContentType)
+com.dotcms.myfeature.business.MyFeatureService
+com.dotcms.myfeature.model.MyFeatureEntity
 
 // Legacy (maintain compatibility)
 com.dotmarketing.business.FeatureAPI
@@ -182,8 +182,8 @@ libs/dotcms-models/src/lib/feature/feature.model.ts
 
 ### Finding Backend Code
 - **REST endpoints**: Look in `com.dotcms.rest.*` first, but ~10% of resource classes are co-located under their own feature package's `.rest` sub-package instead (e.g. `com.dotcms.ai.rest.*`, `com.dotcms.telemetry.rest.*`, `com.dotcms.auth.dotAuth.rest.*`) — if it's not under `com.dotcms.rest`, check the feature's own package for a `.rest` sub-package
-- **Business logic**: Check `com.dotcms.business.*` then `com.dotmarketing.business.*`
-- **Data models**: Search `com.dotcms.*.model.*` and `com.dotmarketing.beans.*`
+- **Business logic**: Most features keep their service/API classes in their own `.business` sub-package (e.g. `com.dotcms.contenttype.business.*`, `com.dotcms.experiments.business.*` — 14 packages follow this), separate from the top-level `com.dotcms.business.*` package (core cross-cutting business logic) and legacy `com.dotmarketing.business.*`
+- **Data models**: Search `com.dotcms.*.model.*` (the dominant convention — 13 packages) and `com.dotmarketing.beans.*`
 - **Configuration**: Check `com.dotcms.config.*`
 
 ### Finding Frontend Code
