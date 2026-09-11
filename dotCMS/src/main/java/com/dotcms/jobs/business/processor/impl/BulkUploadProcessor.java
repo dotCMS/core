@@ -258,42 +258,45 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
-            // The content type's own NEW mapping decides what happens, and this does not
-            // second-guess it.
+            // PUBLISH, and the content type's own mapping decides how.
             //
-            // An earlier version resolved NEW and then FILTERED it — discarding any action that
-            // published, and falling back to a checkin with DISABLE_WORKFLOW so a mapping could
-            // not publish. That made publish state deterministic and made this **the only upload
-            // surface in the product that overrides an administrator's workflow mapping**: the
-            // Content Search drop zone fires PUBLISH and honours whatever it resolves to, Content
-            // Drive's single upload fires NEW and does the same, and both run the content type's
-            // actionlets. Ours skipped them. Removed.
+            // The system action is PUBLISH because an author who drops thirty images expects
+            // thirty images, not thirty drafts to go and publish by hand. It matches the Content
+            // Search drop zone, which has fired PUBLISH per file for years. Content Drive's own
+            // single-file upload sends NEW and lands drafts, so one file and a batch do differ on
+            // that screen — a knowing divergence, settled 2026-09-11 rather than inherited.
             //
-            // NEW rather than PUBLISH is the default because that is what Content Drive's own
-            // single-file upload sends, so one file and thirty behave the same way on the same
-            // screen. Whether the author should be able to CHOOSE the action — as Import Content
-            // already lets them for a CSV — is open; settling it would replace this constant.
+            // What this does NOT do is second-guess the mapping. An earlier version resolved the
+            // action and then discarded any that published, which made this the only upload
+            // surface in the product overriding an administrator's configuration and skipping
+            // their actionlets with it.
             //
-            // The hasSaveActionlet gate stays: it is the product's own test
-            // (SystemActionApiFireCommandFactory), and without a save actionlet firing the action
-            // would create nothing. fireContentWorkflow with no action logs, creates nothing and
-            // RETURNS NORMALLY, which once had every file recorded SUCCESS against an empty folder.
+            // The gate is the product's own for PUBLISH on new content
+            // (SystemActionApiFireCommandFactory#hasPublishValid with needSave): the mapped action
+            // has to BOTH save and publish, because one without the other cannot do the whole job
+            // from a contentlet that does not exist yet. And fireContentWorkflow with no resolved
+            // action logs, creates nothing and RETURNS NORMALLY — which once had every file
+            // recorded SUCCESS against an empty folder.
             final Optional<WorkflowAction> mapped = APILocator.getWorkflowAPI()
                     .findActionMappedBySystemActionContentlet(
-                            contentlet, WorkflowAPI.SystemAction.NEW, user)
-                    .filter(WorkflowAction::hasSaveActionlet);
+                            contentlet, WorkflowAPI.SystemAction.PUBLISH, user)
+                    .filter(action -> action.hasSaveActionlet() && action.hasPublishActionlet());
 
             if (mapped.isEmpty()) {
-                // No mapped action that saves — the same condition the product falls back on, and
-                // it falls back the same way. No DISABLE_WORKFLOW here: checkin looks NEW up again
-                // internally and will reach this same conclusion, so letting it is consistent
-                // rather than clever.
+                // No single mapped action does both, so the two steps are taken separately — which
+                // is exactly what the product falls back to
+                // (PublishSystemActionApiFireCommandImpl#firePublishWithSave). Without this the
+                // file would be checked in and left as a draft, silently ignoring the PUBLISH the
+                // caller asked for.
                 Logger.debug(this, String.format(
-                        "No NEW action saves for [%s]; checking in directly", contentType.variable()));
+                        "No PUBLISH action both saves and publishes for [%s]; checking in and "
+                                + "publishing separately", contentType.variable()));
 
-                recordCreated(job, seq, fileName,
-                        APILocator.getContentletAPI().checkin(contentlet, user, false),
-                        createdInodes);
+                final Contentlet checkedIn =
+                        APILocator.getContentletAPI().checkin(contentlet, user, false);
+                APILocator.getContentletAPI().publish(checkedIn, user, false);
+
+                recordCreated(job, seq, fileName, checkedIn, createdInodes);
                 return;
             }
 

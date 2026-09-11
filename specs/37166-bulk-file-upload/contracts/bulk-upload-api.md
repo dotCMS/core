@@ -154,22 +154,17 @@ upload before is the expected shape of this, not a bug to report.
 
 ### Publish state
 
-**Whatever the content type's `NEW` system action is mapped to** *(settled 2026-09-11)*. On a stock
-install that is the System Workflow's **Save** action, so files land as **drafts** — the same as
-Content Drive's single-file upload, which sends the same system action.
+**Files land published** *(settled 2026-09-11, FR-006a)*. The run fires the `PUBLISH` system action
+and honours whatever the content type maps it to; where no single mapped action both saves and
+publishes, it checks in and publishes as two steps, exactly as the product does elsewhere.
 
-It is **not** fixed by this endpoint, and deliberately so: an earlier version discarded any mapped
-action that published, which made the state predictable and made this the only upload surface in
-the product that overrode an administrator's workflow configuration — skipping their actionlets
-along with it. An operator who maps `NEW` to a publishing action gets published files here, exactly
-as they would anywhere else.
+**This differs from Content Drive's single-file upload on purpose.** That one sends `NEW` and leaves
+a draft. So the same screen behaves differently for one file and for a batch — accepted, because an
+author who drops thirty images expects thirty images rather than thirty drafts to publish by hand.
+It matches the Content Search drop zone, which has fired `PUBLISH` per file for years.
 
-**What a client can rely on**: the batch behaves like N single uploads through Content Drive. What
-it cannot rely on is a specific publish state, because that is the operator's to configure.
-
-> Whether the author should be able to **choose** the action — as Import Content already lets them
-> for a CSV, via `GET /api/v1/workflow/initialactions/contenttype/{id}` — is open. Settling it would
-> add a field here.
+**What a client can rely on**: a finished batch's files are live. **What it cannot**: choosing the
+workflow action — nothing in the submission selects one, and that was considered and settled against.
 
 ---
 

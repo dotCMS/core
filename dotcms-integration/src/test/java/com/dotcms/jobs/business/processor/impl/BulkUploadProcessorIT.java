@@ -843,24 +843,22 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: the bulk-upload processor
      * <p>
-     * Given scenario: A batch of valid files is run.
+     * Given scenario: A batch of valid files is run on a stock install.
      * <p>
-     * Expected result: Every file is left as a <b>draft</b> — working, not live.
+     * Expected result: Every file is <b>published</b> (FR-006a).
      * <p>
-     * <b>This needs its own test because the obvious assertion does not catch it.</b> Publishing a
-     * contentlet leaves a working version behind as well, so
-     * {@code getWorkingContent(...).size() == n} passes whether the run published or not. Only
-     * asking each contentlet whether it is live tells the two apart, which is why an earlier
-     * version of this feature fired PUBLISH for weeks with a green suite.
+     * <b>The assertion has to ask whether the contentlet is live.</b> Publishing leaves a working
+     * version behind as well, so counting {@code getWorkingContent} passes whether the run
+     * published or not — which is how an earlier version of this feature fired the wrong action for
+     * weeks with a green suite.
      * <p>
-     * <b>Why draft is the right answer</b> (FR-006): the single-file endpoint checks an asset in as
-     * working unless the caller explicitly asks for live. A batch that published would mean the
-     * same file put an author's unreviewed content on the live site when uploaded with others and
-     * not when uploaded alone — an equivalence failure whose consequence is publishing something
-     * nobody approved.
+     * This is a <b>knowing divergence from Content Drive's single-file upload</b>, which sends
+     * {@code NEW} and lands drafts. It matches the Content Search drop zone, which has fired
+     * PUBLISH per file for years, and it is what the product decided on 2026-09-11: an author who
+     * drops thirty images expects thirty images, not thirty drafts to publish by hand.
      */
     @Test
-    public void test_run_leavesEveryFileAsADraftRatherThanPublishingIt() throws Exception {
+    public void test_run_publishesEveryFileItCreates() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
         final Job job = jobFor(folder, 3);
 
@@ -870,20 +868,19 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         final Map<String, Object> outcome = processor.getResultMetadata(job);
         assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
                 "the run has to have created something for this to mean anything.\n"
-                        + "Recorded per-item results: " + describe(outcome));
+                        + describe(outcome));
 
         final List<Contentlet> created =
                 APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
         assertEquals(3, created.size());
 
         for (final Contentlet contentlet : created) {
-            assertFalse(contentlet.isLive(), String.format(
-                    "a bulk upload must leave files as drafts, exactly as uploading the same file "
-                            + "on its own does; '%s' was published instead",
+            assertTrue(contentlet.isLive(), String.format(
+                    "a bulk upload publishes what it creates; '%s' was left as a draft, which "
+                            + "would leave an author to publish thirty files by hand",
                     contentlet.getTitle()));
         }
     }
-
 
     /**
      * Method to test: the bulk-upload processor, against a folder that filters names
@@ -939,31 +936,28 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: the bulk-upload processor
      * <p>
-     * Given scenario: A batch is run against a content type whose {@code NEW} system action an
-     * administrator has mapped to an action that <b>publishes</b>.
+     * Given scenario: A content type whose {@code PUBLISH} system action an administrator has
+     * mapped to an action that only <b>saves</b> — no publish actionlet.
      * <p>
-     * Expected result: The files are <b>published</b> — the run honours the mapping.
+     * Expected result: The files are still published, by the run checking them in and publishing
+     * them as two steps.
      * <p>
-     * <b>This test used to assert the opposite, and that was the defect.</b> The processor
-     * resolved {@code NEW} and then discarded any action carrying a publish actionlet, falling
-     * back to a checkin with {@code DISABLE_WORKFLOW}. It made publish state deterministic and made
-     * this <b>the only upload surface in the product that overrides an administrator's workflow
-     * mapping</b>: the Content Search drop zone fires {@code PUBLISH} and honours what it resolves
-     * to, Content Drive's single upload fires {@code NEW} and does the same, and both run the
-     * content type's own actionlets. This one skipped them.
+     * <b>Why this is not "overriding the mapping" the way the old filter was.</b> The filter
+     * discarded a perfectly good publishing action because the code preferred drafts. This does the
+     * opposite: it honours the caller's stated intent when no single mapped action can carry it
+     * out. It is also exactly what the product does —
+     * {@code PublishSystemActionApiFireCommandImpl#firePublishWithSave} checks in and then
+     * publishes when the resolved action lacks a publish actionlet.
      * <p>
-     * So the assertion is inverted rather than deleted: what needs guarding now is that a mapping
-     * is obeyed, which is the property the filter removed. The default outcome — drafts on a
-     * stock install — is covered by
-     * {@link #test_run_leavesEveryFileAsADraftRatherThanPublishingIt}, and comes from the seeded
-     * {@code NEW → Save} mapping rather than from anything this processor decides.
+     * Without it the file would be checked in and quietly left as a draft, which is the failure
+     * this whole area keeps producing: a run that reports success having done half the job.
      */
     @Test
-    public void test_run_honoursAPublishingMappingInsteadOfOverridingIt() throws Exception {
+    public void test_run_publishesEvenWhenTheMappedActionOnlySaves() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
         final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
 
-        mapNewTo(dotAsset, SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
+        mapPublishTo(dotAsset, SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
         try {
             final Job job = jobFor(folder, 2);
 
@@ -977,13 +971,12 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
             for (final Contentlet created :
                     APILocator.getFolderAPI().getWorkingContent(folder, admin(), false)) {
                 assertTrue(created.isLive(), String.format(
-                        "the administrator mapped NEW to a publishing action, so '%s' must be "
-                                + "published. Overriding that mapping is what made this endpoint "
-                                + "behave unlike every other upload surface",
-                        created.getTitle()));
+                        "the caller asked for PUBLISH, so '%s' must end published even though the "
+                                + "mapped action only saves — otherwise the run reports success "
+                                + "having done half the job", created.getTitle()));
             }
         } finally {
-            restoreNewMapping(dotAsset);
+            restorePublishMapping(dotAsset);
         }
     }
 
@@ -994,23 +987,23 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * <b>shared</b> content type outlives the test that set it, and the next test to create a
      * dotAsset would publish for no reason it could see.
      */
-    private void mapNewTo(final ContentType contentType, final String workflowActionId)
+    private void mapPublishTo(final ContentType contentType, final String workflowActionId)
             throws Exception {
         APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
-                WorkflowAPI.SystemAction.NEW,
+                WorkflowAPI.SystemAction.PUBLISH,
                 APILocator.getWorkflowAPI().findAction(workflowActionId, admin()),
                 contentType);
     }
 
-    private void restoreNewMapping(final ContentType contentType) {
+    private void restorePublishMapping(final ContentType contentType) {
         try {
             APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
-                    WorkflowAPI.SystemAction.NEW,
+                    WorkflowAPI.SystemAction.PUBLISH,
                     APILocator.getWorkflowAPI().findAction(
-                            SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, admin()),
+                            SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, admin()),
                     contentType);
         } catch (final Exception e) {
-            Logger.warn(this, "Could not restore the NEW mapping: " + e.getMessage());
+            Logger.warn(this, "Could not restore the PUBLISH mapping: " + e.getMessage());
         }
     }
 

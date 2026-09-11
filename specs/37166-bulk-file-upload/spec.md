@@ -332,6 +332,21 @@ run reports a collision failure for it.
   a particular call site — the single-file path is entered over REST and a background run cannot
   re-enter it, so the reuse point is chosen in the plan. What may not vary is the observable
   behavior.
+- **FR-006a** *(added by amendment, 2026-09-11)*: Files created by a batch MUST be **published**,
+  by firing the `PUBLISH` system action and honouring whatever the content type maps it to.
+  - **A knowing divergence from FR-006**, recorded the way FR-011a is. Content Drive's single-file
+    upload sends `NEW` and lands a draft; a batch sends `PUBLISH` and lands live. So the same screen
+    behaves differently for one file and for thirty, which is accepted: an author who drops thirty
+    images expects thirty images, not thirty drafts to publish by hand. It also matches the Content
+    Search drop zone, which has fired `PUBLISH` per file for years.
+  - **The mapping is not second-guessed.** An earlier implementation resolved the action and then
+    discarded any that published, which made this the only upload surface in the product overriding
+    an administrator's workflow configuration — and skipping their actionlets with it. Where no
+    single mapped action both saves and publishes, the run does the two steps separately, as the
+    product's own `PublishSystemActionApiFireCommandImpl` does.
+  - **Not a caller choice.** Nothing in the submission selects a workflow action. Whether it should
+    — as Import Content already allows for a CSV — was considered and settled against on
+    2026-09-11.
 - **FR-007**: A file failing MUST NOT abort the run; every remaining file MUST still be attempted.
 - **FR-008**: The system MUST NOT wait for each file to become searchable before starting the
   next. Search-index visibility MUST be resolved for the batch, not serialized per file.
