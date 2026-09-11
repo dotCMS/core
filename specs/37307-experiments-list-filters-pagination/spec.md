@@ -125,6 +125,12 @@ observing which rows survive, with the other three parts absent.
    **Then** no further requests are made.
 10. **Given** an experiment whose creator id resolves to no user, **When** any creator is ticked,
     **Then** that experiment is simply not matched, and nothing on the screen breaks.
+11. **Given** a link that already carries a creator selection, **When** it is opened cold by an
+    editor who is not an administrator, **Then** the chip shows a brief loading state and settles
+    on the selected people's names, and the table is narrowed to their experiments throughout.
+12. **Given** the same link, **When** the directory cannot resolve one of the selected ids,
+    **Then** that entry falls back to showing its id, the other names still resolve, and the table
+    stays narrowed to exactly the same experiments.
 
 ---
 
@@ -271,13 +277,34 @@ fewer rows than one page.
   are loaded and as the search term changes — including when the selected person is not present in
   the page currently displayed.
 - **FR-009a**: When a creator selection arrives from the address rather than from a click — a
-  reload, or a shared link — the selected ids MUST be resolved to their display names so the chip
-  labels people rather than opaque ids. The resolution MUST be a lookup of the selected ids, not a
-  scan of the loaded experiments: a person can be selected while having no experiment in view,
-  which is precisely the case that produces the empty state, and that is the case an
-  experiment-derived label would fail to name. A failed resolution MUST leave the filter working —
-  the filter matches on ids and does not depend on the labels — and MUST fall back to showing the
-  id rather than blanking the chip.
+  reload, or a shared link — the selected ids MUST be resolved to their display names, so the chip
+  labels people rather than opaque ids. Selections made by clicking already carry their label from
+  the option list and MUST NOT be re-resolved.
+- **FR-009b**: The resolution MUST go through the same directory search the option list uses,
+  querying one selected id at a time. It MUST NOT use the single-user lookup endpoint: that one
+  requires administrator rights, or access to both the Roles and Users areas, and refuses everyone
+  else — which would produce a filter that works when a person is picked and breaks when the page
+  is reloaded, for non-administrators only. The directory search is available to any back-end user,
+  which is the same population that can reach this screen. This constraint MUST be stated in the
+  implementation, because the single-user lookup is the call an implementer reaches for first.
+- **FR-009c**: The directory search matches an id as a **substring**, across ids, names and email
+  addresses, so a query for one id can return several people — an id that is a prefix of a longer
+  one, most obviously. The resolution MUST select the result whose id matches exactly, and MUST NOT
+  take the first result.
+- **FR-009d**: Resolution MUST NOT read the names off the loaded experiments, even though every
+  experiment will carry its creator's name once #37304 lands. One path is specified deliberately in
+  place of a fast path plus a fallback: it behaves identically before and after #37304 — which
+  matters because the filter is not blocked by #37304 and can ship first — and it removes a
+  fallback branch that would almost never run and therefore would almost never be exercised. The
+  accepted cost is one request per selected person on each hydration that carries a selection, even
+  where the name was already in memory.
+- **FR-009e**: While resolution is in flight the chip MUST show an explicit loading state, rather
+  than rendering ids that are about to be replaced. No chip in this toolbar has such a state today,
+  so this extends the shared chip — the same kind of change FR-013 and FR-014 already require of
+  shared components, and it MUST NOT alter how existing consumers of that chip render.
+- **FR-009f**: A failed resolution MUST leave the filter working — it matches on ids and does not
+  depend on labels — and MUST fall back to showing the id rather than blanking the chip or dropping
+  the selection.
 - **FR-010**: The filter's options MUST NOT show result counts. This is a deliberate divergence
   from the Status and Goal chips: a count cannot be computed for a person whose page of the
   directory has not been fetched, and a count shown for some options and not others is worse than
@@ -305,9 +332,14 @@ fewer rows than one page.
 - **FR-016**: The option list MUST be created only once its popover is actually visible, so that a
   virtualised list measures a real viewport rather than a collapsed one and renders its first page.
 - **FR-016a**: The chip's collapsed label MUST follow the behaviour the shared chip already gives
-  the Status and Goal chips — the unfiltered label while nothing is selected, the selected names
-  while there are few, and an overflow summary beyond that. A count badge MUST NOT be introduced
-  for this chip alone.
+  the Status and Goal chips, with no exception made for this one — the selected names while there
+  are few, and an overflow summary beyond that. A count badge MUST NOT be introduced for this chip
+  alone. This is consistency chosen over legibility with eyes open: two long personal names will
+  not fit the chip and will truncate, where two status names do. Three chips in one toolbar
+  behaving alike is worth more than the second name being readable in that case.
+- **FR-016b**: While nothing is selected the chip MUST read "All", reusing the label the Status and
+  Goal chips already use rather than introducing a chip-specific one. The design prototype reads
+  "All Users"; the shared label is preferred so the three chips agree.
 
 ### Schedule time filter
 
@@ -492,6 +524,10 @@ fewer rows than one page.
   template or component.
 - **SC-015**: Once #37304 has shipped, every row shows a creator name; against a backend without
   #37304, every row shows the placeholder and nothing renders as "undefined".
+- **SC-016**: Opening a shared link that already carries a creator selection shows people's names
+  in the chip, not ids — and does so for an editor who is **not** an administrator and has no
+  access to the Roles or Users areas, which is the population most likely to be handed such a link.
+  The same holds against a backend that does not yet have #37304.
 
 ---
 
@@ -563,11 +599,16 @@ fewer rows than one page.
    that pins them, so a later edit cannot silently reintroduce the divergence.
 10. **This is a frontend-only change.** No Java, no SQL, no endpoint, no `openapi.yaml`. The one
     API-shaped dependency, the creator name, belongs to #37304.
-11. **Selected creators are resolved to names by looking them up, not by reading the loaded
-    experiments** (FR-009a). Chosen over the free alternative because the experiment-derived label
-    only works for creators who have an experiment in view and only after #37304 — and the case it
-    fails is exactly the one that produces the empty state, where the chip is the only thing on
-    screen still naming what was filtered.
+11. **Selected creators are resolved through the directory on every hydration, never from the
+    loaded experiments** (FR-009b, FR-009d). The free alternative was available and was weighed:
+    the listing loads every experiment in one request and keeps the unfiltered set in memory, so
+    once #37304 lands each one carries its creator's id and name together, and a label could be
+    read from that set at no cost for any creator who has an experiment loaded. It was rejected for
+    two reasons that outweigh the saving — it would behave differently before and after #37304,
+    during a window when the filter can ship and #37304 has not; and covering the creators it
+    cannot name would need a fallback branch that runs so rarely it would not be meaningfully
+    tested. One path that always works was preferred over a fast path plus a rarely-exercised one.
+    The cost is a request per selected person on each hydration that carries a selection.
 12. **The shared user search is created in the shared data-access library and the two existing
     portlet-local copies are left alone** (FR-015, FR-015a). Chosen over migrating them, to keep a
     frontend Experiments change from touching two unrelated portlets and their test suites. The
