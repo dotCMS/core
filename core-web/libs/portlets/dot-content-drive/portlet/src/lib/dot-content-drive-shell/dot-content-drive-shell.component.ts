@@ -1631,7 +1631,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
-                        detail: this.#describeSubmissionRefusal(error),
+                        detail: this.#describeSubmissionRefusal(error, baseType),
                         life: ERROR_MESSAGE_LIFE
                     });
                 }
@@ -1654,7 +1654,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * ceilings are the cases worth distinguishing, and they now have copy of their own, so there is
      * nothing left the raw sentence would say better.
      */
-    #describeSubmissionRefusal(error: HttpErrorResponse): string {
+    #describeSubmissionRefusal(error: HttpErrorResponse, baseType: string): string {
         if (error?.status === HttpStatusCode.PayloadTooLarge) {
             return this.#dotMessageService.get('content-drive.upload.refused.too-large');
         }
@@ -1673,7 +1673,22 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return this.#dotMessageService.get('content-drive.upload.refused.too-many-files');
         }
 
-        return this.#dotMessageService.get('content-drive.add-dotasset-error-detail');
+        // Whether the batch's fate is *knowable* decides the advice, and the status says which.
+        // A 4xx is the server answering and refusing: nothing was created, so retrying is free
+        // whatever the base type. No response at all or a 5xx is the uncertain case — the request
+        // may have been accepted and then failed — and there the base type matters: retrying a
+        // file asset costs nothing because the unique index refuses the second copy (FR-037),
+        // while retrying a dotAsset can leave two copies of everything because that index can
+        // never contend for one (FR-037a). Only then is the folder named as the thing to check,
+        // which is the single case overriding FR-037's "never asks them to check the folder
+        // first".
+        const outcomeUnknown = !error?.status || error.status >= HttpStatusCode.InternalServerError;
+
+        return this.#dotMessageService.get(
+            outcomeUnknown && 'DOTASSET' === baseType
+                ? 'content-drive.add-dotasset-error-detail-check-folder'
+                : 'content-drive.add-dotasset-error-detail'
+        );
     }
 
     /**

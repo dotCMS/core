@@ -337,12 +337,26 @@ workflow action on rows selected in the listing.
   the only moment the interface can intervene is before the navigation happens. The warning MUST
   NOT outlive the upload phase: once the handle exists, leaving is safe and prompting would be
   false.
-- **FR-037**: When the connection is lost or the answer is uncertain while a batch is being
-  submitted, the client MUST be able to resubmit the same batch, and MUST NOT make the author work
-  out whether the first attempt landed. Resubmitting cannot produce a second copy of their files:
-  the server either recognises the resubmission as the same batch or refuses the duplicates
-  (backend FR-040, C-002a). The client therefore treats an uncertain submission as retryable, not
-  as a failure the author has to reason about, and never asks them to check the folder first.
+- **FR-037** *(amended 2026-09-11 — scoped to `FILEASSET`)*: When the connection is lost or the
+  answer is uncertain while a batch is being submitted, the client MUST be able to resubmit the same
+  batch, and MUST NOT make the author work out whether the first attempt landed. **For `FILEASSET`**
+  resubmitting cannot produce a second copy of their files: the server either recognises the
+  resubmission as the same batch or refuses the duplicates (backend FR-040, C-002a). There the client
+  treats an uncertain submission as retryable, not as a failure the author has to reason about, and
+  never asks them to check the folder first.
+  - **FR-037a** *(added by amendment, 2026-09-11)*: **That guarantee does not hold for `DOTASSET`,
+    and the client MUST NOT imply that it does.** Backend FR-040b retired it: a dotAsset's identifier
+    takes a per-contentlet `asset_name`, so the unique index the guarantee rests on can never contend
+    for one, and a resubmitted batch creates a second copy of every file and reports clean success.
+    `duplicateSubmission` is additionally `false` whenever the file order differed, because the
+    server's fingerprint is order-sensitive. C-002a1 makes the consequence this client's obligation:
+    where the outcome of a submission is genuinely unknown — a dropped connection, a failure that is
+    neither of the two ceiling refusals — the copy MUST NOT offer an unqualified retry for that base
+    type, because acting on it can leave two copies of everything. Naming the folder as the thing to
+    check is the correct answer there, and is the one case where FR-037's "never asks them to check
+    the folder first" is overridden rather than followed.
+  - *This amendment retires a sentence PR 1 was approved against and therefore needs re-approval,
+    per Quick Start §3.*
   Where the server takes the collision branch, the client depends on a duplicate resubmission being
   distinguishable from a genuinely all-collided batch (backend FR-040a, C-002a), and MUST report
   such a retry as the success it is rather than as "every file failed, file already exists". The
@@ -385,10 +399,20 @@ workflow action on rows selected in the listing.
   distinct states, and the arrival of the handle MUST be visible to the author, because that is the
   moment leaving becomes safe. The client MUST NOT tell the author they are free to move around
   before the handle exists.
-- **FR-041a**: The upload phase MUST report a real position wherever the browser can supply one.
-  Bytes sent against the declared total (FR-038) is available to the client independently of the
-  server, so this phase is not covered by FR-012's "activity without claiming a position" fallback.
-  C-001a rules out *per-file* progress, not progress.
+- **FR-041a** *(amended 2026-09-11 — downgraded to SHOULD, with the reason)*: The upload phase
+  **SHOULD** report a real position wherever the browser can supply one. Bytes sent against the
+  declared total (FR-038) does not require the server, so this phase is not covered by FR-012's
+  "activity without claiming a position" fallback where it is available. C-001a rules out *per-file*
+  progress, not progress.
+  - **It is not available in this application, by decision.** Angular 22 made `FetchBackend` the
+    default `HttpBackend`, and fetch has no equivalent of `xhr.upload`, so
+    `HttpEventType.UploadProgress` never fires and a `reportProgress` request reports nothing on the
+    way up. `withXhr()` restores it and was proven end to end against a live instance; the developer
+    **declined it** because XHR sits too near the deprecation line, its server-side half already
+    being slated for removal in Angular 23. So the upload phase reports activity without a position,
+    which the indicator already renders as activity rather than as zero (FR-012), and the phase stays
+    distinguishable from the run phase by its wording rather than by a number (FR-041).
+  - *Was a MUST when PR 1 was approved. The downgrade is the decision, not an oversight.*
 - **FR-035**: The in-flight indicator MUST remain announced to assistive technology, and the
   additions this feature makes to it MUST NOT make it noisy. Specifically: a run starting, reaching a
   terminal state, or being stopped are worth announcing; continuous progress is not, and MUST NOT be
@@ -438,6 +462,25 @@ by this feature.)*
   wholly fails MUST read as one statement about the batch, not as 50 identical rows. Failing file
   names MUST still be recoverable from the outcome; grouping governs how it reads, not what it
   carries.
+- **FR-023b** *(added by amendment, 2026-09-11 — narrows FR-023)*: **Where naming a file cannot help
+  the author, the count stands in for the names.** FR-023's requirement to name the failures holds
+  for reasons the author can act on — a name already taken, a name the folder's glob refuses, a type
+  the content type will not admit, a file over a ceiling — because those names are a list of things
+  to go and change. It does **not** hold for reasons no per-file action resolves: a permission they
+  do not hold, content that expired before the run reached it, and the unclassified fallback. Those
+  read as a count, however few there are, because a list the author can act on no part of is noise
+  presented as help. A warning group also becomes count-led past eight names, for the reason FR-023a
+  gives: naming the first eight of ninety reads as "eight failed".
+  - **What this gives up, recorded rather than implied**: past those thresholds the names are not on
+    screen anywhere, and the durable notification carries counts only. They survive in the job's own
+    record, which the status endpoint returns, so this is a screen nobody has built rather than data
+    the server discarded — see the task manager, #33331, where a list of ninety belongs.
+- **FR-023c** *(added by amendment, 2026-09-11)*: **An outcome MAY raise one message per severity
+  rather than one message.** FR-021, FR-023 and FR-028 speak of "the message" in the singular; an
+  outcome that carries both an error-severity reason and a warning-severity one raises two, errors
+  first, with the counts stated once in the message read first. The reason is the same one FR-023b
+  turns on: a wall the author cannot pass and a file they can rename are different kinds of news, and
+  one notification carrying both leaves them to work out which half is theirs to act on.
 - **FR-036**: Every failure reason the server can return MUST have its own product copy on the
   client. The server sends a machine-readable reason plus a diagnostic message; the reason is what
   the client maps to text for the author, and the message is never shown (FR-030, backend FR-016a).
@@ -506,8 +549,15 @@ by this feature.)*
   the interface.
 - **FR-030**: Raw server messages MUST NOT be shown to the author. Resolved product copy is shown;
   the raw detail is logged.
-- **FR-031**: Message definitions that this work makes reachable MUST be connected, and definitions
-  it makes obsolete MUST be removed. No definition may be left defined and unreferenced.
+- **FR-031** *(amended 2026-09-11 — one exception, named)*: Message definitions that this work makes
+  reachable MUST be connected, and definitions it makes obsolete MUST be removed. No definition may
+  be left defined and unreferenced, **except the four this work stops using and another consumer
+  still references**: `content-drive.file-upload-in-progress` and its `-detail`,
+  `content-drive.work-in-progress`, and `content-drive.multiple-files-warning`. The Asset Picker
+  still reads them and still uploads a single file by design, so its warning remains true there.
+  Deleting them would break a surface this feature does not own; removal belongs to #37370, which
+  owns that duplicate upload path. **Content Drive's own usage is removed**, which is what this
+  requirement was for.
 
 **Reuse**
 
@@ -629,8 +679,10 @@ to both halves.
 - **SC-006**: An author who starts a batch and leaves the portlet still learns its outcome.
 - **SC-007**: Starting a long operation never prevents an author from starting an unrelated one.
 - **SC-008**: The run-following capability is adopted by #37062 / #37063 without modification to it.
-- **SC-009**: No message definition used by Content Drive is left defined and unreferenced, and none
-  referenced is left undefined.
+- **SC-009** *(amended 2026-09-11)*: No message definition used by Content Drive is left defined and
+  unreferenced **other than the four FR-031 names**, and none referenced is left undefined. The
+  second half is the one that matters and is met in full: every failure reason and every upload key
+  the client can resolve has a definition, checked mechanically rather than by eye.
 - **SC-010**: An author without the right to add children to a target cannot reach an upload into it
   by any route, and in every case is told why rather than being left to discover it.
 - **SC-011**: An author using a screen reader learns that work started and how it ended, and is not

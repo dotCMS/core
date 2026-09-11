@@ -2297,6 +2297,51 @@ describe('DotContentDriveShellComponent', () => {
             expect(uploadService.uploadFilesByBaseType).toHaveBeenCalled();
         });
 
+        it('should not offer an unqualified retry for an asset batch it cannot account for', () => {
+            // FR-037a: the retry guarantee is FILEASSET-only. A dotAsset resubmission creates a
+            // second copy of everything and reports clean success, so "try again later" over a
+            // submission whose fate is unknown can leave the folder holding two of each. The folder
+            // is the thing to check, and this is the one case that overrides FR-037's "never asks
+            // them to check the folder first".
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 0 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.add-dotasset-error-detail-check-folder'
+                })
+            );
+        });
+
+        it('should still offer a plain retry for a file batch, where it is safe', () => {
+            // The unique index refuses the second copy, so retrying costs nothing and asking the
+            // author to go and look would be busywork.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 0 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'FILEASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.add-dotasset-error-detail'
+                })
+            );
+        });
+
         it('should keep the server sentence out of the author-visible copy', () => {
             // FR-030 draws the line here: resolved product copy in front of the author, the raw
             // detail in the log. This branch already removed the same pattern from the folder
@@ -2320,10 +2365,13 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
+            // The check-folder variant, because a 500 leaves the batch's fate unknown and this is a
+            // dotAsset (FR-037a). Still resolved product copy rather than the server's sentence,
+            // which is what this test is about.
             expect(messageService.add).toHaveBeenCalledWith(
                 expect.objectContaining({
                     severity: 'error',
-                    detail: 'content-drive.add-dotasset-error-detail'
+                    detail: 'content-drive.add-dotasset-error-detail-check-folder'
                 })
             );
             // The other half of the requirement: shown copy is not the same as lost detail.
@@ -2739,10 +2787,12 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
+            // No status at all, so the outcome is unknown and this dotAsset batch gets the
+            // check-folder copy (FR-037a). The point stands: it is ours, not the server's.
             expect(addSpy).toHaveBeenCalledWith({
                 severity: 'error',
                 summary: 'content-drive.add-dotasset-error',
-                detail: 'content-drive.add-dotasset-error-detail',
+                detail: 'content-drive.add-dotasset-error-detail-check-folder',
                 life: ERROR_MESSAGE_LIFE
             });
         });
