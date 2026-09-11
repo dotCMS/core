@@ -1,7 +1,5 @@
 package com.dotmarketing.common.reindex;
 
-import static com.dotcms.shutdown.ShutdownCoordinator.isShutdownRelated;
-
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.SystemCache;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -208,7 +206,18 @@ public class ReindexThread {
      */
     private static final String DEAD_WORKER_MESSAGE_KEY = "reindex-thread-dead-worker-restarted";
 
+    /** Throttle key for the "a worker is already alive" notice. Compile-time constant (AC-019). */
+    private static final String WORKER_ALREADY_LIVE_MESSAGE_KEY = "reindex-thread-worker-already-live";
+
     private static final int DEAD_WORKER_LOG_INTERVAL_MS = 60000;
+
+    /**
+     * Granularity at which {@link #waitFor(long)} re-checks the shutdown latch. Small enough that a
+     * 30 s degraded back-off still releases the worker well inside the shutdown task's 8 s budget,
+     * large enough that an idle wait is not a busy poll.
+     */
+    private static final long WAIT_SLICE_MILLIS =
+            Config.getLongProperty("REINDEX_THREAD_WAIT_SLICE_MILLIS", 250);
 
 
     private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
@@ -258,6 +267,14 @@ public class ReindexThread {
             // Invariant I2: cleared on EVERY exit path — normal, Exception, Error, interrupt,
             // executor shutdown. This is what makes a dead worker detectable.
             workerAlive.set(false);
+            // A worker that dies mid-processing (the Error path above) would otherwise leave
+            // state == RUNNING with nothing running: unpauseImpl() handles only PAUSED and
+            // STOPPED, so every later unpause would be a no-op and the node would never index
+            // again — the exact silent stall this class exists to prevent. isWorking() would
+            // also still report true, so DotCMSInitDb's restart check could never fire either.
+            // requestStop() moves RUNNING/PAUSED to the restartable STOPPED and preserves the
+            // terminal SHUTDOWN.
+            requestStop();
             Logger.warn(this.getClass(),
                     "---  ReindexThread is stopping, background indexing will not take place");
         }
@@ -282,9 +299,18 @@ public class ReindexThread {
      * {@code Try.run(() -> Thread.sleep(t)).onFailure(DotRuntimeException::new)}. {@code onFailure}
      * takes a {@code Consumer<Throwable>}, so that method reference only <em>constructs</em> an
      * exception and drops it: the {@code InterruptedException} is never rethrown or logged, and the
-     * interrupt flag the JVM cleared when {@code Thread.sleep} threw is never restored. A worker
-     * parked in it cannot be interrupted at all, which is why {@code shutdownNow()} from
-     * {@code ReindexThreadShutdownTask} has no effect today.</p>
+     * interrupt flag the JVM cleared when {@code Thread.sleep} threw is never restored.</p>
+     *
+     * <p><strong>Nothing currently interrupts this worker.</strong>
+     * {@code ReindexThreadShutdownTask} calls {@code DotSubmitter.shutdown()}, which maps to
+     * {@code ExecutorService.shutdown()} — graceful, and it does <em>not</em> interrupt running
+     * tasks. {@code shutdownNow()} is never called for this pool. So interrupt-awareness alone
+     * would buy nothing at shutdown: a worker parked in the {@code SLEEP_WHEN_DEGRADED} back-off
+     * (30 s by default) would outlive the shutdown task's 8 s budget and then wake normally into a
+     * torn-down connection pool. The wait is therefore <em>sliced</em>, re-checking the shutdown
+     * latch every {@link #WAIT_SLICE_MILLIS} ms, so teardown participation is bounded by the slice
+     * rather than by the full back-off. Interrupt handling is kept because it is correct and makes
+     * a future {@code shutdownNow()} safe.</p>
      *
      * <p>{@code ThreadUtils.sleep} itself is deliberately left alone — it has many callers across
      * the legacy codebase and changing its contract is out of scope for this fix.</p>
@@ -292,8 +318,19 @@ public class ReindexThread {
      * @return {@code false} if the wait was interrupted, in which case the caller must stop working
      */
     private boolean waitFor(final long millis) {
+        final long deadline = System.currentTimeMillis() + millis;
         try {
-            Thread.sleep(millis);
+            long remaining;
+            while ((remaining = deadline - System.currentTimeMillis()) > 0) {
+                // Poll the shutdown latch between slices: nothing interrupts this worker (see the
+                // javadoc above), so this is what actually bounds how long a long back-off can
+                // delay teardown. shutdownRequested() also performs the terminal transition and
+                // logs it once, so the caller's requestStop() is then a no-op.
+                if (shutdownRequested()) {
+                    return false;
+                }
+                Thread.sleep(Math.min(remaining, WAIT_SLICE_MILLIS));
+            }
             return true;
         } catch (final InterruptedException e) {
             // Restore what Thread.sleep cleared, so the executor and anything up the stack can
@@ -398,9 +435,16 @@ public class ReindexThread {
                 }
 
             } catch (Throwable ex) {
-                if (isShutdownRelated(ex) || ShutdownCoordinator.isRequestDraining()
-                        || ex instanceof com.dotcms.shutdown.ShutdownException) {
+                // Deliberately NOT ShutdownCoordinator.isShutdownRelated(ex): that returns true for
+                // any SQLException in the cause chain whose SQLState starts with "08", even with no
+                // shutdown in progress. A transient connection blip would then take this break,
+                // skipping every back-off below, and return to a loop whose state is still RUNNING
+                // — re-entering and rethrowing at full speed. That is the same hot-loop class this
+                // class was reworked to remove. A real connection error now falls through to the
+                // SLEEP_ON_ERROR back-off instead.
+                if (shutdownRequested() || ex instanceof com.dotcms.shutdown.ShutdownException) {
                     Logger.debug(this, "ReindexThread stopping due to shutdown: " + ex.getMessage());
+                    requestStop();
                     break;
                 }
                 if (ex instanceof Error) {
@@ -500,13 +544,26 @@ public class ReindexThread {
      * to restart the worker while the JVM is tearing down.</p>
      */
     private void requestStop() {
+        transitionUnlessShutdown(ThreadState.STOPPED);
+    }
+
+    /** {@link #pause()}'s transition: same terminal-state guarantee as {@link #requestStop()}. */
+    private void requestPause() {
+        transitionUnlessShutdown(ThreadState.PAUSED);
+    }
+
+    /**
+     * Moves to {@code target} unless the worker has already reached the terminal
+     * {@link ThreadState#SHUTDOWN}, which nothing may downgrade.
+     */
+    private void transitionUnlessShutdown(final ThreadState target) {
         ThreadState current;
         do {
             current = state.get();
             if (current == ThreadState.SHUTDOWN) {
                 return;
             }
-        } while (!state.compareAndSet(current, ThreadState.STOPPED));
+        } while (!state.compareAndSet(current, target));
     }
 
     /**
@@ -554,7 +611,10 @@ public class ReindexThread {
         cache.get().put(REINDEX_THREAD_PAUSED, System.currentTimeMillis() + Duration
                 .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
                 .toMillis());
-        getInstance().state(ThreadState.PAUSED);
+        // Same SHUTDOWN-preserving transition stopThread() uses. pause() is public and is called
+        // from ContentletIndexAPIImpl around a full reindex, so a pause racing a shutdown could
+        // otherwise rewrite the terminal SHUTDOWN back to the restartable PAUSED.
+        getInstance().requestPause();
     }
 
     public static void unpause() {
@@ -594,8 +654,14 @@ public class ReindexThread {
 
         final ReindexThread inst = getInstance();
 
-        // Invariant I1: claim before submit. The loser of the race simply returns.
+        // Invariant I1: claim before submit. Losing the CAS means a worker is already live — which
+        // is a real state even when `state == STOPPED`, because requestStop() only sets a flag and
+        // stopThread() waits a fixed 100 ms while the worker may be parked far longer. Log it:
+        // silently returning false made unpauseImpl() claim a restart that never happened.
         if (!inst.workerAlive.compareAndSet(false, true)) {
+            Logger.warnEvery(ReindexThread.class, WORKER_ALREADY_LIVE_MESSAGE_KEY,
+                    "--- Not starting a ReindexThread worker: one is already alive. The previous "
+                            + "worker has not finished exiting yet.", DEAD_WORKER_LOG_INTERVAL_MS);
             return false;
         }
 
@@ -658,9 +724,13 @@ public class ReindexThread {
                 startWorker(false);
             }
         } else if (state == ThreadState.STOPPED) {
-            Logger.info(ReindexThread.class, "--- Recreating ReindexThread from stopped");
-            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
-            startWorker(true);
+            // Log the outcome, not the intent: startWorker() can decline (shutdown in progress, or
+            // a worker still alive), and the old unconditional "Recreating" line claimed a restart
+            // that had not happened.
+            if (startWorker(true)) {
+                Logger.info(ReindexThread.class, "--- Recreated ReindexThread from stopped");
+                Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
+            }
         }
 
     }

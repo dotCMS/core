@@ -16,6 +16,7 @@ import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
@@ -712,6 +713,113 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         } finally {
             Config.setProperty("REINDEX_THREAD_SLEEP_WHEN_DEGRADED", 30000);
         }
+    }
+
+    // ================================================================================
+    // Regression tests for the PR #37295 review findings.
+    // ================================================================================
+
+    /**
+     * Review finding 1 — a worker that dies in {@code RUNNING} must leave a restartable state.
+     *
+     * <p>The {@code Error} path terminates the runnable mid-processing, i.e. while
+     * {@code state == RUNNING}. Clearing {@code workerAlive} alone is not enough:
+     * {@code unpauseImpl()} branches only on {@code PAUSED} and {@code STOPPED}, so a worker left
+     * dead-in-{@code RUNNING} is missed by every later unpause and the node never indexes again —
+     * the same silent stall this class exists to prevent. {@code isWorking()} would also still
+     * report {@code true}, so {@code DotCMSInitDb}'s restart check could never fire.</p>
+     *
+     * <p>The full restart round-trip goes through OSGI bootstrap and is covered by the integration
+     * test; what matters here is that the state left behind is one {@code unpauseImpl()} acts on.</p>
+     */
+    @Test
+    public void workerDyingInRunningLeavesARestartableState() throws Exception {
+        final ReindexQueueAPI queueApi = mock(ReindexQueueAPI.class);
+        when(queueApi.findContentToReindex()).thenThrow(new OutOfMemoryError("simulated"));
+
+        final ReindexThread thread = newThread(queueApi, mockIndexApi());
+        final AtomicBoolean liveness = requireLiveness(thread);
+        setStateRunning(thread);
+        liveness.set(true);
+
+        final Thread runner = startRunnable(thread);
+        try {
+            runner.join(3_000);
+            assertFalse("the worker should have terminated on the Error", runner.isAlive());
+            assertFalse("liveness must be cleared", liveness.get());
+            assertNotEquals("a worker that died in RUNNING must not leave state == RUNNING: "
+                            + "unpauseImpl() handles only PAUSED and STOPPED, so the node would "
+                            + "never index again and isWorking() would still report true",
+                    "RUNNING", currentState(thread));
+            assertEquals("the state left behind must be the restartable STOPPED",
+                    "STOPPED", currentState(thread));
+        } finally {
+            ReindexThread.stopThread();
+            runner.join(3_000);
+        }
+    }
+
+    /**
+     * Review finding 2 — a connection blip is not a shutdown.
+     *
+     * <p>{@code ShutdownCoordinator.isShutdownRelated()} returns {@code true} for any
+     * {@code SQLException} in the cause chain whose SQLState starts with {@code "08"}, even with no
+     * shutdown in progress. Treating that as shutdown took a {@code break} that skipped every
+     * back-off and returned to a loop still in {@code RUNNING} — re-entering and rethrowing at full
+     * speed. The worker must instead back off and stay alive.</p>
+     */
+    @Test
+    public void connectionErrorBacksOffInsteadOfSpinning() throws Exception {
+        final AtomicInteger polls = new AtomicInteger();
+        final ReindexQueueAPI queueApi = mock(ReindexQueueAPI.class);
+        when(queueApi.findContentToReindex()).thenAnswer(inv -> {
+            polls.incrementAndGet();
+            throw new DotDataException("connection blip",
+                    new java.sql.SQLException("connection lost", "08S01"));
+        });
+
+        final ReindexThread thread = newThread(queueApi, mockIndexApi());
+        setStateRunning(thread);
+        setShutdownFlags(false, false);      // explicitly NOT shutting down
+
+        final Thread runner = startRunnable(thread);
+        try {
+            Thread.sleep(1_500);
+            assertTrue("a SQLState-08 blip is recoverable: the worker must stay alive and back "
+                    + "off, not treat it as shutdown", runner.isAlive());
+            assertTrue("the worker must back off between retries; " + polls.get() + " polls in "
+                            + "1.5s means it is spinning, which is the hot-loop class this class "
+                            + "was reworked to remove",
+                    polls.get() < 50);
+        } finally {
+            ReindexThread.stopThread();
+            runner.join(3_000);
+        }
+    }
+
+    /**
+     * Review finding 5 — {@code pause()} must not downgrade the terminal {@code SHUTDOWN}.
+     *
+     * <p>{@code pause()} is public and is called from {@code ContentletIndexAPIImpl} around a full
+     * reindex, so a pause racing a shutdown could rewrite {@code SHUTDOWN} back to the restartable
+     * {@code PAUSED} — erasing the terminal state this class documents as "must NOT be restarted".</p>
+     */
+    @Test
+    public void pauseDoesNotDowngradeTheTerminalShutdownState() throws Exception {
+        final ReindexThread thread = newThread(alwaysWorkingQueue(null), mockIndexApi());
+        setStateRunning(thread);
+        setShutdownFlags(true, false);
+
+        final Method shutdownRequested = ReindexThread.class.getDeclaredMethod("shutdownRequested");
+        shutdownRequested.setAccessible(true);
+        shutdownRequested.invoke(thread);
+        assertEquals("precondition: the worker reached the terminal state",
+                "SHUTDOWN", currentState(thread));
+
+        ReindexThread.pause();
+
+        assertEquals("pause() must not rewrite the terminal SHUTDOWN back to PAUSED",
+                "SHUTDOWN", currentState(thread));
     }
 
     // ================================================================================
