@@ -1,6 +1,5 @@
 package com.dotcms.jobs.business.processor.impl;
 
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
