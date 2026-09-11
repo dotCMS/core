@@ -89,7 +89,9 @@ test.describe('Publishing Queue → Pending — asset queued in multiple bundles
         const bundleIds = await queue.bundleIds();
 
         expect(ids.length, 'expected asset rows to be rendered').toBeGreaterThan(0);
-        expect(bundleIds.length, 'expected all seeded bundles on one page').toBeGreaterThanOrEqual(3);
+        expect(bundleIds.length, 'expected all seeded bundles on one page').toBeGreaterThanOrEqual(
+            3
+        );
 
         // AC-003: globally unique. This is the assertion that fails on unfixed code — the same
         // asset in two bundles produces two identical ids.

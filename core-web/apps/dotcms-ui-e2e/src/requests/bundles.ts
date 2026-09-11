@@ -58,10 +58,9 @@ export async function resolveEnvironmentId(request: APIRequestContext): Promise<
     expect(meResponse.status(), 'could not resolve current user').toBe(200);
     const { roleId } = await meResponse.json();
 
-    const envResponse = await request.get(
-        `/api/environment/loadenvironments/roleId/${roleId}`,
-        { headers: authHeaders() }
-    );
+    const envResponse = await request.get(`/api/environment/loadenvironments/roleId/${roleId}`, {
+        headers: authHeaders()
+    });
     expect(envResponse.status(), 'could not list push-publish environments').toBe(200);
 
     const environments: { id: string; name: string }[] = await envResponse.json();
@@ -129,10 +128,9 @@ export async function pushBundle(
         headers: authHeaders()
     });
 
-    expect(
-        response.status(),
-        `failed to push bundle ${bundleId}: ${await response.text()}`
-    ).toBe(200);
+    expect(response.status(), `failed to push bundle ${bundleId}: ${await response.text()}`).toBe(
+        200
+    );
 }
 
 /**
