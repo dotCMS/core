@@ -374,4 +374,78 @@ describe('EditEmaLayoutComponent', () => {
             expect(templateBuilder.disabled).toBe(false);
         }));
     });
+
+    describe('Serialized save paths (AC3 — no concurrent layout saves)', () => {
+        it('should not fire a second save when force-save-on-leave is requested while the debounced save is in-flight', fakeAsync(() => {
+            const saveSubject = new Subject();
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+
+            // Debounce fires -> POST #1 sent, #layoutSaveInFlight = true
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME);
+
+            expect(dotPageLayoutService.save).toHaveBeenCalledTimes(1);
+
+            // User tries to leave while POST #1 is still in flight — must not send POST #2
+            dotRouter.requestPageLeave();
+
+            expect(dotPageLayoutService.save).toHaveBeenCalledTimes(1);
+
+            saveSubject.next(PAGE_RESPONSE);
+            saveSubject.complete();
+        }));
+
+        it('should skip the debounced save when force-save-on-leave already sent one for the same template', fakeAsync(() => {
+            const saveSubject = new Subject();
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+
+            templateBuilder.templateChange.emit();
+
+            // Leave requested before the 5s debounce elapses -> force-save fires right away
+            dotRouter.requestPageLeave();
+
+            expect(dotPageLayoutService.save).toHaveBeenCalledTimes(1);
+
+            // The original debounce timer is still armed and will elapse on its own —
+            // its switchMap must skip firing a redundant duplicate POST
+            tick(DEBOUNCE_TIME);
+
+            expect(dotPageLayoutService.save).toHaveBeenCalledTimes(1);
+
+            saveSubject.next(PAGE_RESPONSE);
+            saveSubject.complete();
+        }));
+
+        it('should unblock route deactivation from the in-flight save even when the skipped duplicate is the one requesting to leave', fakeAsync(() => {
+            const saveSubject = new Subject();
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME); // POST #1 in-flight
+
+            dotRouter.requestPageLeave(); // skipped — POST #1 already in-flight
+
+            expect(dotRouter.allowRouteDeactivation).not.toHaveBeenCalled();
+
+            saveSubject.next(PAGE_RESPONSE);
+            saveSubject.complete();
+
+            expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
+        }));
+
+        it('should unblock route deactivation when the force-save-on-leave request itself fails', () => {
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            templateBuilder.templateChange.emit();
+
+            // Leave requested before the 5s debounce elapses -> force-save fires right away
+            // and fails. Without allowRouteDeactivation() in a finalize(), the user would be
+            // stuck on the page with no way to retry (pageLeaveRequest$ is distinctUntilChanged).
+            dotRouter.requestPageLeave();
+
+            expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
+        });
+    });
 });
