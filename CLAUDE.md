@@ -87,6 +87,7 @@ When editing ANY code, improve incrementally:
 - Replace legacy: `Logger.info()` not `System.out.println()`
 - Modern Angular: `@if` not `*ngIf`, `input()` not `@Input()`
 - Add missing annotations: `@Override`, `@Nullable`
+- Add missing Javadoc on any Java method you edit, human-readable not AI-oriented — see [Java Standards → Javadoc Requirements](docs/backend/JAVA_STANDARDS.md#javadoc-requirements-required)
 
 ## Spec-Driven Development (Spec-Kit)
 
@@ -149,7 +150,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 
 ### Testing
 - [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns
-- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — API testing, database setup
+- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
 
 ### Infrastructure
