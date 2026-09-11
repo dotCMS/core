@@ -9,7 +9,15 @@ import {
 import { DotExperimentsListSortDirection, ExperimentRow, TagSeverity } from './models';
 
 export const DEFAULT_EXPERIMENTS_LIST_PAGE = 1;
-export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 25;
+/**
+ * Rows per page before anyone chooses. The smallest of {@link ROWS_PER_PAGE_OPTIONS}, matching
+ * Content Drive's own default — see that list for why the two agree.
+ *
+ * It is also the value `per_page` is omitted from the address for, so changing it changes which
+ * URLs carry the param. An address that still names the old size is honoured either way: the
+ * paginator only offers the options above, but `parseViewState` takes any positive integer.
+ */
+export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 20;
 /**
  * Sortable columns. The values double as `pSortableColumn` fields, as the `orderby` URL param
  * and as the comparator keys, so the three can never drift apart.
@@ -71,7 +79,16 @@ export const STATUS_LABEL_KEYS = new Map<string, string>(
 /** Lifetime of the success toasts pushed after a row action. */
 export const SUCCESS_MESSAGE_LIFE = 5000;
 
-export const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
+/**
+ * Page sizes offered by the paginator.
+ *
+ * The same three Content Drive offers, and the same smallest one — `dot-folder-list-view`'s
+ * `rowsPerPageOptions` (`libs/ui/src/lib/components/dot-folder-list-view`). Two listing screens in
+ * the same admin should not disagree about what a page is; this list is the one a user meets first.
+ * {@link DEFAULT_EXPERIMENTS_LIST_PER_PAGE} is its smallest member, so the paginator opens on the
+ * option the dropdown shows first.
+ */
+export const ROWS_PER_PAGE_OPTIONS = [20, 40, 60];
 
 /** Placeholder rows drawn while the first page is still loading. */
 export const SKELETON_ROW_COUNT = 5;
@@ -132,6 +149,28 @@ export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
 /** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
 export const RESULTS_SEGMENT = 'results';
 
+/** Route parameter naming the experiment on the Configure and Results URLs. */
+export const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
+
+/**
+ * i18n keys of the three screens' own titles — the same ones their routes declare.
+ *
+ * The crumb a screen puts on the trail says where you are, so it is the screen's title and not the
+ * experiment's: the experiment is already named right below, in the header. Reading the key the
+ * route reads keeps the crumb and the browser tab from drifting apart.
+ */
+export const LIST_TITLE_KEY = 'experiment.container.list.title';
+export const CONFIGURE_TITLE_KEY = 'experiment.container.configuration.title';
+export const RESULTS_TITLE_KEY = 'experiment.container.report.title';
+
+/**
+ * i18n key of the Configure screen's title while the draft has no name yet.
+ *
+ * Also the screen's own name at that point: a draft that has not been created is the New
+ * Experiment screen, and only becomes the Configure screen once it exists.
+ */
+export const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
+
 /**
  * Multiplier applied to the page-lookup limit.
  *
@@ -171,6 +210,15 @@ export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
 export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
 
 /** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
+/**
+ * How many rows a page lookup asks for.
+ *
+ * More than one because a path — and an identifier — answers once per language, and `limit: 1`
+ * left it to the search which of them came back. The rows are narrowed to one deterministically
+ * after they arrive; ten is room for any realistic set of site languages.
+ */
+export const PAGE_LOOKUP_LIMIT = 10;
+
 export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
 
 /**

@@ -171,6 +171,35 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
                     ?.querySelector('input')?.value
             ).not.toBe('');
         });
+
+        /**
+         * The bounds say what may be *chosen*; they must not decide what is *shown*. PrimeNG
+         * renders no value below `minDate`, and every start date that exists is in the past — the
+         * server stamps one a minute ahead when an experiment is started with no schedule — so a
+         * picker floored at the next half hour showed a running experiment as having no start date
+         * at all.
+         */
+        it('should still show a start date that is already behind us', () => {
+            mountWith({ startDate: daysFromNow(-1), endDate: null });
+
+            expect(
+                spectator
+                    .query(byTestId('experiments-configure-scheduling-start'))
+                    ?.querySelector('input')?.value
+            ).not.toBe('');
+        });
+
+        // The same rule at the other end: an experiment stopped by hand ends before the minimum
+        // duration measured from its start.
+        it('should still show an end date below the minimum window', () => {
+            mountWith({ startDate: daysFromNow(-30), endDate: daysFromNow(-29) });
+
+            expect(
+                spectator
+                    .query(byTestId('experiments-configure-scheduling-end'))
+                    ?.querySelector('input')?.value
+            ).not.toBe('');
+        });
     });
 
     describe('the window handed down by the shell', () => {
@@ -218,6 +247,24 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
             expect(
                 spectator.query(byTestId('experiments-configure-scheduling-note'))?.textContent
             ).toContain('experiments.configure.scheduling.note.immediate');
+        });
+
+        it('should say the experiment starts automatically while the date is ahead', () => {
+            setDates({ startDate: daysFromNow(1) });
+
+            expect(
+                spectator.query(byTestId('experiments-configure-scheduling-note'))?.textContent
+            ).toContain('experiments.configure.scheduling.note.scheduled');
+        });
+
+        // Once the moment has passed, "starts automatically on" is a claim about the future for
+        // something that already happened — which is what a running experiment's note said.
+        it('should say the experiment started once its date has passed', () => {
+            mountWith({ startDate: daysFromNow(-1), endDate: null });
+
+            expect(
+                spectator.query(byTestId('experiments-configure-scheduling-note'))?.textContent
+            ).toContain('experiments.configure.scheduling.note.started');
         });
     });
 

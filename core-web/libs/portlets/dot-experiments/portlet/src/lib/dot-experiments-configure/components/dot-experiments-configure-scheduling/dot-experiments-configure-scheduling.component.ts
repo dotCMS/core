@@ -14,6 +14,10 @@ import { SchedulingDateBounds, SchedulingFormSlice } from '../../../shared/model
 /** Both pickers move in half hours, same as the old screen's. */
 const DATE_PICKER_STEP_MINUTE = 30;
 
+/** Note copy for a start date still ahead of us, and for one already behind. */
+const SCHEDULED_NOTE_KEY = 'experiments.configure.scheduling.note.scheduled';
+const STARTED_NOTE_KEY = 'experiments.configure.scheduling.note.started';
+
 /**
  * Scheduling card of the Configure screen: when the experiment starts collecting sessions, and
  * when it stops.
@@ -61,8 +65,65 @@ export class DotExperimentsConfigureSchedulingComponent {
 
     protected readonly $startDate = computed<Date | null>(() => this.$field()().value().startDate);
 
+    /**
+     * Where the start picker may go — the bounds, widened to admit a date the experiment already
+     * carries.
+     *
+     * The floor for *choosing* a start is the next half hour; the floor for *showing* one has to be
+     * the value itself, because PrimeNG renders nothing below `minDate` and every start date that
+     * exists is in the past. The server stamps one a minute ahead when an experiment is started
+     * with no schedule at all, and a draft scheduled yesterday carries an older one still — both
+     * came up blank, which reads as "this experiment has no start date" for an experiment that is
+     * running on one.
+     *
+     * Only the picker is widened. The rule that refuses a start date in the past stays where it is,
+     * in the form's schema, so nothing here makes a past date choosable.
+     */
+    protected readonly $startMinDate = computed<Date>(() => {
+        const startDate = this.$field()().value().startDate;
+        const { initialStartDate } = this.$bounds();
+
+        return startDate && startDate < initialStartDate ? startDate : initialStartDate;
+    });
+
+    /**
+     * The end picker's window, widened the same way and for the same reason: an experiment ended by
+     * hand stops before `minEndDate` — the minimum duration measured from its start — and one that
+     * ran its course sits at the far edge of `maxEndDate`.
+     */
+    protected readonly $endMinDate = computed<Date>(() => {
+        const endDate = this.$field()().value().endDate;
+        const { minEndDate } = this.$bounds();
+
+        return endDate && endDate < minEndDate ? endDate : minEndDate;
+    });
+
+    protected readonly $endMaxDate = computed<Date>(() => {
+        const endDate = this.$field()().value().endDate;
+        const { maxEndDate } = this.$bounds();
+
+        return endDate && endDate > maxEndDate ? endDate : maxEndDate;
+    });
+
     /** Read off the field: the schema disables the slice, so the card need not ask the store. */
     protected readonly $isLocked = computed<boolean>(() => this.$field()().disabled());
+
+    /**
+     * Whether the note describes a start still to come or one already behind us.
+     *
+     * Keyed on the date rather than on the status: a scheduled experiment whose moment has passed
+     * has started as surely as a running one, and the copy has to agree with the calendar the
+     * picker beside it is showing. The screen's own "now" is not worth holding for this — the note
+     * is re-read on every change, and being a render late about a minute-old start says the same
+     * thing either way.
+     */
+    protected readonly $startNoteKey = computed<string>(() => {
+        const startDate = this.$startDate();
+
+        return startDate && startDate.getTime() <= Date.now()
+            ? STARTED_NOTE_KEY
+            : SCHEDULED_NOTE_KEY;
+    });
 
     /**
      * Nothing to clear before a date is set, and nothing may be cleared once locked.
