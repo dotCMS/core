@@ -1,5 +1,6 @@
 package com.dotcms.job.system.event;
 
+import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -74,7 +75,8 @@ public class SystemEventsReconciliation {
         if (result.isWithinTolerance()) {
             Logger.info(this, "System event reconciliation for server [" + serverId + "]: authored="
                     + result.getAuthoredCount() + ", observed=" + result.getObservedCount()
-                    + ", loss=" + String.format("%.2f", result.getLossPercent()) + "%");
+                    + ", loss=" + String.format("%.2f", result.getLossPercent()) + "%"
+                    + undeliverableSuffix());
         } else {
             Logger.warn(this, "System event delivery is losing events on server [" + serverId
                     + "]: authored=" + result.getAuthoredCount() + ", observed="
@@ -82,8 +84,30 @@ public class SystemEventsReconciliation {
                     + String.format("%.2f", result.getLossPercent()) + "% exceeds the "
                     + LOSS_TOLERANCE_PERCENT + "% tolerance. Events published on this node are not "
                     + "reaching its own poller, which means they are very likely not reaching the "
-                    + "other nodes either.");
+                    + "other nodes either." + undeliverableSuffix());
         }
+    }
+
+    /**
+     * Reports how many events this node has had to skip because their payloads cannot be read.
+     *
+     * <p>This is where that count belongs: it is a partial answer to the question the loss figure
+     * raises. An event whose payload has no Jackson creator is authored, stored and then permanently
+     * undeliverable, so it shows up as loss and no amount of cursor correctness will recover it. The
+     * counter existed but nothing read it, which left the number invisible outside individual
+     * warnings in the log.
+     *
+     * <p>Stated as "since startup" on purpose — unlike the loss figure it is cumulative, not measured
+     * over this window.
+     *
+     * @return a suffix naming the count, or an empty string when there is nothing to report
+     */
+    private String undeliverableSuffix() {
+        final long undeliverable = SystemEventsFactory.getUnreadablePayloadCount();
+        return undeliverable == 0L ? ""
+                : " Note: " + undeliverable + " event(s) since startup could not be deserialized and "
+                        + "are permanently undeliverable; see the earlier warnings for the payload "
+                        + "classes involved.";
     }
 
     /**

@@ -15,13 +15,15 @@ public class SystemEventsPollWindow {
     private final long queryStartTime;
     private final boolean clamped;
     private final long skippedSpanMillis;
+    private final boolean backlogReplay;
 
     SystemEventsPollWindow(final long readFloor, final long queryStartTime, final boolean clamped,
-                           final long skippedSpanMillis) {
+                           final long skippedSpanMillis, final boolean backlogReplay) {
         this.readFloor = readFloor;
         this.queryStartTime = queryStartTime;
         this.clamped = clamped;
         this.skippedSpanMillis = skippedSpanMillis;
+        this.backlogReplay = backlogReplay;
     }
 
     /**
@@ -47,6 +49,23 @@ public class SystemEventsPollWindow {
     }
 
     /**
+     * Whether this poll is re-reading a span that became visible before this node started looking at
+     * it, rather than reading forward from where it left off. True for a seed poll (no stored cursor,
+     * so it reaches back one seed lookback) and for a clamped poll (the cursor was older than the
+     * backlog bound).
+     *
+     * <p>It exists because elapsed time means something different in the two cases. On an incremental
+     * poll, "now minus created" is how long the event's transaction took to commit. On a replay it is
+     * simply how old the event is, which says nothing about commit behaviour — so a diagnostic that
+     * reads one as the other reports a cause that is not there.
+     *
+     * @return true when this window replays a backlog rather than reading forward
+     */
+    public boolean isBacklogReplay() {
+        return this.backlogReplay;
+    }
+
+    /**
      * @return the span of time the clamp skipped over, in millis; zero when not clamped
      */
     public long getSkippedSpanMillis() {
@@ -57,6 +76,6 @@ public class SystemEventsPollWindow {
     public String toString() {
         return "SystemEventsPollWindow{readFloor=" + this.readFloor + ", queryStartTime="
                 + this.queryStartTime + ", clamped=" + this.clamped + ", skippedSpanMillis="
-                + this.skippedSpanMillis + '}';
+                + this.skippedSpanMillis + ", backlogReplay=" + this.backlogReplay + '}';
     }
 }

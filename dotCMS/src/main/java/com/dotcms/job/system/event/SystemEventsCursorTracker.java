@@ -115,7 +115,7 @@ public class SystemEventsCursorTracker {
             // misfire.
             final long seedFloor = now - this.seedLookbackMillis.getAsLong();
             evictOlderThan(seedFloor);
-            return new SystemEventsPollWindow(seedFloor, now, false, 0L);
+            return new SystemEventsPollWindow(seedFloor, now, false, 0L, true);
         }
 
         final long backlogBound = now - this.maxBacklogMillis.getAsLong();
@@ -133,7 +133,8 @@ public class SystemEventsCursorTracker {
         // id would only grow the map.
         evictOlderThan(readFloor);
 
-        return new SystemEventsPollWindow(readFloor, queryStartTime, clamped, skippedSpanMillis);
+        return new SystemEventsPollWindow(readFloor, queryStartTime, clamped, skippedSpanMillis,
+                clamped);
     }
 
     /**
@@ -204,6 +205,31 @@ public class SystemEventsCursorTracker {
      * @return true when the lag has reached the warning threshold
      */
     public boolean isCommitLagApproachingWindow(final long createdDate, final long firstReadTime) {
+        return isCommitLagApproachingWindow(createdDate, firstReadTime, false);
+    }
+
+    /**
+     * As {@link #isCommitLagApproachingWindow(long, long)}, but silent on a backlog replay.
+     *
+     * <p>The measurement is {@code firstReadTime - createdDate}, which stands in for commit lag only
+     * while the poller is reading forward: an event turns up in the query as soon as it is visible, so
+     * the gap is the time its transaction took. On a seed or clamped poll the node is reading a span
+     * that went by while it was not looking, and the same subtraction yields the event's age. Reported
+     * as lag it names a cause that is not there and prescribes raising the overlap window, which is
+     * not the remedy — once per replayed event, which at the default settings is most of a restart's
+     * backlog.
+     *
+     * @param createdDate   the event's created stamp
+     * @param firstReadTime when this node first read the event
+     * @param backlogReplay whether this poll is replaying a backlog rather than reading forward
+     * @return true when the lag has reached the warning threshold on an incremental poll
+     */
+    public boolean isCommitLagApproachingWindow(final long createdDate, final long firstReadTime,
+                                                final boolean backlogReplay) {
+        if (backlogReplay) {
+            return false;
+        }
+
         final long lagMillis = firstReadTime - createdDate;
         final long thresholdMillis =
                 (this.overlapWindowMillis.getAsLong() * this.lagWarnThresholdPercent.getAsInt()) / 100;

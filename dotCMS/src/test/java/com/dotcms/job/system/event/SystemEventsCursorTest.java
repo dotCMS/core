@@ -336,4 +336,81 @@ public class SystemEventsCursorTest {
         assertFalse("A cursor written one interval ago is healthy",
                 tracker.isCursorStale(now - pollIntervalMillis, now, pollIntervalMillis));
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // Commit-lag warnings must not fire on a backlog replay. A seed poll (no stored cursor) and a
+    // clamped poll (cursor older than the backlog bound) both read events that became visible long
+    // before this node looked. For those, "read time minus created time" measures how long ago the
+    // event happened, NOT how late its transaction committed -- so the warning both misdiagnoses the
+    // cause and gives the wrong remedy ("raise the overlap window"), once per replayed event.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} on a node with no
+     * stored cursor
+     * Given Scenario: A seeding poll, which reaches back one seed lookback and re-reads whatever is
+     * in that span
+     * ExpectedResult: The window declares itself a backlog replay, so callers can tell a first read
+     * of old events apart from a late commit.
+     */
+    @Test
+    public void test_a_seed_poll_is_marked_as_a_backlog_replay() {
+        final SystemEventsPollWindow window = tracker().beginPoll(null, 10_000_000L);
+
+        assertTrue("A seed poll re-reads events that are already old; that is a replay",
+                window.isBacklogReplay());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} with a cursor older
+     * than the backlog bound
+     * Given Scenario: A node that was down long enough for its cursor to be clamped
+     * ExpectedResult: The window declares itself a backlog replay. This is the worst case for the
+     * lag warning: up to a full backlog bound of events, every one of them old by definition.
+     */
+    @Test
+    public void test_a_clamped_poll_is_marked_as_a_backlog_replay() {
+        final long now = 10_000_000L;
+        final SystemEventsPollWindow window =
+                tracker().beginPoll(now - TimeUnit.HOURS.toMillis(5), now);
+
+        assertTrue("A clamped poll is a replay of a backlog", window.isBacklogReplay());
+        assertTrue("and it is still a clamp", window.isClamped());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} in steady state
+     * Given Scenario: An ordinary poll, one interval after the last one
+     * ExpectedResult: Not a replay. The lag warning has to keep working in the case it was built
+     * for, or suppressing it on replays would just be a way of switching it off.
+     */
+    @Test
+    public void test_a_normal_poll_is_not_a_backlog_replay() {
+        final long now = 10_000_000L;
+        final SystemEventsPollWindow window = tracker().beginPoll(now - 5_000L, now);
+
+        assertFalse(window.isBacklogReplay());
+    }
+
+    /**
+     * Method to test:
+     * {@link SystemEventsCursorTracker#isCommitLagApproachingWindow(long, long, boolean)}
+     * Given Scenario: An event 84 seconds old -- a lag that IS reported during a normal poll -- read
+     * during a backlog replay instead
+     * ExpectedResult: Not reported. On a replay the age is the event's own age, not the time its
+     * transaction took to commit, so the warning would name the wrong cause and prescribe raising a
+     * window that is not the problem. Both assertions are here on purpose: the same inputs must
+     * still warn on a normal poll.
+     */
+    @Test
+    public void test_commit_lag_is_not_warned_about_on_a_backlog_replay() {
+        final SystemEventsCursorTracker tracker = trackerWithLagThreshold(50);
+        final long readAt = 10_000_000L;
+        final long created = readAt - TimeUnit.SECONDS.toMillis(84);
+
+        assertTrue("Control: this lag is reported on a normal poll",
+                tracker.isCommitLagApproachingWindow(created, readAt, false));
+        assertFalse("The same lag on a replay is just the event's age, and must not be reported",
+                tracker.isCommitLagApproachingWindow(created, readAt, true));
+    }
 }

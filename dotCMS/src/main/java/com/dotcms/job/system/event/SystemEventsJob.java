@@ -118,7 +118,8 @@ public class SystemEventsJob implements Runnable, Job {
 
 			for (final Delegate<JobDelegateDataBean> delegate : delegateList) {
 				runPropagatingFailures(delegate,
-						new JobDelegateDataBean(jobContext, window.getReadFloor(), tracker));
+						new JobDelegateDataBean(jobContext, window.getReadFloor(), tracker,
+								window.isBacklogReplay()));
 			}
 
 			// Only reached when every delegate completed. A failed read must leave the cursor alone so

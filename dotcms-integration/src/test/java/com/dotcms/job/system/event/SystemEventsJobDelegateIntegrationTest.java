@@ -277,4 +277,75 @@ public class SystemEventsJobDelegateIntegrationTest {
                 .loadResult();
         DbConnectionFactory.commit();
     }
+
+    /**
+     * Method to test: {@link SystemEventsFactory#getUnreadablePayloadCount()} across repeated polls
+     * Given Scenario: One undeserialisable row sits inside the overlap window, so every poll for as
+     * long as it remains in that window reads it again -- roughly 24 times at the default 5-second
+     * cadence and 120-second window, and far more if the cursor has been clamped
+     * Expected Result: It is counted once. The counter is meant to answer "how many events can never
+     * be delivered", and it is reported to operators in that language; incrementing per re-read
+     * turns one broken payload class into a number that climbs forever and cannot be acted on.
+     *
+     * <p>Note the dedupe that suppresses re-delivery lives in the delegate and works on events that
+     * converted successfully. A row that fails conversion never becomes an event, so nothing was
+     * suppressing its repeat counting.
+     */
+    @Test
+    public void test_an_unreadable_payload_is_counted_once_however_often_it_is_re_read()
+            throws Exception {
+        final String poison = UUIDGenerator.generateUuid();
+        final String foreignServerId = UUIDGenerator.generateUuid();
+        final long created = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(30);
+        final long floor = created - TimeUnit.SECONDS.toMillis(10);
+
+        try {
+            insertPoisonEvent(poison, foreignServerId, created);
+
+            final long before = SystemEventsFactory.getUnreadablePayloadCount();
+
+            // Three polls over the same window, exactly as the overlap window produces.
+            idsSince(floor);
+            idsSince(floor);
+            idsSince(floor);
+
+            assertEquals("One undeliverable event must count as one, not once per poll that re-reads it",
+                    1L, SystemEventsFactory.getUnreadablePayloadCount() - before);
+        } finally {
+            deleteEvent(poison);
+        }
+    }
+
+    /**
+     * Method to test: {@link SystemEventsFactory#getUnreadablePayloadCount()} with more than one bad
+     * row
+     * Given Scenario: Two distinct undeserialisable events in the same window, read twice
+     * Expected Result: Two. Counting distinct events must not collapse into "at least one bad row
+     * exists" -- the magnitude is what tells an operator whether this explains the gap
+     * reconciliation is reporting.
+     */
+    @Test
+    public void test_distinct_unreadable_payloads_are_counted_separately() throws Exception {
+        final String firstPoison = UUIDGenerator.generateUuid();
+        final String secondPoison = UUIDGenerator.generateUuid();
+        final String foreignServerId = UUIDGenerator.generateUuid();
+        final long created = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(30);
+        final long floor = created - TimeUnit.SECONDS.toMillis(10);
+
+        try {
+            insertPoisonEvent(firstPoison, foreignServerId, created);
+            insertPoisonEvent(secondPoison, foreignServerId, created + 1);
+
+            final long before = SystemEventsFactory.getUnreadablePayloadCount();
+
+            idsSince(floor);
+            idsSince(floor);
+
+            assertEquals("Two distinct undeliverable events must count as two",
+                    2L, SystemEventsFactory.getUnreadablePayloadCount() - before);
+        } finally {
+            deleteEvent(firstPoison);
+            deleteEvent(secondPoison);
+        }
+    }
 }

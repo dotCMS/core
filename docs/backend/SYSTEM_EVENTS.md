@@ -92,10 +92,14 @@ cover the duplicate case with a test.
   not authorised to see.
 - **The payload type must be deserializable by the receiving node.** `Payload` records the payload's
   concrete class name and the receiver reconstructs into it. A class with no usable Jackson creator
-  (no `@JsonCreator`, no default constructor) can be *written* but never *read back* — and because a
-  batch is converted as a whole, it also destroys delivery of every other event in its window. Two
-  instances have been found: `SystemTableUpdatedKeyEvent` (fixed) and `JobCompletedEvent`. The
-  batch-level fragility is tracked in **#37249**.
+  (no `@JsonCreator`, no default constructor) can be *written* but never *read back*. Such a row is
+  now skipped on its own and the rest of the batch is delivered; it used to destroy delivery of every
+  other event in its window (**#37249**). Two instances have been found:
+  `SystemTableUpdatedKeyEvent` (fixed) and `JobCompletedEvent`.
+- **An unreadable payload is still a permanently undeliverable event.** Skipping it keeps the batch
+  alive; it does not recover the event. Each distinct one is counted once — not once per poll that
+  re-reads it — and the running total is appended to the reconciliation line, because it explains part
+  of any authored-vs-observed gap that no amount of cursor correctness can close.
 
 > If you add a payload class, give it an explicit `@JsonCreator` / `@JsonProperty` constructor and a
 > test that round-trips it.
@@ -172,4 +176,12 @@ Loss must never be silent again. Four signals:
 | Commit lag approaching the window (WARN) | The window is too small for this workload — the one remaining way to lose an event | Raise `SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS` |
 | Cursor stale (WARN) | The poller is not running, or every read is failing | Investigate the node |
 | Backlog clamped (WARN, with the skipped span) | The node was down longer than the backlog bound; events in that span were never delivered to it | Assess what was missed |
+| Backlog replay (INFO, one per poll) | A seeding or clamped poll is re-reading a span that went by while this node was not looking | None; expected after a restart |
+| Unreadable payload (WARN, once per distinct event) | That event can never be delivered to this node | Give the named payload class a `@JsonCreator` |
 | Reconciliation above tolerance (WARN) | Authored and observed have diverged beyond 1% | Treat as a delivery regression |
+
+**Commit lag is only measured on incremental polls.** On a seed or clamped poll the node reads events
+that became visible long before it looked, so "read time minus created time" is the event's age, not
+the time its transaction took. Reporting that as lag names a cause that is not there and prescribes
+raising a window that is not the problem — once per replayed event, which at the default settings is
+most of a restart's backlog. Those polls log the single backlog-replay line above instead.

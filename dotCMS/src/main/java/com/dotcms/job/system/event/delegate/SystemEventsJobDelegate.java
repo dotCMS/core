@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * This delegate class is registered to the {@link SystemEventsJob}, which is
@@ -66,6 +67,16 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 
 			final SystemEventsCursorTracker cursorTracker = data.getCursorTracker();
 			final long readAt = System.currentTimeMillis();
+			final boolean backlogReplay = data.isBacklogReplay();
+
+			if (backlogReplay) {
+				// One line for the poll instead of one commit-lag warning per event. A seeding or
+				// clamped poll reads a span that went by while this node was not looking, so every
+				// event in it looks "late" by exactly as much as it is old.
+				Logger.info(this, "Replaying a backlog of " + newEvents.size() + " system event(s) "
+						+ "from [" + new Date(lastCallback) + "]; commit-lag checking is "
+						+ "skipped for this poll because an event's age here is not its commit lag.");
+			}
 
 			for (final SystemEvent event : newEvents) {
 
@@ -105,7 +116,7 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 				// after events start disappearing.
 				if (null != cursorTracker
 						&& cursorTracker.isCommitLagApproachingWindow(
-								event.getCreationDate().getTime(), readAt)) {
+								event.getCreationDate().getTime(), readAt, backlogReplay)) {
 					Logger.warn(this, "System event [" + event.getId() + "] was committed "
 							+ (readAt - event.getCreationDate().getTime())
 							+ "ms after its creation timestamp, approaching the overlap window. "
