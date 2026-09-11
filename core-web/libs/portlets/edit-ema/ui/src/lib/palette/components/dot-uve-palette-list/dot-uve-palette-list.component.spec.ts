@@ -1,20 +1,22 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 // Mock window.matchMedia for PrimeNG components
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
@@ -70,14 +72,14 @@ const mockStore = {
     $isContentTypesView: signal(true),
     $isFavoritesList: signal(false),
     // methods we assert on
-    getContentTypes: jest.fn(),
-    getContentlets: jest.fn(),
-    setLayoutMode: jest.fn(),
-    addFavorite: jest.fn().mockImplementation((contentType: DotCMSContentType) => {
+    getContentTypes: vi.fn(),
+    getContentlets: vi.fn(),
+    setLayoutMode: vi.fn(),
+    addFavorite: vi.fn().mockImplementation((contentType: DotCMSContentType) => {
         const current = mockStore.contenttypes();
         mockStore.contenttypes.set([...current, contentType]);
     }),
-    removeFavorite: jest.fn().mockImplementation((contentTypeId: string) => {
+    removeFavorite: vi.fn().mockImplementation((contentTypeId: string) => {
         const current = mockStore.contenttypes();
         mockStore.contenttypes.set(current.filter((ct) => ct.id !== contentTypeId));
     })
@@ -174,7 +176,7 @@ const setLoadedContentlets = ({
  * Advances timers to trigger debounced search
  */
 const advanceSearchDebounce = () => {
-    jest.advanceTimersByTime(400);
+    vi.advanceTimersByTime(400);
 };
 
 const basicContentType = {
@@ -196,7 +198,7 @@ const mockGlobalStore = {
 
 describe('DotUvePaletteListComponent', () => {
     let spectator: Spectator<DotUvePaletteListComponent>;
-    let store: jest.Mocked<InstanceType<typeof DotPaletteListStore>>;
+    let store: Mocked<InstanceType<typeof DotPaletteListStore>>;
 
     const createComponent = createComponentFactory({
         component: DotUvePaletteListComponent,
@@ -210,13 +212,13 @@ describe('DotUvePaletteListComponent', () => {
             {
                 provide: DotPageContentTypeService,
                 useValue: {
-                    get: jest.fn().mockReturnValue(
+                    get: vi.fn().mockReturnValue(
                         of({
                             contenttypes: [],
                             pagination: { currentPage: 1, perPage: 30, totalEntries: 0 }
                         })
                     ),
-                    getAllContentTypes: jest.fn().mockReturnValue(
+                    getAllContentTypes: vi.fn().mockReturnValue(
                         of({
                             contenttypes: [],
                             pagination: { currentPage: 1, perPage: 30, totalEntries: 0 }
@@ -227,18 +229,18 @@ describe('DotUvePaletteListComponent', () => {
             {
                 provide: DotFavoriteContentTypeService,
                 useValue: {
-                    getAll: jest.fn().mockReturnValue([]),
-                    isFavorite: jest.fn().mockReturnValue(false),
-                    add: jest.fn().mockReturnValue([]),
-                    remove: jest.fn().mockReturnValue([]),
-                    set: jest.fn().mockReturnValue([])
+                    getAll: vi.fn().mockReturnValue([]),
+                    isFavorite: vi.fn().mockReturnValue(false),
+                    add: vi.fn().mockReturnValue([]),
+                    remove: vi.fn().mockReturnValue([]),
+                    set: vi.fn().mockReturnValue([])
                 }
             },
             DotLocalstorageService,
             {
                 provide: DotESContentService,
                 useValue: {
-                    get: jest.fn().mockReturnValue(
+                    get: vi.fn().mockReturnValue(
                         of({
                             contentlets: [],
                             pagination: { currentPage: 1, perPage: 30, totalEntries: 0 }
@@ -259,7 +261,7 @@ describe('DotUvePaletteListComponent', () => {
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         // Reset mockGlobalStore signal
         mockGlobalStore.currentSiteId.set('demo.dotcms.com');
 
@@ -278,9 +280,9 @@ describe('DotUvePaletteListComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllTimers();
-        jest.clearAllMocks();
-        jest.useRealTimers();
+        vi.clearAllTimers();
+        vi.clearAllMocks();
+        vi.useRealTimers();
     });
 
     it('search (content types): debounces and calls getContentTypes with filter and page 1', () => {
@@ -411,7 +413,7 @@ describe('DotUvePaletteListComponent', () => {
             expect(favoritesPanelComponent).toBeTruthy();
 
             // Create spy on the component's toggle method
-            const toggleSpy = jest.spyOn(favoritesPanelComponent, 'toggle');
+            const toggleSpy = vi.spyOn(favoritesPanelComponent!, 'toggle');
 
             // Trigger click on the add button
             const mockEvent = new MouseEvent('click');
@@ -557,7 +559,7 @@ describe('DotUvePaletteListComponent', () => {
             const menuComponent = spectator.query(Menu);
             expect(menuComponent).toBeTruthy();
 
-            const showSpy = jest.spyOn(menuComponent, 'show');
+            const showSpy = vi.spyOn(menuComponent!, 'show');
             const mockEvent = new MouseEvent('click');
             spectator.triggerEventHandler('[data-testid="sort-menu-button"]', 'onClick', mockEvent);
 
@@ -574,7 +576,7 @@ describe('DotUvePaletteListComponent', () => {
             const contextMenuComponent = spectator.query(ContextMenu);
             expect(contextMenuComponent).toBeTruthy();
 
-            const showSpy = jest.spyOn(contextMenuComponent, 'show');
+            const showSpy = vi.spyOn(contextMenuComponent!, 'show');
             const mockEvent = new MouseEvent('contextmenu');
             spectator.triggerEventHandler('dot-uve-palette-contenttype', 'contextMenu', mockEvent);
 
@@ -699,7 +701,7 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
-            (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
+            (mockFavoriteService.isFavorite as Mock).mockReturnValue(true);
 
             spectator.triggerEventHandler(
                 'dot-uve-palette-contenttype',
@@ -729,7 +731,7 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
-            (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
+            (mockFavoriteService.isFavorite as Mock).mockReturnValue(true);
 
             spectator.triggerEventHandler(
                 'dot-uve-palette-contenttype',
@@ -766,7 +768,7 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             // Clear previous calls
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Update the siteId
             mockGlobalStore.currentSiteId.set('new-site.dotcms.com');
@@ -787,7 +789,7 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             // Clear initial calls
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Trigger sort
             spectator.component['onSortSelect']({ orderby: 'usage', direction: 'DESC' });
@@ -806,7 +808,7 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             // Clear initial calls
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Change languageId via input (component now receives props, not store)
             spectator.setInput('languageId', 2);
@@ -827,7 +829,7 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             // Clear initial calls
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Change pagePath via input (component now receives props, not store)
             spectator.setInput('pagePath', '/new-page');
@@ -895,7 +897,7 @@ describe('DotUvePaletteListComponent', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.output('selectContentType').subscribe(emitSpy);
 
             spectator.triggerEventHandler(
@@ -929,7 +931,7 @@ describe('DotUvePaletteListComponent', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.output('selectContentType').subscribe(emitSpy);
 
             spectator.triggerEventHandler(
@@ -996,7 +998,7 @@ describe('DotUvePaletteListComponent', () => {
             const contextMenuComponent = spectator.query(ContextMenu);
             expect(contextMenuComponent).toBeTruthy();
 
-            const showSpy = jest.spyOn(contextMenuComponent, 'show');
+            const showSpy = vi.spyOn(contextMenuComponent!, 'show');
             spectator.triggerEventHandler(
                 'dot-uve-palette-contenttype',
                 'contextMenu',

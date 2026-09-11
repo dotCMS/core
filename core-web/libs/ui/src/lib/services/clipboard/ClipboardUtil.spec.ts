@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { vi } from 'vitest';
+
 import { TestBed } from '@angular/core/testing';
 
 import { DotClipboardUtil } from './ClipboardUtil';
@@ -12,7 +14,7 @@ describe('DotClipboardUtil', () => {
         originalExecCommand = document.execCommand;
         // Add execCommand to document if it doesn't exist
         if (!document.execCommand) {
-            document.execCommand = jest.fn();
+            document.execCommand = vi.fn();
         }
 
         TestBed.configureTestingModule({
@@ -29,7 +31,7 @@ describe('DotClipboardUtil', () => {
 
     it('should copy using modern Clipboard API', async () => {
         const mockClipboard = {
-            writeText: jest.fn().mockResolvedValue(undefined)
+            writeText: vi.fn().mockResolvedValue(undefined)
         };
         Object.defineProperty(navigator, 'clipboard', {
             value: mockClipboard,
@@ -43,14 +45,14 @@ describe('DotClipboardUtil', () => {
 
     it('should use fallback when Clipboard API fails', async () => {
         const mockClipboard = {
-            writeText: jest.fn().mockRejectedValue(new Error('Not allowed'))
+            writeText: vi.fn().mockRejectedValue(new Error('Not allowed'))
         };
         Object.defineProperty(navigator, 'clipboard', {
             value: mockClipboard,
             writable: true
         });
 
-        document.execCommand = jest.fn().mockReturnValue(true);
+        document.execCommand = vi.fn().mockReturnValue(true);
 
         const result = await service.copy('hello-world');
         expect(result).toBe(true);
@@ -59,14 +61,14 @@ describe('DotClipboardUtil', () => {
 
     it('should handle complete failure gracefully', async () => {
         const mockClipboard = {
-            writeText: jest.fn().mockRejectedValue(new Error('Not allowed'))
+            writeText: vi.fn().mockRejectedValue(new Error('Not allowed'))
         };
         Object.defineProperty(navigator, 'clipboard', {
             value: mockClipboard,
             writable: true
         });
 
-        document.execCommand = jest.fn().mockImplementation(() => {
+        document.execCommand = vi.fn().mockImplementation(() => {
             throw new Error('execCommand failed');
         });
 

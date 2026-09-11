@@ -8,7 +8,7 @@
         "generate-spec": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "npx tsx scripts/generate-spec.ts",
+                "command": "tsx scripts/generate-spec.ts",
                 "cwd": "libs/sdk/ai"
             }
         },
@@ -41,16 +41,7 @@
             }
         },
         "test": {
-            "dependsOn": ["generate-spec"],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
+            "dependsOn": ["generate-spec"]
         }
     }
 }

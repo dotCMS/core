@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -173,12 +174,12 @@ describe('DotCMSEditorComponent — #36985 value-load gating', () => {
     // raised from an animation-frame callback and buries the real assertion failure. Shimming
     // them changes no behaviour under test — the editor never reads the geometry back.
     beforeAll(() => {
-        Element.prototype.getClientRects = jest.fn(() => emptyRectList());
-        Element.prototype.getBoundingClientRect = jest.fn(() => emptyRect());
+        Element.prototype.getClientRects = vi.fn(() => emptyRectList());
+        Element.prototype.getBoundingClientRect = vi.fn(() => emptyRect());
 
         // ProseMirror measures through a Range, not only an Element.
-        Range.prototype.getClientRects = jest.fn(() => emptyRectList());
-        Range.prototype.getBoundingClientRect = jest.fn(() => emptyRect());
+        Range.prototype.getClientRects = vi.fn(() => emptyRectList());
+        Range.prototype.getBoundingClientRect = vi.fn(() => emptyRect());
     });
 
     afterEach(() => {

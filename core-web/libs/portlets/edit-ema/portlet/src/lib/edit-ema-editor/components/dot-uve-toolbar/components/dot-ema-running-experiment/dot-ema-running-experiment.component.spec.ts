@@ -1,4 +1,9 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';

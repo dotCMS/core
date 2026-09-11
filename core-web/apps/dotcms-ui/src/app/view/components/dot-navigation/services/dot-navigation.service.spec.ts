@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Observable, of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -86,7 +87,7 @@ class TitleServiceMock {
         return 'dotCMS platform';
     }
 
-    setTitle = jest.fn();
+    setTitle = vi.fn();
 }
 
 export const dotMenuMock = () => {
@@ -161,7 +162,7 @@ const baseMockAuth: Auth = {
 };
 
 describe('DotNavigationService', () => {
-    jest.setTimeout(10000); // Increase timeout for this test suite
+    vi.setConfig({ testTimeout: 10000 }); // Increase timeout for this test suite
 
     let service: DotNavigationService;
     let dotRouterService: DotRouterService;
@@ -174,7 +175,7 @@ describe('DotNavigationService', () => {
 
     beforeEach(() => {
         router = new RouterMock();
-        const getPortletIdFn = jest.fn((url: string) => {
+        const getPortletIdFn = vi.fn((url: string) => {
             // Extract portlet id from URL like /c/123 -> '123'
             if (!url) return '123-567';
             url = decodeURIComponent(url);
@@ -200,8 +201,8 @@ describe('DotNavigationService', () => {
             get queryParams() {
                 return { mId: '123' };
             },
-            reloadCurrentPortlet: jest.fn(),
-            gotoPortlet: jest.fn().mockReturnValue(new Promise((resolve) => resolve(true))),
+            reloadCurrentPortlet: vi.fn(),
+            gotoPortlet: vi.fn().mockReturnValue(new Promise((resolve) => resolve(true))),
             getPortletId: getPortletIdFn
         };
 
@@ -228,7 +229,7 @@ describe('DotNavigationService', () => {
                 {
                     provide: DotIframeService,
                     useValue: {
-                        reload: jest.fn()
+                        reload: vi.fn()
                     }
                 },
                 {
@@ -242,18 +243,18 @@ describe('DotNavigationService', () => {
                 {
                     provide: DynamicRouteService,
                     useValue: {
-                        registerRoutesFromMenuItems: jest.fn().mockReturnValue(0),
-                        getRegisteredRoutes: jest.fn().mockReturnValue([])
+                        registerRoutesFromMenuItems: vi.fn().mockReturnValue(0),
+                        getRegisteredRoutes: vi.fn().mockReturnValue([])
                     }
                 },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 GlobalStore,
                 {
                     useValue: {
-                        connect: jest.fn().mockReturnValue(of(null)),
-                        status$: jest.fn().mockReturnValue(of('connected')),
-                        on: jest.fn().mockReturnValue(of()),
-                        destroy: jest.fn()
+                        connect: vi.fn().mockReturnValue(of(null)),
+                        status$: vi.fn().mockReturnValue(of('connected')),
+                        on: vi.fn().mockReturnValue(of()),
+                        destroy: vi.fn()
                     }
                 },
                 provideHttpClient(),
@@ -269,9 +270,9 @@ describe('DotNavigationService', () => {
         dotEventService = TestBed.inject(DotEventsService);
         titleService = TestBed.inject(Title);
 
-        jest.spyOn(titleService, 'setTitle');
-        jest.spyOn(dotEventService, 'notify');
-        jest.spyOn(dotMenuService, 'reloadMenu');
+        vi.spyOn(titleService, 'setTitle');
+        vi.spyOn(dotEventService, 'notify');
+        vi.spyOn(dotMenuService, 'reloadMenu');
         localStorage.clear();
     });
 
@@ -288,7 +289,7 @@ describe('DotNavigationService', () => {
     it('should go to first portlet on auth change', () => {
         (loginService as unknown as LoginServiceMock).triggerNewAuth(baseMockAuth);
 
-        jest.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
+        vi.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
             of([
                 {
                     active: false,
@@ -321,44 +322,48 @@ describe('DotNavigationService', () => {
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
-    it('should expand and set active menu option by url when is not collapsed', (done) => {
-        const globalStore = TestBed.inject(GlobalStore);
+    it('should expand and set active menu option by url when is not collapsed', () =>
+        new Promise<void>((done) => {
+            const globalStore = TestBed.inject(GlobalStore);
 
-        // Mock loadMenu to return the same menu structure when navigation event is triggered
-        jest.spyOn(dotMenuService, 'loadMenu').mockReturnValue(of([dotMenuMock(), dotMenuMock1()]));
+            // Mock loadMenu to return the same menu structure when navigation event is triggered
+            vi.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
+                of([dotMenuMock(), dotMenuMock1()])
+            );
 
-        // Set up initial state
-        globalStore.loadMenu([dotMenuMock(), dotMenuMock1()]);
-        globalStore.expandNavigation();
+            // Set up initial state
+            globalStore.loadMenu([dotMenuMock(), dotMenuMock1()]);
+            globalStore.expandNavigation();
 
-        // Use URL that matches the item id (123) - getTheUrlId extracts the first segment or last if /c/
-        // For /c/123, getTheUrlId returns '123' which matches the item id
-        router.triggerNavigationEnd('/c/123');
+            // Use URL that matches the item id (123) - getTheUrlId extracts the first segment or last if /c/
+            // For /c/123, getTheUrlId returns '123' which matches the item id
+            router.triggerNavigationEnd('/c/123');
 
-        // Wait for async operations - need to wait for the menu service to load and setActiveMenu to be called
-        setTimeout(() => {
-            const menuGroups = globalStore.menuGroup();
-            const activeItem = globalStore.activeMenuItem();
-            if (menuGroups.length > 0) {
-                // When navigating to /c/123, the menu group should be open and the item should be active
-                // Note: setActiveMenu opens the parent menu only if navigation is not collapsed
-                expect(menuGroups[0].isOpen).toBe(true);
-                expect(activeItem?.id).toBe('123');
-                expect(activeItem?.active).toBe(true);
-            } else {
-                // If menu groups are not loaded yet, the test setup might need adjustment
-                console.warn('Menu groups not loaded yet');
-            }
-            done();
-        }, 2000); // Increased timeout to allow async operations to complete
-    });
+            // Wait for async operations - need to wait for the menu service to load and setActiveMenu to be called
+            setTimeout(() => {
+                const menuGroups = globalStore.menuGroup();
+                const activeItem = globalStore.activeMenuItem();
+                if (menuGroups.length > 0) {
+                    // When navigating to /c/123, the menu group should be open and the item should be active
+                    // Note: setActiveMenu opens the parent menu only if navigation is not collapsed
+                    expect(menuGroups[0].isOpen).toBe(true);
+                    expect(activeItem?.id).toBe('123');
+                    expect(activeItem?.active).toBe(true);
+                } else {
+                    // If menu groups are not loaded yet, the test setup might need adjustment
+                    console.warn('Menu groups not loaded yet');
+                }
+                done();
+            }, 2000); // Increased timeout to allow async operations to complete
+        }));
 
-    it('should set Page title based on url', (done) => {
-        router.triggerNavigationEnd('url/one');
-        setTimeout(() => {
-            expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
-            expect(titleService.setTitle).toHaveBeenCalledTimes(1);
-            done();
-        }, 100);
-    });
+    it('should set Page title based on url', () =>
+        new Promise<void>((done) => {
+            router.triggerNavigationEnd('url/one');
+            setTimeout(() => {
+                expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
+                expect(titleService.setTitle).toHaveBeenCalledTimes(1);
+                done();
+            }, 100);
+        }));
 });

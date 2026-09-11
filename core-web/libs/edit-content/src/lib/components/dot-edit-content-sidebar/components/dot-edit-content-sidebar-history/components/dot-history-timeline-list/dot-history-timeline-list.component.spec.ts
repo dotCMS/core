@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component, TemplateRef, signal, viewChild } from '@angular/core';
 
@@ -70,14 +71,16 @@ describe('DotHistoryTimelineListComponent', () => {
         // to the original so afterEach can restore it and the stub never leaks into
         // other specs sharing this Jest worker.
         originalIntersectionObserver = global.IntersectionObserver;
-        global.IntersectionObserver = jest
+        global.IntersectionObserver = vi
             .fn()
-            .mockImplementation((callback: IntersectionObserverCallback) => {
+            // A function expression, not an arrow: the component calls
+            // `new IntersectionObserver(...)`, and an arrow is not constructible.
+            .mockImplementation(function (callback: IntersectionObserverCallback) {
                 intersectionCallback = callback;
                 return {
-                    observe: jest.fn(),
-                    unobserve: jest.fn(),
-                    disconnect: jest.fn()
+                    observe: vi.fn(),
+                    unobserve: vi.fn(),
+                    disconnect: vi.fn()
                 };
             }) as unknown as typeof IntersectionObserver;
 
@@ -263,11 +266,13 @@ describe('DotHistoryTimelineListComponent with version items', () => {
     });
 
     beforeEach(() => {
-        global.IntersectionObserver = jest.fn().mockImplementation(() => ({
-            observe: jest.fn(),
-            unobserve: jest.fn(),
-            disconnect: jest.fn()
-        })) as unknown as typeof IntersectionObserver;
+        global.IntersectionObserver = vi.fn().mockImplementation(function () {
+            return {
+                observe: vi.fn(),
+                unobserve: vi.fn(),
+                disconnect: vi.fn()
+            };
+        }) as unknown as typeof IntersectionObserver;
 
         spectator = createHost();
         spectator.detectChanges();
@@ -356,11 +361,13 @@ describe('DotHistoryTimelineListComponent with push publish items', () => {
     });
 
     beforeEach(() => {
-        global.IntersectionObserver = jest.fn().mockImplementation(() => ({
-            observe: jest.fn(),
-            unobserve: jest.fn(),
-            disconnect: jest.fn()
-        })) as unknown as typeof IntersectionObserver;
+        global.IntersectionObserver = vi.fn().mockImplementation(function () {
+            return {
+                observe: vi.fn(),
+                unobserve: vi.fn(),
+                disconnect: vi.fn()
+            };
+        }) as unknown as typeof IntersectionObserver;
 
         spectator = createHost();
         spectator.detectChanges();

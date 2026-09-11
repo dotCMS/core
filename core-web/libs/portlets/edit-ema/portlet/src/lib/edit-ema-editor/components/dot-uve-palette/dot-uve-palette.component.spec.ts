@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { MockComponent, ngMocks } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { computed, signal } from '@angular/core';
 
@@ -82,7 +83,7 @@ describe('DotUvePaletteComponent', () => {
 
     beforeEach(() => {
         // Mock scrollIntoView for PrimeNG TabView
-        Element.prototype.scrollIntoView = jest.fn();
+        Element.prototype.scrollIntoView = vi.fn();
 
         // Reset mock store values
         mockUVEStore.pageURI.set('/test/page/path');

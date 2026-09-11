@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
 import { of, throwError } from 'rxjs';
+import { MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -48,9 +48,12 @@ import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
+// `runningExperiment` defaults to null, not undefined: with no running
+// experiment the service resolves `getRunningExperiment()` to null, and
+// `toEqual` does not treat the two as equal.
 const getDotPageRenderStateMock = (
     favoritePage?: DotCMSContentlet,
-    runningExperiment?: DotExperiment
+    runningExperiment: DotExperiment | null = null
 ) => {
     return new DotPageRenderState(
         mockUser(),
@@ -63,9 +66,9 @@ const getDotPageRenderStateMock = (
 describe('DotPageStateService', () => {
     let dotContentletLockerService: DotContentletLockerService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let dotHttpErrorManagerServiceHandle: jest.SpyInstance;
+    let dotHttpErrorManagerServiceHandle: MockInstance;
     let dotPageRenderService: DotPageRenderService;
-    let dotPageRenderServiceGetSpy: jest.SpyInstance;
+    let dotPageRenderServiceGetSpy: MockInstance;
     let dotRouterService: DotRouterService;
     let dotFavoritePageService: DotFavoritePageService;
     let loginService: LoginService;
@@ -92,7 +95,7 @@ describe('DotPageStateService', () => {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
                 },
-                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(vi) },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -113,11 +116,11 @@ describe('DotPageStateService', () => {
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotExperimentsService = TestBed.inject(DotExperimentsService);
 
-        dotPageRenderServiceGetSpy = jest
+        dotPageRenderServiceGetSpy = vi
             .spyOn(dotPageRenderService, 'get')
             .mockReturnValue(of(mockDotRenderedPage()));
 
-        dotHttpErrorManagerServiceHandle = jest.spyOn(dotHttpErrorManagerService, 'handle');
+        dotHttpErrorManagerServiceHandle = vi.spyOn(dotHttpErrorManagerService, 'handle');
 
         Object.defineProperty(dotRouterService, 'queryParams', {
             value: {
@@ -126,7 +129,7 @@ describe('DotPageStateService', () => {
             writable: true
         });
 
-        jest.spyOn(dotFavoritePageService, 'get').mockReturnValue(
+        vi.spyOn(dotFavoritePageService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -137,7 +140,7 @@ describe('DotPageStateService', () => {
             })
         );
 
-        jest.spyOn(dotExperimentsService, 'getByStatus').mockReturnValue(of([]));
+        vi.spyOn(dotExperimentsService, 'getByStatus').mockReturnValue(of([]));
     });
 
     describe('Method: get', () => {
@@ -175,10 +178,10 @@ describe('DotPageStateService', () => {
             const error500 = mockResponseView(500, '/test', undefined, {
                 message: 'error'
             });
-            dotFavoritePageService.get = jest.fn().mockReturnValue(throwError(() => error500));
+            dotFavoritePageService.get = vi.fn().mockReturnValue(throwError(() => error500));
             service.get();
 
-            const subscribeCallback = jest.fn();
+            const subscribeCallback = vi.fn();
             service.haveContent$.subscribe(subscribeCallback);
 
             expect(subscribeCallback).toHaveBeenCalledWith(true);
@@ -194,7 +197,7 @@ describe('DotPageStateService', () => {
     describe('Get Running Experiment', () => {
         it('should get running experiment', () => {
             const mock = getDotPageRenderStateMock(undefined, EXPERIMENT_MOCK);
-            dotExperimentsService.getByStatus = jest.fn().mockReturnValue(of([EXPERIMENT_MOCK]));
+            dotExperimentsService.getByStatus = vi.fn().mockReturnValue(of([EXPERIMENT_MOCK]));
 
             service.get();
 
@@ -224,9 +227,7 @@ describe('DotPageStateService', () => {
             });
             const mock = getDotPageRenderStateMock();
 
-            dotExperimentsService.getByStatus = jest
-                .fn()
-                .mockReturnValue(throwError(() => error500));
+            dotExperimentsService.getByStatus = vi.fn().mockReturnValue(throwError(() => error500));
 
             service.get();
 
@@ -272,7 +273,7 @@ describe('DotPageStateService', () => {
 
         describe('setLock', () => {
             it('should lock', () => {
-                jest.spyOn(dotContentletLockerService, 'lock').mockReturnValue(
+                vi.spyOn(dotContentletLockerService, 'lock').mockReturnValue(
                     of({
                         id: '',
                         inode: '',
@@ -297,7 +298,7 @@ describe('DotPageStateService', () => {
             });
 
             it('should unlock', () => {
-                jest.spyOn(dotContentletLockerService, 'unlock').mockReturnValue(
+                vi.spyOn(dotContentletLockerService, 'unlock').mockReturnValue(
                     of({
                         id: '',
                         inode: '',
@@ -435,7 +436,13 @@ describe('DotPageStateService', () => {
         });
 
         it('should show error 500 and reload', () => {
-            jest.spyOn(service, 'reload');
+            // mockImplementation, not a bare spy: the real reload() reads
+            // `currentState.state.mode`, and no successful get has populated
+            // currentState in this test. Calling through raised an unhandled
+            // rxjs error, which Jest swallowed and Vitest reports.
+            vi.spyOn(service, 'reload').mockImplementation(() => {
+                /* asserted on, not exercised */
+            });
             const error500 = mockResponseView(500);
             dotPageRenderServiceGetSpy.mockReturnValue(throwError(() => error500));
             dotHttpErrorManagerServiceHandle.mockReturnValue(
@@ -493,7 +500,7 @@ describe('DotPageStateService', () => {
 
         it('should set local state and emit with experiment', () => {
             const mock = getDotPageRenderStateMock(dotcmsContentletMock, EXPERIMENT_MOCK);
-            dotExperimentsService.getByStatus = jest.fn().mockReturnValue(of([EXPERIMENT_MOCK]));
+            dotExperimentsService.getByStatus = vi.fn().mockReturnValue(of([EXPERIMENT_MOCK]));
 
             const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
 
@@ -531,7 +538,7 @@ describe('DotPageStateService', () => {
                 const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jest.fn();
+                const subscribeCallback = vi.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(true);
@@ -554,7 +561,7 @@ describe('DotPageStateService', () => {
                 });
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jest.fn();
+                const subscribeCallback = vi.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(false);
@@ -582,7 +589,7 @@ describe('DotPageStateService', () => {
                 });
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jest.fn();
+                const subscribeCallback = vi.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(true);
@@ -610,7 +617,7 @@ describe('DotPageStateService', () => {
                 });
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jest.fn();
+                const subscribeCallback = vi.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(false);

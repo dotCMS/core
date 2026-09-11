@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -34,10 +35,10 @@ describe('DotAiStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotAiStore>>;
     let currentSiteId: ReturnType<typeof signal<string | null>>;
 
-    // Held outside the factory: a factory's stub object is built once, so a `jest.fn()`
+    // Held outside the factory: a factory's stub object is built once, so a `vi.fn()`
     // written inline is shared by every test in the file and its call counts accumulate.
-    const getResolvedConfig = jest.fn();
-    const getIndexes = jest.fn();
+    const getResolvedConfig = vi.fn();
+    const getIndexes = vi.fn();
 
     const createService = createServiceFactory({
         service: DotAiStore,
@@ -59,7 +60,7 @@ describe('DotAiStore', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         getResolvedConfig.mockReturnValue(of(resolved()));
         getIndexes.mockReturnValue(of([]));
         currentSiteId = signal<string | null>('site-1');

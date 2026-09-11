@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { DotAuthService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotAuthSitesView } from '@dotcms/dotcms-models';
@@ -18,15 +19,15 @@ const FIXTURE: DotAuthSitesView = {
 describe('DotAuthListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotAuthListStore>>;
     let store: InstanceType<typeof DotAuthListStore>;
-    let service: jest.Mocked<DotAuthService>;
+    let service: Mocked<DotAuthService>;
 
     const createService = createServiceFactory({
         service: DotAuthListStore,
         providers: [
             mockProvider(DotAuthService, {
-                listSites: jest.fn().mockReturnValue(of(FIXTURE)),
-                saveConfig: jest.fn().mockReturnValue(of(undefined)),
-                clearConfig: jest.fn().mockReturnValue(of(undefined))
+                listSites: vi.fn().mockReturnValue(of(FIXTURE)),
+                saveConfig: vi.fn().mockReturnValue(of(undefined)),
+                clearConfig: vi.fn().mockReturnValue(of(undefined))
             }),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -35,7 +36,7 @@ describe('DotAuthListStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotAuthService) as jest.Mocked<DotAuthService>;
+        service = spectator.inject(DotAuthService) as Mocked<DotAuthService>;
         // Force the withHooks onInit effect to fire deterministically; otherwise
         // the first assertions race the scheduler.
         spectator.flushEffects();
@@ -126,7 +127,7 @@ describe('DotAuthListStore', () => {
     describe('loadSites error path', () => {
         // Restore the happy-path mock in afterEach so the next describe block
         // starts from a clean state — otherwise the throwError() below poisons
-        // the shared jest.fn() and later tests see errors during onInit.
+        // the shared vi.fn() and later tests see errors during onInit.
         afterEach(() => {
             service.listSites.mockReturnValue(of(FIXTURE));
         });

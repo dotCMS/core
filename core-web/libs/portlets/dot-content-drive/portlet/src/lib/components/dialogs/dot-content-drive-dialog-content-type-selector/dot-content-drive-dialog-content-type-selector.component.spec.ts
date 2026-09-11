@@ -1,12 +1,12 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -41,17 +41,17 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
         ],
         providers: [
             mockProvider(DotContentDriveStore, {
-                closeDialog: jest.fn(),
-                currentSite: jest
+                closeDialog: vi.fn(),
+                currentSite: vi
                     .fn()
                     .mockReturnValue({ hostname: 'demo.dotcms.com', identifier: 'site-1' }),
-                path: jest.fn().mockReturnValue('/about-us/'),
-                selectedNode: jest
+                path: vi.fn().mockReturnValue('/about-us/'),
+                selectedNode: vi
                     .fn()
                     .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } })
             }),
             mockProvider(DotContentDriveNavigationService, {
-                createContent: jest.fn()
+                createContent: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -74,7 +74,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('palette preferences', () => {

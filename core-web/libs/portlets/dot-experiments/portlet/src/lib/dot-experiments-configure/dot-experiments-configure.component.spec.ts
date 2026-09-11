@@ -1,5 +1,11 @@
 import { Dispatcher, EventCreator } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { ApplicationRef, Component, input, signal, WritableSignal } from '@angular/core';
@@ -172,7 +178,7 @@ class FooterStubComponent {}
 
 /**
  * The store is provided by the component itself, so it is replaced through `componentProviders`.
- * Real signals rather than `jest.fn()`s: the shell derives `$isLoading` in a `computed`, fills the
+ * Real signals rather than `vi.fn()`s: the shell derives `$isLoading` in a `computed`, fills the
  * form in an `effect` and watches it in another, none of which would ever re-run over a plain
  * function.
  */
@@ -208,22 +214,22 @@ const createGlobalStoreMock = () => {
 
     return {
         trail,
-        addNewBreadcrumb: jest.fn((crumb: MenuItem) => {
+        addNewBreadcrumb: vi.fn((crumb: MenuItem) => {
             trail.push(crumb);
         }),
-        setLastBreadcrumb: jest.fn((crumb: MenuItem) => {
+        setLastBreadcrumb: vi.fn((crumb: MenuItem) => {
             trail[trail.length - 1] = crumb;
         }),
-        breadcrumbs: jest.fn(() => [...trail]),
-        lastBreadcrumb: jest.fn(() => trail.at(-1) ?? null)
+        breadcrumbs: vi.fn(() => [...trail]),
+        lastBreadcrumb: vi.fn(() => trail.at(-1) ?? null)
     };
 };
 
 describe('DotExperimentsConfigureComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let scrollIntoView: jest.Mock;
-    let dispatch: jest.SpyInstance;
+    let scrollIntoView: Mock;
+    let dispatch: MockInstance;
     let globalStore: ReturnType<typeof createGlobalStoreMock>;
 
     /**
@@ -377,12 +383,12 @@ describe('DotExperimentsConfigureComponent', () => {
         storeMock = createStoreMock();
         globalStore = createGlobalStoreMock();
         // jsdom does not implement scrollIntoView, so there is nothing to spy on.
-        scrollIntoView = jest.fn();
+        scrollIntoView = vi.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('on an existing experiment', () => {
@@ -393,7 +399,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
             // The route names an experiment, so the store is past the save gate before the first
             // render — the tests here are about the screen of an experiment that exists.
             storeMock.isNew.set(false);
@@ -486,7 +492,7 @@ describe('DotExperimentsConfigureComponent', () => {
             it('should offer a way back to the list', () => {
                 renderError();
                 const router = spectator.inject(Router);
-                const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+                const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
                 spectator.click(
                     spectator
@@ -566,24 +572,24 @@ describe('DotExperimentsConfigureComponent', () => {
                 const settleSaveAfter = (ms: number) => {
                     storeMock.$isSaving.set(true);
                     spectator.detectChanges();
-                    jest.advanceTimersByTime(ms);
+                    vi.advanceTimersByTime(ms);
                     storeMock.$isSaving.set(false);
                     spectator.detectChanges();
                 };
 
-                beforeEach(() => jest.useFakeTimers());
-                afterEach(() => jest.useRealTimers());
+                beforeEach(() => vi.useFakeTimers());
+                afterEach(() => vi.useRealTimers());
 
                 it('should stay up for the rest of the window when the save beats it', () => {
                     settleSaveAfter(20);
 
                     expect(bar()).not.toBeNull();
 
-                    jest.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS - 20 - 1);
+                    vi.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS - 20 - 1);
                     spectator.detectChanges();
                     expect(bar()).not.toBeNull();
 
-                    jest.advanceTimersByTime(1);
+                    vi.advanceTimersByTime(1);
                     spectator.detectChanges();
                     expect(bar()).toBeNull();
                 });
@@ -598,7 +604,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     storeMock.$isSaving.set(true);
                     spectator.detectChanges();
 
-                    jest.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS * 5);
+                    vi.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS * 5);
                     spectator.detectChanges();
 
                     expect(bar()).not.toBeNull();
@@ -610,7 +616,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
                     storeMock.$isSaving.set(true);
                     spectator.detectChanges();
-                    jest.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS);
+                    vi.advanceTimersByTime(MIN_PROGRESS_BAR_VISIBLE_MS);
                     spectator.detectChanges();
 
                     // The first hide was cancelled, so the still-running save keeps it up.
@@ -933,7 +939,7 @@ describe('DotExperimentsConfigureComponent', () => {
             const experiment = getExperimentMock(0);
 
             const pushedMessage = (): string =>
-                (spectator.inject(DotMessageDisplayService, true).push as jest.Mock).mock.calls.at(
+                (spectator.inject(DotMessageDisplayService, true).push as Mock).mock.calls.at(
                     -1
                 )?.[0].message;
 
@@ -1081,9 +1087,7 @@ describe('DotExperimentsConfigureComponent', () => {
             storeMock.status.set(ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            const navigate = jest
-                .spyOn(spectator.inject(Router), 'navigate')
-                .mockResolvedValue(true);
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
 
             spectator.click(
                 spectator
@@ -1270,7 +1274,7 @@ describe('DotExperimentsConfigureComponent', () => {
             spectator.detectChanges();
 
             const variants = spectator.query(byTestId('configure-section-variants')) as HTMLElement;
-            const scrollToVariants = jest.spyOn(variants, 'scrollIntoView');
+            const scrollToVariants = vi.spyOn(variants, 'scrollIntoView');
 
             spectator
                 .inject(Dispatcher)
@@ -1309,7 +1313,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
             spectator.detectChanges();
         });
 
@@ -1405,7 +1409,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
             loadExperiment();
         });
 
@@ -1433,7 +1437,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
             loadExperiment();
         });
 
@@ -1504,7 +1508,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
             loadExperiment();
         });
 
@@ -1540,7 +1544,7 @@ describe('DotExperimentsConfigureComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
-            dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
             storeMock.$isLocked.set(true);
             // A locked status is also what the store explains a frozen variant row with.
             storeMock.$disabledTooltipKey.set(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);

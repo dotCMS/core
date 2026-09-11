@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -16,14 +17,14 @@ describe('DotContentTypeFilterChipComponent', () => {
     let spectator: Spectator<DotContentTypeFilterChipComponent>;
 
     const stored = signal<Record<string, string | string[]>>({});
-    const patchFilters = jest.fn();
-    const removeFilter = jest.fn();
+    const patchFilters = vi.fn();
+    const removeFilter = vi.fn();
 
     const facade: DotFilterFacade = {
-        getFilterValue: jest.fn((key: string) => stored()[key]),
+        getFilterValue: vi.fn((key: string) => stored()[key]),
         patchFilters,
         removeFilter,
-        clearFilters: jest.fn(),
+        clearFilters: vi.fn(),
         $hasNonDefaultFilters: signal(false)
     };
 
@@ -32,8 +33,8 @@ describe('DotContentTypeFilterChipComponent', () => {
         providers: [
             { provide: DOT_FILTER_FACADE, useValue: facade },
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of([])),
-                getContentTypesWithPagination: jest
+                getAllContentTypes: vi.fn().mockReturnValue(of([])),
+                getContentTypesWithPagination: vi
                     .fn()
                     .mockReturnValue(of({ contentTypes: [], pagination: {} }))
             }),
@@ -49,7 +50,7 @@ describe('DotContentTypeFilterChipComponent', () => {
         spectator.detectChanges();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should identify itself for the canonical order check', () => {
         expect(spectator.element.getAttribute('data-filter-chip')).toBe('contentType');

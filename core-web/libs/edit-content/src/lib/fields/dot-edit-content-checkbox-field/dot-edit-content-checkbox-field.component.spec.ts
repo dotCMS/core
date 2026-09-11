@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory } from '@openng/spectator/jest';
+import { SpectatorHost, createHostFactory } from '@openng/spectator/vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';

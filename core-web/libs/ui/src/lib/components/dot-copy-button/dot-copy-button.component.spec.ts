@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { discardPeriodicTasks, fakeAsync, flush, tick } from '@angular/core/testing';
 
@@ -33,7 +34,7 @@ describe('DotCopyButtonComponent', () => {
         });
         // Component provides its own DotClipboardUtil; spy on that instance so copy() is used
         dotClipboardUtil = spectator.fixture.debugElement.injector.get(DotClipboardUtil);
-        jest.spyOn(dotClipboardUtil, 'copy').mockResolvedValue(true);
+        vi.spyOn(dotClipboardUtil, 'copy').mockResolvedValue(true);
         spectator.detectChanges();
     });
 
@@ -56,7 +57,7 @@ describe('DotCopyButtonComponent', () => {
         });
 
         it('should copy text to clipboard', fakeAsync(() => {
-            const stopPropagation = jest.fn();
+            const stopPropagation = vi.fn();
             const event = { stopPropagation } as unknown as MouseEvent;
             spectator.component.copyUrlToClipboard(event);
             spectator.detectChanges();
@@ -90,7 +91,7 @@ describe('DotCopyButtonComponent', () => {
         }));
 
         it('should show "Copied" in tooltip after clicking', fakeAsync(() => {
-            const event = { stopPropagation: jest.fn() } as unknown as MouseEvent;
+            const event = { stopPropagation: vi.fn() } as unknown as MouseEvent;
             spectator.component.copyUrlToClipboard(event);
             tick(0); // flush promise .then()
             spectator.detectChanges();
@@ -100,7 +101,7 @@ describe('DotCopyButtonComponent', () => {
         }));
 
         it('should reset tooltip text after 1 second', fakeAsync(() => {
-            const event = { stopPropagation: jest.fn() } as unknown as MouseEvent;
+            const event = { stopPropagation: vi.fn() } as unknown as MouseEvent;
             spectator.component.copyUrlToClipboard(event);
             tick(0); // flush promise .then()
             spectator.detectChanges();

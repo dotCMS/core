@@ -1,6 +1,7 @@
 import { Dispatcher, Events, provideDispatcher } from '@ngrx/signals/events';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { concat, of, Subject, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -156,21 +157,21 @@ describe('DotExperimentsConfigureStore', () => {
     let store: InstanceType<typeof DotExperimentsConfigureStore>;
     let dispatcher: Dispatcher;
     let events: Events;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
 
-    const getById = jest.fn();
-    const add = jest.fn();
-    const patchExperiment = jest.fn();
-    const addVariant = jest.fn();
-    const editVariant = jest.fn();
-    const removeVariant = jest.fn();
-    const start = jest.fn();
-    const stop = jest.fn();
-    const cancelSchedule = jest.fn();
-    const contentSearchGet = jest.fn();
-    const searchPages = jest.fn();
-    const messageGet = jest.fn();
-    const navigate = jest.fn();
+    const getById = vi.fn();
+    const add = vi.fn();
+    const patchExperiment = vi.fn();
+    const addVariant = vi.fn();
+    const editVariant = vi.fn();
+    const removeVariant = vi.fn();
+    const start = vi.fn();
+    const stop = vi.fn();
+    const cancelSchedule = vi.fn();
+    const contentSearchGet = vi.fn();
+    const searchPages = vi.fn();
+    const messageGet = vi.fn();
+    const navigate = vi.fn();
 
     /** `GlobalStore` is root-provided; only the two signals this store reads are stubbed. */
     const globalStoreMock = {
@@ -249,7 +250,7 @@ describe('DotExperimentsConfigureStore', () => {
         events = spectator.inject(Events);
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
         spectator.flushEffects();
     };
 
@@ -336,7 +337,7 @@ describe('DotExperimentsConfigureStore', () => {
      * Makes a call hang until the test answers it, which is the only way to observe the state
      * the store is in *while* a request is in flight.
      */
-    const pendingCall = (call: jest.Mock): Subject<DotExperiment> => {
+    const pendingCall = (call: Mock): Subject<DotExperiment> => {
         const settled = new Subject<DotExperiment>();
         call.mockReturnValue(settled);
 
@@ -347,8 +348,8 @@ describe('DotExperimentsConfigureStore', () => {
         new HttpErrorResponse({ status, error });
 
     beforeEach(() => {
-        jest.resetAllMocks();
-        jest.useFakeTimers();
+        vi.resetAllMocks();
+        vi.useFakeTimers();
 
         routeParams = {};
         routeQueryParams = {};
@@ -373,7 +374,7 @@ describe('DotExperimentsConfigureStore', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('loading an existing experiment', () => {
@@ -2287,7 +2288,7 @@ describe('DotExperimentsConfigureStore', () => {
 
         interface VariantFailureCase {
             action: string;
-            call: jest.Mock;
+            call: Mock;
             dispatch: () => void;
         }
 

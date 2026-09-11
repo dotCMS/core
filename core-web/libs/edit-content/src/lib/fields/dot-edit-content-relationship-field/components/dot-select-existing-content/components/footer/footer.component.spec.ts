@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -71,9 +72,9 @@ describe('FooterComponent', () => {
                 useValue: new MockDotMessageService(messages)
             },
             mockProvider(ExistingContentService, {
-                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
+                getColumnsAndContent: vi.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
-            { provide: DynamicDialogRef, useValue: { close: jest.fn() } }
+            { provide: DynamicDialogRef, useValue: { close: vi.fn() } }
         ],
         detectChanges: false
     });

@@ -1,7 +1,12 @@
-import { describe, expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent, MockModule } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
+import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -70,6 +75,7 @@ import {
 } from '../../../shared/mocks';
 import { DotPageAssetParams } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { Orientation, PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
@@ -96,9 +102,9 @@ class StubDotLanguageSelectorComponent {
 }
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
-jest.mock('../../../utils', () => ({
-    ...jest.requireActual('../../../utils'),
-    createFullURL: jest.fn((params, siteId) => {
+vi.mock('../../../utils', async () => ({
+    ...(await vi.importActual('../../../utils')),
+    createFullURL: vi.fn((params, siteId) => {
         const { url = '/', clientHost = 'http://localhost:3000' } = params;
         return `${clientHost}${url}?siteId=${siteId}&version=true`;
     })
@@ -216,9 +222,9 @@ const MOCK_PAGE_LANGUAGES = [
 
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
-    viewSetDevice: jest.fn(),
-    viewSetSEO: jest.fn(),
-    viewSetOrientation: jest.fn(),
+    viewSetDevice: vi.fn(),
+    viewSetSEO: vi.fn(),
+    viewSetOrientation: vi.fn(),
     pageParams: pageParamsSignal,
     pageAsset: pageSnapshotSignal,
     // View state signal
@@ -243,7 +249,7 @@ const baseUVEState = {
     $urlContentMap: urlContentMapSignal, // Mutable for tests
     $lockOptions: toggleLockOptionsSignal, // Mutable for tests
     $lockFeatureEnabled: $lockFeatureEnabledSignal,
-    pageReload: jest.fn(),
+    pageReload: vi.fn(),
     editorPaletteOpen: signal(true),
     editorCanEditContent: signal(true),
     pageLanguages: signal(MOCK_PAGE_LANGUAGES),
@@ -253,20 +259,20 @@ const baseUVEState = {
     viewDeviceOrientation: orientationSignal,
     workflowIsLoading: signal(false),
     workflowLockIsLoading: signal(false),
-    pageLoad: jest.fn(),
+    pageLoad: vi.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
     viewParams: viewParamsSignal,
     languages: signal(MOCK_PAGE_LANGUAGES),
-    patchViewParams: jest.fn(),
+    patchViewParams: vi.fn(),
     orientation: orientationSignal, // Use the shared signal
-    viewClearDeviceAndSocialMedia: jest.fn(),
+    viewClearDeviceAndSocialMedia: vi.fn(),
     device: deviceSignal, // Use the shared signal
     lockLoading: signal(false),
-    workflowToggleLock: jest.fn(),
+    workflowToggleLock: vi.fn(),
     socialMedia: socialMediaSignal, // Use the shared signal
-    trackUVECalendarChange: jest.fn(),
+    trackUVECalendarChange: vi.fn(),
     pageType: signal(PageType.TRADITIONAL),
     isTraditionalPage: signal(true),
     experiment: signal(null),
@@ -287,7 +293,7 @@ const baseUVEState = {
         ogTags: null,
         styleSchemas: []
     }),
-    setPaletteOpen: jest.fn()
+    setPaletteOpen: vi.fn()
 };
 
 /** Creates lock options for tests. Defaults to unlocked state; pass overrides for locked/disabled cases. */
@@ -314,7 +320,7 @@ function createLockOptions(
 
 /** Extracts the accept callback from the confirmation dialog (for personalization tests). */
 function getConfirmationAcceptCallback(confirmationService: ConfirmationService): () => void {
-    return (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+    return (confirmationService.confirm as Mock).mock.calls[0][0].accept;
 }
 
 /** Shared info display props for variant/device/socialMedia tests. */
@@ -358,6 +364,11 @@ const personaEventMock = {
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
     let store: InstanceType<typeof UVEStore>;
+
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => store as unknown as WithPageApiMethods;
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
@@ -401,14 +412,14 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             mockProvider(DotContentletLockerService, {
-                unlock: jest.fn().mockReturnValue(of({}))
+                unlock: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(ConfirmationService, {
-                confirm: jest.fn()
+                confirm: vi.fn()
             }),
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: () => of([])
@@ -440,14 +451,14 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: MessageService,
                 useValue: {
-                    add: jest.fn()
+                    add: vi.fn()
                 }
             },
             {
                 provide: Router,
                 // `useFactory`, not `useValue`: a `useValue` object literal is evaluated once at
-                // module scope, so its `jest.fn()` would accumulate calls across every test.
-                useFactory: () => ({ navigate: jest.fn() })
+                // module scope, so its `vi.fn()` would accumulate calls across every test.
+                useFactory: () => ({ navigate: vi.fn() })
             },
             {
                 provide: ActivatedRoute,
@@ -468,7 +479,7 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotDevicesService,
                 useValue: {
-                    get: jest.fn().mockReturnValue(of(mockDotDevices))
+                    get: vi.fn().mockReturnValue(of(mockDotDevices))
                 }
             }
         ],
@@ -476,8 +487,8 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: {
-                    getPersonalize: jest.fn(),
-                    personalized: jest.fn().mockReturnValue(of({}))
+                    getPersonalize: vi.fn(),
+                    personalized: vi.fn().mockReturnValue(of({}))
                 }
             }
         ]
@@ -497,7 +508,7 @@ describe('DotUveToolbarComponent', () => {
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should have a dot-uve-workflow-actions component', () => {
@@ -513,7 +524,7 @@ describe('DotUveToolbarComponent', () => {
                     title: 'My super awesome blog post',
                     contentType: 'Blog'
                 };
-                const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
+                const spy = vi.spyOn(spectator.component.editUrlContentMap, 'emit');
 
                 // The edit URL content map button is only rendered in EDIT mode and when the map exists
                 baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
@@ -608,7 +619,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should personalize without confirmation when page is already personalized', () => {
-                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
                     personalized: true
@@ -638,8 +649,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should handle error when personalization confirmation fails', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -661,8 +672,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should show backend message from error-message header when personalization API returns HttpErrorResponse', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -692,8 +703,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should show backend message from body error when personalization API returns HttpErrorResponse with error body', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -723,8 +734,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should show full body error when response has no colon prefix', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -753,8 +764,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should use i18n fallback when error-message header is only whitespace', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -782,8 +793,8 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should use i18n fallback when body error is only whitespace', () => {
-                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
-                const spyMessageService = jest.spyOn(messageService, 'add');
+                const spyPersonalized = vi.spyOn(personalizeService, 'personalized');
+                const spyMessageService = vi.spyOn(messageService, 'add');
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
@@ -835,7 +846,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call pageLoad with language_id when selected language has translation', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'pageLoad');
+                const spyLoadPageAsset = vi.spyOn(baseUVEState, 'pageLoad');
                 const languageWithTranslation = MOCK_PAGE_LANGUAGES[0]; // English, id 1, translated: true
 
                 spectator.triggerEventHandler(
@@ -848,7 +859,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call confirmationService.confirm when selected language has no translation', () => {
-                const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
+                const spyConfirmationService = vi.spyOn(confirmationService, 'confirm');
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
                 spectator.triggerEventHandler(
@@ -862,7 +873,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should emit translatePage with page and newLanguage when user confirms new translation', () => {
-                const translatePageSpy = jest.spyOn(spectator.component.translatePage, 'emit');
+                const translatePageSpy = vi.spyOn(spectator.component.translatePage, 'emit');
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
                 spectator.triggerEventHandler(
@@ -872,7 +883,7 @@ describe('DotUveToolbarComponent', () => {
                 );
                 spectator.detectChanges();
 
-                const acceptCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                const acceptCallback = (confirmationService.confirm as Mock).mock.calls[0][0]
                     .accept;
                 acceptCallback();
 
@@ -887,7 +898,7 @@ describe('DotUveToolbarComponent', () => {
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
                 const currentLanguage = baseUVEState.pageLanguage();
                 const languageSelector = spectator.query(StubDotLanguageSelectorComponent);
-                const valueSetSpy = jest.spyOn(languageSelector.value, 'set');
+                const valueSetSpy = vi.spyOn(languageSelector!.value, 'set');
 
                 spectator.triggerEventHandler(
                     StubDotLanguageSelectorComponent,
@@ -896,7 +907,7 @@ describe('DotUveToolbarComponent', () => {
                 );
                 spectator.detectChanges();
 
-                const rejectCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                const rejectCallback = (confirmationService.confirm as Mock).mock.calls[0][0]
                     .reject;
                 rejectCallback();
 
@@ -955,7 +966,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock when unlocked button is clicked', () => {
-                const spy = jest.spyOn(store, 'workflowToggleLock');
+                const spy = vi.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$lockOptions.set(createLockOptions({ inode: 'test-inode-unlock' }));
                 spectator.detectChanges();
@@ -967,7 +978,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock when locked button is clicked', () => {
-                const spy = jest.spyOn(store, 'workflowToggleLock');
+                const spy = vi.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$lockOptions.set(
                     createLockOptions({
@@ -1004,7 +1015,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock with correct params for page locked by another user', () => {
-                const spy = jest.spyOn(store, 'workflowToggleLock');
+                const spy = vi.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$lockOptions.set(
                     createLockOptions({
@@ -1179,7 +1190,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
+                const spyLoadPageAsset = vi.spyOn(liveBaseUveState, 'pageReload');
 
                 const calendar = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-calendar"]')
@@ -1201,7 +1212,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyTrackUVECalendarChange = jest.spyOn(
+                const spyTrackUVECalendarChange = vi.spyOn(
                     liveBaseUveState,
                     'trackUVECalendarChange'
                 );
@@ -1226,7 +1237,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
+                const spyLoadPageAsset = vi.spyOn(liveBaseUveState, 'pageReload');
                 const todayButton = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
 
                 expect(todayButton).toBeTruthy();
@@ -1243,7 +1254,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyTrackUVECalendarChange = jest.spyOn(
+                const spyTrackUVECalendarChange = vi.spyOn(
                     liveBaseUveState,
                     'trackUVECalendarChange'
                 );
@@ -1586,7 +1597,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.toggleLock with correct parameters', () => {
-                        const spy = jest.spyOn(store, 'workflowToggleLock');
+                        const spy = vi.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1602,7 +1613,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should handle locked state correctly', () => {
-                        const spy = jest.spyOn(store, 'workflowToggleLock');
+                        const spy = vi.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1618,7 +1629,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should handle page locked by another user', () => {
-                        const spy = jest.spyOn(store, 'workflowToggleLock');
+                        const spy = vi.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1673,7 +1684,7 @@ describe('DotUveToolbarComponent', () => {
                 });
 
                 it('should call handleToggleLock when toggleLockClick emits', () => {
-                    const spy = jest.spyOn(spectator.component, 'handleToggleLock');
+                    const spy = vi.spyOn(spectator.component, 'handleToggleLock');
 
                     spectator.triggerEventHandler(DotToggleLockButtonComponent, 'toggleLockClick', {
                         inode: 'test-inode',
@@ -1699,7 +1710,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.viewClearDeviceAndSocialMedia when device action is triggered', () => {
-                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+                        const spy = vi.spyOn(store, 'viewClearDeviceAndSocialMedia');
 
                         spectator.triggerEventHandler(
                             DotEmaInfoDisplayComponent,
@@ -1711,7 +1722,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.viewClearDeviceAndSocialMedia when socialMedia action is triggered', () => {
-                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+                        const spy = vi.spyOn(store, 'viewClearDeviceAndSocialMedia');
 
                         spectator.triggerEventHandler(
                             DotEmaInfoDisplayComponent,
@@ -1723,7 +1734,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should not call viewClearDeviceAndSocialMedia for variant action', () => {
-                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
+                        const spy = vi.spyOn(store, 'viewClearDeviceAndSocialMedia');
                         spy.mockClear(); // Clear any calls from previous tests
 
                         spectator.triggerEventHandler(
@@ -1757,7 +1768,7 @@ describe('DotUveToolbarComponent', () => {
                             experimentId: null
                         };
 
-                        let navigate: jest.SpyInstance;
+                        let navigate: MockInstance;
 
                         const leaveVariant = () =>
                             spectator.triggerEventHandler(
@@ -1773,7 +1784,7 @@ describe('DotUveToolbarComponent', () => {
                                 id: EXPERIMENT_ID,
                                 pageId: PAGE_ID
                             } as DotExperiment);
-                            navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+                            navigate = vi.spyOn(spectator.inject(Router), 'navigate');
                         });
 
                         // #37005. Previewing the CONTROL from the portlet's Configure screen
@@ -1994,7 +2005,7 @@ describe('DotUveToolbarComponent', () => {
                 });
 
                 it('should call handleInfoDisplayAction when actionClicked emits', () => {
-                    const spy = jest.spyOn(spectator.component, 'handleInfoDisplayAction');
+                    const spy = vi.spyOn(spectator.component, 'handleInfoDisplayAction');
 
                     spectator.triggerEventHandler(
                         DotEmaInfoDisplayComponent,

@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState, signalStore, withFeature, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -70,8 +70,8 @@ describe('withPageApi', () => {
     let spectator: SpectatorService<InstanceType<ReturnType<typeof buildTestStore>>>;
     let store: InstanceType<ReturnType<typeof buildTestStore>>;
 
-    const getSpy = jest.fn((_params?: unknown) => of(MOCK_RESPONSE_HEADLESS));
-    const getGraphQLPageSpy = jest.fn((_params?: unknown) =>
+    const getSpy = vi.fn((_params?: unknown) => of(MOCK_RESPONSE_HEADLESS));
+    const getGraphQLPageSpy = vi.fn((_params?: unknown) =>
         of({
             pageAsset: MOCK_RESPONSE_HEADLESS,
             content: { source: 'graphql' }
@@ -84,19 +84,19 @@ describe('withPageApi', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotExperimentsService, {
-                getById: jest.fn().mockReturnValue(of(null))
+                getById: vi.fn().mockReturnValue(of(null))
             }),
             mockProvider(DotLanguagesService, {
-                getLanguagesUsedPage: jest.fn().mockReturnValue(of([]))
+                getLanguagesUsedPage: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotPageLayoutService, {
-                save: jest.fn().mockReturnValue(of({}))
+                save: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(UveIframeMessengerService, {
-                sendPageData: jest.fn()
+                sendPageData: vi.fn()
             }),
             {
                 provide: WINDOW,
@@ -107,22 +107,22 @@ describe('withPageApi', () => {
                 }
             },
             mockProvider(DotWorkflowActionsFireService, {
-                saveContentlet: jest.fn().mockReturnValue(of({}))
+                saveContentlet: vi.fn().mockReturnValue(of({}))
             }),
             {
                 provide: DotPageApiService,
                 useValue: {
                     get: getSpy,
                     getGraphQLPage: getGraphQLPageSpy,
-                    save: jest.fn().mockReturnValue(of({})),
-                    saveStyleProperties: jest.fn().mockReturnValue(of({}))
+                    save: vi.fn().mockReturnValue(of({})),
+                    saveStyleProperties: vi.fn().mockReturnValue(of({}))
                 }
             }
         ]
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         store = spectator.service;
         spectator.flushEffects();
@@ -387,7 +387,7 @@ describe('withPageApi', () => {
 
     describe('saveQuickEditFields', () => {
         it('should include DEFAULT variantName when pageParams has no variantName', () => {
-            const saveContentletSpy = jest.spyOn(
+            const saveContentletSpy = vi.spyOn(
                 spectator.inject(DotWorkflowActionsFireService),
                 'saveContentlet'
             );
@@ -400,7 +400,7 @@ describe('withPageApi', () => {
         });
 
         it('should include the active variantName from pageParams when set', () => {
-            const saveContentletSpy = jest.spyOn(
+            const saveContentletSpy = vi.spyOn(
                 spectator.inject(DotWorkflowActionsFireService),
                 'saveContentlet'
             );
@@ -417,7 +417,7 @@ describe('withPageApi', () => {
     describe('pageReload – fetch vs GraphQL', () => {
         it('should call get when reloading without GraphQL metadata', () => {
             store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             store.pageReload();
             spectator.flushEffects();
@@ -430,7 +430,7 @@ describe('withPageApi', () => {
         it('should call getGraphQLPage when reloading with GraphQL metadata', () => {
             store.setCustomClient(graphqlRequestWithoutUrl);
             store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             store.pageReload();
             spectator.flushEffects();
@@ -454,10 +454,9 @@ describe('withPageApi', () => {
             const languagesSubject = new Subject<DotLanguage[]>();
 
             getSpy.mockReturnValueOnce(of(freshPage));
-            jest.spyOn(
-                spectator.inject(DotLanguagesService),
-                'getLanguagesUsedPage'
-            ).mockReturnValue(languagesSubject);
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                languagesSubject
+            );
 
             store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
 
@@ -482,10 +481,9 @@ describe('withPageApi', () => {
         it('should apply the page asset and set status to LOADED when getLanguagesUsedPage fails', () => {
             store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
 
-            jest.spyOn(
-                spectator.inject(DotLanguagesService),
-                'getLanguagesUsedPage'
-            ).mockReturnValue(throwError(() => ({ status: 500 })));
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                throwError(() => ({ status: 500 }))
+            );
 
             store.pageReload();
             spectator.flushEffects();

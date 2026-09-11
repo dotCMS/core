@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -18,9 +19,9 @@ export class MockDotLoginPageStateService {
         }
     });
 
-    set = jest.fn().mockReturnValue(this.mockLoginInfo);
-    get = jest.fn().mockReturnValue(this.mockLoginInfo);
-    update = jest.fn();
+    set = vi.fn().mockReturnValue(this.mockLoginInfo);
+    get = vi.fn().mockReturnValue(this.mockLoginInfo);
+    update = vi.fn();
 }
 
 describe('DotLoginPageResolver', () => {
