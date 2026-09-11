@@ -61,7 +61,7 @@ public interface AbstractBulkRefreshItemResult {
      * <p>
      * <b>Extraction, not modification.</b> Everything above stays exactly as it shipped —
      * {@link #identifier()}, {@link #inodes()} and {@link #versionsIndexed()} are untouched, so the
-     * existing consumer and its tests are unaffected (SC-006). This adds a way to <i>read</i> the
+     * existing consumer and its tests are unaffected. This adds a way to <i>read</i> the
      * record through the generic shape that {@code #37062} and {@code #37063} also consume, so the
      * product ends with one batch-outcome contract rather than three.
      * <p>

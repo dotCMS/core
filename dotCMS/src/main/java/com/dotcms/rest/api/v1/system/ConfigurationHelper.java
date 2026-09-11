@@ -172,7 +172,7 @@ public class ConfigurationHelper implements Serializable {
 				)
 		));
 
-		// The bulk upload ceilings (#37166), so the client can name the limit instead of saying
+		// The bulk upload ceilings, so the client can name the limit instead of saying
 		// "fewer". Two things follow from a number the author can read: a refusal becomes one
 		// informed retry rather than a descending series of guesses, and the client can stop an
 		// over-ceiling batch IN THE FILE CHOOSER instead of uploading gigabytes to be told no —

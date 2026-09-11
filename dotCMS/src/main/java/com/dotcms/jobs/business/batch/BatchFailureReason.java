@@ -4,12 +4,12 @@ package com.dotcms.jobs.business.batch;
  * Machine-readable cause of a {@link BatchItemStatus#FAILED} item.
  * <p>
  * <b>This is what the client presents</b>, mapped to resolved product copy; the accompanying
- * message is diagnostic and is never displayed (spec FR-016a). Adding a value here is a change to
- * both halves of the feature, because every value needs client copy (spec C-002b).
+ * message is diagnostic and is never displayed. Adding a value here is a change to
+ * both halves of the feature, because every value needs client copy.
  * <p>
  * Reasons are derived from facts the staging layer reported — the measured size and the resolved
  * media type — never from the text of a validation exception, whose wording differs only by a
- * translated string between the size and type cases (research R4).
+ * translated string between the size and type cases.
  *
  * @author dotCMS
  */
@@ -20,11 +20,11 @@ public enum BatchFailureReason {
 
     /**
      * The resolved media type is not in the content type's allow list. A <b>media-type</b> rule,
-     * not a file-extension one (spec FR-012a).
+     * not a file-extension one.
      */
     DISALLOWED_FILE_TYPE,
 
-    /** An item of that name already exists in the target. Case-insensitive (spec FR-042a). */
+    /** An item of that name already exists in the target. Case-insensitive. */
     NAME_COLLISION,
 
     /**
@@ -43,7 +43,7 @@ public enum BatchFailureReason {
     PERMISSION_DENIED,
 
     /**
-     * The staged content could not be retrieved when the run reached it (spec FR-032). Not the
+     * The staged content could not be retrieved when the run reached it. Not the
      * author's fault — copy must not suggest they supplied a bad file.
      */
     STAGED_CONTENT_UNAVAILABLE,
