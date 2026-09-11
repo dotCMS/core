@@ -103,6 +103,7 @@ test.describe('Publishing Queue → Pending — asset queued in multiple bundles
             ).toBe(true);
         }
     });
+
     test('deleting an asset row removes it from that bundle only @critical', async ({ page }) => {
         const queue = new PublishingQueueHelper(page);
         await queue.goto();
@@ -132,6 +133,7 @@ test.describe('Publishing Queue → Pending — asset queued in multiple bundles
         expect(await queue.assetIdsForBundle(bundleA)).not.toContain(contentlet?.identifier);
         expect(await queue.assetIdsForBundle(bundleB)).toContain(contentlet?.identifier);
     });
+
     test('checking a bundle cascades to its asset rows @critical', async ({ page }) => {
         const queue = new PublishingQueueHelper(page);
         await queue.goto();

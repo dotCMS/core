@@ -64,7 +64,7 @@ export async function resolveEnvironmentId(request: APIRequestContext): Promise<
     );
     expect(envResponse.status(), 'could not list push-publish environments').toBe(200);
 
-    const environments: Array<{ id: string; name: string }> = await envResponse.json();
+    const environments: { id: string; name: string }[] = await envResponse.json();
     const usable = environments.find((env) => env.id && env.id !== '0' && env.name);
 
     if (!usable) {

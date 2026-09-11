@@ -145,7 +145,7 @@ export class PublishingQueueHelper {
      */
     async assetCheckboxStates(
         bundleId: string
-    ): Promise<Array<{ checked: boolean; disabled: boolean }>> {
+    ): Promise<{ checked: boolean; disabled: boolean }[]> {
         return this.frame.locator('body').evaluate((_body, id: string) => {
             const dijit = (
                 window as unknown as {
