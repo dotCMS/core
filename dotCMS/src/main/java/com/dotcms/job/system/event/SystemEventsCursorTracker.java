@@ -39,7 +39,7 @@ import java.util.function.LongSupplier;
  * ({@code server_id = <me>}), and a skewed node observes its own events normally, so both nodes can
  * report 0% loss while cross-node delivery is entirely broken. Keep the nodes on NTP; see
  * {@code docs/backend/SYSTEM_EVENTS.md} §1. Adding a skew check is deliberately left as separate
- * work rather than smuggled into the fix for issue #36827.
+ * work rather than smuggled into the fix for issue #36827; it is tracked in issue #37513.
  */
 public class SystemEventsCursorTracker {
 

@@ -49,7 +49,8 @@ Duplicates are by design, not by accident:
   in the product detects this today: reconciliation compares each node against *itself*, and a skewed
   node observes its own events normally, so every node reports 0% loss while cross-node delivery is
   entirely broken. If cross-node delivery is failing and every node reports healthy, compare clocks
-  first. Raising the overlap window buys tolerance for skew as well as for commit lag.
+  first. Raising the overlap window buys tolerance for skew as well as for commit lag. Detection is
+  tracked in **#37513**.
 
 ### The author-node exception
 
