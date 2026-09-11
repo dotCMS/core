@@ -146,9 +146,14 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * Save the template
      *
      * Guarded on #layoutSaveInFlight: if the debounced auto-save already has a POST in
-     * flight for this page, this is a no-op — that request's own finalize()/complete
-     * callback already unlocks route deactivation once it settles. Firing a second,
-     * concurrent save here would race the first one at the server.
+     * flight for this page, this is a no-op — that request's own finalize() already
+     * unlocks route deactivation once it settles. Firing a second, concurrent save here
+     * would race the first one at the server.
+     *
+     * allowRouteDeactivation() lives in finalize(), not the complete callback: it must
+     * fire on error too, or a failed force-save-on-leave leaves the route permanently
+     * blocked with no way to retry (pageLeaveRequest$ is distinctUntilChanged, so a
+     * second leave attempt with the same value never re-emits).
      *
      * @param {DotTemplateDesigner} template
      * @memberof EditEmaLayoutComponent
@@ -169,12 +174,16 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         this.dotPageLayoutService
             // To save a layout and no a template the title should be null
             .save(this.uveStore.$layoutProps().pageId, { ...template, title: null })
-            .pipe(take(1))
-            .subscribe(
-                () => this.handleSuccessSaveTemplate(),
-                (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err),
-                () => this.dotRouterService.allowRouteDeactivation()
-            );
+            .pipe(
+                take(1),
+                catchError((err: HttpErrorResponse) => {
+                    this.handleErrorSaveTemplate(err);
+
+                    return EMPTY;
+                }),
+                finalize(() => this.dotRouterService.allowRouteDeactivation())
+            )
+            .subscribe(() => this.handleSuccessSaveTemplate());
     }
 
     /**

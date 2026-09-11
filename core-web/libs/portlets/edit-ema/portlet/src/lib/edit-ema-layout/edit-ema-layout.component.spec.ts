@@ -426,5 +426,20 @@ describe('EditEmaLayoutComponent', () => {
 
             expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
         }));
+
+        it('should unblock route deactivation when the force-save-on-leave request itself fails', () => {
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            templateBuilder.templateChange.emit();
+
+            // Leave requested before the 5s debounce elapses -> force-save fires right away
+            // and fails. Without allowRouteDeactivation() in a finalize(), the user would be
+            // stuck on the page with no way to retry (pageLeaveRequest$ is distinctUntilChanged).
+            dotRouter.requestPageLeave();
+
+            expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
+        });
     });
 });
