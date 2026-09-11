@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -26,7 +27,13 @@ describe('ImagePropertiesPopoverComponent — message keys match the bound attri
 
     const KEY = 'dot.block.editor.dialog.image-properties.field.title';
 
-    const activePopover = signal<{ id: string } | null>(null);
+    /**
+     * The `<dot-editor-popover>` shell positions itself off `clientRectFn()` whenever the id
+     * matches, so the stub must supply one — a bare `{ id }` makes the shell's effect throw
+     * `active.clientRectFn is not a function`, which Vitest reports as an unhandled error and
+     * fails the run even while every assertion passes.
+     */
+    const activePopover = signal<{ id: string; clientRectFn: () => DOMRect } | null>(null);
 
     const createComponent = createComponentFactory({
         component: ImagePropertiesPopoverComponent,
@@ -38,14 +45,14 @@ describe('ImagePropertiesPopoverComponent — message keys match the bound attri
                     activePopover,
                     imagePropertiesPayload: signal(null),
                     isOpen: (id: string) => activePopover()?.id === id,
-                    close: jest.fn()
+                    close: vi.fn()
                 }
             }
         ]
     });
 
     beforeEach(() => {
-        activePopover.set({ id: 'image-properties' });
+        activePopover.set({ id: 'image-properties', clientRectFn: () => new DOMRect() });
         spectator = createComponent({ props: { editor: {} as Editor } });
     });
 
