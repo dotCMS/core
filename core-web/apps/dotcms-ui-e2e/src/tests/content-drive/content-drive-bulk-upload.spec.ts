@@ -15,7 +15,7 @@ import { test } from '../../fixtures/content-drive.fixture';
 // A batch is asynchronous end to end: the request, then a queued job, then the completion signal
 // that refreshes the grid. Twenty seconds of that is a coin toss on a loaded runner, and the
 // default budget cannot hold a wait of its own size.
-test.describe.configure({ timeout: 180000 });
+test.describe.configure({ timeout: 300000 });
 
 test.describe('Content Drive bulk upload', () => {
     test('uploads every file chosen through the file chooser @critical', async ({

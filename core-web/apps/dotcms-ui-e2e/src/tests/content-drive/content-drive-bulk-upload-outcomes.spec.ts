@@ -53,7 +53,7 @@ async function inSeededFolder(
         name: string;
         fileMasks?: string[];
     },
-    body: (drive: ContentDrivePage) => Promise<void>
+    body: (drive: ContentDrivePage, seeded: { site: string; path: string }) => Promise<void>
 ): Promise<void> {
     const site = await apiHelpers.getDefaultSite();
     const path = `/${name}`;
@@ -68,7 +68,7 @@ async function inSeededFolder(
         const drive = new ContentDrivePage(adminPage);
         await drive.goTo();
         await drive.openFolder(name);
-        await body(drive);
+        await body(drive, { site: site.hostname, path });
     } finally {
         await apiHelpers.deleteFolders(site.hostname, [path]);
     }
@@ -77,7 +77,7 @@ async function inSeededFolder(
 // Same reason as the happy-path spec: every assertion here waits on a queued job and a pushed
 // signal, and one of these tests died as a *test* timeout because its inner wait was the size of
 // the whole budget.
-test.describe.configure({ timeout: 180000 });
+test.describe.configure({ timeout: 300000 });
 
 test.describe('Content Drive bulk upload outcomes', () => {
     test('tells the author the batch is theirs to leave, and keeps reporting it @critical', ({
@@ -123,63 +123,69 @@ test.describe('Content Drive bulk upload outcomes', () => {
         apiHelpers,
         testSuffix
     }) =>
-        inSeededFolder({ adminPage, apiHelpers, name: `cd-retry-${testSuffix}` }, async (drive) => {
-            const batch = [`retry-a-${testSuffix}.png`, `retry-b-${testSuffix}.png`];
+        inSeededFolder(
+            { adminPage, apiHelpers, name: `cd-retry-${testSuffix}` },
+            async (drive, seeded) => {
+                const batch = [`retry-a-${testSuffix}.png`, `retry-b-${testSuffix}.png`];
 
-            // FILEASSET, for the same reason the collision test above pins it: the whole premise
-            // here is that every file in the resubmitted batch collides, and only a fileAsset has a
-            // name to collide on. Sent as dotAssets these uploaded a second time and the folder
-            // ended up holding two of everything, which is the product behaving correctly and the
-            // test asserting a refusal that was never on offer.
-            await drive.chooseFilesForUpload(batch, 'FILEASSET');
-            await drive.expectUploadedTitle(`cd-retry-${testSuffix}`, batch[0]);
+                // FILEASSET, for the same reason the collision test above pins it: the whole premise
+                // here is that every file in the resubmitted batch collides, and only a fileAsset has a
+                // name to collide on. Sent as dotAssets these uploaded a second time and the folder
+                // ended up holding two of everything, which is the product behaving correctly and the
+                // test asserting a refusal that was never on offer.
+                await drive.chooseFilesForUpload(batch, 'FILEASSET');
+                await drive.expectUploadedTitle(`cd-retry-${testSuffix}`, batch[0]);
 
-            // Same race as the dotAsset case: the flag needs the first run to have reached SUCCESS.
-            await apiHelpers.waitForJobsToSettle();
+                // Same race as the dotAsset case: the flag needs the first run to have reached SUCCESS.
+                await apiHelpers.waitForFolderJobsToSettle(seeded.site, seeded.path);
 
-            // By the counts this is a total failure: every file collides. Reporting it that way
-            // sends the author to delete and re-upload files that are already correctly there,
-            // which the spec calls worse than offering no retry at all.
-            await drive.chooseFilesForUpload(batch, 'FILEASSET');
+                // By the counts this is a total failure: every file collides. Reporting it that way
+                // sends the author to delete and re-upload files that are already correctly there,
+                // which the spec calls worse than offering no retry at all.
+                await drive.chooseFilesForUpload(batch, 'FILEASSET');
 
-            await drive.expectOutcomeContaining('already uploaded');
+                await drive.expectOutcomeContaining('already uploaded');
 
-            // And the folder has to agree with the message. "Nothing was duplicated" is a claim
-            // about what is in the folder, so one row per name is the part worth asserting.
-            await drive.expectTitleCount(batch[0], 1);
-            await drive.expectTitleCount(batch[1], 1);
-        }));
+                // And the folder has to agree with the message. "Nothing was duplicated" is a claim
+                // about what is in the folder, so one row per name is the part worth asserting.
+                await drive.expectTitleCount(batch[0], 1);
+                await drive.expectTitleCount(batch[1], 1);
+            }
+        ));
 
     test('tells a resubmitted dotAsset batch that it now has two copies', ({
         adminPage,
         apiHelpers,
         testSuffix
     }) =>
-        inSeededFolder({ adminPage, apiHelpers, name: `cd-dup-${testSuffix}` }, async (drive) => {
-            // The FILEASSET test above is the mirror of this one. FR-040b: a dotAsset's asset_name
-            // is generated per contentlet, so the unique index that refuses a file asset's second
-            // copy can never contend, and the batch genuinely runs again. The team accepted the
-            // duplicates; what the client must not do is call that "nothing was duplicated".
-            const batch = [`dup-a-${testSuffix}.png`, `dup-b-${testSuffix}.png`];
+        inSeededFolder(
+            { adminPage, apiHelpers, name: `cd-dup-${testSuffix}` },
+            async (drive, seeded) => {
+                // The FILEASSET test above is the mirror of this one. FR-040b: a dotAsset's asset_name
+                // is generated per contentlet, so the unique index that refuses a file asset's second
+                // copy can never contend, and the batch genuinely runs again. The team accepted the
+                // duplicates; what the client must not do is call that "nothing was duplicated".
+                const batch = [`dup-a-${testSuffix}.png`, `dup-b-${testSuffix}.png`];
 
-            await drive.chooseFilesForUpload(batch, 'DOTASSET');
-            await drive.expectUploadedTitle(`cd-dup-${testSuffix}`, batch[0]);
+                await drive.chooseFilesForUpload(batch, 'DOTASSET');
+                await drive.expectUploadedTitle(`cd-dup-${testSuffix}`, batch[0]);
 
-            // The row proves the content exists, not that the run finished, and a resubmission is
-            // only recognised against a job already in SUCCESS. Resubmitting too early makes the
-            // server answer truthfully that this is not a duplicate, and the test then waits for
-            // copy that can never arrive. It went flaky in CI for exactly that reason.
-            await apiHelpers.waitForJobsToSettle();
+                // The row proves the content exists, not that the run finished, and a resubmission is
+                // only recognised against a job already in SUCCESS. Resubmitting too early makes the
+                // server answer truthfully that this is not a duplicate, and the test then waits for
+                // copy that can never arrive. It went flaky in CI for exactly that reason.
+                await apiHelpers.waitForFolderJobsToSettle(seeded.site, seeded.path);
 
-            await drive.chooseFilesForUpload(batch, 'DOTASSET');
+                await drive.chooseFilesForUpload(batch, 'DOTASSET');
 
-            // Says a second copy exists, rather than claiming nothing happened.
-            await drive.expectOutcomeContaining('uploaded again');
+                // Says a second copy exists, rather than claiming nothing happened.
+                await drive.expectOutcomeContaining('uploaded again');
 
-            // And the folder agrees: two of each, which is the accepted cost rather than a defect.
-            await drive.expectTitleCount(batch[0], 2);
-            await drive.expectTitleCount(batch[1], 2);
-        }));
+                // And the folder agrees: two of each, which is the accepted cost rather than a defect.
+                await drive.expectTitleCount(batch[0], 2);
+                await drive.expectTitleCount(batch[1], 2);
+            }
+        ));
 
     test("says the folder's own rule refused the file, not that the type is wrong", ({
         adminPage,

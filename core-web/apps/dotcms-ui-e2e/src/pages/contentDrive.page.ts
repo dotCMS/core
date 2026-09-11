@@ -4,6 +4,20 @@ import { Portlet } from '@utils/portlets';
 /**
  * Page object for the Content Drive portlet shell.
  */
+/**
+ * How long an assertion may wait for something a *queued job* has to produce.
+ *
+ * Generous on purpose. A batch is asynchronous end to end — request, job, completion signal — and
+ * the suite runs two workers against one instance, so two tests uploading at once queue behind each
+ * other and every outcome arrives later than it would alone. Measured: the same eleven tests take
+ * 2.9 minutes with one worker and 13.1 with two, and three of them failed at 30 and 60 seconds
+ * purely from that contention.
+ *
+ * Raising it does not slow a passing run, because every one of these waits returns the moment its
+ * condition holds. It only changes how long a *failing* one takes to admit it.
+ */
+const OUTCOME_TIMEOUT = 120000;
+
 export class ContentDrivePage {
     readonly toolbar: Locator;
     readonly treeSelector: Locator;
@@ -186,7 +200,7 @@ export class ContentDrivePage {
      */
     async expectTitleCount(title: string, count: number) {
         await expect(this.listTitles.filter({ hasText: title })).toHaveCount(count, {
-            timeout: 30000
+            timeout: OUTCOME_TIMEOUT
         });
     }
 
@@ -275,7 +289,7 @@ export class ContentDrivePage {
      */
     async expectHandedToBackground() {
         await expect(this.toasts.filter({ hasText: 'in the background' }).first()).toBeVisible({
-            timeout: 30000
+            timeout: OUTCOME_TIMEOUT
         });
         await expect(this.uploadIndicator).toBeVisible();
     }
@@ -312,7 +326,7 @@ export class ContentDrivePage {
 
     async expectToastContaining(text: string) {
         await expect(this.toasts.filter({ hasText: text }).first()).toBeVisible({
-            timeout: 60000
+            timeout: OUTCOME_TIMEOUT
         });
     }
 
@@ -345,7 +359,7 @@ export class ContentDrivePage {
                 .locator('#dot-toolbar-notifications-content')
                 .filter({ hasText: text })
                 .first()
-        ).toBeVisible({ timeout: 60000 });
+        ).toBeVisible({ timeout: OUTCOME_TIMEOUT });
     }
 
     /**

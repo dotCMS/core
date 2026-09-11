@@ -12,46 +12,65 @@ function authHeaders() {
 /** The states a job does not leave. Anything else is still in flight. */
 const TERMINAL = ['SUCCESS', 'FAILED_PERMANENTLY', 'ABANDONED_PERMANENTLY', 'CANCELED'];
 
+interface JobView {
+    state?: string;
+    parameters?: { folderId?: string };
+}
+
 /**
- * Waits until no job is still in flight.
+ * Waits until this folder's uploads have finished, not merely appeared.
  *
- * **Why a test would need this.** Content appears in the listing *before* its job is marked
- * `SUCCESS`: the contentlets are created during the run, and the state transition comes after. A
- * test that waits for a row and then acts has therefore only proven the content exists, not that
- * the run finished — and one server behaviour depends on exactly that difference.
+ * **Why a test needs this at all.** Content reaches the listing *before* its job is marked
+ * `SUCCESS`: the contentlets are created during the run and the state transition follows. A test
+ * that waits for a row has proven the content exists, not that the run ended — and one server
+ * behaviour turns on exactly that difference. A resubmission is recognised by matching its
+ * fingerprint against a job **already in `SUCCESS`** (`BulkUploadHelper.findSucceededSubmission`),
+ * so resubmitting inside that gap makes the server answer, correctly, that this is not a duplicate.
+ * The test then waits for copy that can never arrive. It cost a flaky CI run to learn.
  *
- * A resubmission is recognised by matching its fingerprint against a job **already in `SUCCESS`**
- * (`BulkUploadHelper.findSucceededSubmission`). Resubmit while the first run is still transitioning
- * and there is no such row yet, so `duplicateSubmission` comes back `false` and the outcome reads as
- * an ordinary upload. That is not a product defect; it is a race the test has to avoid, and waiting
- * for the row is not enough to avoid it.
- *
- * It cost a flaky run to learn: the duplicate test timed out waiting for copy that could never
- * arrive, then passed on retry when the timing happened to differ.
+ * **Why it is scoped to one folder.** Waiting for *every* job to settle would couple tests to each
+ * other: the suite runs two workers against one instance, so one test would wait out another's
+ * uploads, and under load could time out because of work it has nothing to do with. Filtering on
+ * the target folder keeps each test waiting only for itself — which matters more here than
+ * elsewhere, because these tests deliberately create slow work.
  */
-export async function waitForJobsToSettle(
+export async function waitForFolderJobsToSettle(
     request: APIRequestContext,
+    siteName: string,
+    folderPath: string,
     timeoutMs = 60000
 ): Promise<void> {
-    const deadline = Date.now() + timeoutMs;
+    const byPath = await request.post('/api/v1/folder/byPath', {
+        data: { path: `//${siteName}${folderPath}` },
+        headers: authHeaders()
+    });
+    expect(byPath.ok(), `could not resolve ${folderPath} to wait on its jobs`).toBeTruthy();
 
-    while (Date.now() < deadline) {
+    const found = (await byPath.json())?.entity;
+    const folder = Array.isArray(found) ? found[0] : found;
+    const folderId: string = folder?.id ?? folder?.identifier ?? folder?.inode;
+    expect(folderId, `no id for ${folderPath}`).toBeTruthy();
+
+    const inFlight = async (): Promise<JobView[]> => {
         const response = await request.get('/api/v1/jobs?limit=50', { headers: authHeaders() });
-        const jobs: { state?: string }[] = (await response.json())?.entity?.jobs ?? [];
-        const inFlight = jobs.filter((job) => !TERMINAL.includes(String(job.state)));
+        const jobs: JobView[] = (await response.json())?.entity?.jobs ?? [];
 
-        if (!inFlight.length) {
+        return jobs.filter(
+            (job) => job.parameters?.folderId === folderId && !TERMINAL.includes(String(job.state))
+        );
+    };
+
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const pending = await inFlight();
+
+        if (!pending.length) {
             return;
         }
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
-    // Reported rather than thrown bare, so the failure names what was still running.
-    const response = await request.get('/api/v1/jobs?limit=50', { headers: authHeaders() });
-    const jobs: { state?: string }[] = (await response.json())?.entity?.jobs ?? [];
-    expect(
-        jobs.filter((job) => !TERMINAL.includes(String(job.state))),
-        'jobs still in flight after waiting'
-    ).toEqual([]);
+    // Fails rather than returning quietly, and names what was still running when it gave up.
+    expect(await inFlight(), `jobs still in flight for ${folderPath}`).toEqual([]);
 }
