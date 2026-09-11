@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
@@ -37,15 +43,15 @@ describe('DotRolesAddComponent', () => {
         detectChanges: false,
         providers: [
             mockProvider(DotRolesStore, {
-                roleTree: jest.fn().mockReturnValue([
+                roleTree: vi.fn().mockReturnValue([
                     { id: 'r-a', name: 'Root A', childCount: 2, roleChildren: [] },
                     { id: 'r-b', name: 'Root B', childCount: 0, roleChildren: [] }
                 ]),
-                loadRoleChildren: jest.fn(),
-                searchRoleTree: jest.fn().mockResolvedValue([]),
-                createRole: jest.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
+                loadRoleChildren: vi.fn(),
+                searchRoleTree: vi.fn().mockResolvedValue([]),
+                createRole: vi.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
             }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             { provide: DynamicDialogConfig, useValue: { data: {} } },
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }
         ]
@@ -64,14 +70,14 @@ describe('DotRolesAddComponent', () => {
 
     describe('parent picker', () => {
         beforeEach(() => {
-            // `mockProvider` builds its jest.fn()s once at factory scope, so
+            // `mockProvider` builds its vi.fn()s once at factory scope, so
             // BOTH call history and implementation survive between tests.
             // `mockClear` only resets the former — re-seed the default too, or
             // one test's `mockResolvedValue` silently becomes every later
             // test's behaviour.
             const store = spectator.inject(DotRolesStore, true);
-            (store.searchRoleTree as jest.Mock).mockReset().mockResolvedValue([]);
-            (store.loadRoleChildren as jest.Mock).mockReset();
+            (store.searchRoleTree as Mock).mockReset().mockResolvedValue([]);
+            (store.loadRoleChildren as Mock).mockReset();
         });
 
         it('marks a node with children as expandable even before they are fetched', () => {
@@ -125,7 +131,7 @@ describe('DotRolesAddComponent', () => {
             const spectator = createComponent();
             spectator.detectChanges();
             const store = spectator.inject(DotRolesStore, true);
-            (store.searchRoleTree as jest.Mock).mockResolvedValueOnce([
+            (store.searchRoleTree as Mock).mockResolvedValueOnce([
                 { id: 'r-found', name: 'Found', roleChildren: [] }
             ]);
 
@@ -181,7 +187,7 @@ describe('DotRolesAddComponent', () => {
             let resolveSearch: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock).mockReturnValueOnce(
+            (store.searchRoleTree as Mock).mockReturnValueOnce(
                 new Promise<DotRoleNode[]>((resolve) => {
                     resolveSearch = resolve;
                 })
@@ -208,7 +214,7 @@ describe('DotRolesAddComponent', () => {
             let resolveFirst: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock)
+            (store.searchRoleTree as Mock)
                 .mockReturnValueOnce(
                     new Promise<DotRoleNode[]>((resolve) => {
                         resolveFirst = resolve;
@@ -244,10 +250,10 @@ describe('DotRolesAddComponent', () => {
 
     it('should report the missing required field in the footer instead of creating', () => {
         const store = spectator.inject(DotRolesStore);
-        // The `mockProvider` factory reuses the same `jest.fn()` across tests
+        // The `mockProvider` factory reuses the same `vi.fn()` across tests
         // in this suite, so a bare `not.toHaveBeenCalled()` would inherit
         // earlier calls.
-        (store.createRole as jest.Mock).mockClear();
+        (store.createRole as Mock).mockClear();
         spectator.detectChanges();
 
         spectator.click(byTestId('btn-save'));
@@ -287,11 +293,11 @@ describe('DotRolesAddComponent', () => {
     it('should set the inline error and keep the dialog open when createRole returns null', async () => {
         const store = spectator.inject(DotRolesStore);
         const dialogRef = spectator.inject(DynamicDialogRef);
-        // The `mockProvider` factory reuses the same `jest.fn()` across
+        // The `mockProvider` factory reuses the same `vi.fn()` across
         // tests in this suite — clear before asserting so we only see
         // calls from this test.
-        (dialogRef.close as jest.Mock).mockClear();
-        (store.createRole as jest.Mock).mockResolvedValueOnce(null);
+        (dialogRef.close as Mock).mockClear();
+        (store.createRole as Mock).mockResolvedValueOnce(null);
 
         spectator.detectChanges();
         spectator.typeInElement('New Role', byTestId('input-role-name'));
@@ -314,14 +320,14 @@ describe('DotRolesAddComponent (opened from inline +)', () => {
         detectChanges: false,
         providers: [
             mockProvider(DotRolesStore, {
-                roleTree: jest
+                roleTree: vi
                     .fn()
                     .mockReturnValue([
                         { id: 'r-categories', name: 'Categories', roleChildren: [] }
                     ]),
-                createRole: jest.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
+                createRole: vi.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
             }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             {
                 provide: DynamicDialogConfig,
                 useValue: { data: { parentRoleId: 'r-categories' } }

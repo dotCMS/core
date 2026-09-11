@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NgTemplateOutlet } from '@angular/common';
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
@@ -115,7 +121,7 @@ const PINNED_FOLDER = {
 };
 
 /**
- * State is exposed as real signals, not `jest.fn()`s: the component derives `$offset` and
+ * State is exposed as real signals, not `vi.fn()`s: the component derives `$offset` and
  * `$targetFolder` with `computed`, which only recomputes when a signal dependency changes. A plain
  * mock function would memoize the first value forever.
  */
@@ -147,23 +153,23 @@ const createMockStore = () => {
         selectedAsset: signal<DotContentDriveBrowseItem | null>(null),
         $request: signal({}),
         // methods
-        initPicker: jest.fn(),
-        selectNode: jest.fn(),
-        setTreeSearch: jest.fn(),
-        expandNode: jest.fn(),
-        loadMore: jest.fn(),
-        patchFilters: jest.fn(),
-        removeFilter: jest.fn(),
-        clearFilters: jest.fn(),
-        setSearch: jest.fn(),
-        setPagination: jest.fn(),
-        setSort: jest.fn(),
-        setSelectedAsset: jest.fn(),
-        clearSelection: jest.fn(),
-        setSelectedNode: jest.fn(),
-        loadFolders: jest.fn(),
-        loadItems: jest.fn(),
-        toggleFullscreen: jest.fn(() => isFullscreen.set(!isFullscreen()))
+        initPicker: vi.fn(),
+        selectNode: vi.fn(),
+        setTreeSearch: vi.fn(),
+        expandNode: vi.fn(),
+        loadMore: vi.fn(),
+        patchFilters: vi.fn(),
+        removeFilter: vi.fn(),
+        clearFilters: vi.fn(),
+        setSearch: vi.fn(),
+        setPagination: vi.fn(),
+        setSort: vi.fn(),
+        setSelectedAsset: vi.fn(),
+        clearSelection: vi.fn(),
+        setSelectedNode: vi.fn(),
+        loadFolders: vi.fn(),
+        loadItems: vi.fn(),
+        toggleFullscreen: vi.fn(() => isFullscreen.set(!isFullscreen()))
     };
 };
 
@@ -180,10 +186,10 @@ describe('DotAssetPickerComponent', () => {
         providers: [
             mockProvider(DynamicDialogRef),
             mockProvider(DotContentletService, {
-                getContentletByInodeWithContent: jest.fn().mockReturnValue(of(HYDRATED_ASSET))
+                getContentletByInodeWithContent: vi.fn().mockReturnValue(of(HYDRATED_ASSET))
             }),
             mockProvider(DotUploadFileService, {
-                uploadFileByBaseType: jest.fn().mockReturnValue(of({ title: 'logo.png' }))
+                uploadFileByBaseType: vi.fn().mockReturnValue(of({ title: 'logo.png' }))
             }),
             {
                 provide: DotMessageService,
@@ -228,17 +234,15 @@ describe('DotAssetPickerComponent', () => {
         // `mockProvider` builds one mock instance for the whole describe and `clearAllMocks` only
         // clears calls, not implementations — so re-seed here or a test that overrides a return
         // value leaks into every test after it.
-        (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+        (contentletService.getContentletByInodeWithContent as Mock).mockReturnValue(
             of(HYDRATED_ASSET)
         );
-        (uploadService.uploadFileByBaseType as jest.Mock).mockReturnValue(
-            of({ title: 'logo.png' })
-        );
+        (uploadService.uploadFileByBaseType as Mock).mockReturnValue(of({ title: 'logo.png' }));
 
         spectator.detectChanges();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     describe('reporting failed requests', () => {
         // The store cannot toast for itself and deliberately does not inject
@@ -247,7 +251,7 @@ describe('DotAssetPickerComponent', () => {
         const messageService = () => spectator.inject(MessageService, true);
 
         it('should toast what the store says failed', () => {
-            const spyAdd = jest.spyOn(messageService(), 'add');
+            const spyAdd = vi.spyOn(messageService(), 'add');
 
             store.requestError.set({ messageKey: 'dot.asset.picker.error.assets' });
             spectator.detectChanges();
@@ -256,7 +260,7 @@ describe('DotAssetPickerComponent', () => {
         });
 
         it('should say nothing while nothing has failed', () => {
-            const spyAdd = jest.spyOn(messageService(), 'add');
+            const spyAdd = vi.spyOn(messageService(), 'add');
 
             spectator.detectChanges();
 
@@ -266,7 +270,7 @@ describe('DotAssetPickerComponent', () => {
         it('should report a second identical failure', () => {
             // Each failure is a fresh object precisely so the effect re-runs — a repeated outage
             // must not go silent just because the message is the same.
-            const spyAdd = jest.spyOn(messageService(), 'add');
+            const spyAdd = vi.spyOn(messageService(), 'add');
 
             store.requestError.set({ messageKey: 'dot.asset.picker.error.folders' });
             spectator.detectChanges();
@@ -381,7 +385,7 @@ describe('DotAssetPickerComponent', () => {
         });
 
         it('should fall back to the browsed folder when the asset has no url', () => {
-            (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+            (contentletService.getContentletByInodeWithContent as Mock).mockReturnValue(
                 of({ inode: 'inode-1' } as DotCMSContentlet)
             );
             store.path.set('/docs/');
@@ -403,11 +407,11 @@ describe('DotAssetPickerComponent', () => {
         it('should tell the user when the asset can no longer be loaded', () => {
             // The row was fetched minutes ago — by now it can be gone or permissions can have
             // changed. Silently swallowing that left Confirm looking like it did nothing.
-            (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+            (contentletService.getContentletByInodeWithContent as Mock).mockReturnValue(
                 throwError(() => new Error('gone'))
             );
             const messageService = spectator.inject(MessageService, true);
-            const addSpy = jest.spyOn(messageService, 'add');
+            const addSpy = vi.spyOn(messageService, 'add');
 
             spectator.click(button('asset-picker-confirm'));
 
@@ -589,7 +593,7 @@ describe('DotAssetPickerComponent', () => {
         });
 
         it('should not refresh the list when the upload fails', () => {
-            (uploadService.uploadFileByBaseType as jest.Mock).mockReturnValue(
+            (uploadService.uploadFileByBaseType as Mock).mockReturnValue(
                 throwError(() => ({ error: { errors: [{ message: 'nope' }] } }))
             );
             const files = [new File([''], 'a.png')] as unknown as FileList;
@@ -622,7 +626,7 @@ describe('DotAssetPickerComponent', () => {
             beforeEach(() => restrictToImages());
 
             it('should refuse a dropped file outside the allowed types', () => {
-                const spyAdd = jest.spyOn(messageService(), 'add');
+                const spyAdd = vi.spyOn(messageService(), 'add');
 
                 spectator.component['onRequestUpload']({
                     files: fileList('application/pdf', 'report.pdf'),
@@ -765,7 +769,7 @@ describe('DotAssetPickerComponent', () => {
         describe('in the File field, which restricts nothing', () => {
             // The over-reach guard. CONFIG carries no `mimeTypes`, exactly as a File field opens.
             it('should upload a dropped PDF', () => {
-                const spyAdd = jest.spyOn(messageService(), 'add');
+                const spyAdd = vi.spyOn(messageService(), 'add');
 
                 spectator.component['onRequestUpload']({
                     files: fileList('application/pdf', 'report.pdf'),
@@ -844,7 +848,7 @@ describe('DotAssetPickerComponent — full screen', () => {
     /** Stand-in for the PrimeNG `Dialog`, whose `maximized` flag the picker keeps in step. */
     let dialog: {
         maximized: boolean | undefined;
-        maximize: jest.Mock;
+        maximize: Mock;
         container: () => HTMLElement;
     };
 
@@ -874,7 +878,7 @@ describe('DotAssetPickerComponent — full screen', () => {
             // UNSET, like PrimeNG's own field before its maximize button is ever clicked. Starting
             // this at `false` is what hid the bug where the picker opened full screen.
             maximized: undefined,
-            maximize: jest.fn(() => (dialog.maximized = !dialog.maximized)),
+            maximize: vi.fn(() => (dialog.maximized = !dialog.maximized)),
             container: () => container
         };
 
@@ -894,7 +898,7 @@ describe('DotAssetPickerComponent — full screen', () => {
         spectator.detectChanges();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should open windowed, not full screen', () => {
         // Regression: PrimeNG leaves `maximized` unset, so a strict `!== false` fired `maximize()`

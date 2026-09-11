@@ -1,5 +1,5 @@
-import { expect, describe, it, beforeEach } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/vitest';
+import { expect, describe, it, beforeEach } from 'vitest';
 
 import { signal, WritableSignal } from '@angular/core';
 

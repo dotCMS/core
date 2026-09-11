@@ -4,7 +4,8 @@ import {
     createHostFactory,
     Spectator,
     SpectatorHost
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import type { TreeNode } from 'primeng/api';
 import { Tree } from 'primeng/tree';
@@ -152,9 +153,9 @@ describe('DotFolderTreeComponent', () => {
 
     describe('outputs', () => {
         it('should emit select, expand, and collapse from p-tree', () => {
-            const selectSpy = jest.spyOn(component.onNodeSelect, 'emit');
-            const expandSpy = jest.spyOn(component.onNodeExpand, 'emit');
-            const collapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
+            const selectSpy = vi.spyOn(component.onNodeSelect, 'emit');
+            const expandSpy = vi.spyOn(component.onNodeExpand, 'emit');
+            const collapseSpy = vi.spyOn(component.onNodeCollapse, 'emit');
 
             const selectEvent: TreeNodeSelectEvent = {
                 originalEvent: new Event('select'),
@@ -197,8 +198,8 @@ describe('DotFolderTreeComponent', () => {
         };
 
         it('should emit loadMore on click without selecting', () => {
-            const loadMoreSpy = jest.spyOn(component.loadMore, 'emit');
-            const selectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+            const loadMoreSpy = vi.spyOn(component.loadMore, 'emit');
+            const selectSpy = vi.spyOn(component.onNodeSelect, 'emit');
 
             spectator.setInput('folders', [loadMoreNode]);
             spectator.setInput('showLoadMoreRemaining', true);
@@ -498,11 +499,11 @@ describe('DotFolderTreeComponent', () => {
 
     describe('keyboard focus', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
             document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
         });
 
@@ -523,7 +524,7 @@ describe('DotFolderTreeComponent', () => {
 
             firstRow().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
             spectator.detectChanges();
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
 
             expect(document.querySelector('.p-tooltip-text')?.textContent?.trim()).toBe('content');
         });
@@ -532,10 +533,10 @@ describe('DotFolderTreeComponent', () => {
             forceOverflow(clipInFirstRow());
             firstRow().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
             spectator.detectChanges();
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
 
             firstRow().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
 
             expect(document.querySelector('.p-tooltip')).toBeNull();
         });
@@ -549,7 +550,7 @@ describe('DotFolderTreeComponent', () => {
 
             control.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
             spectator.detectChanges();
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
 
             expect(document.querySelector('.p-tooltip')).toBeNull();
         });

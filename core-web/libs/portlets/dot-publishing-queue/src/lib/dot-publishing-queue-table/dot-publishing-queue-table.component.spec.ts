@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -61,23 +67,23 @@ describe('DotPublishingQueueTableComponent', () => {
             bundlesSortDirection,
             bundlesSelectedIds,
             rowsPerPage,
-            setBundlesPage: jest.fn((p: number) => bundlesPage.set(p)),
-            setRowsPerPage: jest.fn((r: number) => rowsPerPage.set(r)),
-            cycleBundlesSort: jest.fn(),
-            setBundlesSelection: jest.fn((ids: string[]) => bundlesSelectedIds.set(ids)),
-            clearBundlesSelection: jest.fn(() => bundlesSelectedIds.set([])),
-            openDetail: jest.fn(),
-            openAssetList: jest.fn(),
-            deleteBundle: jest.fn(),
-            retryBundles: jest.fn()
+            setBundlesPage: vi.fn((p: number) => bundlesPage.set(p)),
+            setRowsPerPage: vi.fn((r: number) => rowsPerPage.set(r)),
+            cycleBundlesSort: vi.fn(),
+            setBundlesSelection: vi.fn((ids: string[]) => bundlesSelectedIds.set(ids)),
+            clearBundlesSelection: vi.fn(() => bundlesSelectedIds.set([])),
+            openDetail: vi.fn(),
+            openAssetList: vi.fn(),
+            deleteBundle: vi.fn(),
+            retryBundles: vi.fn()
         };
     }
 
-    let confirmationService: jest.Mocked<ConfirmationService>;
-    let clipboard: jest.Mocked<DotClipboardUtil>;
-    let globalMessage: jest.Mocked<DotGlobalMessageService>;
-    let pushPublishService: jest.Mocked<DotPushPublishDialogService>;
-    let downloadService: jest.Mocked<DotDownloadBundleDialogService>;
+    let confirmationService: Mocked<ConfirmationService>;
+    let clipboard: Mocked<DotClipboardUtil>;
+    let globalMessage: Mocked<DotGlobalMessageService>;
+    let pushPublishService: Mocked<DotPushPublishDialogService>;
+    let downloadService: Mocked<DotDownloadBundleDialogService>;
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueTableComponent,
@@ -85,7 +91,7 @@ describe('DotPublishingQueueTableComponent', () => {
             mockProvider(DotPublishingQueueStore, makeStoreStub()),
             ConfirmationService,
             mockProvider(DotClipboardUtil, {
-                copy: jest.fn().mockResolvedValue(true)
+                copy: vi.fn().mockResolvedValue(true)
             })
         ],
         providers: [
@@ -97,9 +103,9 @@ describe('DotPublishingQueueTableComponent', () => {
                     'publishing-queue.column.items.view': 'View items'
                 })
             },
-            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
-            mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
-            mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+            mockProvider(DotPushPublishDialogService, { open: vi.fn() }),
+            mockProvider(DotDownloadBundleDialogService, { open: vi.fn() }),
             mockProvider(DotFormatDateService)
         ]
     });
@@ -118,22 +124,22 @@ describe('DotPublishingQueueTableComponent', () => {
         confirmationService = spectator.inject(
             ConfirmationService,
             true
-        ) as jest.Mocked<ConfirmationService>;
-        clipboard = spectator.inject(DotClipboardUtil, true) as jest.Mocked<DotClipboardUtil>;
+        ) as Mocked<ConfirmationService>;
+        clipboard = spectator.inject(DotClipboardUtil, true) as Mocked<DotClipboardUtil>;
         globalMessage = spectator.inject(
             DotGlobalMessageService
-        ) as jest.Mocked<DotGlobalMessageService>;
+        ) as Mocked<DotGlobalMessageService>;
         pushPublishService = spectator.inject(
             DotPushPublishDialogService
-        ) as jest.Mocked<DotPushPublishDialogService>;
+        ) as Mocked<DotPushPublishDialogService>;
         downloadService = spectator.inject(
             DotDownloadBundleDialogService
-        ) as jest.Mocked<DotDownloadBundleDialogService>;
-        jest.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
+        ) as Mocked<DotDownloadBundleDialogService>;
+        vi.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
             cfg.accept?.();
             return confirmationService;
         });
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('renders the table', () => {
@@ -235,14 +241,14 @@ describe('DotPublishingQueueTableComponent', () => {
 
     describe('copyToClipboard', () => {
         it('delegates to DotClipboardUtil.copy', async () => {
-            (clipboard.copy as jest.Mock).mockResolvedValue(true);
+            (clipboard.copy as Mock).mockResolvedValue(true);
             await spectator.component.copyToClipboard('bundle-xyz');
             expect(clipboard.copy).toHaveBeenCalledWith('bundle-xyz');
             expect(globalMessage.error).not.toHaveBeenCalled();
         });
 
         it('surfaces a global error toast when copy fails', async () => {
-            (clipboard.copy as jest.Mock).mockResolvedValue(false);
+            (clipboard.copy as Mock).mockResolvedValue(false);
             await spectator.component.copyToClipboard('bundle-xyz');
             expect(globalMessage.error).toHaveBeenCalled();
         });
@@ -374,8 +380,8 @@ describe('DotPublishingQueueTableComponent', () => {
     describe('right-click context menu', () => {
         it('onRowContextMenu preventDefaults the browser menu and pins the row', () => {
             const event = {
-                preventDefault: jest.fn(),
-                stopPropagation: jest.fn()
+                preventDefault: vi.fn(),
+                stopPropagation: vi.fn()
             } as unknown as MouseEvent;
             spectator.component.onRowContextMenu(event, row('b1'));
             expect(event.preventDefault).toHaveBeenCalled();
@@ -384,8 +390,8 @@ describe('DotPublishingQueueTableComponent', () => {
 
         it('contextMenuItems mirrors the same kebab items for the pinned row', () => {
             const event = {
-                preventDefault: jest.fn(),
-                stopPropagation: jest.fn()
+                preventDefault: vi.fn(),
+                stopPropagation: vi.fn()
             } as unknown as MouseEvent;
             spectator.component.onRowContextMenu(
                 event,

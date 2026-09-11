@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -81,20 +87,20 @@ describe('DotUsersApiTokensTabComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
-                getApiTokens: jest.fn().mockReturnValue(of([])),
-                getApiTokenJwt: jest.fn().mockReturnValue(of('jwt-value')),
-                revokeApiToken: jest.fn().mockReturnValue(of({}))
+                getApiTokens: vi.fn().mockReturnValue(of([])),
+                getApiTokenJwt: vi.fn().mockReturnValue(of('jwt-value')),
+                revokeApiToken: vi.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
     beforeEach(() => {
-        // mockProvider's jest.fn() instances are created once by the
+        // mockProvider's vi.fn() instances are created once by the
         // factory and persist across tests. `clearAllMocks` clears
         // call history without touching the default `mockReturnValue`
         // implementations set at factory time.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('create mode (no userId)', () => {
@@ -121,10 +127,10 @@ describe('DotUsersApiTokensTabComponent', () => {
             // p-confirmDialog subscription the tab template embeds.
             dialogService = spectator.fixture.debugElement.injector.get(DialogService);
             confirmationService = spectator.fixture.debugElement.injector.get(ConfirmationService);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(undefined)
             } as never);
-            jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
+            vi.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
         });
 
         it('should fetch tokens on init with showRevoked=false', () => {
@@ -139,7 +145,7 @@ describe('DotUsersApiTokensTabComponent', () => {
         });
 
         it('should label an expired-but-not-revoked row as Expired (not Revoked)', () => {
-            (usersService.getApiTokens as jest.Mock).mockReturnValueOnce(
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(
                 of([tokenFactory({ id: 'tok-exp', expired: true, valid: false })])
             );
             spectator.component['onShowRevokedChange'](true);
@@ -150,7 +156,7 @@ describe('DotUsersApiTokensTabComponent', () => {
         });
 
         it('should label a revoked row as Revoked', () => {
-            (usersService.getApiTokens as jest.Mock).mockReturnValueOnce(
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(
                 of([tokenFactory({ id: 'tok-rev', revoked: true, valid: false })])
             );
             spectator.component['onShowRevokedChange'](true);
@@ -162,7 +168,7 @@ describe('DotUsersApiTokensTabComponent', () => {
 
         it('should render the error state with Retry when the fetch fails', () => {
             const error = new Error('boom');
-            (usersService.getApiTokens as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(throwError(() => error));
             spectator.component['onShowRevokedChange'](true);
             spectator.detectChanges();
 
@@ -203,8 +209,8 @@ describe('DotUsersApiTokensTabComponent', () => {
             const enter = new KeyboardEvent('keydown', { key: 'Enter' });
             const space = new KeyboardEvent('keydown', { key: ' ' });
             const tab = new KeyboardEvent('keydown', { key: 'Tab' });
-            const enterPreventSpy = jest.spyOn(enter, 'preventDefault');
-            const spacePreventSpy = jest.spyOn(space, 'preventDefault');
+            const enterPreventSpy = vi.spyOn(enter, 'preventDefault');
+            const spacePreventSpy = vi.spyOn(space, 'preventDefault');
 
             spectator.component['onRowKeydown'](token, enter);
             expect(usersService.getApiTokenJwt).toHaveBeenCalledTimes(1);
@@ -229,7 +235,7 @@ describe('DotUsersApiTokensTabComponent', () => {
 
         it('should surface a reveal error through httpErrorManager and hide the dialog', () => {
             const error = new Error('malformed');
-            (usersService.getApiTokenJwt as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            (usersService.getApiTokenJwt as Mock).mockReturnValueOnce(throwError(() => error));
 
             spectator.component['reveal']('tok-1');
 
@@ -238,7 +244,7 @@ describe('DotUsersApiTokensTabComponent', () => {
         });
 
         it('should stopPropagation on the Revoke button and open the confirmation', () => {
-            const stopPropagation = jest.fn();
+            const stopPropagation = vi.fn();
             const token = tokenFactory();
             spectator.component['revoke'](token, { stopPropagation } as unknown as MouseEvent);
 
@@ -248,7 +254,7 @@ describe('DotUsersApiTokensTabComponent', () => {
 
         it('should refetch after the request dialog closes with a new token', () => {
             const closeSubject = new Subject<{ jwt: string; token: DotApiToken }>();
-            (dialogService.open as jest.Mock).mockReturnValueOnce({
+            (dialogService.open as Mock).mockReturnValueOnce({
                 onClose: closeSubject.asObservable()
             });
 

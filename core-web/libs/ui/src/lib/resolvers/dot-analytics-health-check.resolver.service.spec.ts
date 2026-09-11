@@ -1,6 +1,7 @@
 // dot-analytics-health-check.resolver.service.spec.ts
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -19,7 +20,7 @@ describe('dotAnalyticsHealthCheckResolver', () => {
             providers: [
                 {
                     provide: DotExperimentsService,
-                    useValue: { healthCheck: jest.fn().mockReturnValue(of(HealthStatusTypes.OK)) }
+                    useValue: { healthCheck: vi.fn().mockReturnValue(of(HealthStatusTypes.OK)) }
                 }
             ]
         });
@@ -32,7 +33,7 @@ describe('dotAnalyticsHealthCheckResolver', () => {
             dotAnalyticsHealthCheckResolver(null, {} as RouterStateSnapshot)
         );
 
-        jest.spyOn(dotExperimentsService, 'healthCheck').mockReturnValue(of(HealthStatusTypes.OK));
+        vi.spyOn(dotExperimentsService, 'healthCheck').mockReturnValue(of(HealthStatusTypes.OK));
 
         resolver.subscribe((healthStatus) => {
             expect(healthStatus).toBe(HealthStatusTypes.OK);

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 export const ANIMATION = 'animation';
 export const TRANSITION = 'transition';
 export const DEFAULT_MOTION_OPTIONS = {
@@ -45,17 +46,17 @@ export const createMotion = (element: unknown, options: MotionOptions = {}) => {
     };
 
     return {
-        enter: jest.fn(() => run(options.onBeforeEnter, options.onEnter, options.onAfterEnter)),
-        leave: jest.fn(() => run(options.onBeforeLeave, options.onLeave, options.onAfterLeave)),
-        cancel: jest.fn(),
-        update: jest.fn()
+        enter: vi.fn(() => run(options.onBeforeEnter, options.onEnter, options.onAfterEnter)),
+        leave: vi.fn(() => run(options.onBeforeLeave, options.onLeave, options.onAfterLeave)),
+        cancel: vi.fn(),
+        update: vi.fn()
     };
 };
 
-export const getMotionHooks = jest.fn();
-export const getMotionMetadata = jest.fn();
-export const mergeOptions = jest.fn();
-export const resolveClassNames = jest.fn();
-export const resolveDuration = jest.fn();
-export const setAutoDimensionVariables = jest.fn();
-export const shouldSkipMotion = jest.fn();
+export const getMotionHooks = vi.fn();
+export const getMotionMetadata = vi.fn();
+export const mergeOptions = vi.fn();
+export const resolveClassNames = vi.fn();
+export const resolveDuration = vi.fn();
+export const setAutoDimensionVariables = vi.fn();
+export const shouldSkipMotion = vi.fn();

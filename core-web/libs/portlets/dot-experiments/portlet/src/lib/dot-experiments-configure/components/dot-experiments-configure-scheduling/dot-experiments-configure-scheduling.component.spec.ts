@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { formatDate } from '@angular/common';
 import { computed, Injector, signal, WritableSignal } from '@angular/core';
@@ -39,15 +40,15 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
     beforeAll(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query: string) => ({
+            value: vi.fn().mockImplementation((query: string) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -139,7 +140,7 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
         mountWith();
     });
 
-    afterEach(() => jest.restoreAllMocks());
+    afterEach(() => vi.restoreAllMocks());
 
     describe('the pickers', () => {
         const openPicker = (testId: string) => {
@@ -168,6 +169,35 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
             expect(
                 spectator
                     .query(byTestId('experiments-configure-scheduling-start'))
+                    ?.querySelector('input')?.value
+            ).not.toBe('');
+        });
+
+        /**
+         * The bounds say what may be *chosen*; they must not decide what is *shown*. PrimeNG
+         * renders no value below `minDate`, and every start date that exists is in the past — the
+         * server stamps one a minute ahead when an experiment is started with no schedule — so a
+         * picker floored at the next half hour showed a running experiment as having no start date
+         * at all.
+         */
+        it('should still show a start date that is already behind us', () => {
+            mountWith({ startDate: daysFromNow(-1), endDate: null });
+
+            expect(
+                spectator
+                    .query(byTestId('experiments-configure-scheduling-start'))
+                    ?.querySelector('input')?.value
+            ).not.toBe('');
+        });
+
+        // The same rule at the other end: an experiment stopped by hand ends before the minimum
+        // duration measured from its start.
+        it('should still show an end date below the minimum window', () => {
+            mountWith({ startDate: daysFromNow(-30), endDate: daysFromNow(-29) });
+
+            expect(
+                spectator
+                    .query(byTestId('experiments-configure-scheduling-end'))
                     ?.querySelector('input')?.value
             ).not.toBe('');
         });
@@ -218,6 +248,24 @@ describe('DotExperimentsConfigureSchedulingComponent', () => {
             expect(
                 spectator.query(byTestId('experiments-configure-scheduling-note'))?.textContent
             ).toContain('experiments.configure.scheduling.note.immediate');
+        });
+
+        it('should say the experiment starts automatically while the date is ahead', () => {
+            setDates({ startDate: daysFromNow(1) });
+
+            expect(
+                spectator.query(byTestId('experiments-configure-scheduling-note'))?.textContent
+            ).toContain('experiments.configure.scheduling.note.scheduled');
+        });
+
+        // Once the moment has passed, "starts automatically on" is a claim about the future for
+        // something that already happened — which is what a running experiment's note said.
+        it('should say the experiment started once its date has passed', () => {
+            mountWith({ startDate: daysFromNow(-1), endDate: null });
+
+            expect(
+                spectator.query(byTestId('experiments-configure-scheduling-note'))?.textContent
+            ).toContain('experiments.configure.scheduling.note.started');
         });
     });
 

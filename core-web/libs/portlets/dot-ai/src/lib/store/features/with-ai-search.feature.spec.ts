@@ -1,6 +1,7 @@
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -56,7 +57,7 @@ describe('withAiSearch', () => {
     });
 
     it('should store results and mark the search loaded', () => {
-        spectator.inject(DotAiSearchService).semanticSearch = jest
+        spectator.inject(DotAiSearchService).semanticSearch = vi
             .fn()
             .mockReturnValue(of(response()));
 
@@ -69,7 +70,7 @@ describe('withAiSearch', () => {
 
     it('should send the shared retrieval payload plus the prompt', () => {
         const service = spectator.inject(DotAiSearchService);
-        service.semanticSearch = jest.fn().mockReturnValue(of(response()));
+        service.semanticSearch = vi.fn().mockReturnValue(of(response()));
 
         store.setSettings({ settingsIndexName: 'blogs' });
         store.setSearchPrompt('what is dotCMS');
@@ -82,7 +83,7 @@ describe('withAiSearch', () => {
 
     it('should not search on an empty prompt', () => {
         const service = spectator.inject(DotAiSearchService);
-        service.semanticSearch = jest.fn().mockReturnValue(of(response()));
+        service.semanticSearch = vi.fn().mockReturnValue(of(response()));
 
         store.setSearchPrompt('   ');
         store.runSearch();
@@ -94,7 +95,7 @@ describe('withAiSearch', () => {
         const first = new Subject<DotAiSearchResponse>();
         const second = new Subject<DotAiSearchResponse>();
         const service = spectator.inject(DotAiSearchService);
-        service.semanticSearch = jest.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+        service.semanticSearch = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
 
         store.setSearchPrompt('one');
         store.runSearch();
@@ -110,7 +111,7 @@ describe('withAiSearch', () => {
 
     it('should keep the screen usable when a search fails (FR-051)', () => {
         const error = new HttpErrorResponse({ status: 500 });
-        spectator.inject(DotAiSearchService).semanticSearch = jest
+        spectator.inject(DotAiSearchService).semanticSearch = vi
             .fn()
             .mockReturnValue(throwError(() => error));
 
@@ -122,7 +123,7 @@ describe('withAiSearch', () => {
     });
 
     it('should report a missing index by name rather than generically', () => {
-        spectator.inject(DotAiSearchService).semanticSearch = jest
+        spectator.inject(DotAiSearchService).semanticSearch = vi
             .fn()
             .mockReturnValue(
                 throwError(() => ({ indexNotFound: true, indexName: 'gone', original: null }))
@@ -136,7 +137,7 @@ describe('withAiSearch', () => {
     });
 
     it('should expose a distinct empty state when nothing passed the threshold', () => {
-        spectator.inject(DotAiSearchService).semanticSearch = jest
+        spectator.inject(DotAiSearchService).semanticSearch = vi
             .fn()
             .mockReturnValue(of(response({ count: 0, total: 0, results: [] })));
 

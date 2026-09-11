@@ -1,5 +1,5 @@
-import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, expect, vi } from 'vitest';
 
 import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
@@ -8,17 +8,17 @@ import { DotCMSEditablePageService } from './dotcms-editable-page.service';
 
 // Import the mocked modules
 // Mock external dependencies
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn(),
-    initUVE: jest.fn(),
-    createUVESubscription: jest.fn(),
-    updateNavigation: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn(),
+    initUVE: vi.fn(),
+    createUVESubscription: vi.fn(),
+    updateNavigation: vi.fn()
 }));
 
 describe('DotCMSEditablePageService', () => {
     let spectator: SpectatorService<DotCMSEditablePageService>;
     let service: DotCMSEditablePageService;
-    let unsubscribeMock: jest.Mock;
+    let unsubscribeMock: Mock;
 
     const mockPageAsset: DotCMSPageResponse = {
         pageAsset: {
@@ -46,12 +46,12 @@ describe('DotCMSEditablePageService', () => {
 
     beforeEach(() => {
         // Reset all mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Setup default mock behaviors
-        unsubscribeMock = jest.fn();
-        (getUVEState as jest.Mock).mockReturnValue(true);
-        (createUVESubscription as jest.Mock).mockReturnValue({ unsubscribe: unsubscribeMock });
+        unsubscribeMock = vi.fn();
+        (getUVEState as Mock).mockReturnValue(true);
+        (createUVESubscription as Mock).mockReturnValue({ unsubscribe: unsubscribeMock });
 
         spectator = createService();
         service = spectator.service;
@@ -59,7 +59,7 @@ describe('DotCMSEditablePageService', () => {
 
     describe('listenEditablePage', () => {
         it('should initialize UVE and setup subscriptions', () => {
-            (getUVEState as jest.Mock).mockReturnValue(true);
+            (getUVEState as Mock).mockReturnValue(true);
 
             const result = service.listen(mockPageAsset);
 
@@ -73,7 +73,7 @@ describe('DotCMSEditablePageService', () => {
         });
 
         it('should return observable with the initial page asset when UVE state is false', () => {
-            (getUVEState as jest.Mock).mockReturnValue(false);
+            (getUVEState as Mock).mockReturnValue(false);
             let result: DotCMSPageResponse | undefined = undefined;
 
             service.listen(mockPageAsset).subscribe((res) => {
@@ -91,7 +91,7 @@ describe('DotCMSEditablePageService', () => {
                 // Empty default implementation
             };
 
-            (createUVESubscription as jest.Mock).mockImplementation((eventType, callback) => {
+            (createUVESubscription as Mock).mockImplementation((eventType, callback) => {
                 capturedCallback = callback;
 
                 return { unsubscribe: unsubscribeMock };

@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -53,14 +53,15 @@ describe('DotGlobalMessageComponent', () => {
         expect(dotIcon).toBeDefined();
     });
 
-    it('should set visibility to false after 10 ms', (done) => {
-        dotEventsService.notify('dot-global-message', { value: 'test', life: 1 });
-        expect(spectator.component.classes).toContain('dot-global-message--visible');
-        setTimeout(() => {
-            expect(spectator.component.classes).not.toContain('dot-global-message--visible');
-            done();
-        }, 10);
-    });
+    it('should set visibility to false after 10 ms', () =>
+        new Promise<void>((done) => {
+            dotEventsService.notify('dot-global-message', { value: 'test', life: 1 });
+            expect(spectator.component.classes).toContain('dot-global-message--visible');
+            setTimeout(() => {
+                expect(spectator.component.classes).not.toContain('dot-global-message--visible');
+                done();
+            }, 10);
+        }));
 
     it('should set value to success event', () => {
         dotEventsService.notify('dot-global-message', { value: 'test', type: 'success' });

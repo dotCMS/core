@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import type { Injector } from '@angular/core';
 
 import { Extension, flattenExtensions, getSchema } from '@tiptap/core';
@@ -30,7 +32,7 @@ import type { SlashMenuService } from '../components/slash-menu/slash-menu.servi
 describe('createEditorExtensions', () => {
     // A restricted list keeps table/codeBlock/image out, so the injector is never touched
     // during assembly — a bare stub is enough.
-    const injector = { get: jest.fn() } as unknown as Injector;
+    const injector = { get: vi.fn() } as unknown as Injector;
     const menuService = {} as SlashMenuService;
     const messageService = { get: (key: string) => key } as unknown as DotMessageService;
 
@@ -52,7 +54,7 @@ describe('createEditorExtensions', () => {
     });
 
     it('drops a remote extension whose name collides with a built-in and warns', () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         const remoteUnderline = Extension.create({ name: 'underline' });
 
         const names = build([remoteUnderline]);
@@ -175,14 +177,30 @@ describe('createEditorExtensions', () => {
             expect(doc.firstChild?.firstChild?.type.name).toBe('emoji');
         });
 
-        // The schema keeps the extensions so stored content loads; these flags are what
-        // actually enforce the restriction, alongside the toolbar's `@if (isAllowed(...))`.
-        it('disables the implicit authoring paths when the block is not allowed', () => {
+        // The schema keeps the extensions so stored content loads; for `link`, these flags are
+        // what actually enforce the restriction, alongside the toolbar's `@if (isAllowed(...))`.
+        it('disables the implicit LINK authoring paths when the block is not allowed', () => {
             const extensions = restricted();
 
             expect(byName(extensions, 'link')?.options.autolink).toBe(false);
             expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(false);
-            expect(byName(extensions, 'emoji')?.options.enableEmoticons).toBe(false);
+        });
+
+        /**
+         * #37340 AC-008 — this assertion is the INVERSE of what it was, deliberately.
+         *
+         * `emoji` is not selectable in Allowed Blocks: the option list comes from
+         * `getEditorBlockOptions()`, which offers block nodes only, and `link`/`emoji`/`youtube`
+         * were excluded by #37175 itself. So `has('emoji')` was true ONLY on a field with no
+         * restriction at all — meaning restricting ANY block silently removed `:)` (and the
+         * toolbar's emoji button) from that field, with no admin having chosen it.
+         *
+         * That is not a restriction anyone configured; it is a gate that could only misfire. And
+         * since emoji are now plain characters an author can always type, there is nothing left
+         * for it to restrict even in principle.
+         */
+        it('keeps emoticon entry on a restricted field, because emoji cannot be restricted', () => {
+            expect(byName(restricted(), 'emoji')?.options.enableEmoticons).toBe(true);
         });
 
         it('keeps the implicit authoring paths on an unrestricted field', () => {
