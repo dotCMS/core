@@ -1,13 +1,43 @@
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY, pipe } from 'rxjs';
 
-import { LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
+import { computed, inject } from '@angular/core';
 
-import { DEFAULT_ASSET_PICKER_PAGE, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
+import { catchError, switchMap, take, tap } from 'rxjs/operators';
+
+import { DotSiteService } from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    DotCMSContentTypeField,
+    LOAD_MORE_NODE_TYPE,
+    TreeNodeItem
+} from '@dotcms/dotcms-models';
+
+import {
+    DEFAULT_ASSET_PICKER_PAGE,
+    DEFAULT_ASSET_PICKER_PAGINATION,
+    DEFAULT_ASSET_PICKER_SORT
+} from './constants';
 import { withAssetBrowse } from './features/with-asset-browse.feature';
 import { withAssetFolderTree } from './features/with-asset-folder-tree.feature';
 import { withAssetSelection } from './features/with-asset-selection.feature';
-import { DotAssetPickerConfig, DotAssetPickerFilters, DotAssetPickerState } from './models';
+import { buildPickerFilterDefaults, hasNonDefaultPickerFilters } from './filter-defaults';
+import {
+    DotAssetPickerConfig,
+    DotAssetPickerFilters,
+    DotAssetPickerSite,
+    DotAssetPickerState
+} from './models';
 
+import { USER_SEARCHABLE_PREFIX } from '../../dot-filter-bar/chips/dot-field-filter/constants';
 import { resolveSiteId } from '../../dot-folder-tree/site-tree.utils';
 
 const initialState: DotAssetPickerState = {
@@ -16,7 +46,9 @@ const initialState: DotAssetPickerState = {
     browsingSite: undefined,
     path: undefined,
     filters: {},
-    isFullscreen: false
+    isFullscreen: false,
+    userSearchableFields: [],
+    userSearchableActive: []
 };
 
 /**
@@ -41,7 +73,51 @@ export const DotAssetPickerStore = signalStore(
     withAssetSelection(),
     withAssetBrowse(),
     withAssetFolderTree(),
-    withMethods((store) => {
+    withComputed(({ filters, config }) => ({
+        /**
+         * Whether anything differs from what the picker opened with, which is what drives the
+         * shared toolbar's "Clear all".
+         *
+         * Counting filter keys would keep the button on screen permanently: the caller's seeds are
+         * always present, so there is always something in the bag. What matters is whether anything
+         * is worth clearing.
+         */
+        $hasNonDefaultFilters: computed(() => hasNonDefaultPickerFilters(filters(), config()))
+    })),
+    withMethods((store, siteService = inject(DotSiteService)) => {
+        /**
+         * Resolves the site to open on when the caller did not name one.
+         *
+         * `DotSiteService` is already in this component's graph (the folder tree reaches it through
+         * `DotBrowsingService`) and depends on nothing but `HttpClient` — which is exactly why the
+         * picker asks it rather than `GlobalStore`. `@dotcms/ui` is bundled into the legacy Dojo
+         * custom elements, which boot without a `Router`, so anything pulling one in would break
+         * that bundle at load time even though the picker never opens there.
+         */
+        const resolveEntrySite = rxMethod<void>(
+            pipe(
+                switchMap(() =>
+                    siteService.getCurrentSite().pipe(
+                        take(1),
+                        tap((site) => {
+                            if (site) {
+                                patchState(store, {
+                                    browsingSite: {
+                                        identifier: site.identifier,
+                                        hostname: site.hostname
+                                    }
+                                });
+                            }
+                        }),
+                        // No site is not an error state: the sidebar lists every site the user can
+                        // browse, so the picker opens on the tree with nothing selected and they
+                        // pick one. `$isBrowsable` keeps the search from firing until then.
+                        catchError(() => EMPTY)
+                    )
+                )
+            )
+        );
+
         /** Any filter change invalidates the cursor bookmarks and sends the user back to page 1. */
         const resetPaging = () => ({
             pagination: { ...store.pagination(), page: 1 },
@@ -57,24 +133,43 @@ export const DotAssetPickerStore = signalStore(
              * clear them. `config.mimeTypes` does not: it lives outside the filter bag on purpose.
              */
             initPicker: (config: DotAssetPickerConfig): void => {
+                // Starting point only — the sidebar can move the picker to another site. The
+                // remembered location wins, then the caller's own site; with neither, the picker
+                // looks the current one up rather than refusing to open.
+                const entrySite = config.browseSite ?? config.site;
+
                 patchState(store, {
                     config,
-                    // Starting point only — the sidebar can move the picker to another site. Opens
-                    // on the remembered site when there is one, otherwise on the editor's own.
-                    browsingSite: config.browseSite ?? {
-                        identifier: config.site.identifier,
-                        hostname: config.site.hostname
+                    browsingSite: entrySite && {
+                        identifier: entrySite.identifier,
+                        hostname: entrySite.hostname
                     },
                     path: config.path,
-                    filters: {
-                        ...(config.languageId ? { languageId: [config.languageId] } : {}),
-                        ...(config.baseTypes?.length ? { baseType: config.baseTypes } : {})
-                    },
+                    // Shared with `clearFilters`, so a clear lands on exactly what a fresh open
+                    // shows. Keeping the two in one function is what stops one path from quietly
+                    // missing a seed.
+                    filters: buildPickerFilterDefaults(config),
                     pagination: DEFAULT_ASSET_PICKER_PAGINATION,
+                    // Seeded, not pinned: `sortByDesc` sets the direction the picker opens with,
+                    // and the user can still re-sort from the table header afterwards.
+                    sort: config.browse
+                        ? {
+                              field: config.browse.sortField ?? DEFAULT_ASSET_PICKER_SORT.field,
+                              order: config.browse.sortByDesc === false ? 'asc' : 'desc'
+                          }
+                        : DEFAULT_ASSET_PICKER_SORT,
                     pages: [DEFAULT_ASSET_PICKER_PAGE],
                     items: [],
-                    selectedAsset: null
+                    selectedAsset: null,
+                    // Nothing is remembered between openings (FR-011), field chips included: the
+                    // editor is filling a different field now.
+                    userSearchableFields: [],
+                    userSearchableActive: []
                 });
+
+                if (!entrySite) {
+                    resolveEntrySite();
+                }
 
                 store.loadFolders();
             },
@@ -108,6 +203,60 @@ export const DotAssetPickerStore = signalStore(
                 });
             },
 
+            /**
+             * Moves the picker to another site.
+             *
+             * Lives here rather than in the folder-tree feature because it touches everything at
+             * once — the tree, the folder scope, the search term and the asset list's paging — and
+             * `resetPaging` is the store's, not the feature's.
+             *
+             * The folder term is cleared on the way: a term is only meaningful against the site it
+             * was typed for. Carrying it over would leave the editor reading site A's results under
+             * a selector that says site B.
+             */
+            setBrowsingSite: (site: DotAssetPickerSite): void => {
+                if (site.identifier === store.browsingSite()?.identifier) {
+                    return;
+                }
+
+                patchState(store, {
+                    browsingSite: site,
+                    path: undefined,
+                    selectedNode: null,
+                    folderSearch: '',
+                    searchResults: null,
+                    searchStatus: ComponentStatus.INIT,
+                    searchHasMore: false,
+                    ...resetPaging()
+                });
+
+                store.loadFolders();
+            },
+
+            /**
+             * Scopes the list to a folder picked out of the flat search results.
+             *
+             * Deliberately **not** `selectNode`: that one resolves the site by walking up to the
+             * tree root, and a search result has no parent in the tree to walk. The result already
+             * belongs to the browsed site, so the site does not change — only the folder does.
+             *
+             * The term and the results are left alone. Keeping the list up is the point: the editor
+             * can try the next match without retyping.
+             */
+            selectSearchResult: (node: TreeNodeItem): void => {
+                const data = node.data;
+
+                if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+                    return;
+                }
+
+                store.setSelectedNode(node);
+                patchState(store, {
+                    path: data.path || undefined,
+                    ...resetPaging()
+                });
+            },
+
             patchFilters: (filters: DotAssetPickerFilters): void => {
                 patchState(store, {
                     filters: { ...store.filters(), ...filters },
@@ -115,7 +264,7 @@ export const DotAssetPickerStore = signalStore(
                 });
             },
 
-            removeFilter: (filter: keyof DotAssetPickerFilters): void => {
+            removeFilter: (filter: string): void => {
                 const filters = { ...store.filters() };
 
                 if (!(filter in filters)) {
@@ -127,11 +276,83 @@ export const DotAssetPickerStore = signalStore(
             },
 
             /**
-             * Clears every filter the editor can see. The host's mimetype restriction survives —
-             * it is not a filter, it is part of what the picker is.
+             * One filter's value, or `undefined` when it is not set.
+             *
+             * The read half of what a shared filter chip needs. `undefined` and `[]` are different
+             * states and both are load-bearing: the first is "no filter", the second is "filtered
+             * to nothing selected".
+             */
+            getFilterValue: (filter: string): string | string[] | undefined =>
+                store.filters()[filter],
+
+            /**
+             * Returns the filters to what the picker opened with — the caller's seeded locale and
+             * base types — not to an empty set.
+             *
+             * It used to clear to `{}`, which dropped the seeds and stranded an Image field's editor
+             * in an unfiltered, unlocalized library. `buildPickerFilterDefaults` is shared with
+             * `initPicker` so the two paths cannot disagree about what "default" means.
+             *
+             * Two things deliberately survive a clear: the host's mimetype restriction, which is
+             * not a filter but part of what the picker *is*, and the browsed folder, which is not a
+             * filter either — an editor who reached the site root by searching stays there rather
+             * than being moved somewhere they did not ask for.
              */
             clearFilters: (): void => {
-                patchState(store, { filters: {}, ...resetPaging() });
+                patchState(store, {
+                    filters: buildPickerFilterDefaults(store.config()),
+                    ...resetPaging()
+                });
+            },
+
+            /**
+             * Publishes one field fetch from the "More" overflow: the filterable fields, which the
+             * chips render controls from and `$request` reshapes values with.
+             *
+             * The raw field list has no consumer here — the picker has no results table with "Show
+             * In List" columns — so it is accepted and dropped rather than stored unused.
+             */
+            setUserSearchableFields: (fields: {
+                eligible: DotCMSContentTypeField[];
+                all: DotCMSContentTypeField[];
+            }): void => {
+                patchState(store, { userSearchableFields: fields.eligible });
+            },
+
+            /**
+             * Shows a field-filter chip without touching `filters`, so no search fires on the way
+             * in. A repeated variable is a no-op: two chips writing one key would fight over it.
+             */
+            addUserSearchableField: (variable: string): void => {
+                if (store.userSearchableActive().includes(variable)) {
+                    return;
+                }
+
+                patchState(store, {
+                    userSearchableActive: [...store.userSearchableActive(), variable]
+                });
+            },
+
+            /**
+             * Drops every `us.*` filter, every chip and the cached metadata — the active content
+             * type changed, so the previous type's fields do not exist on the new one.
+             *
+             * Resets paging like any other filter write: the result set is about to widen, and a
+             * cursor bookmark taken against the narrower one describes a query nobody made.
+             */
+            clearUserSearchableFilters: (): void => {
+                const filters = Object.fromEntries(
+                    Object.entries(store.filters()).filter(
+                        ([key]) => !key.startsWith(USER_SEARCHABLE_PREFIX)
+                    )
+                );
+
+                patchState(store, {
+                    filters,
+                    userSearchableFields: [],
+                    userSearchableActive: [],
+                    ...resetPaging()
+                });
             },
 
             /**

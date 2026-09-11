@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@openng/spectator/jest';
+import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -63,7 +64,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {
-    view = jest.fn();
+    view = vi.fn();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -169,7 +170,7 @@ describe('DotWorkflowTaskComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
-        jest.spyOn(dotIframeService, 'reloadData');
+        vi.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
@@ -193,7 +194,7 @@ describe('DotWorkflowTaskComponent', () => {
     });
 
     it('should redirect to /workflow when edit-task-executed-workflow event is triggered', () => {
-        jest.spyOn(component, 'onCloseWorkflowTaskEditor');
+        vi.spyOn(component, 'onCloseWorkflowTaskEditor');
         taskDetail.triggerEventHandler('custom', {
             detail: {
                 name: 'edit-task-executed-workflow'
@@ -215,7 +216,7 @@ describe('DotWorkflowTaskComponent', () => {
     });
 
     it('should call to dotCustomEventHandlerService with the correct callbaack', () => {
-        jest.spyOn(dotCustomEventHandlerService, 'handle');
+        vi.spyOn(dotCustomEventHandlerService, 'handle');
         const mockEvent = {
             detail: {
                 name: 'workflow-wizard',

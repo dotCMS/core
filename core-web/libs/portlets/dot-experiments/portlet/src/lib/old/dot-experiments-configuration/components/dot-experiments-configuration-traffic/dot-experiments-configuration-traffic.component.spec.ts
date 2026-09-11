@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -110,7 +111,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
     });
 
     it('should open sidebar of traffic allocation', () => {
-        jest.spyOn(store, 'openSidebar');
+        vi.spyOn(store, 'openSidebar');
 
         const allocationButton = spectator.query(byTestId('traffic-allocation-button'));
         const button = allocationButton.querySelector('button') || allocationButton;
@@ -124,7 +125,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
 
-        jest.spyOn(store, 'openSidebar');
+        vi.spyOn(store, 'openSidebar');
 
         const allocationButton = spectator.query(byTestId('traffic-allocation-button'));
         const button = allocationButton.querySelector('button') || allocationButton;

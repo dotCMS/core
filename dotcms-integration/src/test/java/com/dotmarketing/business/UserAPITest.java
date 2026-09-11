@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.notifications.bean.Notification;
@@ -1604,6 +1605,61 @@ public class UserAPITest extends IntegrationTestBase {
 		} finally {
 			UserDataGen.remove(backendUser);
 			UserDataGen.remove(plainUser);
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUsersByName(String, List, int, int)} and
+	 * {@link UserAPI#getCountUsersByName(String, List)}
+	 * Given Scenario: A role WITHOUT a roleKey has one user directly granted to it, and another
+	 * user with the same name prefix is not granted. The search combines the shared name filter
+	 * with that keyless role.
+	 * ExpectedResult: The granted user is returned and counted. The role filter must work for
+	 * roles that only carry an id; this powers GET /v1/roles/{roleId}/users for keyless roles.
+	 */
+	@Test
+	public void testGetUsersByNameFilteredByKeylessRole() throws DotDataException {
+		final String unique = String.valueOf(System.currentTimeMillis());
+		final Role keylessRole = new RoleDataGen().key(null).nextPersisted();
+		final User granted = new UserDataGen().firstName("keylessFilter" + unique + "granted")
+				.roles(keylessRole).nextPersisted();
+		final User plainUser = new UserDataGen().firstName("keylessFilter" + unique + "plain").nextPersisted();
+		try {
+			final List<User> matches = userAPI.getUsersByName("keylessFilter" + unique,
+					List.of(keylessRole), 0, 40);
+			assertEquals(1, matches.size());
+			assertEquals(granted.getUserId(), matches.get(0).getUserId());
+			assertEquals(1, userAPI.getCountUsersByName("keylessFilter" + unique, List.of(keylessRole)));
+		} finally {
+			UserDataGen.remove(granted);
+			UserDataGen.remove(plainUser);
+			RoleDataGen.remove(keylessRole);
+		}
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUsersByName(String, List, int, int)}
+	 * Given Scenario: The roles filter receives a hand-built Role object carrying only a
+	 * roleKey and no id, as an external UserAPI caller might construct it.
+	 * ExpectedResult: The role is resolved through its key and the granted user is returned.
+	 */
+	@Test
+	public void testGetUsersByNameFilteredByKeyOnlyRoleObject() throws DotDataException {
+		final String unique = String.valueOf(System.currentTimeMillis());
+		final Role persisted = new RoleDataGen().key("keyOnlyFilter" + unique).nextPersisted();
+		final User granted = new UserDataGen().firstName("keyOnlyFilter" + unique)
+				.roles(persisted).nextPersisted();
+		try {
+			final Role keyOnly = new Role();
+			keyOnly.setRoleKey(persisted.getRoleKey());
+
+			final List<User> matches = userAPI.getUsersByName("keyOnlyFilter" + unique,
+					List.of(keyOnly), 0, 40);
+			assertEquals(1, matches.size());
+			assertEquals(granted.getUserId(), matches.get(0).getUserId());
+		} finally {
+			UserDataGen.remove(granted);
+			RoleDataGen.remove(persisted);
 		}
 	}
 }

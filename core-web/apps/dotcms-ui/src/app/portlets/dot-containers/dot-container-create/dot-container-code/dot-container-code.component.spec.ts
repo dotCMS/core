@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { vi } from 'vitest';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
@@ -181,7 +183,7 @@ describe('DotContentEditorComponent', () => {
 
     beforeEach(async () => {
         // Mock scrollIntoView for PrimeNG TabView
-        Element.prototype.scrollIntoView = jest.fn();
+        Element.prototype.scrollIntoView = vi.fn();
 
         await TestBed.configureTestingModule({
             declarations: [],
@@ -279,7 +281,7 @@ describe('DotContentEditorComponent', () => {
                 code.triggerEventHandler('monacoInit', {
                     name: menu.model[0].label,
                     editor: {
-                        focus: jest.fn()
+                        focus: vi.fn()
                     }
                 });
                 hostFixture.detectChanges();
@@ -325,7 +327,7 @@ describe('DotContentEditorComponent', () => {
                 const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
                 expect(code).not.toBeNull();
 
-                const mockEditor1 = { focus: jest.fn() };
+                const mockEditor1 = { focus: vi.fn() };
                 code.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[0].id,
                     editor: mockEditor1
@@ -374,8 +376,8 @@ describe('DotContentEditorComponent', () => {
 
         it('should handle tab click correctly', () => {
             const event = createFakeEvent('click') as MouseEvent;
-            jest.spyOn(event, 'preventDefault');
-            jest.spyOn(event, 'stopPropagation');
+            vi.spyOn(event, 'preventDefault');
+            vi.spyOn(event, 'stopPropagation');
 
             // Test with index 0 (should prevent default)
             const result = comp.handleTabClick(event, 0);
@@ -384,7 +386,7 @@ describe('DotContentEditorComponent', () => {
             expect(result).toBe(false);
 
             // Test with index greater than 0
-            const mockEditor = { focus: jest.fn() };
+            const mockEditor = { focus: vi.fn() };
             comp.monacoEditors[mockContentTypes[0].id] = mockEditor as any;
             comp.handleTabClick(event, 1);
             expect(comp.activeTabIndex).toBe(1);
@@ -397,7 +399,7 @@ describe('DotContentEditorComponent', () => {
             expect(comp.activeTabIndex).toBe(initialIndex);
 
             // Test with value greater than 0
-            const mockEditor = { focus: jest.fn() };
+            const mockEditor = { focus: vi.fn() };
             comp.monacoEditors[mockContentTypes[0].id] = mockEditor as any;
             comp.handleTabChange(1);
             expect(comp.activeTabIndex).toBe(1);
@@ -410,16 +412,16 @@ describe('DotContentEditorComponent', () => {
             } as any;
 
             const mockEditor = {
-                getSelections: jest.fn(() => [
+                getSelections: vi.fn(() => [
                     { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
                 ]),
-                getModel: jest.fn(() => ({
-                    pushEditOperations: jest.fn()
+                getModel: vi.fn(() => ({
+                    pushEditOperations: vi.fn()
                 }))
             };
             comp.monacoEditors[mockContentTypes[0].id] = mockEditor as any;
 
-            jest.spyOn(comp['dialogService'], 'open');
+            vi.spyOn(comp['dialogService'], 'open');
 
             comp.handleAddVariable(mockContentType);
 
@@ -437,7 +439,7 @@ describe('DotContentEditorComponent', () => {
         });
 
         it('should initialize monaco editor correctly', fakeAsync(() => {
-            const mockEditor = { focus: jest.fn(), updateOptions: jest.fn() };
+            const mockEditor = { focus: vi.fn(), updateOptions: vi.fn() };
             const monacoInstance = {
                 name: 'testEditor',
                 editor: mockEditor
@@ -452,7 +454,7 @@ describe('DotContentEditorComponent', () => {
         }));
 
         it('should set monaco editor to readonly when no content types', fakeAsync(() => {
-            const mockEditor = { focus: jest.fn(), updateOptions: jest.fn() };
+            const mockEditor = { focus: vi.fn(), updateOptions: vi.fn() };
             const monacoInstance = {
                 name: 'testEditor',
                 editor: mockEditor

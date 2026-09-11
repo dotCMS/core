@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -16,28 +17,33 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotFolderTreeNodeContentData,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe, DotUploadButtonComponent } from '@dotcms/ui';
+import {
+    DotContentTypeFilterChipComponent,
+    DotFieldFilterComponent,
+    DotFieldFilterMenuComponent,
+    DotFilterBarComponent,
+    DotFilterChipError,
+    DotLanguageFilterChipComponent,
+    DotMessagePipe,
+    DotSharedAssetsFilterComponent,
+    DotStatusFilterComponent,
+    DotUploadButtonComponent
+} from '@dotcms/ui';
 
-import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
-import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
-import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
-import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
-import { DotContentDriveSharedAssetsFilterComponent } from './components/dot-content-drive-shared-assets-filter/dot-content-drive-shared-assets-filter.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
@@ -132,14 +138,16 @@ interface ToolbarAnimationState {
         DotMessagePipe,
         DotUploadButtonComponent,
         DotContentDriveTreeTogglerComponent,
-        DotContentDriveContentTypeFilterComponent,
+        DotContentTypeFilterChipComponent,
         DotContentDriveSearchInputComponent,
-        DotContentDriveLanguageFieldComponent,
+        DotLanguageFilterChipComponent,
         DotContentDriveWorkflowActionsComponent,
         DotContentDriveWorkflowFilterComponent,
-        DotContentDriveFieldFilterComponent,
-        DotContentDriveFieldFilterMenuComponent,
-        DotContentDriveSharedAssetsFilterComponent,
+        DotFieldFilterComponent,
+        DotFieldFilterMenuComponent,
+        DotSharedAssetsFilterComponent,
+        DotFilterBarComponent,
+        DotStatusFilterComponent,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
@@ -203,6 +211,7 @@ interface ToolbarAnimationState {
 export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     // Emits the click event so the shell can anchor the upload-type popover to the button.
     $upload = output<MouseEvent>({ alias: 'upload' });
@@ -269,15 +278,17 @@ export class DotContentDriveToolbarComponent {
     }
 
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
+
     /**
-     * Drives the "Clear all" button. Counting filter keys would keep it on screen permanently: the
-     * default language and the shared-assets toggle are always seeded, so there is always something
-     * in the bag. What matters is whether anything differs from its default and is therefore worth
-     * clearing.
+     * The environment's default locale, which this drive re-seeds on every path that builds filters
+     * from scratch. Handed to the Locale chip so it can tell a clearable selection from one whose X
+     * would simply put the same value back.
+     *
+     * `?? null` because the store leaves it `undefined` until `/api/v2/languages` answers, and the
+     * chip's input is `number | null` — an absent default means "nothing is re-seeded", which is the
+     * right reading while the lookup is still in flight.
      */
-    readonly $hasFilters = computed(() =>
-        hasNonDefaultFilters(this.#store.filters(), this.#store.defaultLanguageId())
-    );
+    readonly $defaultLanguageId = computed(() => this.#store.defaultLanguageId() ?? null);
 
     /**
      * The action currently being applied, surfaced here because the run outlives the Action Center
@@ -325,8 +336,27 @@ export class DotContentDriveToolbarComponent {
             .filter((field): field is DotCMSContentTypeField => field !== undefined);
     });
 
-    onClearAll(): void {
-        this.#store.clearFilters();
+    /**
+     * The shared "More" menu could not load a content type's fields.
+     *
+     * The chip reports *that* it failed and stays interactive; how that is announced is the
+     * surface's call, and on this one it is the platform's usual error handling — the same channel
+     * the menu reached itself before it moved to `@dotcms/ui`, where `DotHttpErrorManagerService`
+     * cannot be injected at all (it transitively needs `Router`, which the legacy Dojo host that
+     * bundle boots in has none of).
+     *
+     * The chip hands over a translation key rather than the response, so the payload is
+     * synthesized: a 400 whose `header` is that key, which is the one branch of the manager that
+     * renders a caller-supplied message instead of a status-generic one. The status is the only
+     * fidelity lost — a failed field fetch showed a generic dialog before too.
+     */
+    onFieldFilterError(error: DotFilterChipError): void {
+        this.#httpErrorManager.handle(
+            new HttpErrorResponse({
+                status: 400,
+                error: { header: error.messageKey, message: error.messageKey }
+            })
+        );
     }
 
     /**

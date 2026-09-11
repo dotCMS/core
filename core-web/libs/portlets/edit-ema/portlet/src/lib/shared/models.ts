@@ -1,3 +1,5 @@
+import { Params } from '@angular/router';
+
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction, StyleEditorProperties } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
@@ -90,6 +92,13 @@ export interface ContentletPayload {
     contentType: string;
     baseType?: string;
     onNumberOfPages?: number;
+    /**
+     * Whether the current user holds EDIT permission on this contentlet
+     * instance, read from the `data-dot-can-edit` attribute the container
+     * renderer emits. Optional and fail-open: `undefined` means allowed,
+     * because headless pages never carry the attribute.
+     */
+    canEdit?: boolean;
     dotStyleProperties?: StyleEditorProperties;
 }
 
@@ -120,6 +129,14 @@ export interface NavigationBarItem {
     id: string;
     isDisabled?: boolean;
     tooltip?: string;
+    /**
+     * Query params for this destination, replacing the editor's own rather than merging with them.
+     *
+     * Only set by items that leave the editor's route tree (#37005's Experiments entry point when
+     * the portlet switch is on). Items inside `edit-page` omit it and keep inheriting the page
+     * params, which is what an editor navigating between Content, Layout and Rules needs.
+     */
+    queryParams?: Params;
 }
 
 export interface MessageInfo {

@@ -1,7 +1,10 @@
-import { SpectatorHost, createHostFactory, mockProvider } from '@openng/spectator/jest';
+import { SpectatorHost, createHostFactory, mockProvider } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -75,8 +78,14 @@ describe('DotEditContentBlockEditorComponent', () => {
                 }
             },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true))
-            })
+                getFeatureFlag: vi.fn().mockReturnValue(of(true))
+            }),
+            // The real DotMessageService reaches for /api/v2/languages/default/keys as
+            // soon as something injects it, and in jsdom that XHR fails with status 0.
+            // The testing backend parks the request instead: nothing asserts on it, it
+            // just must not become an unhandled HttpErrorResponse (five of them here).
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         detectChanges: false
     });

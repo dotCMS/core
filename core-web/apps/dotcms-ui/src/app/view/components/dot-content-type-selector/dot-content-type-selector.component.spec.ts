@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -11,7 +12,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotContentTypeSelectorComponent } from './dot-content-type-selector.component';
 
 class MockDotContentTypeService {
-    getContentTypes = jest.fn().mockReturnValue(
+    getContentTypes = vi.fn().mockReturnValue(
         observableOf([
             { name: 'FORM', variable: 'Form' },
             { name: 'WIDGET', variable: 'Widget' }
@@ -50,8 +51,8 @@ describe('DotContentTypeSelectorComponent', () => {
     it('should emit the selected content type', () => {
         const pSelect = getSelect();
         expect(pSelect).toBeTruthy();
-        jest.spyOn(spectator.component.selected, 'emit');
-        jest.spyOn(spectator.component, 'change');
+        vi.spyOn(spectator.component.selected, 'emit');
+        vi.spyOn(spectator.component, 'change');
 
         pSelect.triggerEventHandler('onChange', allContentTypesItem);
 
@@ -61,12 +62,13 @@ describe('DotContentTypeSelectorComponent', () => {
         expect(spectator.component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
-    it('should add All Content Types option as first position', (done) => {
-        spectator.component.options$.subscribe((options) => {
-            expect(options[0]).toEqual(allContentTypesItem);
-            done();
-        });
-    });
+    it('should add All Content Types option as first position', () =>
+        new Promise<void>((done) => {
+            spectator.component.options$.subscribe((options) => {
+                expect(options[0]).toEqual(allContentTypesItem);
+                done();
+            });
+        }));
 
     it('should set attributes to p-select', () => {
         const pSelectEl = getSelect();

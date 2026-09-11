@@ -14,7 +14,7 @@ This document is the single source of truth for Angular development in the dotCM
 - **State**: NgRx Signals 21.x, Component Store
 - **Build**: Nx 23.x
 - **TypeScript**: 6.x
-- **Testing**: Jest 30.x + Spectator, imported from `@openng/spectator` (REQUIRED)
+- **Testing**: Vitest 30.x + Spectator, imported from `@openng/spectator` (REQUIRED)
 
 ## Reuse Before Creating (Required)
 

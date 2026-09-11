@@ -6,8 +6,9 @@ import {
     Spectator,
     SpectatorHost,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -67,7 +68,7 @@ describe('DotSiteComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotSiteService),
-            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
+            mockProvider(DotEventsSocket, { on: vi.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting()
         ]
@@ -142,12 +143,12 @@ describe('DotSiteComponent', () => {
     describe('Lazy Loading', () => {
         beforeEach(() => {
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should handle lazy load events from PrimeNG Select', () => {
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
@@ -189,7 +190,7 @@ describe('DotSiteComponent', () => {
             );
 
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
@@ -206,7 +207,7 @@ describe('DotSiteComponent', () => {
         it('should not load duplicate pages', () => {
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Try to load page 2 again
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
@@ -234,7 +235,7 @@ describe('DotSiteComponent', () => {
             );
 
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Manually set loading state to true
             patchState(spectator.component.$state, { loading: true });
@@ -285,7 +286,7 @@ describe('DotSiteComponent', () => {
             // This is a temporary workaround until the backend is fixed to return the correct totalEntries value.
             patchState(spectator.component.$state, { totalRecords: 50 });
 
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Now try to load page 3, which would be beyond total of 50
             // The component should check and not load page 3
@@ -317,7 +318,7 @@ describe('DotSiteComponent', () => {
 
             spectator.detectChanges();
             tick();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Trigger lazy load for page 1 (which will complete loading all pages)
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
@@ -355,7 +356,7 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
             tick();
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Set a value that will NOT be in the loaded sites
             // The constructor effect will fetch it and add it to the list
@@ -373,7 +374,7 @@ describe('DotSiteComponent', () => {
                 pinnedOption: null
             });
 
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Trigger lazy load for page 1 (which will complete loading all pages)
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
@@ -390,7 +391,7 @@ describe('DotSiteComponent', () => {
     describe('Filtering Functionality', () => {
         beforeEach(() => {
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should debounce filter changes', fakeAsync(() => {
@@ -439,7 +440,7 @@ describe('DotSiteComponent', () => {
             // Load page 2 first to mark it as loaded
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Apply filter - should reset loaded pages and clear sites
             // Calling the method directly because in the test above we tests the trigger from the HTML and is too complex so not worth it to test it again.
@@ -459,7 +460,7 @@ describe('DotSiteComponent', () => {
             // Verify that sites were cleared before filter load
             // The filter already loaded page 1, so now page 1 is in loadedPages
             // But if we try to load page 2 with filter, it should work since pages were reset
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             siteService.getSites.mockReturnValue(
                 of({
                     sites: [
@@ -489,7 +490,7 @@ describe('DotSiteComponent', () => {
             // Apply a filter first
             spectator.component.onFilterChange('example');
             tick(300);
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Clear filter
             spectator.component.onFilterChange('');
@@ -548,6 +549,57 @@ describe('DotSiteComponent', () => {
     describe('Component Inputs', () => {
         beforeEach(() => {
             spectator.detectChanges();
+        });
+
+        // Added for the AssetPicker sidebar (#37208), whose design shows a globe inside the closed
+        // control. Additive and off by default: every existing consumer must be unaffected.
+        /**
+         * The icon rides inside `p-select`'s *closed* label, which this harness never renders: even
+         * without the template, asserting the plain hostname in `.p-select-label` fails here — the
+         * label comes out as the empty placeholder. So what can be checked at this layer is the
+         * contract (the input exists, and nothing appears unless it is set); that the glyph actually
+         * paints is asserted in the AssetPicker sidebar e2e, which runs a real browser.
+         */
+        describe('icon', () => {
+            it('should default to no icon', () => {
+                expect(spectator.component.icon()).toBe('');
+            });
+
+            it('should render no icon element when unset', () => {
+                spectator.component.value.set('site1');
+                spectator.flushEffects();
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="dot-site-icon"]')).toBeNull();
+            });
+
+            // The classes on the icon element cannot be asserted here: it lives inside
+            // `p-select`'s closed label, which this harness never renders (see the note above).
+            // `[class]` replaces the class attribute, so the layout classes had to be folded into
+            // the binding — that they survive is asserted in the AssetPicker sidebar e2e.
+
+            it('should accept an icon class', () => {
+                spectator.setInput('icon', 'pi pi-globe');
+                spectator.detectChanges();
+
+                expect(spectator.component.icon()).toBe('pi pi-globe');
+            });
+        });
+
+        // The overlay is appended to `body`, so a consumer cannot reach it from its own styles —
+        // the class has to travel through the component. Added for the AssetPicker sidebar, whose
+        // dropdown sat flush against the trigger with no gap.
+        describe('panelStyleClass', () => {
+            it('should default to no class', () => {
+                expect(spectator.component.panelStyleClass()).toBe('');
+            });
+
+            it('should pass the class through to the overlay panel', () => {
+                spectator.setInput('panelStyleClass', 'mt-1');
+                spectator.detectChanges();
+
+                expect(spectator.query(Select).panelStyleClass).toBe('mt-1');
+            });
         });
 
         it('should update value model signal', () => {
@@ -627,7 +679,7 @@ describe('DotSiteComponent', () => {
         });
 
         it('should trigger ControlValueAccessor onChange when model signal changes', () => {
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             spectator.component.registerOnChange(onChangeSpy);
 
             const testValue = 'site1';
@@ -645,7 +697,7 @@ describe('DotSiteComponent', () => {
 
         it('should emit onChange output when value changes', () => {
             spectator.detectChanges();
-            const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
+            const onChangeSpy = vi.spyOn(spectator.component.onChange, 'emit');
 
             const selectedSite = mockSites[0];
             // Call onSiteChange directly (bound from template: (onChange)="onSiteChange($event.value)")
@@ -657,7 +709,7 @@ describe('DotSiteComponent', () => {
         });
 
         it('should emit null when value is cleared', () => {
-            const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
+            const onChangeSpy = vi.spyOn(spectator.component.onChange, 'emit');
 
             spectator.triggerEventHandler(Select, 'onChange', { value: null });
 
@@ -666,7 +718,7 @@ describe('DotSiteComponent', () => {
         });
 
         it('should emit onShow output when select overlay is shown', () => {
-            const onShowSpy = jest.spyOn(spectator.component.onShow, 'emit');
+            const onShowSpy = vi.spyOn(spectator.component.onShow, 'emit');
 
             spectator.triggerEventHandler(Select, 'onShow', {} as unknown as AnimationEvent);
 
@@ -674,7 +726,7 @@ describe('DotSiteComponent', () => {
         });
 
         it('should emit onHide output when select overlay is hidden', () => {
-            const onHideSpy = jest.spyOn(spectator.component.onHide, 'emit');
+            const onHideSpy = vi.spyOn(spectator.component.onHide, 'emit');
 
             spectator.triggerEventHandler(Select, 'onHide', {} as unknown as AnimationEvent);
 
@@ -1079,7 +1131,7 @@ describe('DotSiteComponent', () => {
         });
 
         it('should call resetFilter after debounce when any site event fires', fakeAsync(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             siteEventSubjects['PUBLISH_SITE'].next({ identifier: 'site1' });
             tick(299);
             expect(siteService.getSites).not.toHaveBeenCalled();
@@ -1089,7 +1141,7 @@ describe('DotSiteComponent', () => {
         }));
 
         it('should debounce multiple rapid events into a single resetFilter call', fakeAsync(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             siteEventSubjects['SAVE_SITE'].next({ identifier: 'site1' });
             siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site2' });
             siteEventSubjects['PUBLISH_SITE'].next({ identifier: 'site3' });
@@ -1101,7 +1153,7 @@ describe('DotSiteComponent', () => {
         it('should re-fetch the selected site when a non-unavailable event fires for it', fakeAsync(() => {
             patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
             siteService.getSiteById.mockReturnValue(of(mockSites[0]));
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site1' });
 
@@ -1111,7 +1163,7 @@ describe('DotSiteComponent', () => {
 
         it('should NOT re-fetch when the event is for a different site', fakeAsync(() => {
             patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site2' });
             tick(300);
@@ -1128,7 +1180,7 @@ describe('DotSiteComponent', () => {
             };
             patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
             siteService.switchSite.mockReturnValue(of(defaultSite as DotSite));
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             siteEventSubjects['ARCHIVE_SITE'].next({ identifier: 'site1' });
             tick(300);
@@ -1194,7 +1246,7 @@ describe('DotSiteComponent', () => {
 
         it('should unsubscribe from site events on destroy', () => {
             const sub = spectator.component['siteEventsSub'];
-            const unsubscribeSpy = jest.spyOn(sub, 'unsubscribe');
+            const unsubscribeSpy = vi.spyOn(sub!, 'unsubscribe');
             spectator.component.ngOnDestroy();
             expect(unsubscribeSpy).toHaveBeenCalled();
         });
@@ -1208,7 +1260,7 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotSiteService),
-            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
+            mockProvider(DotEventsSocket, { on: vi.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting()
         ],

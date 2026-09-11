@@ -62,7 +62,7 @@ export interface DotUserDetail extends DotUserListItem {
  *   password mutation when omitted.
  * - A non-empty `roles` list REPLACES the user's role membership
  *   entirely (see UserResource#processRoles). The FE always sends the
- *   full role list echoed back from {@link DotUsersService.getUserRoles}
+ *   full role list echoed back from `DotRolesService.getForUser`
  *   with Access-toggle deltas applied, so membership is preserved on
  *   every save — omitting `roles` (the alternative "don't touch" mode)
  *   is not used by this UI.
@@ -100,35 +100,69 @@ interface DotUserUpdateResponse {
     };
 }
 
-/**
- * RoleView returned by `GET /api/v1/roles/users/{userIdOrEmail}`. The
- * `roleKey` field is what UserForm on the backend consumes when we
- * send `roles: [...]` on save — create/update call
- * `roleAPI.loadRoleByKey(...)` on each entry.
- */
-export interface DotRoleView {
-    id: string;
-    name?: string;
-    description?: string;
-    roleKey?: string;
-    parent?: string;
-    editPermissions?: boolean;
-    editUsers?: boolean;
-    editLayouts?: boolean;
-    locked?: boolean;
-    system?: boolean;
-    dbfqn?: string;
-    fqn?: string;
-}
-
-interface DotRolesResponse {
-    entity: DotRoleView[];
-}
-
 interface DotToolgroupStateResponse {
     entity: {
         message?: boolean;
     };
+}
+
+/**
+ * Row shape returned by GET /api/v1/apitoken/{userId}/tokens. Mirrors
+ * `com.dotcms.auth.providers.jwt.beans.ApiToken`. Dates are epoch
+ * milliseconds (`revokedDate` is null when not revoked). The three
+ * boolean flags reflect derived state on the backend: `valid = !expired
+ * && !revoked && after-notBefore`.
+ */
+export interface DotApiToken {
+    id: string;
+    userId: string;
+    requestingUserId: string;
+    requestingIp: string | null;
+    issuer: string | null;
+    subject: string | null;
+    tokenType: string | null;
+    claims: { label?: string } & Record<string, unknown>;
+    allowNetwork: string | null;
+    issueDate: number;
+    expiresDate: number;
+    revokedDate: number | null;
+    modificationDate: number;
+    valid: boolean;
+    expired: boolean;
+    revoked: boolean;
+}
+
+/**
+ * Payload accepted by POST /api/v1/apitoken. `expirationSeconds` is
+ * the TTL in seconds computed from the user-picked expiration date.
+ * `network` is a CIDR block ("0.0.0.0/0" = any). Free-form `claims`
+ * are stored verbatim; the UI only sets `label`.
+ */
+export interface DotApiTokenCreatePayload {
+    userId: string;
+    expirationSeconds: number;
+    network?: string;
+    claims?: { label?: string } & Record<string, unknown>;
+}
+
+/**
+ * Response envelope for POST /api/v1/apitoken. The `jwt` field is the
+ * initial signed value returned alongside the created token record;
+ * the caller can re-mint an equivalent JWT later via `getApiTokenJwt`,
+ * so this is not a one-shot secret — it's just the convenient first
+ * one so the UI doesn't need a second round-trip.
+ */
+export interface DotApiTokenCreateResult {
+    jwt: string;
+    token: DotApiToken;
+}
+
+interface DotApiTokensListResponse {
+    entity: { tokens: DotApiToken[] };
+}
+
+interface DotApiTokenCreateResponse {
+    entity: { jwt: string; token: DotApiToken };
 }
 
 export interface DotUsersPaginatedParams {
@@ -210,30 +244,6 @@ export class DotUsersService {
     }
 
     /**
-     * Returns every role currently assigned to a user (explicit + system).
-     * We rely on this for two things:
-     *   1. Hydrating the Access section toggles by checking for
-     *      well-known role keys (CMS Administrator, DOTCMS_BACK_END_USER,
-     *      DOTCMS_FRONT_END_USER).
-     *   2. Preserving the user's other role memberships on save. The
-     *      backend `PUT /api/v1/users` replaces the full role list, so
-     *      we must send back every role key the user already had, minus
-     *      the access-role keys that are now toggled off.
-     *
-     * Note: `/api/v1/roles/users/{id}` is served by the
-     * `includeImplicitRoles = true` overload — inherited roles come
-     * back alongside direct grants without a discriminator. Echoing
-     * that list back into `PUT /api/v1/users` therefore promotes
-     * inherited roles to direct grants, which is a big part of the
-     * reason we're moving away from sending `roles` on update.
-     */
-    getUserRoles(userIdOrEmail: string): Observable<DotRoleView[]> {
-        return this.#http
-            .get<DotRolesResponse>(`/api/v1/roles/users/${encodeURIComponent(userIdOrEmail)}`)
-            .pipe(map((response) => response.entity ?? []));
-    }
-
-    /**
      * Reads whether the `gettingstarted` layout is assigned to a user.
      * The legacy admin UI ties the "Show Getting Started" checkbox to
      * this same layout via `_addtouser` / `_removefromuser`; we mirror
@@ -260,5 +270,76 @@ export class DotUsersService {
         return this.#http.put(url, null, {
             params: new HttpParams().set('userid', userId)
         });
+    }
+
+    /**
+     * Lists every API token owned by a user. `showRevoked=false` (the
+     * default) filters revoked entries server-side; the tab flips this
+     * when the user checks "Show revoked/expired".
+     */
+    getApiTokens(userId: string, showRevoked: boolean): Observable<DotApiToken[]> {
+        return this.#http
+            .get<DotApiTokensListResponse>(
+                `/api/v1/apitoken/${encodeURIComponent(userId)}/tokens`,
+                { params: new HttpParams().set('showRevoked', String(showRevoked)) }
+            )
+            .pipe(map((response) => response.entity?.tokens ?? []));
+    }
+
+    /**
+     * Mints a new API token for the target user. The JWT string in the
+     * response is a convenience — the tab surfaces it inline so the
+     * admin doesn't need a second call — but any later reveal minted
+     * via `getApiTokenJwt` signs an equivalent JWT over the same
+     * record. Listings only return metadata.
+     */
+    createApiToken(payload: DotApiTokenCreatePayload): Observable<DotApiTokenCreateResult> {
+        return this.#http
+            .post<DotApiTokenCreateResponse>('/api/v1/apitoken', payload)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Mints a fresh JWT for an existing token id. Stateless: the token
+     * record itself is unchanged and previously-issued JWTs stay valid
+     * until the token is revoked or expires — revoke is the only
+     * mechanism that kills a leaked JWT. Backend refuses this on
+     * revoked/expired tokens (400).
+     */
+    getApiTokenJwt(tokenId: string): Observable<string> {
+        return this.#http
+            .get<{ entity: { jwt: string } }>(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/jwt`)
+            .pipe(
+                map((response) => {
+                    const jwt = response.entity?.jwt;
+                    // Throwing here surfaces a malformed response
+                    // through the tab's httpErrorManager instead of
+                    // leaving the reveal dialog spinning on `''`.
+                    if (typeof jwt !== 'string' || jwt.length === 0) {
+                        throw new Error('Malformed JWT response');
+                    }
+
+                    return jwt;
+                })
+            );
+    }
+
+    /**
+     * Soft-revokes a token. The row stays in the list (with
+     * `revoked=true`, `revokedDate` populated) so an admin can prove
+     * when it was disabled; a subsequent DELETE is required to purge.
+     */
+    revokeApiToken(tokenId: string): Observable<unknown> {
+        return this.#http.put(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/revoke`, null);
+    }
+
+    /**
+     * Hard-deletes a token. No UI surface yet — the current tab shows
+     * a static "Revoked" pill for inactive rows instead of a Delete
+     * button. Left in place so the wiring is ready when that follow-up
+     * lands.
+     */
+    deleteApiToken(tokenId: string): Observable<unknown> {
+        return this.#http.delete(`/api/v1/apitoken/${encodeURIComponent(tokenId)}`);
     }
 }

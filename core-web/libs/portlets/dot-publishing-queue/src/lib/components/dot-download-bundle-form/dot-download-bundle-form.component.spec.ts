@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import {
     DotMessageService,
@@ -21,14 +22,14 @@ const FILTERS: DotPushPublishFilter[] = [
 
 describe('DotDownloadBundleFormComponent', () => {
     let spectator: Spectator<DotDownloadBundleFormComponent>;
-    let filtersService: jest.Mocked<DotPushPublishFiltersService>;
+    let filtersService: Mocked<DotPushPublishFiltersService>;
 
     const createComponent = createComponentFactory({
         component: DotDownloadBundleFormComponent,
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService({}) },
             mockProvider(DotPushPublishFiltersService, {
-                get: jest.fn().mockReturnValue(of(FILTERS))
+                get: vi.fn().mockReturnValue(of(FILTERS))
             })
         ]
     });
@@ -37,7 +38,7 @@ describe('DotDownloadBundleFormComponent', () => {
         spectator = createComponent({ props: { bundleId: 'bundle-1' } });
         filtersService = spectator.inject(
             DotPushPublishFiltersService
-        ) as jest.Mocked<DotPushPublishFiltersService>;
+        ) as Mocked<DotPushPublishFiltersService>;
         spectator.detectChanges();
     });
 

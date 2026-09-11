@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -17,15 +18,15 @@ describe('ActionHeaderComponent', () => {
 
     Object.defineProperty(window, 'matchMedia', {
         writable: true,
-        value: jest.fn().mockImplementation((query: string) => ({
+        value: vi.fn().mockImplementation((query: string) => ({
             matches: false,
             media: query,
             onchange: null,
-            addListener: jest.fn(), // deprecated
-            removeListener: jest.fn(), // deprecated
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn(),
-            dispatchEvent: jest.fn()
+            addListener: vi.fn(), // deprecated
+            removeListener: vi.fn(), // deprecated
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn()
         }))
     });
 
@@ -85,8 +86,8 @@ describe('ActionHeaderComponent', () => {
     });
 
     it('should trigger the methods in the action buttons', () => {
-        const primarySpy = jest.fn();
-        const secondarySpy = jest.fn();
+        const primarySpy = vi.fn();
+        const secondarySpy = vi.fn();
         const options = {
             secondary: [
                 {

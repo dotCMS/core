@@ -1,0 +1,13 @@
+{
+    "name": "portlets-dot-roles-portlet",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-roles/src",
+    "prefix": "dot",
+    "projectType": "library",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:roles-beta"],
+    "targets": {
+        "lint": {
+            "executor": "@nx/eslint:lint"
+        }
+    }
+}

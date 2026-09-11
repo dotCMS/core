@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -81,7 +82,7 @@ describe('ContainerSelectorComponent', () => {
     });
 
     it('should set onInit Pagination Service with right values', () => {
-        jest.spyOn(paginatorService, 'setExtraParams');
+        vi.spyOn(paginatorService, 'setExtraParams');
         spectator.component.ngOnInit();
         expect(paginatorService.setExtraParams).toHaveBeenCalled();
     });
@@ -115,7 +116,7 @@ describe('ContainerSelectorComponent', () => {
         const page = 1;
 
         paginatorService.totalRecords = 2;
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
         spectator.detectChanges();
         searchableDropdownComponent = spectator.debugElement.query(
             By.css('dot-searchable-dropdown')
@@ -139,7 +140,7 @@ describe('ContainerSelectorComponent', () => {
         const filter = 'filter';
 
         paginatorService.totalRecords = 2;
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
         spectator.detectChanges();
         searchableDropdownComponent = spectator.debugElement.query(
             By.css('dot-searchable-dropdown')
@@ -156,7 +157,7 @@ describe('ContainerSelectorComponent', () => {
 
     it('should set container list replacing the identifier for the path, if needed', fakeAsync(() => {
         spectator.detectChanges();
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
         const searchable = spectator.debugElement.query(
             By.css('[data-testid="searchableDropdown"]')
         ).componentInstance as SearchableDropdownComponent;

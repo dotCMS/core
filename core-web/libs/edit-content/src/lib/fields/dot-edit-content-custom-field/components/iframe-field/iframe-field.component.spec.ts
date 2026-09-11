@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DeferBlockState } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -498,7 +499,7 @@ describe('IframeFieldComponent', () => {
             ) as HTMLIFrameElement;
             if (!iframe || !iframe.contentWindow) return;
 
-            const postMessageSpy = jest.spyOn(iframe.contentWindow, 'postMessage');
+            const postMessageSpy = vi.spyOn(iframe.contentWindow, 'postMessage');
             spectator.component.onIframeLoad();
 
             expect(postMessageSpy).toHaveBeenCalledWith(

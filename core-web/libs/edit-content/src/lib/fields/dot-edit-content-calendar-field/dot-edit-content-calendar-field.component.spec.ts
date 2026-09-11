@@ -1,5 +1,5 @@
-import { describe } from '@jest/globals';
-import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@openng/spectator/jest';
+import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@openng/spectator/vitest';
+import { describe, vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -47,7 +47,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         detectChanges: false,
         providers: [
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Never expires')
+                get: vi.fn().mockReturnValue('Never expires')
             })
         ]
     });
@@ -500,15 +500,15 @@ describe('DotEditContentCalendarFieldComponent', () => {
     describe('Default value handling', () => {
         beforeEach(() => {
             // Mock utility functions
-            jest.spyOn(calendarUtils, 'processFieldDefaultValue').mockReturnValue(null);
-            jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(null);
-            jest.spyOn(calendarUtils, 'getCurrentServerTime').mockReturnValue(
+            vi.spyOn(calendarUtils, 'processFieldDefaultValue').mockReturnValue(null);
+            vi.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(null);
+            vi.spyOn(calendarUtils, 'getCurrentServerTime').mockReturnValue(
                 new Date('2024-01-15T10:30:00Z')
             );
         });
 
         afterEach(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         it('should process field default value when field has defaultValue', () => {
@@ -517,9 +517,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 formValue: new Date('2024-01-15T15:30:00Z')
             };
 
-            jest.spyOn(calendarUtils, 'processFieldDefaultValue').mockReturnValue(
-                mockDefaultResult
-            );
+            vi.spyOn(calendarUtils, 'processFieldDefaultValue').mockReturnValue(mockDefaultResult);
 
             const fieldWithDefault = { ...DATE_FIELD_MOCK, defaultValue: 'now' };
 
@@ -590,7 +588,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             const existingValue = new Date('2024-01-10T14:20:00Z').getTime(); // Convert to timestamp
             const mockProcessedValue = new Date('2024-01-10T09:20:00Z');
 
-            jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
+            vi.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
 
             spectator = createHost(
                 `<form [formGroup]="formGroup">
@@ -629,7 +627,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             const existingValue = new Date('2024-01-10T14:20:00Z').getTime(); // Convert to timestamp
             const mockProcessedValue = new Date('2024-01-10T09:20:00Z');
 
-            jest.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
+            vi.spyOn(calendarUtils, 'processExistingValue').mockReturnValue(mockProcessedValue);
 
             // Start without timezone
             spectator = createHost(
@@ -668,7 +666,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
     describe('Calendar value changes', () => {
         beforeEach(() => {
             // Mock utility functions
-            jest.spyOn(calendarUtils, 'extractDateComponents').mockReturnValue({
+            vi.spyOn(calendarUtils, 'extractDateComponents').mockReturnValue({
                 year: 2024,
                 month: 0,
                 date: 15,
@@ -676,16 +674,16 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 minutes: 30,
                 seconds: 0
             });
-            jest.spyOn(calendarUtils, 'createUtcDateAtMidnight').mockReturnValue(
+            vi.spyOn(calendarUtils, 'createUtcDateAtMidnight').mockReturnValue(
                 new Date('2024-01-15T00:00:00Z')
             );
-            jest.spyOn(calendarUtils, 'convertServerTimeToUtc').mockReturnValue(
+            vi.spyOn(calendarUtils, 'convertServerTimeToUtc').mockReturnValue(
                 new Date('2024-01-15T15:30:00Z')
             );
         });
 
         afterEach(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         it('should handle calendar change for DATE field', () => {

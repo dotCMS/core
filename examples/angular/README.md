@@ -1,5 +1,12 @@
 # Angular Client-Side Rendering with dotCMS Integration
 
+> [!NOTE]
+> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen
+> instance (always the current release). If your dotCMS instance is **not** on Evergreen — an
+> older self-hosted release, or an LTS server — installing as-is may fail with GraphQL
+> `FieldUndefined` errors. Check your server's version and replace `latest` with that exact
+> version for every `@dotcms/*` entry in `package.json` before installing.
+
 This Angular project demonstrates how to implement editable dotCMS pages using Angular Client-Side Rendering (CSR). It showcases best practices for integrating dotCMS content management with Angular's client-side rendering capabilities.
 
 ### Content Management Features

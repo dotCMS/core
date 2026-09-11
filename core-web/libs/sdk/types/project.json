@@ -27,17 +27,6 @@
             "options": {
                 "packageRoot": "dist/{projectRoot}"
             }
-        },
-        "test": {
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
         }
     }
 }

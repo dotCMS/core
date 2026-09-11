@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.user;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -36,6 +37,11 @@ public final class UserForm extends Validated implements LanguageSupport  {
 
     private final Map<String, Object> additionalInfo;
 
+    @Schema(description = "Role keys or role IDs (roles created without a key can only be "
+            + "referenced by ID). On update: field absent = roles untouched; [] = remove all "
+            + "user-assignable roles; otherwise the complete user-assignable role set. On create: "
+            + "absent or empty = default Front-end User role. Unknown entries are ignored.",
+            example = "[\"DOTCMS_BACK_END_USER\", \"48190c8c-42c4-46af-8d1a-0cd5db894797\"]")
     private final List<String> roles;
 
     private UserForm(UserForm.Builder builder) {
