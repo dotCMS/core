@@ -120,7 +120,9 @@ jobs:
         with:
           node-version-file: 'core-web/.nvmrc'
           cache: npm
-          cache-dependency-path: .github/scripts/validate-sdk-package-shapes/package-lock.json
+          cache-dependency-path: |
+            .github/scripts/validate-sdk-package-shapes/package-lock.json
+            .github/scripts/resolve-sdk-pin/package-lock.json
 
       - name: 'Build and test validator'
         working-directory: .github/scripts/validate-sdk-package-shapes

@@ -149,7 +149,20 @@ jobs:
           # not a reliable signal - existing lines start at _v0 or _v1 inconsistently).
           if [[ "${is_lts}" == "true" && -z "${RELEASE_COMMIT}" ]]; then
             lts_line="${release_version%_lts_v*}"
-            prior_tags=$(git ls-remote --tags https://github.com/dotCMS/core.git "v${lts_line}_lts_v*" | wc -l | tr -d '[:space:]')
+
+            # The fetch is checked on its own, not folded into a pipeline. This step declares
+            # no `shell:`, so it runs under the runner default `bash -e` WITHOUT pipefail: a
+            # pipeline's status is its last command's, so `ls-remote | wc -l | tr` reports
+            # success even when ls-remote dies. A DNS blip or rate limit would then yield an
+            # empty list, prior_tags="0", and the guard would conclude "first cut" and let a
+            # patch be branched from main -- the exact outcome it exists to prevent, and by
+            # the comment above the only place it can be caught.
+            if ! prior_tag_refs=$(git ls-remote --tags https://github.com/dotCMS/core.git "v${lts_line}_lts_v*"); then
+              echo "::error::Could not reach the remote to check for prior ${lts_line} LTS tags. Refusing to cut ${release_version} rather than risk branching a patch from main."
+              exit 1
+            fi
+            prior_tags=$(printf '%s' "${prior_tag_refs}" | grep -c . || true)
+
             if [[ "${prior_tags}" != "0" ]]; then
               echo "::error::${release_version} is a patch on the existing ${lts_line} LTS line (${prior_tags} prior tag(s)), but no release_commit was supplied. It would be cut from main. Re-dispatch with release_commit set to the commit on the ${lts_line} LTS lineage."
               exit 1
@@ -268,48 +281,6 @@ jobs:
             git add "${MIN_SDK_FILE}"
           fi
 
-          # ── Pin the example apps' @dotcms/* dependencies ─────────────────────────
-          #
-          # Root-cause fix for examples/nextjs on release-25.07.10_lts_v12/_v16 having
-          # shipped with a floating "latest" for months, resolving far ahead of the LTS
-          # server, with nothing to catch it (dotCMS/core#36891, Freshdesk #38677).
-          # `main` is never touched and keeps floating on "latest" by design - its examples
-          # target Evergreen customers.
-          #
-          # Folded into THIS commit on purpose rather than a separate commit+push:
-          #   - `release_commit` below is the release tag's target_commitish, so a later
-          #     commit would leave the tag pointing at a tree with no pin.
-          #   - a second push to release-* re-triggers cicd_5-lts.yml, whose
-          #     `cancel-in-progress: true` would cancel the run the first push just started.
-          #   - `git commit -a` picks these rewrites up, so there is no separate commit to
-          #     fail with "nothing to commit" when the pin is a no-op on a re-run.
-          #
-          # WHICH version to pin is decided by what this branch is being cut FROM, never by
-          # parsing the release version string:
-          #
-          #   already exact   A manifest carrying an exact version means we are branching
-          #                   off an existing LTS lineage, already frozen at an SDK verified
-          #                   compatible with that line. Leave it. Moving a line to a newer
-          #                   SDK is a compatibility judgement and belongs in a reviewed
-          #                   commit, not in this step.
-          #   floating, non-LTS
-          #                   A normal release cut off main. This release publishes its own
-          #                   SDK at the same version (ADR-0019 date lockstep), so the
-          #                   version being released is the correct pin.
-          #   floating, LTS   A NEW LTS line cut off main. cicd_release-sdk.yml SKIPS the
-          #                   SDK publish for LTS releases, so NO SDK exists at this
-          #                   release's version. The correct pin is the SDK the most recent
-          #                   non-LTS release published - npm's current "latest", which is
-          #                   contemporaneous with the main commit being branched and can
-          #                   only ever be at or behind that code, never ahead of it.
-          #
-          # Deriving the pin from the release NAME (26.09.15_lts_v1 -> 26.9.15-1) was
-          # considered and rejected. Two reasons, both load-bearing:
-          #   - The counter cannot be assumed. 13 dates in 2026 carry 2-4 releases
-          #     (26.08.19 has four), so defaulting to -01 silently pins a real but WRONG
-          #     published build - one that installs cleanly and is wrong in production.
-          #   - `git describe` cannot disambiguate it either: release tags point at each
-          #     release branch's own commit and are never ancestors of main.
           # Resolve WHICH version to pin. The decision lives in
           # .github/scripts/resolve-sdk-pin - a dependency-free, unit-tested module - rather
           # than inline here. As shell it could only ever be exercised by cutting a real

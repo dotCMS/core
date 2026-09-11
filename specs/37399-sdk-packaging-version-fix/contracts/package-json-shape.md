@@ -102,7 +102,7 @@ and rejected: 13 dates in 2026 carry 2–4 releases (`26.08.19` has four), so as
 wrong in production. `git describe` cannot disambiguate it either, because release tags point
 at each release branch's own commit and are never ancestors of `main`.
 
-Two guards run before anything is written, and both fail the release rather than ship a bad
+Three guards run before anything is written, and each fails the release rather than ship a bad
 pin:
 
 1. **Shape** — the value must be an exact version. Catches an LTS-shaped string, a range or a
@@ -114,6 +114,15 @@ pin:
    normal release pins the version this very pipeline is about to publish: `Create GitHub
    Release` is what triggers `cicd_release-sdk.yml`, so at pin time that version is
    legitimately absent from npm and checking it would fail every release.
+3. **Compatibility floor** — the pin must be at or above `MinSdkVersion.VALUE`, the oldest
+   `@dotcms/*` SDK the branch's own build still supports, served to clients as
+   `X-DotCMS-Min-SDK`. Date proximity is only a *proxy* for compatibility; this is the repo's
+   explicit statement of it, and it sits in the tree being branched, so the branch is checked
+   against itself. Both sides are compared by numeric segment, since `VALUE` is written in the
+   raw zero-padded release form (`26.08.19-01`) and a pin is in npm form (`26.8.19-1`).
+   **This guard is a no-op today**: `VALUE` is still the `"0.0.0"` baseline, meaning no
+   breaking change has been declared under that mechanism, so its unit tests are the only
+   thing exercising it.
 
 Separately, a patch on an existing LTS line must be dispatched with an explicit
 `release_commit`; without one it would be cut from `main` and ship main's code under an LTS

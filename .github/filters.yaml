@@ -61,6 +61,9 @@ examples:
 sdk_package_shapes:
   - '.github/scripts/validate-sdk-package-shapes/**'
   - '.github/scripts/resolve-sdk-pin/**'
+  # resolve-sdk-pin's only caller, and the owner of the CLI's argument contract. Without it,
+  # changing a flag in the workflow does not run the tests that cover the module it invokes.
+  - '.github/workflows/cicd_comp_release-prepare-phase.yml'
 
 # PR area labeling filters
 # These are separate from test-triggering filters to avoid false positives
