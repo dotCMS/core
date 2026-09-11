@@ -10553,10 +10553,10 @@ paths:
           content:
             application/javascript:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
           description: default response
       tags:
       - Experiment
@@ -36228,6 +36228,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MulitreeView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityViewMapStringHealth:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: string
+            enum:
+            - OK
+            - NOT_CONFIGURED
+            - CONFIGURATION_ERROR
         errors:
           type: array
           items:
