@@ -971,19 +971,28 @@ public class ReindexThreadUnitTest extends UnitTestBase {
      * instead of a {@code NoSuchFieldException}.
      */
     private static AtomicBoolean livenessFlag(final ReindexThread thread) throws Exception {
-        for (final Field f : ReindexThread.class.getDeclaredFields()) {
-            if (AtomicBoolean.class.equals(f.getType())) {
-                f.setAccessible(true);
-                return (AtomicBoolean) f.get(thread);
-            }
+        // Bound to the field by NAME, not by type. getDeclaredFields() has no specified order, so
+        // a type-based scan would silently rebind to the wrong flag the moment a second
+        // AtomicBoolean is added to ReindexThread (a `degraded` or `fullReindexInProgress` flag
+        // would be natural here) — deadWorkerIsRestartedOnUnpause would then clear the wrong flag,
+        // workerAlive would stay true, unpauseImpl() would take the healthy branch, and the test
+        // would pass vacuously. The type scan only made sense while the field name was undecided.
+        try {
+            final Field f = ReindexThread.class.getDeclaredField(LIVENESS_FIELD_NAME);
+            f.setAccessible(true);
+            return (AtomicBoolean) f.get(thread);
+        } catch (final NoSuchFieldException e) {
+            return null;
         }
-        return null;
     }
+
+    private static final String LIVENESS_FIELD_NAME = "workerAlive";
 
     private static AtomicBoolean requireLiveness(final ReindexThread thread) throws Exception {
         final AtomicBoolean flag = livenessFlag(thread);
-        assertNotNull("AC-006: ReindexThread must carry an AtomicBoolean liveness flag so a dead "
-                + "runnable can be distinguished from a paused one; no such field exists", flag);
+        assertNotNull("AC-006: ReindexThread must carry an AtomicBoolean liveness field named '"
+                + LIVENESS_FIELD_NAME + "' so a dead runnable can be distinguished from a paused "
+                + "one; no such field exists", flag);
         return flag;
     }
 

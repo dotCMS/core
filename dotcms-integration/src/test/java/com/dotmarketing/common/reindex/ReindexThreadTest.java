@@ -326,10 +326,18 @@ public class ReindexThreadTest {
         // 1. Force the worker into the dead-but-PAUSED state: stop it, wait for the runnable to
         //    exit, then rewrite the state to PAUSED behind its back.
         ReindexThread.stopThread();
-        DateUtil.sleep(2000);
+        // Wait for the worker to ACTUALLY die, then fake PAUSED. isWorking() reads
+        // state == RUNNING and says nothing about liveness, which is the flag unpauseImpl()
+        // branches on — and a fixed sleep is not enough: a worker parked in the 30s degraded
+        // back-off, or mid-bulk-batch, is still alive after 2s. If it were, unpauseImpl() would
+        // take the HEALTHY branch, the still-live worker would drain the queue, and every
+        // assertion below would pass green without ever exercising the dead-worker recovery
+        // this test exists to cover.
+        assertTrue("Precondition: the worker must actually exit before we fake the PAUSED state",
+                waitUntilQuiet(() -> !isWorkerAlive(), 30_000));
         setThreadState("PAUSED");
-        assertFalse("Precondition: the worker must not report itself as working",
-                ReindexThread.isWorking());
+        assertFalse("Precondition: liveness must be false — this is the flag unpauseImpl() reads",
+                isWorkerAlive());
 
         // 2. Queue work the way a push-publish receiver would: save content, which enqueues a
         //    journal entry and registers the unpause commit listener.
@@ -366,6 +374,19 @@ public class ReindexThreadTest {
             ContentletDataGen.destroy(contentlet);
             ReindexThread.startThread();
         }
+    }
+
+    /**
+     * Reads the private {@code workerAlive} liveness flag — the fact {@code unpauseImpl()} branches
+     * on, as opposed to {@code isWorking()}, which only reports the command state. Bound by field
+     * name so adding another {@code AtomicBoolean} to {@code ReindexThread} cannot silently rebind
+     * this to the wrong flag.
+     */
+    private static boolean isWorkerAlive() throws Exception {
+        final java.lang.reflect.Field field = ReindexThread.class.getDeclaredField("workerAlive");
+        field.setAccessible(true);
+        return ((java.util.concurrent.atomic.AtomicBoolean)
+                field.get(ReindexThread.getInstance())).get();
     }
 
     /**
