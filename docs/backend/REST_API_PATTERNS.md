@@ -549,7 +549,7 @@ public Response bulkOperation(
 ```
 
 ## Location Information
-- **REST endpoints**: Located in `com.dotcms.rest.*` packages but the ones under `com.dotcms.rest.api.v*` are considered the new endpoints, the ones directly under `com.dotcms.rest` are considered legacy endpoints. For example: `com.dotcms.rest.ContentResource` is the legacy one and `com.dotcms.rest.api.v1.ContentResource` is the new one.
+- **REST endpoints**: Located in `com.dotcms.rest.*` packages but the ones under `com.dotcms.rest.api.v*` are considered the new endpoints, the ones directly under `com.dotcms.rest` are considered legacy endpoints. For example: `com.dotcms.rest.ContentResource` is the legacy one and `com.dotcms.rest.api.v1.content.ContentResource` is the new one.
 - **WebResource**: Found in `com.dotcms.rest.WebResource`
 - **ResponseUtil**: Located in `com.dotcms.rest.api.v1.authentication.ResponseUtil`
 - **Forms**: Typically in same package as resource or `*.form` subpackage
