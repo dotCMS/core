@@ -185,17 +185,74 @@ public final class PhaseRouter<T> {
      * @return    result from the read provider (or ES fallback in Phase 2)
      */
     public <R> R read(final Function<T, R> fn) {
+        return read(null, fn);
+    }
+
+    /**
+     * Same as {@link #read(Function)}, but names the operation in the fallback log line.
+     *
+     * <p>The plain {@link #read(Function)} can only report the cause, because the operation it
+     * runs is an opaque lambda. That is enough to know <em>something</em> fell back, but not
+     * enough for log-based monitoring to say <em>what</em> stopped working — which is the
+     * early-warning signal the migration design promises. Callers on a read path that matters
+     * operationally should pass a name.</p>
+     *
+     * @param operation short name of the operation being routed, e.g. {@code "indexCount"};
+     *                  may be {@code null}, in which case the log line omits it
+     * @param fn        must not throw checked exceptions; use {@link #readChecked} otherwise
+     */
+    public <R> R read(final String operation, final Function<T, R> fn) {
         if (!isPhase2()) {
             return fn.apply(readProvider());
         }
         try {
             return fn.apply(osImpl);
         } catch (final RuntimeException e) {
-            Logger.error(PhaseRouter.class,
-                    "OS read failed in Phase 2 — falling back to ES. "
-                    + "OS index may be stale or unavailable. Cause: " + e.getMessage(), e);
+            Logger.error(PhaseRouter.class, fallbackMessage(operation, e), e);
             return fn.apply(esImpl);
         }
+    }
+
+    /**
+     * Builds the Phase 2 fallback log line.
+     *
+     * <p>Named operation and root cause are both deliberate. This line is the migration
+     * design's early-warning signal that OS has stopped answering, so it has to say
+     * <em>what</em> stopped working and <em>why</em> — a monitor that can only see "a read fell
+     * back" cannot tell a dead node from a single malformed query. The root cause matters
+     * because providers wrap failures in a generic message: the actionable text
+     * ("Connection refused", "index_not_found_exception") is further down the chain.</p>
+     */
+    private static String fallbackMessage(final String operation, final Throwable failure) {
+        final StringBuilder message = new StringBuilder("OS read failed in Phase 2");
+        if (null != operation && !operation.isBlank()) {
+            message.append(" [").append(operation).append(']');
+        }
+        message.append(" — falling back to ES. OS index may be stale or unavailable. Cause: ")
+                .append(failure.getMessage());
+        final String rootCause = rootCauseMessage(failure);
+        if (null != rootCause) {
+            message.append(" / root cause: ").append(rootCause);
+        }
+        return message.toString();
+    }
+
+    /**
+     * Message of the deepest cause, or {@code null} when the failure is not wrapping anything
+     * that adds information.
+     */
+    private static String rootCauseMessage(final Throwable failure) {
+        Throwable current = failure;
+        while (null != current.getCause() && current.getCause() != current) {
+            current = current.getCause();
+        }
+        if (current == failure) {
+            return null;
+        }
+        final String message = current.getMessage();
+        return null == message || message.isBlank()
+                ? current.getClass().getSimpleName()
+                : current.getClass().getSimpleName() + ": " + message;
     }
 
     /**
