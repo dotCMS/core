@@ -500,33 +500,9 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
         });
 
         /**
-         * The empty state's way out has to cover the case where the *scope* is the problem: an
-         * editor in a scope with nothing in it has no filters to clear, so an action gated on
-         * filters alone would leave them stuck with a message telling them to try another site and
-         * no control to do it with.
+         * `reset()` is what the shared bar's "Clear all" calls. Changing where you are looking is
+         * not un-picking what you already picked.
          */
-        it('offers a reset when the scope has moved, even with no filters set', () => {
-            store.initialize(baseInput);
-
-            expect(store.$canReset()).toBe(false);
-
-            store.setScope({ hostname: 'System Host' });
-            expect(store.$canReset()).toBe(true);
-        });
-
-        it('resets scope and filters back to how the dialog opened', () => {
-            store.initialize(baseInput);
-            store.patchFilters({ title: 'something' });
-            store.setScope({ hostname: 'other.dotcms.com', path: '/blog/' });
-
-            store.reset();
-
-            expect(store.scopeLabel()).toBe('demo.dotcms.com');
-            expect(store.getFilterValue('title')).toBeUndefined();
-            expect(store.$canReset()).toBe(false);
-            expect(lastRequest().assetPath).toBe('//demo.dotcms.com/');
-        });
-
         it('keeps the selection through a reset', () => {
             store.initialize(baseInput);
             store.load();

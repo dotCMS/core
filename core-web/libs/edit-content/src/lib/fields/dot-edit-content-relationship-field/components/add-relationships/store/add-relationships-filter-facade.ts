@@ -1,4 +1,4 @@
-import { inject, Provider } from '@angular/core';
+import { computed, inject, Provider } from '@angular/core';
 
 import { DOT_FILTER_FACADE, DotFilterFacade, DotFilterValue, isNoOpFilterPatch } from '@dotcms/ui';
 
@@ -38,9 +38,27 @@ export function createAddRelationshipsFilterFacade(store: Store): DotFilterFacad
 
         removeFilter: (key: string): void => store.removeFilter(key),
 
-        clearFilters: (): void => store.clearFilters(),
+        // "Clear all" here means the browsed site too, not just the chips — see `reset()`. The
+        // wider clear is what keeps obligation O5 true once scope counts below: the bar asserts
+        // that after clearing there is nothing left worth clearing.
+        clearFilters: (): void => store.reset(),
 
-        $hasNonDefaultFilters: store.$hasNonDefaultFilters
+        /**
+         * Extended beyond the filter bag, deliberately.
+         *
+         * The contract asks whether anything differs from *this surface's defaults* — not whether a
+         * filter does. The browsed site is one of this surface's defaults: it opens on the
+         * contentlet's own site, and moving off it is a change the editor made and may want undone.
+         * Keeping it out would mean browsing into an empty site and being offered no way back,
+         * which is the one case where the editor is actually stuck.
+         *
+         * Content Drive answers differently because its browsed folder lives in the URL and its
+         * tree is always on screen. Absorbing that difference per surface is exactly why this seam
+         * exists.
+         */
+        $hasNonDefaultFilters: computed(
+            () => store.$hasNonDefaultFilters() || store.assetPath() !== store.defaultAssetPath()
+        )
     };
 }
 

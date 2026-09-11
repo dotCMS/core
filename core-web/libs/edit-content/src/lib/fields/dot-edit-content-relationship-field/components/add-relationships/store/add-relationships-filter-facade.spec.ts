@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 
 import { DotContentDriveService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
+import { DotFilterFacade } from '@dotcms/ui';
 import { testFilterFacadeConformance } from '@dotcms/ui/testing';
 
 import { createAddRelationshipsFilterFacade } from './add-relationships-filter-facade';
@@ -83,4 +84,52 @@ describe('AddRelationshipsFilterFacade', () => {
         },
         { normalizes: false }
     );
+
+    /**
+     * Beyond the shared obligations: on this surface the browsed site counts as something to
+     * clear.
+     *
+     * Reported from the running app — changing site or folder left "Clear all" hidden, so an
+     * editor who browsed into an empty site was told to try another one with no control to do it
+     * with. The site is not in the filter bag (it is scope, the way Content Drive's browsed folder
+     * is), which is why the shared computed alone cannot see it.
+     */
+    describe('scope counts as something to clear', () => {
+        let store: InstanceType<typeof AddRelationshipsStore>;
+        let facade: DotFilterFacade;
+
+        beforeEach(() => {
+            spectator = createService();
+            store = spectator.service;
+            store.initialize(input);
+            facade = createAddRelationshipsFilterFacade(store);
+        });
+
+        it('offers nothing to clear on the site the dialog opened on', () => {
+            expect(facade.$hasNonDefaultFilters()).toBe(false);
+        });
+
+        it('offers a clear once the editor browses to another site', () => {
+            store.setScope({ hostname: 'other.dotcms.com' });
+
+            expect(facade.$hasNonDefaultFilters()).toBe(true);
+        });
+
+        it('offers a clear once the editor browses into a folder', () => {
+            store.setScope({ hostname: 'demo.dotcms.com', path: '/blog/' });
+
+            expect(facade.$hasNonDefaultFilters()).toBe(true);
+        });
+
+        it('puts the site back, not only the filters — O5 must still hold', () => {
+            store.patchFilters({ title: 'something' });
+            store.setScope({ hostname: 'other.dotcms.com', path: '/blog/' });
+
+            facade.clearFilters();
+
+            expect(store.scopeLabel()).toBe('demo.dotcms.com');
+            expect(facade.getFilterValue('title')).toBeUndefined();
+            expect(facade.$hasNonDefaultFilters()).toBe(false);
+        });
+    });
 });

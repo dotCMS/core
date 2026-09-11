@@ -191,29 +191,6 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     $showActions = input(true, { alias: 'showActions' });
 
     /**
-     * Empty-state copy, as i18n keys.
-     *
-     * Default to Content Drive's, so that surface is unchanged. A dialog searching one content type
-     * needs different words — "no content found, try another site or clear the filters" — and the
-     * table is the only thing that knows when the result set is empty, so the copy has to reach it
-     * rather than the caller rendering its own empty state and losing the header and paging rows.
-     */
-    $emptyTitleKey = input('content.drive.empty.state.title', { alias: 'emptyTitleKey' });
-    $emptyDescriptionKey = input('content.drive.empty.state.description', {
-        alias: 'emptyDescriptionKey'
-    });
-
-    /**
-     * i18n key for an optional action inside the empty state — "Clear Filters", typically.
-     *
-     * Empty by default: a surface that offers no way out of an empty result shows none.
-     */
-    $emptyActionKey = input('', { alias: 'emptyActionKey' });
-
-    /** Emitted when that action is used. */
-    emptyAction = output<void>();
-
-    /**
      * Whether clicking a row's title or thumbnail **opens** the item rather than selecting the row.
      *
      * Defaults to `true` for Content Drive, where the title is a distinct affordance: it navigates

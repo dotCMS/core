@@ -190,16 +190,6 @@ export class AddRelationshipsComponent implements OnInit {
     }
 
     /**
-     * The empty state's way out: back to how the dialog opened — filters **and** scope.
-     *
-     * Not just `clearFilters`: an editor who browsed into a scope with nothing in it has no filters
-     * to clear, and clearing only filters would leave them exactly where they were stuck.
-     */
-    protected onClearFilters(): void {
-        this.store.reset();
-    }
-
-    /**
      * Moves to the page the footer asked for, carrying its page size.
      *
      * The size travels because the shared list offers 20/40/60 and the store has to fetch what the

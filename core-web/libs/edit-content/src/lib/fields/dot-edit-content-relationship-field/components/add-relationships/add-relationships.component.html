@@ -93,12 +93,6 @@
                         [unselectable]="store.$constrainedList()"
                         [totalItems]="store.totalItems()"
                         [offset]="store.$offset()"
-                        emptyTitleKey="dot.relationship.add.dialog.empty.title"
-                        emptyDescriptionKey="dot.relationship.add.dialog.empty.description"
-                        [emptyActionKey]="
-                            store.$canReset() ? 'dot.relationship.add.dialog.empty.clear' : ''
-                        "
-                        (emptyAction)="onClearFilters()"
                         (selectionChange)="onSelectionChange($event)"
                         (paginate)="onPaginate($event)"
                         (sort)="onSort($event)" />

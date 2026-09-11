@@ -201,16 +201,6 @@ export const AddRelationshipsStore = signalStore(
          * worth offering. Not the same question as "are there filters at all": the defaults are
          * always present, so counting keys would answer yes on a dialog nobody has filtered.
          */
-        /**
-         * Whether anything about the current view differs from how the dialog opened — filters or
-         * scope. Drives the empty state's way out, which must be offered whenever the editor could
-         * be stuck, not only when a chip is set.
-         */
-        $canReset: computed(
-            () =>
-                state.assetPath() !== state.defaultAssetPath() ||
-                JSON.stringify(state.filters()) !== JSON.stringify(state.defaultFilters())
-        ),
         $hasNonDefaultFilters: computed(() => {
             const current = state.filters();
             const defaults = state.defaultFilters();
@@ -515,11 +505,13 @@ export const AddRelationshipsStore = signalStore(
                 /**
                  * Returns the dialog to the state it opened in — filters **and** browsed scope.
                  *
-                 * Wider than `DOT_FILTER_FACADE.clearFilters`, deliberately: that one leaves the
-                 * scope alone, which is right for a chip row but wrong for the empty state's way
-                 * out. An editor who browsed into a scope with nothing in it — Shared Assets is not
-                 * searchable at all — has no filters to clear, so clearing only filters would leave
+                 * Wider than the filter bag on purpose. The browsed site is not a filter — it lives
+                 * outside the bag, the way Content Drive keeps its browsed folder out — but to an
+                 * editor it is one more thing they changed, and an editor who browsed into a site
+                 * with nothing in it has no filters to clear. Clearing only filters would leave
                  * them exactly where they were stuck.
+                 *
+                 * This is what the shared bar's "Clear all" calls, through the facade.
                  */
                 reset(): void {
                     patchState(store, {

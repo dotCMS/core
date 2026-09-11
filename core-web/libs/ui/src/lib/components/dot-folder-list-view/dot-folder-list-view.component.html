@@ -363,20 +363,12 @@
                         </div>
                         <div class="flex flex-col text-center">
                             <h3 class="m-0 text-lg font-medium text-gray-800">
-                                {{ $emptyTitleKey() | dm }}
+                                {{ 'content.drive.empty.state.title' | dm }}
                             </h3>
                             <p class="text-text-color m-0 text-base leading-6">
-                                {{ $emptyDescriptionKey() | dm }}
+                                {{ 'content.drive.empty.state.description' | dm }}
                             </p>
                         </div>
-                        @if ($emptyActionKey()) {
-                            <p-button
-                                type="button"
-                                [label]="$emptyActionKey() | dm"
-                                [rounded]="true"
-                                data-testid="folder-list-empty-action"
-                                (onClick)="emptyAction.emit()" />
-                        }
                     </div>
                 </td>
             </tr>
