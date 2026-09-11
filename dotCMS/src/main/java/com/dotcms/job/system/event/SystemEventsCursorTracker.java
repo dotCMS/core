@@ -23,9 +23,23 @@ import java.util.function.LongSupplier;
  *       reading taken after processing — the original defect.</li>
  *   <li>The read floor sits one overlap window behind the cursor, so an event whose transaction
  *       commits after its {@code created} stamp is re-read instead of being skipped forever.</li>
- *   <li>The cursor never moves backwards, even if the system clock does. Correctness must not depend
- *       on clock synchronisation between nodes — that dependency is part of the bug.</li>
+ *   <li>The cursor never moves backwards, even if the <em>local</em> system clock does.</li>
  * </ol>
+ *
+ * <p><b>Cross-node clock agreement is a real dependency, and this class does not remove it.</b> An
+ * earlier version of this javadoc claimed the opposite. {@code created} is stamped by the
+ * <em>authoring</em> node's clock (in the {@link com.dotcms.api.system.event.SystemEvent}
+ * constructor) and written to the database as-is, while {@link #beginPoll(Long, long)} derives the
+ * read floor from the <em>reading</em> node's clock. Skew between the two is subtracted straight from
+ * the overlap budget, so the window that actually tolerates commit lag is
+ * {@code SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS − peer skew}, and a peer running further behind than
+ * the whole window is invisible to this node for every event it publishes.
+ *
+ * <p>Nothing here detects that. Reconciliation cannot either: it compares a node against itself
+ * ({@code server_id = <me>}), and a skewed node observes its own events normally, so both nodes can
+ * report 0% loss while cross-node delivery is entirely broken. Keep the nodes on NTP; see
+ * {@code docs/backend/SYSTEM_EVENTS.md} §1. Adding a skew check is deliberately left as separate
+ * work rather than smuggled into the fix for issue #36827.
  */
 public class SystemEventsCursorTracker {
 
@@ -127,6 +141,8 @@ public class SystemEventsCursorTracker {
         // contract, but moving the cursor backwards is not something callers should have to reason about.
         final long queryStartTime = Math.max(now, storedCursor);
 
+        // Derived from THIS node's clock, while `created` came from the authoring node's. The overlap
+        // window therefore buys commit-lag tolerance only after peer skew has been paid out of it.
         final long readFloor = effectiveCursor - this.overlapWindowMillis.getAsLong();
 
         // Anything older than the new floor can never be returned by a query again, so retaining its

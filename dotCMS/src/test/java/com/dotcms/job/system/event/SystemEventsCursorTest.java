@@ -185,10 +185,14 @@ public class SystemEventsCursorTest {
 
     /**
      * Method to test: {@link SystemEventsCursorTracker#completePoll(SystemEventsPollWindow)}
-     * Given Scenario: The system clock jumps backwards, so the poll start is earlier than the stored
-     * cursor
-     * ExpectedResult: The cursor does not move backwards. Correctness must not depend on clock
-     * synchronisation — that dependency is part of the original defect.
+     * Given Scenario: This node's own clock jumps backwards, so the poll start is earlier than the
+     * stored cursor
+     * ExpectedResult: The cursor does not move backwards.
+     *
+     * <p>Scope note: this is about the LOCAL clock only. Cross-node skew is a separate matter and is
+     * <em>not</em> handled — see the cross-node tests at the end of this class. An earlier version of
+     * this comment claimed correctness did not depend on clock synchronisation at all, which
+     * overstated what this test shows.
      */
     @Test
     public void test_cursor_never_moves_backwards_under_clock_skew() {
@@ -412,5 +416,64 @@ public class SystemEventsCursorTest {
                 tracker.isCommitLagApproachingWindow(created, readAt, false));
         assertFalse("The same lag on a replay is just the event's age, and must not be reported",
                 tracker.isCommitLagApproachingWindow(created, readAt, true));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Cross-node clock skew. These pin a LIMITATION rather than a fix: `created` comes from the
+    // authoring node's clock and the read floor from the reading node's, so skew is spent out of the
+    // overlap budget. Written because the class javadoc previously claimed correctness did not depend
+    // on clock synchronisation between nodes, which was not true -- and a prose-only correction can
+    // drift back out of date the same way. If someone later adds real skew tolerance, these fail and
+    // say so.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} against an event
+     * authored by a node whose clock is behind this one's
+     * Given Scenario: A peer running 3 minutes behind publishes an event, stamping {@code created}
+     * from its own clock; this node polls in steady state with the default 120s overlap window
+     * ExpectedResult: The event falls below the read floor and is never delivered -- not once, and
+     * not on any later poll either, because the floor only moves forward.
+     *
+     * <p>This is invisible in production: reconciliation compares a node against itself, and the
+     * skewed node observes its own events normally, so both nodes report 0% loss while cross-node
+     * delivery is entirely broken.
+     */
+    @Test
+    public void test_a_peer_skewed_beyond_the_overlap_window_is_invisible_to_this_node() {
+        final long readerNow = 10_000_000L;
+        final long peerSkew = TimeUnit.MINUTES.toMillis(3);
+        final long createdBySkewedPeer = readerNow - peerSkew;
+
+        final SystemEventsPollWindow window = tracker().beginPoll(readerNow, readerNow);
+
+        assertTrue("A peer skewed further than the overlap window publishes events this node can "
+                        + "never read; the window is the whole skew budget",
+                tracker().isOutsideOverlapWindow(createdBySkewedPeer, window));
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} with skew inside the
+     * budget
+     * Given Scenario: The same peer, drifting 60 seconds rather than 3 minutes
+     * ExpectedResult: Delivered. The budget is real but finite -- which is the point: the effective
+     * tolerance for commit lag is the overlap window MINUS peer skew, so skew and lag compete for the
+     * same 120 seconds.
+     */
+    @Test
+    public void test_skew_inside_the_window_is_tolerated_but_spends_the_lag_budget() {
+        final long readerNow = 10_000_000L;
+        final long createdBySkewedPeer = readerNow - TimeUnit.SECONDS.toMillis(60);
+
+        final SystemEventsPollWindow window = tracker().beginPoll(readerNow, readerNow);
+
+        assertFalse("60s of skew is inside a 120s window",
+                tracker().isOutsideOverlapWindow(createdBySkewedPeer, window));
+
+        // ...but it has consumed half the window, so an event from that peer needs to commit within
+        // 60s rather than 120s to survive. Skew and commit lag are drawn from one budget.
+        final long alsoLaggedByAnother60s = createdBySkewedPeer - TimeUnit.SECONDS.toMillis(61);
+        assertTrue("Skew plus commit lag exceeding the window loses the event",
+                tracker().isOutsideOverlapWindow(alsoLaggedByAnother60s, window));
     }
 }

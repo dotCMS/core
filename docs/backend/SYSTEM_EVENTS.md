@@ -38,6 +38,18 @@ Duplicates are by design, not by accident:
 - **Not loss-proof against unbounded transactions.** A transaction held open longer than
   `SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS` can still lose its events. This is bounded, configurable and
   *warned about* — as opposed to the unbounded silent loss it replaced.
+- **Not independent of the nodes' clocks.** `created` is stamped by the *authoring* node and the read
+  floor is derived from the *reading* node's clock, so peer skew comes straight out of the overlap
+  budget:
+
+  > **effective commit-lag tolerance = `SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS` − peer clock skew**
+
+  At the 120s default, a node whose clock runs 3 minutes behind its peers publishes events that its
+  peers never see — every event, permanently, with no warning. **Keep cluster nodes on NTP.** Nothing
+  in the product detects this today: reconciliation compares each node against *itself*, and a skewed
+  node observes its own events normally, so every node reports 0% loss while cross-node delivery is
+  entirely broken. If cross-node delivery is failing and every node reports healthy, compare clocks
+  first. Raising the overlap window buys tolerance for skew as well as for commit lag.
 
 ### The author-node exception
 
