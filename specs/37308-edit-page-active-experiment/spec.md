@@ -37,7 +37,7 @@ The change has two halves, and they are independent enough to build and verify s
 2. **Add a persistent, non-dismissible warning banner** to the UVE shell, with different copy for
    `RUNNING` and `SCHEDULED`.
 
-### Three things the code says that the issue does not
+### Five things the code says that the issue does not
 
 The issue's account of the code is accurate on the guard itself and on the absence of backend
 enforcement. Three findings from reading the named files change what the work actually delivers, and
@@ -73,6 +73,50 @@ permission, for an unlocked page, for a lock held by the current user, for a loc
 user, and for both toggle-lock flag states — and not once for experiment status. Nothing asserts the
 current blocking behavior, so removing it breaks no existing test. Every test the issue asks for is
 new coverage of ground that was never covered.
+
+**4. Removing the guard does not make a variant editable. Two further obstacles sit behind it, and
+neither consults experiment status.**
+
+This is the finding that most changes what this issue can deliver. The issue's model is that one
+guard stands between the editor and a variant edit. It does not.
+
+- **The workflow controls are not rendered on any non-DEFAULT variant.**
+  `$showWorkflowsActions` (`withView.ts:145-152`) is `isEditMode && isDefaultVariant`. It never reads
+  experiment status, so it survives this change untouched, and `<dot-uve-workflow-actions>` has no
+  other call site — when the signal is false the control is not disabled, it is never instantiated.
+  With the experiment guard gone, a variant of a running experiment becomes "editable" with no Save
+  or Publish control on screen.
+- **A save from the new Edit Content editor lands on the DEFAULT variant, silently.**
+  `EditContentDialogData` carries no variant field, and `libs/edit-content` contains no
+  `variantId`/`variantName` handling at all, so its save fires
+  `PUT /api/v1/workflow/actions/{actionId}/fire` with no `variantName`. On the server,
+  `WorkflowResource`'s 7-argument `getContentlet` overload hard-codes
+  `VariantAPI.DEFAULT_VARIANT.name()` (`WorkflowResource.java:5080`), and
+  `resolveContentletByVariant` (`:5164-5188`) is symmetric — given a contentlet living in a variant
+  and a requested variant of DEFAULT, it returns a sibling with a blank inode and
+  `variantId = DEFAULT`. Six of the seven fire entry points use that coercing overload
+  (`:2861, :3036, :4216, :4492, :4648, :4871`); only `:3523` passes a real `variantName`.
+
+  Scope of that second obstacle: the **legacy** dialog is variant-correct — `dot-ema-dialog.store.ts`
+  sets `variantName: pageVariantId()` in four places. The coercion is reached only through the new
+  editor, which UVE selects per content type via `FEATURE_FLAG_CONTENT_EDITOR2_ENABLED` in the
+  content type's metadata (`edit-ema-editor.component.ts:1424-1452`). So the exposure is real but
+  bounded to content types already migrated to the new editor.
+
+Neither obstacle is created by this issue; both are pre-existing and currently unreachable, because
+the experiment guard stops the editor before either can bite. Removing the guard is what exposes
+them. This is recorded as **O6** rather than silently absorbed into scope, because the second one is
+a data-correctness bug that likely deserves its own issue.
+
+**5. The guard does not merely hide the option — it ejects you.**
+`$modeGuardEffect` (`dot-editor-mode-selector.component.ts:96-108`) fires `onModeChange(PREVIEW)` —
+a real `store.pageLoad({mode: PREVIEW})`, not a cosmetic toggle — whenever the editor is in `EDIT`
+without edit access. Its sibling `$shouldShowDraftMode` (`:41-52`) removes the Draft option from the
+menu. Both branches are gated on `FEATURE_FLAG_UVE_TOGGLE_LOCK`, and that flag ships as **`false`**
+(`dotmarketing-config.properties:880`), so the ejecting branch is the default path, not the
+alternative. Both behaviors are pinned by tests (`dot-editor-mode-selector.component.spec.ts:111-131`
+and `:207-222`). This matters for verification: on the default configuration the observable symptom
+of the current block is not a greyed-out control, it is the editor bouncing out of edit mode.
 
 ### What removing the guard actually switches back on
 
@@ -114,7 +158,7 @@ the spec's factual floor; the requirements below depend on it.
 | `computeCanEditPage()` "blocks entering edit mode" | **Wrong** | No production caller anywhere in the repo; only its own spec references it |
 | Guard in `editorHasAccessToEditMode` | **Confirmed** | `withEditor.ts:96-112`; condition at 98-101 |
 | Guard in `hasPermissionToEditLayout` | **Confirmed** | `withEditor.ts:114-134`; condition at 123-126, applied as `!isExperimentRunning` at 131 |
-| No backend enforcement of the edit block | **Confirmed** | No path rejects a contentlet or page save because an experiment is running. The only refusals in `ExperimentsAPIImpl` are overlap/start guards (`getRunningExperimentsOnPage`, `CANNOT_START_AN_ALREADY_STARTED_EXPERIMENT_MESSAGE`) |
+| No backend enforcement of the edit block | **Confirmed, exhaustively** | Nine backend layers audited independently, each then challenged by two adversarial reviewers briefed to find a block: the contentlet checkin path (`ESContentletAPIImpl.checkin` → factory write → versioning → unique-field validation), the REST endpoints UVE actually calls, the permission layer, the workflow engine and its actionlets, the variant domain, everything the experiments domain writes outward on start (quartz job, Rule, cache, system table), every interception point (servlet filters, `WebInterceptor`s, CDI interceptors, the `LocalSystemEventsAPI` subscriber registry, and the `ContentletAPI` pre/post hooks — the designed extension point for exactly this kind of rule), push publishing and its bundlers, and integration-test feasibility. No layer found a block; no challenger overturned a layer. The structural reason: the save path holds no reference to the experiment domain, so there is nowhere for such a check to live — the experiment is consulted when the page is *rendered*, never when it is *saved*. The only refusals in `ExperimentsAPIImpl` are overlap/start guards (`getRunningExperimentsOnPage`, `CANNOT_START_AN_ALREADY_STARTED_EXPERIMENT_MESSAGE`), and `start()` never locks the page. Still static analysis: see **FR-040** and **O6** for the runtime proof that remains unrun |
 | Only `ContentletDeletedEvent` is subscribed | **Confirmed** | `ExperimentsAPIImpl.java:142-146` subscribes exactly two events: `ContentletDeletedEvent` → `checkAndDeleteExperiment`, and `SystemTableUpdatedKeyEvent`. No save or publish subscriber exists |
 | Results are queried live from CubeJS | **Confirmed** | `getResults()` → `ExperimentResultsQueryFactory`, which reads `experiment.runningIds().getCurrent()` at query time |
 | Lock banner is `p-message severity="warn"` at the top of the shell | **Confirmed** | `dot-ema-shell.component.html:1-34`, with a close button and a `$showBanner` signal (`dot-ema-shell.component.ts:160`) |
@@ -123,6 +167,8 @@ the spec's factual floor; the requirements below depend on it.
 | Legacy copy at `Language.properties:6034` | **Off by 8** | `experiment.running.edit.confirmation` is at **6042**; the cited range 6033-6035 is **6041-6043**. A second dead string with the same inaccurate "may invalidate any results already collected" phrasing sits at 6043 (`experiment.running.edit.lock.confirmation.note`). Neither is referenced by any frontend code |
 | `docs/backend/EXPERIMENTS_CONSTRAINTS.md` documents the lifecycle | **Does not exist** | Not in the working tree, not in `HEAD`, not on any remote branch, and no commit has ever touched that path |
 | Data integrity holds `runningIds` and `lookBackWindow` steady | **Confirmed, but not frontend-checkable** | Both live only on the backend `AbstractExperiment` / `RunningIds`; the frontend `DotExperiment` model carries neither |
+| Removing the guard is sufficient to make a variant editable | **Wrong** | Two further obstacles sit behind it, neither of which reads experiment status: `$showWorkflowsActions` (`withView.ts:145-152`) renders no Save/Publish control on any non-DEFAULT variant, and a save from the new Edit Content editor is coerced to the DEFAULT variant by `WorkflowResource.java:5080` + `:5164-5188`. See Scope Note finding 4 and **O6** |
+| The guard hides the edit affordance | **Understated** | It ejects: `$modeGuardEffect` (`dot-editor-mode-selector.component.ts:96-108`) issues a real `pageLoad({mode: PREVIEW})`. The ejecting branch is the default, since `FEATURE_FLAG_UVE_TOGGLE_LOCK=false` (`dotmarketing-config.properties:880`) |
 
 ---
 
@@ -338,9 +384,18 @@ page is still editable.
 - **FR-006**: Content in the **original** variant MUST be editable while the page's experiment is
   `RUNNING` or `SCHEDULED`.
 - **FR-007**: Content in a **created variant** MUST be editable while the experiment is `RUNNING` or
-  `SCHEDULED`.
+  `SCHEDULED`. Removing the experiment condition does **not** by itself achieve this — see Scope Note
+  finding 4 and **O6**. Whatever is needed to clear the two remaining obstacles is either in scope by
+  O6's resolution or this FR is explicitly deferred with it; it MUST NOT be reported as satisfied on
+  the strength of the guard removal alone.
+- **FR-007a**: An edit made while viewing a non-DEFAULT variant MUST be written to **that** variant.
+  A save that silently lands on the DEFAULT variant MUST be treated as a failure of FR-007, not as a
+  partial success. This is the acceptance criterion that distinguishes "the editor let me type" from
+  "the edit reached the variant I was looking at".
 - **FR-008**: Saving an edit made while an experiment is active MUST succeed and persist, with no
-  error from the page or contentlet APIs. The workflow actions MUST be available to perform it.
+  error from the page or contentlet APIs. The workflow actions MUST be **rendered** and available to
+  perform it — on a non-DEFAULT variant this requires clearing `$showWorkflowsActions`
+  (`withView.ts:145-152`), which is independent of experiment status.
 - **FR-009**: No new gate, confirmation, dialog or interstitial MAY be introduced in place of the
   removed condition. The removal MUST be a removal.
 
@@ -448,8 +503,12 @@ rather than assumed, and so that a later change cannot quietly break it.
 ### Measurable Outcomes
 
 - **SC-001**: On a page with a `RUNNING` experiment, a user with edit permission on an unlocked page
-  can enter edit mode, change content and save it, in one uninterrupted pass with no confirmation
-  step.
+  can enter edit mode on the **original** (DEFAULT) variant, change content and save it, in one
+  uninterrupted pass with no confirmation step — and is not ejected back to `PREVIEW` by
+  `$modeGuardEffect` on the default configuration (`FEATURE_FLAG_UVE_TOGGLE_LOCK=false`).
+- **SC-001a**: On a **created variant** of that experiment, the same pass succeeds *and the saved
+  content is read back on that variant, not on DEFAULT*. This SC is gated on **O6**; if O6 resolves
+  to option A it is deferred with FR-007 and MUST be struck rather than quietly reported as passing.
 - **SC-002**: On a page with a `SCHEDULED` experiment reached with its `experimentId`, the same pass
   succeeds.
 - **SC-003**: Layout editing is reachable on a drawed template with a `RUNNING` or `SCHEDULED`
@@ -498,10 +557,16 @@ rather than assumed, and so that a later change cannot quietly break it.
 - **Recording or annotating edits made mid-experiment** so the results screen can mark them. The
   issue defers this explicitly; file separately if results need annotating.
 - **Surfacing `SCHEDULED` experiments through the page API** so the scheduled banner appears on an
-  ordinary page load. This is backend work, it is outside the epic's frontend scope, and it is
-  **O3**.
+  ordinary page load. Backend work, outside the epic's frontend scope — **O3**, resolved as not in
+  scope.
 - **Any backend change.** The block is frontend-only and there is nothing server-side to remove.
-  FR-034 through FR-040 are verification obligations, not backend work.
+  FR-034 through FR-040 are verification obligations, not backend work. The variant coercion in
+  `WorkflowResource` (**O6**, obstacle 2) is backend and is therefore out of scope here by default —
+  which is precisely why O6 must be answered rather than assumed.
+- **Fixing the two obstacles behind the guard** — `$showWorkflowsActions` gating Save/Publish on the
+  DEFAULT variant, and the new Edit Content editor's saves being coerced to DEFAULT — unless **O6**
+  rules them in. Both are pre-existing and neither is caused by this change; this change is what
+  makes them reachable.
 - **Changing the toolbar's running-experiment tag**, beyond whatever **O1** decides about link
   targets.
 - **Changing the page-lock banner**, its copy, or its dismissal behavior.
@@ -525,6 +590,13 @@ rather than assumed, and so that a later change cannot quietly break it.
   behavior reaches nothing. Not rollback-unsafe.
 - **Data considerations**: none for this change. FR-034 through FR-040 exist to prove that, which is
   why they are stated as verification rather than migration.
+- **Exposure risk — the reason O6 exists**: this change removes the condition that currently makes
+  two pre-existing defects unreachable on a page with an active experiment. The second of them
+  (`WorkflowResource` coercing a variant save to DEFAULT) fails *silently* and writes the editor's
+  change to the original instead of the variant they were viewing. Nothing in this diff causes it,
+  and nothing in this diff need fix it — but shipping the guard removal without answering O6 means
+  shipping the path that reaches it. That is a conscious decision to make, not a detail to discover
+  in QA.
 - **Product risk, accepted and stated**: editing a variant mid-run pollutes the run's dataset going
   forward, and the comparison gets weaker. This is the accepted cost of the change, not a defect. It
   does not invalidate measurements already taken. Anyone wanting a clean comparison can still end the
@@ -580,6 +652,11 @@ rather than assumed, and so that a later change cannot quietly break it.
   `editorHasAccessToEditMode`, `editorCanEditContent` and `editorCanEditLayout`, since those are what
   the UI reads. A unit test of `computeCanEditPage()` is required by FR-005 but is not evidence for
   FR-001 or FR-002.
+- **A7 — The primary scenario is the DEFAULT variant, and it is unaffected by O6.** SC-001 and SC-002
+  are written against the original page — no variant involved — which is the case customers are
+  actually blocked on and which both O6 obstacles leave alone: `$showWorkflowsActions` is satisfied on
+  DEFAULT, and there is no variant for a save to be coerced away from. The guard removal delivers that
+  scenario in full regardless of how O6 resolves. Only FR-007 (created variants) depends on O6.
 
 ---
 
@@ -660,9 +737,13 @@ issue's explicit acceptance criterion. So: fixed, tested, and documented as unus
 
 ## Open Decisions
 
-Five questions this spec deliberately does not answer. Each is either a product call or a
-cross-issue coordination call, and each is recorded here rather than guessed at. **O1** and **O2**
-block implementation of the banner's link; the rest do not block starting.
+Questions this spec deliberately does not answer. Each is either a product call or a cross-issue
+coordination call, and each is recorded here rather than guessed at.
+
+**O1** and **O2** block implementation of the banner's link. **O6** blocks FR-007 — what the issue
+calls "content in a created variant can be edited" — and is the one that changes this issue's scope.
+**O3**, **O4** and **O5** are resolved; they are kept below with their resolutions rather than
+deleted, so a reader of the review artifact can see what was asked and what came back.
 
 ### O1 — Where does the banner's link go when the experiments panel flag is on?
 
@@ -693,7 +774,7 @@ experiment *configuration* (#37478's FR-020) rather than a read-only page — in
 ambiguous and worth tightening. Surfacing rather than deciding, since #37478's spec is already
 reviewed and posted.
 
-### O3 — Is surfacing `SCHEDULED` experiments through the page API in scope?
+### O3 — Is surfacing `SCHEDULED` experiments through the page API in scope? *(resolved: no)*
 
 Per finding 2 in the Scope Note, `pageAsset.runningExperimentId` is `RUNNING`-only by construction, so
 a scheduled experiment never reaches the editor on an ordinary page load. As a result the scheduled
@@ -702,20 +783,70 @@ already inert everywhere else.
 
 If the intent is that an editor navigating normally to a page with an experiment starting Monday sees
 the scheduled warning, the page API has to change — backend work, which collides with the epic's
-frontend-only scope. If the narrower reach is acceptable, FR-002 and A5 stand as written. This spec
-assumes the latter.
+frontend-only scope. If the narrower reach is acceptable, FR-002 and A5 stand as written.
 
-### O4 — Should the banner appear in `PREVIEW` and `LIVE` mode, or only in `EDIT`?
+**Resolved: not in scope.** The epic is frontend-only, so FR-002 stays confined to the portlet
+arrival path and A5 stands. A backend follow-up can be filed separately if the wider reach is wanted.
+
+### O4 — Should the banner appear in `PREVIEW` and `LIVE` mode, or only in `EDIT`? *(resolved: all modes)*
 
 The warning is about editing, which argues for `EDIT` only. But the lock banner is not mode-gated,
 the running-experiment tag is not mode-gated, and a reader in preview who is about to switch to edit
 arguably benefits from seeing it first. A2 assumes all modes, following the shell's existing habit.
-Changing it changes FR-017.
 
-### O5 — When a page is both locked by another user and running an experiment, what shows?
+**Resolved: all modes.** A2 stands as an assumption rather than hardening into a MUST, so FR-017 is
+unchanged.
+
+### O5 — When a page is both locked by another user and running an experiment, what shows? *(resolved: both)*
 
 Two banners are eligible, stacked. The lock banner reports a rule that is still enforced and blocks
 the editor; the experiment banner reports a cost that blocks nothing. Showing both is honest but
 noisy, and the experiment warning is arguably irrelevant to someone who cannot edit at all. A4
 assumes both show; FR-024 requires whatever is chosen to be explicit rather than incidental to
 template order.
+
+**Resolved: both show.** A4 stands, and FR-024's requirement that the ordering be deliberate rather
+than incidental still applies.
+
+### O6 — Removing the guard does not make a variant editable. What does this issue do about that?
+
+This is the question that changes the issue's scope, and it was not visible from the issue text.
+
+Two obstacles sit behind the experiment guard, and **neither reads experiment status**, so both
+survive this change untouched (evidence in Scope Note finding 4):
+
+1. **No Save/Publish control on a variant.** `$showWorkflowsActions` (`withView.ts:145-152`) is
+   `isEditMode && isDefaultVariant`. `<dot-uve-workflow-actions>` has no other call site, so on a
+   non-DEFAULT variant the control is never instantiated. Ship FR-001 through FR-006 alone and a
+   variant of a running experiment becomes editable with nothing on screen to save it with.
+2. **A save from the new Edit Content editor lands on DEFAULT.** `EditContentDialogData` has no
+   variant field and `libs/edit-content` has no variant handling, so the save fires the workflow
+   endpoint with no `variantName`; `WorkflowResource.java:5080` hard-codes
+   `VariantAPI.DEFAULT_VARIANT.name()` and `resolveContentletByVariant` (`:5164-5188`) rewrites the
+   contentlet to `variantId = DEFAULT`. Six of seven fire entry points use that coercing overload.
+   The legacy dialog is variant-correct, so the exposure is bounded to content types carrying
+   `FEATURE_FLAG_CONTENT_EDITOR2_ENABLED`.
+
+The second is a **data-correctness bug**: the editor believes they changed a variant, and the change
+lands on the original. Today it is unreachable on a page with an active experiment, because the guard
+stops the editor first. This issue removes that guard.
+
+Options, framed rather than chosen:
+
+- **A — Deliver the guard removal and the banner; defer FR-007.** Honest and small. The original
+  variant (DEFAULT) becomes fully editable, which is the issue's primary scenario and the one
+  customers are blocked on. Created variants stay effectively non-editable, and the issue says
+  explicitly that they should not. Requires amending FR-007 and telling the user that half of one
+  acceptance criterion is deferred.
+- **B — Also fix `$showWorkflowsActions` here.** Small frontend change, restores Save/Publish on
+  variants. But it *enables* reaching obstacle 2, so on content types using the new editor it turns a
+  missing button into a silent wrong-variant write. Worse than A unless paired with C.
+- **C — Fix the variant coercion too.** Correct, and out of this issue's stated frontend scope: it
+  means either giving the new editor a variant concept or making `WorkflowResource` stop coercing.
+  Likely its own issue with its own spec, and arguably a bug worth filing regardless of #37308.
+
+**Recommendation: A now, with C filed immediately as a separate issue and B folded into C's scope.**
+Shipping B alone converts an obvious failure into a silent one, which is the worst of the three.
+
+Whatever is chosen, **FR-007a** stands: an edit made on a variant must reach that variant, and a save
+that lands on DEFAULT counts as a failure, never as a partial success.
