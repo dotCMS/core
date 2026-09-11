@@ -37,6 +37,14 @@ public class SystemEventsReconciliationIntegrationTest {
 
     private static SystemEventsAPI systemEventsAPI;
 
+    /**
+     * How far in the past fixture events are authored so they count as settled rather than in
+     * flight. The authored count is bounded at one poll interval below "now", because an event the
+     * poller cannot yet have seen is not a lost event. Fixtures authored at {@code now} would sit
+     * inside that bound and count as zero.
+     */
+    private static final long SETTLED = TimeUnit.MINUTES.toMillis(1);
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -51,7 +59,7 @@ public class SystemEventsReconciliationIntegrationTest {
     @Test
     public void test_full_delivery_reports_zero_loss() throws Exception {
         final String serverId = UUIDGenerator.generateUuid();
-        final List<String> ids = pushEvents(serverId, 10, System.currentTimeMillis());
+        final List<String> ids = pushEvents(serverId, 10, System.currentTimeMillis() - SETTLED);
 
         try {
             final SystemEventsReconciliation reconciliation = new SystemEventsReconciliation();
@@ -76,7 +84,7 @@ public class SystemEventsReconciliationIntegrationTest {
     @Test
     public void test_partial_delivery_is_flagged_outside_tolerance() throws Exception {
         final String serverId = UUIDGenerator.generateUuid();
-        final List<String> ids = pushEvents(serverId, 10, System.currentTimeMillis());
+        final List<String> ids = pushEvents(serverId, 10, System.currentTimeMillis() - SETTLED);
 
         try {
             final SystemEventsReconciliation.Result result = new SystemEventsReconciliation()
@@ -102,7 +110,7 @@ public class SystemEventsReconciliationIntegrationTest {
     @Test
     public void test_small_gap_stays_within_the_agreed_tolerance() throws Exception {
         final String serverId = UUIDGenerator.generateUuid();
-        final List<String> ids = pushEvents(serverId, 200, System.currentTimeMillis());
+        final List<String> ids = pushEvents(serverId, 200, System.currentTimeMillis() - SETTLED);
 
         try {
             final SystemEventsReconciliation.Result result = new SystemEventsReconciliation()
@@ -182,5 +190,42 @@ public class SystemEventsReconciliationIntegrationTest {
                     .addParam(id).loadResult();
         }
         DbConnectionFactory.commit();
+    }
+
+    /**
+     * Method to test: {@link SystemEventsReconciliation#reconcile(String, long, long)} with an event
+     * authored moments before the reconciliation fires
+     * Given Scenario: Four settled events and one authored a second ago — the poller has not yet had
+     * a chance to observe the fifth, so the observed count legitimately lags by one
+     * Expected Result: No loss reported. An event still in flight is not a lost event.
+     *
+     * <p>The authored count had no upper bound, so it included events the poller could not possibly
+     * have seen yet. A node authoring five events an hour with one in flight at the boundary reported
+     * 20% loss and raised "System event delivery is losing events" while perfectly healthy. At a 1%
+     * tolerance any node authoring fewer than ~100 events per window does this whenever a single
+     * event straddles the boundary — which teaches operators to ignore the one alarm this feature
+     * exists to raise.
+     */
+    @Test
+    public void test_an_event_still_in_flight_is_not_counted_as_loss() throws Exception {
+        final String serverId = UUIDGenerator.generateUuid();
+        final long now = System.currentTimeMillis();
+
+        final List<String> settled = pushEvents(serverId, 4, now - TimeUnit.MINUTES.toMillis(5));
+        final List<String> inFlight = pushEvents(serverId, 1, now - 1_000L);
+
+        try {
+            final SystemEventsReconciliation.Result result = new SystemEventsReconciliation()
+                    .reconcile(serverId, TimeUnit.MINUTES.toMillis(10), 4L);
+
+            assertEquals("An event authored inside the last poll interval is still in flight and must "
+                    + "not be counted as authored-but-missing", 4L, result.getAuthoredCount());
+            assertEquals(0.0d, result.getLossPercent(), 0.001d);
+            assertTrue("A healthy node must not report loss for an in-flight event",
+                    result.isWithinTolerance());
+        } finally {
+            deleteEvents(settled);
+            deleteEvents(inFlight);
+        }
     }
 }

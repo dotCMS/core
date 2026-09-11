@@ -97,8 +97,12 @@ public class SystemEventsJob implements Runnable, Job {
 			final Long cursorValue = storedCursor.map(SystemEventsCursor::getLastEventDate).orElse(null);
 
 			if (cursorValue == null) {
+				// State the lookback rather than "the current time": this poll DOES reach back, and
+				// anyone investigating duplicate side effects after a restart needs to know that.
 				Logger.info(this, "No delivery cursor found for server [" + serverId
-						+ "]; seeding at the current time. The retained backlog is deliberately not replayed.");
+						+ "]; seeding with a lookback of " + SystemEventsConfig.getSeedLookbackMillis()
+						+ "ms, so events published in that window are re-read. The retained backlog "
+						+ "beyond it is deliberately not replayed.");
 			}
 
 			storedCursor.ifPresent(cursor -> warnIfPollerStalled(serverId, tracker, cursor));

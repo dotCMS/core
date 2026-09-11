@@ -32,20 +32,34 @@ public class SystemEventsReconciliation {
     /**
      * Compares authored against observed for one node over a window.
      *
+     * <p>The window is half-open at the recent end: it counts events authored between
+     * {@code windowMillis} ago and one poll interval ago. An event authored more recently than that
+     * has not yet had a poll in which to be observed, so counting it would report a healthy node as
+     * losing events.
+     *
      * @param serverId      the node
-     * @param windowMillis  how far back to count
+     * @param windowMillis  how far back to count, from one poll interval ago
      * @param observedCount how many of its own events the node's poller actually saw
      * @return the comparison
      */
     public Result reconcile(final String serverId, final long windowMillis, final long observedCount)
             throws DotDataException {
 
-        final long from = System.currentTimeMillis() - windowMillis;
+        final long now = System.currentTimeMillis();
+        final long from = now - windowMillis;
+
+        // Bounded at the top by one poll interval. Without it the count includes events authored so
+        // recently that the poller cannot yet have seen them, and every one of those reads as loss:
+        // a node authoring five events an hour with one in flight at the boundary reported 20% loss
+        // while perfectly healthy. Below a few hundred events per window that false alarm fires
+        // routinely, which trains operators to ignore the one signal this exists to raise.
+        final long until = now - SystemEventsConfig.getPollIntervalMillis();
 
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT count(*) AS authored FROM system_event WHERE server_id = ? AND created >= ?");
+        dc.setSQL("SELECT count(*) AS authored FROM system_event WHERE server_id = ? AND created >= ? AND created < ?");
         dc.addParam(serverId);
         dc.addParam(from);
+        dc.addParam(until);
 
         final List<Map<String, Object>> results = dc.loadObjectResults();
         final long authored = results.isEmpty() ? 0L
