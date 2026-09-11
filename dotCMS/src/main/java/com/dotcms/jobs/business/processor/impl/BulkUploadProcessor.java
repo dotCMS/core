@@ -1,8 +1,11 @@
 package com.dotcms.jobs.business.processor.impl;
 
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotmarketing.beans.Host;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
@@ -47,11 +50,14 @@ import javax.enterprise.context.Dependent;
  * <p>
  * <b>Not marked {@code @NoRetryPolicy}, deliberately.</b> The abandoned-job sweep re-queues a
  * stalled run without consulting the retry policy, so marking this no-retry would not prevent a
- * second attempt — it would only leave that attempt unprepared for one. The run is resumable
- * instead: each item's outcome is committed as it completes, and a re-queued run skips what already
- * succeeded rather than recreating it. A re-run without that would not duplicate data — the unique
- * index on the lower-cased path rejects the second create — but it would make the report lie, which
- * is worse: the author is told 30 files failed when all 30 are in the folder.
+ * second attempt — it would only leave that attempt unprepared for one.
+ * <p>
+ * <b>A re-queued run starts over, and that is now the accepted behaviour (FR-036a).</b> The durable
+ * per-item checkpoint that used to let it skip what it had already created was removed, so an
+ * interrupted batch re-attempts every file. On {@code FILEASSET} the unique index on the
+ * lower-cased path still rejects the second create, so no duplicate exists and only the report is
+ * wrong — files this run created come back as collisions. On {@code DOTASSET} there is no such
+ * index (FR-040b), so the files are genuinely created twice.
  *
  * @author dotCMS
  */
@@ -181,11 +187,40 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
+            // The content is resolved FIRST, because the content type is routed from it.
+            //
+            // This used to come after the size and type pre-check, which forced that check to run
+            // against a hardcoded generic type — see resolveContentType. Reordering costs nothing:
+            // getTempFile hands back a handle, not a copy.
+            final File binary = resolveStagedContent(job, tempFileId, user)
+                    .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
+
+            final boolean isFileAsset = isFileAsset(job.parameters());
+
+            final Contentlet contentlet = new Contentlet();
+
+            // The two base types name their binary field differently, and getting it wrong fails
+            // with "Unable to get The Asset From the Given dotAsset Contentlet" — a message that
+            // does not mention the field, so it is worth naming here. A dotAsset carries 'asset'
+            // and derives its title from the file; a fileAsset carries 'fileAsset' and needs the
+            // title and file name set explicitly.
+            if (isFileAsset) {
+                contentlet.setBinary(FileAssetAPI.BINARY_FIELD, binary);
+                contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
+                contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+            } else {
+                contentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, binary);
+            }
+            applyTarget(contentlet, job.parameters(), user);
+
+            // Routed by the binary's media type, the same way every other creation path does it.
+            final ContentType contentType = resolveContentType(job, contentlet, user);
+            contentlet.setContentTypeId(contentType.id());
+
             // Decided from what staging measured, before anything is created (research R4). The
             // validation layer reports an over-size file and a disallowed type through the same
             // exception class, differing only by a translated string, so a reason recovered from
             // it would be a guess. Here both are facts.
-            final ContentType contentType = contentTypeFor(job.parameters(), user);
             final Optional<BatchFailureReason> refused = reasons.preCheck(
                     sizeOf(file),
                     (String) file.get("mimeType"),
@@ -223,94 +258,16 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return;
             }
 
-            final File binary = resolveStagedContent(job, tempFileId, user)
-                    .orElseThrow(() -> new StagedContentUnavailableException(tempFileId));
-
-            final boolean isFileAsset = "FILEASSET".equals(job.parameters().get("baseType"));
-
-            final Contentlet contentlet = new Contentlet();
-            contentlet.setContentTypeId(contentTypeIdFor(job.parameters(), user));
-
-            // The two base types name their binary field differently, and getting it wrong fails
-            // with "Unable to get The Asset From the Given dotAsset Contentlet" — a message that
-            // does not mention the field, so it is worth naming here. A dotAsset carries 'asset'
-            // and derives its title from the file; a fileAsset carries 'fileAsset' and needs the
-            // title and file name set explicitly.
-            if (isFileAsset) {
-                contentlet.setBinary(FileAssetAPI.BINARY_FIELD, binary);
-                contentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
-                contentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
-            } else {
-                contentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, binary);
-            }
-            applyTarget(contentlet, job.parameters(), user);
-
-            // Created as a DRAFT, and deterministically so.
+            // Created, then published — two steps, the way content import does it
+            // (ImportUtil#runWorkflowIfCould and #runWorkflowPublishIfCould).
             //
-            // NEW rather than PUBLISH: the single-file endpoint checks an asset in as WORKING
-            // unless the caller explicitly asks for live (WebAssetHelper#checkinOrPublish), so
-            // firing PUBLISH made a batch publish content that the same file uploaded alone would
-            // have left as a draft — the opposite of the equivalence FR-006 requires, and a
-            // surprise with real consequences: it puts unreviewed files straight onto the live site.
-            //
-            // But NEW alone is not enough, which is the part that had to be learned twice. What
-            // NEW resolves to is whatever action the CONTENT TYPE happens to map it to, and that
-            // differs per content type: on one instance a dotAsset published while a fileAsset
-            // stayed a draft, from this same code. So the mapping is consulted and then CHECKED —
-            // an action that publishes is not used to create a draft, whatever it is mapped to.
-            // Leaving that to configuration means the author's files are published or not
-            // depending on a workflow mapping they cannot see and did not choose.
-            final Optional<WorkflowAction> mapped = APILocator.getWorkflowAPI()
-                    .findActionMappedBySystemActionContentlet(
-                            contentlet, WorkflowAPI.SystemAction.NEW, user);
-
-            final Optional<WorkflowAction> draftAction = mapped
-                    .filter(WorkflowAction::hasSaveActionlet)
-                    .filter(action -> !action.hasPublishActionlet());
-
-            if (draftAction.isEmpty()) {
-                // No mapped action both saves and leaves the content working. Fall back to the
-                // plain checkin, which is exactly what the single-file endpoint does for a draft —
-                // so the outcome the author sees is identical, which is the requirement. What is
-                // given up is the content type's own actionlets, and that is the right trade: a
-                // scheme with no draft-producing action has not asked for a draft path, and
-                // publishing against the author's intent is the worse failure.
-                Logger.debug(this, String.format(
-                        "No NEW action leaves content working for [%s]; checking in directly",
-                        contentType.variable()));
-
-                // DISABLE_WORKFLOW is what makes this an actual fallback rather than a detour back
-                // to the same decision. checkin is NOT the plain save it reads as: it looks up the
-                // NEW system action itself (ESContentletAPIImpl:5779) and, if that action saves,
-                // fires the workflow instead of checking in — so without this flag the fallback
-                // re-enters the very mapping it exists to bypass, and a NEW mapped to Publish
-                // publishes the file anyway. The bug this whole branch was written to prevent,
-                // reintroduced by the escape hatch.
-                contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
-
-                final Contentlet checkedIn = APILocator.getContentletAPI()
-                        .checkin(contentlet, user, false);
-                recordCreated(job, seq, fileName, checkedIn, createdInodes);
-                return;
-            }
-
-            // fireContentWorkflow with no action logs "should not have a null workflow action",
-            // creates nothing, and RETURNS NORMALLY — so a run that did no work reported every
-            // file as a success. The action is always resolved explicitly, never left null.
-            final WorkflowAction action = draftAction.get();
-
-            final Contentlet created = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
-                    new ContentletDependencies.Builder()
-                            .modUser(user)
-                            .workflowActionId(action.getId())
-                            .respectAnonymousPermissions(false)
-                            // DEFER, never WAIT_FOR: the per-file wait also flushes the
-                            // system-wide query cache, so a full batch would charge every other
-                            // user one flush per file. The batch resolves visibility once, at the
-                            // end, before the completion signal (FR-008a).
-                            .indexPolicy(IndexPolicy.DEFER)
-                            .indexPolicyDependencies(IndexPolicy.DEFER)
-                            .build());
+            // An earlier version fired PUBLISH directly, with a gate requiring the mapped action
+            // to both save and publish. It produced published files, and it skipped the content
+            // type's NEW action entirely — so a customer whose NEW action notifies someone or sets
+            // a field lost that, silently, because a different action did the saving. Two steps
+            // honour both mappings, which is why import is shaped this way.
+            final Contentlet created = publish(job, createWith(job, contentlet, contentType, user),
+                    user);
 
             recordCreated(job, seq, fileName, created, createdInodes);
 
@@ -326,6 +283,95 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             record(job, seq, fileName, BatchItemStatus.FAILED, reasons.classify(e),
                     e.getClass().getName() + ": " + e.getMessage(), null);
         }
+    }
+
+    /**
+     * Creates the contentlet through the content type's own {@code NEW} mapping.
+     * <p>
+     * Mirrors {@code ImportUtil#runWorkflowIfCould}: fire the mapped action when it saves,
+     * otherwise check in directly. Firing it is what runs the content type's own actionlets, which
+     * is the whole reason to ask the mapping rather than always checking in.
+     * <p>
+     * {@code DISABLE_WORKFLOW} on the fallback because {@code checkin} looks {@code NEW} up itself
+     * and would fire the very action just rejected — import's own comment on the same line calls it
+     * "needed to avoid recursive call".
+     */
+    private Contentlet createWith(final Job job, final Contentlet contentlet,
+                                  final ContentType contentType, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Optional<WorkflowAction> saveAction = APILocator.getWorkflowAPI()
+                .findActionMappedBySystemActionContentlet(
+                        contentlet, WorkflowAPI.SystemAction.NEW, user)
+                .filter(WorkflowAction::hasSaveActionlet);
+
+        if (saveAction.isEmpty()) {
+            Logger.debug(this, String.format(
+                    "No NEW action saves for [%s]; checking in directly", contentType.variable()));
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            return APILocator.getContentletAPI().checkin(contentlet, user, false);
+        }
+
+        return APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
+                new ContentletDependencies.Builder()
+                        .modUser(user)
+                        .workflowActionId(saveAction.get().getId())
+                        .respectAnonymousPermissions(false)
+                        // DEFER, never WAIT_FOR: the per-file wait also flushes the system-wide
+                        // query cache, so a full batch would charge every other user one flush per
+                        // file. The batch resolves visibility once, at the end, before the
+                        // completion signal (FR-008a).
+                        .indexPolicy(IndexPolicy.DEFER)
+                        .indexPolicyDependencies(IndexPolicy.DEFER)
+                        .build());
+    }
+
+    /**
+     * Publishes what was just created, through the content type's own {@code PUBLISH} mapping
+     * (FR-006a).
+     * <p>
+     * Mirrors {@code ImportUtil#runWorkflowPublishIfCould}: fire the mapped action when it
+     * publishes, otherwise publish directly.
+     * <p>
+     * <b>{@code DISABLE_WORKFLOW} on the direct call is not belt-and-braces.</b> {@code publish()}
+     * is not the direct operation it reads as — {@code checkAndRunPublishAsWorkflow}
+     * ({@code ESContentletAPIImpl:5686}) resolves {@code PUBLISH} and runs it as a workflow
+     * instead. This branch is entered exactly when that mapping does not publish, so without the
+     * flag the call fires the same non-publishing action and leaves the file saved but not live:
+     * a run reporting success having done half the job.
+     */
+    private Contentlet publish(final Job job, final Contentlet created, final User user)
+            throws DotDataException, DotSecurityException {
+
+        if (created == null || !UtilMethods.isSet(created.getIdentifier())) {
+            // Nothing to publish, and recordCreated will reject it in a moment with a message that
+            // names the file. Returned as-is rather than guessed at.
+            return created;
+        }
+
+        final Optional<WorkflowAction> publishAction = APILocator.getWorkflowAPI()
+                .findActionMappedBySystemActionContentlet(
+                        created, WorkflowAPI.SystemAction.PUBLISH, user)
+                .filter(WorkflowAction::hasPublishActionlet);
+
+        if (publishAction.isPresent()) {
+            return APILocator.getWorkflowAPI().fireContentWorkflow(created,
+                    new ContentletDependencies.Builder()
+                            .modUser(user)
+                            .workflowActionId(publishAction.get().getId())
+                            .respectAnonymousPermissions(false)
+                            .indexPolicy(IndexPolicy.DEFER)
+                            .indexPolicyDependencies(IndexPolicy.DEFER)
+                            .build());
+        }
+
+        Logger.debug(this, String.format(
+                "No PUBLISH action publishes for job [%s]; publishing directly", job.id()));
+
+        created.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        APILocator.getContentletAPI().publish(created, user, false);
+        created.getMap().remove(Contentlet.DISABLE_WORKFLOW);
+        return created;
     }
 
     /**
@@ -365,12 +411,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      */
     private Optional<File> resolveStagedContent(final Job job, final String tempFileId,
                                                 final User user) {
-        final List<String> accessingList = new ArrayList<>();
-        accessingList.add(user.getUserId());
-        final Object fingerprint = job.parameters().get("requestFingerprint");
-        if (fingerprint != null) {
-            accessingList.add(String.valueOf(fingerprint));
-        }
+        final List<String> accessingList = accessingList(job, user);
         return APILocator.getTempFileAPI().getTempFile(accessingList, tempFileId)
                 .map(tempFile -> tempFile.file);
     }
@@ -427,17 +468,79 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
      * Resolves the content type the batch creates into — one type for the whole batch, validated at
      * submission, so this never has to infer one per file.
      */
-    private ContentType contentTypeFor(final Map<String, Object> parameters, final User user)
+    /**
+     * Resolves the <b>specific</b> content type this file should become, from its media type.
+     * <p>
+     * Routed through the product's own {@code BaseTypeToContentTypeStrategyResolver} — the same one
+     * {@code ESContentletAPIImpl#checkOrSetContentType} uses — rather than a matcher of our own, so
+     * a batch and a single upload of the same file land on the same type by construction rather
+     * than by two implementations agreeing.
+     * <p>
+     * <b>The context map is built by hand because the run has no HTTP request.</b> The product's
+     * caller reads the request thread-local for the session id and the temp fingerprint; a worker
+     * thread has neither, so the accessing list is assembled from the job's own parameters, the
+     * same way {@link #resolveStagedContent} does. The binary is already set on the contentlet as a
+     * real {@link File}, which the strategies accept directly, so nothing here depends on
+     * re-resolving a temp id.
+     * <p>
+     * Falls back to the base type's default when nothing matches — which is what the strategies
+     * themselves do, and what the previous behaviour was for every file.
+     */
+    private ContentType resolveContentType(final Job job, final Contentlet contentlet,
+                                           final User user)
             throws DotDataException, DotSecurityException {
-        final String variable = "FILEASSET".equals(parameters.get("baseType"))
+
+        final boolean isFileAsset = isFileAsset(job.parameters());
+        final BaseContentType baseType =
+                isFileAsset ? BaseContentType.FILEASSET : BaseContentType.DOTASSET;
+
+        final Optional<ContentType> routed = routeByMediaType(job, contentlet, user, baseType);
+        if (routed.isPresent()) {
+            return routed.get();
+        }
+
+        final String fallback = isFileAsset
                 ? FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME
                 : "dotAsset";
-        return APILocator.getContentTypeAPI(user).find(variable);
+        return APILocator.getContentTypeAPI(user).find(fallback);
     }
 
-    private String contentTypeIdFor(final Map<String, Object> parameters, final User user)
-            throws DotDataException, DotSecurityException {
-        return contentTypeFor(parameters, user).id();
+    /**
+     * Asks the product's strategy for the specific type, and never lets that question fail a file.
+     * <p>
+     * A routing failure degrades to the base type's default — which is where every file landed
+     * before this existed, so the worst case is the previous behaviour rather than a lost file.
+     */
+    private Optional<ContentType> routeByMediaType(final Job job, final Contentlet contentlet,
+                                                   final User user,
+                                                   final BaseContentType baseType) {
+        try {
+            final Optional<BaseTypeToContentTypeStrategy> strategy =
+                    BaseTypeToContentTypeStrategyResolver.getInstance().get(baseType);
+            if (strategy.isEmpty()) {
+                return Optional.empty();
+            }
+
+            final Host host = APILocator.getHostAPI().find(contentlet.getHost(), user, false);
+            if (null == host) {
+                return Optional.empty();
+            }
+
+            final List<String> accessingList = accessingList(job, user);
+
+            return strategy.get().apply(baseType, Map.of(
+                    "user", user,
+                    "host", host,
+                    "contentletMap", contentlet.getMap(),
+                    "accessingList", accessingList));
+
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Bulk upload job [%s]: could not route '%s' by media type, falling back to the "
+                            + "base type's default: %s",
+                    job.id(), contentlet.getTitle(), e.getMessage()));
+            return Optional.empty();
+        }
     }
 
     /** Places the asset in the folder, or at the site root when the batch targets a site. */
@@ -500,7 +603,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 return Optional.of(BatchFailureReason.FOLDER_FILTER_MISMATCH);
             }
 
-            if (!"FILEASSET".equals(parameters.get("baseType"))) {
+            if (!isFileAsset(parameters)) {
                 return Optional.empty();
             }
 
@@ -662,6 +765,29 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         metadata.put("duplicateSubmission", job.parameters().containsKey("duplicateOfJobId"));
 
         return metadata;
+    }
+
+    /** Whether this batch creates fileAssets. The two base types differ in enough places to name. */
+    private boolean isFileAsset(final Map<String, Object> parameters) {
+        return "FILEASSET".equals(parameters.get("baseType"));
+    }
+
+    /**
+     * Who the staging layer will accept as the owner of this run's content.
+     * <p>
+     * <b>Built from the job, never from a request.</b> The run has none — that is why the
+     * submission captures a fingerprint into the job's parameters in the first place. Shared by
+     * every caller so the two cannot drift: content resolved under one list and routed under a
+     * different one would fail in ways that look like the file being missing.
+     */
+    private List<String> accessingList(final Job job, final User user) {
+        final List<String> accessingList = new ArrayList<>();
+        accessingList.add(user.getUserId());
+        final Object fingerprint = job.parameters().get("requestFingerprint");
+        if (null != fingerprint) {
+            accessingList.add(String.valueOf(fingerprint));
+        }
+        return accessingList;
     }
 
     @SuppressWarnings("unchecked")

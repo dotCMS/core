@@ -24,6 +24,10 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.jobs.business.processor.ProgressTracker;
@@ -839,24 +843,22 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: the bulk-upload processor
      * <p>
-     * Given scenario: A batch of valid files is run.
+     * Given scenario: A batch of valid files is run on a stock install.
      * <p>
-     * Expected result: Every file is left as a <b>draft</b> — working, not live.
+     * Expected result: Every file is <b>published</b> (FR-006a).
      * <p>
-     * <b>This needs its own test because the obvious assertion does not catch it.</b> Publishing a
-     * contentlet leaves a working version behind as well, so
-     * {@code getWorkingContent(...).size() == n} passes whether the run published or not. Only
-     * asking each contentlet whether it is live tells the two apart, which is why an earlier
-     * version of this feature fired PUBLISH for weeks with a green suite.
+     * <b>The assertion has to ask whether the contentlet is live.</b> Publishing leaves a working
+     * version behind as well, so counting {@code getWorkingContent} passes whether the run
+     * published or not — which is how an earlier version of this feature fired the wrong action for
+     * weeks with a green suite.
      * <p>
-     * <b>Why draft is the right answer</b> (FR-006): the single-file endpoint checks an asset in as
-     * working unless the caller explicitly asks for live. A batch that published would mean the
-     * same file put an author's unreviewed content on the live site when uploaded with others and
-     * not when uploaded alone — an equivalence failure whose consequence is publishing something
-     * nobody approved.
+     * This is a <b>knowing divergence from Content Drive's single-file upload</b>, which sends
+     * {@code NEW} and lands drafts. It matches the Content Search drop zone, which has fired
+     * PUBLISH per file for years, and it is what the product decided on 2026-09-11: an author who
+     * drops thirty images expects thirty images, not thirty drafts to publish by hand.
      */
     @Test
-    public void test_run_leavesEveryFileAsADraftRatherThanPublishingIt() throws Exception {
+    public void test_run_publishesEveryFileItCreates() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
         final Job job = jobFor(folder, 3);
 
@@ -866,20 +868,19 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         final Map<String, Object> outcome = processor.getResultMetadata(job);
         assertEquals(3, ((Number) outcome.get("successCount")).intValue(),
                 "the run has to have created something for this to mean anything.\n"
-                        + "Recorded per-item results: " + describe(outcome));
+                        + describe(outcome));
 
         final List<Contentlet> created =
                 APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
         assertEquals(3, created.size());
 
         for (final Contentlet contentlet : created) {
-            assertFalse(contentlet.isLive(), String.format(
-                    "a bulk upload must leave files as drafts, exactly as uploading the same file "
-                            + "on its own does; '%s' was published instead",
+            assertTrue(contentlet.isLive(), String.format(
+                    "a bulk upload publishes what it creates; '%s' was left as a draft, which "
+                            + "would leave an author to publish thirty files by hand",
                     contentlet.getTitle()));
         }
     }
-
 
     /**
      * Method to test: the bulk-upload processor, against a folder that filters names
@@ -935,42 +936,47 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     /**
      * Method to test: the bulk-upload processor
      * <p>
-     * Given scenario: A batch is run against a content type whose {@code NEW} system action is
-     * mapped to an action that <b>publishes</b>.
+     * Given scenario: A content type whose {@code PUBLISH} system action an administrator has
+     * mapped to an action that only <b>saves</b> — no publish actionlet.
      * <p>
-     * Expected result: The files are still drafts.
+     * Expected result: The files are still published — the run publishes them directly once the
+     * mapped action turns out not to.
      * <p>
-     * <b>This is the case that made drafts non-deterministic.</b> Firing {@code SystemAction.NEW}
-     * only asks for whatever action the content type happens to map it to, and that differs per
-     * content type — on a real instance a dotAsset published while a fileAsset stayed working, from
-     * identical code. So the author's files were published or not according to a workflow mapping
-     * they cannot see and did not choose. The run now checks what it resolved and refuses to create
-     * a draft with an action that publishes.
+     * <b>This covers the branch where {@code publish()} bites back.</b> That call is not the direct
+     * operation it reads as: {@code checkAndRunPublishAsWorkflow} resolves the {@code PUBLISH}
+     * mapping and runs it as a workflow instead — and this branch is entered precisely when that
+     * mapping does not publish. Without the {@code DISABLE_WORKFLOW} guard the call fires the same
+     * non-publishing action and the file ends saved but not live: a run reporting success having
+     * done half the job.
+     * <p>
+     * Mirrors {@code ImportUtil#runWorkflowPublishIfCould}, whose comment on the same line calls
+     * that flag "needed to avoid recursive call".
      */
     @Test
-    public void test_run_leavesFilesAsDraftsEvenWhenNewIsMappedToPublish() throws Exception {
+    public void test_run_publishesDirectlyWhenTheMappedActionDoesNot() throws Exception {
         final Folder folder = new FolderDataGen().site(site()).nextPersisted();
         final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
 
-        mapNewTo(dotAsset, SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
+        mapPublishTo(dotAsset, SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
         try {
             final Job job = jobFor(folder, 2);
 
             final BulkUploadProcessor processor = new BulkUploadProcessor();
             processor.process(job);
-            final Map<String, Object> outcome = processor.getResultMetadata(job);
 
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
             assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
                     "the files still have to be created.\n" + describe(outcome));
 
             for (final Contentlet created :
                     APILocator.getFolderAPI().getWorkingContent(folder, admin(), false)) {
-                assertFalse(created.isLive(), String.format(
-                        "publish state must not depend on how NEW happens to be mapped; '%s' was "
-                                + "published because the mapping said so", created.getTitle()));
+                assertTrue(created.isLive(), String.format(
+                        "the caller asked for PUBLISH, so '%s' must end published even though the "
+                                + "mapped action only saves — otherwise the run reports success "
+                                + "having done half the job", created.getTitle()));
             }
         } finally {
-            restoreNewMapping(dotAsset);
+            restorePublishMapping(dotAsset);
         }
     }
 
@@ -981,23 +987,23 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * <b>shared</b> content type outlives the test that set it, and the next test to create a
      * dotAsset would publish for no reason it could see.
      */
-    private void mapNewTo(final ContentType contentType, final String workflowActionId)
+    private void mapPublishTo(final ContentType contentType, final String workflowActionId)
             throws Exception {
         APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
-                WorkflowAPI.SystemAction.NEW,
+                WorkflowAPI.SystemAction.PUBLISH,
                 APILocator.getWorkflowAPI().findAction(workflowActionId, admin()),
                 contentType);
     }
 
-    private void restoreNewMapping(final ContentType contentType) {
+    private void restorePublishMapping(final ContentType contentType) {
         try {
             APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
-                    WorkflowAPI.SystemAction.NEW,
+                    WorkflowAPI.SystemAction.PUBLISH,
                     APILocator.getWorkflowAPI().findAction(
-                            SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, admin()),
+                            SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, admin()),
                     contentType);
         } catch (final Exception e) {
-            Logger.warn(this, "Could not restore the NEW mapping: " + e.getMessage());
+            Logger.warn(this, "Could not restore the PUBLISH mapping: " + e.getMessage());
         }
     }
 
@@ -1040,8 +1046,8 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * <p>
      * Given scenario: A batch of FILEASSETs against a folder.
      * <p>
-     * Expected result: Every file is created, as a draft, with its file name and title set from
-     * the submitted name.
+     * Expected result: Every file is created and published, with its file name and title set
+     * from the submitted name.
      * <p>
      * <b>Why this needed its own test.</b> FR-006 promises equivalence with the single-file upload
      * — and that endpoint <b>only ever creates FileAssets</b>
@@ -1082,8 +1088,8 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
             assertTrue(submittedNames.contains(fileName), String.format(
                     "a fileAsset carries the submitted name in its own fileName field; got '%s'",
                     fileName));
-            assertFalse(contentlet.isLive(),
-                    "and a FILEASSET batch leaves drafts, the same as a dotAsset one");
+            assertTrue(contentlet.isLive(),
+                    "and a FILEASSET batch publishes, the same as a dotAsset one (FR-006a)");
         }
     }
 
@@ -1247,6 +1253,107 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
         List<Float> reported() {
             return reported;
         }
+    }
+
+
+    /**
+     * Method to test: content-type routing in the bulk-upload processor
+     * <p>
+     * Given scenario: A site carrying its own dotAsset-based type, capped at 1 KB — standing in for
+     * the Image type a real instance has. A batch is submitted into that site with a 4 KB file.
+     * <p>
+     * Expected result: The file is refused as {@code OVER_SIZE_LIMIT} — meaning the run validated
+     * against the <b>specific</b> type the file routes to, not the base type's default.
+     * <p>
+     * <b>This is the defect, and it is not about labels.</b> The processor used to hardcode the
+     * type from the declared base type, so every file became the generic {@code dotAsset}. Since
+     * {@code effectiveCeiling} and {@code acceptedTypes} read from whatever type was resolved, an
+     * instance that caps its Image type at 5 MB and restricts it to {@code image/*} had both rules
+     * <b>silently bypassed by this endpoint</b>, while every other path that creates one enforced
+     * them. Exactly the divergence FR-006 exists to prevent.
+     * <p>
+     * <b>Why the type is site-scoped with no accept list, rather than matched on a media type.</b>
+     * Two earlier versions of this test failed for reasons that were not the routing: the first
+     * capped the generic type and trusted a {@code .png} name, when routing sniffs content rather
+     * than names; the second declared {@code accept=text/plain} on a type the matcher then filtered
+     * out by host. {@code BaseTypeMimeTypeMatcher} resolves in the order
+     * <i>exact-current-site, exact-system-host, partial-current-site, partial-system-host,
+     * <b>wildcard-current-site</b>, wildcard-system-host</i>, and a binary field with no accept
+     * variable <b>is</b> the total wildcard. So a wildcard type on the batch's own site outranks the
+     * system-host generic one for any content whatsoever — which removes both the mime sniffing and
+     * the host filtering from what this test depends on, leaving only the thing it is about.
+     * <p>
+     * The ceiling is the assertion rather than the type's name on purpose: a test that only read
+     * back {@code getContentType()} would pass against a routing that resolved correctly and then
+     * validated against something else, which is the half that actually costs an author their file.
+     */
+    @Test
+    public void test_run_validatesAgainstTheTypeTheFileRoutesTo_notTheGenericOne() throws Exception {
+        final Host routingSite = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(routingSite).nextPersisted();
+
+        final ContentType siteType = dotAssetTypeOn(routingSite, 1024L);
+        try {
+            final Job job = jobForBytes(folder, "note.txt", 4096);
+
+            final BulkUploadProcessor processor = new BulkUploadProcessor();
+            processor.process(job);
+
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
+
+            assertEquals(BatchFailureReason.OVER_SIZE_LIMIT, reasonFor(outcome, "note.txt"),
+                    "the run must apply the ceiling of the type this file actually becomes. "
+                            + "Falling back to the base type's default ceiling is how this "
+                            + "endpoint let files past rules every other creation path "
+                            + "enforces.\n" + describe(outcome));
+        } finally {
+            ContentTypeDataGen.remove(siteType);
+        }
+    }
+
+    /**
+     * A dotAsset-based type living on one site, capped, and accepting anything.
+     * <p>
+     * No accept variable on purpose — that is the total wildcard, which puts it in the
+     * wildcard-current-site bucket and ahead of the system-host generic type for any file at all.
+     */
+    private ContentType dotAssetTypeOn(final Host host, final long maxBytes) throws Exception {
+
+        final ContentType type = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.DOTASSET)
+                .host(host)
+                .velocityVarName("bulkRouted" + System.currentTimeMillis())
+                .nextPersisted();
+
+        final Field binary = new FieldDataGen()
+                .contentTypeId(type.id())
+                .type(BinaryField.class)
+                .velocityVarName(DotAssetContentType.ASSET_FIELD_VAR)
+                .nextPersisted();
+
+        new FieldVariableDataGen().field(binary)
+                .key(BinaryField.MAX_FILE_LENGTH).value(String.valueOf(maxBytes)).nextPersisted();
+
+        return APILocator.getContentTypeAPI(admin()).find(type.variable());
+    }
+
+    /** Stages one file of exactly {@code bytes} bytes under the given name, and builds its job. */
+    private Job jobForBytes(final Folder folder, final String fileName, final int bytes)
+            throws Exception {
+        final Job job = jobForNames(folder, List.of(fileName));
+
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> staged =
+                (List<Map<String, Object>>) job.parameters().get("stagedFiles");
+
+        final HttpServletRequest request = request();
+        final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
+                fileName, request, new ByteArrayInputStream(bodyOf(0, bytes)));
+
+        staged.get(0).put("tempFileId", tempFile.id);
+        staged.get(0).put("sizeBytes", tempFile.length());
+        staged.get(0).put("mimeType", tempFile.mimeType);
+        return job;
     }
 
 }

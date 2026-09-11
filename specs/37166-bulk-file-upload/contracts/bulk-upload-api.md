@@ -152,6 +152,22 @@ upload before is the expected shape of this, not a bug to report.
 
 ---
 
+### Publish state
+
+**Files land published** *(settled 2026-09-11, FR-006a)*. The run fires the `PUBLISH` system action
+and honours whatever the content type maps it to; where no single mapped action both saves and
+publishes, it checks in and publishes as two steps, exactly as the product does elsewhere.
+
+**This differs from Content Drive's single-file upload on purpose.** That one sends `NEW` and leaves
+a draft. So the same screen behaves differently for one file and for a batch — accepted, because an
+author who drops thirty images expects thirty images rather than thirty drafts to publish by hand.
+It matches the Content Search drop zone, which has fired `PUBLISH` per file for years.
+
+**What a client can rely on**: a finished batch's files are live. **What it cannot**: choosing the
+workflow action — nothing in the submission selects one, and that was considered and settled against.
+
+---
+
 ## 2. Follow, cancel
 
 Existing job-framework endpoints. This feature adds none.
