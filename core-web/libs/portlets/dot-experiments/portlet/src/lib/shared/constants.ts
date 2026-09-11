@@ -108,6 +108,12 @@ export const SKELETON_ROWS: ExperimentRow[] = Array.from(
 /** One skeleton cell per table column. */
 export const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);
 
+/**
+ * The same skeleton row inside the panel, which renders one column fewer — Page is dropped there
+ * (FR-009). A skeleton wider than its header puts a cell outside the table while it loads.
+ */
+export const PANEL_SKELETON_COLUMNS = SKELETON_COLUMNS.slice(1);
+
 /** Placeholder rendered in the Goal column when no goal is configured. */
 export const NO_GOAL_PLACEHOLDER = '—';
 
@@ -127,6 +133,23 @@ export const NO_GOAL_PLACEHOLDER = '—';
 export const LIST_TABLE_STYLE: Record<string, string> = {
     'table-layout': 'fixed',
     'min-width': '81rem'
+};
+
+/**
+ * The same table, inside the Experiments panel (#37478).
+ *
+ * One number differs, and it is not a style choice. `81rem` is what the seven data columns need at
+ * their declared widths; the panel drops the Page column (FR-009, `w-56` = 14rem) and gives the
+ * space back to the name, so the floor moves with it: 53rem of fixed columns (67 − 14) plus an
+ * 11rem floor for Name. Keep both numbers in step with the header widths.
+ *
+ * This is a scroll threshold, not a layout switch: which layout renders is decided by the mode
+ * flag alone, never by measured width (FR-041). Below this the panel scrolls horizontally exactly
+ * as the portlet does below `81rem`, which on an 80% panel means a viewport under about 1280px.
+ */
+export const PANEL_LIST_TABLE_STYLE: Record<string, string> = {
+    'table-layout': 'fixed',
+    'min-width': '64rem'
 };
 
 /** Height of the status filter's option list before it scrolls. */

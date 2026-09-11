@@ -60,6 +60,8 @@ import {
     EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
     LIST_TABLE_STYLE,
+    PANEL_LIST_TABLE_STYLE,
+    PANEL_SKELETON_COLUMNS,
     LIST_TITLE_KEY,
     NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
@@ -147,7 +149,8 @@ export class DotExperimentsListComponent {
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
     readonly NO_GOAL_PLACEHOLDER = NO_GOAL_PLACEHOLDER;
     readonly ROWS_PER_PAGE_OPTIONS = ROWS_PER_PAGE_OPTIONS;
-    readonly TABLE_STYLE = LIST_TABLE_STYLE;
+    /** The panel drops the Page column, so it does not need the portlet's 81rem floor. */
+    readonly TABLE_STYLE = this.$inPanel ? PANEL_LIST_TABLE_STYLE : LIST_TABLE_STYLE;
 
     /**
      * Page sizes to offer, or `null` for none.
@@ -162,7 +165,7 @@ export class DotExperimentsListComponent {
             ? ROWS_PER_PAGE_OPTIONS
             : null
     );
-    readonly SKELETON_COLUMNS = SKELETON_COLUMNS;
+    readonly SKELETON_COLUMNS = this.$inPanel ? PANEL_SKELETON_COLUMNS : SKELETON_COLUMNS;
 
     /** Rows currently rendered by the table, already resolved for display. */
     readonly $rows = computed<ExperimentRow[]>(() => {

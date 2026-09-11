@@ -20,7 +20,7 @@ Legend: **P** = portlet (`#panel === null`), **N** = panel (`#panel !== null`).
 | Site narrowing via `pageInfoByPageId[…].host` | yes | **bypassed** — not merely unfed | FR-029, SC-008 (see note) |
 | Analytics health gate before the first fetch | yes | **yes, identical** | FR-027, SC-005 |
 | `selectedPageId` | from `?pageId=`, clearable | the page in hand, structural | FR-006, D6 |
-| Layout | `p-table`, 7 sortable columns + kebab, `min-width: 81rem` | compact flex rows: name (truncating) + status + goal + schedule on one line, kebab on hover. **Selected by the mode flag alone** — never by measured width, so the panel never renders the table even on a viewport wide enough to clear 81rem | FR-009, FR-041 |
+| Layout | `p-table`, 7 data columns + kebab, `min-width: 81rem` | **the same `p-table`**, minus the Page column, `min-width: 64rem`. Paginator, sorting, lazy load and scrolling are the table's and are not reimplemented. **Selected by the mode flag alone** — the width floor follows the column set, and never decides which layout renders | FR-009, FR-040, FR-041, SC-015 |
 | Page column | shown | **absent** | FR-009 |
 | Breadcrumb (`syncBreadcrumbEffect`) | pushed | **not pushed** | FR-033, D8, SC-012 |
 | Row → Configure / Results | `router.navigate` | `panel.showConfigure(id)` / `panel.showResults(id)` — **phase 2/3**; until then `router.navigate` as today | FR-008, FR-013, FR-025g |

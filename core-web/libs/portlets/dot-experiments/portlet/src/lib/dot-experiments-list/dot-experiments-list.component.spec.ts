@@ -36,7 +36,10 @@ import {
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    LIST_TABLE_STYLE,
+    PANEL_LIST_TABLE_STYLE,
     ROWS_PER_PAGE_OPTIONS,
+    SKELETON_COLUMNS,
     SEARCH_DEBOUNCE_MS
 } from '../shared/constants';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
@@ -1403,38 +1406,65 @@ describe('DotExperimentsListComponent', () => {
         };
 
         describe('layout', () => {
-            it('should render compact rows instead of the table', () => {
+            /**
+             * FR-040, D7, SC-015. The panel renders the portlet's table, not a second list built
+             * beside it: same `p-table`, same rows, same paginator, sorting and lazy load. What
+             * differs is the column set and the width floor that follows from it — a presentation,
+             * which is all D7 allows to vary.
+             */
+            it('should render the same table the portlet does', () => {
                 renderPanelRow();
 
-                expect(spectator.query(byTestId('experiments-list-compact'))).not.toBeNull();
-                expect(spectator.queryAll(byTestId('experiment-row-compact'))).toHaveLength(1);
-                expect(spectator.query(byTestId('experiments-table'))).toBeNull();
+                expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                expect(spectator.queryAll(byTestId('experiment-row'))).toHaveLength(1);
             });
 
-            /**
-             * FR-009. The panel *is* the page, so a column repeating it on every row is noise —
-             * and it is the widest column the table has.
-             */
+            /** FR-009. The panel *is* the page, so a column repeating it on every row is noise. */
             it('should not render the page column', () => {
                 renderPanelRow();
 
                 expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                expect(spectator.query(byTestId('experiment-name'))).not.toBeNull();
             });
 
             /**
-             * T023a / FR-041 — the assertion that makes the layout a decision rather than a
+             * The floor has to follow the column set. `81rem` is what the portlet's seven data
+             * columns need; leaving it here would scroll the panel horizontally for a column it no
+             * longer renders.
+             */
+            it('should drop the portlet width floor with the column', () => {
+                renderPanelRow();
+
+                expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
+                expect(spectator.component.TABLE_STYLE['min-width']).not.toBe(
+                    LIST_TABLE_STYLE['min-width']
+                );
+            });
+
+            /** A skeleton wider than its header puts a cell outside the table while it loads. */
+            it('should match the skeleton row to the column set', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.component.SKELETON_COLUMNS).toHaveLength(
+                    SKELETON_COLUMNS.length - 1
+                );
+            });
+
+            /**
+             * T023a / FR-041 — the assertion that makes the column set a decision rather than a
              * coincidence.
              *
-             * `PANEL_WIDTH` is a proportion of the viewport, so the panel clears the table's 81rem
-             * floor on a large monitor and misses it on a laptop. A layout picked by measured width
-             * would therefore give the same build a table on one machine and compact rows on
-             * another. The mode flag alone decides, at every size — asserted from both sides of
-             * the boundary so a width query cannot pass.
+             * `PANEL_WIDTH` is a proportion of the viewport, so the panel is wider on a large
+             * monitor than on a laptop. Nothing about what it renders may follow from that: the
+             * same build has to drop the same column at 1024px and at 2560px. Asserted from both
+             * sides of the portlet's own 81rem boundary, so a width query cannot pass.
              */
             it.each([
                 { label: 'far below the 81rem floor', innerWidth: 1024 },
                 { label: 'far above the 81rem floor', innerWidth: 2560 }
-            ])('should stay compact at a viewport $label', ({ innerWidth }) => {
+            ])('should render the same columns at a viewport $label', ({ innerWidth }) => {
                 const original = window.innerWidth;
                 Object.defineProperty(window, 'innerWidth', {
                     value: innerWidth,
@@ -1444,8 +1474,9 @@ describe('DotExperimentsListComponent', () => {
                 try {
                     renderPanelRow();
 
-                    expect(spectator.query(byTestId('experiments-list-compact'))).not.toBeNull();
-                    expect(spectator.query(byTestId('experiments-table'))).toBeNull();
+                    expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                    expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                    expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
                 } finally {
                     Object.defineProperty(window, 'innerWidth', {
                         value: original,
@@ -1454,11 +1485,11 @@ describe('DotExperimentsListComponent', () => {
                 }
             });
 
-            it('should keep the table in portlet mode at every viewport (FR-042)', () => {
+            it('should keep the page column and the portlet floor in portlet mode (FR-042)', () => {
                 renderRowWith(DotExperimentStatus.DRAFT);
 
-                expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
-                expect(spectator.query(byTestId('experiments-list-compact'))).toBeNull();
+                expect(spectator.query(byTestId('experiment-page'))).not.toBeNull();
+                expect(spectator.component.TABLE_STYLE).toEqual(LIST_TABLE_STYLE);
             });
         });
 
