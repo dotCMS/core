@@ -25,6 +25,14 @@ import { DotEditContentService } from '../../../services/dot-edit-content.servic
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
 import { SelectionMode, TableColumn } from '../models/relationship.models';
 
+/**
+ * Rows revealed per step.
+ *
+ * Matches the Key/Value field and the site/folder selector, which is where this pattern already
+ * lives in the product — one page size across the three, so an editor learns the affordance once.
+ */
+export const RELATED_PAGE_SIZE = 40;
+
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
@@ -34,11 +42,16 @@ export interface RelationshipFieldState {
     isNewEditorEnabled: boolean;
     staticColumns: number;
     columns: TableColumn[];
-    pagination: {
-        offset: number;
-        currentPage: number;
-        rowsPerPage: number;
-    };
+    /**
+     * How many rows are currently rendered.
+     *
+     * **Deliberately not derived from `data`.** `DotKeyValueComponent` learned this the hard way
+     * and records it: a count derived from the list collapses the table back to the first page the
+     * moment anything is added, edited, removed or reordered — 80 rows down to 40 on a single
+     * delete. A field opened afresh still starts at one page, because a new field component is
+     * built for it.
+     */
+    visibleCount: number;
     /**
      * Origin of the current `data`:
      * - `'load'`: populated programmatically (initial load / locale re-init). The
@@ -60,11 +73,7 @@ const initialState: RelationshipFieldState = {
     contentType: null,
     isNewEditorEnabled: false,
     staticColumns: STATIC_COLUMNS,
-    pagination: {
-        offset: 0,
-        currentPage: 1,
-        rowsPerPage: 6
-    },
+    visibleCount: RELATED_PAGE_SIZE,
     lastChangeSource: 'load'
 };
 
@@ -79,20 +88,15 @@ export const RelationshipFieldStore = signalStore(
     withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed((state) => ({
         /**
-         * Computes the total number of pages based on the number of items and the rows per page.
-         * @returns {number} The total number of pages.
+         * The rows to render — a prefix of `data`, never a page of it.
+         *
+         * There is no paging here any more: every related item is in `data`, and this only decides
+         * how much of it reaches the DOM. That is what lets a drag move any item next to any other,
+         * which paging made impossible for anything past the first six rows.
          */
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
-        /**
-         * Returns the slice of data for the current page based on offset and rowsPerPage.
-         * @returns {DotCMSContentlet[]} The items for the current page.
-         */
-        paginatedData: computed(() => {
-            const allData = state.data();
-            const { offset, rowsPerPage } = state.pagination();
-
-            return allData.slice(offset, offset + rowsPerPage);
-        }),
+        $visibleItems: computed(() => state.data().slice(0, state.visibleCount())),
+        /** Rows still withheld below the last rendered one. Drives the "Load more" row. */
+        $remaining: computed(() => Math.max(0, state.data().length - state.visibleCount())),
         /**
          * Checks if the create new content button is disabled based on the selection mode and the number of items.
          * @returns {boolean} True if the button is disabled, false otherwise.
@@ -138,11 +142,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {RelationshipFieldItem[]} data - The data to be set.
              */
             setData(data: DotCMSContentlet[]) {
-                patchState(store, {
-                    data: [...data],
-                    pagination: { ...store.pagination(), offset: 0, currentPage: 1 },
-                    lastChangeSource: 'user'
-                });
+                patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
              * Initializes the relationship field with the provided parameters.
@@ -248,35 +248,15 @@ export const RelationshipFieldStore = signalStore(
              * @param inode - The inode of the item to delete.
              */
             deleteItem(inode: string) {
-                const newData = store.data().filter((item) => item.inode !== inode);
-                const { offset, rowsPerPage } = store.pagination();
-
-                if (offset >= newData.length && newData.length > 0) {
-                    const lastPage = Math.ceil(newData.length / rowsPerPage);
-                    const newOffset = (lastPage - 1) * rowsPerPage;
-                    patchState(store, {
-                        data: newData,
-                        pagination: {
-                            ...store.pagination(),
-                            offset: newOffset,
-                            currentPage: lastPage
-                        },
-                        lastChangeSource: 'user'
-                    });
-                } else if (newData.length === 0) {
-                    patchState(store, {
-                        data: newData,
-                        pagination: {
-                            ...store.pagination(),
-                            offset: 0,
-                            currentPage: 1
-                        },
-                        lastChangeSource: 'user'
-                    });
-                } else {
-                    patchState(store, { data: newData, lastChangeSource: 'user' });
-                }
+                // Just a filter now. The branch this replaces existed only to keep the current page
+                // valid when a removal emptied it — with no pages, there is nothing to clamp, and
+                // `visibleCount` is deliberately left alone so revealed rows stay revealed.
+                patchState(store, {
+                    data: store.data().filter((item) => item.inode !== inode),
+                    lastChangeSource: 'user'
+                });
             },
+
             /**
              * Replaces one item in place, matched by identifier — identifiers are stable across
              * saves, so this finds the row even though a save mints a new inode. Used when a
@@ -315,28 +295,14 @@ export const RelationshipFieldStore = signalStore(
                 patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
-             * Advances the pagination to the next page and updates the state accordingly.
+             * Reveals the next page of rows.
+             *
+             * Purely a rendering limit: the whole list is already in memory, so unlike the
+             * site/folder selector this fetches nothing. Rows are withheld from the DOM, never from
+             * the data — every operation on the value still sees all of them.
              */
-            nextPage: () => {
-                patchState(store, {
-                    pagination: {
-                        ...store.pagination(),
-                        offset: store.pagination().offset + store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage + 1
-                    }
-                });
-            },
-            /**
-             * Moves the pagination to the previous page and updates the state accordingly.
-             */
-            previousPage: () => {
-                patchState(store, {
-                    pagination: {
-                        ...store.pagination(),
-                        offset: store.pagination().offset - store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage - 1
-                    }
-                });
+            loadMore() {
+                patchState(store, { visibleCount: store.visibleCount() + RELATED_PAGE_SIZE });
             }
         })
     )

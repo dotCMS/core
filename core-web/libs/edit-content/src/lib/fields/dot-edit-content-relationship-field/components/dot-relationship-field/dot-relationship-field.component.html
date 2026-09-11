@@ -1,6 +1,5 @@
-@let pagination = store.pagination();
-@let showPagination = store.totalPages() > 1;
-@let data = store.paginatedData();
+@let data = store.$visibleItems();
+@let remaining = store.$remaining();
 @let isDisabled = $isDisabled();
 @let isEmpty = store.data().length === 0;
 @let showThumbnail = store.showThumbnail();
@@ -10,11 +9,9 @@
     [value]="data"
     [columns]="store.columns()"
     data-testid="relationship-field-table"
-    class="dot-relationship-field-table overflow-hidden rounded-lg border border-solid [&_tr:last-child_td]:border-b-0!"
+    class="dot-relationship-field-table w-full max-w-full overflow-hidden rounded-lg border border-solid [&_tr:last-child_td]:border-b-0!"
     [rowHover]="true"
     [paginator]="false"
-    [first]="pagination.offset"
-    [rows]="pagination.rowsPerPage"
     [scrollable]="true"
     [reorderableColumns]="false"
     (onRowReorder)="onRowReorder($event)">
@@ -41,10 +38,12 @@
                         </th>
                     }
                     @case ('status') {
+                        <!-- Right-aligned because it is Status, not because it happens to sit
+                             last: `$last` alignment is the table's generic rule and would drop the
+                             alignment the moment a configured column follows this one. -->
                         <th
                             scope="col"
-                            class="w-32 max-w-32 min-w-32"
-                            [class.text-right!]="$last"
+                            class="w-32 max-w-32 min-w-32 text-right!"
                             data-testid="relationship-status-header">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
@@ -105,17 +104,21 @@
             [class.opacity-50]="isDisabled"
             [class.cursor-not-allowed]="isDisabled"
             class="group">
+            <!-- The handle is revealed by hovering or focusing the row, matching the remove button
+                 at the other end of it: a list of ten items should read as content, not as ten sets
+                 of grip dots. `focus-visible` is what keeps the reorder affordance reachable
+                 without a pointer.
+
+                 A disabled field renders no handle at all — not a greyed-out one. There is nothing
+                 to reorder, so an affordance that merely looks unavailable is still one control too
+                 many. -->
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
                     <span
-                        class="flex cursor-grab items-center text-gray-600"
+                        class="flex cursor-grab items-center text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                        tabindex="0"
                         pReorderableRowHandle
                         data-testid="relationship-drag-handle">
-                        <i class="pi pi-ellipsis-v text-[14px]"></i>
-                        <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
-                    </span>
-                } @else {
-                    <span class="flex cursor-not-allowed items-center text-gray-600">
                         <i class="pi pi-ellipsis-v text-[14px]"></i>
                         <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
                     </span>
@@ -169,9 +172,9 @@
                     }
                     @case ('status') {
                         <td
-                            class="w-32 max-w-32 min-w-32"
+                            class="w-32 max-w-32 min-w-32 text-right!"
                             [class.cursor-not-allowed]="isDisabled"
-                            [class.text-right!]="$last">
+                            data-testid="relationship-status-cell">
                             <dot-contentlet-status-badge [state]="item" />
                         </td>
                     }
@@ -217,17 +220,30 @@
         </tr>
     </ng-template>
 
-    <ng-template pTemplate="summary">
-        @if (showPagination) {
-            <div class="flex items-center justify-center pt-2">
-                <dot-pagination
-                    data-testid="relationship-table-pagination"
-                    [currentPageReportLayout]="'center'"
-                    (nextPage)="store.nextPage()"
-                    (previousPage)="store.previousPage()"
-                    [totalPages]="store.totalPages()"
-                    [currentPage]="pagination.currentPage" />
-            </div>
+    <!-- No paging control: every related item is in the value, and this table renders a growing
+         prefix of it. That is what lets a drag reach any pair of rows — paging made anything past
+         the first page unreachable from the first.
+
+         A real row rather than the table's `summary` slot, matching the Key/Value field: the
+         control belongs after the last rendered row, inside the same frame. -->
+    <ng-template pTemplate="footer">
+        @if (remaining > 0) {
+            <tr data-testid="relationship-load-more-row">
+                <td
+                    [attr.colspan]="$totalColumns()"
+                    class="border-t border-t-(--p-datatable-border-color) px-4 py-3">
+                    <button
+                        type="button"
+                        class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
+                        data-testid="relationship-load-more"
+                        (click)="store.loadMore()">
+                        <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                            add_circle
+                        </span>
+                        {{ 'dot.file.relationship.field.table.load.more' | dm }}
+                    </button>
+                </td>
+            </tr>
         }
     </ng-template>
 </p-table>

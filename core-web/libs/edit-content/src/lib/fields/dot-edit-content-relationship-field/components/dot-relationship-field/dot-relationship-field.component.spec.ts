@@ -141,31 +141,37 @@ describe('DotRelationshipFieldComponent', () => {
         get: jest.fn((key: string) => key)
     };
 
-    const createStoreMock = (overrides: Record<string, unknown> = {}) => ({
-        data: jest.fn().mockReturnValue([buildItem()]),
-        paginatedData: jest.fn().mockReturnValue([buildItem()]),
-        columns: jest.fn().mockReturnValue([TITLE_COLUMN, LANGUAGE_COLUMN, STATUS_COLUMN]),
-        staticColumns: jest.fn().mockReturnValue(2),
-        totalPages: jest.fn().mockReturnValue(1),
-        pagination: jest.fn().mockReturnValue({ offset: 0, currentPage: 1, rowsPerPage: 6 }),
-        showThumbnail: jest.fn().mockReturnValue(false),
-        isDisabledCreateNewContent: jest.fn().mockReturnValue(false),
-        isNewEditorEnabled: jest.fn().mockReturnValue(true),
-        selectionMode: jest.fn().mockReturnValue('multiple'),
-        contentType: jest.fn().mockReturnValue({ id: 'ct-1' }),
-        formattedRelationship: jest.fn().mockReturnValue('id-1'),
-        lastChangeSource: jest.fn().mockReturnValue('load'),
-        // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
-        flags: jest.fn().mockReturnValue({}),
-        initialize: jest.fn(),
-        setData: jest.fn(),
-        refreshItem: jest.fn(),
-        deleteItem: jest.fn(),
-        reorderData: jest.fn(),
-        nextPage: jest.fn(),
-        previousPage: jest.fn(),
-        ...overrides
-    });
+    const createStoreMock = (overrides: Record<string, unknown> = {}) => {
+        const mock = {
+            data: jest.fn().mockReturnValue([buildItem()]),
+            // Derived from `data` by default so a test that sets one list does not have to remember
+            // to set the other; tests about withholding override it explicitly.
+            $visibleItems: jest.fn(() => mock.data()),
+            $remaining: jest.fn().mockReturnValue(0),
+            visibleCount: jest.fn().mockReturnValue(40),
+            loadMore: jest.fn(),
+            columns: jest.fn().mockReturnValue([TITLE_COLUMN, LANGUAGE_COLUMN, STATUS_COLUMN]),
+            staticColumns: jest.fn().mockReturnValue(2),
+
+            showThumbnail: jest.fn().mockReturnValue(false),
+            isDisabledCreateNewContent: jest.fn().mockReturnValue(false),
+            isNewEditorEnabled: jest.fn().mockReturnValue(true),
+            selectionMode: jest.fn().mockReturnValue('multiple'),
+            contentType: jest.fn().mockReturnValue({ id: 'ct-1' }),
+            formattedRelationship: jest.fn().mockReturnValue('id-1'),
+            lastChangeSource: jest.fn().mockReturnValue('load'),
+            // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
+            flags: jest.fn().mockReturnValue({}),
+            initialize: jest.fn(),
+            setData: jest.fn(),
+            refreshItem: jest.fn(),
+            deleteItem: jest.fn(),
+            reorderData: jest.fn(),
+            ...overrides
+        };
+
+        return mock;
+    };
 
     let storeMock: ReturnType<typeof createStoreMock>;
 
@@ -241,8 +247,6 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() =>
             setup({
                 data: jest.fn().mockReturnValue([]),
-                paginatedData: jest.fn().mockReturnValue([]),
-                totalPages: jest.fn().mockReturnValue(0),
                 formattedRelationship: jest.fn().mockReturnValue('')
             })
         );
@@ -374,8 +378,6 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() => {
             setup({
                 data: jest.fn().mockReturnValue([]),
-                paginatedData: jest.fn().mockReturnValue([]),
-                totalPages: jest.fn().mockReturnValue(0),
                 formattedRelationship: jest.fn().mockReturnValue('')
             });
             spectator.component.setDisabledState(true);
@@ -450,8 +452,6 @@ describe('DotRelationshipFieldComponent', () => {
         const setupWithSource = (source: 'load' | 'user') => {
             setup({
                 data: jest.fn().mockReturnValue([]),
-                paginatedData: jest.fn().mockReturnValue([]),
-                totalPages: jest.fn().mockReturnValue(0),
                 formattedRelationship: jest.fn().mockReturnValue(''),
                 lastChangeSource: jest.fn().mockReturnValue(source)
             });
@@ -790,6 +790,196 @@ describe('DotRelationshipFieldComponent', () => {
                 );
                 expect(storeMock.setData).not.toHaveBeenCalled();
             });
+        });
+    });
+
+    /**
+     * US2 / T028 — the two states in which the picker must not be reachable at all.
+     *
+     * Both already hold today; these are regression guards for the refactor, not new behaviour.
+     * They matter because the dialog is being replaced wholesale, and "the add button still opens
+     * something" is an easy thing to keep while losing the guard in front of it.
+     */
+    describe('when the picker must not open (US2)', () => {
+        it('does not open a dialog when the field is disabled', () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockClear();
+
+            spectator.component.setDisabledState(true);
+            spectator.component.showExistingContentDialog();
+
+            expect(dialogService.open).not.toHaveBeenCalled();
+        });
+
+        it('offers no enabled add affordance once a single-cardinality field holds its item', () => {
+            storeMock.isDisabledCreateNewContent.mockReturnValue(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$menuItems().every((menuItem) => menuItem.disabled)).toBe(
+                true
+            );
+        });
+    });
+
+    /**
+     * US4 — no paging control, and a "Load more" row instead.
+     *
+     * The two lists in #37192 are different lists: the *picker* keeps its paging; this one, the
+     * related content inside the form, loses it so a drag can reach any pair of rows.
+     */
+    describe('the related list has no paging (US4)', () => {
+        const rows = (n: number) =>
+            Array.from({ length: n }, (_, i) => buildItem({ inode: `inode-${i}` }));
+
+        it('renders no paging control for a short list', () => {
+            setup({ data: jest.fn().mockReturnValue(rows(3)) });
+
+            expect(spectator.query(byTestId('relationship-table-pagination'))).toBeNull();
+        });
+
+        it('renders no paging control for a list longer than the old page size', () => {
+            setup({
+                data: jest.fn().mockReturnValue(rows(95)),
+                $visibleItems: jest.fn().mockReturnValue(rows(40)),
+                $remaining: jest.fn().mockReturnValue(55)
+            });
+
+            expect(spectator.query(byTestId('relationship-table-pagination'))).toBeNull();
+        });
+
+        it('offers no Load more when everything is on screen', () => {
+            setup({ data: jest.fn().mockReturnValue(rows(12)) });
+
+            expect(spectator.query(byTestId('relationship-load-more'))).toBeNull();
+        });
+
+        it('offers Load more while rows are still withheld', () => {
+            setup({
+                data: jest.fn().mockReturnValue(rows(95)),
+                $visibleItems: jest.fn().mockReturnValue(rows(40)),
+                $remaining: jest.fn().mockReturnValue(55)
+            });
+
+            expect(spectator.query(byTestId('relationship-load-more'))).toBeTruthy();
+        });
+
+        it('reveals the next page when Load more is used', () => {
+            setup({
+                data: jest.fn().mockReturnValue(rows(95)),
+                $visibleItems: jest.fn().mockReturnValue(rows(40)),
+                $remaining: jest.fn().mockReturnValue(55)
+            });
+
+            spectator.click(spectator.query(byTestId('relationship-load-more')) as HTMLElement);
+
+            expect(storeMock.loadMore).toHaveBeenCalled();
+        });
+
+        /** Withholding is a rendering limit: the value keeps all 95, the DOM shows 40. */
+        it('renders only the visible rows, not the whole list', () => {
+            setup({
+                data: jest.fn().mockReturnValue(rows(95)),
+                $visibleItems: jest.fn().mockReturnValue(rows(40)),
+                $remaining: jest.fn().mockReturnValue(55)
+            });
+
+            expect(spectator.queryAll(byTestId('relationship-drag-handle'))).toHaveLength(40);
+        });
+    });
+
+    /**
+     * US5 — the drag handle is revealed on hover, like the remove button already is.
+     *
+     * Hover cannot be simulated meaningfully in jsdom, so these assert the *contract that produces*
+     * the hover behaviour — the same `group` / `group-hover` pair the remove button in this very
+     * row already relies on. Asserting the mechanism is what a unit test can honestly claim; the
+     * visual result is covered manually (quickstart §D6).
+     */
+    describe('the drag handle is quiet until hovered (US5)', () => {
+        it('carries the hover-reveal classes rather than being permanently visible', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+
+            expect(handle?.className).toContain('opacity-0');
+            expect(handle?.className).toContain('group-hover:opacity-100');
+        });
+
+        it('sits inside the row that owns the hover group', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+
+            expect(handle?.closest('tr')?.className).toContain('group');
+        });
+
+        /** Revealed by keyboard focus too, or the reorder affordance is pointer-only. */
+        it('is revealed on focus as well as on hover', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+
+            expect(handle?.className).toContain('focus-visible:opacity-100');
+        });
+
+        it('offers no drag handle at all when the field is disabled', () => {
+            setup({ data: jest.fn().mockReturnValue([buildItem()]) });
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('relationship-drag-handle'))).toBeNull();
+        });
+    });
+
+    /**
+     * US6 — Status right-aligned, and the field respects the form's single-column width.
+     */
+    describe('columns line up (US6)', () => {
+        /**
+         * Status is right-aligned **because it is Status**, not because it happens to be the last
+         * column. The template aligned every last column, so a fixture with Status at the end
+         * passes without the requirement being implemented — which is what this fixture is for.
+         */
+        const withColumnAfterStatus = {
+            columns: jest.fn().mockReturnValue([TITLE_COLUMN, STATUS_COLUMN, LANGUAGE_COLUMN])
+        };
+
+        it('right-aligns the Status column header even when it is not the last column', () => {
+            setup(withColumnAfterStatus);
+
+            expect(spectator.query(byTestId('relationship-status-header'))?.className).toContain(
+                'text-right'
+            );
+        });
+
+        it('right-aligns the Status column body cells even when it is not the last column', () => {
+            setup(withColumnAfterStatus);
+
+            expect(spectator.query(byTestId('relationship-status-cell'))?.className).toContain(
+                'text-right'
+            );
+        });
+
+        /**
+         * The 720px / 1000px rule already lives at the form level (#36615). What this field owes it
+         * is not to break out of the container — a table wider than its column pushes every other
+         * field out of alignment.
+         */
+        it('never exceeds its container', () => {
+            setup();
+
+            const table = spectator.query(byTestId('relationship-field-table'));
+
+            expect(table?.className).toContain('w-full');
+            expect(table?.className).toContain('max-w-full');
+        });
+
+        it('scrolls horizontally inside the field rather than widening it', () => {
+            setup();
+
+            const table = spectator.query(byTestId('relationship-field-table'));
+
+            expect(table?.className).toContain('overflow-hidden');
         });
     });
 });

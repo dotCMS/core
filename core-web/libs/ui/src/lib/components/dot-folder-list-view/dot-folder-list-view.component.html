@@ -332,7 +332,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         @if (!$loading()) {
-            <tr class="h-max hover:bg-transparent!">
+            <tr class="h-max hover:bg-transparent!" data-testId="empty-state">
                 <td [attr.colspan]="$columnSpan()" class="h-full border-none p-6 text-center">
                     <div class="mx-auto flex max-w-100 flex-col items-center gap-4">
                         <div class="flex size-20 items-center justify-center rounded-full">
@@ -340,12 +340,20 @@
                         </div>
                         <div class="flex flex-col text-center">
                             <h3 class="m-0 text-lg font-medium text-gray-800">
-                                {{ 'content.drive.empty.state.title' | dm }}
+                                {{ $emptyTitleKey() | dm }}
                             </h3>
                             <p class="text-text-color m-0 text-base leading-6">
-                                {{ 'content.drive.empty.state.description' | dm }}
+                                {{ $emptyDescriptionKey() | dm }}
                             </p>
                         </div>
+                        @if ($emptyActionKey()) {
+                            <p-button
+                                type="button"
+                                [label]="$emptyActionKey() | dm"
+                                [rounded]="true"
+                                data-testid="folder-list-empty-action"
+                                (onClick)="emptyAction.emit()" />
+                        }
                     </div>
                 </td>
             </tr>

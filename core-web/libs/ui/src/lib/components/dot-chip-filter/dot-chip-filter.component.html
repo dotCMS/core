@@ -1,6 +1,16 @@
+@if (icon()) {
+    <i class="{{ icon() }} text-sm leading-none" aria-hidden="true" data-testid="chip-icon"></i>
+}
 <span class="truncate">
-    <span class="font-semibold" data-testid="chip-title">{{ title() }}</span>
-    @if (active() && !isToggle()) {
+    <!-- A chip with no title is one whose value IS its label — the browsed site, say. Its value is
+         therefore rendered *as* the title: same span, same weight, and no separator, because a
+         leading ": " there would read as a missing word rather than as a prefix.
+
+         Both halves stay on one line each. Split across lines, the interpolation picks up the
+         surrounding indentation as leading and trailing spaces inside the span, which is how
+         "Locale: English" once became "Locale : English". -->
+    <span class="font-semibold" data-testid="chip-title">{{ titleLabel() }}</span>
+    @if (title() && active() && !isToggle()) {
         <span data-testid="chip-values">: {{ valuesLabel() }}</span>
     } @else if (!isToggle() && emptyLabel()) {
         <!-- `!isToggle()` guards the fall-through, not the label itself. A toggle never satisfies the

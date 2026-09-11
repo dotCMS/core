@@ -1,0 +1,28 @@
+<!-- A filter chip like the ones beside it, that happens to open the product's site-and-folder
+     browser. The browser is `dot-host-folder-field`, unchanged: it keeps owning the sites list, the
+     lazy folder tree, the in-site search and Select/Cancel — this only replaces what summons it.
+
+     `dot-chip-filter` is the same component every other chip in this row renders, so the scope
+     reads as one of them rather than as a form control that wandered in.
+
+     `hasError` / `isRequired` are required inputs because the browser's usual home is a
+     content-type field with validation. Here it is a browse scope rather than a value being
+     validated: nothing to mark required, no error state to paint. -->
+<dot-host-folder-field
+    [hasError]="false"
+    [isRequired]="false"
+    [showDefaultTrigger]="false"
+    [formControl]="scopeControl">
+    <!-- No title: the folder icon and the hostname already say everything "Site:" would. The site
+         travels as the chip's *selection* rather than as its title, which is what puts it in the
+         applied state — and it always is applied, since the endpoint resolves exactly one site.
+
+         Not removable: there is no "no site" state to return to. -->
+    <dot-chip-filter
+        hostFolderTrigger
+        icon="pi pi-folder"
+        title=""
+        [selections]="$selections()"
+        [removable]="false"
+        data-testid="add-relationships-site-chip" />
+</dot-host-folder-field>

@@ -1,0 +1,112 @@
+@let isEmpty = store.$isEmpty();
+@let errorMessage = store.errorMessage();
+
+<!-- No splitter and no sidebar: the content of an arbitrary content type is not folder-scoped, so
+     the folder scope is a chip in the row below rather than a tree beside the list. This is the one
+     structural difference from the AssetPicker, and it is why this dialog composes the shared pieces
+     instead of reusing that shell. -->
+<dot-dialog data-testid="add-relationships">
+    <dot-dialog-header
+        [title]="'dot.relationship.add.dialog.title' | dm"
+        [closeLabel]="'dot.relationship.add.dialog.close.aria' | dm"
+        data-testid="add-relationships-title"
+        (close)="cancel()">
+        <!-- Material Symbols, not PrimeIcons: the Asset Picker and the Image Editor both render
+             their full-screen toggle this way, and a dialog that uses a different icon set reads as
+             a different product. -->
+        <p-button
+            dialogHeaderActions
+            type="button"
+            [text]="true"
+            [rounded]="true"
+            [attr.aria-pressed]="$isFullscreen()"
+            [attr.aria-label]="$fullscreenLabel() | dm"
+            [pTooltip]="$fullscreenLabel() | dm"
+            data-testid="add-relationships-fullscreen"
+            (onClick)="toggleFullscreen()">
+            <ng-template #icon>
+                <i class="material-symbols-outlined text-[1.125rem]!">{{ $fullscreenIcon() }}</i>
+            </ng-template>
+        </p-button>
+    </dot-dialog-header>
+
+    <dot-dialog-content>
+        <div class="flex h-full min-h-0 flex-col gap-4 p-4">
+            <dot-search-input
+                class="w-full"
+                testId="add-relationships-search"
+                [value]="$searchTerm()"
+                (search)="onSearch($event)" />
+
+            <!-- The chip set is declared here and nowhere else, so an excluded chip is excluded by
+                 configuration rather than by nobody having written it.
+
+                 Deliberately absent: the content-type chip. The relationship's target type is a
+                 caller restriction, not a filter — offering it would let the editor widen the result
+                 set past the type the field actually accepts. Status, shared-assets and the field
+                 filters are absent because the design does not show them. -->
+            <!-- The selection review. It matters more here than in the dialog this replaced: the
+                 selection is accumulated across pages, searches and scopes, so what the editor is
+                 about to confirm is frequently not what is on screen. -->
+            <div class="flex items-center justify-between gap-4">
+                <dot-filter-bar class="min-w-0 flex-1">
+                    <dot-add-relationships-site-chip />
+                    <dot-language-filter-chip data-testid="add-relationships-locale-chip" />
+                </dot-filter-bar>
+
+                <div class="flex shrink-0 items-center gap-2">
+                    <p-toggleswitch
+                        inputId="add-relationships-selected-only"
+                        [ngModel]="store.viewMode() === 'selected'"
+                        (onChange)="onViewModeChange($event.checked)"
+                        [attr.aria-label]="'dot.relationship.add.dialog.show.selected' | dm"
+                        data-testid="add-relationships-selected-toggle" />
+                    <label
+                        class="cursor-pointer text-sm whitespace-nowrap text-primary-500"
+                        for="add-relationships-selected-only">
+                        {{ 'dot.relationship.add.dialog.show.selected' | dm }}
+                        ({{ store.$selectedCount() }})
+                    </label>
+                </div>
+            </div>
+
+            @if (errorMessage) {
+                <div
+                    class="flex flex-1 items-center justify-center p-12 text-base"
+                    data-testid="add-relationships-error">
+                    <p>{{ errorMessage | dm }}</p>
+                </div>
+            } @else {
+                <!-- The table renders its own empty state, so the header row and the paging footer
+                     stay put when a search matches nothing — replacing the whole table with a
+                     message took those with it, and the editor lost the controls that would get
+                     them out of the empty result. -->
+                <div class="min-h-0 flex-1 rounded-md border border-gray-200">
+                    <dot-folder-list-view
+                        data-testid="add-relationships-list"
+                        [selectionMode]="$selectionMode()"
+                        [showActions]="false"
+                        [titleOpensItem]="false"
+                        [items]="store.$visibleItems()"
+                        [loading]="store.$isLoading()"
+                        [selection]="store.$selectedItems()"
+                        [totalItems]="store.totalItems()"
+                        [offset]="store.$offset()"
+                        emptyTitleKey="dot.relationship.add.dialog.empty.title"
+                        emptyDescriptionKey="dot.relationship.add.dialog.empty.description"
+                        [emptyActionKey]="
+                            store.$canReset() ? 'dot.relationship.add.dialog.empty.clear' : ''
+                        "
+                        (emptyAction)="onClearFilters()"
+                        (selectionChange)="onSelectionChange($event)"
+                        (paginate)="onPaginate($event)"
+                        (sort)="onSort($event)" />
+                </div>
+            }
+        </div>
+    </dot-dialog-content>
+
+    <dot-dialog-footer data-testid="add-relationships-footer">
+        <dot-add-relationships-footer (confirm)="confirm()" (cancel)="cancel()" />
+    </dot-dialog-footer>
+</dot-dialog>

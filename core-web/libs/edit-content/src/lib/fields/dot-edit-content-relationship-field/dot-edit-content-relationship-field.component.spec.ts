@@ -25,7 +25,6 @@ import {
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { DotRelationshipFieldComponent } from './components/dot-relationship-field/dot-relationship-field.component';
-import { PaginationComponent } from './components/pagination/pagination.component';
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
@@ -107,7 +106,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         host: MockFormComponent,
         imports: [ReactiveFormsModule],
         detectChanges: false,
-        componentMocks: [DotCardFieldComponent, DotCardFieldContentComponent, PaginationComponent],
+        componentMocks: [DotCardFieldComponent, DotCardFieldContentComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
@@ -673,7 +672,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             host: MockFormComponent,
             imports: [ReactiveFormsModule],
             detectChanges: false,
-            componentMocks: [PaginationComponent],
             providers: FOOTER_PROVIDERS
         });
 
@@ -738,7 +736,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             host: MockFormComponent,
             imports: [ReactiveFormsModule],
             detectChanges: false,
-            componentMocks: [PaginationComponent],
             providers: FOOTER_PROVIDERS
         });
 

@@ -59,7 +59,7 @@ import {
     resolveUploadRestrictionLabel
 } from './upload-restriction';
 
-import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../dialog/fullscreen-dialog';
+import { applyDialogFullscreen } from '../../dialog/fullscreen-dialog';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 // Relative, not `@dotcms/ui`: the shell lives in this same lib, and the barrel would be a cycle.
 import {
@@ -388,32 +388,12 @@ export class DotAssetPickerComponent implements OnInit {
      * its projected content never marks it dirty.
      */
     #applyFullscreen(on: boolean): void {
-        const container = this.#dialog?.container() as HTMLElement | undefined;
-
-        if (!this.#dialog || !container) {
-            return;
-        }
-
-        // Set the size transition (idempotent) before any toggle, honouring reduced-motion. It
-        // lands on the first (windowed) effect run, so the first real toggle already animates.
-        this.#renderer.setStyle(
-            container,
-            'transition',
-            this.#prefersReducedMotion() ? '' : DIALOG_SIZE_TRANSITION
-        );
-
-        // `Boolean(...)`: PrimeNG leaves `maximized` UNSET until its own button is clicked, and
-        // `undefined !== false` would fire `maximize()` on the effect's first (windowed) run —
-        // flipping the flag to `true` and opening the picker full screen.
-        if (Boolean(this.#dialog.maximized) !== on) {
-            this.#dialog.maximize();
-        }
-
-        if (on) {
-            this.#renderer.addClass(container, MAXIMIZED_DIALOG_CLASS);
-        } else {
-            this.#renderer.removeClass(container, MAXIMIZED_DIALOG_CLASS);
-        }
+        applyDialogFullscreen({
+            dialog: this.#dialog,
+            renderer: this.#renderer,
+            on,
+            prefersReducedMotion: this.#prefersReducedMotion()
+        });
     }
 
     /** Whether the user has requested reduced motion (skips the resize animation). */

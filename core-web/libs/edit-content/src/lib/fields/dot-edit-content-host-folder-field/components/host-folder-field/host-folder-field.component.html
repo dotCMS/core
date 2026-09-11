@@ -5,61 +5,81 @@
 @let isSearching = store.isSearching();
 
 <div class="flex w-full items-center gap-2">
-    <button
-        type="button"
-        class="flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 rounded-(--p-inputtext-border-radius) border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
-        [class.ng-invalid]="hasError"
-        [class.ng-dirty]="hasError"
-        [class.border-(--p-inputtext-invalid-border-color)]="hasError"
-        [disabled]="isDisabled"
-        [attr.aria-expanded]="store.overlayOpen()"
-        data-testid="host-folder-trigger"
-        (click)="toggleOverlay($event)">
-        @if (store.triggerIconType() === 'site') {
-            <span class="material-symbols-outlined flex-none text-lg text-surface-500">public</span>
-        } @else {
-            <span class="material-symbols-outlined flex-none text-lg text-surface-500">folder</span>
-        }
+    <!-- The caller may supply its own trigger — a filter chip, say — while this component keeps
+         owning the browser below. Projected content replaces both the default trigger and its copy
+         action, since a caller that brings its own has no use for either.
 
-        <span
-            class="min-w-0 flex-auto truncate text-(--p-inputtext-color)"
-            data-testid="host-folder-trigger-label">
-            @if (store.showTriggerLoading()) {
-                <span data-testid="host-folder-trigger-skeleton">
-                    <p-skeleton width="60%" height="1rem" />
+         The wrapper carries the click: projection moves nodes, it does not hand them this
+         component's handlers, so a projected trigger with no wrapper is a button that does nothing.
+         `inline-flex` rather than `contents` because `toggleOverlay` measures the trigger to size
+         the overlay, and an element with `display: contents` has no width to measure. -->
+    @if (!$showDefaultTrigger()) {
+        <span class="inline-flex" (click)="toggleOverlay($event)">
+            <ng-content select="[hostFolderTrigger]" />
+        </span>
+    }
+
+    @if ($showDefaultTrigger()) {
+        <button
+            type="button"
+            class="flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 rounded-(--p-inputtext-border-radius) border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
+            [class.ng-invalid]="hasError"
+            [class.ng-dirty]="hasError"
+            [class.border-(--p-inputtext-invalid-border-color)]="hasError"
+            [disabled]="isDisabled"
+            [attr.aria-expanded]="store.overlayOpen()"
+            data-testid="host-folder-trigger"
+            (click)="toggleOverlay($event)">
+            @if (store.triggerIconType() === 'site') {
+                <span class="material-symbols-outlined flex-none text-lg text-surface-500">
+                    public
                 </span>
             } @else {
-                {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+                <span class="material-symbols-outlined flex-none text-lg text-surface-500">
+                    folder
+                </span>
             }
-        </span>
 
-        <i
-            class="pi flex-none text-surface-500"
-            data-testid="host-folder-trigger-icon"
-            [class.pi-spin]="store.showTriggerLoading()"
-            [class.pi-spinner]="store.showTriggerLoading()"
-            [class.pi-chevron-up]="!store.showTriggerLoading() && store.overlayOpen()"
-            [class.pi-chevron-down]="!store.showTriggerLoading() && !store.overlayOpen()"></i>
-    </button>
-
-    <p-button
-        [text]="true"
-        [rounded]="true"
-        size="small"
-        severity="secondary"
-        type="button"
-        data-testid="host-folder-copy"
-        [disabled]="!confirmedNode || isDisabled"
-        [attr.aria-label]="'dot.file.field.host.folder.copy.tooltip' | dm"
-        [pTooltip]="'dot.file.field.host.folder.copy.tooltip' | dm"
-        tooltipPosition="bottom"
-        (onClick)="copyPath()">
-        <ng-template #icon>
-            <span class="material-symbols-outlined text-lg" data-testid="host-folder-copy-icon">
-                {{ $pathCopied() ? 'check' : 'content_copy' }}
+            <span
+                class="min-w-0 flex-auto truncate text-(--p-inputtext-color)"
+                data-testid="host-folder-trigger-label">
+                @if (store.showTriggerLoading()) {
+                    <span data-testid="host-folder-trigger-skeleton">
+                        <p-skeleton width="60%" height="1rem" />
+                    </span>
+                } @else {
+                    {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+                }
             </span>
-        </ng-template>
-    </p-button>
+
+            <i
+                class="pi flex-none text-surface-500"
+                data-testid="host-folder-trigger-icon"
+                [class.pi-spin]="store.showTriggerLoading()"
+                [class.pi-spinner]="store.showTriggerLoading()"
+                [class.pi-chevron-up]="!store.showTriggerLoading() && store.overlayOpen()"
+                [class.pi-chevron-down]="!store.showTriggerLoading() && !store.overlayOpen()"></i>
+        </button>
+
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            severity="secondary"
+            type="button"
+            data-testid="host-folder-copy"
+            [disabled]="!confirmedNode || isDisabled"
+            [attr.aria-label]="'dot.file.field.host.folder.copy.tooltip' | dm"
+            [pTooltip]="'dot.file.field.host.folder.copy.tooltip' | dm"
+            tooltipPosition="bottom"
+            (onClick)="copyPath()">
+            <ng-template #icon>
+                <span class="material-symbols-outlined text-lg" data-testid="host-folder-copy-icon">
+                    {{ $pathCopied() ? 'check' : 'content_copy' }}
+                </span>
+            </ng-template>
+        </p-button>
+    }
 </div>
 
 <p-popover

@@ -132,7 +132,7 @@ import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
         // feeds to the chips, this shell's results table and the store's request builder.
         provideContentDriveFieldFilterHost(),
         // The optional capability the shared field filter needs for Relationship fields. Content
-        // Drive can supply it — `DotSelectExistingContentComponent` lives in a library this portlet
+        // Drive can supply it — the dialog lives in a library this portlet
         // may import and `@dotcms/ui` may not — so the drive keeps exactly today's behaviour.
         DialogService,
         provideContentDriveRelationshipPicker(),

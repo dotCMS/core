@@ -13,7 +13,8 @@ import {
     Injector,
     input,
     signal,
-    viewChild
+    viewChild,
+    booleanAttribute
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -89,6 +90,26 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * It is used to display the required state of the field.
      */
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
+
+    /**
+     * Whether to render this component's own trigger — the input-styled button and its
+     * copy-to-clipboard action.
+     *
+     * Set it to `false` and project a trigger through the `[hostFolderTrigger]` slot instead. The
+     * component keeps owning the browser — sites, folder tree, in-site search, Select/Cancel — and
+     * the caller decides what summons it.
+     *
+     * The seam exists because the relationship picker needs a **filter chip**, matching the Locale
+     * chip beside it, not something shaped like a form input. Restyling this trigger for that case
+     * would put picker looks inside a content-type field, and hiding its parts one input at a time
+     * (`showCopy`, then the next one) is a slope with no bottom.
+     *
+     * Defaults to `true`, so every existing call site is unchanged.
+     */
+    $showDefaultTrigger = input(true, {
+        alias: 'showDefaultTrigger',
+        transform: booleanAttribute
+    });
     /**
      * Reference to the overlay panel, used to close it programmatically after
      * committing a selection.

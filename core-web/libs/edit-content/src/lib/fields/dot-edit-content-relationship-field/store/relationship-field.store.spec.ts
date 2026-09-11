@@ -14,7 +14,7 @@ import { ComponentStatus, DotLanguage, FeaturedFlags } from '@dotcms/dotcms-mode
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { RelationshipFieldService } from './relationship-field.service';
-import { RelationshipFieldStore } from './relationship-field.store';
+import { RELATED_PAGE_SIZE, RelationshipFieldStore } from './relationship-field.store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
@@ -93,11 +93,7 @@ describe('RelationshipFieldStore', () => {
             expect(store.data()).toEqual([]);
             expect(store.status()).toBe(ComponentStatus.INIT);
             expect(store.selectionMode()).toBeNull();
-            expect(store.pagination()).toEqual({
-                offset: 0,
-                currentPage: 1,
-                rowsPerPage: 6
-            });
+            expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE);
         });
     });
 
@@ -174,86 +170,31 @@ describe('RelationshipFieldStore', () => {
 
                 expect(store.data()).toEqual(mockData);
             });
-
-            it('should reset pagination to page 1 when data is replaced', () => {
-                const eightItems = Array.from({ length: 8 }, (_, i) =>
-                    createFakeContentlet({
-                        inode: `set-inode-${i + 1}`,
-                        identifier: `set-identifier-${i + 1}`,
-                        id: `${i + 1}`
-                    })
-                );
-                store.setData(eightItems);
-
-                // Navigate to page 2
-                store.nextPage();
-                expect(store.pagination().currentPage).toBe(2);
-                expect(store.pagination().offset).toBe(6);
-
-                // Replace with fewer items
-                store.setData(mockData);
-
-                expect(store.pagination().currentPage).toBe(1);
-                expect(store.pagination().offset).toBe(0);
-                expect(store.data()).toEqual(mockData);
-            });
         });
 
         describe('reorderData', () => {
-            it('should update data without resetting pagination', () => {
-                const eightItems = Array.from({ length: 8 }, (_, i) =>
+            it('should apply the new order and mark the change as a user edit', () => {
+                const items = Array.from({ length: 8 }, (_, i) =>
                     createFakeContentlet({
                         inode: `reorder-inode-${i + 1}`,
                         identifier: `reorder-identifier-${i + 1}`,
                         id: `${i + 1}`
                     })
                 );
-                store.setData(eightItems);
-
-                // Navigate to page 2
-                store.nextPage();
-                expect(store.pagination().currentPage).toBe(2);
-                expect(store.pagination().offset).toBe(6);
-
-                // Reorder items (swap first two)
-                const reordered = [...eightItems];
-                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
-                store.reorderData(reordered);
-
-                // Pagination should be preserved
-                expect(store.pagination().currentPage).toBe(2);
-                expect(store.pagination().offset).toBe(6);
-                expect(store.data()[0].inode).toBe('reorder-inode-2');
-                expect(store.data()[1].inode).toBe('reorder-inode-1');
-            });
-
-            it('should update data on page 1 without changing pagination', () => {
-                const items = Array.from({ length: 8 }, (_, i) =>
-                    createFakeContentlet({
-                        inode: `p1-inode-${i + 1}`,
-                        identifier: `p1-identifier-${i + 1}`,
-                        id: `${i + 1}`
-                    })
-                );
                 store.setData(items);
 
-                expect(store.pagination().currentPage).toBe(1);
-                expect(store.pagination().offset).toBe(0);
-
-                // Reorder items
                 const reordered = [...items];
                 [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
                 store.reorderData(reordered);
 
-                // Should stay on page 1
-                expect(store.pagination().currentPage).toBe(1);
-                expect(store.pagination().offset).toBe(0);
-                expect(store.data()[0].inode).toBe('p1-inode-2');
+                expect(store.data()[0].inode).toBe('reorder-inode-2');
+                expect(store.data()[1].inode).toBe('reorder-inode-1');
+                expect(store.lastChangeSource()).toBe('user');
             });
         });
 
         describe('refreshItem', () => {
-            it('should replace the matching item by identifier, keeping the current page', () => {
+            it('should replace the matching item by identifier, keeping revealed rows revealed', () => {
                 const eightItems = Array.from({ length: 8 }, (_, i) =>
                     createFakeContentlet({
                         inode: `refresh-inode-${i + 1}`,
@@ -263,9 +204,10 @@ describe('RelationshipFieldStore', () => {
                 );
                 store.setData(eightItems);
 
-                // The user is on page 2, looking at the row they just edited elsewhere.
-                store.nextPage();
-                expect(store.pagination().currentPage).toBe(2);
+                // The editor has revealed a second page of rows and is looking at one they just
+                // edited elsewhere.
+                store.loadMore();
+                expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE * 2);
 
                 // A save mints a new inode; the identifier is what stays stable.
                 store.refreshItem(
@@ -276,10 +218,9 @@ describe('RelationshipFieldStore', () => {
                     })
                 );
 
-                // Snapping back to page 1 would lose the user's place — this is why the method
-                // exists instead of reusing setData.
-                expect(store.pagination().currentPage).toBe(2);
-                expect(store.pagination().offset).toBe(6);
+                // Collapsing the revealed rows would lose the editor's place — this is why the
+                // method exists instead of reusing setData.
+                expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE * 2);
                 expect(store.data()[6].inode).toBe('inode-after-save');
                 expect(store.data()[6].title).toBe('Edited elsewhere');
                 expect(store.data().length).toBe(8);
@@ -317,118 +258,10 @@ describe('RelationshipFieldStore', () => {
                 expect(store.data().length).toBe(2);
                 expect(store.data().find((item) => item.inode === 'inode1')).toBeUndefined();
             });
-
-            it('should reset pagination when current page exceeds total after delete', () => {
-                const sevenItems = Array.from({ length: 7 }, (_, i) =>
-                    createFakeContentlet({
-                        inode: `del-inode-${i + 1}`,
-                        identifier: `del-identifier-${i + 1}`,
-                        id: `${i + 1}`
-                    })
-                );
-                store.setData(sevenItems);
-
-                // Navigate to page 2 (offset 6, only item index 6)
-                store.nextPage();
-                expect(store.pagination().currentPage).toBe(2);
-                expect(store.pagination().offset).toBe(6);
-
-                // Delete the single item on page 2
-                store.deleteItem('del-inode-7');
-
-                // Should reset to page 1
-                expect(store.pagination().currentPage).toBe(1);
-                expect(store.pagination().offset).toBe(0);
-                expect(store.data().length).toBe(6);
-            });
-
-            it('should stay on current page when delete does not invalidate it', () => {
-                const nineItems = Array.from({ length: 9 }, (_, i) =>
-                    createFakeContentlet({
-                        inode: `stay-inode-${i + 1}`,
-                        identifier: `stay-identifier-${i + 1}`,
-                        id: `${i + 1}`
-                    })
-                );
-                store.setData(nineItems);
-
-                // Navigate to page 2 (offset 6, items 7-9)
-                store.nextPage();
-                expect(store.pagination().currentPage).toBe(2);
-                expect(store.pagination().offset).toBe(6);
-
-                // Delete one of the 3 items on page 2
-                store.deleteItem('stay-inode-8');
-
-                // Should stay on page 2
-                expect(store.pagination().currentPage).toBe(2);
-                expect(store.pagination().offset).toBe(6);
-                expect(store.data().length).toBe(8);
-            });
-
-            it('should reset pagination to page 1 when all items are deleted', () => {
-                const sevenItems = Array.from({ length: 7 }, (_, i) =>
-                    createFakeContentlet({
-                        inode: `all-inode-${i + 1}`,
-                        identifier: `all-identifier-${i + 1}`,
-                        id: `${i + 1}`
-                    })
-                );
-                store.setData(sevenItems);
-
-                // Navigate to page 2
-                store.nextPage();
-
-                // Delete all items on page 2, then all on page 1
-                store.deleteItem('all-inode-7');
-                // Now back on page 1 (auto-reset), delete remaining
-                for (let i = 1; i <= 6; i++) {
-                    store.deleteItem(`all-inode-${i}`);
-                }
-
-                expect(store.pagination().currentPage).toBe(1);
-                expect(store.pagination().offset).toBe(0);
-                expect(store.data().length).toBe(0);
-            });
-        });
-
-        describe('pagination', () => {
-            it('should handle next page correctly', () => {
-                store.nextPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 6,
-                    currentPage: 2,
-                    rowsPerPage: 6
-                });
-            });
-
-            it('should handle previous page correctly', () => {
-                store.nextPage();
-                store.previousPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 0,
-                    currentPage: 1,
-                    rowsPerPage: 6
-                });
-            });
         });
     });
 
     describe('Computed Properties', () => {
-        describe('totalPages', () => {
-            it('should compute total pages correctly', () => {
-                store.setData(mockData);
-
-                expect(store.totalPages()).toBe(1);
-            });
-
-            it('should handle empty data', () => {
-                expect(store.totalPages()).toBe(0);
-            });
-        });
-
         describe('isDisabledCreateNewContent', () => {
             beforeEach(() => {
                 const mockField = createFakeRelationshipField({
@@ -473,47 +306,6 @@ describe('RelationshipFieldStore', () => {
                 store.setData(mockData);
 
                 expect(store.isDisabledCreateNewContent()).toBe(false);
-            });
-        });
-
-        describe('paginatedData', () => {
-            const paginatedMockData = Array.from({ length: 8 }, (_, i) =>
-                createFakeContentlet({
-                    inode: `page-inode-${i + 1}`,
-                    identifier: `page-identifier-${i + 1}`,
-                    id: `${i + 1}`
-                })
-            );
-
-            it('should return first page slice by default', () => {
-                store.setData(paginatedMockData);
-
-                const result = store.paginatedData();
-                expect(result.length).toBe(6);
-                expect(result[0].inode).toBe('page-inode-1');
-                expect(result[5].inode).toBe('page-inode-6');
-            });
-
-            it('should return second page after nextPage()', () => {
-                store.setData(paginatedMockData);
-                store.nextPage();
-
-                const result = store.paginatedData();
-                expect(result.length).toBe(2);
-                expect(result[0].inode).toBe('page-inode-7');
-                expect(result[1].inode).toBe('page-inode-8');
-            });
-
-            it('should return empty array when data is empty', () => {
-                expect(store.paginatedData()).toEqual([]);
-            });
-
-            it('should update when data changes', () => {
-                store.setData(paginatedMockData);
-                expect(store.paginatedData().length).toBe(6);
-
-                store.setData(paginatedMockData.slice(0, 3));
-                expect(store.paginatedData().length).toBe(3);
             });
         });
 
@@ -603,29 +395,6 @@ describe('RelationshipFieldStore', () => {
     });
 
     describe('Edge Cases', () => {
-        describe('pagination handling', () => {
-            it('should handle multiple page transitions correctly', () => {
-                // Move forward two pages
-                store.nextPage();
-                store.nextPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 12,
-                    currentPage: 3,
-                    rowsPerPage: 6
-                });
-
-                // Move back one page
-                store.previousPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 6,
-                    currentPage: 2,
-                    rowsPerPage: 6
-                });
-            });
-        });
-
         describe('data manipulation', () => {
             it('should handle deletion of non-existent item gracefully', () => {
                 store.setData(mockData);
@@ -873,6 +642,121 @@ describe('RelationshipFieldStore', () => {
             });
         });
     });
+
+    describe('Load more (US4)', () => {
+        const many = (n: number) =>
+            Array.from({ length: n }, (_, i) =>
+                createFakeContentlet({
+                    inode: `inode${i}`,
+                    identifier: `identifier${i}`,
+                    id: `${i}`
+                })
+            );
+
+        it('starts by rendering the first page and no more', () => {
+            store.setData(many(95));
+
+            expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE);
+            expect(store.$visibleItems()).toHaveLength(RELATED_PAGE_SIZE);
+        });
+
+        it('renders everything and reports nothing remaining for a short list', () => {
+            store.setData(many(12));
+
+            expect(store.$visibleItems()).toHaveLength(12);
+            expect(store.$remaining()).toBe(0);
+        });
+
+        it('reveals one page at a time and stops once everything is on screen', () => {
+            store.setData(many(95));
+
+            store.loadMore();
+            expect(store.$visibleItems()).toHaveLength(80);
+            expect(store.$remaining()).toBe(15);
+
+            store.loadMore();
+            expect(store.$visibleItems()).toHaveLength(95);
+            expect(store.$remaining()).toBe(0);
+        });
+
+        /**
+         * FR-023. The bug `DotKeyValueComponent` hit and documented: with the count derived from
+         * the data, a single removal after revealing rows snapped the table back to 40.
+         */
+        it('keeps revealed rows revealed when an item is removed', () => {
+            store.setData(many(95));
+            store.loadMore();
+            store.deleteItem('inode0');
+
+            expect(store.visibleCount()).toBe(80);
+        });
+
+        it('keeps revealed rows revealed when the list is reordered', () => {
+            store.setData(many(95));
+            store.loadMore();
+            store.reorderData(many(95).reverse());
+
+            expect(store.visibleCount()).toBe(80);
+        });
+
+        /**
+         * FR-022. Withholding is a rendering limit, never a change to the value: everything the
+         * field holds is emitted regardless of how much of it is on screen.
+         */
+        it('emits every item, including the withheld ones', () => {
+            store.setData(many(95));
+
+            expect(store.data()).toHaveLength(95);
+            expect(store.formattedRelationship().split(',')).toHaveLength(95);
+        });
+
+        it('does not lose withheld items when a visible row is removed', () => {
+            store.setData(many(95));
+            store.deleteItem('inode0');
+
+            expect(store.data()).toHaveLength(94);
+        });
+
+        it('does not reorder withheld items as a side effect of a drag', () => {
+            const items = many(95);
+            store.setData(items);
+            const reordered = [items[1], items[0], ...items.slice(2)];
+            store.reorderData(reordered);
+
+            expect(
+                store
+                    .data()
+                    .map((i) => i.inode)
+                    .slice(2)
+            ).toEqual(items.slice(2).map((i) => i.inode));
+        });
+    });
+
+    /**
+     * US4 / T060 — the regression guard.
+     *
+     * Passes today and must never stop passing. A programmatic load that marks the form dirty makes
+     * the unsaved-changes guard fire on content the editor never touched, and this state lives
+     * right beside the paging state being deleted.
+     */
+    describe('lastChangeSource is untouched by the paging removal (US4)', () => {
+        it('stays "user" for an explicit edit', () => {
+            store.setData([createFakeContentlet({ inode: 'a', identifier: 'a' })]);
+            expect(store.lastChangeSource()).toBe('user');
+        });
+
+        it('stays "user" for a removal and for a reorder', () => {
+            store.setData([
+                createFakeContentlet({ inode: 'a', identifier: 'a' }),
+                createFakeContentlet({ inode: 'b', identifier: 'b' })
+            ]);
+            store.deleteItem('a');
+            expect(store.lastChangeSource()).toBe('user');
+
+            store.reorderData([createFakeContentlet({ inode: 'b', identifier: 'b' })]);
+            expect(store.lastChangeSource()).toBe('user');
+        });
+    });
 });
 
 describe('RelationshipFieldStore - Instance Isolation', () => {
@@ -988,4 +872,11 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         expect(store1.data().length).toBe(0);
         expect(store2.data().length).toBe(1);
     });
+
+    /**
+     * US4 — the related list drops paging and reveals rows in pages of 40 instead.
+     *
+     * Mirrors `DotKeyValueComponent`, whose comments already record the trap: deriving the visible
+     * count from the data collapses the table to the first page on every edit.
+     */
 });

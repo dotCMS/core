@@ -4,12 +4,10 @@ import { of, Subject } from 'rxjs';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotSelectExistingContentComponent } from '@dotcms/edit-content';
+import { AddRelationshipsComponent } from '@dotcms/edit-content';
 import { DOT_RELATIONSHIP_PICKER, DotRelationshipPicker } from '@dotcms/ui';
 
 import { provideContentDriveRelationshipPicker } from './content-drive-relationship-picker';
-
-import { DotContentDriveRelationshipFooterComponent } from '../components/dot-content-drive-relationship-footer/dot-content-drive-relationship-footer.component';
 
 const relationshipField = (): DotCMSContentTypeField =>
     ({
@@ -52,18 +50,32 @@ describe('provideContentDriveRelationshipPicker', () => {
 
     afterEach(() => jest.clearAllMocks());
 
-    it('should open the same content-selection dialog Content Drive always opened', () => {
+    /**
+     * Names the component this provider opens.
+     *
+     * Updated by #37192 when the dialog was replaced. That is permitted: the contract
+     * (`specs/37192-relationship-field-assetpicker/contracts/relationship-picker.contract.md`, C5)
+     * fixes what `open()` **returns** and when it completes, and explicitly allows the dialog
+     * itself to change — "its dialog may look different after this work". The five cases below,
+     * which are the contract proper, passed unmodified through that swap.
+     */
+    it('should open the content-selection dialog Content Drive opens', () => {
         dialogService.open.mockReturnValue({ onClose: of(undefined) } as never);
 
         picker.open(relationshipField(), []).subscribe();
 
         expect(dialogService.open).toHaveBeenCalledWith(
-            DotSelectExistingContentComponent,
+            AddRelationshipsComponent,
             expect.objectContaining({
-                // The field's name is the dialog title; the rest is the geometry the drive shipped.
+                // The field's name is the dialog title; the rest is the dialog's geometry.
+                //
+                // Updated by #37192: the windowed size moved from `90%` plus an inline
+                // `max-width` to a single `min()` width, because those inline caps survive
+                // maximisation and kept the full-screen toggle from doing anything. Presentation,
+                // which the contract explicitly allows to change (C5).
                 header: 'Author',
-                width: '90%',
-                height: '90%',
+                width: 'min(90vw, 114rem)',
+                height: 'min(90vh, 68rem)',
                 modal: true,
                 appendTo: 'body',
                 maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field'
@@ -71,9 +83,11 @@ describe('provideContentDriveRelationshipPicker', () => {
         );
     });
 
-    it('should use the filter footer, where Apply is enabled at zero selections', () => {
-        // Clearing the relationship is a valid filter state — which is the whole reason this
-        // footer exists instead of edit-content's own.
+    it('should label the confirm action "Apply", as a filter rather than an edit', () => {
+        // Clearing the relationship is a valid filter state, and the dialog's own footer keeps
+        // Apply enabled at zero selections (#37192) — so this surface no longer injects a
+        // replacement footer, only its label. The replaced footer could reach the dialog's store
+        // solely because that store was `providedIn: 'root'`; the new one is per-dialog.
         dialogService.open.mockReturnValue({ onClose: of(undefined) } as never);
 
         picker.open(relationshipField(), []).subscribe();
@@ -81,7 +95,9 @@ describe('provideContentDriveRelationshipPicker', () => {
         expect(dialogService.open).toHaveBeenCalledWith(
             expect.anything(),
             expect.objectContaining({
-                templates: { footer: DotContentDriveRelationshipFooterComponent }
+                data: expect.objectContaining({
+                    confirmLabel: 'content-drive.field-filter.apply'
+                })
             })
         );
     });
@@ -100,7 +116,11 @@ describe('provideContentDriveRelationshipPicker', () => {
                     // Always single: a filter matches one related value, and cardinality is an
                     // edit-time concern that would disable rows here for no reason.
                     selectionMode: 'single',
-                    currentItemsIds: ['inode-1']
+                    // Nothing to seed from: this caller holds inodes, not contentlets, because
+                    // that is all the token's signature carries. #37192.
+                    selected: [],
+                    selectedInodes: ['inode-1'],
+                    confirmLabel: 'content-drive.field-filter.apply'
                 }
             })
         );
