@@ -1,0 +1,115 @@
+<form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <p class="mb-4 text-xs text-gray-500">{{ 'tools.tool-dialog.description' | dm }}</p>
+
+    <div class="field">
+        <label for="tools-tool-name">
+            {{ 'tools.form.name' | dm }}
+            <span class="text-red-600">*</span>
+        </label>
+        <input
+            pInputText
+            id="tools-tool-name"
+            formControlName="portletName"
+            [placeholder]="'tools.tool-dialog.name.placeholder' | dm"
+            (input)="onNameChange(form.controls.portletName.value)"
+            [class.ng-invalid]="$nameShowsError()"
+            [class.ng-dirty]="$nameShowsError()"
+            data-testid="tools-tool-name-input"
+            class="w-full" />
+        @if ($nameShowsError()) {
+            <small class="text-red-600" data-testid="tools-tool-name-error">
+                {{ 'tools.form.error.name-required' | dm }}
+            </small>
+        }
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-id">{{ 'tools.form.id' | dm }}</label>
+        <input
+            pInputText
+            id="tools-tool-id"
+            formControlName="portletId"
+            [placeholder]="'tools.tool-dialog.id.placeholder' | dm"
+            (input)="onIdTouched()"
+            [class.ng-invalid]="$idShowsError()"
+            [class.ng-dirty]="$idShowsError()"
+            data-testid="tools-tool-id-input"
+            class="w-full font-mono text-sm" />
+        @if ($idShowsError()) {
+            <small class="text-red-600" data-testid="tools-tool-id-error">
+                {{ 'tools.form.error.id-required' | dm }}
+            </small>
+        } @else {
+            <small class="text-gray-500">{{ 'tools.tool-dialog.id.hint' | dm }}</small>
+        }
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-base-types">{{ 'tools.form.base-types' | dm }}</label>
+        <p-multiSelect
+            inputId="tools-tool-base-types"
+            formControlName="baseTypes"
+            [options]="baseTypes"
+            optionLabel="label"
+            optionValue="id"
+            display="chip"
+            [placeholder]="'tools.form.base-types.placeholder' | dm"
+            appendTo="body"
+            data-testid="tools-tool-base-types-select"
+            styleClass="w-full" />
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-content-types">{{ 'tools.form.content-types' | dm }}</label>
+        <p-multiSelect
+            inputId="tools-tool-content-types"
+            formControlName="contentTypes"
+            [options]="$contentTypes()"
+            [loading]="$contentTypesLoading()"
+            optionLabel="label"
+            optionValue="variable"
+            display="chip"
+            [filter]="true"
+            filterBy="label"
+            [placeholder]="'tools.form.content-types.placeholder' | dm"
+            appendTo="body"
+            data-testid="tools-tool-content-types-select"
+            styleClass="w-full" />
+        <small class="text-gray-500">{{ 'tools.form.content-types.hint' | dm }}</small>
+    </div>
+
+    <div class="field">
+        <label for="tools-tool-view-mode">{{ 'tools.form.data-view-mode' | dm }}</label>
+        <p-selectButton
+            inputId="tools-tool-view-mode"
+            formControlName="dataViewMode"
+            [options]="viewModes"
+            optionLabel="label"
+            optionValue="id"
+            [allowEmpty]="false"
+            data-testid="tools-tool-view-mode-select" />
+    </div>
+
+    <div class="mt-4 flex items-center gap-2">
+        @if ($submitted() && form.invalid) {
+            <span
+                class="mr-auto inline-flex items-center gap-2 text-xs text-red-600"
+                data-testid="tools-tool-form-error">
+                <span class="material-symbols-outlined text-base leading-none">warning</span>
+                <span>{{ 'tools.form.error.summary' | dm }}</span>
+            </span>
+        } @else {
+            <span class="mr-auto"></span>
+        }
+        <p-button
+            [label]="'tools.form.cancel' | dm"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+            data-testid="tools-tool-cancel-btn" />
+        <p-button
+            [label]="(isEdit ? 'tools.form.save' : 'tools.form.create') | dm"
+            type="submit"
+            data-testid="tools-tool-save-btn" />
+    </div>
+</form>
