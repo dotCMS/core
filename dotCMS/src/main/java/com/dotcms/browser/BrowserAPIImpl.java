@@ -3042,7 +3042,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     } // dotAssetMap.
 
     private Map<String, Object> dotContentMap(final Contentlet dotAsset) throws DotStateException {
-        return new DotTransformerBuilder().defaultOptions().content(dotAsset).build().toMaps().get(0);
+        // issue #37185: opt-in only at this call site -- never added to defaultOptions -- so no
+        // other consumer of DotTransformerBuilder#defaultOptions() (ContentResource, GraphQL, the
+        // Content Editor, etc.) is affected.
+        return new DotTransformerBuilder().defaultOptions().longTextPreview().content(dotAsset)
+                .build().toMaps().get(0);
     } // dotAssetMap.
 
 

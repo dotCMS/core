@@ -7,8 +7,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.DotAssetDataGen;
@@ -70,6 +75,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2530,5 +2536,294 @@ public class BrowserAPITest extends IntegrationTestBase {
         final File file = new File(Files.createTempDirectory("issue37050").toFile(), name);
         FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
         return file;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // issue #37185 -- long-text listing projection trim (blast-radius regression, US2).
+    //
+    // T030-T033 from specs/37185-content-drive-listing-longtext-projection/tasks.md. Pins the
+    // generic-Content row shape from both getPaginatedContents (Content Drive) and
+    // getFolderContent (Site Browser), which share dotContentMap.
+
+    private static final String LTP_WYSIWYG_VAR = "ltpWysiwyg";
+    private static final String LTP_TEXTAREA_VAR = "ltpTextArea";
+    private static final String LTP_STORY_VAR = "ltpStory";
+
+    /**
+     * AC-002: every field the Content Drive grid/toolbar/action menu depend on, for a
+     * generic-Content row. {@code mimeType}/{@code extension} are File Asset-specific and
+     * legitimately absent here (found running this test against a generic content type).
+     */
+    private static final List<String> REQUIRED_LISTING_KEYS = List.of(
+            "identifier", "inode", "title", "contentType", "baseType", "languageId", "live",
+            "working", "archived", "hasLiveVersion", "modUser", "modUserName", "modDate",
+            "permissions", "icon", "hasTitleImage", "owner");
+
+    private static String storyBlockJson(final String text) {
+        return "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":"
+                + "[{\"type\":\"text\",\"text\":\"" + text + "\"}]}]}";
+    }
+
+    private static ContentType createLongTextContentType(final String uniqueId) {
+        final ContentType contentType = new ContentTypeDataGen()
+                .name("ltpType_" + uniqueId)
+                .velocityVarName("ltpType_" + uniqueId)
+                .nextPersisted();
+        new FieldDataGen().type(WysiwygField.class).name(LTP_WYSIWYG_VAR)
+                .velocityVarName(LTP_WYSIWYG_VAR).contentTypeId(contentType.id())
+                .searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(TextAreaField.class).name(LTP_TEXTAREA_VAR)
+                .velocityVarName(LTP_TEXTAREA_VAR).contentTypeId(contentType.id())
+                .searchable(true).indexed(true).nextPersisted();
+        new FieldDataGen().type(StoryBlockField.class).name(LTP_STORY_VAR)
+                .velocityVarName(LTP_STORY_VAR).contentTypeId(contentType.id())
+                .searchable(true).indexed(true).nextPersisted();
+        return contentType;
+    }
+
+    private static void assertRequiredKeysPresent(final Map<String, Object> row) {
+        for (final String key : REQUIRED_LISTING_KEYS) {
+            assertTrue("Row must carry required key '" + key + "': " + row.keySet(),
+                    row.containsKey(key));
+        }
+    }
+
+    private static void assertLongTextValuesArePreviews(final Map<String, Object> row,
+            final String rawHtmlBody) {
+        for (final String var : List.of(LTP_WYSIWYG_VAR, LTP_TEXTAREA_VAR, LTP_STORY_VAR)) {
+            final Object value = row.get(var);
+            assertTrue("'" + var + "' must be a String preview", value instanceof String);
+            final String preview = (String) value;
+            assertTrue("'" + var + "' preview must be <=150 chars", preview.length() <= 150);
+            assertFalse("'" + var + "' preview must not contain HTML markers",
+                    preview.contains("<") || preview.contains(">"));
+            assertFalse("'" + var + "' preview must not contain JSON structure",
+                    preview.contains("{") || preview.contains("}"));
+            assertTrue("'" + var + "' preview must be shorter than the raw stored value",
+                    preview.length() < rawHtmlBody.length());
+        }
+    }
+
+    /**
+     * AC-002: "Payload for a 40-row page of long-body generic Content drops by at least half
+     * versus current behavior." Compares serialized JSON sizes for just the three long-text
+     * fields -- pre-fix (raw, untruncated stored values) versus post-fix (the previews actually
+     * in {@code row}) -- directly, rather than relying on a proxy ratio. Scoped to only the
+     * affected fields (not the whole row) so the required keys shared by both pre- and post-fix
+     * rows don't dilute the ratio with fixed overhead unrelated to this strategy's trim (found in
+     * review: none of the existing assertions pinned AC-002, the PR's one quantitative
+     * acceptance criterion).
+     */
+    private static void assertPayloadSizeDropsByAtLeastHalf(final Map<String, Object> row,
+            final String rawHtmlBody, final String rawStoryBlockJson) throws Exception {
+        final ObjectMapper objectMapper = new ObjectMapper();
+
+        final Map<String, Object> preFixFields = new LinkedHashMap<>();
+        preFixFields.put(LTP_WYSIWYG_VAR, rawHtmlBody);
+        preFixFields.put(LTP_TEXTAREA_VAR, rawHtmlBody);
+        preFixFields.put(LTP_STORY_VAR, rawStoryBlockJson);
+
+        final Map<String, Object> postFixFields = new LinkedHashMap<>();
+        postFixFields.put(LTP_WYSIWYG_VAR, row.get(LTP_WYSIWYG_VAR));
+        postFixFields.put(LTP_TEXTAREA_VAR, row.get(LTP_TEXTAREA_VAR));
+        postFixFields.put(LTP_STORY_VAR, row.get(LTP_STORY_VAR));
+
+        final int postFixBytes = objectMapper.writeValueAsBytes(postFixFields).length;
+        final int preFixBytes = objectMapper.writeValueAsBytes(preFixFields).length;
+
+        assertTrue("Post-fix long-text fields (" + postFixBytes + " bytes) must be less than "
+                        + "half the pre-fix raw values (" + preFixBytes + " bytes) per AC-002",
+                postFixBytes < preFixBytes * 0.5);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A generic-Content row with WYSIWYG/TextArea/Story Block field
+     *     values, listed via the Content Drive path (T030, AC-001/AC-002).</li>
+     *     <li><b>Expected Result:</b> Every AC-002 key is present AND every long-text field value
+     *     is a &lt;=150-character plain-text preview, free of HTML/JSON structure.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_longTextFields_arePreviewedAndRequiredKeysPresent()
+            throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final ContentType contentType = createLongTextContentType(uniqueId);
+
+        final String rawHtmlBody = "<p>" + "word ".repeat(60) + "</p>";
+        final String rawStoryBlockJson = storyBlockJson("word ".repeat(60));
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .folder(folder)
+                .setProperty("title", "ltpDoc_" + uniqueId)
+                .setProperty(LTP_WYSIWYG_VAR, rawHtmlBody)
+                .setProperty(LTP_TEXTAREA_VAR, rawHtmlBody)
+                .setProperty(LTP_STORY_VAR, rawStoryBlockJson)
+                .languageId(1)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+
+        final Map<String, Object> row = result.list.stream()
+                .filter(item -> contentlet.getIdentifier().equals(item.get("identifier")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must find the created contentlet in the listing"));
+
+        assertRequiredKeysPresent(row);
+        assertLongTextValuesArePreviews(row, rawHtmlBody);
+        assertPayloadSizeDropsByAtLeastHalf(row, rawHtmlBody, rawStoryBlockJson);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getFolderContent(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The same content type/data as above, listed via the Site
+     *     Browser path (T031, AC-004).</li>
+     *     <li><b>Expected Result:</b> Same required keys present, same reduced long-text values --
+     *     Site Browser gets identical treatment to Content Drive since both share
+     *     {@code dotContentMap}.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getFolderContent_longTextFields_arePreviewedAndRequiredKeysPresent()
+            throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final ContentType contentType = createLongTextContentType(uniqueId);
+
+        final String rawHtmlBody = "<p>" + "word ".repeat(60) + "</p>";
+        final String rawStoryBlockJson = storyBlockJson("word ".repeat(60));
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .folder(folder)
+                .setProperty("title", "ltpSiteBrowserDoc_" + uniqueId)
+                .setProperty(LTP_WYSIWYG_VAR, rawHtmlBody)
+                .setProperty(LTP_TEXTAREA_VAR, rawHtmlBody)
+                .setProperty(LTP_STORY_VAR, rawStoryBlockJson)
+                .languageId(1)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> results = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> list = (List<Map<String, Object>>) results.get("list");
+
+        final Map<String, Object> row = list.stream()
+                .filter(item -> contentlet.getIdentifier().equals(item.get("identifier")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must find the created contentlet in the listing"));
+
+        assertRequiredKeysPresent(row);
+        assertLongTextValuesArePreviews(row, rawHtmlBody);
+        assertPayloadSizeDropsByAtLeastHalf(row, rawHtmlBody, rawStoryBlockJson);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A content type with a {@code listed} (Show In List) WYSIWYG
+     *     field (T032, AC-003).</li>
+     *     <li><b>Expected Result:</b> The grid column's cell value is present, a &lt;=150-character
+     *     plain-text preview -- not the full body, not blank, not mid-tag garbage.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_listedWysiwygField_rendersReadablePreview() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .name("ltpListedType_" + uniqueId)
+                .velocityVarName("ltpListedType_" + uniqueId)
+                .nextPersisted();
+        new FieldDataGen().type(WysiwygField.class).name(LTP_WYSIWYG_VAR)
+                .velocityVarName(LTP_WYSIWYG_VAR).contentTypeId(contentType.id())
+                .searchable(true).indexed(true).listed(true).nextPersisted();
+
+        final String rawHtmlBody = "<div><p>" + "article body text ".repeat(30) + "</p></div>";
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .folder(folder)
+                .setProperty("title", "ltpListedDoc_" + uniqueId)
+                .setProperty(LTP_WYSIWYG_VAR, rawHtmlBody)
+                .languageId(1)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+
+        final Map<String, Object> row = result.list.stream()
+                .filter(item -> contentlet.getIdentifier().equals(item.get("identifier")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must find the created contentlet in the listing"));
+
+        final Object value = row.get(LTP_WYSIWYG_VAR);
+        assertTrue("Listed WYSIWYG column must be present", row.containsKey(LTP_WYSIWYG_VAR));
+        assertTrue(value instanceof String);
+        final String preview = (String) value;
+        assertFalse("Must not be blank", preview.isEmpty());
+        assertTrue("Must be <=150 chars", preview.length() <= 150);
+        assertFalse("Must not contain HTML tags", preview.contains("<") || preview.contains(">"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A content type whose title-source field is itself a WYSIWYG
+     *     field (its variable is literally {@code "title"}) (T033, AC-008).</li>
+     *     <li><b>Expected Result:</b> The listing's {@code title} key is the correct, untruncated
+     *     title -- not derived from the same map entry the long-text preview strategy truncates.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_wysiwygTitleField_titleKeyStaysUntruncated() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .name("ltpTitleType_" + uniqueId)
+                .velocityVarName("ltpTitleType_" + uniqueId)
+                .nextPersisted();
+        // The title-source field: WYSIWYG, variable name "title" -- Contentlet#getTitle() nominates
+        // the first field whose variable starts with "title" when no separate title is set.
+        new FieldDataGen().type(WysiwygField.class).name("Title")
+                .velocityVarName("title").contentTypeId(contentType.id())
+                .searchable(true).indexed(true).nextPersisted();
+
+        // Kept under 255 chars (raw HTML) -- the contentlet.title column is varchar(255) -- while
+        // its stripped plain text (~220 chars) still comfortably exceeds the 150-char preview
+        // bound, so an accidental truncation of this key would be caught.
+        final String longTitleHtml = "<p>" + "TitleWord ".repeat(22) + "</p>";
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .folder(folder)
+                .setProperty("title", longTitleHtml)
+                .languageId(1)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+
+        final Map<String, Object> row = result.list.stream()
+                .filter(item -> contentlet.getIdentifier().equals(item.get("identifier")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must find the created contentlet in the listing"));
+
+        assertEquals("The title key must equal Contentlet#getTitle(), untruncated",
+                contentlet.getTitle(), row.get("title"));
     }
 }
