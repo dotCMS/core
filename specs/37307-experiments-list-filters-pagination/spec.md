@@ -218,8 +218,8 @@ fewer rows than one page.
 ### Edge Cases
 
 - **A creator is selected, then the page is reloaded.** The selection lives in the address as a
-  user id. The chip has to label it, and a name for it may not be available — see
-  [NEEDS CLARIFICATION 1].
+  user id, and nothing has fetched the directory yet, so the chip holds an id and no name. The
+  selected ids are resolved to names on hydration — see FR-009a.
 - **A creator is selected and the site is switched.** A site switch already restarts paging and
   drops the page narrowing. Whether it should also drop a creator selection: it should not — the
   same person can have experiments on both sites, and status, goal and search all survive a switch
@@ -270,6 +270,14 @@ fewer rows than one page.
 - **FR-009**: People already selected MUST stay selected, and MUST stay labelled, as further pages
   are loaded and as the search term changes — including when the selected person is not present in
   the page currently displayed.
+- **FR-009a**: When a creator selection arrives from the address rather than from a click — a
+  reload, or a shared link — the selected ids MUST be resolved to their display names so the chip
+  labels people rather than opaque ids. The resolution MUST be a lookup of the selected ids, not a
+  scan of the loaded experiments: a person can be selected while having no experiment in view,
+  which is precisely the case that produces the empty state, and that is the case an
+  experiment-derived label would fail to name. A failed resolution MUST leave the filter working —
+  the filter matches on ids and does not depend on the labels — and MUST fall back to showing the
+  id rather than blanking the chip.
 - **FR-010**: The filter's options MUST NOT show result counts. This is a deliberate divergence
   from the Status and Goal chips: a count cannot be computed for a person whose page of the
   directory has not been fetched, and a count shown for some options and not others is worse than
@@ -286,11 +294,20 @@ fewer rows than one page.
 - **FR-014**: The option list's own copy — its "nothing matched" and "failed to load" text — MUST
   read as being about people. The shared component's current copy is worded for content-type
   fields and is wrong here, so it MUST be parameterised or replaced rather than inherited.
-- **FR-015**: The capability that searches the user directory MUST exist in exactly one place in
-  the client. An equivalent already exists but is not reachable from this portlet; the
-  implementation MUST make one reachable rather than add a second copy.
+- **FR-015**: The capability that searches the user directory MUST live in the shared data-access
+  library, and the Experiments portlet MUST consume it from there. It MUST NOT be reached by
+  importing another portlet's library: two portlets already hold an equivalent, and neither
+  publishes it, which is a boundary rather than an oversight.
+- **FR-015a**: Consolidating the two existing portlet-local user searches onto that shared
+  capability is explicitly OUT OF SCOPE. Both keep working untouched. This knowingly leaves three
+  implementations of the same directory call in the tree until a follow-up consolidates them; the
+  follow-up MUST be filed rather than left implied.
 - **FR-016**: The option list MUST be created only once its popover is actually visible, so that a
   virtualised list measures a real viewport rather than a collapsed one and renders its first page.
+- **FR-016a**: The chip's collapsed label MUST follow the behaviour the shared chip already gives
+  the Status and Goal chips — the unfiltered label while nothing is selected, the selected names
+  while there are few, and an overflow summary beyond that. A count badge MUST NOT be introduced
+  for this chip alone.
 
 ### Schedule time filter
 
@@ -326,18 +343,32 @@ fewer rows than one page.
 
 - **FR-028**: The table MUST have a Created By column showing the creator's name as delivered by
   the experiment payload.
-- **FR-029**: The column MUST render the creator's display name, not the creator's id. The client's
-  experiment type MUST be extended to declare that field when #37304 lands.
+- **FR-029**: The column MUST bind to the creator's display-name field and render whatever it
+  carries — including the raw user id that #37304 deliberately falls back to for an unresolvable
+  creator, which is how that field is guaranteed never to be null or empty. "Not the id" forbids
+  binding the column to the creator-id field instead; it does not ask the screen to detect and
+  suppress #37304's fallback. The client's experiment type MUST be extended to declare the field
+  when #37304 lands.
 - **FR-030**: A name too long for its column MUST be truncated with the full value available on
   hover, consistent with the Name and Page columns.
 - **FR-031**: When the payload carries no creator name — a backend older than #37304 — the cell
   MUST show the listing's existing placeholder rather than an empty cell or a literal "undefined".
-- **FR-032**: The column's position MUST follow the design prototype linked from the issue. See
-  [NEEDS CLARIFICATION 2].
+- **FR-032**: The column MUST sit between Variants and Schedule, per the design prototype, giving
+  the header order: Name, Page, Goal, Variants, Created By, Schedule, Status, Modified, actions —
+  nine columns. It is an **addition**: the Modified column stays, even though the prototype does
+  not draw one.
 - **FR-033**: The table's skeleton row MUST draw one placeholder cell per column after the column
-  is added.
+  is added — nine rather than eight.
 - **FR-034**: The table's documented minimum width MUST be recomputed to include the new column, so
-  the elastic Name column keeps the floor its source comment specifies.
+  the elastic Name column keeps the floor its source comment specifies. The comment carries the
+  arithmetic, not just the total, so the sum itself MUST be rewritten rather than the number
+  silently bumped. The new column's own width is an implementation choice, bounded by the two
+  columns it sits between.
+- **FR-034a**: The Created By column MUST be display-only. It MUST NOT be sortable, MUST NOT add a
+  sort field, a sort URL value or a comparator. Every column beside it is sortable, so this has to
+  be said: the screen's sort fields are a closed set whose values double as the table's sort key,
+  the address's sort parameter and the comparator key, so adding one would reach into the address
+  contract this feature otherwise promises to leave alone. Sorting by creator is not asked for.
 
 ### Pagination alignment
 
@@ -370,12 +401,24 @@ fewer rows than one page.
 
 ### Cross-cutting: address, clearing, and the existing narrowing chain
 
-- **FR-045**: Both new filters MUST be represented in the address, and MUST rehydrate from it on
-  reload and on browser back and forward, exactly as the search term, Status and Goal selections do.
+- **FR-045**: **Every filter of this list is part of the address.** The listing's view state —
+  each narrowing, the sort and the paging — lives in the route and nowhere else, so a filtered
+  list can be linked, reloaded and stepped through with browser back and forward without losing
+  what it was showing. This is a standing rule, stated here as a principle so that filters added
+  after these two inherit it rather than re-deciding it. Applied to this work: both new filters
+  MUST be represented in the address and MUST rehydrate from it on reload and on back and forward,
+  exactly as the search term, Status and Goal selections already do.
+- **FR-045a**: The rule covers filters **of the list**. It MUST NOT be over-applied to transient
+  interface state — in particular, the search box inside the Created By popover narrows the option
+  list rather than the data, and MUST NOT be written to the address. Routing it would also rewrite
+  the address on every settled keystroke for as long as the popover is open.
 - **FR-046**: Both MUST join the existing single-writer/single-reader address contract rather than
   writing to the address independently.
 - **FR-047**: A filter in its default state MUST be absent from the address, so a pristine listing
-  still carries no query string.
+  still carries no query string. This satisfies FR-045 rather than bending it: an absent parameter
+  means its default, so the view state stays fully derivable from the route. The stricter reading
+  — always write every parameter — is deliberately not adopted, because it would change all ten
+  existing parameters and the deep links #37005 built on them.
 - **FR-048**: Values in the address that are not recognised MUST be dropped rather than applied —
   an unknown window value, and a malformed creator entry — matching the rule the Status and Goal
   parameters already follow. An unrecognised creator id is not necessarily invalid, so it MUST be
@@ -472,7 +515,7 @@ fewer rows than one page.
     bookmarked under the old 10/25/50 options is not broken.
 - **Known related decisions**:
   - **#37304** — adds the creator's display name to every experiment response. Hard dependency for
-    User Story 3 and for FR-028 through FR-032. Currently open.
+    User Story 3 and for FR-028 through FR-034a. Currently open.
   - **#37007** — swaps the listing to server-side paging and filtering; parked on **#36823**.
     FR-052 states what it must preserve. Its existence is the reason this work does not attempt
     server-side filtering.
@@ -514,47 +557,65 @@ fewer rows than one page.
    supports search, paging, ordering and a total count, and the total is what makes FR-011's stop
    condition possible.
 8. **The column's placement follows the design prototype**, which could not be read while writing
-   this spec (the link requires an authenticated session). FR-032 carries the open question.
+   this spec, so the order in FR-032 was read from the design project directly and confirmed
+   against it.
 9. **No new tests are needed for the two already-correct pagination constants** beyond an assertion
    that pins them, so a later edit cannot silently reintroduce the divergence.
 10. **This is a frontend-only change.** No Java, no SQL, no endpoint, no `openapi.yaml`. The one
     API-shaped dependency, the creator name, belongs to #37304.
+11. **Selected creators are resolved to names by looking them up, not by reading the loaded
+    experiments** (FR-009a). Chosen over the free alternative because the experiment-derived label
+    only works for creators who have an experiment in view and only after #37304 — and the case it
+    fails is exactly the one that produces the empty state, where the chip is the only thing on
+    screen still naming what was filtered.
+12. **The shared user search is created in the shared data-access library and the two existing
+    portlet-local copies are left alone** (FR-015, FR-015a). Chosen over migrating them, to keep a
+    frontend Experiments change from touching two unrelated portlets and their test suites. The
+    cost is recorded openly: three implementations of the same call coexist until the follow-up
+    lands. Note that nothing in the tooling enforces the boundary being respected here — the lint's
+    dependency constraints are unrestricted, and what actually stops a portlet-to-portlet import is
+    that neither portlet publishes its service. The cheap shortcut is therefore available, and is
+    rejected on architecture rather than because it would fail a check.
 
----
+### Where the design prototype and the issue disagree
 
-## Open Questions
+The issue's refinement decisions win in every case below. They are recorded so a reviewer reading
+the prototype alongside this spec is not surprised by the differences.
 
-Two questions need a product answer. Neither blocks the two P1 filters from being planned; the
-first shapes one edge case of US1, the second shapes one detail of the blocked US3.
-
-**[NEEDS CLARIFICATION 1] — How should the Created By chip label a selected person after a
-reload?**
-
-The address stores user ids. On a fresh load nothing has fetched the directory yet, so the chip has
-an id and no name to show. Three answers, with different costs:
-
-| Option | Behaviour | Cost |
-|---|---|---|
-| A | Take the name from the loaded experiments themselves — once #37304 lands, every experiment carries its creator's name, so any creator who has an experiment in view can be labelled | Free, but only covers creators who have experiments in the current view, and only after #37304. A creator with no experiments here — which is exactly the case that produces the empty state — stays unlabelled |
-| B | Fetch the selected ids by name from the directory on hydration | One extra request per reload; always correct |
-| C | Show the raw id until the directory is opened | No cost; shows an opaque id in the chip |
-
-**[NEEDS CLARIFICATION 2] — Where does the Created By column sit, and does it displace anything?**
-
-The design prototype is authoritative and was not readable while writing this spec. The table
-currently runs Name, Page, Goal, Variants, Schedule, Status, Modified, actions, and its width is
-already at a documented floor — the answer determines whether a column is added or one is replaced.
+13. **The prototype shows a per-user experiment count on each option; the issue decided no counts.**
+    FR-010 stands — counts cannot be computed for people whose page of the directory has not been
+    fetched, so some options would carry a number and others would not.
+14. **The prototype's chip reads "Created By" with a count badge once several people are selected.**
+    Rejected in FR-016a in favour of the behaviour the Status and Goal chips already have, so the
+    three chips in one toolbar read alike; a badge on one of them is a new affordance for no
+    functional gain.
+15. **The prototype's time filter offers a selectable "Any schedule" row.** FR-025 deliberately
+    diverges, modelling the default as no selection, so the chip reads neutral while unfiltered and
+    cannot reach the contradictory state of "Any schedule" ticked beside a specific window.
+16. **The prototype's window labels read "Scheduled in last 3 months"** — no "the" — **and its
+    active chip drops the "Scheduled in " prefix.** The issue writes "Scheduled in the last month".
+    The exact catalogue strings are a plan-phase decision; the five options and their meanings are
+    not.
+17. **The prototype draws a round initials avatar beside the creator's name.** Treated as a design
+    note rather than a requirement; the issue asks only for the name, truncated with the full value
+    on hover.
+18. **The prototype's first column is headed "Experiment" where the shipped table reads "Name",
+    and the prototype has no Modified column.** Neither is changed here: renaming a column and
+    dropping one are out of scope, and FR-032 keeps Modified.
 
 ---
 
 ## Dependencies
 
 - **Blocking**: [#37304](https://github.com/dotCMS/core/issues/37304) — the creator's display name
-  in the experiment payload. Blocks User Story 3 and FR-028 through FR-032 only. Open at the time
+  in the experiment payload. Blocks User Story 3 and FR-028 through FR-034a only. Open at the time
   of writing.
 - **Non-blocking, must stay compatible**: [#37007](https://github.com/dotCMS/core/issues/37007)
   (server-side listing, parked on [#36823](https://github.com/dotCMS/core/issues/36823)) and
   [#37005](https://github.com/dotCMS/core/issues/37005) (page-scope narrowing and the editor
   back-link, which share this listing's address contract).
+- **Spawned by this work**: a follow-up to consolidate the two existing portlet-local user searches
+  onto the shared data-access capability introduced here (FR-015a), and to update the comment that
+  currently documents the duplication as waiting for exactly that shared service.
 - **Design**: the Claude Design prototype linked from issue #37307.
 - **Product owners named in the issue**: filters and chips — Jalison. Users endpoint — Humberto.
