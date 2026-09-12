@@ -76,7 +76,13 @@ at all in CI.
 
 ## Multi-issue consolidation
 
-One PR often fixes several issues. The result is **one plan**, posted verbatim to each.
+One PR often fixes several issues, and spec-driven work often lands as several PRs against the same
+issues. Either way the result is **one plan**, posted verbatim to each issue.
+
+A run resolves a **PR set** as well as an issue set: one merged PR, or a PR plus issues you name, or
+issues alone — in which case the PR set is every merged PR linked to them, and coverage runs over the
+union of their diffs. When more than one PR is in play the Summary names them, and names any it did
+not cover. Unmerged PRs are excluded and said to be excluded.
 
 The issue set is the **union** of three sources, with no precedence:
 
@@ -160,7 +166,7 @@ controls, environments, or URLs; prefer fewer verifiable cases over more specula
 - [`SKILL.md`](SKILL.md) — the instructions Claude reads.
 - [`references/comment-format.md`](references/comment-format.md) — comment skeleton, marker, status
   vocabularies, lifecycle, and the pre-post checklist.
-- [`references/coverage-matrix.md`](references/coverage-matrix.md) — the nine product-surface axes,
+- [`references/coverage-matrix.md`](references/coverage-matrix.md) — the ten coverage axes,
   the UI/UX checklist, and the mandatory cases.
 - [`references/examples.md`](references/examples.md) — worked backend and frontend plans.
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — naming, frontmatter, status lifecycle, lint.
