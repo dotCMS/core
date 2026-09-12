@@ -1,0 +1,347 @@
+package com.dotcms.rest.api.v1.asset.bulkupload;
+
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
+import javax.servlet.http.HttpServletRequest;
+import javax.inject.Inject;
+
+/**
+ * Validates a bulk-upload submission and enqueues the run (#37166, spec FR-003, FR-004, FR-013c).
+ * <p>
+ * <b>Order matters here, and it is not arbitrary.</b> Everything decidable without the body is
+ * decided first — the form's shape, the target's existence, the author's rights, and a declared
+ * total already over the ceiling. Only then is the body read, because reading it writes bytes to
+ * shared storage and every check performed afterwards is a check performed too late.
+ *
+ * @author dotCMS
+ */
+@ApplicationScoped
+public class BulkUploadHelper {
+
+    static final String QUEUE_NAME = "assetBulkUpload";
+
+    public static final String MAX_FILES_KEY = "CONTENT_BULK_UPLOAD_MAX_FILES";
+    public static final String MAX_TOTAL_BYTES_KEY = "CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES";
+
+    public static final int DEFAULT_MAX_FILES = 100;
+    public static final long DEFAULT_MAX_TOTAL_BYTES = 1073741824L;
+
+    private final JobQueueManagerAPI jobQueueManagerAPI;
+
+    /**
+     * Required by CDI, never called by this code.
+     * <p>
+     * {@code @ApplicationScoped} is a normal scope, so Weld injects a client proxy rather than the
+     * bean, and building that proxy needs a no-args constructor. Without one the container fails
+     * validation at deployment — {@code WELD-001435, not proxyable} — which does not degrade this
+     * endpoint, it stops dotCMS from starting at all. {@code BulkRefreshHelper} keeps the same
+     * constructor for the same reason.
+     */
+    public BulkUploadHelper() {
+        this.jobQueueManagerAPI = null;
+    }
+
+    @Inject
+    public BulkUploadHelper(final JobQueueManagerAPI jobQueueManagerAPI) {
+        this.jobQueueManagerAPI = jobQueueManagerAPI;
+    }
+
+    /**
+     * Reads the submission and enqueues the batch.
+     *
+     * @param form    the batch parameters, already shape-validated by its own constructor
+     * @param parts   the file parts, read lazily so the ceilings can abort mid-body
+     * @param staging where the content goes — the temp API in production
+     * @param user    the submitting author; the run creates with their permissions and the
+     *                completion is addressed to them
+     * @return the run's handle. The work has not been done.
+     * @throws DoesNotExistException        the target folder or site does not exist — {@code 404}
+     * @throws DotSecurityException         the author may not add children there — {@code 403}
+     * @throws BulkUploadRefusedException   a ceiling was crossed — {@code 400} or {@code 413}
+     */
+    public BulkUploadSubmitResponse submit(final BulkUploadForm form,
+                                           final Iterable<UploadPart> parts,
+                                           final BatchStaging staging,
+                                           final User user,
+                                           final HttpServletRequest request)
+            throws DotDataException, DotSecurityException {
+
+        final int maxFiles = Config.getIntProperty(MAX_FILES_KEY, DEFAULT_MAX_FILES);
+        final long maxTotalBytes = Config.getLongProperty(MAX_TOTAL_BYTES_KEY,
+                DEFAULT_MAX_TOTAL_BYTES);
+
+        // 1. The target and the right to write to it. Before the body, so an author who cannot
+        //    use the folder is never made to upload into it first.
+        final String targetId = resolveAndAuthorizeTarget(form, user);
+
+        // 2. The courtesy refusal (FR-013c.1). Saves an author uploading gigabytes only to be
+        //    refused. Never the enforcement point: a caller can under-declare or omit it, which is
+        //    what step 3 exists for.
+        if (form.getTotalSizeBytes() != null && form.getTotalSizeBytes() > maxTotalBytes) {
+            throw new BulkUploadRefusedException(
+                    BulkUploadRefusedException.Ceiling.TOTAL_SIZE,
+                    String.format("Declared batch size %d exceeds the maximum of %d bytes",
+                            form.getTotalSizeBytes(), maxTotalBytes));
+        }
+
+        // 3. The authoritative read (FR-010a, FR-013c.2). Aborts at whichever ceiling is crossed
+        //    and reclaims what it staged; nothing purges staged content on a schedule.
+        // The staging layer's own per-file ceiling is passed in so THIS reader enforces it. Left
+        // to the staging layer, crossing it raises the same exception, with the same wording, as a
+        // dropped connection — so one over-size file refused the whole submission (FR-011 says it
+        // must be that file's own failure). Ships as -1, in which case nothing changes.
+        final List<StagedPart> staged = new BoundedMultipartReader(staging, maxFiles, maxTotalBytes,
+                APILocator.getTempFileAPI().maxFileSize(request)).read(parts);
+
+        if (staged.isEmpty()) {
+            throw new BulkUploadRefusedException(
+                    BulkUploadRefusedException.Ceiling.FILE_COUNT,
+                    "A bulk upload requires at least one file");
+        }
+
+        final String jobId = jobQueueManagerAPI.createJob(QUEUE_NAME,
+                jobParameters(form, staged, targetId, user, request));
+
+        Logger.info(this, String.format(
+                "Bulk upload job [%s] created by user [%s] for %d file(s) into [%s]",
+                jobId, user.getUserId(), staged.size(), targetId));
+
+        return BulkUploadSubmitResponse.builder()
+                .jobId(jobId)
+                .statusUrl("/api/v1/jobs/" + jobId + "/status")
+                .submitted(staged.size())
+                .build();
+    }
+
+    /**
+     * Resolves the folder or site the batch targets and checks the author may add children to it.
+     * <p>
+     * <b>Permission is checked once, on the target, not per file.</b> Every file in the batch lands
+     * in the same place, so a per-item loop would ask the same question N times — the O(N) pattern
+     * ADR-0020 records as having caused multi-second responses on a comparable endpoint. The
+     * narrower per-file checks the creation path performs are a different question and stay where
+     * they are.
+     */
+    private String resolveAndAuthorizeTarget(final BulkUploadForm form, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        if (UtilMethods.isSet(form.getFolderId())) {
+            final Folder folder = APILocator.getFolderAPI()
+                    .find(form.getFolderId(), user, false);
+            if (folder == null || !UtilMethods.isSet(folder.getInode())) {
+                throw new DoesNotExistException(
+                        "Target folder does not exist: " + form.getFolderId());
+            }
+            if (!permissionAPI.doesUserHavePermission(folder,
+                    PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)) {
+                throw new DotSecurityException(String.format(
+                        "User [%s] may not add children to folder [%s]",
+                        user.getUserId(), form.getFolderId()));
+            }
+            return folder.getIdentifier();
+        }
+
+        final Host site = APILocator.getHostAPI().find(form.getSiteId(), user, false);
+        if (site == null || !UtilMethods.isSet(site.getIdentifier())) {
+            throw new DoesNotExistException("Target site does not exist: " + form.getSiteId());
+        }
+        if (!permissionAPI.doesUserHavePermission(site,
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)) {
+            throw new DotSecurityException(String.format(
+                    "User [%s] may not add children to site [%s]",
+                    user.getUserId(), form.getSiteId()));
+        }
+        return site.getIdentifier();
+    }
+
+    /**
+     * Builds the job's parameters.
+     * <p>
+     * The measured size and resolved media type are <b>copied in</b> rather than re-read when the
+     * run starts. The batch total was accumulated from them before the batch existed, and if the
+     * content later expires the run still knows what it was meant to be processing — so
+     * {@code STAGED_CONTENT_UNAVAILABLE} can name the file instead of reporting an anonymous gap.
+     */
+    private Map<String, Object> jobParameters(final BulkUploadForm form,
+                                              final List<StagedPart> staged,
+                                              final String targetId,
+                                              final User user,
+                                              final HttpServletRequest request) {
+
+        final List<Map<String, Object>> files = new ArrayList<>(staged.size());
+        for (final StagedPart part : staged) {
+            final Map<String, Object> file = new HashMap<>();
+            file.put("fileName", part.fileName());
+            file.put("sizeBytes", part.sizeBytes());
+
+            if (part.isStaged()) {
+                file.put("tempFileId", part.tempFileId());
+                file.put("mimeType", part.mimeType());
+            } else {
+                // Refused before staging, so it has no temp id and no resolved type. The reason
+                // travels instead, and the run records it without attempting the file. Null values
+                // are never put: the framework holds parameters in an ImmutableMap and one null
+                // stalls the SHARED processing loop, not just this job.
+                file.put("refusedReason", part.refusedReason().name());
+            }
+            files.add(file);
+        }
+
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("baseType", form.getBaseType());
+        parameters.put("targetId", targetId);
+
+        // Only the target that was actually given. Exactly one of the two is set by definition, so
+        // putting both would always carry one null — and the job framework stores parameters in an
+        // ImmutableMap, which rejects null values. That does not fail this submission alone: the
+        // insert succeeds and the failure surfaces later inside PostgresJobQueue.nextJob, which is
+        // the *shared* processing loop, so one such job stops every queue from advancing.
+        if (UtilMethods.isSet(form.getFolderId())) {
+            parameters.put("folderId", form.getFolderId());
+        } else {
+            parameters.put("siteId", form.getSiteId());
+        }
+        parameters.put("userId", user.getUserId());
+        parameters.put("stagedFiles", files);
+
+        // Captured here because the run cannot obtain it later. The product's binary-field
+        // strategy resolves a temp id from a thread-local HTTP request, which is null on a worker
+        // thread, so the run retrieves its content by this fingerprint instead. Without it every
+        // file in every batch would fail as unavailable.
+        parameters.put("requestFingerprint",
+                APILocator.getTempFileAPI().getRequestFingerprint(request));
+        // Only when we have one. A null parameter value is rejected by the framework's
+        // ImmutableMap and the failure surfaces inside the shared job loop, stalling every queue in
+        // the product — see the fix that removed the folderId/siteId nulls. An unrecognisable batch
+        // is a small loss; an unusable queue is not.
+        final String fingerprint = submissionFingerprint(form, staged, targetId, user);
+        if (fingerprint != null) {
+            parameters.put("submissionFingerprint", fingerprint);
+
+            // If this exact batch already ran and succeeded, say so and point at it. The client can
+            // then send the author to that run's outcome rather than letting this one collide
+            // against the files the first attempt created and report "every file failed" — which
+            // an author who trusts it answers by deleting files that were already there.
+            findSucceededSubmission(fingerprint)
+                    .ifPresent(jobId -> parameters.put("duplicateOfJobId", jobId));
+        }
+        return parameters;
+    }
+
+    /**
+     * The id of an earlier run of this exact batch that already succeeded, if there is one.
+     * <p>
+     * <b>The collision branch of FR-040, chosen over returning the original handle.</b> Handing back
+     * the first job's id would mean a submission that answers with someone else's run — the client
+     * could not tell an accepted batch from a deduplicated one without inspecting the id it got,
+     * and the content it just uploaded would be left unreferenced. Flagging instead keeps the two
+     * facts separate: this submission was accepted, and it repeats one that already ran. FR-040a is
+     * satisfied because the flag distinguishes a duplicate from a batch whose files genuinely all
+     * collided, which is a real and different outcome the author must still be told about.
+     * <p>
+     * Matched on the fingerprint alone, so the same files into a different folder are correctly
+     * <b>not</b> a duplicate — the target is part of what is hashed. Only SUCCESS counts: a batch
+     * that failed or was cancelled is something the author may legitimately want to run again.
+     */
+    private Optional<String> findSucceededSubmission(final String fingerprint) {
+        try {
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("SELECT id FROM job WHERE queue_name = ? AND state = ? "
+                            + "AND parameters->>'submissionFingerprint' = ? "
+                            + "ORDER BY created_at DESC")
+                    .addParam(QUEUE_NAME)
+                    .addParam("SUCCESS")
+                    .addParam(fingerprint)
+                    .setMaxRows(1)
+                    .loadObjectResults();
+
+            return rows.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(String.valueOf(rows.get(0).get("id")));
+        } catch (final Exception e) {
+            // Never fail a submission over this. The batch is valid either way; all that is lost is
+            // the ability to recognise it as a repeat, which degrades to today's behaviour.
+            Logger.warn(this, "Could not check whether this batch was already submitted: "
+                    + e.getMessage(), e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * A stable hash identifying <b>this batch</b>, so a resubmission of it can be recognised
+     * (spec FR-040, data-model §1).
+     * <p>
+     * <b>What it is for.</b> An author whose connection dropped before they learned whether their
+     * submission was accepted has to be able to retry. Without a way to tell their retry from a new
+     * batch, the second attempt collides against the files the first one already created and is
+     * reported as "every file failed" — so the author deletes and re-uploads files that were
+     * already there. That is worse than offering no retry at all, which is why C-002a entitles the
+     * client to one and FR-040a requires a duplicate to be distinguishable from a batch whose files
+     * genuinely all collided.
+     * <p>
+     * <b>What goes into it, and why each part.</b> The submitter, because two authors sending the
+     * same files are two batches. The target, because the same files into a different folder is a
+     * different intention. And the ordered {@code (fileName, sizeBytes)} pairs — <b>ordered</b>,
+     * because the outcome reports results in submission order, so a reordered selection is a
+     * different batch with a different report. Sizes are the <b>measured</b> ones (FR-013): a
+     * caller could declare a size to make two different batches look alike, but cannot fake a
+     * measurement.
+     * <p>
+     * <b>What is deliberately left out.</b> The staging ids, which differ on every upload of the
+     * same bytes — including them would make every resubmission look new and defeat the point.
+     */
+    private String submissionFingerprint(final BulkUploadForm form,
+                                         final List<StagedPart> staged,
+                                         final String targetId,
+                                         final User user) {
+
+        final StringBuilder material = new StringBuilder()
+                .append(user.getUserId()).append('|')
+                .append(form.getBaseType()).append('|')
+                .append(targetId);
+
+        for (final StagedPart part : staged) {
+            material.append('|').append(part.fileName()).append(':').append(part.sizeBytes());
+        }
+
+        try {
+            final byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(material.toString().getBytes(StandardCharsets.UTF_8));
+
+            final StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (final byte b : digest) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (final NoSuchAlgorithmException e) {
+            // SHA-256 is mandated by the JDK, so this cannot happen — but a batch must never be
+            // refused over it, and a submission with no fingerprint is still a valid submission
+            // that simply cannot be recognised as a duplicate later.
+            Logger.error(this, "SHA-256 unavailable; this batch will not be recognisable as a "
+                    + "resubmission: " + e.getMessage(), e);
+            return null;
+        }
+    }
+}
