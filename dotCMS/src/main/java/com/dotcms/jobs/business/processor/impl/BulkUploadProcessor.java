@@ -155,11 +155,15 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Creates one asset and commits its outcome in the same breath.
+     * Creates one asset and records its outcome, whatever that outcome is.
      * <p>
-     * The row is written inside the item's own transaction so the record commits with the work it
-     * describes — a crash between the two would otherwise leave a file the resume path does not
-     * know about, and recreate it as a collision.
+     * <b>Every exit from this method records something.</b> A file that is refused, that fails, or
+     * that cannot even be read still leaves a per-item result behind, because the whole feature
+     * exists so the author is told what happened to each of their files — a silent gap in the
+     * outcome is the one failure mode there is no recovering from.
+     * <p>
+     * The record is held in memory for the life of the run, so it does not survive an interruption
+     * (FR-036a) — see {@link #getResultMetadata(Job)}, where that decision is set out.
      */
     private void createOne(final Job job, final Map<String, Object> file, final int seq,
             final User user, final List<String> createdInodes) {
@@ -464,10 +468,6 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
         return size instanceof Number ? ((Number) size).longValue() : 0L;
     }
 
-    /**
-     * Resolves the content type the batch creates into — one type for the whole batch, validated at
-     * submission, so this never has to infer one per file.
-     */
     /**
      * Resolves the <b>specific</b> content type this file should become, from its media type.
      * <p>

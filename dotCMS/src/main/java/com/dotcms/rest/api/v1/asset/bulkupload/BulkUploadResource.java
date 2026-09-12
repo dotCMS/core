@@ -44,7 +44,12 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
  * is told; when one fails, the author gets a count and not the names. This endpoint does the same N
  * ordinary single creates, tracked as <b>one job</b> — authoritative counts, per-file outcomes that
  * name the file and carry a machine-readable reason, progress, a result that is still there
- * tomorrow, and a run that can be cancelled or resumed.
+ * tomorrow, and a run that can be cancelled.
+ * <p>
+ * <b>Not resumed, though.</b> An interrupted run restarts from the first file: the durable per-item
+ * checkpoint that would have made resuming possible was removed with FR-036 … FR-038 (spec
+ * FR-036a), on the grounds that one feature should not carry a private store for state the job
+ * framework does not offer.
  * <p>
  * Content import is the precedent for the shape: multipart in, the temp API called underneath, the
  * work handed to a job.
