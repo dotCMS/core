@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.asset.bulkupload;
 
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityBulkUploadSubmitView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.SecurityUtils;
@@ -98,7 +98,7 @@ public class BulkUploadResource {
             responses = {
                     @ApiResponse(responseCode = "202", description = "Batch queued",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = BulkUploadSubmitResponse.class))),
+                                    schema = @Schema(implementation = ResponseEntityBulkUploadSubmitView.class))),
                     @ApiResponse(responseCode = "400", description =
                             "No files; malformed or missing `form`; unsupported base type; neither "
                                     + "or both of folderId/siteId; more files than the configured "
@@ -137,7 +137,7 @@ public class BulkUploadResource {
                 request);
 
         return Response.status(Response.Status.ACCEPTED)
-                .entity(new ResponseEntityView<>(submitted))
+                .entity(new ResponseEntityBulkUploadSubmitView(submitted))
                 .build();
     }
 
