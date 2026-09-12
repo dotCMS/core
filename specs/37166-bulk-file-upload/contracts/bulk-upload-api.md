@@ -85,10 +85,24 @@ directly (spec FR-003a):
 {
   "entity": {
     "jobId": "e6d9bae8-657b-4e2f-8524-c0222db66355",
-    "statusUrl": "/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status"
+    "statusUrl": "/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status",
+    "submitted": 30
   }
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `jobId` | The run's handle. Everything the client can do afterwards is addressed by this |
+| `statusUrl` | Where to follow, cancel and read the outcome, ready to use — so no client assembles it by hand |
+| `submitted` | How many file parts the **server** read into the batch *(documented 2026-09-11)* |
+
+**`submitted` is the server's own count, and it is the one to display.** It equals the `total` the
+outcome will later report, so the first screen and the last agree by construction. It normally
+matches what the author selected — a part refused by the per-file ceiling still counts here,
+because it is carried into the batch as that file's own failure rather than dropped (FR-011). Where
+it does *not* match, something between the browser and the server lost parts, and a client
+rendering its own count would show a number no later screen ever confirms.
 
 | Status | When |
 |---|---|

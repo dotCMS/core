@@ -12,9 +12,12 @@ import org.immutables.value.Value;
  * framework's own status response and the content import endpoint both include it, and they are
  * the nearer precedents for an endpoint that answers before doing the work.
  * <p>
- * {@code submitted} is the count the server accepted, which is not necessarily what the client
- * believes it sent — a client rendering its own file count instead of this one would misreport a
- * batch whose parts were partly rejected by the reader.
+ * {@code submitted} is the count the <b>server</b> read, and it is the one a client should display:
+ * it equals the {@code total} the outcome later reports, so the first screen and the last agree by
+ * construction. A part the per-file ceiling refused still counts, because it is carried into the
+ * batch as that file's own failure rather than dropped (FR-011) — so this normally matches what the
+ * author selected, and where it does not, parts were lost in transit and the client's own count is
+ * a number no later screen will confirm.
  *
  * @author dotCMS
  */
