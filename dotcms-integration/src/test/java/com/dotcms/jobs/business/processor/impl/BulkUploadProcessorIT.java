@@ -36,6 +36,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayInputStream;
@@ -360,9 +362,9 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                 APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
         assertEquals(10, inFolder.size(), "zero silently discarded");
 
-        // Settled: the run fires NEW, so these are drafts. See
-        // test_run_leavesEveryFileAsADraftRatherThanPublishingIt for the assertion that pins it —
-        // this one would pass either way, because publishing leaves a working version too.
+        // Deliberately no assertion on publish state here: getWorkingContent finds a file whether
+        // it was published or not, so this test would pass either way and pinning it here would be
+        // theatre. test_run_publishesEveryFileItCreates is where FR-006a is actually held.
     }
 
     /**
@@ -981,7 +983,141 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
     }
 
     /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: A content type whose {@code NEW} system action is mapped to an action that
+     * saves, and whose {@code PUBLISH} is mapped to one that publishes — the shipped default.
+     * <p>
+     * Expected result: <b>Both</b> mapped actions were fired, evidenced by the created file's own
+     * workflow history.
+     * <p>
+     * <b>This is the assertion the two-step create exists for.</b> An earlier implementation fired
+     * {@code PUBLISH} alone: it produced published files, so every test then in this class passed,
+     * and it skipped the content type's {@code NEW} action entirely — a customer whose {@code NEW}
+     * action notifies someone or sets a field lost that silently, because a different action did
+     * the saving (FR-006a). Nothing caught it, because nothing asked <i>which</i> actions ran.
+     * Asserting on publish state cannot catch it; only the history can.
+     */
+    @Test
+    public void test_run_firesBothTheNewAndThePublishMapping() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
+
+        mapNewTo(dotAsset, SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
+        try {
+            final Job job = jobFor(folder, 1);
+
+            final BulkUploadProcessor processor = new BulkUploadProcessor();
+            processor.process(job);
+
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
+            assertEquals(1, ((Number) outcome.get("successCount")).intValue(),
+                    "the file has to be created before anything can be said about how.\n"
+                            + describe(outcome));
+
+            final List<Contentlet> created =
+                    APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
+            assertEquals(1, created.size());
+
+            final WorkflowTask task =
+                    APILocator.getWorkflowAPI().findTaskByContentlet(created.get(0));
+            assertTrue(null != task,
+                    "no workflow task at all means neither mapping was fired as a workflow — the "
+                            + "run checked the file in directly and skipped whatever the "
+                            + "administrator configured");
+
+            final List<String> fired = APILocator.getWorkflowAPI().findWorkflowHistory(task)
+                    .stream().map(WorkflowHistory::getActionId).collect(Collectors.toList());
+
+            assertTrue(fired.contains(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID),
+                    "the action mapped to NEW must be the one that saved the file, so a content "
+                            + "type whose NEW action notifies or sets a field still gets that. "
+                            + "Fired: " + fired);
+            assertTrue(fired.contains(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID),
+                    "and the action mapped to PUBLISH must be the one that published it (FR-006a). "
+                            + "Fired: " + fired);
+        } finally {
+            restoreNewMapping(dotAsset);
+        }
+    }
+
+    /**
+     * Method to test: the bulk-upload processor
+     * <p>
+     * Given scenario: A content type whose {@code NEW} system action an administrator has mapped to
+     * an action that does <b>not</b> save — here Unpublish, whose only actionlet unpublishes.
+     * <p>
+     * Expected result: The files are still created, and still published.
+     * <p>
+     * <b>The mirror of {@code test_run_publishesDirectlyWhenTheMappedActionDoesNot}, for the other
+     * half of the pair.</b> {@code checkin} is not the direct operation it reads as:
+     * {@code validateWorkflowStateOrRunAsWorkflow} resolves {@code NEW} and fires it instead — and
+     * this fallback is entered precisely when that mapping cannot save. Without the
+     * {@code DISABLE_WORKFLOW} guard the call fires the same non-saving action against a
+     * contentlet that does not exist yet, and the author loses the file to a configuration choice
+     * that had nothing to do with uploading.
+     */
+    @Test
+    public void test_run_createsTheFileEvenWhenNoNewActionSaves() throws Exception {
+        final Folder folder = new FolderDataGen().site(site()).nextPersisted();
+        final ContentType dotAsset = APILocator.getContentTypeAPI(admin()).find("dotAsset");
+
+        mapNewTo(dotAsset, SystemWorkflowConstants.WORKFLOW_UNPUBLISH_ACTION_ID);
+        try {
+            final Job job = jobFor(folder, 2);
+
+            final BulkUploadProcessor processor = new BulkUploadProcessor();
+            processor.process(job);
+
+            final Map<String, Object> outcome = processor.getResultMetadata(job);
+            assertEquals(2, ((Number) outcome.get("successCount")).intValue(),
+                    "a NEW mapping that cannot save is a reason to check the file in directly, "
+                            + "never a reason to lose it.\n" + describe(outcome));
+
+            final List<Contentlet> created =
+                    APILocator.getFolderAPI().getWorkingContent(folder, admin(), false);
+            assertEquals(2, created.size(), "and both files reach the folder");
+
+            for (final Contentlet contentlet : created) {
+                assertTrue(contentlet.isLive(), String.format(
+                        "and the publish step still runs: '%s' must end live, because what the NEW "
+                                + "mapping cannot do says nothing about what PUBLISH does",
+                        contentlet.getTitle()));
+            }
+        } finally {
+            restoreNewMapping(dotAsset);
+        }
+    }
+
+    /**
      * Points the content type's {@code NEW} system action at a specific workflow action.
+     * <p>
+     * Undone in a {@code finally} without exception, for the same reason {@link #mapPublishTo} is:
+     * a system-action mapping persisted on a <b>shared</b> content type outlives the test that set
+     * it, and the next test to create a dotAsset would behave in a way it could not account for.
+     */
+    private void mapNewTo(final ContentType contentType, final String workflowActionId)
+            throws Exception {
+        APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
+                WorkflowAPI.SystemAction.NEW,
+                APILocator.getWorkflowAPI().findAction(workflowActionId, admin()),
+                contentType);
+    }
+
+    private void restoreNewMapping(final ContentType contentType) {
+        try {
+            APILocator.getWorkflowAPI().mapSystemActionToWorkflowActionForContentType(
+                    WorkflowAPI.SystemAction.NEW,
+                    APILocator.getWorkflowAPI().findAction(
+                            SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, admin()),
+                    contentType);
+        } catch (final Exception e) {
+            Logger.warn(this, "Could not restore the NEW mapping: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Points the content type's {@code PUBLISH} system action at a specific workflow action.
      * <p>
      * Undone in a {@code finally} without exception: a system-action mapping persisted on a
      * <b>shared</b> content type outlives the test that set it, and the next test to create a
