@@ -19,7 +19,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Joiner;
 import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -597,38 +600,45 @@ public class HealthStateManager {
      * This ensures cache updates happen with fresh results, not stale ones
      */
     private void runAllHealthChecksAndWait() {
-        // Create futures for all health checks to track completion
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        
-        for (HealthCheck healthCheck : allHealthChecks) {
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> 
-                runSingleHealthCheckBlocking(healthCheck), executor);
-            futures.add(future);
-        }
-        
-        // Wait for all health checks to complete (with timeout to prevent hanging)
-        try {
-            CompletableFuture<Void> allChecks = CompletableFuture.allOf(
-                futures.toArray(new CompletableFuture[0]));
-            
-            // Calculate timeout based on the longest individual health check timeout + buffer
-            long maxIndividualTimeout = allHealthChecks.stream()
+
+        // Timeout: the longest individual check plus a buffer, honouring any override. Unchanged.
+        final long maxIndividualTimeout = allHealthChecks.stream()
                 .mapToLong(this::getHealthCheckTimeoutMs)
                 .max()
-                .orElse(30000L); // Default 30 seconds if no checks
-            
-            // Add buffer time for execution overhead
-            long timeoutMs = maxIndividualTimeout + 5000L; // Max individual timeout + 5 second buffer
-            
-            // Also respect any configured override
-            timeoutMs = Math.max(timeoutMs, Config.getLongProperty("health.force.refresh.timeout-ms", timeoutMs));
-            
-            allChecks.get(timeoutMs, TimeUnit.MILLISECONDS);
-            
-            Logger.info(this, String.format("All health checks completed in forceRefresh (timeout: %dms)", timeoutMs));
-        } catch (Exception e) {
-            Logger.warn(this, "Some health checks did not complete within timeout during forceRefresh: " + e.getMessage());
-            // Continue anyway - we'll use whatever results we have
+                .orElse(30000L);
+        final long timeoutMs = Math.max(maxIndividualTimeout + 5000L,
+                Config.getLongProperty("health.force.refresh.timeout-ms", maxIndividualTimeout + 5000L));
+
+        // Every check is a subtask of this block. Two things follow from that, and neither was
+        // true of the CompletableFuture.allOf(...).get(timeout) this replaces:
+        //
+        //   1. On timeout the subtasks are CANCELLED, not merely stopped being waited for. The
+        //      old shape left a hung check running on this bounded pool forever, holding one of
+        //      HealthCheckConfig.THREAD_POOL_SIZE threads with nothing reporting it.
+        //   2. close() does not return until they are done, so no work escapes this method.
+        //
+        // awaitAll() is deliberate: a failing check must not cancel the others. The previous
+        // behaviour -- carry on with whatever results arrived -- is preserved exactly.
+        try (var scope = StructuredTaskScope.open(Joiner.<Void>awaitAll(),
+                cfg -> cfg.withTimeout(Duration.ofMillis(timeoutMs)).withName("health-checks"))) {
+
+            allHealthChecks.forEach(healthCheck ->
+                    scope.fork(() -> {
+                        runSingleHealthCheckBlocking(healthCheck);
+                        return null;
+                    }));
+
+            scope.join();
+            Logger.info(this, String.format(
+                    "All health checks completed in forceRefresh (timeout: %dms)", timeoutMs));
+
+        } catch (final StructuredTaskScope.TimeoutException timedOut) {
+            Logger.warn(this, String.format(
+                    "Health checks did not complete within %dms during forceRefresh; the ones still "
+                    + "running were cancelled. Continuing with the results that arrived.", timeoutMs));
+        } catch (final InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            Logger.warn(this, "Interrupted while waiting for health checks during forceRefresh");
         }
     }
     
@@ -829,6 +839,13 @@ public class HealthStateManager {
      * @param checkNames the names of health checks to wait for
      * @param timeoutMs maximum time to wait in milliseconds
      * @return true if all refreshes completed, false if timeout occurred
+     */
+    /*
+     * Deliberately left on CompletableFuture: this method waits on refreshes that were started
+     * ELSEWHERE and are held in the ongoingRefreshes map. A StructuredTaskScope can only wait on
+     * subtasks it forked itself -- that is the whole point of the lifetime being the block -- so
+     * there is nothing here for it to adopt. Converting this would mean moving where the refreshes
+     * are started, which is a different change.
      */
     public boolean waitForOngoingRefreshes(List<String> checkNames, long timeoutMs) {
         List<CompletableFuture<Void>> refreshesToWaitFor = new ArrayList<>();
