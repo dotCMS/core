@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -39,13 +45,13 @@ describe('DotRoleToolsTabComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotRolesStore, {
-                toolGroups: jest.fn().mockReturnValue([]),
-                toolGroupsStatus: jest.fn().mockReturnValue('LOADED'),
-                toolGroupsSaving: jest.fn().mockReturnValue(false),
-                selectedRoleStatus: jest.fn().mockReturnValue('LOADED'),
-                selectedRoleId: jest.fn().mockReturnValue(SELECTED_ROLE_ID),
-                canEditRoleLayouts: jest.fn().mockReturnValue(true),
-                saveToolGroups: jest.fn().mockResolvedValue(true)
+                toolGroups: vi.fn().mockReturnValue([]),
+                toolGroupsStatus: vi.fn().mockReturnValue('LOADED'),
+                toolGroupsSaving: vi.fn().mockReturnValue(false),
+                selectedRoleStatus: vi.fn().mockReturnValue('LOADED'),
+                selectedRoleId: vi.fn().mockReturnValue(SELECTED_ROLE_ID),
+                canEditRoleLayouts: vi.fn().mockReturnValue(true),
+                saveToolGroups: vi.fn().mockResolvedValue(true)
             })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
@@ -55,21 +61,21 @@ describe('DotRoleToolsTabComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        // `mockProvider` builds its jest.fn()s once, at factory scope, so a
+        // `mockProvider` builds its vi.fn()s once, at factory scope, so a
         // `mockReturnValue` in one test leaks into the next. Re-seed the
         // defaults here and let each test override what it needs.
-        (store().toolGroups as jest.Mock).mockReturnValue([]);
-        (store().toolGroupsStatus as jest.Mock).mockReturnValue('LOADED');
-        (store().toolGroupsSaving as jest.Mock).mockReturnValue(false);
-        (store().selectedRoleStatus as jest.Mock).mockReturnValue('LOADED');
-        (store().selectedRoleId as jest.Mock).mockReturnValue(SELECTED_ROLE_ID);
-        (store().canEditRoleLayouts as jest.Mock).mockReturnValue(true);
-        (store().saveToolGroups as jest.Mock).mockClear();
+        (store().toolGroups as Mock).mockReturnValue([]);
+        (store().toolGroupsStatus as Mock).mockReturnValue('LOADED');
+        (store().toolGroupsSaving as Mock).mockReturnValue(false);
+        (store().selectedRoleStatus as Mock).mockReturnValue('LOADED');
+        (store().selectedRoleId as Mock).mockReturnValue(SELECTED_ROLE_ID);
+        (store().canEditRoleLayouts as Mock).mockReturnValue(true);
+        (store().saveToolGroups as Mock).mockClear();
     });
 
     describe('row identity across the post-save reconcile', () => {
         it('keeps the same <tr> when the reconcile rebuilds the row objects', () => {
-            (store().toolGroups as jest.Mock).mockReturnValue([row()]);
+            (store().toolGroups as Mock).mockReturnValue([row()]);
             spectator.detectChanges();
 
             const before = spectator.query(byTestId('tool-group-row-tg-1'));
@@ -79,7 +85,7 @@ describe('DotRoleToolsTabComponent', () => {
             // new object references. With PrimeNG's default identity
             // `rowTrackBy` this tears the row down and rebuilds the
             // checkbox — the blink.
-            (store().toolGroups as jest.Mock).mockReturnValue([row()]);
+            (store().toolGroups as Mock).mockReturnValue([row()]);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('tool-group-row-tg-1'))).toBe(before);
@@ -94,21 +100,21 @@ describe('DotRoleToolsTabComponent', () => {
     });
 
     it('renders the skeleton while loading', () => {
-        (store().toolGroupsStatus as jest.Mock).mockReturnValue('LOADING');
+        (store().toolGroupsStatus as Mock).mockReturnValue('LOADING');
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('tools-loading-skeleton'))).toBeTruthy();
     });
 
     it('renders the error state', () => {
-        (store().toolGroupsStatus as jest.Mock).mockReturnValue('ERROR');
+        (store().toolGroupsStatus as Mock).mockReturnValue('ERROR');
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('tools-error'))).toBeTruthy();
     });
 
     it('shows the cannot-edit notice when the role blocks layout edits', () => {
-        (store().canEditRoleLayouts as jest.Mock).mockReturnValue(false);
+        (store().canEditRoleLayouts as Mock).mockReturnValue(false);
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('cannot-edit-notice'))).toBeTruthy();
@@ -155,7 +161,7 @@ describe('DotRoleToolsTabComponent', () => {
 
     describe('direct vs inherited grants', () => {
         it('treats a grant from the selected role as direct', () => {
-            (store().toolGroups as jest.Mock).mockReturnValue([row()]);
+            (store().toolGroups as Mock).mockReturnValue([row()]);
             spectator.detectChanges();
 
             const component = spectator.component as unknown as {
@@ -168,7 +174,7 @@ describe('DotRoleToolsTabComponent', () => {
 
         it('locks an inherited row — it can only be revoked on the ancestor', () => {
             const inherited = row({ grantedFromRoleId: 'r-parent', grantedFromRoleName: 'Parent' });
-            (store().toolGroups as jest.Mock).mockReturnValue([inherited]);
+            (store().toolGroups as Mock).mockReturnValue([inherited]);
             spectator.detectChanges();
 
             const component = spectator.component as unknown as {
@@ -180,7 +186,7 @@ describe('DotRoleToolsTabComponent', () => {
         });
 
         it('locks every row while a save is in flight', () => {
-            (store().toolGroupsSaving as jest.Mock).mockReturnValue(true);
+            (store().toolGroupsSaving as Mock).mockReturnValue(true);
             spectator.detectChanges();
 
             expect(
@@ -209,7 +215,7 @@ describe('DotRoleToolsTabComponent', () => {
                 grantedFromRoleId: null,
                 grantedFromRoleName: null
             });
-            (store().toolGroups as jest.Mock).mockReturnValue([granted, ungranted]);
+            (store().toolGroups as Mock).mockReturnValue([granted, ungranted]);
             spectator.detectChanges();
 
             toggle(ungranted, true);
@@ -220,7 +226,7 @@ describe('DotRoleToolsTabComponent', () => {
         it('drops the unchecked group from the set', () => {
             const a = row({ id: 'tg-1' });
             const b = row({ id: 'tg-2' });
-            (store().toolGroups as jest.Mock).mockReturnValue([a, b]);
+            (store().toolGroups as Mock).mockReturnValue([a, b]);
             spectator.detectChanges();
 
             toggle(a, false);
@@ -241,7 +247,7 @@ describe('DotRoleToolsTabComponent', () => {
                 grantedFromRoleId: null,
                 grantedFromRoleName: null
             });
-            (store().toolGroups as jest.Mock).mockReturnValue([direct, inherited, ungranted]);
+            (store().toolGroups as Mock).mockReturnValue([direct, inherited, ungranted]);
             spectator.detectChanges();
 
             toggle(ungranted, true);

@@ -20,9 +20,9 @@
  * the very mistake being fixed.
  */
 
-import { reportInstallResult } from './install';
+import { Err, Ok } from '@dotcms/http';
 
-import { Err, Ok } from '../result';
+import { reportInstallResult } from './install';
 
 describe('reportInstallResult', () => {
     it('reports success when the install succeeded', () => {

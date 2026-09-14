@@ -1,8 +1,9 @@
 import { Route, UrlSegment } from '@angular/router';
 
+import { DotExperimentsService } from '@dotcms/data-access';
 import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
+import { dotAnalyticsHealthCheckResolver, DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 
 import { dotExperimentsPortletRoutes, experimentsConfigureMatcher } from './lib.routes';
 
@@ -12,6 +13,9 @@ const segmentsOf = (...paths: string[]): UrlSegment[] =>
 describe('dotExperimentsPortletRoutes', () => {
     const listRoute = dotExperimentsPortletRoutes.find((route) => route.path === '') as Route;
     const configureRoute = dotExperimentsPortletRoutes.find((route) => !!route.matcher) as Route;
+    const resultsRoute = dotExperimentsPortletRoutes.find(
+        (route) => route.path === ':experimentId/results'
+    ) as Route;
 
     it('should expose the list route', () => {
         expect(listRoute).toBeDefined();
@@ -28,11 +32,16 @@ describe('dotExperimentsPortletRoutes', () => {
         expect(configureRoute.path).toBeUndefined();
     });
 
-    it('should not wire the screens owned by follow-up issues', () => {
-        // `:id/results` lands with the reports issue. Until then an unimplemented deep link must
-        // fall through rather than resolve to a blank screen.
-        expect(dotExperimentsPortletRoutes).toHaveLength(2);
-        expect(experimentsConfigureMatcher(segmentsOf('abc', 'reports'))).toBeNull();
+    it('should expose the Results screen on a plain path', () => {
+        // Nothing swaps this URL mid-screen, so it needs none of the matcher the Configure screen
+        // exists for: one experiment, one path, on every status (AC1).
+        expect(resultsRoute).toBeDefined();
+        expect(resultsRoute.loadComponent).toBeDefined();
+        expect(resultsRoute.matcher).toBeUndefined();
+    });
+
+    it('should wire the three screens the portlet owns', () => {
+        expect(dotExperimentsPortletRoutes).toHaveLength(3);
     });
 
     describe('resolvers', () => {
@@ -56,6 +65,23 @@ describe('dotExperimentsPortletRoutes', () => {
                 ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION,
                 ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
             ]);
+        });
+
+        it('should resolve the analytics health status on the Results screen', () => {
+            // A plain resolve, not a guard: it reports rather than redirects, so a misconfigured
+            // analytics app takes out this screen only and the list stays reachable (AC22).
+            expect(resultsRoute.resolve?.['healthStatus']).toBe(dotAnalyticsHealthCheckResolver);
+        });
+
+        it('should provide the service the health resolver injects', () => {
+            // The resolver is a standalone `ResolveFn` and needs no provider of its own, but it
+            // runs in the route's injector — where `DotExperimentsService`, `@Injectable()` with
+            // no `providedIn`, has to exist before the screen does.
+            expect(resultsRoute.providers).toContain(DotExperimentsService);
+        });
+
+        it('should leave the list ungated by the analytics health check', () => {
+            expect(listRoute.resolve?.['healthStatus']).toBeUndefined();
         });
 
         it.each([
@@ -106,7 +132,7 @@ describe('experimentsConfigureMatcher', () => {
 
     it.each([
         ['the list', segmentsOf()],
-        ['the reports screen owned by a follow-up issue', segmentsOf('abc', 'reports')],
+        ['the Results screen, which matches on its own path', segmentsOf('abc', 'results')],
         ['a deeper unknown URL', segmentsOf('abc', 'configuration', 'extra')]
     ])('should fall through to %s', (_name, segments) => {
         expect(experimentsConfigureMatcher(segments)).toBeNull();

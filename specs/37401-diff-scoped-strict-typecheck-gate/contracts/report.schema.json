@@ -1,0 +1,136 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://dotcms.com/schemas/strict-gate/report.schema.json",
+    "title": "Strict gate run report",
+    "description": "Output of one strict-gate harness invocation. Enforced by report.contract.test.mjs.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "base",
+        "head",
+        "flagSet",
+        "granularity",
+        "targets",
+        "unmapped",
+        "findings",
+        "discarded",
+        "durationMs",
+        "exitCode"
+    ],
+    "properties": {
+        "base": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$",
+            "description": "Resolved base commit SHA actually compared."
+        },
+        "head": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$",
+            "description": "Resolved head commit SHA actually compared."
+        },
+        "flagSet": {
+            "enum": ["strict", "null-checks", "strict-max"],
+            "description": "Candidate flag set: the repo strict convention (8+4), the narrower null-checks/implicit-any subset, or strict-max (adds noUncheckedIndexedAccess + exactOptionalPropertyTypes, measured but not the blocking set)."
+        },
+        "granularity": {
+            "enum": ["file", "line"],
+            "description": "Whole changed file, or only changed lines."
+        },
+        "targets": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["project", "root", "configPath", "mode", "files"],
+                "properties": {
+                    "project": { "type": "string" },
+                    "root": { "type": "string" },
+                    "configPath": { "type": "string" },
+                    "mode": {
+                        "enum": ["typescript", "template-aware"],
+                        "description": "Always present: a fallback to typescript mode must be visible, never silent."
+                    },
+                    "files": { "type": "array", "items": { "type": "string" } }
+                }
+            }
+        },
+        "unmapped": {
+            "type": "array",
+            "description": "Changed files no project claimed. Reported, never dropped. Not a failure on its own.",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["path", "reason"],
+                "properties": {
+                    "path": { "type": "string" },
+                    "reason": { "type": "string" }
+                }
+            }
+        },
+        "findings": {
+            "type": "array",
+            "description": "Surviving diagnostics. Every entry must have origin 'changed'.",
+            "items": { "$ref": "#/$defs/diagnostic" }
+        },
+        "discarded": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["byOrigin", "byLayer"],
+            "properties": {
+                "byOrigin": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["dependency", "untouched", "infrastructure"],
+                    "properties": {
+                        "dependency": { "type": "integer", "minimum": 0 },
+                        "untouched": { "type": "integer", "minimum": 0 },
+                        "infrastructure": { "type": "integer", "minimum": 0 }
+                    }
+                },
+                "byLayer": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["source", "template"],
+                    "properties": {
+                        "source": { "type": "integer", "minimum": 0 },
+                        "template": { "type": "integer", "minimum": 0 }
+                    }
+                }
+            }
+        },
+        "durationMs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["total", "typescript", "templateAware"],
+            "properties": {
+                "total": { "type": "number", "minimum": 0 },
+                "typescript": { "type": "number", "minimum": 0 },
+                "templateAware": { "type": "number", "minimum": 0 }
+            }
+        },
+        "exitCode": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0 if and only if findings is empty."
+        }
+    },
+    "$defs": {
+        "diagnostic": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "line", "column", "code", "message", "origin", "layer"],
+            "properties": {
+                "file": {
+                    "type": "string",
+                    "description": "Repository-relative. For an inline template, the component source."
+                },
+                "line": { "type": "integer", "minimum": 1 },
+                "column": { "type": "integer", "minimum": 1 },
+                "code": { "type": "string" },
+                "message": { "type": "string" },
+                "origin": { "enum": ["changed", "dependency", "untouched", "infrastructure"] },
+                "layer": { "enum": ["source", "template"] }
+            }
+        }
+    }
+}

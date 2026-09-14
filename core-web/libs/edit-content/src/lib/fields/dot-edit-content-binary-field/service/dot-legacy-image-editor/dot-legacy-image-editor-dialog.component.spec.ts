@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 

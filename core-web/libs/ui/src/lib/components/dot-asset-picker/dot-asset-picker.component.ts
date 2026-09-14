@@ -20,6 +20,7 @@ import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SplitterModule } from 'primeng/splitter';
+import type { SplitterPassThrough } from 'primeng/types/splitter';
 
 import {
     DotContentletService,
@@ -48,8 +49,15 @@ import {
     WARNING_MESSAGE_LIFE
 } from './constants';
 import { DotAssetPickerLocation, writeLastAssetLocation } from './last-asset-path';
+import { provideAssetPickerFieldFilterHost } from './store/asset-picker-field-filter-host';
+import { provideAssetPickerFilterFacade } from './store/asset-picker-filter-facade';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
+import {
+    buildUploadAccept,
+    isUploadAllowed,
+    resolveUploadRestrictionLabel
+} from './upload-restriction';
 
 import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../dialog/fullscreen-dialog';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
@@ -60,6 +68,7 @@ import {
     DotDialogFooterComponent,
     DotDialogHeaderComponent
 } from '../dot-dialog';
+import { DotFilterChipError } from '../dot-filter-bar/filter-facade.token';
 import { DotFolderListViewComponent } from '../dot-folder-list-view/dot-folder-list-view.component';
 import { DotToastComponent } from '../dot-toast/dot-toast.component';
 import { DotUploadDropzoneComponent } from '../dot-upload-dropzone/dot-upload-dropzone.component';
@@ -94,7 +103,17 @@ import {
     // the failure: it transitively needs `DotAlertConfirmService`, `DotRouterService` -> `Router` and
     // `DotEventsSocket`, and that host has no `Router` at all. The store reports failures as state
     // instead and this component toasts them — see the `requestError` effect.
-    providers: [DotAssetPickerStore, MessageService, DotContentTypeService],
+    providers: [
+        DotAssetPickerStore,
+        // Exposes this dialog's store to the shared filter chips. Alongside the store, never in
+        // `root`: two custom fields can each hold an open picker.
+        provideAssetPickerFilterFacade(),
+        // The field-filter chips' own seam: which chips are shown, plus the field metadata the
+        // "More" overflow fetches and `$request` reshapes values with.
+        provideAssetPickerFieldFilterHost(),
+        MessageService,
+        DotContentTypeService
+    ],
     imports: [
         ButtonModule,
         DialogModule,
@@ -149,8 +168,10 @@ export class DotAssetPickerComponent implements OnInit {
      * The legacy theme gives `.p-splitter` a gray border and a radius, which read as a stray box
      * inside a dialog that already has its own chrome. The gutter keeps its own styling.
      */
-    protected readonly splitterPt = {
+    protected readonly splitterPt: SplitterPassThrough = {
         root: { class: 'border-0! rounded-none!' },
+        // PrimeNG types `panel` as required, so it has to be listed even with nothing to pass.
+        panel: {},
         gutterHandle: {
             'aria-label': this.#dotMessageService.get('dot.asset.picker.splitter.aria')
         }
@@ -201,6 +222,28 @@ export class DotAssetPickerComponent implements OnInit {
 
     /** Holds the chosen type while the OS file picker is open (Upload-button flow only). */
     readonly $activeSelection = signal<DotUploadSelection | undefined>(undefined);
+
+    /**
+     * Pre-filters the OS file dialog to what the entry point can hold.
+     *
+     * `null` in the unrestricted modes, which removes the attribute — the File field and `browse`
+     * must keep offering every file. A hint only: the dialog lets the user switch back to "all
+     * files", which is why `#refuseDisallowedUpload` still has to stand behind it.
+     */
+    protected readonly $uploadAccept = computed(() =>
+        buildUploadAccept(this.store.config()?.mimeTypes)
+    );
+
+    /**
+     * What the restriction is called, for the Asset/File prompt and the refusal toast. Empty when
+     * nothing is restricted, which is what makes the prompt render its default copy.
+     */
+    protected readonly $uploadRestrictionLabel = computed(
+        () =>
+            resolveUploadRestrictionLabel(this.store.config()?.mimeTypes, (key) =>
+                this.#dotMessageService.get(key)
+            ) ?? ''
+    );
 
     ngOnInit(): void {
         const config = this.#dialogConfig?.data;
@@ -272,6 +315,18 @@ export class DotAssetPickerComponent implements OnInit {
                         life: ERROR_MESSAGE_LIFE
                     })
             });
+    }
+
+    /**
+     * A filter chip could not load its options.
+     *
+     * Routed to the same toast the store's own failures use, which is this dialog's only error
+     * channel: `DotHttpErrorManagerService` cannot be injected here at all (it transitively needs
+     * `Router`, and the legacy Dojo host has none), and the dialog must stay open and operable
+     * with the affected control simply offering nothing (FR-015).
+     */
+    protected onFilterError(error: DotFilterChipError): void {
+        this.#reportRequestError(error.messageKey);
     }
 
     /** Toasts a failed request. `messageKey` comes from {@link ASSET_PICKER_ERROR_KEYS}. */
@@ -410,6 +465,13 @@ export class DotAssetPickerComponent implements OnInit {
 
     /** Drag-and-drop: the files are already known, so a pinned base type uploads immediately. */
     protected onRequestUpload({ files, targetFolder }: DotUploadFiles): void {
+        // Judged here as well as at `#resolveFilesUpload`, which is the actual guarantee. Without
+        // this the user would be asked to choose a storage type for a file that was never eligible,
+        // and only then be refused.
+        if (this.#refuseDisallowedUpload(files)) {
+            return;
+        }
+
         const baseType = this.#resolvePreferredBaseType(targetFolder);
 
         if (baseType) {
@@ -506,8 +568,51 @@ export class DotAssetPickerComponent implements OnInit {
         }
     }
 
+    /**
+     * Refuses a file the entry point cannot hold, and says which types it can.
+     *
+     * The restriction is `config.mimeTypes` — the same value that narrows what the list shows, so
+     * an Image field cannot upload something it would then be unable to display. Returns whether
+     * the upload was refused.
+     *
+     * This is the guarantee, not the filter: `accept` on the file input only *suggests* a type to
+     * the OS dialog, and the user can switch it off from the dialog itself. Judged on the file that
+     * would actually be uploaded, since a multi-file selection already warns and uploads only the
+     * first.
+     */
+    #refuseDisallowedUpload(files?: FileList | null): boolean {
+        const mimeTypes = this.store.config()?.mimeTypes;
+        const file = files?.[0];
+
+        if (!file || isUploadAllowed(file, mimeTypes)) {
+            return false;
+        }
+
+        const allowed = resolveUploadRestrictionLabel(mimeTypes, (key) =>
+            this.#dotMessageService.get(key)
+        );
+
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('dot.asset.picker.upload.rejected'),
+            detail: this.#dotMessageService.get(
+                'dot.asset.picker.upload.rejected.detail',
+                allowed ?? ''
+            ),
+            life: ERROR_MESSAGE_LIFE
+        });
+
+        return true;
+    }
+
     #resolveFilesUpload({ files, targetFolder, baseType }: DotUploadSelection): void {
         if (!files?.length) {
+            return;
+        }
+
+        // The one gate every upload route converges on — the Upload button, drag-and-drop, and a
+        // folder whose settings pin a base type and skip the prompt entirely.
+        if (this.#refuseDisallowedUpload(files)) {
             return;
         }
 

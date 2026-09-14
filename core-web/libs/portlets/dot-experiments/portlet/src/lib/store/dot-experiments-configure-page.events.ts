@@ -11,6 +11,13 @@ import {
 export interface ConfigurePagePrefill {
     pageId?: string | null;
     url?: string | null;
+    /**
+     * Language version to resolve, as UVE spells it in every address it writes.
+     *
+     * `null` when the caller did not say — a link typed by hand — and the lookup then narrows
+     * the versions it found deterministically instead (#37005).
+     */
+    languageId?: number | null;
 }
 
 /** A rename of a single variant, which has its own endpoint rather than a `trafficProportion` PATCH. */

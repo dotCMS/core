@@ -14,8 +14,6 @@ export const DEFAULT_ASSET_PICKER_SORT: DotAssetPickerSort = {
 export const DEFAULT_ASSET_PICKER_PAGE: DotAssetPickerPage = {
     contentCursor: 0,
     hasMoreContent: true,
-    folderCursor: 0,
-    hasMoreFolders: true,
     linkCursor: 0,
     hasMoreLinks: true
 };

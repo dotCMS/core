@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
@@ -20,7 +26,7 @@ describe('DotImageEditorPanelsComponent', () => {
         component: DotImageEditorPanelsComponent,
         providers: [
             provideNoopAnimations(),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })
         ],
         // The sub-panels own their own store/dispatch wiring; mock them so this
         // container spec stays isolated to the accordion layout.

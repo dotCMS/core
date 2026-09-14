@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -61,16 +67,16 @@ describe('DotAuthListComponent', () => {
         component: DotAuthListComponent,
         componentProviders: [
             mockProvider(DotAuthListStore, {
-                system: jest.fn().mockReturnValue(SYSTEM),
-                sites: jest.fn().mockReturnValue(ROWS),
-                filteredSites: jest.fn().mockReturnValue(ROWS),
-                query: jest.fn().mockReturnValue(''),
-                filter: jest.fn().mockReturnValue('all'),
-                status: jest.fn().mockReturnValue('loaded'),
-                loadSites: jest.fn(),
-                setQuery: jest.fn(),
-                setFilter: jest.fn(),
-                clearSite: jest.fn()
+                system: vi.fn().mockReturnValue(SYSTEM),
+                sites: vi.fn().mockReturnValue(ROWS),
+                filteredSites: vi.fn().mockReturnValue(ROWS),
+                query: vi.fn().mockReturnValue(''),
+                filter: vi.fn().mockReturnValue('all'),
+                status: vi.fn().mockReturnValue('loaded'),
+                loadSites: vi.fn(),
+                setQuery: vi.fn(),
+                setFilter: vi.fn(),
+                clearSite: vi.fn()
             }),
             ConfirmationService,
             MessageService
@@ -80,8 +86,8 @@ describe('DotAuthListComponent', () => {
             { provide: ActivatedRoute, useValue: {} },
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotAuthService, {
-                exportBundle: jest.fn().mockResolvedValue(null),
-                importBundle: jest.fn()
+                exportBundle: vi.fn().mockResolvedValue(null),
+                importBundle: vi.fn()
             }),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -90,7 +96,7 @@ describe('DotAuthListComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         router = spectator.inject(Router);
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('statusTag (severity encodes protocol)', () => {
@@ -187,7 +193,7 @@ describe('DotAuthListComponent', () => {
     describe('confirmClearSystem / confirmClearSite', () => {
         it('clears the system row when the confirmation is accepted', () => {
             const confirm = spectator.inject(ConfirmationService, true);
-            jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+            vi.spyOn(confirm, 'confirm').mockImplementation((opts) => {
                 opts.accept?.();
                 return confirm;
             });
@@ -199,7 +205,7 @@ describe('DotAuthListComponent', () => {
 
         it('does not clear the system row when rejected', () => {
             const confirm = spectator.inject(ConfirmationService, true);
-            jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+            vi.spyOn(confirm, 'confirm').mockImplementation((opts) => {
                 opts.reject?.();
                 return confirm;
             });
@@ -211,7 +217,7 @@ describe('DotAuthListComponent', () => {
 
         it('clears a site row when the confirmation is accepted', () => {
             const confirm = spectator.inject(ConfirmationService, true);
-            jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+            vi.spyOn(confirm, 'confirm').mockImplementation((opts) => {
                 opts.accept?.();
                 return confirm;
             });
@@ -223,8 +229,8 @@ describe('DotAuthListComponent', () => {
     });
 
     describe('onSearch (300ms debounce)', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('does not forward to setQuery until 300ms of silence', () => {
             spectator.component.onSearch('a');
@@ -233,7 +239,7 @@ describe('DotAuthListComponent', () => {
 
             expect(spectator.component.store.setQuery).not.toHaveBeenCalled();
 
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.store.setQuery).toHaveBeenCalledTimes(1);
             expect(spectator.component.store.setQuery).toHaveBeenLastCalledWith('abc');
@@ -241,9 +247,9 @@ describe('DotAuthListComponent', () => {
 
         it('dedupes back-to-back equal values (distinctUntilChanged)', () => {
             spectator.component.onSearch('a');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.component.onSearch('a');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(spectator.component.store.setQuery).toHaveBeenCalledTimes(1);
         });

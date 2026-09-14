@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
-type SpyInstance = ReturnType<typeof jest.spyOn>;
+type SpyInstance = ReturnType<typeof vi.spyOn>;
 
 import {
     DotCMSContentType,
@@ -42,7 +42,7 @@ describe('Utils Functions', () => {
     const originalWarn = console.warn;
 
     beforeAll(() => {
-        console.warn = jest.fn();
+        console.warn = vi.fn();
     });
 
     afterAll(() => {
@@ -655,21 +655,19 @@ describe('Utils Functions', () => {
         });
 
         describe('No special field', () => {
-            it('should call castSingleSelectableValue', () => {
-                const value = 'value1';
-                const field = {
-                    fieldType: 'something',
-                    dataType: 'something'
-                } as DotCMSContentTypeField;
+            // Asserted through the result rather than by spying on `castSingleSelectableValue`:
+            // that function now lives in `@dotcms/ui` (the shared field filter parses the same
+            // options), so a spy on this module's re-export no longer intercepts the internal
+            // call. The cast is what the test is about, and the result shows it.
+            it.each([
+                ['something', 'value1', 'value1'],
+                ['INTEGER', '42', 42],
+                ['FLOAT', '4.5', 4.5],
+                ['BOOL', 'true', true]
+            ])('should cast the value by its %s dataType', (dataType, value, expected) => {
+                const field = { fieldType: 'something', dataType } as DotCMSContentTypeField;
 
-                const castSingleSelectableValueMock = jest.spyOn(
-                    functionsUtil,
-                    'castSingleSelectableValue'
-                );
-
-                getFinalCastedValue(value, field);
-
-                expect(castSingleSelectableValueMock).toHaveBeenCalledWith(value, field.dataType);
+                expect(getFinalCastedValue(value, field)).toBe(expected);
             });
         });
 
@@ -1223,11 +1221,11 @@ describe('Utils Functions', () => {
         beforeEach(() => {
             sessionStorage.clear();
             // eslint-disable-next-line @typescript-eslint/no-empty-function
-            jest.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
         });
 
         afterEach(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         describe('getStoredUIState', () => {
@@ -1279,7 +1277,7 @@ describe('Utils Functions', () => {
             });
 
             it('should return default state and warn when sessionStorage throws error', () => {
-                const mockGetItem = jest.fn(() => {
+                const mockGetItem = vi.fn(() => {
                     throw new Error('Storage error');
                 });
 
@@ -1679,9 +1677,9 @@ describe('Utils Functions', () => {
 
                 beforeEach(() => {
                     // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+                    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
                     // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+                    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
                 });
 
                 afterEach(() => {

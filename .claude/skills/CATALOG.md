@@ -3,7 +3,7 @@
 
 Auto-generated inventory of dotCMS skills. **Check here before creating a new skill** — if something close exists, extend it or mark yours `related`, don't fork. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-_22 first-party · 6 external (symlinked)._
+_23 first-party · 6 external (symlinked)._
 
 ## First-party skills (`dot-*`)
 

@@ -12,7 +12,7 @@
 #   first step, which is exactly what AC-013 exists to prevent.
 #
 #   So this asserts the artifact: the file is in dist at the path the CLI resolves at runtime,
-#   and npm would actually put it in the tarball.
+#   and the packer would actually put it in the tarball.
 #
 # Usage:  ./verify-package.sh [dist-dir]      (defaults to the nx output path)
 # Exit 0 = the asset ships.
@@ -44,16 +44,50 @@ else
     bad "$ASSET_REL is MISSING from the build output — check project.json's esbuild \`assets\` (input/glob/output)"
 fi
 
-# 2. npm would actually pack it. This is the half that `files` in package.json controls, and it
-#    is a separate failure from the esbuild copy above: either alone ships a broken package.
-PACKED="$(cd "$DIST" && npm pack --dry-run --json 2>/dev/null | grep -o "\"path\": *\"[^\"]*\"" | sed 's/.*: *"//; s/"$//')"
+# 2. the packer would actually pack it. This is the half that `files` in package.json
+#    controls, and it is a separate failure from the esbuild copy above: either alone
+#    ships a broken package.
+#
+#    Both packers are tried because neither is present everywhere. `npm` is missing from a
+#    pnpm-managed local toolchain (`pnpm env` installs node without it), which is what made
+#    `npm pack` report a false failure on a dev machine. `pnpm` — the corepack shim the Maven
+#    build puts on PATH — is the one that returned nothing on the CI runner. Whichever answers
+#    first decides the check; if neither does, each packer's stderr is printed, because a
+#    silent packer is exactly what made this failure unreadable the first time.
+PACKED=""
+PACKER=""
+PACK_ERRORS=""
+
+for candidate in pnpm npm; do
+    if ! command -v "$candidate" >/dev/null 2>&1; then
+        PACK_ERRORS="$PACK_ERRORS
+        $candidate: not on PATH"
+        continue
+    fi
+
+    PACK_OUT="$(mktemp)"
+    PACK_ERR="$(mktemp)"
+    (cd "$DIST" && "$candidate" pack --dry-run --json) >"$PACK_OUT" 2>"$PACK_ERR"
+    PACKED="$(grep -o "\"path\": *\"[^\"]*\"" "$PACK_OUT" | sed 's/.*: *"//; s/"$//')"
+
+    if [ -n "$PACKED" ]; then
+        PACKER="$candidate"
+        rm -f "$PACK_OUT" "$PACK_ERR"
+        break
+    fi
+
+    PACK_ERRORS="$PACK_ERRORS
+        $candidate: $(tr '\n' ' ' <"$PACK_ERR" | cut -c1-300)"
+    rm -f "$PACK_OUT" "$PACK_ERR"
+done
 
 if [ -z "$PACKED" ]; then
-    bad "npm pack --dry-run produced no file list — cannot confirm the tarball contents"
+    bad "no packer produced a file list — cannot confirm the tarball contents"
+    printf '%s\n' "$PACK_ERRORS"
 elif printf '%s\n' "$PACKED" | grep -qx "$ASSET_REL"; then
-    ok "npm pack includes $ASSET_REL in the tarball"
+    ok "$PACKER pack includes $ASSET_REL in the tarball"
 else
-    bad "npm pack does NOT include $ASSET_REL — check \`files\` in package.json"
+    bad "$PACKER pack does NOT include $ASSET_REL — check \`files\` in package.json"
     printf '        tarball contains: %s\n' "$(printf '%s ' $PACKED)"
 fi
 

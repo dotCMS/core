@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -46,6 +46,7 @@ import {
     GOALS_METADATA_MAP,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
     DotEmptyContainerComponent,
@@ -55,10 +56,10 @@ import {
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
 import {
-    CONFIGURATION_SEGMENT,
     EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
     LIST_TABLE_STYLE,
+    LIST_TITLE_KEY,
     NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
@@ -77,24 +78,21 @@ import {
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
+import { experimentsListCrumb, putCrumbOnTrail } from '../util/dot-experiments-breadcrumb.util';
 import {
+    configureCommandsOf,
     ExperimentScheduleLabels,
     formatSchedule,
     goalTypeOf,
     isAllowed,
+    pageFilterParams,
+    resultsCommandsOf,
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
 
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
-
-/** Configure URL of an experiment that already exists. */
-const configureCommandsOf = (experimentId: string): string[] => [
-    EXPERIMENTS_URL,
-    experimentId,
-    CONFIGURATION_SEGMENT
-];
 
 @Component({
     selector: 'dot-experiments-list',
@@ -122,7 +120,9 @@ const configureCommandsOf = (experimentId: string): string[] => [
     // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
     // screens do the same in `old/dot-experiments-shell`.
     providers: [DotExperimentsListStore, ConfirmationService, DotExperimentsService],
-    host: { class: 'flex flex-col h-full min-h-0' }
+    host: {
+        class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
+    }
 })
 export class DotExperimentsListComponent {
     readonly store = inject(DotExperimentsListStore);
@@ -233,6 +233,7 @@ export class DotExperimentsListComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -265,12 +266,59 @@ export class DotExperimentsListComponent {
      * Empty-state copy. Resolved once for the same reason as `#scheduleLabels`, and declared
      * after the injections because field initialisers run in declaration order.
      */
-    /** Any narrowing the user applied, as opposed to a site that simply has no experiments. */
+    /**
+     * The page the list is narrowed to (#37005, FR-021c).
+     *
+     * `null` when there is no page filter. When there is one but `pageInfoByPageId` cannot resolve
+     * it — the page was deleted after the editor left it — the empty state still says so, rather
+     * than reading as a page that merely has no experiments.
+     *
+     * The narrowing arrives in the address and there is no control here that widens it: FR-021c's
+     * "starting point, not a cage" half is **not met**, and is tracked in **#37478** — the UVE
+     * panel that takes over this screen, where the requirement changes shape (the panel is
+     * page-scoped by construction, so "clearable" becomes an explicit way out to the full
+     * portlet). With rows present the only sign of the narrowing is the `Page` column and the
+     * page's own crumb, which a fresh session does not have.
+     *
+     * A narrowing by *path* is the exception: one that resolves to no page reads as "nothing
+     * matched" and the empty state's own button clears it — see `$hasActiveFilters`. That case has
+     * a way out because without one the list is a dead end; this one shows the page-scoped empty
+     * state instead, which offers to create the first experiment for the page.
+     */
+    readonly $pageFilter = computed<{ path: string; resolved: boolean } | null>(() => {
+        const pageId = this.store.selectedPageId();
+
+        if (!pageId) {
+            return null;
+        }
+
+        const url = this.store.pageInfoByPageId()[pageId]?.url;
+
+        return url
+            ? { path: url, resolved: true }
+            : {
+                  path: this.#dotMessageService.get('experiments.list.page-filter.unavailable'),
+                  resolved: false
+              };
+    });
+
+    /**
+     * Any narrowing in force, as opposed to a site that simply has no experiments.
+     *
+     * A page narrowing by path counts. It arrives in the address rather than from a control here —
+     * `?url=` is the shape of every Universal Visual Editor address — and one that resolves to no
+     * page is the case this exists for: the list has nothing to show and no reason on screen for
+     * it, so it has to read as "nothing matched" with a way out, not as an empty site.
+     *
+     * A narrowing by `pageId` deliberately does not count: that one has its own empty state, which
+     * names the page and offers to create the first experiment for it.
+     */
     readonly $hasActiveFilters = computed<boolean>(
         () =>
             this.store.filter().length > 0 ||
             this.store.selectedStatuses().length > 0 ||
-            this.store.selectedGoals().length > 0
+            this.store.selectedGoals().length > 0 ||
+            !!this.store.selectedPageUrl()
     );
 
     /** The table is replaced by an empty state once a settled load has nothing to show. */
@@ -283,8 +331,25 @@ export class DotExperimentsListComponent {
      * first is a site with no experiments, the second is the user's own filters hiding them, and
      * only the second is worth offering a way out of.
      */
-    readonly $emptyConfiguration = computed<PrincipalConfiguration>(() =>
-        this.$hasActiveFilters()
+    readonly $emptyConfiguration = computed<PrincipalConfiguration>(() => {
+        const pageFilter = this.$pageFilter();
+
+        // Arriving from a page that has no experiments is a third situation, not a case of the
+        // user's own filters hiding things: they did not set this filter, so offering to clear it
+        // is the wrong help. Offering to create an experiment for the page is the right help.
+        if (pageFilter) {
+            return {
+                title: this.#dotMessageService.get('experiments.list.empty.page.title'),
+                subtitle: this.#dotMessageService.get(
+                    'experiments.list.empty.page.description',
+                    pageFilter.path
+                ),
+                icon: 'science',
+                iconStyle: 'material-symbols-rounded'
+            };
+        }
+
+        return this.$hasActiveFilters()
             ? {
                   title: this.#dotMessageService.get('experiments.list.no-results.title'),
                   subtitle: this.#dotMessageService.get('experiments.list.no-results.description'),
@@ -296,8 +361,24 @@ export class DotExperimentsListComponent {
                   subtitle: this.#dotMessageService.get('experiments.list.empty.description'),
                   icon: 'science',
                   iconStyle: 'material-symbols-rounded'
-              }
-    );
+              };
+    });
+
+    /**
+     * The empty state's action, or `''` when the state has nothing to offer.
+     *
+     * Paired with `onEmptyAction` below and read off the same two conditions as
+     * `$emptyConfiguration`, so the copy and the button cannot end up describing different states.
+     */
+    readonly $emptyActionLabel = computed<string>(() => {
+        if (this.$pageFilter()) {
+            return this.#dotMessageService.get('experiments.list.empty.page.action');
+        }
+
+        return this.$hasActiveFilters()
+            ? this.#dotMessageService.get('experiments.list.no-results.clear')
+            : '';
+    });
 
     /**
      * Shown when the load fails. The error itself is already surfaced by
@@ -331,6 +412,33 @@ export class DotExperimentsListComponent {
     constructor() {
         this.#listenForActionSuccess();
     }
+
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * Nothing else does. `processUrl` in the breadcrumb feature only builds a trail for a URL that
+     * matches a main-menu entry, and this portlet matches neither test: it is opt-in, so it is
+     * absent from `/api/v1/menu`, and the arrival from UVE carries `?pageId=` without an `mId`,
+     * which that matcher rejects outright. With no crumb of its own the trail kept whatever the
+     * previous screen left — so, arriving from the editor, the list rendered the *page's* name as
+     * its title.
+     *
+     * Appended rather than set: the crumb the UVE shell pushed for the page is exactly the way
+     * back to the editor, and it belongs above this one. `putCrumbOnTrail` replaces on a matching
+     * id, so re-entering the list (a reload, clearing the page filter, returning from Configure)
+     * lands on the crumb already there instead of stacking another.
+     *
+     * An effect rather than a one-shot: the filter can be cleared without leaving the screen, and
+     * the crumb's address has to follow it.
+     */
+    protected readonly syncBreadcrumbEffect = effect(() => {
+        const crumb = experimentsListCrumb(
+            this.#dotMessageService.get(LIST_TITLE_KEY),
+            this.#pageFilterParams()
+        );
+
+        untracked(() => putCrumbOnTrail(this.#globalStore, crumb));
+    });
 
     /**
      * Options for the two chip filters. Both are built here rather than inside the filter so it
@@ -368,11 +476,38 @@ export class DotExperimentsListComponent {
         this.$searchTerm.set('');
     }
 
-    /** Clears every narrowing at once, from the no-results state. */
+    /**
+     * Clears the narrowings the user applied, from the no-results state.
+     *
+     * Not the page filter: that one is not the user's — they arrived with it from the editor — and
+     * it lives in the address rather than in a control on this screen. Nothing here can widen it;
+     * see the note on `$pageFilter`.
+     */
     onClearFilters(): void {
         this.$searchTerm.set('');
         this.#dispatch.statusesChanged([]);
         this.#dispatch.goalsChanged([]);
+        // Including a page narrowing that matched nothing — the only case where this button is on
+        // screen beside one. A narrowing that *is* matching shows the page-scoped empty state,
+        // whose action creates an experiment for the page rather than widening the list.
+        this.#dispatch.pageNarrowingCleared();
+    }
+
+    /**
+     * The empty state's one action, whichever of the two states it is in.
+     *
+     * Two branches on one condition rather than two containers in the template: the states differ
+     * only in the label and what the press does, and keeping them in one place is what stops a
+     * later edit from moving one and not the other.
+     */
+    onEmptyAction(): void {
+        if (this.$pageFilter()) {
+            this.onNewExperiment();
+
+            return;
+        }
+
+        this.onClearFilters();
     }
 
     onStatusesChange(statuses: string[]): void {
@@ -417,19 +552,72 @@ export class DotExperimentsListComponent {
         }
     }
 
+    /**
+     * Opens the screen the row's status makes relevant.
+     *
+     * An experiment that is collecting or has collected data is read, not edited, so RUNNING and
+     * ENDED land on Results; every other status has nothing to report yet and lands on Configure.
+     * The gate is `AllowedActionsByExperimentStatus.results`, shared with the rest of the screen,
+     * rather than a second status list that could drift from it.
+     */
+    onRowClick(experiment: DotExperiment): void {
+        this.#router.navigate(
+            isAllowed('results', experiment.status)
+                ? resultsCommandsOf(experiment.id)
+                : configureCommandsOf(experiment.id),
+            { queryParams: this.#pageFilterParams() }
+        );
+    }
+
     /** Rebuilds the kebab menu for the given row before the popup opens. */
     onRowMenuToggle(experiment: DotExperiment): void {
         this.$rowMenuItems.set(this.#buildRowMenuItems(experiment));
     }
 
-    /** Opens the Configure screen with nothing created yet: the draft is POSTed from there. */
+    /**
+     * Opens the Configure screen with nothing created yet: the draft is POSTed from there.
+     *
+     * While the list is narrowed to a page, the new experiment starts from that page: the filter
+     * travels as `?pageId=` (plus `&language_id=` when the address carried one) and Configure
+     * prefills its Page card from it (FR-024). Arriving from the editor and being handed an empty
+     * picker would ask the user to find, by hand, the page they were standing on a click ago.
+     *
+     * Both entry points — this button and the filtered empty state's offer — come through here, so
+     * the two cannot carry different addresses.
+     */
     onNewExperiment(): void {
-        this.#router.navigate(NEW_EXPERIMENT_COMMANDS);
+        this.#router.navigate(NEW_EXPERIMENT_COMMANDS, { queryParams: this.#pageFilterParams() });
+    }
+
+    /**
+     * The narrowing to carry through every door out of this screen (FR-021c).
+     *
+     * Empty when the list is site-wide, so it can be handed to `navigate` unconditionally. What
+     * comes back travels as `?pageId=` (plus `&language_id=`), which is the same address the
+     * receiving screen's back arrow reads to return here.
+     */
+    #pageFilterParams(): Params {
+        return pageFilterParams(this.store.selectedPageId(), this.store.languageId());
     }
 
     /** Opens the Configure screen of an existing experiment. */
     onConfigure(experiment: DotExperiment): void {
-        this.#router.navigate(configureCommandsOf(experiment.id));
+        this.#router.navigate(configureCommandsOf(experiment.id), {
+            queryParams: this.#pageFilterParams()
+        });
+    }
+
+    /**
+     * Opens the Results screen of an experiment.
+     *
+     * Ungated on purpose, unlike every other menu entry: `AllowedActionsByExperimentStatus.results`
+     * clears RUNNING and ENDED only, but the screen renders a waiting state of its own for an
+     * experiment with nothing to count yet, so it is offered whatever the status (AC6).
+     */
+    onViewResults(experiment: DotExperiment): void {
+        this.#router.navigate(resultsCommandsOf(experiment.id), {
+            queryParams: this.#pageFilterParams()
+        });
     }
 
     confirmArchive(experiment: DotExperiment): void {
@@ -446,8 +634,15 @@ export class DotExperimentsListComponent {
 
         return [
             {
-                // The primary action of the row: it leads the menu, and is the only entry every
-                // status allows.
+                // Temporary home: the design leads the row with View Results as its own control,
+                // but it sits in the menu until that lands. Leads the menu because, unlike every
+                // other entry, the Results screen is reachable on any status — it renders its own
+                // waiting state for an experiment with nothing counted yet (AC6).
+                id: 'experiments-view-results',
+                label: this.#dotMessageService.get('experiments.list.actions.view-results'),
+                command: () => this.onViewResults(experiment)
+            },
+            {
                 id: 'experiments-configure',
                 label: this.#dotMessageService.get('experiments.list.action.configure'),
                 visible: isAllowed('configuration', status),
@@ -503,19 +698,6 @@ export class DotExperimentsListComponent {
                     })
             },
             {
-                id: 'experiments-delete',
-                label: this.#dotMessageService.get('experiments.action.delete'),
-                visible: isAllowed('delete', status),
-                command: () =>
-                    this.#confirm({
-                        headerKey: 'experiments.action.delete',
-                        messageKey: 'experiments.action.delete.confirm-question',
-                        messageArg: experiment.name,
-                        acceptLabelKey: 'experiments.action.delete',
-                        accept: () => this.#dispatch.deleteExperiment(experiment)
-                    })
-            },
-            {
                 id: 'experiments-push-publish',
                 label: this.#dotMessageService.get('contenttypes.content.push_publish'),
                 visible: isAllowed('pushPublish', status),
@@ -530,6 +712,23 @@ export class DotExperimentsListComponent {
                 label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: isAllowed('addToBundle', status),
                 command: () => this.$addToBundleAssetId.set(experiment.id)
+            },
+            // Delete closes the menu, kept apart by a rule so it is never hit while reaching for
+            // the entry above it. The rule is bound to the same gate as delete itself: without it
+            // an experiment that cannot be deleted would end its menu on a dangling line.
+            { separator: true, visible: isAllowed('delete', status) },
+            {
+                id: 'experiments-delete',
+                label: this.#dotMessageService.get('experiments.action.delete'),
+                visible: isAllowed('delete', status),
+                command: () =>
+                    this.#confirm({
+                        headerKey: 'experiments.action.delete',
+                        messageKey: 'experiments.action.delete.confirm-question',
+                        messageArg: experiment.name,
+                        acceptLabelKey: 'experiments.action.delete',
+                        accept: () => this.#dispatch.deleteExperiment(experiment)
+                    })
             }
         ];
     }

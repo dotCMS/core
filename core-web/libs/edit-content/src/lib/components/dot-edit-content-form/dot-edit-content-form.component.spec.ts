@@ -1,4 +1,3 @@
-import { expect } from '@jest/globals';
 import { patchState } from '@ngrx/signals';
 import {
     byTestId,
@@ -6,8 +5,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
-import { of } from 'rxjs';
+} from '@openng/spectator/vitest';
+import { of, Subject } from 'rxjs';
+import { Mock, MockInstance, expect, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -23,6 +23,7 @@ import {
     DotContentletService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFireActionOptions,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
@@ -85,10 +86,10 @@ describe('DotFormComponent', () => {
             {
                 provide: EDIT_CONTENT_HOST,
                 useValue: {
-                    setContentTitle: jest.fn(),
-                    addBreadcrumb: jest.fn(),
-                    goToSavedContent: jest.fn(),
-                    goToRestoredVersion: jest.fn()
+                    setContentTitle: vi.fn(),
+                    addBreadcrumb: vi.fn(),
+                    goToSavedContent: vi.fn(),
+                    goToRestoredVersion: vi.fn()
                 }
             },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
@@ -107,14 +108,14 @@ describe('DotFormComponent', () => {
             mockProvider(DialogService),
             mockProvider(DotWorkflowEventHandlerService),
             mockProvider(DotWizardService, {
-                open: jest.fn().mockReturnValue(of({}))
+                open: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService),
             mockProvider(DotVersionableService),
             mockProvider(GlobalStore, {
-                loadCurrentSite: jest.fn(),
-                siteDetails: jest.fn().mockReturnValue(null),
-                addNewBreadcrumb: jest.fn()
+                loadCurrentSite: vi.fn(),
+                siteDetails: vi.fn().mockReturnValue(null),
+                addNewBreadcrumb: vi.fn()
             }),
             {
                 provide: ActivatedRoute,
@@ -137,7 +138,7 @@ describe('DotFormComponent', () => {
                 }
             },
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(
+                getSystemConfig: vi.fn().mockReturnValue(
                     of({
                         logos: { loginScreen: '/assets/logo.png', navBar: 'NA' },
                         colors: { primary: '#000000', secondary: '#FFFFFF', background: '#F5F5F5' },
@@ -184,10 +185,21 @@ describe('DotFormComponent', () => {
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
         dotContentletService = spectator.inject(DotContentletService);
+
+        // `mockProvider` registers its vi.fn()s at factory level, so any test that swaps an
+        // implementation keeps it for the rest of the file — `vi.clearAllMocks()` below clears
+        // call data but not implementations. Re-establishing the defaults here makes every test
+        // start from the same state regardless of declaration order.
+        (spectator.inject(DotWizardService).open as Mock).mockReturnValue(of({}));
+
+        const workflowEventHandler = spectator.inject(DotWorkflowEventHandlerService);
+        (workflowEventHandler.containsPushPublish as Mock).mockReturnValue(false);
+        (workflowEventHandler.checkPublishEnvironments as Mock).mockReturnValue(of(true));
+        (workflowEventHandler.processWorkflowPayload as Mock).mockReturnValue(undefined);
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Form creation and validation', () => {
@@ -451,7 +463,7 @@ describe('DotFormComponent', () => {
                 expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
 
-                const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
+                const toggleSidebarSpy = vi.spyOn(store, 'toggleSidebar');
 
                 spectator.click(sidebarButton);
 
@@ -488,7 +500,7 @@ describe('DotFormComponent', () => {
 
                 // DotMessageService is a bare mockProvider (returns undefined), so echo the key back
                 // to make the label observable.
-                (spectator.inject(DotMessageService).get as jest.Mock).mockImplementation(
+                (spectator.inject(DotMessageService).get as Mock).mockImplementation(
                     (key: string) => key
                 );
 
@@ -595,7 +607,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should fire the action on the store when it has no inputs', () => {
-                const spy = jest.spyOn(store, 'fireWorkflowAction');
+                const spy = vi.spyOn(store, 'fireWorkflowAction');
 
                 component.fireWorkflowAction({
                     workflow: { id: '1' } as DotCMSWorkflowAction,
@@ -636,9 +648,9 @@ describe('DotFormComponent', () => {
             });
 
             it('should validate and not fire when the form is invalid (regression)', () => {
-                const fireSpy = jest.spyOn(store, 'fireWorkflowAction');
-                const setFormStatusSpy = jest.spyOn(store, 'setFormStatus');
-                const markAllAsTouchedSpy = jest.spyOn(component.form, 'markAllAsTouched');
+                const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+                const setFormStatusSpy = vi.spyOn(store, 'setFormStatus');
+                const markAllAsTouchedSpy = vi.spyOn(component.form, 'markAllAsTouched');
 
                 // Force the form invalid via a required control.
                 component.form.get('text1')?.setValidators(Validators.required);
@@ -661,7 +673,7 @@ describe('DotFormComponent', () => {
 
                 beforeEach(() => {
                     wizardService = spectator.inject(DotWizardService);
-                    (wizardService.open as jest.Mock).mockClear();
+                    (wizardService.open as Mock).mockClear();
                 });
 
                 it('should open wizard when action has commentable input', () => {
@@ -712,11 +724,164 @@ describe('DotFormComponent', () => {
                     expect(wizardService.open).not.toHaveBeenCalled();
                 });
             });
+
+            // AC-002 (#36883): the action must not complete until the author submits the
+            // dialog, and cancelling must leave everything untouched. The branch logic above
+            // was already covered; what was not is the *gating* — that nothing fires while the
+            // dialog is open, and that a cancelled dialog fires nothing at all.
+            describe('dialog gating (AC-002, #36883)', () => {
+                const commentableWorkflow = {
+                    id: '1',
+                    actionInputs: [{ id: 'commentable', body: {} }]
+                } as DotCMSWorkflowAction;
+
+                // `fireWorkflowAction` is an rxMethod, so its parameter type is a union of
+                // (value | Observable | factory). Narrow to the value form for assertions.
+                const firedPayload = (spy: MockInstance, call = 0) =>
+                    spy.mock.calls[call][0] as DotFireActionOptions<{
+                        [key: string]: string | object | string[];
+                    }>;
+
+                it('should not fire the action while the dialog is still open', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    // A wizard that never emits models a dialog the author has not answered yet.
+                    (wizardService.open as Mock).mockReturnValue(new Subject());
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                    expect(fireSpy).not.toHaveBeenCalled();
+                });
+
+                it('should fire the action only once the author submits, carrying the comment', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    const wizard$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(wizard$);
+                    // The payload the wizard collects reaches the store through
+                    // processWorkflowPayload; pass it through so we can assert the comment
+                    // actually survives the hop.
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.processWorkflowPayload as Mock).mockImplementation(
+                        (data) => data
+                    );
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    expect(fireSpy).not.toHaveBeenCalled();
+
+                    wizard$.next({ comments: 'looks good' });
+
+                    expect(fireSpy).toHaveBeenCalledTimes(1);
+                    expect(firedPayload(fireSpy).data).toEqual(
+                        expect.objectContaining({ comments: 'looks good' })
+                    );
+                });
+
+                it('should fire nothing when the author cancels the dialog', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    const wizard$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(wizard$);
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    // DotWizardService.cancel() completes the stream without emitting.
+                    wizard$.complete();
+
+                    expect(fireSpy).not.toHaveBeenCalled();
+                });
+
+                it('should keep the typed form values after a cancel, so a second attempt works', () => {
+                    const wizardService = spectator.inject(DotWizardService);
+                    const firstAttempt$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(firstAttempt$);
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.form.get('text1')?.setValue('a value the author typed');
+
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    firstAttempt$.complete(); // cancel
+
+                    expect(component.form.get('text1')?.value).toBe('a value the author typed');
+
+                    // Second attempt: same action, this time submitted.
+                    const secondAttempt$ = new Subject<{ [key: string]: string }>();
+                    (wizardService.open as Mock).mockReturnValue(secondAttempt$);
+                    component.fireWorkflowAction({ workflow: commentableWorkflow, ...baseParams });
+                    secondAttempt$.next({ comments: 'second try' });
+
+                    expect(fireSpy).toHaveBeenCalledTimes(1);
+                    expect(firedPayload(fireSpy).data.contentlet).toEqual(
+                        expect.objectContaining({ text1: 'a value the author typed' })
+                    );
+                });
+            });
+
+            // #36883: `moveable` is the second behavior change the derivation brings. A Move
+            // action with no preset path previously fired directly on unsaved content; it now
+            // folds into a `commentAndAssign` step and asks the author for a path — parity with
+            // saved content, which already gets `moveable` from getByInode.
+            it('should open the wizard for a moveable-only action', () => {
+                const wizardService = spectator.inject(DotWizardService);
+
+                component.fireWorkflowAction({
+                    workflow: {
+                        id: '1',
+                        actionInputs: [{ id: 'moveable', body: {} }]
+                    } as DotCMSWorkflowAction,
+                    ...baseParams
+                });
+
+                expect(wizardService.open).toHaveBeenCalled();
+            });
+
+            // #36883: the derivation emits `pushPublish` too, so a Push Publish action on content
+            // with no inode now routes through the environment check instead of firing directly.
+            // That is intended: previously it fired with NO push-publish data at all, so the
+            // action's push publish silently did nothing. Blocking with a notification is the
+            // correct outcome — you cannot push publish without an environment. Pinned here so the
+            // behavior reads as deliberate rather than accidental.
+            describe('push publish without environments (#36883)', () => {
+                const pushPublishWorkflow = {
+                    id: '1',
+                    actionInputs: [{ id: 'pushPublish', body: {} }]
+                } as DotCMSWorkflowAction;
+
+                it('should not fire the action when no publish environments are configured', () => {
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.containsPushPublish as Mock).mockReturnValue(true);
+                    (eventHandler.checkPublishEnvironments as Mock).mockReturnValue(of(false));
+                    const wizardService = spectator.inject(DotWizardService);
+                    const fireSpy = vi.spyOn(store, 'fireWorkflowAction');
+
+                    component.fireWorkflowAction({
+                        workflow: pushPublishWorkflow,
+                        ...baseParams
+                    });
+
+                    expect(fireSpy).not.toHaveBeenCalled();
+                    expect(wizardService.open).not.toHaveBeenCalled();
+                });
+
+                it('should open the wizard when environments are configured', () => {
+                    const eventHandler = spectator.inject(DotWorkflowEventHandlerService);
+                    (eventHandler.containsPushPublish as Mock).mockReturnValue(true);
+                    (eventHandler.checkPublishEnvironments as Mock).mockReturnValue(of(true));
+                    const wizardService = spectator.inject(DotWizardService);
+
+                    component.fireWorkflowAction({
+                        workflow: pushPublishWorkflow,
+                        ...baseParams
+                    });
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                });
+            });
         });
     });
 
     describe('Preview Button', () => {
-        let windowOpenSpy: jest.SpyInstance;
+        let windowOpenSpy: MockInstance;
 
         afterEach(() => {
             // Restore the original implementation of window.open
@@ -726,7 +891,7 @@ describe('DotFormComponent', () => {
         describe('With URL Map', () => {
             beforeEach(() => {
                 // Mock window.open
-                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
                 dotContentTypeService.getContentTypeWithRender.mockReturnValue(
                     of(MOCK_CONTENTTYPE_2_TABS)
@@ -760,7 +925,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should call showPreview when the preview button is clicked', () => {
-                const showPreviewSpy = jest.spyOn(component, 'showPreview');
+                const showPreviewSpy = vi.spyOn(component, 'showPreview');
                 const previewButton = spectator.query(byTestId('preview-button'));
 
                 spectator.click(previewButton);
@@ -781,7 +946,7 @@ describe('DotFormComponent', () => {
         describe('Without URL Map', () => {
             beforeEach(() => {
                 // Mock window.open
-                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
                 dotContentTypeService.getContentTypeWithRender.mockReturnValue(
                     of(MOCK_CONTENTTYPE_2_TABS)
@@ -820,7 +985,7 @@ describe('DotFormComponent', () => {
             } as DotCMSContentlet;
 
             beforeEach(() => {
-                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
                 dotContentTypeService.getContentTypeWithRender.mockReturnValue(
                     of(MOCK_CONTENTTYPE_2_TABS)
@@ -861,7 +1026,7 @@ describe('DotFormComponent', () => {
 
         describe('New content', () => {
             beforeEach(() => {
-                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
                 dotContentTypeService.getContentTypeWithRender.mockReturnValue(
                     of(MOCK_CONTENTTYPE_1_TAB)
@@ -1026,7 +1191,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should not reinitialize the form when only lock state changes', () => {
-                const initFormSpy = jest.spyOn(
+                const initFormSpy = vi.spyOn(
                     component as DotEditContentFormComponent & { initializeForm(): void },
                     'initializeForm'
                 );
@@ -1246,7 +1411,7 @@ describe('DotFormComponent', () => {
                 expect(component.form.enabled).toBe(true);
                 expect(component.form.pristine).toBe(true);
 
-                const enableSpy = jest.spyOn(component.form, 'enable');
+                const enableSpy = vi.spyOn(component.form, 'enable');
 
                 store.lockContent();
                 spectator.detectChanges();
@@ -1418,7 +1583,7 @@ describe('DotFormComponent', () => {
 
             it('should emit event when disabledWYSIWYG form control value changes', () => {
                 const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
-                const spy = jest.spyOn(disabledWYSIWYGControl, 'setValue');
+                const spy = vi.spyOn(disabledWYSIWYGControl!, 'setValue');
 
                 component.onDisabledWYSIWYGChange(['newField']);
 
@@ -1514,7 +1679,7 @@ describe('DotFormComponent', () => {
             };
 
             // Spy on the changeValue output
-            const changeValueSpy = jest.fn();
+            const changeValueSpy = vi.fn();
             spectator.output('changeValue').subscribe(changeValueSpy);
 
             // Call onFormChange
@@ -1534,12 +1699,12 @@ describe('DotFormComponent', () => {
             } as unknown as DotCMSContentTypeField;
 
             const originalFormFields = component.$formFields();
-            jest.spyOn(component, '$formFields').mockReturnValue([
+            vi.spyOn(component, '$formFields').mockReturnValue([
                 ...originalFormFields,
                 categoryField
             ]);
 
-            const changeValueSpy = jest.fn();
+            const changeValueSpy = vi.fn();
             spectator.output('changeValue').subscribe(changeValueSpy);
 
             // Simulate the translation scenario where categories is an empty string
@@ -1559,12 +1724,12 @@ describe('DotFormComponent', () => {
             } as unknown as DotCMSContentTypeField;
 
             const originalFormFields = component.$formFields();
-            jest.spyOn(component, '$formFields').mockReturnValue([
+            vi.spyOn(component, '$formFields').mockReturnValue([
                 ...originalFormFields,
                 categoryField
             ]);
 
-            const changeValueSpy = jest.fn();
+            const changeValueSpy = vi.fn();
             spectator.output('changeValue').subscribe(changeValueSpy);
 
             component.onFormChange({
@@ -1615,7 +1780,7 @@ describe('DotFormComponent', () => {
         });
 
         describe('Form State Management', () => {
-            xit('should disable / enable form when exiting historical version view', () => {
+            it.skip('should disable / enable form when exiting historical version view', () => {
                 // Start by simulating historical version state
                 store.loadVersionContent('historical-inode');
                 spectator.detectChanges();
@@ -1630,11 +1795,11 @@ describe('DotFormComponent', () => {
             });
 
             it('should reinitialize form when contentlet changes', () => {
-                const initFormSpy = jest.spyOn(
+                const initFormSpy = vi.spyOn(
                     component as DotEditContentFormComponent & { initializeForm(): void },
                     'initializeForm'
                 );
-                const initListenerSpy = jest.spyOn(
+                const initListenerSpy = vi.spyOn(
                     component as DotEditContentFormComponent & { initializeFormListener(): void },
                     'initializeFormListener'
                 );
@@ -1742,11 +1907,10 @@ describe('DotFormComponent', () => {
                 initializeForm: () => void;
                 initializeFormListener: () => void;
             };
-            jest.spyOn(
-                component as unknown as PrivateFormMethods,
-                'initializeForm'
-            ).mockReturnValue(undefined);
-            jest.spyOn(
+            vi.spyOn(component as unknown as PrivateFormMethods, 'initializeForm').mockReturnValue(
+                undefined
+            );
+            vi.spyOn(
                 component as unknown as PrivateFormMethods,
                 'initializeFormListener'
             ).mockReturnValue(undefined);

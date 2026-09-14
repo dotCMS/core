@@ -1,0 +1,64 @@
+@if (!$isLoading()) {
+    <div class="flex flex-col gap-2">
+        <div class="flex flex-row items-start justify-end gap-6 pr-1">
+            <!-- Optional heading beside the legend. Left as a slot rather than an input so the
+                 caller owns its markup; with nothing projected the legend keeps the right edge to
+                 itself, which is what the screens that predate the slot expect. -->
+            <ng-content select="[chartHeading]" />
+            <ul
+                class="m-0 flex list-none flex-row items-center gap-2 p-0"
+                data-testId="chart-legends">
+                @for (item of $legendItems(); track item.index) {
+                    <li
+                        class="cursor-pointer"
+                        [class.opacity-40]="item.hidden"
+                        [attr.aria-pressed]="!item.hidden"
+                        (click)="toggleSeries(item.index)"
+                        (keydown.enter)="toggleSeries(item.index)"
+                        (keydown.space)="toggleSeries(item.index); $event.preventDefault()"
+                        data-testId="chart-legend-item"
+                        role="button"
+                        tabindex="0">
+                        <p-tag severity="secondary">
+                            <span class="flex items-center gap-1.5">
+                                <span
+                                    class="size-2 flex-none rounded-full"
+                                    [style.background-color]="item.color"
+                                    aria-hidden="true"></span>
+                                {{ item.label }}
+                            </span>
+                        </p-tag>
+                    </li>
+                }
+            </ul>
+        </div>
+        @if (!$isEmpty()) {
+            <p-chart
+                [data]="$chartData()"
+                [options]="options"
+                [id]="chartId"
+                height="500px"
+                width="100%" />
+        } @else {
+            <div
+                class="flex h-[500px] w-full flex-col items-center justify-center gap-0 bg-contain bg-center bg-no-repeat"
+                [style.background-image]="emptyChartBackgroundImage"
+                data-testId="empty-data-msg">
+                <i class="material-symbols-outlined mb-2 text-surface-400">show_chart</i>
+                <p class="m-0 text-lg">{{ 'experiments.reports.chart.empty.title' | dm }}</p>
+                <p class="m-0 text-base text-gray-600">
+                    {{ 'experiments.reports.chart.empty.description' | dm }}
+                </p>
+            </div>
+        }
+    </div>
+} @else {
+    <div class="grid grid-cols-12 gap-4" data-testId="loading-skeleton">
+        <div class="col-span-2 mt-6">
+            <p-skeleton height="1rem" width="100%" />
+        </div>
+        <div class="col-span-12">
+            <p-skeleton height="33rem" width="100%" />
+        </div>
+    </div>
+}

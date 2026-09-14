@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -80,14 +86,14 @@ describe('DotA11yDiffComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        jest.useFakeTimers();
+        vi.clearAllMocks();
+        vi.useFakeTimers();
         selectedPage = MOCK_PAGE;
         previewRevision.set(0);
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     /**
@@ -96,7 +102,7 @@ describe('DotA11yDiffComponent', () => {
      * fires — every assertion about a load has to come after this.
      */
     function flushReload() {
-        jest.advanceTimersByTime(DIFF_RELOAD_DEBOUNCE_MS);
+        vi.advanceTimersByTime(DIFF_RELOAD_DEBOUNCE_MS);
         spectator.detectChanges();
     }
 
@@ -105,10 +111,10 @@ describe('DotA11yDiffComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotPageSourcesService, {
-                    getPageSources: jest
+                    getPageSources: vi
                         .fn()
                         .mockReturnValue(of(diffFiles.map((f) => f as PageSourceFile))),
-                    getDiffFiles: jest.fn().mockReturnValue(of(diffFiles))
+                    getDiffFiles: vi.fn().mockReturnValue(of(diffFiles))
                 })
             ]
         });
@@ -190,8 +196,8 @@ describe('DotA11yDiffComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotPageSourcesService, {
-                    getPageSources: jest.fn().mockReturnValue(of(DIFF_FILES as PageSourceFile[])),
-                    getDiffFiles: jest.fn().mockReturnValue(of(DIFF_FILES))
+                    getPageSources: vi.fn().mockReturnValue(of(DIFF_FILES as PageSourceFile[])),
+                    getDiffFiles: vi.fn().mockReturnValue(of(DIFF_FILES))
                 })
             ]
         });
@@ -217,8 +223,8 @@ describe('DotA11yDiffComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotPageSourcesService, {
-                    getPageSources: jest.fn().mockReturnValue(of([])),
-                    getDiffFiles: jest.fn().mockReturnValue(of([]))
+                    getPageSources: vi.fn().mockReturnValue(of([])),
+                    getDiffFiles: vi.fn().mockReturnValue(of([]))
                 })
             ]
         });
@@ -234,8 +240,8 @@ describe('DotA11yDiffComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotPageSourcesService, {
-                    getPageSources: jest.fn().mockReturnValue(of([])),
-                    getDiffFiles: jest.fn().mockReturnValue(throwError(() => new Error('boom')))
+                    getPageSources: vi.fn().mockReturnValue(of([])),
+                    getDiffFiles: vi.fn().mockReturnValue(throwError(() => new Error('boom')))
                 })
             ]
         });

@@ -24,7 +24,9 @@
 
 <!-- After the router-outlet to make sure always shows up on top of any other dialog in the system -->
 <dot-large-message-display />
-<dot-alert-confirm />
+<!-- No <dot-alert-confirm /> here: app.component.html already renders one at the root,
+     covering every route. Two hosts both subscribe to DotAlertConfirmService, so every
+     alert and confirm in the admin was rendering twice. -->
 <dot-push-publish-dialog />
 <dot-download-bundle-dialog />
 <dot-wizard />

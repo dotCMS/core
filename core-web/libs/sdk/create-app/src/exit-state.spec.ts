@@ -73,6 +73,8 @@
  * Acceptance criterion: AC-004.
  */
 
+import { vi } from 'vitest';
+
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -113,10 +115,10 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
         envPath = path.join(tmpDir, '.env');
 
         stdout = [];
-        jest.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+        vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
             stdout.push(args.map(String).join(' ') + '\n');
         });
-        jest.spyOn(process.stdout, 'write').mockImplementation((chunk: unknown) => {
+        vi.spyOn(process.stdout, 'write').mockImplementation((chunk: unknown) => {
             stdout.push(String(chunk));
 
             return true;
@@ -131,7 +133,7 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
         resetExitState();
         installedListeners().forEach((listener) => process.off('exit', listener));
 
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
         fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
@@ -447,9 +449,9 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
 
     describe('the handler is synchronous (D1)', () => {
         it('writes with writeFileSync, never writeFile, and returns no promise', () => {
-            const writeFileSync = jest.spyOn(fs, 'writeFileSync');
-            const writeFile = jest.spyOn(fs, 'writeFile');
-            const writeFileAsync = jest.spyOn(fs.promises, 'writeFile');
+            const writeFileSync = vi.spyOn(fs, 'writeFileSync');
+            const writeFile = vi.spyOn(fs, 'writeFile');
+            const writeFileAsync = vi.spyOn(fs.promises, 'writeFile');
 
             recordRecoverableState({
                 host: HOST,
@@ -478,7 +480,7 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
 
     describe('idempotent installation', () => {
         it('registering twice prints once and writes once', () => {
-            const writeFileSync = jest.spyOn(fs, 'writeFileSync');
+            const writeFileSync = vi.spyOn(fs, 'writeFileSync');
 
             recordRecoverableState({
                 host: HOST,

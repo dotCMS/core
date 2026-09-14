@@ -1,5 +1,11 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -35,7 +41,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
         component: DotImageEditorTransformPanelComponent,
         providers: [
             provideNoopAnimations(),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })
         ],
         componentProviders: [
             Dispatcher,
@@ -48,7 +54,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
         outputDimensions.set({ width: 800, height: 600 });
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
-        jest.spyOn(dispatcher, 'dispatch');
+        vi.spyOn(dispatcher, 'dispatch');
     });
 
     it('should dispatch scaleChanged on the scale slider slide end', () => {
@@ -163,7 +169,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
      * the first call argument.
      */
     function dispatchedEvent(type: string): { type: string; payload?: unknown } | undefined {
-        const call = (dispatcher.dispatch as jest.Mock).mock.calls.find(
+        const call = (dispatcher.dispatch as Mock).mock.calls.find(
             ([dispatched]) => dispatched.type === type
         );
 

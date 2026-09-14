@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, MockDotMessageService } from '@dotcms/utils-testing';
@@ -54,7 +55,7 @@ describe('DotCategoryFieldSelectedComponent', () => {
     });
 
     it('should emit an event when remove button is clicked', () => {
-        const removeSpy = jest.spyOn(spectator.component.removeItem, 'emit');
+        const removeSpy = vi.spyOn(spectator.component.removeItem, 'emit');
         const button = spectator.query(byTestId('category-remove-btn'));
         spectator.click(button);
         expect(removeSpy).toHaveBeenCalledWith(CATEGORY_MOCK_TRANSFORMED[0].key);

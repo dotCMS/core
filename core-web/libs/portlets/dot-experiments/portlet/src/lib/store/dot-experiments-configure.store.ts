@@ -1,7 +1,7 @@
 import { mapResponse } from '@ngrx/operators';
 import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
 import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
-import { from, merge, of, SubscriptionLike } from 'rxjs';
+import { defer, from, merge, Observable, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
@@ -23,16 +23,14 @@ import {
     DotContentSearchService,
     DotExperimentsService,
     DotHttpErrorManagerService,
-    DotMessageService,
-    DotPagesBrowserService
+    DotMessageService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
-    DotExperimentStatus,
     DotExperiment,
+    DotExperimentStatus,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
-    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     Variant
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -45,6 +43,7 @@ import {
 } from './dot-experiments-configure-page.events';
 
 import {
+    PAGE_LOOKUP_LIMIT,
     CONFIGURATION_SEGMENT,
     DEFAULT_TRAFFIC_ALLOCATION,
     LOCKED_BANNER_KEY_READ_ONLY,
@@ -60,16 +59,16 @@ import {
     ExperimentListAction
 } from '../shared/models';
 import {
-    toConfigureFormModel,
     isSendableSplit,
+    toConfigureFormModel,
     toConfigurePatch
 } from '../util/dot-experiments-configure-form.util';
 import {
     canChangePage,
     deletableVariants,
-    fromBrowserPage,
     isSameFormValue,
     normalizePath,
+    pickPageVersion,
     toConfigurePage,
     validateConfigure
 } from '../util/dot-experiments-configure.util';
@@ -88,7 +87,7 @@ const initialState: DotExperimentsConfigureViewState = {
     draftDescription: '',
     selectedPage: null,
     pagePrefillError: null,
-    pageLockInfo: null,
+    pageChanging: false,
     deletingVariants: false,
     deleteVariantsFailed: false,
     validationRevealed: false,
@@ -128,7 +127,7 @@ interface PageLookupEntity {
  * mutating methods and never opens UI — confirmations and toasts belong to the shell.
  *
  * Not provided in root: supply it in the Configure shell's `providers` together with
- * `DotExperimentsService` and `DotPagesBrowserService`.
+ * `DotExperimentsService`.
  */
 
 /**
@@ -155,8 +154,6 @@ function baselineOf(experiment: DotExperiment): ConfigureFormModel {
 export const DotExperimentsConfigureStore = signalStore(
     withState<DotExperimentsConfigureViewState>(initialState),
     withComputed((store) => {
-        const globalStore = inject(GlobalStore);
-
         /** A screen with no experiment yet is a draft: nothing on it is locked. */
         const $status = computed<DotExperimentStatus>(
             () => store.experiment()?.status ?? DotExperimentStatus.DRAFT
@@ -167,16 +164,6 @@ export const DotExperimentsConfigureStore = signalStore(
          * kebab still offers its status-specific actions; it is the *fields* that are frozen.
          */
         const $isLocked = computed<boolean>(() => $status() !== DotExperimentStatus.DRAFT);
-
-        const $lockedByAnotherUser = computed<boolean>(() => {
-            const lock = store.pageLockInfo();
-
-            if (!lock?.locked || !lock.lockedBy) {
-                return false;
-            }
-
-            return lock.lockedBy !== globalStore.loggedUser()?.userId;
-        });
 
         const $variants = computed<Variant[]>(
             () => store.experiment()?.trafficProportion?.variants ?? []
@@ -264,7 +251,6 @@ export const DotExperimentsConfigureStore = signalStore(
         return {
             $status,
             $isLocked,
-            $lockedByAnotherUser,
             $variants,
             $deletableVariants,
             /**
@@ -290,16 +276,23 @@ export const DotExperimentsConfigureStore = signalStore(
                     : LOCKED_BANNER_KEY_READ_ONLY;
             }),
             /**
-             * Same precedence as the old screen: a non-DRAFT status explains the disabled state
-             * before a page lock does, since it is the stronger reason.
+             * The experiment's own status is the only thing that freezes this screen.
+             *
+             * A lock held on the *page* deliberately does not, which is where this parts company
+             * with the old screen. Nothing the Configure screen writes goes through the page: a
+             * variant is a row in `variant` plus copied `multi_tree` rows, and a weight, a rename
+             * and a delete are all writes to the experiment. `ExperimentsAPIImpl` reads the page
+             * once, to build a preview URL, and neither it nor `ExperimentsResource` consults the
+             * lock — so the backend accepts every one of these edits on a locked page. Refusing
+             * them here only invented a dead end the server never asked for.
+             *
+             * Editing a variant's *content* is the write that would need the lock, and that is a
+             * UVE round-trip this screen does not make yet (#37005). The reason belongs on that
+             * button, when there is one.
              */
-            $disabledTooltipKey: computed<string | null>(() => {
-                if ($isLocked()) {
-                    return EXP_CONFIG_ERROR_LABEL_CANT_EDIT;
-                }
-
-                return $lockedByAnotherUser() ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED : null;
-            }),
+            $disabledTooltipKey: computed<string | null>(() =>
+                $isLocked() ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT : null
+            ),
             /** Kebab gating, straight off `AllowedActionsByExperimentStatus`. No license gates. */
             $allowedActions: computed<Record<ExperimentListAction, boolean>>(() => {
                 const status = $status();
@@ -430,8 +423,19 @@ export const DotExperimentsConfigureStore = signalStore(
                 return {};
             }
 
-            return { selectedPage: payload, pagePrefillError: null };
+            // In flight only when there is an experiment to move: before creation the page travels
+            // in the POST, so nothing is pending and nothing needs gating.
+            const pageChanging = !!state.experiment && payload.pageId !== state.experiment.pageId;
+
+            return { selectedPage: payload, pagePrefillError: null, pageChanging };
         }),
+        on(apiEvents.pageChangeSucceeded, ({ payload }) => ({
+            experiment: payload,
+            pageChanging: false
+        })),
+        // The revert is the existing `revertRefusedPage$`, which re-resolves the page the
+        // experiment actually reports; this only lets the form go again.
+        on(apiEvents.pageChangeFailed, () => ({ pageChanging: false })),
         on(apiEvents.pagePrefillResolved, ({ payload }) => ({
             selectedPage: payload,
             pagePrefillError: null
@@ -448,7 +452,6 @@ export const DotExperimentsConfigureStore = signalStore(
             selectedPage: null,
             pagePrefillError: PAGE_PREFILL_LOOKUP_ERROR_KEY
         })),
-        on(apiEvents.pageLockResolved, ({ payload }) => ({ pageLockInfo: payload })),
 
         /**
          * The form moved. The mirror is replaced wholesale — there is nothing to merge, because
@@ -500,12 +503,38 @@ export const DotExperimentsConfigureStore = signalStore(
          */
         on(apiEvents.saveSkipped, () => ({ status: ComponentStatus.LOADED })),
 
-        // Variants have their own endpoints, each answering with the recomputed proportion.
+        /**
+         * Variants have their own endpoints, each answering with the recomputed proportion.
+         *
+         * Which means that proportion is already written, so the baseline has to move with it:
+         * the card mirrors the response into the form, and a baseline left behind called that
+         * mirroring unsaved work. Save Draft lit up for something already stored, and the
+         * `canDeactivate` guard then blocked the way out — so "Edit variant" came back as a
+         * confirm dialog about losing changes instead of opening the editor (#37005).
+         *
+         * Only that slice settles. `baselineOf` would rebuild the whole baseline from the server's
+         * experiment, which would call a name or a goal typed and never sent "saved" and lose it
+         * on the way out — the same trap `saveSucceeded` documents.
+         */
         on(
             apiEvents.addVariantSucceeded,
             apiEvents.editVariantSucceeded,
             apiEvents.removeVariantSucceeded,
-            ({ payload }) => ({ experiment: payload, status: ComponentStatus.LOADED })
+            ({ payload }, state) => {
+                const settled = baselineOf(payload);
+
+                return {
+                    experiment: payload,
+                    status: ComponentStatus.LOADED,
+                    savedFormValue: state.savedFormValue
+                        ? {
+                              ...state.savedFormValue,
+                              variantWeights: settled.variantWeights,
+                              trafficProportionType: settled.trafficProportionType
+                          }
+                        : settled
+                };
+            }
         ),
         on(pageEvents.variantAdded, pageEvents.variantRenamed, pageEvents.variantDeleted, () => ({
             status: ComponentStatus.SAVING
@@ -574,6 +603,16 @@ export const DotExperimentsConfigureStore = signalStore(
             pageEvents.abortRequested,
             () => ({ status: ComponentStatus.SAVING })
         ),
+        /**
+         * A transition's answer is authoritative about the schedule, the same way a PATCH's is.
+         *
+         * The server dates the experiment as part of running it: starting one that carries no
+         * schedule stamps a real window on it (`ExperimentsAPIImpl.startNowScheduling` — a minute
+         * from now, through the default duration), stopping one rewrites its end date, and
+         * cancelling a schedule clears both. So the baseline moves with the experiment here —
+         * without it the screen is left dirty against dates the user never typed, and the autosave
+         * would offer to write them back to an experiment that is no longer a draft.
+         */
         on(
             apiEvents.startSucceeded,
             apiEvents.stopSucceeded,
@@ -581,6 +620,7 @@ export const DotExperimentsConfigureStore = signalStore(
             apiEvents.abortSucceeded,
             ({ payload }) => ({
                 experiment: payload,
+                savedFormValue: baselineOf(payload),
                 validationRevealed: false,
                 starting: false,
                 status: ComponentStatus.LOADED
@@ -600,12 +640,53 @@ export const DotExperimentsConfigureStore = signalStore(
             store,
             events = inject(Events),
             experimentsService = inject(DotExperimentsService),
-            pagesBrowserService = inject(DotPagesBrowserService),
             contentSearchService = inject(DotContentSearchService),
             httpErrorManager = inject(DotHttpErrorManagerService),
             dotMessageService = inject(DotMessageService),
             globalStore = inject(GlobalStore)
         ) => {
+            /**
+             * The accumulated diff as a request, or `null` when there is nothing worth writing.
+             *
+             * Shared by Save draft and Start, because the backend validates a *start* against what
+             * is persisted, not against what the screen holds: a goal picked and never flushed is a
+             * goal the server has never seen, and `ExperimentsAPIImpl.start()` rejects it with
+             * "The Experiment needs to have the Goal set." Start therefore writes before it
+             * transitions, rather than trusting that a save happened to have gone out.
+             *
+             * Nothing to patch before the draft exists: those values reach the server through the
+             * creation POST, and the rest follows as soon as it answers. Nothing to patch either
+             * when the form is not in a state worth sending — the same question the Save button
+             * asks. That matters most on the run that follows `createSucceeded`, where the POST has
+             * just written the form and a second call would carry the identical body.
+             *
+             * The page travels only when it actually moved. Sending the stored one back on every
+             * save would put `pageId` in the body of an experiment that has variants, which is the
+             * one shape `ExperimentsAPIImpl.save()` refuses with a 400 — for a change the user
+             * never made.
+             */
+            const pendingSave = (): {
+                form: ConfigureFormModel;
+                save$: Observable<DotExperiment>;
+            } | null => {
+                const experiment = store.experiment();
+                const model = store.formValue();
+
+                if (!experiment || !model || !store.$canSave()) {
+                    return null;
+                }
+
+                const selectedPageId = store.selectedPage()?.pageId;
+                const body = toConfigurePatch(
+                    model,
+                    store.formValidity(),
+                    experiment.trafficProportion?.variants ?? [],
+                    selectedPageId === experiment.pageId ? undefined : selectedPageId
+                );
+
+                return { form: model, save$: experimentsService.patch(experiment.id, body) };
+            };
+
             /** Routes a failed call through the shared manager, then reports it as its event. */
             const toFailure =
                 <T>(failed: (error: HttpErrorResponse) => T) =>
@@ -615,8 +696,46 @@ export const DotExperimentsConfigureStore = signalStore(
                     return failed(error);
                 };
 
+            /** The pending write as its own outcome — what Save draft reports and nothing more. */
+            const savedBy = (pending: NonNullable<ReturnType<typeof pendingSave>>) =>
+                pending.save$.pipe(
+                    mapResponse({
+                        next: (updated: DotExperiment) =>
+                            apiEvents.saveSucceeded({ experiment: updated, form: pending.form }),
+                        error: toFailure(apiEvents.saveFailed)
+                    })
+                );
+
+            /**
+             * Runs a page lookup and reports the one page it resolved, or why it did not.
+             *
+             * Shared by both prefill params so they cannot drift: one request shape, one mapping,
+             * one failure event. More than one row is asked for because a page answers once per
+             * language, and the narrowing below is deterministic rather than "whatever came first".
+             *
+             * @param query the Lucene narrowing — by identifier or by path
+             * @param reported what to name in the failure event, as the user wrote it
+             */
+            const lookupPage = (query: string, reported: string) =>
+                contentSearchService
+                    .get<PageLookupEntity>({ query, limit: PAGE_LOOKUP_LIMIT })
+                    .pipe(
+                        map((entity) => pickPageVersion(entity?.jsonObjectView?.contentlets)),
+                        map((contentlet) =>
+                            contentlet
+                                ? apiEvents.pagePrefillResolved(toConfigurePage(contentlet))
+                                : apiEvents.pagePrefillFailed(reported)
+                        ),
+                        catchError((error: HttpErrorResponse) =>
+                            of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
+                        )
+                    );
+
             /** Resolves `?pageId=` / `?url=` to the page the Page card shows. */
-            const resolvePrefill = ({ pageId, url }: ConfigurePagePrefill) => {
+            const resolvePrefill = ({ pageId, url, languageId }: ConfigurePagePrefill) => {
+                // Narrows to the version the caller named. Without it the lookup returns one row
+                // per language and picks between them after the fact.
+                const language = languageId ? ` +languageId:${languageId}` : '';
                 if (pageId) {
                     // `?pageId=` is whatever the address bar carries, and it is concatenated into
                     // a Lucene query below: a value with spaces or operators would widen the
@@ -627,54 +746,40 @@ export const DotExperimentsConfigureStore = signalStore(
                         return of(apiEvents.pagePrefillFailed(pageId));
                     }
 
-                    // The page-search endpoint filters by path only, so an identifier is
-                    // resolved with the same content search the list uses for its Page column.
-                    return contentSearchService
-                        .get<PageLookupEntity>({
-                            query: `+contentType:htmlpageasset +working:true +identifier:${pageId}`,
-                            limit: 1
-                        })
-                        .pipe(
-                            map((entity) => entity?.jsonObjectView?.contentlets?.[0]),
-                            map((contentlet) =>
-                                contentlet
-                                    ? apiEvents.pagePrefillResolved(toConfigurePage(contentlet))
-                                    : apiEvents.pagePrefillFailed(pageId)
-                            ),
-                            catchError((error: HttpErrorResponse) =>
-                                of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
-                            )
-                        );
+                    // No content-type filter. The page picker offers URL-mapped content — a
+                    // `Destination` with a URL map renders as a page and can carry an experiment —
+                    // and filtering to `htmlpageasset` meant this lookup could never read one
+                    // back: the experiment worked right after the pick and reported its page as
+                    // missing on the next entry, on a page that was live the whole time (#37005).
+                    // Narrowing by identifier is enough; whatever the contentlet is, it is the page
+                    // the experiment stores.
+                    return lookupPage(`+working:true +identifier:${pageId}${language}`, pageId);
                 }
 
                 if (!url) {
                     return of(apiEvents.pagePrefillFailed(null));
                 }
 
-                const wanted = normalizePath(url);
+                /**
+                 * `?url=` resolves through the same content search as `?pageId=`, filtered by path
+                 * instead of identifier — which is what #37003 AC-3 asks for ("path resolved by
+                 * HTMLPAGE search on the current site") and what makes the two params behave alike.
+                 *
+                 * It used to go through `GET /api/v1/page/search`, and that is why it did not work
+                 * (TC-005). That endpoint matches a path **substring** and answers with at most ten
+                 * rows; the exact page was then picked out client-side. Twelve of demo's pages
+                 * contain "index", so whether `/index` survived the cap was down to the dataset and
+                 * the endpoint's ordering — it happened to work locally and failed on the QA build.
+                 * Filtering server-side removes both the cap and the guesswork.
+                 *
+                 * Site-scoped because a path, unlike an identifier, is not unique: every site has
+                 * an `/index`. Quoted because a path carries slashes, which Lucene would otherwise
+                 * read as syntax.
+                 */
+                const path = normalizePath(url.startsWith('/') ? url : `/${url}`);
+                const site = globalStore.currentSiteId();
 
-                return pagesBrowserService
-                    .searchPages({
-                        hostname: globalStore.siteDetails()?.hostname,
-                        path: url
-                    })
-                    .pipe(
-                        map((pages) =>
-                            pages.find(
-                                (page) =>
-                                    normalizePath(page.path) === wanted ||
-                                    normalizePath(page.url) === wanted
-                            )
-                        ),
-                        map((page) =>
-                            page
-                                ? apiEvents.pagePrefillResolved(fromBrowserPage(page))
-                                : apiEvents.pagePrefillFailed(url)
-                        ),
-                        catchError((error: HttpErrorResponse) =>
-                            of(toFailure(apiEvents.pagePrefillLookupFailed)(error))
-                        )
-                    );
+                return lookupPage(`+working:true +conHost:${site} +path:"${path}"${language}`, url);
             };
 
             return {
@@ -758,26 +863,6 @@ export const DotExperimentsConfigureStore = signalStore(
                     .pipe(switchMap(({ payload }) => resolvePrefill(payload))),
 
                 /**
-                 * Lock state is ancillary: a failed lookup reports the page as unlocked rather
-                 * than blocking a screen that is otherwise fully usable.
-                 */
-                resolvePageLock$: merge(
-                    events.on(pageEvents.pageSelected).pipe(map(({ payload }) => payload.pageId)),
-                    events
-                        .on(apiEvents.pagePrefillResolved)
-                        .pipe(map(({ payload }) => payload.pageId))
-                ).pipe(
-                    filter((pageId): pageId is string => !!pageId),
-                    distinctUntilChanged(),
-                    switchMap((pageId) =>
-                        pagesBrowserService.getPageLockState(pageId).pipe(
-                            map((lockInfo) => apiEvents.pageLockResolved(lockInfo)),
-                            catchError(() => of(apiEvents.pageLockResolved({ locked: false })))
-                        )
-                    )
-                ),
-
-                /**
                  * The one write of the form: Save draft flushes the whole accumulated diff as a
                  * single multi-key PATCH, whichever cards it came from.
                  *
@@ -800,53 +885,55 @@ export const DotExperimentsConfigureStore = signalStore(
                     events.on(apiEvents.createSucceeded)
                 ).pipe(
                     switchMap(() => {
-                        const experiment = store.experiment();
-                        const model = store.formValue();
+                        const pending = pendingSave();
 
-                        /**
-                         * Nothing to patch before the draft exists: those values reach the server
-                         * through the creation POST, and the rest follows as soon as it answers.
-                         *
-                         * And nothing to patch when the form is not in a state worth sending —
-                         * the same question the button asks. It matters most on the run that
-                         * follows `createSucceeded`, where the POST has just written the form and
-                         * a second call would carry the identical body.
-                         */
-                        if (!experiment || !model || !store.$canSave()) {
+                        if (!pending) {
                             return of(apiEvents.saveSkipped());
                         }
-
-                        /**
-                         * The page travels only when it actually moved. Sending the stored one
-                         * back on every save would put `pageId` in the body of an experiment that
-                         * has variants, which is the one shape `ExperimentsAPIImpl.save()` refuses
-                         * with a 400 — for a change the user never made.
-                         */
-                        const selectedPageId = store.selectedPage()?.pageId;
-                        const body = toConfigurePatch(
-                            model,
-                            store.formValidity(),
-                            experiment.trafficProportion?.variants ?? [],
-                            selectedPageId === experiment.pageId ? undefined : selectedPageId
-                        );
 
                         // `saveRequested` marks the moment a real request leaves — the visible
                         // progress indicator keys on it, so it runs for the flight only, not for
                         // the whole debounce window while the user is still typing.
-                        return merge(
-                            of(apiEvents.saveRequested()),
-                            experimentsService.patch(experiment.id, body).pipe(
-                                mapResponse({
-                                    next: (updated) =>
-                                        apiEvents.saveSucceeded({
-                                            experiment: updated,
-                                            form: model
-                                        }),
-                                    error: toFailure(apiEvents.saveFailed)
-                                })
-                            )
-                        );
+                        return merge(of(apiEvents.saveRequested()), savedBy(pending));
                     })
+                ),
+
+                /**
+                 * Persists a confirmed page change on its own, instead of letting it ride along
+                 * with the next Save Draft.
+                 *
+                 * The server takes `pageId` only while the experiment's variants are the control
+                 * alone, so this precondition expires the moment a variant is added — and adding
+                 * one is a single click that used to be available during the whole wait. Once it
+                 * expired, the change could never be written, and the card went on showing a page
+                 * the experiment was not on (#37005).
+                 *
+                 * `switchMap`: picking a second page while the first is still in flight makes the
+                 * first irrelevant. A partial body is what the endpoint expects — `setGoal` sends
+                 * `{ goals }` the same way.
+                 */
+                changePage$: events.on(pageEvents.pageSelected).pipe(
+                    map(({ payload }) => payload.pageId),
+                    filter((pageId) => {
+                        const experiment = store.experiment();
+
+                        // The same rule the reducer applies before recording the pick, and the one
+                        // the server enforces: a pick it declined must not be sent either.
+                        return (
+                            !!experiment &&
+                            !!pageId &&
+                            pageId !== experiment.pageId &&
+                            canChangePage(experiment)
+                        );
+                    }),
+                    switchMap((pageId) =>
+                        experimentsService.patch(store.experiment()?.id ?? '', { pageId }).pipe(
+                            mapResponse({
+                                next: (experiment) => apiEvents.pageChangeSucceeded(experiment),
+                                error: toFailure(apiEvents.pageChangeFailed)
+                            })
+                        )
+                    )
                 ),
 
                 /**
@@ -859,7 +946,10 @@ export const DotExperimentsConfigureStore = signalStore(
                  * the user something that is not stored anywhere, so it is re-resolved from the
                  * experiment. The message explaining why was already raised by the error handler.
                  */
-                revertRefusedPage$: events.on(apiEvents.saveFailed).pipe(
+                revertRefusedPage$: merge(
+                    events.on(apiEvents.saveFailed),
+                    events.on(apiEvents.pageChangeFailed)
+                ).pipe(
                     filter(() => store.selectedPage()?.pageId !== store.experiment()?.pageId),
                     map(() => store.experiment()?.pageId),
                     filter((pageId): pageId is string => !!pageId),
@@ -987,10 +1077,13 @@ export const DotExperimentsConfigureStore = signalStore(
                             !!store.experiment() &&
                             !store.starting()
                     ),
-                    switchMap(() =>
-                        merge(
-                            of(apiEvents.startRequested()),
-                            experimentsService.start(store.experiment()?.id ?? '').pipe(
+                    switchMap(() => {
+                        const experimentId = store.experiment()?.id ?? '';
+                        // `defer` so the transition is only asked for once the write ahead of it
+                        // has been accepted: built eagerly, a refused flush would still have
+                        // called `start`.
+                        const started$ = defer(() =>
+                            experimentsService.start(experimentId).pipe(
                                 mapResponse({
                                     next: (experiment) => apiEvents.startSucceeded(experiment),
                                     error: (error: HttpErrorResponse) => {
@@ -1010,8 +1103,39 @@ export const DotExperimentsConfigureStore = signalStore(
                                     }
                                 })
                             )
-                        )
-                    )
+                        );
+                        const pending = pendingSave();
+
+                        return merge(
+                            of(apiEvents.startRequested()),
+                            pending
+                                ? pending.save$.pipe(
+                                      switchMap((updated) =>
+                                          merge(
+                                              of(
+                                                  apiEvents.saveSucceeded({
+                                                      experiment: updated,
+                                                      form: pending.form
+                                                  })
+                                              ),
+                                              started$
+                                          )
+                                      ),
+                                      catchError((error: HttpErrorResponse) => {
+                                          httpErrorManager.handle(error);
+
+                                          // Both, and in this order: the refused write leaves the
+                                          // screen dirty and usable, and the start that never left
+                                          // has to release `starting` or the button stays dead.
+                                          return of(
+                                              apiEvents.saveFailed(error),
+                                              apiEvents.startFailed(error)
+                                          );
+                                      })
+                                  )
+                                : started$
+                        );
+                    })
                 ),
 
                 stop$: events.on(pageEvents.stopRequested).pipe(
@@ -1067,13 +1191,19 @@ export const DotExperimentsConfigureStore = signalStore(
                  * keeps `/new` out of the history, so Back leaves the screen instead of
                  * returning to a creation form for an experiment that already exists (AC3).
                  * Relative navigation, so the portlet's mount point is not restated here.
+                 *
+                 * `queryParamsHandling: 'preserve'` keeps the page narrowing the screen was
+                 * opened with. Without it the swap dropped `?pageId=`, and from then on the
+                 * screen had no way back to the list it came from — the back arrow landed on
+                 * every experiment on the site (#37005, FR-021c).
                  */
                 createdSubscription = events
                     .on(dotExperimentsConfigureApiEvents.createSucceeded)
                     .subscribe(({ payload }) => {
                         router.navigate(['..', payload.id, CONFIGURATION_SEGMENT], {
                             relativeTo: route,
-                            replaceUrl: true
+                            replaceUrl: true,
+                            queryParamsHandling: 'preserve'
                         });
                     });
 
@@ -1105,9 +1235,20 @@ export const DotExperimentsConfigureStore = signalStore(
 
                         const pageId = route.snapshot.queryParamMap.get('pageId');
                         const url = route.snapshot.queryParamMap.get('url');
+                        // Same key UVE writes, so the language survives the whole trip.
+                        const languageId = Number.parseInt(
+                            route.snapshot.queryParamMap.get('language_id') ?? '',
+                            10
+                        );
 
                         if (pageId || url) {
-                            dispatcher.dispatch(pageEvents.pagePrefillRequested({ pageId, url }));
+                            dispatcher.dispatch(
+                                pageEvents.pagePrefillRequested({
+                                    pageId,
+                                    url,
+                                    languageId: Number.isFinite(languageId) ? languageId : null
+                                })
+                            );
                         }
                     });
             },

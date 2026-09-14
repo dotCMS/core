@@ -3,7 +3,10 @@
 # Set default environment variables
 export LANG=${LANG:-"C.UTF-8"}
 
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true  -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
+# java.library.path must include the bundled tcnative dir (see java-base image):
+# -Djava.library.path overrides LD_LIBRARY_PATH, so without it Tomcat's
+# AprLifecycleListener cannot find libtcnative-1 and silently falls back to JSSE.
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Djava.library.path=/usr/local/tomcat-native/lib:/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
 # Auto-tune GC algorithm based on available vCPUs:
 #   1-3 cores → G1GC (default) + G1PeriodicGCInterval to return memory to OS on idle
