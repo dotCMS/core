@@ -255,6 +255,155 @@ public class LongTextPreviewStrategyTest {
                 realTitle, map.get("title"));
     }
 
+    /**
+     * A field that IS in scope (a WYSIWYG field on the content type) but whose key is entirely
+     * absent from the row's map -- distinct from {@code transform_noInScopeFields_mapUnchanged},
+     * which has no in-scope field at all -- must stay absent rather than gaining a synthesized
+     * {@code ""} entry (found in review; the fix this test pins).
+     */
+    @Test
+    public void transform_inScopeFieldAbsentFromMap_staysAbsent() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put("title", "Some title");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertFalse("A field absent from the row's map must stay absent, not gain a synthesized entry",
+                map.containsKey(WYSIWYG_VAR));
+    }
+
+    // --- Truncation marker (found in review) ----------------------------------------------------
+
+    /** A value longer than the 150-character bound must be marked as truncated. */
+    @Test
+    public void transform_wysiwygField_longValue_previewEndsWithTruncationMarker() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(WYSIWYG_VAR, "<p>" + "word ".repeat(60) + "</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String preview = (String) map.get(WYSIWYG_VAR);
+        assertTrue("A truncated preview must end with the truncation marker", preview.endsWith("…"));
+        assertTrue("Preview must still honor the <=150-character bound including the marker",
+                preview.length() <= 150);
+    }
+
+    /** A value at or under the bound is a complete value, not a truncation -- no marker. */
+    @Test
+    public void transform_wysiwygField_shortValue_previewHasNoTruncationMarker() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(WYSIWYG_VAR, "<p>Hello world</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertFalse("A short, complete value must not carry the truncation marker",
+                ((String) map.get(WYSIWYG_VAR)).endsWith("…"));
+    }
+
+    /**
+     * A story block whose text-leaf traversal lands exactly on the 150-character bound, with more
+     * text still pending in the tree, must still be marked as truncated -- the one-character gap
+     * between {@code collectText}'s stop condition and {@code truncate}'s marker condition (found
+     * in review).
+     */
+    @Test
+    public void transform_storyBlockField_traversalStopsExactlyAtBound_stillMarksTruncation()
+            throws Exception {
+        final Field storyField = mockField(StoryBlockField.class, STORY_VAR);
+        final ContentType contentType = mockContentType(List.of(), List.of(), List.of(storyField));
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        // The first leaf alone lands collectText's running length at exactly the 150-character
+        // bound. A pre-fix `>= MAX_PREVIEW_LENGTH` stop condition would end the traversal right
+        // there without ever visiting the second leaf, so the dropped text left no trace and
+        // `truncate` (seeing a text length of exactly 150, not greater than it) added no marker --
+        // this is the exact bug this test pins the fix for.
+        final Map<String, Object> firstLeaf = Map.of("type", "text", "text", "a".repeat(150));
+        final Map<String, Object> secondLeaf = Map.of("type", "text", "text", "b".repeat(75));
+        final Map<String, Object> paragraph1 = Map.of("type", "paragraph", "content", List.of(firstLeaf));
+        final Map<String, Object> paragraph2 = Map.of("type", "paragraph", "content", List.of(secondLeaf));
+
+        final LinkedHashMap<String, Object> storyBlockDoc = new LinkedHashMap<>();
+        storyBlockDoc.put("type", "doc");
+        storyBlockDoc.put("content", List.of(paragraph1, paragraph2));
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(STORY_VAR, storyBlockDoc);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String preview = (String) map.get(STORY_VAR);
+        assertTrue("A traversal that stopped with more text pending must still be marked truncated",
+                preview.endsWith("…"));
+        assertTrue("Preview must still honor the <=150-character bound including the marker",
+                preview.length() <= 150);
+    }
+
+    /**
+     * An emoji (a UTF-16 surrogate pair) straddling the 150-character cut boundary must not be
+     * split into a lone, invalid surrogate at the end of the preview (found in review).
+     */
+    @Test
+    public void transform_wysiwygField_emojiAtTruncationBoundary_isNotSplit() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        // truncate()'s cut budget is 149 (150 minus the marker's length), and it inspects the
+        // character immediately before that index -- 148 plain characters put the emoji's high
+        // surrogate (a 2-char UTF-16 pair) exactly there, straddling the cut point. More text
+        // follows so the value is genuinely truncated.
+        final String body = "a".repeat(148) + "😀" + "more text after the emoji";
+        final Map<String, Object> map = new HashMap<>();
+        map.put(WYSIWYG_VAR, "<p>" + body + "</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String preview = (String) map.get(WYSIWYG_VAR);
+        assertFalse("Preview must not end with a lone (invalid) high surrogate",
+                Character.isHighSurrogate(preview.charAt(preview.length() - 2)));
+    }
+
+    /**
+     * A WYSIWYG body that opens with a large non-text span (a base64 image data URI) can spend the
+     * entire {@code HTML_PARSE_BUDGET} inside that one attribute value, so {@code Jsoup.text()} on
+     * the narrow-budget prefix alone returns nothing. The strategy must retry with a wider budget
+     * rather than ship an empty preview for a body that does have visible text further in (found in
+     * review -- this was a real regression introduced by the budget itself).
+     */
+    @Test
+    public void transform_wysiwygField_largeLeadingDataUri_stillExtractsTrailingText() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        // A base64 payload well past HTML_PARSE_BUDGET (4096), so the narrow-budget prefix lands
+        // entirely inside the attribute value with no visible text at all.
+        final String base64Payload = "A".repeat(6000);
+        final String html = "<img src=\"data:image/png;base64," + base64Payload + "\">"
+                + "<p>Real visible text after the embedded image</p>";
+        final Map<String, Object> map = new HashMap<>();
+        map.put(WYSIWYG_VAR, html);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String preview = (String) map.get(WYSIWYG_VAR);
+        assertTrue("Preview must recover the trailing visible text rather than come back empty",
+                preview.contains("Real visible text"));
+    }
+
     // --- T012: TransformOptions ordinal placement ----------------------------------------------
 
     /**

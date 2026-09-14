@@ -47,6 +47,17 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
      */
     private static final int HTML_PARSE_BUDGET = 4096;
 
+    /**
+     * Fallback budget tried once when {@link #HTML_PARSE_BUDGET} extracts no visible text at all --
+     * a body that opens with a large non-text span (a base64 image data URI, a long {@code <style>}
+     * block) can spend the entire first budget inside it, and {@code Jsoup.text()} returns an empty
+     * string even though the body has real visible text further in. Wide enough to clear a large
+     * embedded resource without falling back to a genuinely unbounded full-body parse (found in
+     * review -- this budget's own first draft was the regression: an empty preview instead of the
+     * short one it replaced).
+     */
+    private static final int HTML_PARSE_BUDGET_CEILING = 65_536;
+
     /** Appended to a preview when truncation actually drops content (found in review). */
     private static final String TRUNCATION_MARKER = "…";
 
@@ -98,9 +109,53 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
             return rawValue instanceof String ? (String) rawValue : StringPool.BLANK;
         }
         final String html = (String) rawValue;
-        final String bounded = html.length() > HTML_PARSE_BUDGET
-                ? html.substring(0, HTML_PARSE_BUDGET) : html;
-        return truncate(Jsoup.parse(bounded).text());
+        final String preview = truncate(extractVisibleText(html, HTML_PARSE_BUDGET));
+        if (!preview.isEmpty() || html.length() <= HTML_PARSE_BUDGET) {
+            return preview;
+        }
+        // The narrow budget landed entirely inside a non-text span and came back empty, even
+        // though the raw value is long enough that it might carry real visible text further in.
+        // Retry once against the wider ceiling rather than shipping an empty preview for content
+        // that used to show something (found in review).
+        return truncate(extractVisibleText(html, HTML_PARSE_BUDGET_CEILING));
+    }
+
+    /**
+     * Flattens {@code html} to plain text via {@link Jsoup#parse}, parsing only the first
+     * {@code budget} characters rather than the whole value.
+     */
+    private static String extractVisibleText(final String html, final int budget) {
+        if (html.length() <= budget) {
+            return Jsoup.parse(html).text();
+        }
+        return Jsoup.parse(html.substring(0, safeHtmlCutIndex(html, budget))).text();
+    }
+
+    /**
+     * Backs a raw-HTML cut index off far enough to avoid splitting a UTF-16 surrogate pair or an
+     * HTML character entity (e.g. {@code &amp;} cut to {@code &am}) mid-sequence -- either would
+     * hand {@link Jsoup#parse} a malformed fragment right at the boundary (found in review).
+     */
+    private static int safeHtmlCutIndex(final String html, final int budget) {
+        int cut = budget;
+        if (cut > 0 && Character.isHighSurrogate(html.charAt(cut - 1))) {
+            cut--;
+        }
+        // Entities are short -- "&amp;" is the longest common one at 5 characters, a numeric
+        // reference like "&#x1F600;" runs a little longer -- so a small fixed lookback is enough
+        // to catch one in progress without rescanning the whole prefix.
+        final int lookback = Math.max(0, cut - 12);
+        for (int i = cut - 1; i >= lookback; i--) {
+            final char c = html.charAt(i);
+            if (c == ';') {
+                break; // any entity within the window is already closed
+            }
+            if (c == '&') {
+                cut = i;
+                break;
+            }
+        }
+        return cut;
     }
 
     /**
@@ -124,9 +179,15 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
      * Recursively walks a Story Block JSON-tree node, collecting every {@code text} leaf value.
      * Stops once enough text has been collected for the preview bound, so a large story block is
      * not fully traversed/concatenated just to be truncated away afterward (found in review).
+     *
+     * <p>Deliberately overshoots {@code MAX_PREVIEW_LENGTH} by continuing past it rather than
+     * stopping the instant it is reached: {@link #truncate} only appends the truncation marker
+     * when the collected text is strictly longer than the bound, so a traversal that stopped
+     * exactly at the bound with more text still pending would return a truncated preview with no
+     * marker -- the one case the marker exists to signal (found in review).</p>
      */
     private static void collectText(final Object node, final StringBuilder out) {
-        if (out.length() >= MAX_PREVIEW_LENGTH) {
+        if (out.length() > MAX_PREVIEW_LENGTH) {
             return;
         }
         if (node instanceof Map) {
@@ -141,7 +202,7 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
             final Object content = nodeMap.get("content");
             if (content instanceof List) {
                 for (final Object child : (List<?>) content) {
-                    if (out.length() >= MAX_PREVIEW_LENGTH) {
+                    if (out.length() > MAX_PREVIEW_LENGTH) {
                         break;
                     }
                     collectText(child, out);
@@ -149,7 +210,7 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
             }
         } else if (node instanceof List) {
             for (final Object child : (List<?>) node) {
-                if (out.length() >= MAX_PREVIEW_LENGTH) {
+                if (out.length() > MAX_PREVIEW_LENGTH) {
                     break;
                 }
                 collectText(child, out);
