@@ -487,8 +487,8 @@ grep -rl "esSearchRaw\|esSearch"  /tmp/bundle --include=*.class
 | Result | Level | Meaning |
 |---|:---:|---|
 | No hits at all | **1** | Safe. Nothing to do. |
-| Hits on `esSearch` / `esSearchRaw` only | **2** | Breaks at Phase 2. Recompile needed. |
-| Hits on `org/elasticsearch` | **3** | Breaks at Phase 2 and will not even load later. Recompile mandatory. |
+| Hits on `esSearch` / `esSearchRaw` only | **2** | Keeps reading Elasticsearch, so it diverges from the rest of the site in Phase 2 and fails in Phase 3. Recompile needed. |
+| Hits on `org/elasticsearch` | **3** | Same, and will not even load once Elasticsearch leaves the classpath. Recompile mandatory. |
 
 **Record:** every Level-2 and Level-3 plugin, and **who is going to recompile it**. Hand them
 [R7](#r7-osgi-plugins-in-detail) and [`SEARCH_API_MIGRATION.md`](SEARCH_API_MIGRATION.md).
@@ -699,7 +699,9 @@ OS_INDEX_REPLICAS=<n>
 > credentials will **reuse the Elasticsearch ones** rather than failing — which works only by
 > accident, and breaks the moment the two clusters differ.
 
-> **Set `OS_INDEX_REPLICAS` explicitly.** OpenSearch does not inherit dotCMS's implicit default.
+> **Set `OS_INDEX_REPLICAS` explicitly.** Left unset it falls back to `ES_INDEX_REPLICAS`, and if
+> neither is set no replica count is pinned at all — so the new cluster silently inherits whatever the
+> old one happened to use, or nothing.
 
 **Do not change the phase yet.**
 
@@ -1057,9 +1059,11 @@ reindex. Only a crawl does. Background: [R12](#r12-site-search-rules).
 2. For **each** Site Search index, run a **full** crawl — not an incremental one — from the Site
    Search portlet ("Run Now").
 
-> **Full, not incremental.** A full crawl builds the OpenSearch copy with the correct field mapping.
-> An incremental crawl writes documents in place and can leave a copy with a *dynamic* mapping, which
-> silently breaks term aggregations and facets.
+> **Full, not incremental.** A full crawl rebuilds the index on both engines with the correct field
+> mapping. An incremental one writes documents in place, which is the wrong operation while a copy is
+> still being built. dotCMS does gate this — an incremental that finds the copies missing or holding
+> different counts demotes itself to a full rebuild and says so in the log ([R12](#r12-site-search-rules))
+> — but run the full crawl yourself rather than relying on the gate. "Run Now" is always full.
 
 **Confirm both engines agree:**
 
@@ -1766,7 +1770,7 @@ usually silently.
 | `$estool.search(query)` | `ContentSearchResults` of `ContentMap`; `.aggregations` is a neutral map | ✅ **Safe** |
 | `$estool.raw(query)` | `ContentSearchResponse` (neutral) | ✅ **Safe** |
 | `$estool.esSearch(query)` | `ESSearchResults`, wrapping raw `Contentlet`s and ES-typed aggregations | ⚠️ **Legacy**, deprecated for removal |
-| `$estool.esRaw(query)` | Elasticsearch's own `SearchResponse` | ⚠️ **Legacy**, breaks outright on OpenSearch |
+| `$estool.esRaw(query)` | Elasticsearch's own `SearchResponse` | ⚠️ **Legacy**, keeps reading Elasticsearch — diverges in Phase 2, breaks in Phase 3 |
 
 All four take a **raw engine JSON query body**, not a Lucene string. `search` and `raw` lowercase the
 whole query, so `contentType` becomes the physical field `contenttype` — convenient, but case-sensitive
@@ -1850,8 +1854,8 @@ last decade could and did, because dotCMS's own search API handed them Elasticse
 | Level | What the plugin does | When it breaks |
 |:---:|---|---|
 | **1** | Calls `contentletAPI.search(...)` / `searchRaw(...)`, or `$dotcontent` | Never. Already neutral. |
-| **2** | Calls the deprecated `contentletAPI.esSearch(...)` / `esSearchRaw(...)`, or implements the deprecated `esSearch` / `esSearchRaw` hook methods | **At Phase 2.** Also at compile time once the deprecated methods are removed. |
-| **3** | Imports `org.elasticsearch.*` directly and holds them in fields, casts, or signatures | **At Phase 2**, and permanently once Elasticsearch leaves the classpath — the bundle will not resolve. |
+| **2** | Calls the deprecated `contentletAPI.esSearch(...)` / `esSearchRaw(...)`, or implements the deprecated `esSearch` / `esSearchRaw` hook methods | **Diverges at Phase 2, fails at Phase 3.** Also at compile time once the deprecated methods are removed. |
+| **3** | Imports `org.elasticsearch.*` directly and holds them in fields, casts, or signatures | Same, and permanently once Elasticsearch leaves the classpath — the bundle will not resolve. |
 
 ### The fix — the mapping is mechanical
 
@@ -1872,16 +1876,28 @@ Two extra notes for the developer:
 - `ContentSearchResults<T>` is a **typed** `List<T>` — the old `(Contentlet)` casts go away.
 - `ContentSearchResponse.toString()` is **not JSON**. Code that called `.toString()` on the old raw
   response to get ES wire-format JSON must switch to the structured accessors: `hits()`,
-  `hits().hits()`, `hits().totalHits().value()`, `aggregations()`, `scrollId()`, `tookMillis()`.
+  `hits().getHits()`, `hits().getTotalHits().value()`, `getAggregations()`, `scrollId()`,
+  `tookMillis()`.
+  Two traps in those names. `SearchHits` declares its record components as `getHits` / `getTotalHits`
+  — deliberately, so Velocity can resolve them as bean properties — so there is no `hits()` or
+  `totalHits()` method on it. And `aggregations()` is **not** the aggregation tree: it returns the
+  flattened first-level-terms view, dropping nested aggregations and `top_hits`. Use
+  `getAggregations()`.
 
 ### Timing
 
 A Level-2 or Level-3 plugin **does not fail in Phase 1** — Phase 1 still reads from Elasticsearch, so
-the plugin gets exactly what it always got. It fails when you enter **Phase 2**.
+the plugin gets exactly what it always got.
 
-That is useful: you can enable dual-write, prove the write path, and buy the customer time to
-recompile — all without exposing them to the plugin risk. But it also means **a clean Phase 1 tells
-you nothing about plugin readiness.**
+It does not fail in Phase 2 either, and that is the part worth understanding. `esSearch` and
+`esSearchRaw` delegate straight to `APILocator.getEsSearchAPI()` — the legacy Elasticsearch client —
+in **every** phase, bypassing the phase router entirely. So in Phase 2 the plugin keeps answering
+from Elasticsearch while the rest of the site reads OpenSearch: no error, no log line, just two
+sources of truth in one page. It fails outright at **Phase 3**, when Elasticsearch is gone.
+
+Plan around the divergence, not around the crash: Phase 2 is where a plugin starts returning a
+different set than everything around it, and nothing announces it. A clean Phase 1 — and even a clean
+Phase 2 — **tells you nothing about plugin readiness.**
 
 ---
 
@@ -1894,7 +1910,7 @@ you nothing about plugin readiness.**
 | **OpenSearch 3.x** | dotCMS asserts the major version at startup | Validation fails; migration halts to Phase 0 |
 | **A separate instance from Elasticsearch** | dotCMS compares the two endpoint sets | Validation fails with an explicit "same endpoint(s)" error |
 | **Reachable from every dotCMS node** | Each node connects independently | That node halts its own migration and silently serves Elasticsearch-only |
-| **`number_of_replicas` set explicitly** | OpenSearch does not inherit dotCMS's implicit default | Yellow cluster, or unexpected replica behaviour |
+| **`number_of_replicas` set explicitly** | Unset, `OS_INDEX_REPLICAS` falls back to `ES_INDEX_REPLICAS`, and if neither is set no count is pinned | Yellow cluster, or unexpected replica behaviour |
 
 The endpoint-separation check is **best-effort on strings**: `127.0.0.1:9200` and `localhost:9200` are
 the same server but will not be detected as overlapping. Verify by hand.
