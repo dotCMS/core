@@ -14,9 +14,11 @@ import org.junit.Test;
  * (spec FR-013d, SC-008).
  * <p>
  * <b>Why these are their own class.</b> Reclaim runs on exception paths, which is where cleanup is
- * forgotten, and the consequence is not recoverable elsewhere: nothing purges staged content on a
- * schedule — the repository has no cleanup task — so anything left here is left permanently, in
- * bytes the author cannot see and no run will ever collect.
+ * forgotten, and what is forgotten here is not corrected promptly anywhere else: {@code
+ * BinaryCleanupJob} does collect from {@code tmp_upload}, but only files older than three hours
+ * and only while its cron is firing, which by default is the midnight hour alone. So anything
+ * missed here sits on the shared assets volume for up to a day — bytes the author cannot see and
+ * no run will ever use.
  * <p>
  * FR-013d covers two paths and they are <b>not the same code</b>. A refusal is raised by this side,
  * so this side knows to clean up. A read that dies underneath — the author navigated away, the

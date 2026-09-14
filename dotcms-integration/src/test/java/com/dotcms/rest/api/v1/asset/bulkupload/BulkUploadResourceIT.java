@@ -213,7 +213,8 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
             assertTrue(staging.staged().size() <= 3,
                     "no more than the ceiling may reach disk");
             assertEquals(List.of(), staging.leaked(),
-                    "what was staged before the abort is reclaimed; nothing purges it later");
+                    "what was staged before the abort is reclaimed, rather than left for the "
+                            + "nightly sweep");
         } finally {
             Config.setProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY, max);
         }

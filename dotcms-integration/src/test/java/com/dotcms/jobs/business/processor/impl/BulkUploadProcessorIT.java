@@ -628,9 +628,9 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
      * Expected result: The staged content is gone (FR-033). <b>This is the happy path, which is
      * exactly why it went unchecked:</b> the reclaim was written for the two failure routes — a
      * refusal and a read that dies — and both were tested carefully. A run that succeeds reaches a
-     * terminal state too, and nothing purges staged content on a schedule, so every completed batch
-     * was leaking its own bytes permanently: invisible to the author, uncollected by any run, and
-     * growing with every upload.
+     * terminal state too, so every completed batch was leaving its own bytes behind until the
+     * nightly sweep — which by default runs only in the midnight hour — collected them: invisible
+     * to the author, unusable by any run, and re-accumulating with every upload.
      */
     @Test
     public void test_run_reclaimsStagedContentWhenItReachesATerminalState() throws Exception {
@@ -653,8 +653,8 @@ public class BulkUploadProcessorIT extends Junit5WeldBaseTest {
                     .getTempFile(List.of(admin().getUserId()), tempFileId);
 
             assertTrue(leftBehind.isEmpty() || !leftBehind.get().file.exists(), String.format(
-                    "staged content '%s' survived a completed run; nothing purges it on a "
-                            + "schedule, so this leaks permanently and grows with every batch",
+                    "staged content '%s' survived a completed run; it then sits on the assets "
+                            + "volume until the nightly sweep, and re-accumulates with every batch",
                     tempFileId));
         }
     }

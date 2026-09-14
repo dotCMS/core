@@ -38,10 +38,12 @@ import org.junit.jupiter.api.Test;
  * navigated away, or the connection dropped. A reclaim written into the refusal branch passes that
  * test and fails these.
  * <p>
- * It matters more than it looks because <b>nothing purges staged content on a schedule</b> — the
- * repository has no cleanup task anywhere — so bytes missed here are missed permanently, invisible
- * to the author and uncollected by any run. And it is the likelier of the two paths, since it is
- * the author's own action rather than a limit being hit.
+ * It matters more than it looks because the only thing that would collect what is missed here is
+ * {@code BinaryCleanupJob}, which deletes from {@code tmp_upload} only above a three-hour age and
+ * only while its cron is firing — by default the midnight hour alone. So bytes missed here sit on
+ * the shared assets volume for up to a day, invisible to the author and unusable by any run. And it
+ * is the likelier of the two paths, since it is the author's own action rather than a limit being
+ * hit.
  */
 @EnableWeld
 public class BulkUploadReclaimIT extends Junit5WeldBaseTest {
@@ -155,8 +157,8 @@ public class BulkUploadReclaimIT extends Junit5WeldBaseTest {
             final Optional<DotTempFile> reclaimed =
                     APILocator.getTempFileAPI().getTempFile(request(), tempFileId);
             assertTrue(reclaimed.isEmpty() || !reclaimed.get().file.exists(), String.format(
-                    "staged content '%s' survived an abandoned submission; nothing purges it on a "
-                            + "schedule, so it is leaked permanently", tempFileId));
+                    "staged content '%s' survived an abandoned submission; it then sits on the "
+                            + "assets volume until the nightly sweep", tempFileId));
         }
     }
 

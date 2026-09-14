@@ -82,7 +82,7 @@ class FakeBatchStaging implements BatchStaging {
     /** Ids handed back for cleanup. */
     Set<String> reclaimed() { return reclaimed; }
 
-    /** Staged and never reclaimed: what would be left on disk, where nothing purges on a schedule. */
+    /** Staged and never reclaimed: what a run would leave on the shared assets volume. */
     List<String> leaked() {
         final List<String> leaked = new ArrayList<>(staged);
         leaked.removeAll(reclaimed);

@@ -667,8 +667,9 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                     // ignorable.
                     if (!binary.delete() && binary.exists()) {
                         Logger.warn(this, String.format(
-                                "Bulk upload job [%s]: could not delete staged content '%s'; "
-                                        + "nothing purges it on a schedule, so it will remain",
+                                "Bulk upload job [%s]: could not delete staged content '%s'; it "
+                                        + "will remain until BinaryCleanupJob collects it, which "
+                                        + "by default runs in the midnight hour",
                                 job.id(), tempFileId));
                     }
                 });

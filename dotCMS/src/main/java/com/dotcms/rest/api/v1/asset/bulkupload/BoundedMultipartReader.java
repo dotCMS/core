@@ -24,15 +24,16 @@ import java.util.List;
  * <ul>
  *   <li>It aborts <b>part by part</b>, so no submission over a ceiling <b>stages</b> more than the
  *       ceiling. Scoped deliberately: this bounds what reaches the <i>assets volume</i>, where
- *       nothing purges on a schedule and what lands stays. It does <b>not</b> bound what the
+ *       what lands stays until the nightly sweep collects it. It does <b>not</b> bound what the
  *       container already received — Jersey deserializes the whole multipart entity before the
  *       resource method is entered, spooling every part over the 4096-byte default threshold to
  *       {@code java.io.tmpdir}. Bounding that needs a request-size limit at the connector or the
  *       reverse proxy, and neither exists today (see {@code BulkUploadResource}).</li>
  *   <li>It reclaims over the <b>whole read</b>, not just its own refusal path. A read that dies
  *       underneath it — the author navigated away, the connection dropped — raises nothing from
- *       this side, and nothing purges staged content on a schedule, so a reclaim scoped to the
- *       refusal would leak permanently (spec FR-013d.2, C-001a1).</li>
+ *       this side, so a reclaim scoped to the refusal would leave it for {@code BinaryCleanupJob},
+ *       whose default cron only fires during the midnight hour: up to a day of a dead
+ *       submission's bytes on shared storage (spec FR-013d.2, C-001a1).</li>
  * </ul>
  *
  * @author dotCMS
@@ -84,7 +85,8 @@ public class BoundedMultipartReader {
         // here, so a narrower scope would still catch it — but a read that dies underneath (the
         // author navigated away, the connection dropped) raises nothing of ours, and that is the
         // likelier of the two because it is the author's own action rather than a limit being hit.
-        // Nothing purges staged content on a schedule, so anything missed here is missed for good.
+        // BinaryCleanupJob would eventually collect what is missed here, but its default cron only
+        // fires during the midnight hour, so "eventually" is up to a day on shared storage.
         try {
             for (final UploadPart part : parts) {
 
@@ -181,9 +183,9 @@ public class BoundedMultipartReader {
      * <b>Parts that were never staged are skipped, not reclaimed.</b> A part refused by the
      * per-file ceiling has no {@code tempFileId} by construction — nothing of it reached the
      * staging layer — so asking for it back would log the warning below about content that will
-     * never be collected, for content that was never written. That warning has to stay credible:
-     * it is the only notice anyone gets that a leak happened, and nothing purges staged content on
-     * a schedule to correct a false one.
+     * outlive the batch, for content that was never written. That warning has to stay credible: it
+     * is the only notice anyone gets that this run left bytes behind, and the nightly sweep that
+     * would eventually collect them says nothing when it does.
      */
     private void reclaimAll(final List<StagedPart> staged) {
         for (final StagedPart part : staged) {
@@ -195,8 +197,8 @@ public class BoundedMultipartReader {
             } catch (final Exception e) {
                 Logger.warn(this, String.format(
                         "Could not reclaim staged content '%s' for an abandoned or refused bulk "
-                                + "upload; nothing purges staged content on a schedule, so this "
-                                + "will not be cleaned up later: %s",
+                                + "upload; it will sit on the assets volume until BinaryCleanupJob "
+                                + "collects it, which by default runs in the midnight hour: %s",
                         part.tempFileId(), e.getMessage()), e);
             }
         }
