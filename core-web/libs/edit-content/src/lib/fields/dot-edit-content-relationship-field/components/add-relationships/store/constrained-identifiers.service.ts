@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotContentSearchService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -41,8 +41,10 @@ export class ConstrainedIdentifiersService {
      * @param params.fieldVariable The relationship field's variable, e.g. `relation`.
      * @param params.currentContentIdentifier The contentlet being edited, so its **own** children
      *   are not reported as taken. Null for a contentlet that has never been saved.
-     * @return The taken identifiers. Empty on failure — a lookup that could not run must not make
-     *   every row unselectable.
+     * @return The taken identifiers. **Errors are not swallowed here.** Collapsing a failure to an
+     *   empty set turned "the check could not run" into "nothing is claimed", which silently
+     *   switches the guard off for the life of the dialog. The caller decides what a failure means
+     *   and, crucially, says so on screen.
      */
     get(params: {
         parentContentTypeId: string;
@@ -98,8 +100,7 @@ export class ConstrainedIdentifiersService {
                     }
 
                     return constrainedIds;
-                }),
-                catchError(() => of(new Set<string>()))
+                })
             );
     }
 }

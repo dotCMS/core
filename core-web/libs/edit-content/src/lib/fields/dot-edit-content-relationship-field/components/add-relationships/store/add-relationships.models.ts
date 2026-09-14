@@ -155,6 +155,15 @@ export interface AddRelationshipsState {
      */
     constrainedIdentifiers: Set<string>;
 
+    /**
+     * Whether the claimed-children lookup failed.
+     *
+     * Kept apart from `errorMessage`, which replaces the results. This one leaves the dialog
+     * usable — refusing every row because a lookup timed out would be worse — but the editor has
+     * to be told the guard is off, or a silent reparent is exactly what they get.
+     */
+    constraintCheckFailed: boolean;
+
     status: ComponentStatus;
 
     /** Translation key of the last failure, or null. */

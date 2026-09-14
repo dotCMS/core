@@ -61,6 +61,19 @@
                      stay put when a search matches nothing — replacing the whole table with a
                      message took those with it, and the editor lost the controls that would get
                      them out of the empty result. -->
+                <!-- The guard is off and the editor has to know. Not an error state: the results
+                     are real and pickable, but a child already held by another parent will not be
+                     greyed out, so confirming one reparents it. Sits above the table because it
+                     qualifies every row in it. -->
+                @if (store.constraintCheckFailed()) {
+                    <p
+                        class="m-0 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-700"
+                        role="status"
+                        data-testid="add-relationships-constraint-warning">
+                        {{ 'dot.relationship.add.dialog.constraint.check.failed' | dm }}
+                    </p>
+                }
+
                 <div class="min-h-0 flex-1 rounded-md border border-gray-200">
                     <dot-folder-list-view
                         data-testid="add-relationships-list"

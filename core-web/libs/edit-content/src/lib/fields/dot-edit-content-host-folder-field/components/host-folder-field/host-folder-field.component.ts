@@ -224,6 +224,26 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     }
 
     /**
+     * Activates a **projected** trigger from the keyboard.
+     *
+     * Needed because a projected trigger need not be a native `<button>`. The filter chip the
+     * relationship picker projects is a `role="button"` host that turns Enter and Space into its
+     * own Angular output, and an Angular output does not dispatch a bubbling DOM click — so the
+     * wrapper's `click` listener never heard it. The chip was focusable, announced itself as a
+     * button, and did nothing on Enter while the mouse worked.
+     *
+     * `preventDefault` is what keeps this safe for the other case. On a native `<button>` the
+     * browser synthesises a click from Enter and Space, which would reach the wrapper's `click`
+     * listener and toggle the overlay a second time — opening and closing it in one keystroke.
+     * Suppressing the default stops that click being generated, so either kind of trigger
+     * activates exactly once.
+     */
+    onProjectedTriggerKeydown(event: Event): void {
+        event.preventDefault();
+        this.toggleOverlay(event);
+    }
+
+    /**
      * Toggles the selector overlay, keeping the trigger and the store's `overlayOpen`
      * flag in sync (the overlay panel drives visibility; the store drives icon state).
      */

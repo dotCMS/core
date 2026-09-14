@@ -9,12 +9,24 @@
          owning the browser below. Projected content replaces both the default trigger and its copy
          action, since a caller that brings its own has no use for either.
 
-         The wrapper carries the click: projection moves nodes, it does not hand them this
+         The wrapper carries the activation: projection moves nodes, it does not hand them this
          component's handlers, so a projected trigger with no wrapper is a button that does nothing.
          `inline-flex` rather than `contents` because `toggleOverlay` measures the trigger to size
-         the overlay, and an element with `display: contents` has no width to measure. -->
+         the overlay, and an element with `display: contents` has no width to measure.
+
+         **Keyboard as well as mouse.** A projected trigger that is not a native `<button>` — the
+         filter chip is a `role="button"` host — turns Enter and Space into its own Angular output,
+         and an Angular output does not dispatch a bubbling DOM click. Listening for `click` alone
+         left such a trigger focusable, announced as a button, and inert to the keyboard while the
+         mouse worked. `keydown` bubbles, so catching it here covers every projected trigger rather
+         than making each one wire its own. See `onProjectedTriggerKeydown` for why it suppresses
+         the default. -->
     @if (!$showDefaultTrigger()) {
-        <span class="inline-flex" (click)="toggleOverlay($event)">
+        <span
+            class="inline-flex"
+            (click)="toggleOverlay($event)"
+            (keydown.enter)="onProjectedTriggerKeydown($event)"
+            (keydown.space)="onProjectedTriggerKeydown($event)">
             <ng-content select="[hostFolderTrigger]" />
         </span>
     }

@@ -1,5 +1,5 @@
 import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotContentDriveService, DotLanguagesService } from '@dotcms/data-access';
@@ -543,6 +543,58 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             claimed.next(new Set(['id-1']));
 
             expect(store.$isSelected()('id-1')).toBe(false);
+        });
+
+        /**
+         * Reported in review: the lookup's `catchError` collapsed every failure — a 500, a 403, a
+         * timeout — into an empty set, which reads as "nothing is claimed". The guard then stayed
+         * off for the life of the dialog with nothing on screen saying so, and confirming a claimed
+         * child reparented it silently.
+         *
+         * The dialog still works on a failure; what changes is that it admits the check did not run.
+         */
+        it('flags the degraded state when the lookup fails', () => {
+            constrainedMock.mockReturnValue(throwError(() => new Error('boom')));
+
+            store.initialize({
+                ...baseInput,
+                cardinality: 2,
+                isParentField: true,
+                parentContentTypeId: 'parent-type',
+                fieldVariable: 'rel'
+            });
+
+            expect(store.constraintCheckFailed()).toBe(true);
+        });
+
+        it('leaves the dialog usable when the lookup fails', () => {
+            constrainedMock.mockReturnValue(throwError(() => new Error('boom')));
+
+            store.initialize({
+                ...baseInput,
+                cardinality: 2,
+                isParentField: true,
+                parentContentTypeId: 'parent-type',
+                fieldVariable: 'rel'
+            });
+            store.load();
+            store.toggleSelection(item(1));
+
+            // Refusing every row because a lookup timed out would be worse than the warning.
+            expect(store.$isSelected()('id-1')).toBe(true);
+            expect(store.errorMessage()).toBeNull();
+        });
+
+        it('carries no warning when the lookup succeeds', () => {
+            store.initialize({
+                ...baseInput,
+                cardinality: 2,
+                isParentField: true,
+                parentContentTypeId: 'parent-type',
+                fieldVariable: 'rel'
+            });
+
+            expect(store.constraintCheckFailed()).toBe(false);
         });
 
         it('leaves picks the constrained set does not name', () => {

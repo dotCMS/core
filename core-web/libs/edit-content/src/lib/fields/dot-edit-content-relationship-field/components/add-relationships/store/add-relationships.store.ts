@@ -127,6 +127,7 @@ const initialState: AddRelationshipsState = {
     pages: {},
     sort: { field: 'modDate', order: 'desc' },
     constrainedIdentifiers: new Set<string>(),
+    constraintCheckFailed: false,
     status: ComponentStatus.INIT,
     errorMessage: null
 };
@@ -391,7 +392,11 @@ export const AddRelationshipsStore = signalStore(
                     selection.delete(identifier);
                 }
 
-                patchState(store, { constrainedIdentifiers, selection });
+                patchState(store, {
+                    constrainedIdentifiers,
+                    selection,
+                    constraintCheckFailed: false
+                });
             };
 
             const loadConstrained = rxMethod<AddRelationshipsInput>(
@@ -415,7 +420,17 @@ export const AddRelationshipsStore = signalStore(
                                 currentContentIdentifier: input.currentContentIdentifier ?? null
                             })
                             .pipe(
-                                tap(applyConstrained)
+                                tap(applyConstrained),
+                                // Failing open, but not silently. Refusing every row because the
+                                // lookup timed out would make the dialog useless; leaving the guard
+                                // off with nothing on screen is how a child gets reparented without
+                                // anyone noticing. The dialog stays usable and says the check did
+                                // not run.
+                                catchError(() => {
+                                    patchState(store, { constraintCheckFailed: true });
+
+                                    return EMPTY;
+                                })
                             );
                     })
                 )
