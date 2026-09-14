@@ -114,6 +114,25 @@ export function formatGithub(report) {
         .join('\n');
 }
 
+/**
+ * What the run cost, paired with the diff size that produced it.
+ *
+ * Emitted on every run, passing ones included. Shipping this gate non-blocking is justified
+ * entirely by the promise to measure its real cost on real pull requests and revisit the blocking
+ * decision with data; a duration printed only when there are findings would sample the fast and
+ * slow cases unevenly, and it is the tail that the decision turns on. The diff size travels with
+ * it because a duration alone is not comparable between a one-file pull request and a forty-file
+ * one.
+ *
+ * One decimal place: the no-op case costs ~0.3s and rounding it to "0s" would make the cheapest
+ * and most common outcome invisible in the evidence.
+ */
+function costLine(report) {
+    const seconds = (report.durationMs.total / 1000).toFixed(1);
+    const files = report.targets.reduce((n, t) => n + t.files.length, 0);
+    return `_Checked ${files} file(s) across ${report.targets.length} project config(s) in ${seconds}s._`;
+}
+
 /** Markdown for the job summary — what a human opening the run sees first. */
 export function formatMarkdown(report) {
     const total = ignoredCount(report);
@@ -122,7 +141,9 @@ export function formatMarkdown(report) {
             '## ✅ strict-gate: pass',
             '',
             `No new strict-mode violations. ${total} pre-existing or dependency diagnostic(s) ignored, ` +
-                `across ${report.targets.length} project config(s).`
+                `across ${report.targets.length} project config(s).`,
+            '',
+            costLine(report)
         ].join('\n');
     }
 
@@ -134,6 +155,8 @@ export function formatMarkdown(report) {
         `## ❌ strict-gate: ${report.findings.length} new strict-mode violation(s)`,
         '',
         `**Scope.** ${scopeRule(report.granularity)} ${total} diagnostic(s) from dependencies and untouched code were ignored — fix only what is listed.`,
+        '',
+        costLine(report),
         '',
         '| File | Line | Code | Message |',
         '|---|---|---|---|',

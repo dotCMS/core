@@ -67,18 +67,66 @@ node tools/scripts/strict-gate/run.mjs \
 - `--granularity line` — whole-file makes an author inherit 83 % of what it reports from lines they
   did not write. New files are unaffected: every line of an added file is a changed line.
 
-**Recommendation: ship non-blocking first.** Precision is better than the spec asked for; runtime
-is the open issue (8.4–9.4 s average, 12 s at the tail, against a 10 s budget). The cost is entirely
-dependency-closure recompilation and has untried optimisations. Templates are a **no-go for
-blocking** for now — 2.2× the compiler time on the largest application.
+**The spike recommended shipping non-blocking first** — precision was better than the spec asked
+for, but runtime was the open question (8.4–9.4 s average, 12 s at the tail, against a 10 s budget),
+and the cost is entirely dependency-closure recompilation with untried optimisations. *(Superseded
+by #37536: the gate ships blocking. The runtime question is unchanged and now matters more, not
+less — see Status.)* Templates remain a **no-go** either way: 2.2× the compiler time on the largest
+application.
 
 Full measurements, adjudication of every finding, and the go/no-go:
 `specs/37401-diff-scoped-strict-typecheck-gate/findings.md` and issue #37401.
 
+## Where this runs
+
+**Wired and live since #37536**: a `strict-gate` execution in `core-web/pom.xml`, inside the
+`validate` profile beside `lint-test` and `format-test`.
+
+**It blocks.** A new strict-mode violation on a line your pull request wrote fails the check, and
+the change does not merge until it is fixed. You get the violation annotated inline on the diff,
+plus a job summary — so the fix is usually a type annotation on the line the annotation points at.
+Read the scope note in the output before you touch anything else: only the lines you changed are
+checked, and diagnostics from dependencies and untouched code were discarded on purpose.
+
+It runs in two places, doing different jobs:
+
+| Event | Role |
+|---|---|
+| `pull_request` | Where you read it. Annotations render inline on the diff. |
+| `merge_group` | Where it is enforced. `main` declares no required status checks, so a red check on a pull request does not by itself stop a merge; a job failing in the merge queue ejects the pull request, and that does. |
+
+Trunk and nightly runs skip it — `HEAD` equals `origin/main` there, so the diff is empty.
+
+Nothing runs it on your machine. To get the answer before pushing, run it yourself with the
+command under "Running it" above.
+
+There is **no escape hatch**. If you have a change that legitimately must add a violation, it
+cannot merge until the violation is fixed or the gate is turned off repository-wide. That gap is
+known and accepted; if you hit it, say so on #37536 rather than working around it quietly.
+
+Two things worth knowing before you change it:
+
+- **Two activation profiles, not one.** `strict-gate-pull-request` and `strict-gate-merge-queue`
+  each flip `skip.strict.gate` on their own `GITHUB_EVENT_NAME`. Maven property activation has no
+  OR, so both are needed — and dropping either one breaks a different half: without the first
+  nobody sees the annotations, without the second nothing is enforced.
+- **`successCodes` lists `0` and nothing else.** `1` (findings) and `2` (the harness could not
+  run) both fail, and both must: a gate nobody has to obey is a report, and a gate that reports
+  "clean" without having looked is worse than no gate, because it is indistinguishable from a
+  clean pull request. Do not add codes here to get a build through.
+
+**Run the tests with `--test-concurrency=1`.** `corpus.acceptance.test.mjs` additionally needs
+network access to the GitHub API (it resolves the corpus pull requests through `gh`) and carries
+machine-dependent timing assertions; it goes red offline or on a slow machine while every other
+file stays green.
+
 ## Status
 
-Pending the follow-up task's decision to **promote** this into the real gate (durable script +
-CI hook in `core-web/pom.xml` + local hook in `lint-staged.config.mjs`) or **delete** it.
+Live and blocking. The open question is cost, not correctness: the spike measured 8.4–9.4 s
+average with a 12 s tail against a 10 s budget, on a synthetic corpus. That cost now sits on the
+critical path of every frontend merge, so every run prints its own elapsed time in the job summary
+— collect it on #37536, and if the real distribution is worse than the corpus suggested, the
+conversation is about making the harness faster, not about switching the gate off.
 
 Either way the end state is the same: **#37198 merging retires this gate.** Promotion only changes
 how much there is to remove — see §3.3 of
