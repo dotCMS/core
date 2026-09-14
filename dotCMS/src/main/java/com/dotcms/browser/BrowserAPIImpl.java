@@ -314,20 +314,28 @@ public class BrowserAPIImpl implements BrowserAPI {
                 break;
             }
 
+            // Natural DB exhaustion also wins over the guard rail, for the same reason: the scan
+            // limit exists to cut off a search that is NOT done, not to relabel a search that
+            // finished on its own. A partial last chunk (fewer rows than chunkSize) means there is
+            // nothing left to scan, regardless of how far dbOffset has climbed -- checking the scan
+            // limit first would report hasMore=true for a folder that is actually fully paged
+            // through whenever the last (partial) chunk's ending offset happens to land on or past
+            // the scan limit, which is reachable whenever chunkSize and the scan limit are close in
+            // size (found in review, issue #37184).
+            if (candidateChunkInodes.size() < chunkSize) {
+                Logger.debug(this, String.format(
+                        "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
+                        accumulatedContent.size()));
+                nextContentCursor = dbOffset;
+                break;
+            }
+
             if (dbOffset >= scanLimit) {
                 Logger.warn(BrowserAPIImpl.class, String.format(
                         "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
                         dbOffset, chunkCount, accumulatedContent.size()));
                 nextContentCursor = dbOffset;
                 hasMore = true;
-                break;
-            }
-
-            if (candidateChunkInodes.size() < chunkSize) {
-                Logger.debug(this, String.format(
-                        "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
-                        accumulatedContent.size()));
-                nextContentCursor = dbOffset;
                 break;
             }
 
