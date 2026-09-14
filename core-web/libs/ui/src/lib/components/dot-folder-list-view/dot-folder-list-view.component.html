@@ -121,7 +121,7 @@
                 [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
-                (dblclick)="onDoubleClick(item)"
+                (dblclick)="onDoubleClick(item, $event)"
                 [attr.draggable]="!$readOnly()"
                 (dragstart)="onDragStart($event, item)"
                 (dragend)="onDragEnd()"

@@ -2492,6 +2492,45 @@ describe('DotFolderListViewComponent', () => {
             expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
         });
 
+        it('should not open the item when the row is double clicked with Shift held', () => {
+            // Shift is a selection modifier, so every gesture carrying it belongs to the selection
+            // and none of them opens anything. Reported from QA on #32591: a second click landing
+            // inside a Shift range, or a stray double, took the author out of the listing entirely,
+            // and opening a dialog drops the selection they were halfway through building.
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            row.dispatchEvent(new MouseEvent('dblclick', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(doubleClickSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not open the item when its title is clicked with Shift held', () => {
+            // The title and the thumbnail carry their own open handlers rather than relying on the
+            // row's, so the guard has to hold on all three or the modifier only works in some parts
+            // of the row.
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const titleText = spectator.query(byTestId('item-title-text'));
+
+            titleText.dispatchEvent(new MouseEvent('click', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should still open the item on a plain double click', () => {
+            // The guard is about the modifier, not the gesture: without this the fix could pass by
+            // disabling opening altogether.
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            row.dispatchEvent(new MouseEvent('dblclick', { shiftKey: false, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
         it('should emit doubleClick event when thumbnail is clicked', () => {
             const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));

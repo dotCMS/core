@@ -1251,10 +1251,19 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Handles double click on a content item
      * @param contentlet The content item that was double clicked
      */
-    onDoubleClick(contentlet: DotContentDriveBrowseItem) {
+    onDoubleClick(contentlet: DotContentDriveBrowseItem, event?: MouseEvent) {
         // Guarded here rather than per template binding: the row's dblclick, the title and the
         // thumbnail all land on this, and opening an item from a dialog would navigate away from it.
         if (this.$readOnly()) {
+            return;
+        }
+
+        // Shift belongs to the selection, so nothing carrying it opens anything. Without this a
+        // second click inside a Shift range, or a stray double, opened the item and took the
+        // author out of the listing — losing the selection they were partway through building.
+        // The event is optional because callers that have no gesture to judge (the context menu's
+        // own open action) legitimately pass none.
+        if (event?.shiftKey) {
             return;
         }
 
@@ -1276,7 +1285,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return;
         }
 
-        this.onDoubleClick(contentlet);
+        this.onDoubleClick(contentlet, event as MouseEvent);
         event.stopPropagation();
     }
 
