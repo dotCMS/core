@@ -191,10 +191,6 @@ public class ContentDriveHelper {
                     "'filters.searchScope' qualifies 'filters.text' and cannot be used without it.");
         }
 
-        // Content Drive is the one caller with a user to tell when a query fails to execute.
-        // Every other consumer of this API keeps receiving today's empty result (see
-        // BrowserQuery.Builder#surfaceQueryFailures).
-        builder.surfaceQueryFailures(true);
 
         // Per-field value filters (Content Drive). Field types are resolved against a single
         // content type; index-routed criteria also flip on ES filtering, while DB-routed criteria

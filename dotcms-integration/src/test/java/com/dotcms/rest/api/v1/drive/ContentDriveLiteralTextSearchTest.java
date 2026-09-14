@@ -178,6 +178,29 @@ public class ContentDriveLiteralTextSearchTest extends IntegrationTestBase {
     }
 
     /**
+     * The other half of #37532: a term that once produced a query Elasticsearch could not parse
+     * must now simply run. This is the case that used to fail, get logged, and reach the user as
+     * "No results found".
+     *
+     * <p>Note what this test does <b>not</b> claim. An earlier attempt made the browsing service
+     * raise query failures instead of swallowing them; it was reverted. Once the term is escaped,
+     * no user input can break the query, so what remained was infrastructure failure — and raising
+     * it broke the guarantee that a Lucene-injection attempt is escaped, matches nothing, and does
+     * not produce a 500 ({@code ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe}).
+     * Failures the front end can observe still surface there as an error banner rather than an
+     * empty grid.</p>
+     */
+    @Test
+    public void injectionShapedTerm_runsSafely_andMatchesNothing() throws Exception {
+        final PaginatedContents results = search("not-a-title\"] OR title:*");
+
+        assertTrue("An injection-shaped term must be escaped and simply match nothing, without "
+                        + "breaking the query or leaking other content",
+                results.list.stream()
+                        .noneMatch(item -> seeded.containsValue((String) item.get("inode"))));
+    }
+
+    /**
      * #37532 also asks for equivalent behavior in Content Drive's <b>field</b> filters. Those route
      * through {@code TextFieldStrategy}, which already escapes via {@code LuceneQueryUtils} and
      * already drops empty tokens — so this test is expected to pass <b>before</b> the search-box fix

@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
 import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
+import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -891,17 +892,15 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
-            // Log first, always — this is the only record for callers that do not opt in.
+            // Deliberately swallowed, and it is worth saying why rather than leaving it to look
+            // like an oversight. Raising this instead was tried while fixing #37532 and reverted:
+            // once the term is escaped (see GlobalSearchAttributeStrategy) no user input can break
+            // the query, so what remains here is infrastructure failure — and raising it also broke
+            // the guarantee that a Lucene-injection attempt is escaped, matches nothing, and does
+            // NOT produce a 500 (see ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe).
+            // Failures the front end can observe — network and server errors — already surface as
+            // an error banner rather than an empty grid.
             Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
-            // Then, only if the caller asked for it, stop pretending the search found nothing.
-            // Collapsing "the query failed" into an empty result is what let a malformed query
-            // reach a user as "No results found" for content they were looking at (issue #37532).
-            // Off by default, so the assets REST API, the legacy admin browser and the Velocity
-            // viewtool keep behaving exactly as they do today.
-            if (browserQuery.surfaceQueryFailures) {
-                throw new DotRuntimeException(
-                        "Content search query failed to execute: " + getErrorMessage(e), e);
-            }
         }
 
         return new LinkedHashSet<>(collectedInodes);
@@ -1205,16 +1204,20 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
-            // Reuse the Content Search global-search strategy so Content Drive keyword search stays
-            // consistent with the Search portlet (issue #36688). It builds a selective mandatory
-            // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
-            // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
-            // scanned slowly on large, indexed datasets.
-            final FieldContext globalSearchContext = new FieldContext.Builder()
-                    .withFieldName("title")
-                    .withFieldValue(browserQuery.filter)
-                    .build();
-            textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
+            if (SearchScope.TITLE == browserQuery.searchScope) {
+                textGroup.append(buildTitleScopedQuery(browserQuery.filter));
+            } else {
+                // Reuse the Content Search global-search strategy so Content Drive keyword search stays
+                // consistent with the Search portlet (issue #36688). It builds a selective mandatory
+                // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
+                // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
+                // scanned slowly on large, indexed datasets.
+                final FieldContext globalSearchContext = new FieldContext.Builder()
+                        .withFieldName("title")
+                        .withFieldValue(browserQuery.filter)
+                        .build();
+                textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
+            }
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1261,6 +1264,53 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return baseQuery.toString();
+    }
+
+    /**
+     * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
+     * a term against the contentlet title alone (issue #37479).
+     *
+     * <p>This is a <b>sibling</b> of {@link GlobalSearchAttributeStrategy} rather than a branch
+     * inside it. That strategy also serves the Search portlet and the Relationships dialog through
+     * the Lucene Query Builder service, and neither asked for a narrower query; adding a mode to it
+     * would change their behavior too.</p>
+     *
+     * <p>Two things this clause must not do, both of which would make the scope a display filter
+     * rather than the cheaper query path it exists to be:</p>
+     *
+     * <ul>
+     *   <li><b>No {@code catchall}.</b> That field aggregates every field of the document, which is
+     *       exactly the breadth the Title scope is meant to avoid.</li>
+     *   <li><b>No leading wildcard in the mandatory gate.</b> {@code title_dotraw} is a keyword
+     *       field, so {@code *term*} scans every distinct raw title while {@code term*} is a prefix
+     *       seek. Issue #36688 removed a leading wildcard for this reason and it must not return.</li>
+     * </ul>
+     *
+     * <p>The gate matches either a token prefix on the analyzed {@code title} — so a word from the
+     * middle of a name still matches — or a prefix of the whole raw title. <b>Known trade-off</b>:
+     * dropping the leading wildcard also drops mid-token matching, so searching {@code 1004} will
+     * not find {@code IMG_1004.jpeg} in this scope. That is deliberate and signed off: All Fields
+     * keeps mid-token matching (issue #36791), and restoring it here would cost the prefix seek
+     * that makes the scope worth having.</p>
+     *
+     * <p>The term is escaped before the wildcards are appended, so a reserved character is matched
+     * literally and the wildcards stay live (issue #37532, FR-027).</p>
+     *
+     * @param filter The raw, unescaped term the user typed.
+     *
+     * @return The Lucene clause for a title-only search.
+     */
+    private String buildTitleScopedQuery(final String filter) {
+        final String value = LuceneQueryUtils.escape(filter);
+        final StringBuilder query = new StringBuilder();
+        // Mandatory gate: token prefix on the analyzed field, OR raw-value prefix on the keyword.
+        query.append("+(title:").append(value).append("* OR title_dotraw:")
+                .append(value).append("*) ");
+        // Non-mandatory boosts, mirroring the all-fields strategy so ranking feels the same: an
+        // exact-value hit outranks a prefix hit.
+        query.append("title:'").append(value).append("'^15 ");
+        query.append("title_dotraw:").append(value).append("^10");
+        return query.toString();
     }
 
     /**
