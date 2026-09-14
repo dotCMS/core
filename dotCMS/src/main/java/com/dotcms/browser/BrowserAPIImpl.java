@@ -643,13 +643,16 @@ public class BrowserAPIImpl implements BrowserAPI {
             ? browserQuery.site.getIdentifier()
             : browserQuery.folder.getHostId();
 
+        // The caller's request decides this, and nothing else. This used to widen the clause
+        // whenever the folder happened to be the system folder — that is, at every site root —
+        // which made this builder answer differently from the SQL one about a structural
+        // criterion. ADR-0018 makes the database authoritative for exactly those criteria and
+        // forbids re-routing them to the index, so the two must name the same hosts for the same
+        // request. The divergence only ever surfaced under the non-default PURE_ES heuristic,
+        // which is why it went unnoticed rather than why it was acceptable.
         if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
             query.append("+conhost:SYSTEM_HOST ");
-        } else if (SystemHostMode.INCLUDE == browserQuery.systemHostMode
-                || browserQuery.folder.isSystemFolder()) {
-            // The system-folder half of this condition is deliberately preserved for now: it makes
-            // this builder disagree with the SQL one about a structural criterion, which is a
-            // defect in its own right and is fixed with its own test rather than silently here.
+        } else if (SystemHostMode.INCLUDE == browserQuery.systemHostMode) {
             query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
         } else {
             query.append("+conhost:").append(hostId).append(" ");
