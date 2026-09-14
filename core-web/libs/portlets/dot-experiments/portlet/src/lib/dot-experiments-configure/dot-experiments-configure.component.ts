@@ -1,4 +1,5 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
+import { of } from 'rxjs';
 
 import { formatDate } from '@angular/common';
 import {
@@ -15,7 +16,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
     applyEach,
     disabled,
@@ -39,12 +40,14 @@ import { take } from 'rxjs/operators';
 
 import {
     DotExperimentsService,
+    DotPropertiesService,
     DotMessageDisplayService,
     DotMessageService,
     DotPagesBrowserService
 } from '@dotcms/data-access';
 import {
     CONFIGURE_SECTION_PARAM,
+    ExperimentsConfigProperties,
     CONFIGURE_SECTION_VARIANTS,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
@@ -312,15 +315,25 @@ export class DotExperimentsConfigureComponent {
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
     /**
-     * How long an experiment may run. Read once: a modal-free screen outlives no resolve.
+     * How long an experiment may run.
      *
-     * Two sources, one answer. The portlet's route resolves these properties; the panel has no
-     * routes and resolves them at its own door instead. Falling through to the route's copy keeps
-     * the portlet exactly as it was, and stops the panel from silently offering the 7-and-90-day
-     * defaults on an install that configured something else (#37478).
+     * The portlet's route resolves these properties before the screen exists, so it reads them
+     * once off the route data. The panel has no route to resolve them, so the screen asks for them
+     * itself — the same two keys, the same service the resolver uses. Without that it silently
+     * fell back to the 7-and-90-day defaults and offered a window the install never configured
+     * (#37478).
+     *
+     * A signal because the panel's answer arrives after construction; the portlet's is there from
+     * the first read and never changes.
      */
-    readonly #durationBounds = resolveDurationBounds(
-        this.#panel?.configProps() ?? this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]
+    readonly #durationBounds = toSignal(
+        this.#panel
+            ? inject(DotPropertiesService).getKeys([
+                  ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION,
+                  ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
+              ])
+            : of(this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]),
+        { initialValue: undefined }
     );
 
     /** "Now" for the whole session. The pickers offer nothing before it. */
@@ -338,11 +351,12 @@ export class DotExperimentsConfigureComponent {
      */
     protected readonly $schedulingBounds = computed<SchedulingDateBounds>(() => {
         const from = this.$model().scheduling.startDate?.getTime() ?? this.#now.getTime();
+        const bounds = resolveDurationBounds(this.#durationBounds());
 
         return {
             initialStartDate: this.#initialStartDate,
-            minEndDate: new Date(from + this.#durationBounds.minDuration),
-            maxEndDate: new Date(from + this.#durationBounds.maxDuration)
+            minEndDate: new Date(from + bounds.minDuration),
+            maxEndDate: new Date(from + bounds.maxDuration)
         };
     });
 

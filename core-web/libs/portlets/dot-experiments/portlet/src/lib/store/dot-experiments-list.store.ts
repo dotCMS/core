@@ -670,7 +670,6 @@ export const DotExperimentsListStore = signalStore(
         let siteEffect: EffectRef;
         let syncUrlEffect: EffectRef;
         let rescopeEffect: EffectRef;
-        let healthEffect: EffectRef;
         let locationSubscription: SubscriptionLike;
 
         /**
@@ -791,26 +790,6 @@ export const DotExperimentsListStore = signalStore(
          * would discard the editor's view state for no change in the answer (FR-034a, D10). The
          * language is still carried into the state, as return context for the variant round trip.
          */
-        /**
-         * Hands the gate's answer to the panel, once, so the deeper screens do not ask again.
-         *
-         * In the portlet each screen gets this from its own route resolver. The panel has no
-         * routes, and results can only be reached through this list — so the question is already
-         * answered by the time it matters, and asking again would spend a request on it
-         * (FR-027, SC-005).
-         */
-        const shareHealthWithThePanel = (): void => {
-            healthEffect = effect(() => {
-                const healthStatus = store.healthStatus();
-
-                if (!healthStatus) {
-                    return;
-                }
-
-                untracked(() => panel?.setHealthStatus(healthStatus));
-            });
-        };
-
         const followTheEditorsPage = (): void => {
             let knownPageId: string | null | undefined;
 
@@ -846,7 +825,6 @@ export const DotExperimentsListStore = signalStore(
             onInit() {
                 if (panel) {
                     followTheEditorsPage();
-                    shareHealthWithThePanel();
                 } else {
                     hydrateFromUrl();
                 }
@@ -867,7 +845,6 @@ export const DotExperimentsListStore = signalStore(
                 siteEffect?.destroy();
                 syncUrlEffect?.destroy();
                 rescopeEffect?.destroy();
-                healthEffect?.destroy();
                 locationSubscription?.unsubscribe();
             }
         };

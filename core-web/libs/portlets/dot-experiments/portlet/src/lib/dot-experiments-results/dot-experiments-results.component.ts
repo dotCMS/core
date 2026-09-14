@@ -1,4 +1,5 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
+import { of } from 'rxjs';
 
 import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -10,7 +11,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { map } from 'rxjs/operators';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotExperiment,
@@ -127,8 +132,21 @@ export class DotExperimentsResultsComponent {
      * results through the panel's list, whose own gate already asked. Asking again here would
      * spend a second request on a question already answered (FR-027, SC-005).
      */
+    /**
+     * Analytics health inside the panel, asked for rather than resolved.
+     *
+     * There is no route here to carry a resolver, so the screen asks the same question the
+     * portlet's `dotAnalyticsHealthCheckResolver` asks — one call to the same service, once per
+     * time results is opened, which is exactly what the resolver does per screen. Routing it
+     * through the panel instead would put a second copy of an install-level answer in a store
+     * that holds a destination.
+     */
+    readonly #panelHealthStatus = toSignal(
+        this.#panel ? inject(DotExperimentsService).healthCheck() : of(undefined)
+    );
+
     readonly #healthStatus = computed<HealthStatusTypes | undefined>(
-        () => this.#panel?.healthStatus() ?? this.#routeHealthStatus()
+        () => this.#panelHealthStatus() ?? this.#routeHealthStatus()
     );
 
     /** Anything but `OK` means the report cannot be trusted, so none of it is shown (AC22). */

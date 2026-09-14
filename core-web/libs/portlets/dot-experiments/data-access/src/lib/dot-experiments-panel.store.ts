@@ -19,7 +19,7 @@ import {
     untracked
 } from '@angular/core';
 
-import { CONFIGURE_SECTION_VARIANTS, HealthStatusTypes } from '@dotcms/dotcms-models';
+import { CONFIGURE_SECTION_VARIANTS } from '@dotcms/dotcms-models';
 
 /** The single surface the panel shows at any moment. Never two of these at once. */
 export type DotExperimentsPanelView = 'list' | 'create' | 'configure' | 'results';
@@ -39,23 +39,6 @@ export interface DotExperimentsPanelContext {
 
 export interface DotExperimentsPanelState {
     isOpen: boolean;
-    /**
-     * Analytics health, as the list's own gate resolved it; `null` until it has.
-     *
-     * It lives here because the screens the panel shows are the portlet's, and in the portlet each
-     * of them gets this from a route resolver that re-runs per screen. The panel has no routes, and
-     * asking again per screen would spend a second request on a question already answered — so the
-     * list answers it once and the deeper screens read it from here (FR-027, SC-005).
-     */
-    healthStatus: HealthStatusTypes | null;
-    /**
-     * The experiments config properties the Scheduling card bounds itself by; `null` until read.
-     *
-     * Same story as {@link healthStatus}: in the portlet a route resolver supplies these, and the
-     * panel has no routes. Without them the card silently falls back to its 7-and-90-day defaults
-     * and offers a window the install never configured — wrong, and invisible.
-     */
-    configProps: Record<string, string | boolean> | null;
     view: DotExperimentsPanelView;
     /** The experiment `configure` and `results` are showing; `null` on `list` and `create`. */
     experimentId: string | null;
@@ -80,26 +63,8 @@ export interface DotExperimentsPanelState {
     suspendedForVariant: boolean;
 }
 
-/**
- * What the editor was looking at, reset.
- *
- * Deliberately **not** the whole state: {@link DotExperimentsPanelState.healthStatus} and
- * {@link DotExperimentsPanelState.configProps} are facts about the install, answered once at the
- * panel's door. Clearing them on open or close would re-ask a question whose answer cannot have
- * changed, which is exactly the request FR-027 and SC-005 count.
- */
-const viewState = () => ({
-    isOpen: false,
-    view: 'list' as DotExperimentsPanelView,
-    experimentId: null,
-    section: null,
-    suspendedForVariant: false
-});
-
 const initialState: DotExperimentsPanelState = {
     isOpen: false,
-    healthStatus: null,
-    configProps: null,
     view: 'list',
     experimentId: null,
     section: null,
@@ -107,23 +72,38 @@ const initialState: DotExperimentsPanelState = {
 };
 
 /**
- * The Experiments panel's view state, and the signal that tells the portlet's screens they are
- * rendering inside it (#37478).
+ * **This is the sidebar's route** (#37478).
  *
- * **Provided by the UVE shell, not by the panel.** The panel component is mounted and destroyed
- * by the shell's `@if` on {@link isOpen}, so a store owned by the panel would die with it — and
- * the variant round trip needs the state to survive a period during which the panel is closed.
- * The shell is the smallest scope that outlives that trip: leaving for a variant only changes
- * the editor's query params, so the shell is never re-created. A browser reload does destroy it,
- * which is exactly the case the spec declines to define.
+ * Read it as the panel's address bar, not as a second store beside the screens'. The portlet says
+ * which screen is open, for which experiment and at which section in its URL —
+ * `/experiments/:id/configuration?section=variants` — and the screens read it back off the route.
+ * The panel has no URL to say it in, so it says it here. That is the whole of this file: four
+ * fields naming a destination, plus one bit for a trip that is still in flight.
  *
- * **Methods rather than dispatched events**, unlike the three screen stores beside it. Those
- * hold server state and every transition is an async flow worth naming as an event. This holds
- * only what the editor is looking at, no request ever reaches it, and its callers are a
- * component and a toolbar. `withReducer` here would be ceremony around four fields.
+ * Which makes the layering the portlet's own, not a new one. `DotExperimentsListStore`,
+ * `DotExperimentsConfigureStore` and `DotExperimentsResultsStore` are unchanged and still own
+ * everything they owned: their data, their forms, their requests. What changes for them is only
+ * where their "route param" comes from. Nobody calls the Router a second store, and this is the
+ * Router's job.
  *
- * Nothing in this store touches the router, `Location` or `window.history` — not the fact that
- * it is open, not the view, not the experiment (FR-002, FR-031, FR-035).
+ * It follows that nothing else belongs here. Anything a screen could ask for itself — analytics
+ * health, the install's configured experiment durations — is the screen's to ask, exactly as it
+ * does in the portlet through its resolvers. Both lived here for a while and were the only
+ * duplicated state in the feature.
+ *
+ * **Provided by the route**, beside `UVEStore`, not by the shell component. The shell is destroyed
+ * and rebuilt when the editor leaves for a variant — `/edit-page` declares `reuseRoute: false` and
+ * route data is inherited — so a component-scoped store loses the panel's place on the way out and
+ * the return has nothing to return to. A browser reload does clear it, which is the one case the
+ * spec declines to define.
+ *
+ * **Methods rather than dispatched events**, unlike the three screen stores beside it. Those hold
+ * server state and every transition is an async flow worth naming as an event. This holds only a
+ * destination, no request ever reaches it, and `panel.showResults(id)` reads the way
+ * `router.navigate([...])` reads. `withReducer` here would be ceremony.
+ *
+ * Nothing in it touches the router, `Location` or `window.history` — not the fact that it is open,
+ * not the view, not the experiment (FR-002, FR-031, FR-035).
  *
  * @see specs/37478-uve-experiments-panel/contracts/panel-store.contract.md
  */
@@ -156,22 +136,6 @@ export const DotExperimentsPanelStore = signalStore(
          * because refetching on a language change would re-request a provably identical set and
          * resetting would discard the editor's view state for no change in the answer (D10).
          */
-        /**
-         * Records what the list's analytics gate answered, so results does not ask again.
-         *
-         * Deliberately not reset by {@link close}: the answer is about the install, not about what
-         * the editor was looking at, and re-opening the panel would otherwise re-ask a question
-         * whose answer cannot have changed in the meantime.
-         */
-        setHealthStatus(healthStatus: HealthStatusTypes): void {
-            patchState(store, { healthStatus });
-        },
-
-        /** Records the experiments config properties the panel resolved for its screens. */
-        setConfigProps(configProps: Record<string, string | boolean>): void {
-            patchState(store, { configProps });
-        },
-
         setContext(context: DotExperimentsPanelContext): void {
             store._rescope.effect?.destroy();
             store._context.set(context);
@@ -222,7 +186,7 @@ export const DotExperimentsPanelStore = signalStore(
          * (D11). The empty state carries the create action instead.
          */
         open(): void {
-            patchState(store, { ...viewState(), isOpen: true });
+            patchState(store, { ...initialState, isOpen: true });
         },
 
         /**
@@ -281,7 +245,7 @@ export const DotExperimentsPanelStore = signalStore(
          * data rather than what was on screen at this close (FR-039, SC-016).
          */
         close(): void {
-            patchState(store, viewState());
+            patchState(store, initialState);
         },
 
         /**

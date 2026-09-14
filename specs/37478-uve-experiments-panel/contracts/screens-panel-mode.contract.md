@@ -62,7 +62,7 @@ Legend: **P** = portlet (`#panel === null`), **N** = panel (`#panel !== null`).
 | Concern | P (unchanged) | N | Requirement |
 |---|---|---|---|
 | `experimentId` source | `route.paramMap` | `panel.experimentId()` | FR-025a |
-| `healthStatus` source | `dotAnalyticsHealthCheckResolver` on the route | supplied by the panel — already known from the list's gate | FR-027, SC-005 |
+| `healthStatus` source | `dotAnalyticsHealthCheckResolver` on the route | **the screen asks for it**, through the same service the resolver uses. Not carried by the panel store: that holds a destination, and an install-level answer parked in it is a second copy of something no screen owns | FR-027, SC-005 |
 | chart.js / `primeng/chart` load | with the route chunk | **only when results actually open**, via a nested `@defer` in the panel. `@defer` *is* available here, unlike at the shell→panel edge: results and the chart component live in this same lib, so the static import a `@defer` block needs is not a boundary crossing and `@nx/enforce-module-boundaries` never sees it | FR-025f, FR-037 |
 | Measurements shown | all | **all** — never fewer to fit the width | FR-025e |
 | Back | `router.navigate([EXPERIMENTS_URL], …)` | `panel.showConfigure(id)` when it came from configuration, else `panel.backToList()` | FR-025b |
