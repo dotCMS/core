@@ -53,7 +53,9 @@ const EXPERIMENT_MOCK = getExperimentMock(0);
 // `toEqual` does not treat the two as equal.
 const getDotPageRenderStateMock = (
     favoritePage?: DotCMSContentlet,
-    runningExperiment: DotExperiment | null = null
+    // `undefined`, not `null`: `DotPageState.runningExperiment` is optional, and that is what
+    // the service hands `DotPageRenderState` when no experiment is running.
+    runningExperiment?: DotExperiment
 ) => {
     return new DotPageRenderState(
         mockUser(),

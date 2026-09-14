@@ -279,15 +279,15 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.showLoadMoreButton).toEqual(false);
             expect(data.favoritePages.total).toEqual(0);
             expect(data.isEnterprise).toEqual(false);
-            expect(data.languages).toEqual(null);
-            expect(data.loggedUser.id).toEqual(null);
+            expect(data.languages).toEqual([]);
+            expect(data.loggedUser.id).toEqual('');
             expect(data.loggedUser.canRead).toEqual({
-                contentlets: null,
-                htmlPages: null
+                contentlets: false,
+                htmlPages: false
             });
             expect(data.loggedUser.canWrite).toEqual({
-                contentlets: null,
-                htmlPages: null
+                contentlets: false,
+                htmlPages: false
             });
             expect(data.pages.items).toEqual([]);
             expect(data.pages.keyword).toEqual('');
@@ -780,7 +780,9 @@ describe('DotPageStore', () => {
 
         await settled(dotPageStore.state$).then((data) => {
             expect(data.pages.menuActions!.length).toEqual(8);
-            expect(data.pages.menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
             expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
         });
     });
@@ -806,7 +808,9 @@ describe('DotPageStore', () => {
         });
 
         await settled(dotPageStore.state$).then((data) => {
-            expect(data.pages.menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
             expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
             expect(data.pages.menuActions![2]).toEqual({ separator: true });
             expect(data.pages.menuActions![3].label).toEqual('Assign Workflow');

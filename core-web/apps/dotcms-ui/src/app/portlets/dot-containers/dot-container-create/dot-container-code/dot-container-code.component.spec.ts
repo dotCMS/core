@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { vi } from 'vitest';
-
 import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';

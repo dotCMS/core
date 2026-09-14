@@ -1,4 +1,4 @@
-import { TooltipItem } from 'chart.js';
+import { Color, TooltipItem } from 'chart.js';
 
 import { ChartColors } from '@dotcms/dotcms-models';
 
@@ -45,9 +45,11 @@ export const generateDotExperimentLineChartJsOptions = ({
                         return `${label}: ${context.parsed.y + '%'}`;
                     },
                     labelColor: function (context: TooltipItem<'line'>) {
+                        const borderColor = context.dataset.borderColor as Color;
+
                         return {
-                            borderColor: context.dataset.borderColor,
-                            backgroundColor: context.dataset.borderColor,
+                            borderColor,
+                            backgroundColor: borderColor,
                             borderWidth: 2.5,
                             borderRadius: 5
                         };
@@ -160,9 +162,11 @@ export const generateDotExperimentLineChartJsOptions = ({
                         return `${label}: ${context.parsed.y}`;
                     },
                     labelColor: function (context: TooltipItem<'line'>) {
+                        const borderColor = context.dataset.borderColor as Color;
+
                         return {
-                            borderColor: context.dataset.borderColor,
-                            backgroundColor: context.dataset.borderColor,
+                            borderColor,
+                            backgroundColor: borderColor,
                             borderWidth: 2.5,
                             borderRadius: 5
                         };

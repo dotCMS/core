@@ -10,7 +10,7 @@ import {
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { MockDotHttpErrorManagerService } from '@dotcms/utils-testing';
 
-import { DotContentCompareStore } from './dot-content-compare.store';
+import { DotContentCompareState, DotContentCompareStore } from './dot-content-compare.store';
 
 const generateRandomString = function (length: number) {
     const words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit'];
@@ -738,6 +738,10 @@ describe('DotContentCompareStore', () => {
         }));
 
     it('should update compare', () => {
+        // `updateCompare` is a no-op until the versions table has loaded. Seeded rather than
+        // loaded: the store formats `getContentletVersionsMOCKResponse` in place, so a second
+        // `loadData` in this file would re-format already-formatted values.
+        dotContentCompareStore.setState(expectedData as unknown as DotContentCompareState);
         dotContentCompareStore.updateCompare(expectedData.data.versions[1]);
         dotContentCompareStore.state$.subscribe((data) => {
             expect(data.data!.compare).toEqual(newCompare);

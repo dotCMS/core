@@ -1,3 +1,6 @@
+// `htmldiff-js.d.ts` is an ambient `declare module`, not a module: importing it would
+// register nothing. The reference is what pulls it into the program.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./htmldiff-js.d.ts" />
 import HtmlDiff from 'htmldiff-js';
 
