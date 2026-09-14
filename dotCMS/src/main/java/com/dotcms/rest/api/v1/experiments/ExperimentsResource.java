@@ -2,7 +2,10 @@ package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentFilter;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotcms.security.apps.Secret;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPI.Health;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -539,33 +542,57 @@ public class ExperimentsResource {
     /**
      * Healthcheck for the Experiments/Analytics configuration.
      *
+     * <p>When {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS} is {@code true} the check targets the
+     * {@code dotContentAnalytics-config} app and verifies that both the {@code siteAuth} and
+     * {@code bearerToken} secrets are set. When the flag is {@code false} (legacy path) the
+     * original {@code dotExperiments-config} / EventLogRunnable connectivity test is used.
      */
     @GET
     @NoCache
     @Path("/health")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView healthcheck(@Context final HttpServletRequest request,
+    public ResponseEntityView<Map<String, Health>> healthcheck(
+            @Context final HttpServletRequest request,
             @Context final HttpServletResponse response)
             throws DotDataException, DotSecurityException, SystemException, PortalException {
 
-        final InitDataObject initData = getInitData(request, response);
+        getInitData(request, response);
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-        final AnalyticsApp analyticsApp = Try.of(()->AnalyticsHelper.get().appFromHost(host))
-                .getOrNull();
 
-        if(analyticsApp==null) {
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.NOT_CONFIGURED));
+        if (ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()) {
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, caemHealthCheck(host)));
         }
 
+        return new ResponseEntityView<>(Map.of(HEALTH_KEY, legacyHealthCheck(host)));
+    }
+
+    private Health caemHealthCheck(final Host host) {
+        final Map<String, Secret> secrets = ContentAnalyticsUtil.getAppSecrets(host);
+        if (secrets.isEmpty()) {
+            return Health.NOT_CONFIGURED;
+        }
+        final Secret siteAuth = secrets.get("siteAuth");
+        final Secret bearerToken = secrets.get("bearerToken");
+        final boolean configured = siteAuth != null && UtilMethods.isSet(siteAuth.getString())
+                && bearerToken != null && UtilMethods.isSet(bearerToken.getString());
+        return configured ? Health.OK : Health.CONFIGURATION_ERROR;
+    }
+
+    private Health legacyHealthCheck(final Host host) {
+        final AnalyticsApp analyticsApp = Try.of(() -> AnalyticsHelper.get().appFromHost(host))
+                .getOrNull();
+        if (analyticsApp == null) {
+            return Health.NOT_CONFIGURED;
+        }
         try {
             final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
-            Optional<CircuitBreakerUrl.Response<String>> responseOptional  = eventLogRunnable.sendTestEvent();
-
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, responseOptional.isPresent()
+            final Optional<CircuitBreakerUrl.Response<String>> responseOptional =
+                    eventLogRunnable.sendTestEvent();
+            return responseOptional.isPresent()
                     && UtilMethods.isSet(responseOptional.get().getResponse())
-                    ? Health.OK:Health.CONFIGURATION_ERROR));
-        } catch (IllegalStateException e) {
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.CONFIGURATION_ERROR));
+                    ? Health.OK : Health.CONFIGURATION_ERROR;
+        } catch (final IllegalStateException e) {
+            return Health.CONFIGURATION_ERROR;
         }
     }
 
