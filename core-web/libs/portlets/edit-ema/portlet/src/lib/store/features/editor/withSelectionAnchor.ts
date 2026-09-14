@@ -158,13 +158,21 @@ export function withSelectionAnchor() {
                                 //     DROPS the rest. Preserving them is what keeps the
                                 //     selection usable across a scroll or resize.
                                 //
-                                // Spread order: previous first so nothing is lost, the
-                                // fresh payload second so live values win. contentlet is
-                                // nest-merged for the same reason — a wholesale replace
-                                // is precisely the bug.
+                                // The fresh payload is the base, and exactly the
+                                // DOM-sourced data is carried over it — an allowlist, not
+                                // a blanket `...previousPayload`. A blanket spread would
+                                // also pin the transient fields (`position`,
+                                // `newContentlet`, `newContentletId`) to the selection for
+                                // as long as it lives: `promoteHoverToSelected()` writes
+                                // `contentContext()`, which always stamps `position`, and
+                                // `insertContentletInContainer` branches on that field.
+                                //
+                                // `contentlet` IS merged wholesale, deliberately — every
+                                // field on it is DOM-sourced, so the snapshot's five win
+                                // and the rest survive.
                                 payload: {
-                                    ...previousPayload,
                                     ...actionPayload,
+                                    vtlFiles: actionPayload.vtlFiles ?? previousPayload?.vtlFiles,
                                     contentlet: {
                                         ...previousPayload?.contentlet,
                                         ...actionPayload.contentlet

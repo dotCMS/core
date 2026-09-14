@@ -505,6 +505,42 @@ describe('withSelectionAnchor', () => {
                 // survived the merge, this would be ['gone-since-selection'].
                 expect(contentletsId).toEqual(['kept-a', 'kept-b']);
             });
+
+            /**
+             * Only DOM-sourced data is preserved — the transient fields are not.
+             *
+             * `promoteHoverToSelected()` writes `contentContext()`, which always
+             * stamps `position` (defaulting to 'after'), and getPageSavePayload
+             * never sets it. A blanket carry-forward would therefore pin
+             * `position` on the selection for as long as it lives, and
+             * insertContentletInContainer branches on exactly that field:
+             *
+             *     if (action.position) { return insertPositionedContentletInContainer(action); }
+             *
+             * Every insert path re-stamps `position` today, so this is latent
+             * rather than live — which is the reason to pin it now, while it is
+             * still cheap.
+             */
+            it('drops transient fields instead of pinning them to the selection', () => {
+                patchStoreState(store, {
+                    editorSelected: {
+                        ...SELECTED_WITH_FULL_PAYLOAD,
+                        payload: {
+                            ...SELECTED_WITH_FULL_PAYLOAD.payload,
+                            position: 'after',
+                            newContentletId: 'left-over-from-an-add'
+                        } as unknown as ActionPayload
+                    }
+                });
+
+                reAnchor();
+
+                const { payload } = setSelectedSpy.mock.calls[0][0];
+                expect(payload.position).toBeUndefined();
+                expect(payload.newContentletId).toBeUndefined();
+                // …while the DOM-sourced data it sits beside still survives.
+                expect(payload.vtlFiles).toBeDefined();
+            });
         });
     });
 });
