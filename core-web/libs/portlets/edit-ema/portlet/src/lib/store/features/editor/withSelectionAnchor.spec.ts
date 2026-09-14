@@ -9,6 +9,7 @@ import { withSelectionAnchor } from './withSelectionAnchor';
 import { Container } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
 import { ActionPayload, PositionPayload, SelectedContentlet } from '../../../shared/models';
+import { deleteContentletFromContainer } from '../../../utils';
 import { UVEState } from '../../models';
 
 const containerKey = (identifier: string, uuid: string) => ({ identifier, uuid });
@@ -434,6 +435,75 @@ describe('withSelectionAnchor', () => {
                 expect(payload.contentlet.title).toBe('Fresh title');
                 expect(payload.contentlet.contentType).toBe('VtlInclude');
                 expect(payload.contentlet.canEdit).toBe(true);
+            });
+
+            /**
+             * The reason the merge preserves DOM data but never freezes the whole
+             * payload. deleteContentletFromContainer and
+             * insertContentletInContainer read action.pageContainers straight off
+             * this object — and mutate it with .push() when the container is not
+             * found — so a merge that carried the click-time container tree
+             * forward would silently write stale content back to the page.
+             *
+             * The sibling test above asserts the payload FIELD; this one runs the
+             * real consumer over the merged payload, which is what the field
+             * exists for.
+             */
+            it('leaves the merged payload safe for the save path after a re-anchor', () => {
+                const STALE = [
+                    { identifier: 'c1', uuid: '1', contentletsId: ['gone-since-selection'] }
+                ];
+                const FRESH = [
+                    {
+                        identifier: 'c1',
+                        uuid: '1',
+                        contentletsId: ['kept-a', 'inode-1-identifier', 'kept-b']
+                    }
+                ];
+
+                getPageSavePayloadSpy.mockImplementationOnce(
+                    (positionPayload: PositionPayload) =>
+                        ({
+                            ...positionPayload,
+                            pageContainers: FRESH
+                        }) as unknown as ActionPayload
+                );
+
+                patchStoreState(store, {
+                    editorSelected: {
+                        ...SELECTED_WITH_FULL_PAYLOAD,
+                        payload: {
+                            ...SELECTED_WITH_FULL_PAYLOAD.payload,
+                            pageContainers: STALE
+                        } as unknown as ActionPayload
+                    }
+                });
+
+                store.applyBoundsForSelection([
+                    makeContainer('c1', '1', { x: 0, y: 0, width: 100, height: 100 }, [
+                        {
+                            x: 0,
+                            y: 0,
+                            width: 10,
+                            height: 10,
+                            payload: {
+                                contentlet: {
+                                    inode: 'inode-1',
+                                    identifier: 'inode-1-identifier',
+                                    title: 'Fresh title'
+                                },
+                                container: { identifier: 'c1', uuid: '1' }
+                            }
+                        } as unknown as ReturnType<typeof makeContentletBound>
+                    ])
+                ]);
+
+                const { payload } = setSelectedSpy.mock.calls[0][0];
+                const { contentletsId } = deleteContentletFromContainer(payload);
+
+                // Operated on the refreshed tree. Had the stale pageContainers
+                // survived the merge, this would be ['gone-since-selection'].
+                expect(contentletsId).toEqual(['kept-a', 'kept-b']);
             });
         });
     });
