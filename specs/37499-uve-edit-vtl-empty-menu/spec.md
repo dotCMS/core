@@ -46,6 +46,10 @@ has already lost the data it needs.
 - Q: Which test layers does this fix get, given Principle V? → A: **Component/store specs only.** No E2E; AC-002, AC-006 and AC-007 stay manual, with the Principle V justification recorded below.
 - Q (from PR #37519 review): after fix (1) and AC-010, no consumer reads `vtlFiles` off `editorSelected.payload` — should AC-009 (store carry-forward) stay? → A: **No. AC-009 is withdrawn.** The store change is dropped and the lossy re-anchor is documented instead. Verified: the only non-spec `vtlFiles` readers in `core-web` are `hasVtlFiles` (`:213`), `selectedHasVtlFiles` (`:234`, deleted by AC-010) and `vtlMenuItems` (`:333`, becoming hover-only).
 
+### Session 2026-09-14
+
+- Q (from PR #37519 review): with A selected, hovering B and clicking B's `</>` opens B's VTL while A stays the selected contentlet — should `</>` promote the hovered contentlet to selected? → A: **No. The selection is deliberately left where it is.** The hover toolbar already splits on *what the action opens*, not on which contentlet it targets: the bolt (Quick Edit) and palette (Style editor) call `promoteHoverToSelected()` because their side panels bind to `editorSelected` and have no other input; the pencil (full editor) and `×` (delete) do not, and the pencil is documented in-code as "intentionally stateless". `</>` opens the same dialog the pencil does (`handleEditVTL()` → `openContentForEdit()`), so it belongs with the pencil. Promoting on the button click would additionally move the selection when the user merely opens the menu and dismisses it without picking a file. Before this fix the divergence was invisible, because the menu listed the selected contentlet's files anyway; it is recorded here as a decision rather than as how the code happens to behave.
+
 ## Reproduction *(mandatory)*
 
 **Environment**: dotCMS `main` (reproduced locally); demo starter site; UVE in Edit mode;
@@ -198,6 +202,15 @@ withdrawn AC-009 note under Acceptance, and the non-goal below.
   add-content menu keeps the same selected-preferred dual-context pattern. It never reads
   `vtlFiles` — it passes the context through as the `addContent` payload, where preferring the
   selected contentlet is the intended behavior. Confirmed intentionally untouched.
+- **No change to which contentlet is *selected* when `</>` is clicked** (clarified 2026-09-14).
+  `</>` does not call `promoteHoverToSelected()` and will not start doing so. The toolbar's
+  existing rule is that side-panel actions promote (bolt → Quick Edit, palette → Style editor,
+  both bound to `editorSelected`) while dialog actions do not (pencil → full editor, `×` →
+  delete; the pencil is documented in-code as deliberately stateless). `</>` opens the same
+  dialog the pencil does, so it stays with the pencil: after this fix it targets the **hovered**
+  contentlet and leaves the selection border where it is. This is not new behavior — the fix
+  only makes it observable, because until now the menu listed the selected contentlet's files
+  anyway. Making the selection follow `</>` is separate product work.
 - **No `strict: true` migration** for the workspace, tempting as the undefined return makes it.
   Tracked separately (#37401).
 
