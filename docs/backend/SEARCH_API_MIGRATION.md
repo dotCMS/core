@@ -1,7 +1,7 @@
 # Search API Migration Guide
 
 This guide is intended for **dotCMS plugin and integration developers** who use the
-`ContentletAPI`, `ESSeachAPI`, or the `$ESContent` Velocity tool in their extensions.
+`ContentletAPI`, `ESSeachAPI`, or the `$estool` Velocity tool in their extensions.
 
 The changes described here are part of the ongoing ES → OpenSearch migration. The
 deprecated methods listed below **will be removed** when dotCMS completes the cutover
@@ -54,8 +54,12 @@ for (Contentlet c : results) {
 }
 
 ContentSearchResponse raw = contentletAPI.searchRaw(query, false, user, false);
-List<SearchHit> hits = raw.hits().hits(); // neutral SearchHit DTO
+List<SearchHit> hits = raw.hits().getHits(); // neutral SearchHit DTO
 ```
+
+Note the accessor names on `SearchHits`: its record components are declared `getHits` and
+`getTotalHits` (so that Velocity can resolve them as bean properties), which means the Java
+calls are `hits().getHits()` and `hits().getTotalHits()` — not `hits().hits()`.
 
 ---
 
@@ -105,12 +109,20 @@ public class MyPreHook implements ContentletAPIPreHook {
 
 ---
 
-## 3. Velocity / VTL — `$ESContent` viewtool
+## 3. Velocity / VTL — `$estool` viewtool
 
-The `$ESContent` viewtool (`ESContentTool`) is available in Velocity templates. Two of
-its methods changed return types in this release.
+The viewtool backed by `ESContentTool` is registered under the key **`estool`**
+(`toolbox.xml`), so templates reach it as `$estool`. Two of its methods changed return
+types in this release.
 
-### `$ESContent.search(query)`
+> **Velocity is not Java.** Velocity resolves `$a.b` through JavaBean getters, so the
+> Java call `response.hits().getHits()` is written `$response.hits.hits` in a template —
+> no parentheses, and the getter name is what has to exist. The record accessors used in
+> the Java examples earlier in this guide (`hits()`, `tookMillis()`) are **not** reachable
+> from VTL; the bean aliases are. Every VTL snippet below is written the way it must
+> appear in a template.
+
+### `$estool.search(query)`
 
 | | Before | After |
 |--|--------|-------|
@@ -122,7 +134,7 @@ the elements are still `ContentMap` objects with the same properties.
 
 ```velocity
 ## This continues to work unchanged
-#foreach($content in $ESContent.search($query))
+#foreach($content in $estool.search($query))
   $content.title
 #end
 ```
@@ -130,7 +142,7 @@ the elements are still `ContentMap` objects with the same properties.
 Templates that access the result as `ESSearchResults` through a Java helper or cast
 will fail at runtime. Replace with `ContentSearchResults`.
 
-### `$ESContent.raw(query)`
+### `$estool.raw(query)`
 
 | | Before | After |
 |--|--------|-------|
@@ -138,30 +150,98 @@ will fail at runtime. Replace with `ContentSearchResults`.
 
 **Impact:** Templates that call `.toString()` on the raw response to obtain ES
 wire-format JSON (e.g. to parse it manually) will receive a different string. The new
-`ContentSearchResponse.toString()` is a Java object representation, not JSON.
+`ContentSearchResponse.toString()` is a Java object representation, not JSON — and
+nothing errors, so the page renders and whatever consumed that string silently receives
+garbage. See [JSON output](#json-output-replacing-tostring) below for the replacement.
 
 ```velocity
 ## HIGH RISK — if your template does this, it will stop receiving valid JSON
-#set($json = $ESContent.raw($query).toString())
+#set($json = $estool.raw($query).toString())
 
 ## Use the structured accessors instead
-#set($raw = $ESContent.raw($query))
-#set($hits = $raw.hits().hits())
-#foreach($hit in $hits)
-  $hit.id()
+#set($raw = $estool.raw($query))
+#foreach($hit in $raw.hits.hits)
+  $hit.id
 #end
 ```
 
-Useful accessors on `ContentSearchResponse`:
+Accessors on `ContentSearchResponse`, in both dialects:
 
-| Method | Description |
-|--------|-------------|
-| `hits()` | Returns `SearchHits` — iterable collection of `SearchHit` |
-| `hits().hits()` | `List<SearchHit>` |
-| `hits().totalHits().value()` | Total number of matching documents |
-| `scrollId()` | Scroll ID for paginated requests, or `null` |
-| `tookMillis()` | Query execution time in milliseconds |
-| `aggregations()` | `Map<String, List<AggregationBucket>>` — terms aggregations |
+| In a template (VTL) | From Java | Description |
+|---------------------|-----------|-------------|
+| `$raw.hits` | `hits()` | `SearchHits` — iterable collection of `SearchHit` |
+| `$raw.hits.hits` | `hits().getHits()` | `List<SearchHit>` |
+| `$raw.hits.totalHits.value` | `hits().getTotalHits().value()` | Total number of matching documents |
+| `$raw.scrollId` | `scrollId()` | Scroll ID for paginated requests, or `null` |
+| `$raw.tookInMillis` | `tookMillis()` | Query execution time in milliseconds |
+| `$raw.aggregations` | `getAggregations()` | `Map<String, Aggregation>` — the **full** aggregation tree |
+| — | `aggregations()` | `Map<String, List<AggregationBucket>>` — first-level **terms only**; nested aggregations and `top_hits` are dropped |
+
+On each `SearchHit`: `$hit.id`, `$hit.index`, `$hit.score`, `$hit.sourceAsMap`,
+`$hit.sortValues`.
+
+> **Use `$raw.aggregations`, not the flattened `aggregations()` view.** The flattened map
+> keeps only first-level terms aggregations and silently discards nested ones and
+> `top_hits`. From VTL, `$raw.aggregations` resolves to `getAggregations()` and returns the
+> whole tree; each value exposes `.buckets`, and each bucket exposes `.key`,
+> `.keyAsString`, `.keyAsNumber`, `.docCount` and its own nested `.aggregations`.
+
+> **Aggregation names come back lowercased.** Both `search` and `raw` fold the whole query
+> to lower case before running it (`StringUtils.lowercaseStringExceptMatchingTokens`, the
+> same call the deprecated methods made), so an aggregation declared as `"tagAgg"` is keyed
+> `tagagg` in the response. Looking it up by the name you wrote returns `null`, and a
+> `#foreach` over `null` renders nothing rather than failing.
+
+<a id="json-output-replacing-tostring"></a>
+
+### JSON output — what replaces `.toString()`
+
+`.toString()` no longer produces JSON, but you have not lost JSON output. What is gone is
+**Elasticsearch's own wire format**; that distinction decides whether you can swap one call
+or have to restructure.
+
+**If the consumer just needs JSON** — a `<script>` block, a fetch endpoint, anything you
+control — use `$json.generate(...)`, the `JSONTool` viewtool registered under the key
+`json`:
+
+```velocity
+#set($raw = $estool.raw($query))
+<script>
+  var data = $json.generate($raw);
+</script>
+```
+
+`JSONTool.generate(Object)` builds the JSON reflectively from the object's bean getters.
+This path is deliberately supported: `ContentSearchResponse.getAggregations()` is
+intentionally **not** annotated `@JsonIgnore` so the reflection-based JSON builder keeps
+seeing it, and templates doing `$json.generate($response).aggregations…` keep working
+(issue #36435).
+
+For a smaller payload, generate only what the consumer needs:
+
+```velocity
+#set($raw = $estool.raw($query))
+#set($out = {"total": $raw.hits.totalHits.value, "items": []})
+#foreach($hit in $raw.hits.hits)
+  #set($ignore = $out.items.add($hit.sourceAsMap))
+#end
+<script>var data = $json.generate($out);</script>
+```
+
+**If the consumer needs the Elasticsearch wire format specifically** — a JavaScript library
+that parses ES responses, a published contract, anything expecting `hits.hits[]._source`
+and the rest of the ES envelope — there is no replacement, and there will not be one. The
+neutral response has different keys by design, since the point of the migration is that the
+engine's shape no longer leaks into the API. Those templates have to be restructured around
+the accessors above.
+
+The same applies server-side: `/api/es/raw` returns the neutral shape, not the ES envelope.
+
+| What you had | What to use now |
+|--------------|-----------------|
+| `$estool.raw($q).toString()` consumed as JSON | `$json.generate($estool.raw($q))` — neutral shape |
+| `$estool.raw($q).toString()` parsed as an ES response | No equivalent. Restructure around `$raw.hits.hits` / `$raw.aggregations` |
+| A JS library that parses ES JSON | Build the payload the library needs explicitly, as above |
 
 ---
 
