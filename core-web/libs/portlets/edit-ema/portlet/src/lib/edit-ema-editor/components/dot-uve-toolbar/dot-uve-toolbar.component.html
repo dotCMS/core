@@ -94,6 +94,8 @@
             @if (runningExperiment) {
                 <dot-ema-running-experiment
                     [runningExperiment]="runningExperiment"
+                    [asAction]="$experimentsPanelEnabled()"
+                    (viewResults)="handleRunningExperimentClick($event)"
                     data-testId="uve-toolbar-running-experiment" />
             }
             <dot-language-selector

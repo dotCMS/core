@@ -1337,9 +1337,11 @@ describe('DotExperimentsListStore', () => {
      */
     describe('panel mode (#37478)', () => {
         let panelPageId: WritableSignal<string | null>;
+        const panelSetHealthStatus = vi.fn();
         let panelLanguageId: WritableSignal<number | null>;
 
         beforeEach(() => {
+            panelSetHealthStatus.mockClear();
             panelPageId = signal<string | null>(PANEL_PAGE_ID);
             panelLanguageId = signal<number | null>(1);
             // The editor's address is never empty: it carries the page's url, its language and
@@ -1361,7 +1363,8 @@ describe('DotExperimentsListStore', () => {
                         provide: DotExperimentsPanelStore,
                         useValue: {
                             pageId: panelPageId,
-                            languageId: panelLanguageId
+                            languageId: panelLanguageId,
+                            setHealthStatus: panelSetHealthStatus
                         }
                     }
                 ]
@@ -1461,6 +1464,17 @@ describe('DotExperimentsListStore', () => {
                 EXPERIMENT_DRAFT.id,
                 EXPERIMENT_ARCHIVED.id
             ]);
+        });
+
+        /**
+         * FR-027, SC-005. The gate runs once, at the panel's door, and its answer travels to the
+         * deeper screens through the panel — results has no route resolver to ask with, and a
+         * second request for a question already answered is exactly what SC-005 counts.
+         */
+        it('should hand the gate answer to the panel', () => {
+            initPanelStore();
+
+            expect(panelSetHealthStatus).toHaveBeenCalledWith(HealthStatusTypes.OK);
         });
 
         describe('following the editor', () => {

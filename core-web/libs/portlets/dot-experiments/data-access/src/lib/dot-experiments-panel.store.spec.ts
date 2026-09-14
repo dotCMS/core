@@ -2,6 +2,9 @@ import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest
 
 import { signal, WritableSignal } from '@angular/core';
 
+import { CONFIGURE_SECTION_VARIANTS } from '@dotcms/dotcms-models';
+
+
 import { DotExperimentsPanelStore } from './dot-experiments-panel.store';
 
 const PAGE_A = 'page-a';
@@ -185,6 +188,117 @@ describe('DotExperimentsPanelStore', () => {
 
             expect(store.view()).toBe('list');
             expect(store.experimentId()).toBeNull();
+        });
+    });
+
+    /**
+     * #37478, FR-023, FR-046. The return leg, reconstructed rather than remembered.
+     *
+     * The experiment is named by the editor's own address while they are on the variant, so the
+     * way back depends on nothing surviving the trip. These tests are written from the worst
+     * starting points on purpose — a panel that was never suspended, and one whose state was wiped
+     * while the editor was away — because those are the states a reload or a re-scope leaves
+     * behind, and the first implementation could not return from either.
+     */
+    /**
+     * The re-scope, and the one input it must not react to (#37478, FR-034).
+     *
+     * `pageId` is read off the editor's page asset, which is re-fetched whenever the editor's
+     * address changes — including when the variant round trip clears the variant off it. While
+     * that fetch is out the asset has no identifier, and a `null` read there means "not loaded
+     * yet", not "the editor moved to another page". Treating the two alike let a reload wipe the
+     * view the return had just restored, and the panel came back on the list instead of on the
+     * configuration it left.
+     */
+    /**
+     * FR-023. The trip leaves from the Variants card and has to come back to it: Configure is four
+     * stacked cards tall, and returning to the top loses the reader's place.
+     */
+    it('should remember the Variants card across the round trip', () => {
+        initStore();
+        store.showConfigure('exp-9');
+
+        store.suspendForVariant();
+        store.resumeFromVariant();
+
+        expect(store.view()).toBe('configure');
+        expect(store.experimentId()).toBe('exp-9');
+        expect(store.section()).toBe(CONFIGURE_SECTION_VARIANTS);
+    });
+
+    describe('re-scoping on the editor page', () => {
+        it('should not re-scope while the page asset is between loads', () => {
+            initStore();
+            store.returnFromVariant('exp-9');
+
+            pageId.set(null);
+            spectator.flushEffects();
+
+            expect(store.view()).toBe('configure');
+            expect(store.experimentId()).toBe('exp-9');
+        });
+
+        it('should re-scope once the editor is really on another page', () => {
+            initStore();
+            store.returnFromVariant('exp-9');
+
+            pageId.set(PAGE_B);
+            spectator.flushEffects();
+
+            expect(store.view()).toBe('list');
+            expect(store.experimentId()).toBeNull();
+        });
+
+        /** The same page coming back from a reload is not a move either. */
+        it('should not re-scope when the same page returns after a gap', () => {
+            initStore();
+            store.returnFromVariant('exp-9');
+
+            pageId.set(null);
+            spectator.flushEffects();
+            pageId.set(PAGE_A);
+            spectator.flushEffects();
+
+            expect(store.view()).toBe('configure');
+            expect(store.experimentId()).toBe('exp-9');
+        });
+    });
+
+    describe('returnFromVariant()', () => {
+        it('should land on that experiment configuration, at the Variants card', () => {
+            store.returnFromVariant('exp-9');
+
+            expect(store.isOpen()).toBe(true);
+            expect(store.view()).toBe('configure');
+            expect(store.experimentId()).toBe('exp-9');
+            expect(store.section()).toBe(CONFIGURE_SECTION_VARIANTS);
+        });
+
+        it('should return from a panel that was never suspended', () => {
+            expect(store.suspendedForVariant()).toBe(false);
+
+            store.returnFromVariant('exp-9');
+
+            expect(store.isOpen()).toBe(true);
+            expect(store.experimentId()).toBe('exp-9');
+        });
+
+        it('should clear the suspension it may or may not have been holding', () => {
+            store.showConfigure('exp-9');
+            store.suspendForVariant();
+
+            store.returnFromVariant('exp-9');
+
+            expect(store.suspendedForVariant()).toBe(false);
+        });
+
+        /** Only the return asks for a card; everything else starts at the top of the form. */
+        it('should leave the Variants card behind on the next move', () => {
+            store.returnFromVariant('exp-9');
+
+            store.backToList();
+
+            expect(store.section()).toBeNull();
         });
     });
 

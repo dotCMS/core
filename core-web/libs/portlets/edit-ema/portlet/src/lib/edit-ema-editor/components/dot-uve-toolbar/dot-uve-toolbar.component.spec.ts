@@ -39,6 +39,7 @@ import {
     EXPERIMENT_RETURN_PARAM,
     EXPERIMENT_RETURN_PORTLET
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
@@ -484,6 +485,7 @@ describe('DotUveToolbarComponent', () => {
             }
         ],
         componentProviders: [
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
             {
                 provide: DotPersonalizeService,
                 useValue: {
@@ -493,6 +495,18 @@ describe('DotUveToolbarComponent', () => {
             }
         ]
     });
+
+    /**
+     * The UVE panel's store, provided by the shell in the app. `null` here unless a test is about
+     * the panel — its presence is what the toolbar reads to tell the two worlds apart (#37478).
+     */
+    let panelStore: {
+        suspendedForVariant: Mock;
+        resumeFromVariant: Mock;
+        returnFromVariant: Mock;
+        experimentId: Mock;
+        openResults?: Mock;
+    } | null = null;
 
     describe('base state', () => {
         beforeEach(() => {
@@ -1762,10 +1776,13 @@ describe('DotUveToolbarComponent', () => {
                     describe('returning from a variant', () => {
                         const EXPERIMENT_ID = 'exp-1';
                         const PAGE_ID = 'page-1';
+                        /** The marker goes with them: once the editor is back there is no round
+                         * trip left for it to describe. */
                         const CLEARED = {
                             mode: null,
                             variantName: null,
-                            experimentId: null
+                            experimentId: null,
+                            [EXPERIMENT_RETURN_PARAM]: null
                         };
 
                         let navigate: MockInstance;
@@ -1785,6 +1802,265 @@ describe('DotUveToolbarComponent', () => {
                                 pageId: PAGE_ID
                             } as DotExperiment);
                             navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+                        });
+
+                        /**
+                         * #37478, FR-023, FR-046. The return leg, rebuilt rather than recovered.
+                         *
+                         * Written from the states a real trip leaves behind, not from the tidy one:
+                         * a panel that never suspended, and one whose memory was wiped while the
+                         * editor was away. The first implementation consulted `suspendedForVariant`
+                         * and could return from neither.
+                         */
+                        describe('returning from a variant with the flag on', () => {
+                            const panelWith = (suspended: boolean) => {
+                                panelStore = {
+                                    suspendedForVariant: vi.fn().mockReturnValue(suspended),
+                                    resumeFromVariant: vi.fn(),
+                                    returnFromVariant: vi.fn(),
+                                    // What the panel was showing, for a reload that took the
+                                    // address with it.
+                                    experimentId: vi.fn().mockReturnValue(null)
+                                };
+                                $experimentsPortletSwitchSignal.set(true);
+                                spectator = createComponent({ detectChanges: false });
+                                spectator.detectChanges();
+                                navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+                                baseUVEState.pageExperiment.set({
+                                    id: EXPERIMENT_ID,
+                                    pageId: PAGE_ID
+                                } as DotExperiment);
+                                spectator.detectChanges();
+                            };
+
+                            afterEach(() => {
+                                panelStore = null;
+                            });
+
+                            /**
+                             * The common path, and the faithful one: the panel still holds the
+                             * view, the experiment and the card the editor was on, so the return
+                             * asks for none of them. Recomputing here would replace what they left
+                             * with something merely equivalent.
+                             */
+                            it('should hand a suspended panel back untouched', () => {
+                                panelWith(true);
+                                routeQueryParams = {};
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(panelStore?.resumeFromVariant).toHaveBeenCalledTimes(1);
+                                expect(panelStore?.returnFromVariant).not.toHaveBeenCalled();
+                            });
+
+                            /**
+                             * `pageExperiment()` answers "what is running on this page", which is
+                             * a different question and commonly a different experiment: the page
+                             * runs one while the editor is off previewing a draft of another.
+                             * Answering with it reopened the panel on an experiment the editor
+                             * never clicked.
+                             */
+                            it('should name the previewed experiment, not the running one', () => {
+                                panelWith(false);
+                                baseUVEState.pageExperiment.set({
+                                    id: 'the-running-one',
+                                    pageId: PAGE_ID
+                                } as DotExperiment);
+                                routeQueryParams = { experimentId: 'the-draft-i-clicked' };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(panelStore?.returnFromVariant).toHaveBeenCalledWith(
+                                    'the-draft-i-clicked'
+                                );
+                            });
+
+                            /**
+                             * The bug the whole feature died on, and the reason it survived every
+                             * unit test until someone used it.
+                             *
+                             * A DRAFT experiment is not running on the page. Once the editor is
+                             * back on the original, the page asset carries no experiment and the
+                             * address carries no `experimentId`, so `pageExperiment()` is null —
+                             * and the guard that protects the branches *below* was swallowing the
+                             * click before the panel was ever asked. The chip did nothing at all.
+                             *
+                             * This return needs nothing from the experiment: the panel is holding
+                             * it. So it is answered first.
+                             */
+                            it('should reopen the panel with no experiment on the page', () => {
+                                panelWith(true);
+                                baseUVEState.pageExperiment.set(null);
+                                routeQueryParams = {};
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(panelStore?.resumeFromVariant).toHaveBeenCalledTimes(1);
+                                expect(navigate).not.toHaveBeenCalled();
+                            });
+
+                            /**
+                             * The regression this whole branch exists for. Writing the variant off
+                             * the address looks like tidying up; the shell watches those params, so
+                             * it restarts UVE and the editor watches their page reload underneath
+                             * the panel they just reopened.
+                             */
+                            /**
+                             * Previewing the CONTROL leaves `variantName=DEFAULT` on the address:
+                             * present, but not a variant. Reading it as presence restarted UVE for
+                             * nothing — the editor was already on the page they were going back to.
+                             */
+                            it('should not reload at all when on the control', () => {
+                                panelWith(true);
+                                routeQueryParams = { variantName: DEFAULT_VARIANT_ID };
+                                spectator.detectChanges();
+                                (baseUVEState.pageLoad as Mock).mockClear();
+
+                                leaveVariant();
+
+                                expect(baseUVEState.pageLoad).not.toHaveBeenCalled();
+                                expect(navigate).not.toHaveBeenCalled();
+                            });
+
+                            /**
+                             * On a real variant the same button does what it does everywhere else
+                             * in this bar: it gets the editor out of the state they are in. The
+                             * canvas reload is inherent — the original page has to be fetched.
+                             */
+                            /**
+                             * Loaded, not routed. `/edit-page` declares `reuseRoute: false` and
+                             * route data is inherited, so any router navigation beneath it rebuilds
+                             * the whole editor — toolbar, canvas and iframe — which is a visible
+                             * jump for a page that only needed its content swapped.
+                             */
+                            it('should leave a real variant by loading, not routing', () => {
+                                panelWith(true);
+                                routeQueryParams = { variantName: 'variant-b' };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(baseUVEState.pageLoad).toHaveBeenCalledWith(CLEARED);
+                                expect(navigate).not.toHaveBeenCalled();
+                                expect(panelStore?.resumeFromVariant).toHaveBeenCalledTimes(1);
+                            });
+
+                            /**
+                             * Nothing to resume — the trip began in the full-screen portlet, or a
+                             * reload during it took the panel's memory. Rebuilt from the address
+                             * instead, which still names the experiment.
+                             */
+                            it('should rebuild the return when there is nothing to resume', () => {
+                                panelWith(false);
+                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(panelStore?.returnFromVariant).toHaveBeenCalledWith(
+                                    EXPERIMENT_ID
+                                );
+                            });
+
+                            it.each([
+                                {
+                                    origin: 'the portlet',
+                                    params: { [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET }
+                                },
+                                { origin: 'nowhere — a pasted link', params: {} }
+                            ])('should stay in the editor, coming from $origin', ({ params }) => {
+                                panelWith(false);
+                                routeQueryParams = { ...params, experimentId: EXPERIMENT_ID };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(panelStore?.returnFromVariant).toHaveBeenCalledWith(
+                                    EXPERIMENT_ID
+                                );
+                                expect(navigate).not.toHaveBeenCalledWith(
+                                    ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                    expect.anything()
+                                );
+                            });
+
+                            /**
+                             * With nothing to resume the editor may still be standing on the
+                             * variant, and the original page has to be fetched to be shown. Merged,
+                             * because everything else on that address is the editor's own.
+                             */
+                            it('should take the variant off by loading the page again', () => {
+                                panelWith(false);
+                                routeQueryParams = {
+                                    variantName: 'variant-a',
+                                    experimentId: EXPERIMENT_ID
+                                };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(baseUVEState.pageLoad).toHaveBeenCalledWith(CLEARED);
+                                expect(navigate).not.toHaveBeenCalled();
+                            });
+
+                            /** Already back on the page: writing it again would reload for nothing. */
+                            it('should not reload on the control with nothing to resume', () => {
+                                panelWith(false);
+                                routeQueryParams = {
+                                    experimentId: EXPERIMENT_ID,
+                                    variantName: DEFAULT_VARIANT_ID
+                                };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(navigate).not.toHaveBeenCalled();
+                            });
+                        });
+
+                        /**
+                         * #37478, FR-025c, FR-025d, D14. The tag announces what is running on the page the editor is
+                         * looking at; asking how it is doing must not cost them that page.
+                         */
+                        describe('the running-experiment tag (#37478)', () => {
+                            const RUNNING = { id: 'running-1', pageId: 'page-1' } as DotExperiment;
+
+                            afterEach(() => {
+                                panelStore = null;
+                            });
+
+                            it('should open its results in the panel, with the switch on', () => {
+                                panelStore = {
+                                    suspendedForVariant: vi.fn().mockReturnValue(false),
+                                    resumeFromVariant: vi.fn(),
+                                    returnFromVariant: vi.fn(),
+                                    experimentId: vi.fn().mockReturnValue(null),
+                                    openResults: vi.fn()
+                                };
+                                $experimentsPortletSwitchSignal.set(true);
+                                spectator = createComponent({ detectChanges: false });
+                                spectator.detectChanges();
+
+                                spectator.component.handleRunningExperimentClick(RUNNING);
+
+                                expect(panelStore.openResults).toHaveBeenCalledWith('running-1');
+                            });
+
+                            /**
+                             * With the switch off the tag keeps the legacy reports route it has always had, which is
+                             * what FR-017 of #37005 constrains — so it is a destination, not an action, and nothing
+                             * asks the panel anything.
+                             */
+                            it('should stay a destination with the switch off', () => {
+                                $experimentsPortletSwitchSignal.set(false);
+                                spectator = createComponent({ detectChanges: false });
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$experimentsPanelEnabled()).toBe(false);
+                            });
                         });
 
                         // #37005. Previewing the CONTROL from the portlet's Configure screen
@@ -1821,8 +2097,41 @@ describe('DotUveToolbarComponent', () => {
 
                             // The legacy in-UVE screens send the same `experimentId` but never the
                             // marker, and #37005 must leave the switch-off path exactly as it was.
-                            it('should not offer the chip without the origin marker', () => {
+                            /**
+                             * With the switch off the origin marker still decides, because the
+                             * legacy in-UVE screens send the same `experimentId` and must not gain
+                             * a chip they never had (FR-042, FR-047).
+                             */
+                            it('should not offer the chip without the origin marker, switch off', () => {
+                                $experimentsPortletSwitchSignal.set(false);
                                 routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                spectator = createComponent({ detectChanges: false });
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toBeFalsy();
+                            });
+
+                            /**
+                             * #37478. With the switch on, the way back is the panel and every
+                             * arrival inside an experiment deserves one — so the chip keys on the
+                             * experiment being on the address, which is true, rather than on a
+                             * marker claiming the editor came from the portlet, which is not: the
+                             * panel builds its variant links through the same helper and the
+                             * marker is written unconditionally.
+                             */
+                            it('should offer the chip for any experiment arrival, switch on', () => {
+                                $experimentsPortletSwitchSignal.set(true);
+                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                spectator = createComponent({ detectChanges: false });
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toBeTruthy();
+                            });
+
+                            it('should offer no chip outside an experiment, switch on', () => {
+                                $experimentsPortletSwitchSignal.set(true);
+                                routeQueryParams = {};
+                                spectator = createComponent({ detectChanges: false });
                                 spectator.detectChanges();
 
                                 expect(spectator.component.$infoDisplayProps()).toBeFalsy();
@@ -1959,19 +2268,6 @@ describe('DotUveToolbarComponent', () => {
                         // T040. No origin marker, switch on — the opted-in operator's deep link
                         // lands somewhere coherent rather than on the screen they are migrating
                         // away from.
-                        it('should fall back to the portlet with no origin and the switch on', () => {
-                            $experimentsPortletSwitchSignal.set(true);
-                            routeQueryParams = {};
-                            spectator.detectChanges();
-
-                            leaveVariant();
-
-                            expect(navigate).toHaveBeenCalledWith(
-                                ['/experiments', EXPERIMENT_ID, 'configuration'],
-                                expect.anything()
-                            );
-                        });
-
                         it('should do nothing when there is no experiment to return to', () => {
                             baseUVEState.pageExperiment.set(null);
                             spectator.detectChanges();

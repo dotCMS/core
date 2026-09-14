@@ -7,8 +7,11 @@ This is the one new public surface this work adds. It is the *only* thing `edit-
 experiments beyond the component symbol, and it is the *only* thing the experiments screens learn
 about the editor.
 
-**Location**: `libs/portlets/dot-experiments/portlet/src/lib/store/dot-experiments-panel.store.ts`,
-exported from `@dotcms/portlets/dot-experiments/portlet`.
+**Location**: `libs/portlets/dot-experiments/data-access/src/lib/dot-experiments-panel.store.ts`,
+exported from `@dotcms/portlets/dot-experiments/data-access` — **not** from the portlet barrel.
+The shell provides it, a provider is a static import, and Nx marks the portlet lib lazy-loaded
+(`edit-ema` reaches it only through a dynamic `import()`), so a static import of it is rejected.
+`data-access` is the non-lazy boundary both libs already share.
 
 **Provided by**: `DotEmaShellComponent` (`providers: [DotExperimentsPanelStore]`) — shell scope,
 so it outlives the panel across the variant round trip and dies with the editor.

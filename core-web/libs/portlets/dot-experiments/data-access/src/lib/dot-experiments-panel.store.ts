@@ -19,6 +19,8 @@ import {
     untracked
 } from '@angular/core';
 
+import { CONFIGURE_SECTION_VARIANTS, HealthStatusTypes } from '@dotcms/dotcms-models';
+
 /** The single surface the panel shows at any moment. Never two of these at once. */
 export type DotExperimentsPanelView = 'list' | 'create' | 'configure' | 'results';
 
@@ -37,9 +39,35 @@ export interface DotExperimentsPanelContext {
 
 export interface DotExperimentsPanelState {
     isOpen: boolean;
+    /**
+     * Analytics health, as the list's own gate resolved it; `null` until it has.
+     *
+     * It lives here because the screens the panel shows are the portlet's, and in the portlet each
+     * of them gets this from a route resolver that re-runs per screen. The panel has no routes, and
+     * asking again per screen would spend a second request on a question already answered — so the
+     * list answers it once and the deeper screens read it from here (FR-027, SC-005).
+     */
+    healthStatus: HealthStatusTypes | null;
+    /**
+     * The experiments config properties the Scheduling card bounds itself by; `null` until read.
+     *
+     * Same story as {@link healthStatus}: in the portlet a route resolver supplies these, and the
+     * panel has no routes. Without them the card silently falls back to its 7-and-90-day defaults
+     * and offers a window the install never configured — wrong, and invisible.
+     */
+    configProps: Record<string, string | boolean> | null;
     view: DotExperimentsPanelView;
     /** The experiment `configure` and `results` are showing; `null` on `list` and `create`. */
     experimentId: string | null;
+    /**
+     * Where inside the configuration to land; `null` for the top of the form.
+     *
+     * Only the variant round trip asks. It starts and ends at the Variants card, three cards down,
+     * and returning to the top loses the reader's place (#37005 FR-018, #37478 FR-023). The
+     * portlet expresses this as `?section=`; the panel has no address to express it in, so it says
+     * it here.
+     */
+    section: string | null;
     /**
      * The panel is closed **because the editor left to see a variant**, not because they
      * dismissed it.
@@ -52,10 +80,29 @@ export interface DotExperimentsPanelState {
     suspendedForVariant: boolean;
 }
 
+/**
+ * What the editor was looking at, reset.
+ *
+ * Deliberately **not** the whole state: {@link DotExperimentsPanelState.healthStatus} and
+ * {@link DotExperimentsPanelState.configProps} are facts about the install, answered once at the
+ * panel's door. Clearing them on open or close would re-ask a question whose answer cannot have
+ * changed, which is exactly the request FR-027 and SC-005 count.
+ */
+const viewState = () => ({
+    isOpen: false,
+    view: 'list' as DotExperimentsPanelView,
+    experimentId: null,
+    section: null,
+    suspendedForVariant: false
+});
+
 const initialState: DotExperimentsPanelState = {
     isOpen: false,
+    healthStatus: null,
+    configProps: null,
     view: 'list',
     experimentId: null,
+    section: null,
     suspendedForVariant: false
 };
 
@@ -109,6 +156,22 @@ export const DotExperimentsPanelStore = signalStore(
          * because refetching on a language change would re-request a provably identical set and
          * resetting would discard the editor's view state for no change in the answer (D10).
          */
+        /**
+         * Records what the list's analytics gate answered, so results does not ask again.
+         *
+         * Deliberately not reset by {@link close}: the answer is about the install, not about what
+         * the editor was looking at, and re-opening the panel would otherwise re-ask a question
+         * whose answer cannot have changed in the meantime.
+         */
+        setHealthStatus(healthStatus: HealthStatusTypes): void {
+            patchState(store, { healthStatus });
+        },
+
+        /** Records the experiments config properties the panel resolved for its screens. */
+        setConfigProps(configProps: Record<string, string | boolean>): void {
+            patchState(store, { configProps });
+        },
+
         setContext(context: DotExperimentsPanelContext): void {
             store._rescope.effect?.destroy();
             store._context.set(context);
@@ -119,7 +182,16 @@ export const DotExperimentsPanelStore = signalStore(
                 () => {
                     const currentPageId = context.pageId();
 
-                    if (currentPageId === knownPageId) {
+                    /**
+                     * `null` is "the page asset is between loads", not "the editor moved".
+                     *
+                     * The asset is re-fetched whenever the editor's address changes — including
+                     * when the variant round trip clears the variant off it — and it has no
+                     * identifier while that fetch is out. Treating that gap as a page change let a
+                     * reload wipe the view the editor was on, so the panel came back on the list
+                     * instead of on the configuration they left (FR-023, FR-034).
+                     */
+                    if (currentPageId === null || currentPageId === knownPageId) {
                         return;
                     }
 
@@ -133,6 +205,7 @@ export const DotExperimentsPanelStore = signalStore(
                         patchState(store, {
                             view: 'list',
                             experimentId: null,
+                            section: null,
                             suspendedForVariant: false
                         })
                     );
@@ -149,7 +222,7 @@ export const DotExperimentsPanelStore = signalStore(
          * (D11). The empty state carries the create action instead.
          */
         open(): void {
-            patchState(store, { ...initialState, isOpen: true });
+            patchState(store, { ...viewState(), isOpen: true });
         },
 
         /**
@@ -169,19 +242,38 @@ export const DotExperimentsPanelStore = signalStore(
         },
 
         showCreate(): void {
-            patchState(store, { view: 'create', experimentId: null });
+            patchState(store, { view: 'create', experimentId: null, section: null });
+        },
+
+        /**
+         * The return leg of the variant round trip (#37478, FR-023, FR-046).
+         *
+         * **Reconstructed, not remembered.** The experiment is named by the editor's own address
+         * for as long as the editor is on the variant, so the way back does not depend on any
+         * state surviving the trip — not a reload, not a re-scope, not the panel being destroyed
+         * while the editor was away. Whatever happened in between, this lands on the same
+         * experiment's configuration, at the card the trip started from.
+         */
+        returnFromVariant(experimentId: string): void {
+            patchState(store, {
+                isOpen: true,
+                view: 'configure',
+                experimentId,
+                section: CONFIGURE_SECTION_VARIANTS,
+                suspendedForVariant: false
+            });
         },
 
         showConfigure(experimentId: string): void {
-            patchState(store, { view: 'configure', experimentId });
+            patchState(store, { view: 'configure', experimentId, section: null });
         },
 
         showResults(experimentId: string): void {
-            patchState(store, { view: 'results', experimentId });
+            patchState(store, { view: 'results', experimentId, section: null });
         },
 
         backToList(): void {
-            patchState(store, { view: 'list', experimentId: null });
+            patchState(store, { view: 'list', experimentId: null, section: null });
         },
 
         /**
@@ -189,7 +281,7 @@ export const DotExperimentsPanelStore = signalStore(
          * data rather than what was on screen at this close (FR-039, SC-016).
          */
         close(): void {
-            patchState(store, initialState);
+            patchState(store, viewState());
         },
 
         /**
@@ -197,7 +289,17 @@ export const DotExperimentsPanelStore = signalStore(
          * return lands on the same experiment's configuration rather than on the list (FR-023).
          */
         suspendForVariant(): void {
-            patchState(store, { isOpen: false, suspendedForVariant: true });
+            /**
+             * The card the trip started from is recorded here rather than on the way back, because
+             * here is where it is known: every variant round trip leaves from the Variants card,
+             * three cards down a form that would otherwise return the editor to its top (#37005
+             * FR-018, #37478 FR-023).
+             */
+            patchState(store, {
+                isOpen: false,
+                suspendedForVariant: true,
+                section: CONFIGURE_SECTION_VARIANTS
+            });
         },
 
         /**
