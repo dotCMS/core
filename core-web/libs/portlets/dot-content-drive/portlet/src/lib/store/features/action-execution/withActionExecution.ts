@@ -52,10 +52,16 @@ interface WithActionExecutionState {
      */
     runs: Record<string, DotContentDriveRun>;
     /**
-     * Outcome of the last finished execution, awaiting presentation. The shell consumes this and
-     * calls {@link clearActionExecutionResult}; the store never shows the toast itself.
+     * Outcomes awaiting presentation, oldest first. The shell consumes the head and calls
+     * {@link clearActionExecutionResult}; the store never shows the toast itself.
+     *
+     * A queue rather than a slot because several runs are legitimate at once and the shell drains
+     * from an `effect()`, which flushes on the next change-detection pass rather than synchronously.
+     * Two outcomes landing in the same tick therefore met one slot and the first was overwritten
+     * before anything read it — reported nowhere, which is the silent shortfall this feature exists
+     * to remove.
      */
-    actionExecutionResult?: DotContentDriveActionExecutionResult;
+    actionExecutionResults: DotContentDriveActionExecutionResult[];
     /**
      * Ids of the reindex jobs this store submitted and has not yet settled.
      *
@@ -100,11 +106,20 @@ export function withActionExecution() {
         },
         withState<WithActionExecutionState>({
             runs: {},
-            actionExecutionResult: undefined,
+            actionExecutionResults: [],
             refreshJobIds: [],
             uploadJobs: {}
         }),
-        withComputed(({ runs }) => ({
+        withComputed(({ runs, actionExecutionResults }) => ({
+            /**
+             * The outcome waiting to be presented, or `undefined` when none is.
+             *
+             * The head of the queue, not a slot of its own: every consumer wants "the next thing to
+             * show", and draining is what advances it. Keeping the singular name means the shell and
+             * the dialog read exactly what they always did, while the queue behind it stops a second
+             * outcome landing in the same tick from overwriting this one.
+             */
+            actionExecutionResult: computed(() => actionExecutionResults()[0]),
             /** Runs in flight, in insertion order. */
             activeRuns: computed(() => Object.values(runs())),
             /**
@@ -202,9 +217,12 @@ export function withActionExecution() {
                 const startRun = (run: Omit<DotContentDriveRun, 'runId'>): string => {
                     const runId = runKey(run.operation, run.targets);
 
+                    // The queue is deliberately left alone. This used to clear it so a stale result
+                    // could not sit beside a new run, but with several runs in flight that discards
+                    // an outcome nobody has seen yet — and starting one run while another settles is
+                    // ordinary now. Presentation drains the queue; starting work does not.
                     patchState(store, {
-                        runs: { ...store.runs(), [runId]: { ...run, runId } },
-                        actionExecutionResult: undefined
+                        runs: { ...store.runs(), [runId]: { ...run, runId } }
                     });
 
                     return runId;
@@ -247,7 +265,9 @@ export function withActionExecution() {
                     result: DotContentDriveActionExecutionResult
                 ): void => {
                     endRun(runId);
-                    patchState(store, { actionExecutionResult: result });
+                    patchState(store, {
+                        actionExecutionResults: [...store.actionExecutionResults(), result]
+                    });
                 };
 
                 /**
@@ -554,15 +574,18 @@ export function withActionExecution() {
                         // also had to avoid wiping a *different* action's slot; keying runs by id
                         // removed that hazard.
                         patchState(store, {
-                            actionExecutionResult: {
-                                actionName,
-                                successCount: event.successCount ?? 0,
-                                skippedCount: event.skippedCount ?? 0,
-                                failedCount: event.failedCount ?? 0,
-                                partialDetailKey:
-                                    'content-drive.action-center.toast.refreshed-partial',
-                                backgrounded: true
-                            }
+                            actionExecutionResults: [
+                                ...store.actionExecutionResults(),
+                                {
+                                    actionName,
+                                    successCount: event.successCount ?? 0,
+                                    skippedCount: event.skippedCount ?? 0,
+                                    failedCount: event.failedCount ?? 0,
+                                    partialDetailKey:
+                                        'content-drive.action-center.toast.refreshed-partial',
+                                    backgrounded: true
+                                }
+                            ]
                         });
                     },
 
@@ -864,39 +887,48 @@ export function withActionExecution() {
                         }
 
                         patchState(store, {
-                            actionExecutionResult: {
-                                actionName,
-                                successCount: event.successCount ?? 0,
-                                skippedCount: event.skippedCount ?? 0,
-                                failedCount: event.failedCount ?? 0,
-                                affectedFolders,
-                                // An upload's shortfall needs its own sentence. The default is the
-                                // workflow one, which explains failures as missing permissions or
-                                // content locked by another user, and skips as the action not being
-                                // on the item's workflow step — none of which an upload can mean.
-                                partialDetailKey: 'content-drive.upload.toast.partial',
-                                // Carried whole rather than summarised here: turning results into
-                                // copy is the shell's business, and the store has no message
-                                // service to do it with.
-                                failures: event.results,
-                                duplicateSubmission: event.duplicateSubmission,
-                                // Carried because the flag alone does not say what happened to the
-                                // folder: see FR-040b.
-                                baseType,
-                                // It arrives unprompted, long after the click, so it announces
-                                // itself and must not interrupt whatever is happening now.
-                                backgrounded: true
-                            }
+                            actionExecutionResults: [
+                                ...store.actionExecutionResults(),
+                                {
+                                    actionName,
+                                    successCount: event.successCount ?? 0,
+                                    skippedCount: event.skippedCount ?? 0,
+                                    failedCount: event.failedCount ?? 0,
+                                    affectedFolders,
+                                    // An upload's shortfall needs its own sentence. The default is the
+                                    // workflow one, which explains failures as missing permissions or
+                                    // content locked by another user, and skips as the action not being
+                                    // on the item's workflow step — none of which an upload can mean.
+                                    partialDetailKey: 'content-drive.upload.toast.partial',
+                                    // Carried whole rather than summarised here: turning results into
+                                    // copy is the shell's business, and the store has no message
+                                    // service to do it with.
+                                    failures: event.results,
+                                    duplicateSubmission: event.duplicateSubmission,
+                                    // Carried because the flag alone does not say what happened to the
+                                    // folder: see FR-040b.
+                                    baseType,
+                                    // It arrives unprompted, long after the click, so it announces
+                                    // itself and must not interrupt whatever is happening now.
+                                    backgrounded: true
+                                }
+                            ]
                         });
                     },
 
                     reportExternalResult: (result: DotContentDriveActionExecutionResult): void => {
-                        patchState(store, { actionExecutionResult: result });
+                        patchState(store, {
+                            actionExecutionResults: [...store.actionExecutionResults(), result]
+                        });
                     },
 
                     /** Called by the shell once the result has been presented. */
                     clearActionExecutionResult: (): void => {
-                        patchState(store, { actionExecutionResult: undefined });
+                        // Shifts one, rather than emptying: anything queued behind it has not been
+                        // presented yet and is the next thing the shell will read.
+                        patchState(store, {
+                            actionExecutionResults: store.actionExecutionResults().slice(1)
+                        });
                     }
                 };
             }

@@ -744,6 +744,72 @@ describe('withActionExecution', () => {
         });
     });
 
+    describe('two runs settling together', () => {
+        it('should present both outcomes, in the order they finished', () => {
+            // The whole premise of the run registry is that several runs are legitimate at once, and
+            // the shell drains outcomes from an `effect()`, which flushes on the next
+            // change-detection pass rather than synchronously. A single slot therefore loses one:
+            // the second write lands before the effect has read the first, and the first outcome is
+            // never shown at all. A silently dropped shortfall is the defect this feature exists to
+            // close, so it fails in exactly the way it was built to prevent.
+            build();
+
+            store.reportExternalResult({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 2
+            });
+            store.reportExternalResult({
+                actionName: 'Reindex',
+                successCount: 3,
+                skippedCount: 0,
+                failedCount: 0
+            });
+
+            // First finished, first presented: the one that would have been overwritten.
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ actionName: 'Upload', failedCount: 2 })
+            );
+
+            store.clearActionExecutionResult();
+
+            // And the second still arrives, rather than having been consumed by the first's drain.
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ actionName: 'Reindex', successCount: 3 })
+            );
+
+            store.clearActionExecutionResult();
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not drop a pending outcome when a new run starts', () => {
+            // Starting a run used to clear the slot so a stale result could not sit beside it. With
+            // a queue that would throw away an outcome that has not been shown yet, which is the
+            // same silent drop by another route — and starting a second run while one is settling
+            // is ordinary here.
+            build();
+
+            store.reportExternalResult({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 1
+            });
+            store.startExternalRun({
+                operation: 'move:1',
+                actionName: 'Move',
+                total: 1,
+                targets: ['inode-9']
+            });
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ actionName: 'Upload' })
+            );
+        });
+    });
+
     describe('clearActionExecutionResult', () => {
         it('should drop the result once it has been presented', () => {
             build();
