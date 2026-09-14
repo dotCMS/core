@@ -289,6 +289,17 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     describe('chip row', () => {
+        // The full row exists in all site content, which is the only scope where the Show System
+        // Host chip has anything to decide. Asserted there rather than lowered to five chips,
+        // because what these guard is that every chip is present and correctly ordered when it
+        // applies, not how many happen to apply in the default state.
+        beforeEach(async () => {
+            allSiteContentSelectedSignal.set(true);
+            await settleToolbarAnimation(spectator);
+        });
+
+        afterEach(() => allSiteContentSelectedSignal.set(false));
+
         it('should render all six chips', () => {
             const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
                 (element) => element.getAttribute('data-filter-chip')
@@ -834,6 +845,27 @@ describe('DotContentDriveToolbarComponent', () => {
             await withPermissions(['READ', 'EDIT', 'CAN_ADD_CHILDREN']);
 
             expect(spectator.component.$canAddChildren()).toBe(true);
+        });
+
+        describe('the Show System Host chip', () => {
+            afterEach(() => allSiteContentSelectedSignal.set(false));
+
+            it('should be offered while all site content is selected', async () => {
+                allSiteContentSelectedSignal.set(true);
+                await settleToolbarAnimation(spectator);
+
+                expect(spectator.query(byTestId('shared-assets-filter'))).toBeTruthy();
+            });
+
+            it('should be taken away everywhere else', async () => {
+                // System Host content only ever sits at the System Host root, so it can never
+                // appear inside a site folder: outside all site content the chip has nothing to
+                // decide, and a control with nothing to decide should not be sitting there.
+                allSiteContentSelectedSignal.set(false);
+                await settleToolbarAnimation(spectator);
+
+                expect(spectator.query(byTestId('shared-assets-filter'))).toBeFalsy();
+            });
         });
 
         // All site content spans every folder in the site, so there is no single place for new

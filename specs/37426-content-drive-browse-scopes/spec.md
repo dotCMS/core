@@ -49,7 +49,7 @@ A user needs to find or manage assets shared across every site. Today those asse
 2. **Given** the user has selected **System Host**, **When** they look at the listing, **Then** no folders are offered, because System Host has none.
 3. **Given** the user has selected **All Site Content** with "Show System Host" on, **When** they look at the listing, **Then** System Host content appears alongside the current site's content.
 4. **Given** the user has selected **All Site Content** with "Show System Host" off, **When** they look at the listing, **Then** no System Host content appears.
-5. **Given** the user has selected the site row or a folder, **When** they look at the filter bar, **Then** the "Show System Host" control is still there but disabled, and says why: it has nothing to decide outside **All Site Content**, because System Host content can only ever sit at the System Host root.
+5. **Given** the user has selected the site row or a folder, **When** they look at the filter bar, **Then** the "Show System Host" control is not offered: it has nothing to decide outside **All Site Content**, because System Host content can only ever sit at the System Host root.
 6. **Given** **System Host** is selected and a search is running, **When** the search is served by either of the product's two internal search paths, **Then** both return the same items, and neither admits content belonging to a site.
 
 ---
@@ -115,7 +115,7 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 #### The System Host toggle
 
 - **FR-017**: The existing "Show Shared Assets" control MUST be renamed **"Show System Host"**. Only the label changes; links already in circulation that carry the control's current value MUST keep restoring correctly.
-- **FR-018**: The control MUST remain visible in every browse scope but be **disabled** outside **All Site Content**, and it MUST say why it is disabled. Hiding it would reflow the filter row and move the neighbouring controls under the pointer every time the selection changes; a disabled control with no explanation is just something people click at twice.
+- **FR-018**: The control MUST be offered only while **All Site Content** is selected, and MUST animate in and out the way the filter row's other conditional chips do, collapsing its width rather than appearing and vanishing. A control with nothing to decide should not be sitting there, and the animation is what stops the chips beside it jumping under the pointer when the selection changes.
 - **FR-019**: The control MUST retain its value while another browse scope is selected, so returning to **All Site Content** restores the user's previous choice rather than resetting it.
 - **FR-020**: With the control on, **All Site Content** MUST include System Host content alongside the site's; with it off, **All Site Content** MUST exclude it.
 

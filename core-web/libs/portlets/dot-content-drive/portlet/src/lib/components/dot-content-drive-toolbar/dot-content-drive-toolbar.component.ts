@@ -226,6 +226,9 @@ export class DotContentDriveToolbarComponent {
      */
     protected readonly $canAddChildren = this.#store.$canAddChildren;
 
+    /** Gates the Show System Host chip: it has something to decide in one scope only. */
+    protected readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
+
     /** Empty when creation is allowed, so the buttons carry no tooltip in the normal case. */
     /**
      * Why creating and uploading are unavailable, when they are.
