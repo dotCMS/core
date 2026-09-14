@@ -7,7 +7,7 @@ import {
 import { Subject } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -15,6 +15,7 @@ import { DotAiIndex } from '@dotcms/dotcms-models';
 
 import DotAiEmbeddingsComponent from './dot-ai-embeddings.component';
 
+import { DOT_AI_INDEX_OPERATION } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
 
 const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
@@ -33,6 +34,7 @@ describe('DotAiEmbeddingsComponent', () => {
     let onDialogDestroy: Subject<unknown>;
     let dialogService: DialogService;
     let confirmSpy: MockInstance;
+    let toastSpy: MockInstance;
 
     const storeMock = {
         indexes: vi.fn().mockReturnValue([index()]),
@@ -42,9 +44,9 @@ describe('DotAiEmbeddingsComponent', () => {
         isConfigured: vi.fn().mockReturnValue(true),
         setIndexFilter: vi.fn(),
         buildIndex: vi.fn(),
-        indexBuildNotice: vi.fn().mockReturnValue(null),
-        dismissBuildNotice: vi.fn(),
-        deleteFromIndex: vi.fn(),
+        indexNotice: vi.fn().mockReturnValue(null),
+        dismissIndexNotice: vi.fn(),
+        removeFromIndex: vi.fn(),
         deleteIndex: vi.fn(),
         rebuildEmbeddingsDb: vi.fn()
     };
@@ -57,7 +59,10 @@ describe('DotAiEmbeddingsComponent', () => {
         componentProviders: [
             { provide: DotAiStore, useValue: storeMock },
             ConfirmationService,
-            { provide: DialogService, useValue: { open: vi.fn() } }
+            { provide: DialogService, useValue: { open: vi.fn() } },
+            // Real, for the same reason ConfirmationService is: p-toast subscribes to its
+            // messageObserver at construction and a bare mock has none.
+            MessageService
         ],
         // Echoes the key, so assertions on dialog copy read as the key that was asked
         // for rather than `undefined`.
@@ -71,17 +76,35 @@ describe('DotAiEmbeddingsComponent', () => {
         storeMock.filteredIndexes.mockReturnValue([index()]);
         onClose = new Subject();
         onDialogDestroy = new Subject();
-        storeMock.indexBuildNotice.mockReturnValue(null);
+        storeMock.indexNotice.mockReturnValue(null);
         spectator = createComponent();
         dialogService = spectator.inject(DialogService, true);
         (dialogService.open as Mock).mockReturnValue({ onClose, onDestroy: onDialogDestroy });
         confirmSpy = vi.spyOn(spectator.inject(ConfirmationService, true), 'confirm');
+        toastSpy = vi.spyOn(spectator.inject(MessageService, true), 'add');
     });
 
     const clickButton = (testId: string) =>
         spectator.click(
             spectator.query(byTestId(testId))?.querySelector('button') as HTMLButtonElement
         );
+
+    /**
+     * Runs a row-menu item by its label key.
+     *
+     * The overlay itself is PrimeNG's and does not render in a shallow test, so this opens the
+     * menu for the row and invokes the command the component put on the model — which is the
+     * component's half of the contract.
+     */
+    const openRowMenuItem = (labelKey: string) => {
+        clickButton('dotai-embeddings-row-actions');
+        const item = (spectator.component as unknown as { $rowActions: () => MenuItem[] })
+            .$rowActions()
+            .find((action) => action.label === labelKey);
+
+        item?.command?.({} as never);
+        spectator.detectChanges();
+    };
 
     it('should render the table with the index rows', () => {
         expect(spectator.query(byTestId('dotai-embeddings-table'))).toBeTruthy();
@@ -105,7 +128,7 @@ describe('DotAiEmbeddingsComponent', () => {
     const acceptConfirmation = () => confirmSpy.mock.calls[0][0].accept();
 
     it('should confirm before deleting an index (FR-031)', () => {
-        clickButton('dotai-embeddings-delete');
+        openRowMenuItem('dotai.embeddings.delete');
 
         expect(confirmSpy).toHaveBeenCalled();
         // Nothing happens until the confirmation is accepted.
@@ -115,7 +138,7 @@ describe('DotAiEmbeddingsComponent', () => {
     it('should delete once the confirmation is accepted (FR-031)', () => {
         // Asserting only the guard proves the dialog opens, not that accepting it does the
         // thing — a broken `accept` wiring would pass that test alone.
-        clickButton('dotai-embeddings-delete');
+        openRowMenuItem('dotai.embeddings.delete');
 
         acceptConfirmation();
 
@@ -156,52 +179,54 @@ describe('DotAiEmbeddingsComponent', () => {
             // with the last one's error.
             clickButton('dotai-embeddings-new-index');
 
-            expect(storeMock.dismissBuildNotice).toHaveBeenCalled();
+            expect(storeMock.dismissIndexNotice).toHaveBeenCalled();
         });
 
         it('should stay quiet about an outcome the dialog is there to render', () => {
             // Otherwise the failure appears twice — once in the form holding the query, once
-            // on the tab behind the modal, which is the report nobody could act on.
+            // as a toast over a modal, which is the report nobody could act on.
             clickButton('dotai-embeddings-new-index');
-            storeMock.indexBuildNotice.mockReturnValue({
-                kind: 'failed',
+            storeMock.indexNotice.mockReturnValue({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
                 indexName: 'blogs',
                 detail: 'Cannot parse query'
             });
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dotai-embeddings-build-notice'))).toBeFalsy();
+            expect(toastSpy).not.toHaveBeenCalled();
         });
 
         it('should report a build abandoned mid-flight once the dialog has gone', () => {
             // Escape or the header X while the build is still running: the outcome arrives
             // after the dialog is destroyed, so this tab is the only thing left that can show
-            // it. It used to render `built` only, so a success was announced and a failure
-            // disappeared.
+            // it. It used to render the success only, so a failure disappeared.
             clickButton('dotai-embeddings-new-index');
             onDialogDestroy.next(undefined);
-            storeMock.indexBuildNotice.mockReturnValue({
-                kind: 'failed',
+            storeMock.indexNotice.mockReturnValue({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
                 indexName: 'blogs',
                 detail: 'Cannot parse query'
             });
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dotai-embeddings-build-notice'))).toContainText(
-                'dotai.embeddings.build.failed'
-            );
+            expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
         });
 
         it('should hand back only when the dialog is really gone, not when it starts closing', () => {
-            // `close()` fires onClose and only then plays the leave animation, so the dialog --
-            // and the teardown hook that withdraws an outcome it already showed -- is still
-            // up. Handing over there would flash that outcome onto the tab for those frames.
+            // `close()` fires onClose and only then plays the leave animation, so the dialog is
+            // still up and still owns what the user has to act on.
             clickButton('dotai-embeddings-new-index');
             onClose.next(undefined);
-            storeMock.indexBuildNotice.mockReturnValue({ kind: 'failed', indexName: 'blogs' });
+            storeMock.indexNotice.mockReturnValue({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
+                indexName: 'blogs'
+            });
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dotai-embeddings-build-notice'))).toBeFalsy();
+            expect(toastSpy).not.toHaveBeenCalled();
         });
 
         it('should leave the build to the dialog rather than submitting on close', () => {
@@ -212,7 +237,7 @@ describe('DotAiEmbeddingsComponent', () => {
             onClose.next(undefined);
 
             expect(storeMock.buildIndex).not.toHaveBeenCalled();
-            expect(storeMock.deleteFromIndex).not.toHaveBeenCalled();
+            expect(storeMock.removeFromIndex).not.toHaveBeenCalled();
         });
     });
 
@@ -220,7 +245,7 @@ describe('DotAiEmbeddingsComponent', () => {
         const config = () => confirmSpy.mock.calls[0][0];
 
         it('should give the delete confirmation a primary accept', () => {
-            clickButton('dotai-embeddings-delete');
+            openRowMenuItem('dotai.embeddings.delete');
 
             // Absent, not 'p-button-primary': the theme defines no such class — `.p-button`
             // carries the primary styling itself — so asking for one renders nothing.
@@ -228,7 +253,7 @@ describe('DotAiEmbeddingsComponent', () => {
         });
 
         it('should give the delete confirmation an outlined cancel', () => {
-            clickButton('dotai-embeddings-delete');
+            openRowMenuItem('dotai.embeddings.delete');
 
             expect(config().rejectButtonStyleClass).toBe('p-button-outlined');
         });
@@ -251,22 +276,48 @@ describe('DotAiEmbeddingsComponent', () => {
         });
     });
 
-    describe('the per-row delete action', () => {
-        const deleteButton = () =>
-            spectator.query(byTestId('dotai-embeddings-delete'))?.querySelector('button');
+    describe('the per-row action menu', () => {
+        const trigger = () =>
+            spectator.query(byTestId('dotai-embeddings-row-actions'))?.querySelector('button');
+
+        it('should offer removing content as well as deleting the index', () => {
+            // Removing content belongs on the index it acts on. It used to be a mode of the
+            // build dialog, where the index name was a free-text field: a typo removed nothing
+            // and a near-miss hit a different index, both silently.
+            clickButton('dotai-embeddings-row-actions');
+
+            const labels = (spectator.component as unknown as { $rowActions: () => MenuItem[] })
+                .$rowActions()
+                .map((action) => action.label);
+
+            expect(labels).toEqual(['dotai.embeddings.remove-content', 'dotai.embeddings.delete']);
+        });
+
+        it('should open the remove-content dialog with the row as its index', () => {
+            openRowMenuItem('dotai.embeddings.remove-content');
+
+            expect(dialogService.open).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    width: '700px',
+                    closable: true,
+                    closeOnEscape: true,
+                    data: { indexName: 'blogs' }
+                })
+            );
+        });
 
         it('should be secondary, so a red control does not sit on every row', () => {
             // The destructive step is the confirm dialog, whose accept button carries
-            // p-button-danger; the row action only opens it.
-            expect(deleteButton()?.className).toContain('p-button-secondary');
-            expect(deleteButton()?.className).not.toContain('p-button-danger');
+            // p-button-danger; the row action only opens a menu.
+            expect(trigger()?.className).toContain('p-button-secondary');
+            expect(trigger()?.className).not.toContain('p-button-danger');
         });
 
         it('should force its own square rather than rely on the icon-only token', () => {
             // PrimeNG's icon-only width sets a width and leaves the height to padding plus
             // content, so with a full-size glyph the button came out 28x37 — the distortion.
-            // dot-plugins and dot-locales both pin the box in `styleClass` for this reason.
-            const classes = deleteButton()?.className.split(/\s+/) ?? [];
+            const classes = trigger()?.className.split(/\s+/) ?? [];
 
             expect(classes).toContain('w-8');
             expect(classes).toContain('h-8');
@@ -274,20 +325,10 @@ describe('DotAiEmbeddingsComponent', () => {
         });
 
         it('should collapse the glyph line box, which is what inflated the height', () => {
-            // `leading-none` is the other half: without it the glyph's own line-height sets
-            // the button's content height and no width class can square it up.
-            const glyph = deleteButton()?.querySelector('.material-symbols-outlined');
+            const glyph = trigger()?.querySelector('.material-symbols-outlined');
 
             expect(glyph?.className).toContain('leading-none!');
             expect(glyph?.className).toContain('text-lg!');
-        });
-
-        it('should be a borderless round action, like the other tables row actions', () => {
-            const classes = deleteButton()?.className.split(/\s+/) ?? [];
-
-            expect(classes).toContain('p-button-text');
-            expect(classes).toContain('p-button-rounded');
-            expect(classes).not.toContain('p-button-outlined');
         });
 
         it('should keep Rebuild DB a plain outlined button, not a red one', () => {

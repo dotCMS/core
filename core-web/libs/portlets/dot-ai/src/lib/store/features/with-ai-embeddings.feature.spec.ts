@@ -11,7 +11,11 @@ import { DotAiEmbeddingsBuildResult, DotAiIndex } from '@dotcms/dotcms-models';
 import { withAiEmbeddings } from './with-ai-embeddings.feature';
 import { withAiIndexes } from './with-ai-indexes.feature';
 
-import { DOT_AI_INITIAL_STATE, DotAiPortletState } from '../../models/dot-ai-portlet.models';
+import {
+    DOT_AI_INDEX_OPERATION,
+    DOT_AI_INITIAL_STATE,
+    DotAiPortletState
+} from '../../models/dot-ai-portlet.models';
 
 const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
     name: 'blogs',
@@ -95,8 +99,9 @@ describe('withAiEmbeddings', () => {
 
             store.buildIndex({ indexName: 'blogs', query: '+++[' });
 
-            expect(store.indexBuildNotice()).toEqual({
-                kind: 'failed',
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
                 indexName: 'blogs',
                 detail: 'Index -1 out of bounds for length 0'
             });
@@ -114,7 +119,11 @@ describe('withAiEmbeddings', () => {
 
             store.buildIndex({ indexName: 'blogs', query: '+contentType:NoSuchType' });
 
-            expect(store.indexBuildNotice()).toEqual({ kind: 'empty', indexName: 'blogs' });
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'empty',
+                indexName: 'blogs'
+            });
         });
 
         it('should report how much was embedded on success', () => {
@@ -126,22 +135,52 @@ describe('withAiEmbeddings', () => {
 
             store.buildIndex({ indexName: 'blogs', query: '+contentType:Blog' });
 
-            expect(store.indexBuildNotice()).toEqual({
-                kind: 'built',
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'ok',
                 indexName: 'blogs',
                 detail: '6'
             });
         });
     });
 
-    describe('deleteFromIndex', () => {
+    describe('removeFromIndex', () => {
         it('should send the query as a deletion criterion, not as content to embed', () => {
             service.deleteFromIndex = vi.fn().mockReturnValue(of(3));
 
-            store.deleteFromIndex({ indexName: 'blogs', query: '+contentType:Blog' });
+            store.removeFromIndex({ indexName: 'blogs', query: '+contentType:Blog' });
 
             expect(service.deleteFromIndex).toHaveBeenCalledWith('blogs', '+contentType:Blog');
             expect(service.getIndexes).toHaveBeenCalled();
+        });
+
+        it('should report how much it removed', () => {
+            // The count came back from the server and was dropped on the floor, so a removal
+            // confirmed and then said nothing at all.
+            service.deleteFromIndex = vi.fn().mockReturnValue(of(3));
+
+            store.removeFromIndex({ indexName: 'blogs', query: '+contentType:Blog' });
+
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                outcome: 'ok',
+                indexName: 'blogs',
+                detail: '3'
+            });
+        });
+
+        it('should flag a removal that matched nothing rather than looking successful', () => {
+            // The server answers 200 with `deleted: 0` when the query matches nothing.
+            service.deleteFromIndex = vi.fn().mockReturnValue(of(0));
+
+            store.removeFromIndex({ indexName: 'blogs', query: '+contentType:NoSuchType' });
+
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                outcome: 'empty',
+                indexName: 'blogs',
+                detail: '0'
+            });
         });
     });
 
@@ -173,6 +212,11 @@ describe('withAiEmbeddings', () => {
             store.rebuildEmbeddingsDb();
 
             expect(service.rebuildEmbeddingsDb).toHaveBeenCalled();
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REBUILD_DB,
+                outcome: 'ok',
+                indexName: ''
+            });
             expect(service.getIndexes).toHaveBeenCalled();
         });
 
@@ -202,14 +246,24 @@ describe('withAiEmbeddings', () => {
             expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
         });
 
-        it('should still route other failures through the error manager', () => {
-            const error = new HttpErrorResponse({ status: 500 });
+        it("should report other failures in the portlet's own words", () => {
+            // Not through DotHttpErrorManagerService: it renders these as "Unknown Error" over
+            // a raw Java message and loses which operation and index it was about.
+            const error = new HttpErrorResponse({
+                status: 500,
+                error: { message: 'relation does not exist' }
+            });
             service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(throwError(() => error));
 
             store.rebuildEmbeddingsDb();
 
             expect(store.indexesForbidden()).toBe(false);
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REBUILD_DB,
+                outcome: 'failed',
+                indexName: '',
+                detail: 'relation does not exist'
+            });
         });
     });
 

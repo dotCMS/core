@@ -1,22 +1,4 @@
 <form class="form" (ngSubmit)="submit()">
-    <!-- Same reason as the operator group in the settings panel: the heading needs to be
-         programmatically associated, and a segmented control has no single input to point a
-         `for` at. -->
-    <div class="field" role="group" aria-labelledby="dotai-index-create-mode-label">
-        <label id="dotai-index-create-mode-label">{{ 'dotai.index.create.mode' | dm }}</label>
-        <p-selectButton
-            [options]="modes"
-            optionLabel="label"
-            optionValue="value"
-            [allowEmpty]="false"
-            [ngModel]="$mode()"
-            (ngModelChange)="$mode.set($event)"
-            [ngModelOptions]="{ standalone: true }"
-            data-testid="dotai-index-create-mode">
-            <ng-template let-item pTemplate="item">{{ item.label | dm }}</ng-template>
-        </p-selectButton>
-    </div>
-
     <div class="field">
         <!-- `p-label-input-required` is the asterisk `dotFieldRequired` applies. The
              directive itself is unusable here: it injects `FormGroupDirective`, and this
@@ -56,35 +38,32 @@
         <small class="p-field-hint">{{ 'dotai.index.create.query.hint' | dm }}</small>
     </div>
 
-    <!-- Both only shape what gets embedded, so they are meaningless when deleting. -->
-    @if ($mode() === 'add') {
-        <div class="field">
-            <label for="dotai-index-fields">{{ 'dotai.index.create.fields' | dm }}</label>
-            <input
-                pInputText
-                id="dotai-index-fields"
-                [ngModel]="$fields()"
-                [ngModelOptions]="{ standalone: true }"
-                (ngModelChange)="$fields.set($event)"
-                [placeholder]="'dotai.index.create.fields.placeholder' | dm"
-                data-testid="dotai-index-create-fields" />
-            <small class="p-field-hint">{{ 'dotai.index.create.fields.hint' | dm }}</small>
-        </div>
+    <div class="field">
+        <label for="dotai-index-fields">{{ 'dotai.index.create.fields' | dm }}</label>
+        <input
+            pInputText
+            id="dotai-index-fields"
+            [ngModel]="$fields()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="$fields.set($event)"
+            [placeholder]="'dotai.index.create.fields.placeholder' | dm"
+            data-testid="dotai-index-create-fields" />
+        <small class="p-field-hint">{{ 'dotai.index.create.fields.hint' | dm }}</small>
+    </div>
 
-        <div class="field">
-            <label for="dotai-index-template">{{ 'dotai.index.create.template' | dm }}</label>
-            <textarea
-                pTextarea
-                id="dotai-index-template"
-                rows="3"
-                [ngModel]="$velocityTemplate()"
-                [ngModelOptions]="{ standalone: true }"
-                (ngModelChange)="$velocityTemplate.set($event)"
-                [placeholder]="'dotai.index.create.template.placeholder' | dm"
-                data-testid="dotai-index-create-template"></textarea>
-            <small class="p-field-hint">{{ 'dotai.index.create.template.hint' | dm }}</small>
-        </div>
-    }
+    <div class="field">
+        <label for="dotai-index-template">{{ 'dotai.index.create.template' | dm }}</label>
+        <textarea
+            pTextarea
+            id="dotai-index-template"
+            rows="3"
+            [ngModel]="$velocityTemplate()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="$velocityTemplate.set($event)"
+            [placeholder]="'dotai.index.create.template.placeholder' | dm"
+            data-testid="dotai-index-create-template"></textarea>
+        <small class="p-field-hint">{{ 'dotai.index.create.template.hint' | dm }}</small>
+    </div>
 
     <!-- The build outcome belongs here, not on the tab behind: a rejected Lucene query is a
          correction to the field two rows up, and the dialog is still holding it. Only the
@@ -92,10 +71,10 @@
     @if ($notice(); as notice) {
         <p-message
             class="mt-4 block"
-            [severity]="notice.kind === 'empty' ? 'warn' : 'error'"
+            [severity]="notice.outcome === 'empty' ? 'warn' : 'error'"
             data-testid="dotai-index-create-notice">
-            @if (notice.kind === 'empty') {
-                {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
+            @if (notice.outcome === 'empty') {
+                {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName, notice.detail ?? ''] }}
             } @else {
                 {{ 'dotai.embeddings.build.failed' | dm: [notice.indexName, notice.detail ?? ''] }}
             }
@@ -111,10 +90,9 @@
             data-testid="dotai-index-create-cancel" />
         <p-button
             type="submit"
-            [severity]="$mode() === 'delete' ? 'danger' : 'primary'"
             [disabled]="!$canSubmit()"
             [loading]="$submitting()"
-            [label]="$submitLabel() | dm"
+            [label]="'dotai.index.create.submit.add' | dm"
             data-testid="dotai-index-create-submit" />
     </div>
 </form>

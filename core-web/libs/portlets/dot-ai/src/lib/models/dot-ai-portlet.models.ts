@@ -46,17 +46,32 @@ export const DOT_AI_TABS = [
 export type DotAiTab = (typeof DOT_AI_TABS)[number];
 export type DotAiTabId = DotAiTab['id'];
 
+export const DOT_AI_INDEX_OPERATION = {
+    BUILD: 'build',
+    REMOVE_CONTENT: 'removeContent',
+    DELETE_INDEX: 'deleteIndex',
+    REBUILD_DB: 'rebuildDb'
+} as const;
+
+export type DotAiIndexOperation =
+    (typeof DOT_AI_INDEX_OPERATION)[keyof typeof DOT_AI_INDEX_OPERATION];
+
 /**
- * The outcome of the last index build, surfaced in the tab.
+ * What the last index operation did.
  *
- * `empty` is its own case on purpose: the server answers 200 with `totalToEmbed: 0` when the
- * query matches nothing, and an index with no rows does not come back from `indexCount` at
- * all — so without this the build looks like it silently did nothing.
+ * One channel for all four, because where an outcome belongs is decided by the outcome rather
+ * than the operation: anything the user has to act on goes in the dialog still holding the
+ * field that caused it, everything else is a toast.
+ *
+ * `empty` is its own outcome on purpose. A build whose query matches nothing answers 200 with
+ * `totalToEmbed: 0`, and the index it makes never comes back from `indexCount`; a removal whose
+ * query matches nothing answers 200 with `deleted: 0`. Both are a query to fix, not a success.
  */
-export interface DotAiIndexBuildNotice {
-    kind: 'built' | 'empty' | 'failed';
+export interface DotAiIndexNotice {
+    operation: DotAiIndexOperation;
+    outcome: 'ok' | 'empty' | 'failed';
     indexName: string;
-    /** Rows embedded, for `built`; the server's reason, for `failed`. */
+    /** The count, for `ok`; the server's reason, for `failed`. */
     detail?: string;
 }
 
@@ -157,7 +172,7 @@ export interface DotAiPortletState {
 
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
-    indexBuildNotice: DotAiIndexBuildNotice | null;
+    indexNotice: DotAiIndexNotice | null;
 
     // image
     image: DotAiGeneratedImage | null;
@@ -231,7 +246,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     chatStreaming: false,
 
     indexFilter: '',
-    indexBuildNotice: null,
+    indexNotice: null,
 
     image: null,
     imageGenerating: false,

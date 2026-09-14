@@ -14,7 +14,7 @@ import { DotAiIndex } from '@dotcms/dotcms-models';
 
 import { DotAiIndexCreateComponent } from './dot-ai-index-create.component';
 
-import { DotAiIndexBuildNotice } from '../../../models/dot-ai-portlet.models';
+import { DOT_AI_INDEX_OPERATION, DotAiIndexNotice } from '../../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../../store/dot-ai.store';
 
 describe('DotAiIndexCreateComponent', () => {
@@ -22,10 +22,9 @@ describe('DotAiIndexCreateComponent', () => {
     let dialogRef: DynamicDialogRef;
     let store: {
         indexes: ReturnType<typeof signal<DotAiIndex[]>>;
-        indexBuildNotice: ReturnType<typeof signal<DotAiIndexBuildNotice | null>>;
+        indexNotice: ReturnType<typeof signal<DotAiIndexNotice | null>>;
         buildIndex: ReturnType<typeof vi.fn>;
-        deleteFromIndex: ReturnType<typeof vi.fn>;
-        dismissBuildNotice: ReturnType<typeof vi.fn>;
+        dismissIndexNotice: ReturnType<typeof vi.fn>;
     };
 
     const createComponent = createComponentFactory({
@@ -46,10 +45,9 @@ describe('DotAiIndexCreateComponent', () => {
                     contentTypes: []
                 }
             ]),
-            indexBuildNotice: signal<DotAiIndexBuildNotice | null>(null),
+            indexNotice: signal<DotAiIndexNotice | null>(null),
             buildIndex: vi.fn(),
-            deleteFromIndex: vi.fn(),
-            dismissBuildNotice: vi.fn()
+            dismissIndexNotice: vi.fn()
         };
 
         spectator = createComponent({
@@ -120,8 +118,9 @@ describe('DotAiIndexCreateComponent', () => {
         fillValidForm();
         clickButton('dotai-index-create-submit');
 
-        store.indexBuildNotice.set({
-            kind: 'failed',
+        store.indexNotice.set({
+            operation: DOT_AI_INDEX_OPERATION.BUILD,
+            outcome: 'failed',
             indexName: 'blogs',
             detail: 'Cannot parse query'
         });
@@ -138,7 +137,11 @@ describe('DotAiIndexCreateComponent', () => {
         fillValidForm();
         clickButton('dotai-index-create-submit');
 
-        store.indexBuildNotice.set({ kind: 'empty', indexName: 'blogs' });
+        store.indexNotice.set({
+            operation: DOT_AI_INDEX_OPERATION.BUILD,
+            outcome: 'empty',
+            indexName: 'blogs'
+        });
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('dotai-index-create-notice'))).toBeTruthy();
@@ -149,7 +152,12 @@ describe('DotAiIndexCreateComponent', () => {
         fillValidForm();
         clickButton('dotai-index-create-submit');
 
-        store.indexBuildNotice.set({ kind: 'built', indexName: 'blogs', detail: '12' });
+        store.indexNotice.set({
+            operation: DOT_AI_INDEX_OPERATION.BUILD,
+            outcome: 'ok',
+            indexName: 'blogs',
+            detail: '12'
+        });
         spectator.detectChanges();
 
         expect(dialogRef.close).toHaveBeenCalled();
@@ -171,7 +179,12 @@ describe('DotAiIndexCreateComponent', () => {
         fillValidForm();
         clickButton('dotai-index-create-submit');
 
-        store.indexBuildNotice.set({ kind: 'failed', indexName: 'blogs', detail: 'bad query' });
+        store.indexNotice.set({
+            operation: DOT_AI_INDEX_OPERATION.BUILD,
+            outcome: 'failed',
+            indexName: 'blogs',
+            detail: 'bad query'
+        });
         spectator.detectChanges();
 
         expect(
@@ -193,28 +206,23 @@ describe('DotAiIndexCreateComponent', () => {
         expect(dialogRef.close).toHaveBeenCalledWith();
     });
 
-    it('should clear an unshown outcome on teardown, however it was dismissed', () => {
-        // PrimeNG's own header X and Escape call DynamicDialogRef.close directly rather than
-        // `cancel()`, so a failure dismissed that way would be left set with nothing rendering
-        // it — the tab shows only `built`, and this dialog is gone.
-        store.indexBuildNotice.set({ kind: 'failed', indexName: 'blogs' });
+    it('should leave an unshown outcome standing for the tab to report', () => {
+        // PrimeNG's own header X and Escape call DynamicDialogRef.close directly, so a build
+        // abandoned mid-flight used to fail into silence. The tab toasts whatever this dialog
+        // was not around to render, which means the notice has to survive its teardown.
+        store.indexNotice.set({
+            operation: DOT_AI_INDEX_OPERATION.BUILD,
+            outcome: 'failed',
+            indexName: 'blogs'
+        });
         spectator.fixture.destroy();
 
-        expect(store.dismissBuildNotice).toHaveBeenCalled();
+        expect(store.dismissIndexNotice).not.toHaveBeenCalled();
     });
 
-    it('should leave a success standing for the tab behind it', () => {
-        store.indexBuildNotice.set({ kind: 'built', indexName: 'blogs', detail: '12' });
-        spectator.fixture.destroy();
-
-        expect(store.dismissBuildNotice).not.toHaveBeenCalled();
-    });
-
-    it('should associate the mode heading with the segmented control', () => {
-        const group = spectator.query('[role="group"]');
-
-        expect(group?.getAttribute('aria-labelledby')).toBe('dotai-index-create-mode-label');
-        expect(spectator.query('#dotai-index-create-mode-label')).toBeTruthy();
+    it('should not offer a delete mode any more', () => {
+        // Removing content is its own dialog now, opened from the row of the index it acts on.
+        expect(spectator.query(byTestId('dotai-index-create-mode'))).toBeFalsy();
     });
 
     it('should mark the two genuinely-required fields as required', () => {

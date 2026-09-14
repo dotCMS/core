@@ -24,34 +24,6 @@
         </ng-template>
     </p-toolbar>
 
-    <!-- Everything the create dialog is not around to render itself. A build abandoned with
-         Escape while still in flight has nowhere else to report. -->
-    @if ($notice(); as notice) {
-        <p-message
-            class="block shrink-0 px-4 pb-2"
-            [severity]="
-                notice.kind === 'built' ? 'success' : notice.kind === 'empty' ? 'warn' : 'error'
-            "
-            [closable]="true"
-            (onClose)="store.dismissBuildNotice()"
-            data-testid="dotai-embeddings-build-notice">
-            @switch (notice.kind) {
-                @case ('built') {
-                    {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
-                }
-                @case ('empty') {
-                    {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
-                }
-                @default {
-                    {{
-                        'dotai.embeddings.build.failed'
-                            | dm: [notice.indexName, notice.detail ?? '']
-                    }}
-                }
-            }
-        </p-message>
-    }
-
     <div class="min-h-0 flex-1 overflow-hidden">
         @if (store.indexesForbidden()) {
             <!-- indexCount requires CMS_ADMINISTRATOR_ROLE while portlet access does not, so
@@ -141,22 +113,22 @@
                                  glyph's own line-height is what was inflating that content.
                                  Without them this measured 28x37.
 
-                                 Secondary, not danger: a red control on every row reads as a
-                                 warning about the row itself. The destructive step is the
-                                 confirm dialog, whose accept button is `p-button-danger`. -->
+                                 A menu rather than a bare trash icon: removing content from
+                                 an index belongs on the index it acts on, not in a mode of
+                                 the build dialog where the name had to be typed. -->
                             <p-button
                                 [text]="true"
                                 [rounded]="true"
                                 severity="secondary"
                                 size="small"
                                 styleClass="w-8 h-8 p-0"
-                                [ariaLabel]="'dotai.embeddings.delete' | dm"
-                                (onClick)="confirmDeleteIndex(index)"
-                                data-testid="dotai-embeddings-delete">
+                                [ariaLabel]="'dotai.embeddings.row.actions' | dm"
+                                (onClick)="openRowMenu(index); rowMenu.toggle($event)"
+                                data-testid="dotai-embeddings-row-actions">
                                 <span
                                     class="material-symbols-outlined text-lg! leading-none!"
                                     aria-hidden="true">
-                                    delete
+                                    more_vert
                                 </span>
                             </p-button>
                         </td>
@@ -166,6 +138,15 @@
         }
     </div>
 </section>
+
+<!-- One menu for the whole table: `openRowMenu` sets which index it is for just before the
+     toggle, so a row does not each carry an overlay of its own. -->
+<p-menu #rowMenu [model]="$rowActions()" [popup]="true" appendTo="body" />
+
+<!-- Every outcome lands here now, which is what the rest of the admin does. The tab used to
+     carry a standing banner for a successful build and say nothing at all for the three
+     destructive actions. -->
+<p-toast [breakpoints]="{ '640px': { width: '90vw' } }" />
 
 <!-- closeAriaLabel: PrimeNG's own hook. Without it the header's X is announced with no
      name at all, on both the delete and the rebuild confirmation. -->

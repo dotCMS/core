@@ -5,14 +5,12 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DOT_AI_INDEX_OPERATION } from '../../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../../store/dot-ai.store';
-
-type DotAiIndexCreateMode = 'add' | 'delete';
 
 /**
  * The server stores whatever it is given — `bad name with spaces` is accepted verbatim, and
@@ -22,11 +20,11 @@ type DotAiIndexCreateMode = 'add' | 'delete';
 const INDEX_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 /**
- * One dialog, two modes.
+ * Builds an index, and only builds one.
  *
- * Add mode embeds the content the query matches; delete mode removes it from the index. The
- * submit label flips with the toggle so the destructive mode never hides behind a neutral
- * word (FR-030) — the legacy screen did the same remap.
+ * Removing content used to be a mode on this same form, which meant a destructive action sat
+ * one click from a create action behind a toggle, sharing its submit button, reshaping the
+ * fields underneath it. It has its own dialog now, opened from the row of the index it acts on.
  *
  * The dialog calls the store itself rather than closing with a form value for the list
  * component to submit. It has to: a build is the one action here whose *failure* is a
@@ -42,7 +40,6 @@ const INDEX_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
         ButtonModule,
         InputTextModule,
         TextareaModule,
-        SelectButtonModule,
         MessageModule,
         DotMessagePipe
     ],
@@ -59,22 +56,10 @@ export class DotAiIndexCreateComponent {
      */
     protected readonly $submitting = signal(false);
 
-    protected readonly $mode = signal<DotAiIndexCreateMode>('add');
     protected readonly $indexName = signal('');
     protected readonly $query = signal('');
     protected readonly $fields = signal('');
     protected readonly $velocityTemplate = signal('');
-
-    protected readonly modes = [
-        { label: 'dotai.index.create.mode.add', value: 'add' as const },
-        { label: 'dotai.index.create.mode.delete', value: 'delete' as const }
-    ];
-
-    protected readonly $submitLabel = computed(() =>
-        this.$mode() === 'delete'
-            ? 'dotai.index.create.submit.delete'
-            : 'dotai.index.create.submit.add'
-    );
 
     /**
      * The build outcome, while it is this dialog's to show.
@@ -84,9 +69,11 @@ export class DotAiIndexCreateComponent {
      * query the server rejected.
      */
     protected readonly $notice = computed(() => {
-        const notice = this.store.indexBuildNotice();
+        const notice = this.store.indexNotice();
 
-        return notice?.kind === 'built' ? null : notice;
+        return notice?.operation === DOT_AI_INDEX_OPERATION.BUILD && notice.outcome !== 'ok'
+            ? notice
+            : null;
     });
 
     constructor() {
@@ -94,7 +81,7 @@ export class DotAiIndexCreateComponent {
         // outcome the form still has to show. The success message is left standing on the tab
         // behind, next to the row it just created.
         effect(() => {
-            const notice = this.store.indexBuildNotice();
+            const notice = this.store.indexNotice();
 
             if (!notice) {
                 return;
@@ -103,20 +90,16 @@ export class DotAiIndexCreateComponent {
             untracked(() => {
                 this.$submitting.set(false);
 
-                if (notice.kind === 'built') {
+                if (notice.operation === DOT_AI_INDEX_OPERATION.BUILD && notice.outcome === 'ok') {
                     this.#dialogRef.close();
                 }
             });
         });
 
-        // On teardown, not in `cancel()`: PrimeNG's own header X and the Escape key call
-        // `DynamicDialogRef.close` directly, so a notice dismissed that way would be left set
-        // with nothing rendering it — the tab shows only `built`, and this dialog is gone.
-        inject(DestroyRef).onDestroy(() => {
-            if (this.store.indexBuildNotice()?.kind !== 'built') {
-                this.store.dismissBuildNotice();
-            }
-        });
+        // Nothing is cleared on teardown any more. A build abandoned with Escape or the
+        // header X while still in flight used to fail into silence; the tab now toasts
+        // whatever this dialog was not around to render, so the notice has to survive it.
+        inject(DestroyRef).onDestroy(() => this.$submitting.set(false));
     }
 
     /** Empty until the field has been touched, so the form does not scold you on open. */
@@ -131,8 +114,7 @@ export class DotAiIndexCreateComponent {
             return 'dotai.index.create.name.invalid';
         }
 
-        // Only for a build: deleting names an index that must already exist.
-        if (this.$mode() === 'add' && this.store.indexes().some((index) => index.name === name)) {
+        if (this.store.indexes().some((index) => index.name === name)) {
             return 'dotai.index.create.name.exists';
         }
 
@@ -152,22 +134,10 @@ export class DotAiIndexCreateComponent {
             return;
         }
 
-        const indexName = this.$indexName().trim();
-        const query = this.$query().trim();
-
-        // A delete has no outcome to report back into the form — it either works or goes
-        // through the shared error handler — so it keeps the original resolve-and-close shape.
-        if (this.$mode() === 'delete') {
-            this.store.deleteFromIndex({ indexName, query });
-            this.#dialogRef.close();
-
-            return;
-        }
-
         this.$submitting.set(true);
         this.store.buildIndex({
-            indexName,
-            query,
+            indexName: this.$indexName().trim(),
+            query: this.$query().trim(),
             // Both only shape what gets embedded, so they are omitted rather than sent blank.
             ...(this.$fields().trim() ? { fields: this.$fields().trim() } : {}),
             ...(this.$velocityTemplate().trim()
