@@ -45,6 +45,11 @@ tenant/project is still visible.
 3. **Given** an instance with Analytics Mode set to "Read Only", **When** an admin changes
    Analytics Mode back to "Read & Write" and saves, **Then** the instance resumes sending
    analytics events without requiring a restart.
+4. **Given** an instance with Analytics Mode set to "Read Only" whose content is consumed by a
+   headless/SPA application through the Content Analytics SDK (not a server-rendered page),
+   **When** that application triggers a tracked event, **Then** no event reaches the Content
+   Analytics infrastructure — the same guarantee holds for SDK-driven traffic as for
+   server-rendered page tracking.
 
 ---
 
@@ -132,7 +137,12 @@ and confirm existing data for the tenant/project renders normally.
   strictly to Content Analytics ingest traffic — it does not affect any other, unrelated
   telemetry, health-check, or usage-reporting signal the instance emits.
 - **FR-005**: System MUST apply an Analytics Mode change without requiring the dotCMS instance
-  to be restarted.
+  to be restarted. On a clustered instance, the change MUST propagate to every node using the
+  same cluster-wide cache-invalidation mechanism every other Content Analytics app configuration
+  field already relies on — no new propagation mechanism, and no special same-node-only
+  guarantee, is introduced for this field. A brief window where a sibling node has not yet
+  received the change (matching that existing mechanism's normal propagation delay) is expected
+  and acceptable; nodes are not expected to diverge beyond it.
 - **FR-006**: System MUST allow users to view existing analytics dashboards and reports
   regardless of the instance's current Analytics Mode.
 - **FR-007**: System MUST NOT classify, distinguish, or filter analytics data by originating
@@ -162,10 +172,15 @@ and confirm existing data for the tenant/project renders normally.
 - **SC-001**: An admin can change an instance's analytics-persistence behavior end-to-end
   (open configuration, change mode, save) in under one minute, with no deployment or restart.
 - **SC-002**: 100% of instances that were sending analytics data before this change continue
-  doing so immediately after upgrading, with zero customer action required.
+  doing so immediately after upgrading, with zero customer action required — measured by
+  comparing each instance's analytics event count for a fixed window immediately before and
+  after upgrade and confirming neither drops to zero nor decreases unexpectedly.
 - **SC-003**: An instance set to "Read Only" produces zero new analytics events in the shared
   analytics dataset while retaining full, unchanged access to its existing dashboards and
-  reports.
+  reports — measured, on the instance side (since the shared dataset does not distinguish which
+  instance contributed a given event, per FR-007), by confirming no outbound event submission
+  occurs for any tracked action performed while Read Only is active, and that the same dashboard
+  queries return unchanged data before and after the switch.
 - **SC-004**: Customers can control per-instance analytics persistence without creating or
   managing any additional users or roles for cross-instance access — eliminating the operational
   burden the original epic (#37349) set out to avoid.
@@ -200,7 +215,13 @@ and confirm existing data for the tenant/project renders normally.
 - Read Only is enforced entirely on the dotCMS instance side, at the single point through which
   every event — regardless of collection method — already passes on its way to the Content
   Analytics infrastructure; the infrastructure itself requires no new rejection logic of its
-  own for this feature.
+  own for this feature. **This is the assumption the whole feature depends on** — if any
+  collection method (present or future) were found to submit events directly to the Content
+  Analytics infrastructure instead of through the instance, Read Only would silently leak for
+  that path. `/speckit-plan` MUST re-trace the actual ingest path for every current collection
+  method (server-rendered tracking and the headless/SPA SDK) against the code at plan time,
+  rather than carrying this forward as an unverified assumption, and Acceptance Scenario 4 above
+  MUST be covered by a real test, not just server-rendered tracking.
 - Experiments (A/B testing) results are computed from the same Content Analytics dataset this
   feature gates. Setting an instance to Read Only is expected to also stop new experiment
   result data from that instance — this is accepted, not treated as a gap to work around, since
