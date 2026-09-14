@@ -179,23 +179,6 @@ describe('createEditorExtensions', () => {
         });
 
         /**
-         * #36351 — this assertion is the INVERSE of what it was, for the same reason the emoji
-         * one below is.
-         *
-         * `link` is not selectable in Allowed Blocks either, so `has('link')` was true ONLY on a
-         * field with no restriction at all. Restricting any block silently disabled auto-linking
-         * and link-on-paste — and hid the toolbar button — with no admin having chosen it and no
-         * control anywhere to undo it. The gate could only ever misfire, so it is gone; these
-         * flags are now unconditional.
-         */
-        it('keeps the implicit LINK authoring paths on a restricted field', () => {
-            const extensions = restricted();
-
-            expect(byName(extensions, 'link')?.options.autolink).toBe(true);
-            expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(true);
-        });
-
-        /**
          * #37340 AC-008 — this assertion is the INVERSE of what it was, deliberately.
          *
          * `emoji` is not selectable in Allowed Blocks: the option list comes from
@@ -325,24 +308,27 @@ describe('createEditorExtensions', () => {
      * ProseMirror to assert a rule that upstream already guarantees, while this fails the moment
      * someone adds an `addPasteRules` override again — which is exactly the regression to catch.
      *
-     * The authoring-path flags themselves are covered above by
-     * `keeps the implicit LINK authoring paths on a restricted field`.
+     * The authoring-path flags are pinned here too, across every shape of `allowedBlocks`: the
+     * gate that #36351 removed derived both of them from `has('link')`, so a restricted field
+     * is where a reintroduced gate would show up first.
      */
     describe('link-on-paste is never gated (#36351)', () => {
+        const linkFor = (allowedBlocks: string[] | undefined) =>
+            flattenExtensions(
+                createEditorExtensions(menuService, allowedBlocks, injector, messageService)
+            ).find((ext) => ext.name === 'link');
+
         it('does not override the base paste rules', () => {
             expect(DotLink.config.addPasteRules).toBe(Link.config.addPasteRules);
         });
 
-        it('leaves the authoring flags on regardless of allowedBlocks', () => {
-            const linkFor = (allowedBlocks: string[] | undefined) =>
-                flattenExtensions(
-                    createEditorExtensions(menuService, allowedBlocks, injector, messageService)
-                ).find((ext) => ext.name === 'link');
-
-            for (const allowedBlocks of [undefined, ['bulletList', 'orderedList'], ['image']]) {
-                expect(linkFor(allowedBlocks)?.options.autolink).toBe(true);
-                expect(linkFor(allowedBlocks)?.options.linkOnPaste).toBe(true);
-            }
+        it.each([
+            ['an unrestricted field', undefined],
+            ['a restricted field', ['bulletList', 'orderedList']],
+            ['a field restricted to a single block', ['image']]
+        ])('leaves the authoring flags on for %s', (_label, allowedBlocks) => {
+            expect(linkFor(allowedBlocks)?.options.autolink).toBe(true);
+            expect(linkFor(allowedBlocks)?.options.linkOnPaste).toBe(true);
         });
     });
 });

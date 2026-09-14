@@ -1,20 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
-import { vi } from 'vitest';
-
-import { Injector } from '@angular/core';
-
-import { ConfirmationService } from 'primeng/api';
-
-import { DotMessageService } from '@dotcms/data-access';
-
-import { EditorToolbarStore } from './editor-toolbar.store';
-import { ToolbarComponent } from './toolbar.component';
-
-import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
-import { EditorModalService } from '../../services/editor-modal.service';
-import { EditorPopoverService } from '../../services/editor-popover.service';
-import { EditorStore } from '../../store/editor.store';
-import { createTestEditor } from '../../testing/editor.testing';
+import { createToolbarHarness } from '../../testing/toolbar.testing';
 
 /**
  * #37340 AC-008 — emoji authoring is available on EVERY Block Editor field.
@@ -28,73 +12,9 @@ import { createTestEditor } from '../../testing/editor.testing';
  * button is still there.
  */
 describe('ToolbarComponent — emoji is never gated (#37340)', () => {
-    let spectator: Spectator<ToolbarComponent>;
-    let injector: Injector;
+    const { buildWith, buttonWithIcon } = createToolbarHarness();
 
-    const createComponent = createComponentFactory({
-        component: ToolbarComponent,
-        shallow: true,
-        providers: [
-            { provide: DotMessageService, useValue: { get: (key: string) => key } },
-            { provide: EditorPopoverService, useValue: { isOpen: () => false, toggle: vi.fn() } },
-            { provide: EditorModalService, useValue: {} },
-            { provide: ContentletEditUrlService, useValue: {} },
-            { provide: ConfirmationService, useValue: {} },
-            {
-                provide: EditorToolbarStore,
-                /**
-                 * A Proxy rather than a hand-listed stub. The toolbar reads a wide surface of
-                 * mark/block/alignment signals, and enumerating them would make this spec a
-                 * maintenance burden for every future toolbar button while testing none of them.
-                 * Everything answers "inactive"; the one thing under test is whether the emoji
-                 * button renders at all.
-                 */
-                useValue: new Proxy(
-                    {},
-                    {
-                        get: (_target, property) =>
-                            property === 'connect'
-                                ? vi.fn().mockReturnValue(() => undefined)
-                                : () => false
-                    }
-                )
-            }
-        ]
-    });
-
-    const buildWith = (allowedBlocks: string[] | undefined) => {
-        spectator = createComponent({
-            detectChanges: false,
-            providers: [
-                {
-                    provide: EditorStore,
-                    useValue: {
-                        // The only store surface the toolbar template reads for gating.
-                        isAllowed: (block: string) =>
-                            !allowedBlocks || allowedBlocks.includes(block),
-                        allowedBlocksSet: () => new Set(allowedBlocks ?? [])
-                    }
-                }
-            ]
-        });
-
-        injector = spectator.inject(Injector);
-        spectator.setInput('editor', createTestEditor(injector));
-        spectator.detectChanges();
-    };
-
-    afterEach(() => {
-        spectator?.component?.editor()?.destroy();
-    });
-
-    const emojiButton = () =>
-        spectator
-            .queryAll('button')
-            .find((button) =>
-                button
-                    .querySelector('.material-symbols-outlined')
-                    ?.textContent?.includes('emoji_emotions')
-            );
+    const emojiButton = () => buttonWithIcon('emoji_emotions');
 
     it('renders the emoji button on an UNRESTRICTED field', () => {
         buildWith(undefined);
@@ -144,71 +64,7 @@ describe('ToolbarComponent — emoji is never gated (#37340)', () => {
  * which is why the defect shipped. These tests exist so the gate cannot come back.
  */
 describe('ToolbarComponent — the link button is never gated (#36351)', () => {
-    let spectator: Spectator<ToolbarComponent>;
-    let injector: Injector;
-
-    const createComponent = createComponentFactory({
-        component: ToolbarComponent,
-        shallow: true,
-        providers: [
-            { provide: DotMessageService, useValue: { get: (key: string) => key } },
-            { provide: EditorPopoverService, useValue: { isOpen: () => false, toggle: vi.fn() } },
-            { provide: EditorModalService, useValue: {} },
-            { provide: ContentletEditUrlService, useValue: {} },
-            { provide: ConfirmationService, useValue: {} },
-            {
-                provide: EditorToolbarStore,
-                // Same Proxy stub as the emoji block: everything answers "inactive"; the only
-                // thing under test is whether a button renders at all.
-                useValue: new Proxy(
-                    {},
-                    {
-                        get: (_target, property) =>
-                            property === 'connect'
-                                ? vi.fn().mockReturnValue(() => undefined)
-                                : () => false
-                    }
-                )
-            }
-        ]
-    });
-
-    const buildWith = (allowedBlocks: string[] | undefined) => {
-        spectator = createComponent({
-            detectChanges: false,
-            providers: [
-                {
-                    provide: EditorStore,
-                    useValue: {
-                        isAllowed: (block: string) =>
-                            !allowedBlocks || allowedBlocks.includes(block),
-                        allowedBlocksSet: () => new Set(allowedBlocks ?? [])
-                    }
-                }
-            ]
-        });
-
-        injector = spectator.inject(Injector);
-        spectator.setInput('editor', createTestEditor(injector));
-        spectator.detectChanges();
-    };
-
-    afterEach(() => {
-        spectator?.component?.editor()?.destroy();
-    });
-
-    /**
-     * Exact match, not `includes`. The "Add asset by URL" trigger uses the `media_link` icon,
-     * which contains `link` as a substring — a loose match would pass on the wrong button and
-     * report a gate as removed while it is still in place.
-     */
-    const buttonWithIcon = (icon: string) =>
-        spectator
-            .queryAll('button')
-            .find(
-                (button) =>
-                    button.querySelector('.material-symbols-outlined')?.textContent?.trim() === icon
-            );
+    const { buildWith, buttonWithIcon } = createToolbarHarness();
 
     const linkButton = () => buttonWithIcon('link');
 
