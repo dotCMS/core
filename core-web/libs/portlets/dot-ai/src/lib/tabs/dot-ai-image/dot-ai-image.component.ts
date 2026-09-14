@@ -11,9 +11,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAIImageOrientation } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiStore } from '../../store/dot-ai.store';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Image tab: describe an image, generate it, then decide what to do with it.
@@ -44,12 +45,11 @@ export default class DotAiImageComponent {
 
     readonly #messageService = inject(DotMessageService);
 
-    protected readonly emptyConfig: PrincipalConfiguration = {
-        title: this.#messageService.get('dotai.image.empty.title'),
-        subtitle: this.#messageService.get('dotai.image.empty.sub'),
-        icon: 'image',
-        iconStyle: 'material-symbols-rounded'
-    };
+    protected readonly emptyConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.image.empty.title',
+        subtitle: 'dotai.image.empty.sub',
+        icon: 'image'
+    });
 
     protected readonly $prompt = signal('');
 

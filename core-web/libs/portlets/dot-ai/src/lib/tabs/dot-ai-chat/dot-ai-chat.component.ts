@@ -7,10 +7,11 @@ import { ButtonModule } from 'primeng/button';
 import { DotAgentThinkingComponent, DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_ANSWER_STATE } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Chat tab: ask a question of the indexed content and watch the answer stream in.
@@ -48,12 +49,11 @@ export default class DotAiChatComponent {
      * The subtitle deliberately does not promise sources: only the non-streaming mode returns
      * them, and this tab streams.
      */
-    protected readonly emptyConfig: PrincipalConfiguration = {
-        title: this.#messageService.get('dotai.chat.empty.title'),
-        subtitle: this.#messageService.get('dotai.chat.empty.sub'),
-        icon: 'forum',
-        iconStyle: 'material-symbols-rounded'
-    };
+    protected readonly emptyConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.chat.empty.title',
+        subtitle: 'dotai.chat.empty.sub',
+        icon: 'forum'
+    });
 
     constructor() {
         // FR-015: leaving Chat mid-answer must cancel it. The store's own onDestroy cannot do

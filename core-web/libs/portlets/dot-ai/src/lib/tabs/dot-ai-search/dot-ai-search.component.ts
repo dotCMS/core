@@ -18,6 +18,7 @@ import {
 import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Search tab: a hero query field over a ranked result list, with the shared retrieval-settings
@@ -49,27 +50,25 @@ export default class DotAiSearchComponent {
 
     readonly #messageService = inject(DotMessageService);
 
-    /** Resolved strings rather than keys: `dot-empty-container` renders `configuration` as-is. */
-    protected readonly firstRunConfig: PrincipalConfiguration = {
-        title: this.#messageService.get('dotai.search.first-run.title'),
-        subtitle: this.#messageService.get('dotai.search.first-run.sub'),
-        icon: 'search',
-        iconStyle: 'material-symbols-rounded'
-    };
+    protected readonly firstRunConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.search.first-run.title',
+        subtitle: 'dotai.search.first-run.sub',
+        icon: 'search'
+    });
 
-    protected readonly noResultsConfig: PrincipalConfiguration = {
-        title: this.#messageService.get('dotai.search.no-results.title'),
-        subtitle: this.#messageService.get('dotai.search.no-results.sub'),
-        icon: 'search_off',
-        iconStyle: 'material-symbols-rounded'
-    };
+    protected readonly noResultsConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.search.no-results.title',
+        subtitle: 'dotai.search.no-results.sub',
+        icon: 'search_off'
+    });
 
     /** The only one that has to be computed — the subtitle is the index name from the server. */
     protected readonly $missingIndexConfig = computed<PrincipalConfiguration>(() => ({
-        title: this.#messageService.get('dotai.search.index-missing'),
-        subtitle: this.store.searchMissingIndex() ?? '',
-        icon: 'database_off',
-        iconStyle: 'material-symbols-rounded'
+        ...toEmptyStateConfig(this.#messageService, {
+            title: 'dotai.search.index-missing',
+            icon: 'database_off'
+        }),
+        subtitle: this.store.searchMissingIndex() ?? ''
     }));
 
     /**

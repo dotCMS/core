@@ -113,7 +113,7 @@
             type="submit"
             [severity]="$mode() === 'delete' ? 'danger' : 'primary'"
             [disabled]="!$canSubmit()"
-            [loading]="store.indexBuildInFlight()"
+            [loading]="$submitting()"
             [label]="$submitLabel() | dm"
             data-testid="dotai-index-create-submit" />
     </div>

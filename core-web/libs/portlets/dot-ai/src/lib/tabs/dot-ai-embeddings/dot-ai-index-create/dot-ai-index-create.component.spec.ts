@@ -23,7 +23,6 @@ describe('DotAiIndexCreateComponent', () => {
     let store: {
         indexes: ReturnType<typeof signal<DotAiIndex[]>>;
         indexBuildNotice: ReturnType<typeof signal<DotAiIndexBuildNotice | null>>;
-        indexBuildInFlight: ReturnType<typeof signal<boolean>>;
         buildIndex: ReturnType<typeof vi.fn>;
         deleteFromIndex: ReturnType<typeof vi.fn>;
         dismissBuildNotice: ReturnType<typeof vi.fn>;
@@ -48,7 +47,6 @@ describe('DotAiIndexCreateComponent', () => {
                 }
             ]),
             indexBuildNotice: signal<DotAiIndexBuildNotice | null>(null),
-            indexBuildInFlight: signal(false),
             buildIndex: vi.fn(),
             deleteFromIndex: vi.fn(),
             dismissBuildNotice: vi.fn()
@@ -159,13 +157,27 @@ describe('DotAiIndexCreateComponent', () => {
 
     it('should block a second submit while a build is outstanding', () => {
         fillValidForm();
-        store.indexBuildInFlight.set(true);
+        clickButton('dotai-index-create-submit');
         spectator.detectChanges();
 
         expect(
             spectator.query(byTestId('dotai-index-create-submit'))?.querySelector('button')
                 ?.disabled
         ).toBe(true);
+        expect(store.buildIndex).toHaveBeenCalledTimes(1);
+    });
+
+    it('should let the form be submitted again once the build fails', () => {
+        fillValidForm();
+        clickButton('dotai-index-create-submit');
+
+        store.indexBuildNotice.set({ kind: 'failed', indexName: 'blogs', detail: 'bad query' });
+        spectator.detectChanges();
+
+        expect(
+            spectator.query(byTestId('dotai-index-create-submit'))?.querySelector('button')
+                ?.disabled
+        ).toBe(false);
     });
 
     it('should reject a name an existing index already uses', () => {
@@ -178,8 +190,24 @@ describe('DotAiIndexCreateComponent', () => {
     it('should close with nothing on cancel, so the caller does no work', () => {
         clickButton('dotai-index-create-cancel');
 
-        expect(store.dismissBuildNotice).toHaveBeenCalled();
         expect(dialogRef.close).toHaveBeenCalledWith();
+    });
+
+    it('should clear an unshown outcome on teardown, however it was dismissed', () => {
+        // PrimeNG's own header X and Escape call DynamicDialogRef.close directly rather than
+        // `cancel()`, so a failure dismissed that way would be left set with nothing rendering
+        // it — the tab shows only `built`, and this dialog is gone.
+        store.indexBuildNotice.set({ kind: 'failed', indexName: 'blogs' });
+        spectator.fixture.destroy();
+
+        expect(store.dismissBuildNotice).toHaveBeenCalled();
+    });
+
+    it('should leave a success standing for the tab behind it', () => {
+        store.indexBuildNotice.set({ kind: 'built', indexName: 'blogs', detail: '12' });
+        spectator.fixture.destroy();
+
+        expect(store.dismissBuildNotice).not.toHaveBeenCalled();
     });
 
     it('should associate the mode heading with the segmented control', () => {

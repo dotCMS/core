@@ -24,20 +24,15 @@
         </ng-template>
     </p-toolbar>
 
-    <!-- Only a successful build reaches the tab. The two outcomes that need the query fixed —
-         nothing matched, and a query the server rejected — stay inside the dialog, next to the
-         field that produced them. -->
-    @if (store.indexBuildNotice(); as notice) {
-        @if (notice.kind === 'built') {
-            <p-message
-                class="block shrink-0 px-4 pb-2"
-                severity="success"
-                [closable]="true"
-                (onClose)="store.dismissBuildNotice()"
-                data-testid="dotai-embeddings-build-notice">
-                {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
-            </p-message>
-        }
+    @if ($builtNotice(); as notice) {
+        <p-message
+            class="block shrink-0 px-4 pb-2"
+            severity="success"
+            [closable]="true"
+            (onClose)="store.dismissBuildNotice()"
+            data-testid="dotai-embeddings-build-notice">
+            {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
+        </p-message>
     }
 
     <div class="min-h-0 flex-1 overflow-hidden">

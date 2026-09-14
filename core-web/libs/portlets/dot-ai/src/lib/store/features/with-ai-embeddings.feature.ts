@@ -94,12 +94,7 @@ export function withAiEmbeddings() {
 
                 buildIndex: rxMethod<DotAiEmbeddingsBuildForm>(
                     pipe(
-                        tap(() =>
-                            patchState(store, {
-                                indexBuildNotice: null,
-                                indexBuildInFlight: true
-                            })
-                        ),
+                        tap(() => patchState(store, { indexBuildNotice: null })),
                         // exhaustMap: a double submit must not build twice.
                         exhaustMap((form) =>
                             embeddingsService.buildIndex(form).pipe(
@@ -109,7 +104,6 @@ export function withAiEmbeddings() {
                                     // saying nothing here reads as "the build did nothing".
                                     if (!result.totalToEmbed) {
                                         patchState(store, {
-                                            indexBuildInFlight: false,
                                             indexBuildNotice: {
                                                 kind: 'empty',
                                                 indexName: result.indexName
@@ -120,7 +114,6 @@ export function withAiEmbeddings() {
                                     }
 
                                     patchState(store, {
-                                        indexBuildInFlight: false,
                                         indexBuildNotice: {
                                             kind: 'built',
                                             indexName: result.indexName,
@@ -141,7 +134,6 @@ export function withAiEmbeddings() {
                                 // (FR-014).
                                 catchError((error: HttpErrorResponse) => {
                                     patchState(store, {
-                                        indexBuildInFlight: false,
                                         indexBuildNotice: {
                                             kind: 'failed',
                                             indexName: form.indexName,

@@ -180,6 +180,31 @@ describe('withAiIndexes', () => {
             expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
         });
 
+        it('should not cut off a long build the server is still reporting progress on', () => {
+            // The TTL covers only the window before the index is listed at all. Measured from
+            // the start of the build instead, a large one would flip to Ready mid-flight and
+            // stop the poll — the exact failure this feature exists to prevent.
+            vi.useFakeTimers();
+
+            try {
+                stubIndexes([index({ name: 'existing' })]);
+                store.loadIndexes();
+                store.markIndexBuilding('blogs');
+
+                stubIndexes([index({ name: 'existing' }), index({ name: 'blogs', fragments: 4 })]);
+                store.loadIndexes();
+
+                vi.advanceTimersByTime(5 * 60 * 1000);
+
+                stubIndexes([index({ name: 'existing' }), index({ name: 'blogs', fragments: 90 })]);
+                store.loadIndexes();
+
+                expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
         it('should stop waiting on a build that never materialises', () => {
             // Without an expiry the seed would keep the badge up and the poll running for the
             // life of the page.

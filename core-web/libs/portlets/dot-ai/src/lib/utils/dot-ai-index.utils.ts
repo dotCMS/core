@@ -27,7 +27,7 @@ export function toIndexOptions(indexes: DotAiIndex[]): { label: string; value: s
  * `dot_embeddings`, and `indexCount` does not return it. Standing in for it with a zeroed row
  * is what puts it in the table immediately, rather than leaving the user to reload the page.
  */
-export function toPendingIndex(name: string): DotAiIndex {
+function toPendingIndex(name: string): DotAiIndex {
     return { name, fragments: 0, contents: 0, tokenTotal: 0, tokensPerChunk: 0, contentTypes: [] };
 }
 

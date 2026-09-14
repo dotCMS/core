@@ -9,7 +9,6 @@ import {
     DotAIImageOrientation,
     DOT_AI_VECTOR_OPERATOR,
     DotAiIndex,
-    DotAiIndexStatus,
     DotAiSearchResponse,
     DotAiVectorOperator
 } from '@dotcms/dotcms-models';
@@ -121,7 +120,6 @@ export interface DotAiPortletState {
 
     // indexes
     indexes: DotAiIndex[];
-    indexStatuses: Record<string, DotAiIndexStatus>;
     indexFragmentSnapshot: Record<string, number>;
     /**
      * Builds that have been requested but may not be in `indexes` yet — name to the epoch ms
@@ -160,8 +158,6 @@ export interface DotAiPortletState {
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
     indexBuildNotice: DotAiIndexBuildNotice | null;
-    /** A build request is outstanding. Read by the create dialog, which stays open until it settles. */
-    indexBuildInFlight: boolean;
 
     // image
     image: DotAiGeneratedImage | null;
@@ -212,7 +208,6 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     providerConfig: null,
 
     indexes: [],
-    indexStatuses: {},
     indexFragmentSnapshot: {},
     indexBuildSeeds: {},
     indexesForbidden: false,
@@ -237,7 +232,6 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
 
     indexFilter: '',
     indexBuildNotice: null,
-    indexBuildInFlight: false,
 
     image: null,
     imageGenerating: false,

@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -12,7 +12,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiStore } from '../../../store/dot-ai.store';
 
-export type DotAiIndexCreateMode = 'add' | 'delete';
+type DotAiIndexCreateMode = 'add' | 'delete';
 
 /**
  * The server stores whatever it is given — `bad name with spaces` is accepted verbatim, and
@@ -28,12 +28,12 @@ const INDEX_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
  * submit label flips with the toggle so the destructive mode never hides behind a neutral
  * word (FR-030) — the legacy screen did the same remap.
  *
- * Unusually for this codebase, the dialog calls the store itself rather than closing with a
- * form value for the list component to submit. It has to: a build is the one action here whose
- * *failure* is a correction to the form — a malformed Lucene query — and resolving the dialog
- * first threw that message onto the tab behind a modal that had already taken the query with
- * it. Owning the submit is what lets the query survive its own error. The store is still data
- * only; nothing here is dispatched from it.
+ * The dialog calls the store itself rather than closing with a form value for the list
+ * component to submit. It has to: a build is the one action here whose *failure* is a
+ * correction to the form — a malformed Lucene query — and resolving the dialog first threw
+ * that message onto the tab behind a modal that had already taken the query with it. Owning
+ * the submit is what lets the query survive its own error. See the documented exception under
+ * CRUD Patterns in `libs/portlets/CLAUDE.md`.
  */
 @Component({
     selector: 'dot-ai-index-create',
@@ -52,6 +52,12 @@ export class DotAiIndexCreateComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
 
     protected readonly store = inject(DotAiStore);
+
+    /**
+     * A build is outstanding. Local rather than store state: it is this dialog's submit button
+     * that it disables, and nothing outside this component ever reads it.
+     */
+    protected readonly $submitting = signal(false);
 
     protected readonly $mode = signal<DotAiIndexCreateMode>('add');
     protected readonly $indexName = signal('');
@@ -84,11 +90,31 @@ export class DotAiIndexCreateComponent {
     });
 
     constructor() {
-        // A finished build is the only thing that dismisses this dialog. The success message is
-        // left standing on the tab behind, next to the row it just created.
+        // A finished build is the only thing that dismisses this dialog; anything else is an
+        // outcome the form still has to show. The success message is left standing on the tab
+        // behind, next to the row it just created.
         effect(() => {
-            if (this.store.indexBuildNotice()?.kind === 'built') {
-                untracked(() => this.#dialogRef.close());
+            const notice = this.store.indexBuildNotice();
+
+            if (!notice) {
+                return;
+            }
+
+            untracked(() => {
+                this.$submitting.set(false);
+
+                if (notice.kind === 'built') {
+                    this.#dialogRef.close();
+                }
+            });
+        });
+
+        // On teardown, not in `cancel()`: PrimeNG's own header X and the Escape key call
+        // `DynamicDialogRef.close` directly, so a notice dismissed that way would be left set
+        // with nothing rendering it — the tab shows only `built`, and this dialog is gone.
+        inject(DestroyRef).onDestroy(() => {
+            if (this.store.indexBuildNotice()?.kind !== 'built') {
+                this.store.dismissBuildNotice();
             }
         });
     }
@@ -118,7 +144,7 @@ export class DotAiIndexCreateComponent {
             !!this.$indexName().trim() &&
             !!this.$query().trim() &&
             !this.$nameError() &&
-            !this.store.indexBuildInFlight()
+            !this.$submitting()
     );
 
     protected submit(): void {
@@ -138,6 +164,7 @@ export class DotAiIndexCreateComponent {
             return;
         }
 
+        this.$submitting.set(true);
         this.store.buildIndex({
             indexName,
             query,
@@ -150,7 +177,6 @@ export class DotAiIndexCreateComponent {
     }
 
     protected cancel(): void {
-        this.store.dismissBuildNotice();
         this.#dialogRef.close();
     }
 }

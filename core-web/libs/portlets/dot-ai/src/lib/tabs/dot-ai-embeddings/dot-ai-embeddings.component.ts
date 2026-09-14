@@ -21,6 +21,7 @@ import {
 import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-create.component';
 
 import { DotAiStore } from '../../store/dot-ai.store';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Button treatment shared by both confirmations: a primary accept and an outlined cancel.
@@ -74,31 +75,41 @@ export default class DotAiEmbeddingsComponent {
     protected readonly statuses = DOT_AI_INDEX_STATUS;
 
     /**
+     * The build outcome this tab owns.
+     *
+     * Only a success reaches here. The two outcomes that need the query fixed — nothing
+     * matched, and a query the server rejected — stay inside the create dialog, next to the
+     * field that produced them.
+     */
+    protected readonly $builtNotice = computed(() => {
+        const notice = this.store.indexBuildNotice();
+
+        return notice?.kind === 'built' ? notice : null;
+    });
+
+    /**
      * Two different empty states behind one slot: an instance with no indexes at all, and a
      * filter that matched none of the ones there are. Telling someone to create their first
      * index when they have six and mistyped the filter is the wrong instruction.
      */
     protected readonly $emptyConfig = computed<PrincipalConfiguration>(() =>
         this.store.indexFilter().trim()
-            ? {
-                  title: this.#messageService.get('dotai.embeddings.no-matches'),
-                  icon: 'filter_alt_off',
-                  iconStyle: 'material-symbols-rounded'
-              }
-            : {
-                  title: this.#messageService.get('dotai.embeddings.empty.title'),
-                  subtitle: this.#messageService.get('dotai.embeddings.empty.sub'),
-                  icon: 'database',
-                  iconStyle: 'material-symbols-rounded'
-              }
+            ? toEmptyStateConfig(this.#messageService, {
+                  title: 'dotai.embeddings.no-matches',
+                  icon: 'filter_alt_off'
+              })
+            : toEmptyStateConfig(this.#messageService, {
+                  title: 'dotai.embeddings.empty.title',
+                  subtitle: 'dotai.embeddings.empty.sub',
+                  icon: 'database'
+              })
     );
 
-    protected readonly forbiddenConfig: PrincipalConfiguration = {
-        title: this.#messageService.get('dotai.index.admin-required'),
-        subtitle: this.#messageService.get('dotai.index.admin-required.sub'),
-        icon: 'lock',
-        iconStyle: 'material-symbols-rounded'
-    };
+    protected readonly forbiddenConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.index.admin-required',
+        subtitle: 'dotai.index.admin-required.sub',
+        icon: 'lock'
+    });
 
     /** Fixed layout plus full height keeps the empty state from collapsing the table. */
     protected readonly tablePt = {
