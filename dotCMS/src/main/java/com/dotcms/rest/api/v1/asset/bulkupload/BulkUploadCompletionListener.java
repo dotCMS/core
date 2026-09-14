@@ -54,6 +54,8 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
     private static final String NOTIFICATION_FAILED_KEY = "notification.bulkupload.failed";
     private static final String NOTIFICATION_CANCELLED_KEY = "notification.bulkupload.cancelled";
     private static final String NOTIFICATION_DUPLICATE_KEY = "notification.bulkupload.duplicate";
+    private static final String NOTIFICATION_DUPLICATE_DOTASSET_KEY =
+            "notification.bulkupload.duplicate.dotasset";
 
     private final SystemEventsAPI systemEventsAPI;
     private final NotificationAPI notificationAPI;
@@ -183,8 +185,21 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
             // Worth being concrete about the harm: told "50 of 50 failed", an author goes and
             // re-uploads 50 files that are already in the folder. The spec calls that worse than
             // offering no retry at all, and it is why the flag was added.
-            messageKey = NOTIFICATION_DUPLICATE_KEY;
-            level = NotificationLevel.INFO;
+            //
+            // SPLIT BY BASE TYPE, because a resubmission does two different things (FR-040b). A
+            // FILEASSET batch loses every file to the unique index on the lower-cased path, so
+            // nothing is duplicated and there is nothing to do. A DOTASSET batch has no such index
+            // — asset_name is generated per contentlet, so the name never contends — and the files
+            // are created a second time. One message for both said "nothing was uploaded twice" to
+            // an author who had just acquired a duplicate of everything, on the durable channel,
+            // which is the one they read after walking away and therefore precisely when they
+            // cannot look at the folder and see otherwise.
+            final boolean fileAsset = isFileAsset(job);
+            messageKey = fileAsset
+                    ? NOTIFICATION_DUPLICATE_KEY : NOTIFICATION_DUPLICATE_DOTASSET_KEY;
+            // WARNING for dotAsset, not INFO: the author is left with a decision — which copy to
+            // keep — and INFO is the level that says there is nothing to do.
+            level = fileAsset ? NotificationLevel.INFO : NotificationLevel.WARNING;
         } else if (JobState.SUCCESS != job.state() || (0 == succeeded && failed > 0)) {
             messageKey = NOTIFICATION_FAILED_KEY;
             level = NotificationLevel.ERROR;
@@ -209,6 +224,17 @@ public class BulkUploadCompletionListener implements EventSubscriber<JobComplete
                 userId,
                 userId,
                 this.userAPI.loadUserById(userId).getLocale());
+    }
+
+    /**
+     * Whether this batch created fileAssets, which is what decides the duplicate wording.
+     * <p>
+     * Read from the job's own parameters rather than from the outcome: the outcome carries per-item
+     * results, not the base type, and the parameters are immutable from {@code createJob} so this
+     * is the same value the run itself worked from.
+     */
+    private boolean isFileAsset(final Job job) {
+        return "FILEASSET".equals(job.parameters().get("baseType"));
     }
 
     private String submitter(final Job job) {

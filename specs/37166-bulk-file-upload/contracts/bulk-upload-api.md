@@ -269,6 +269,18 @@ durable notification so the outcome survives navigating away (FR-019 … FR-023)
   **once per batch**, even across an interruption (FR-039)
 - **Best-effort**: a failed notification is logged and does not affect the recorded outcome (FR-023)
 
+**The durable notification's duplicate wording splits by base type** *(added 2026-09-14)*, because a
+resubmission does two different things (FR-040b) and the author reads this message precisely when
+they cannot open the folder and check:
+
+| Base type | Key | Level | What it says |
+|---|---|---|---|
+| `FILEASSET` | `notification.bulkupload.duplicate` | `INFO` | The files were already there and were not uploaded again — nothing was duplicated |
+| `DOTASSET` | `notification.bulkupload.duplicate.dotasset` | `WARNING` | The batch ran again, the folder now holds two copies of each file, and the author has to delete the ones they do not want |
+
+`WARNING` rather than `INFO` for the second is the point, not a detail: `INFO` is the level that
+says there is nothing to do, and here there is. The client toast mirrors the same split.
+
 ---
 
 ## Configuration
