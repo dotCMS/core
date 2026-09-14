@@ -8,6 +8,11 @@
 
 **Status**: Draft — the three scope questions were settled 2026-09-09 (see [Clarifications](#clarifications))
 
+**Amended after sign-off (2026-09-14)**: **FR-014 withdrawn** — the picker carries no selection
+review. Acceptance scenario 10 and the clause in FR-011 that bound the review to the accumulated set
+go with it. This changes the contract that was approved, so it needs re-approval before PR 2 merges.
+The accepted consequence is written into FR-014 itself rather than left to the reader.
+
 **Related GitHub Issue**: [#37192](https://github.com/dotCMS/core/issues/37192) — reuses the AssetPicker epic [#36702](https://github.com/dotCMS/core/issues/36702); cross-references [#36155](https://github.com/dotCMS/core/issues/36155) (kept separate) and [#36615](https://github.com/dotCMS/core/issues/36615) (form max-width, closed)
 
 **Design**: [Asset Picker canvas](https://claude.ai/design/p/202fc776-9326-4926-b4c6-5996a8be9ea1?via=share&file=Asset+Picker.dc.html) — the "Add Relationships" artboard is the one this spec is written against.
@@ -133,8 +138,7 @@ editor claim an already-claimed child, or put two items into a one-to-one field,
 content — a worse outcome than the old dialog.
 
 **Independent Test**: Exercise each rule against the new dialog with no reference to the old one: a
-single-cardinality field, a many field, a target set containing an already-claimed item, and a
-multi-item selection reviewed before confirming.
+single-cardinality field, a many field, and a target set containing an already-claimed item.
 
 **Acceptance Scenarios**:
 
@@ -163,9 +167,9 @@ multi-item selection reviewed before confirming.
    it is beyond the first page, or the opening locale/site filters it out — **When** the editor
    confirms without touching it, **Then** it is **still related**. Confirmation reconciles against
    the whole selection, never against the rows on screen.
-10. **Given** the editor has selected several items, **When** they review their current selection,
-    **Then** the review lists their whole selection — including items not in the current result
-    view — and they can deselect from there.
+10. ~~**Given** the editor has selected several items, **When** they review their current
+    selection, **Then** the review lists their whole selection — including items not in the current
+    result view — and they can deselect from there.~~ **Withdrawn with FR-014.**
 11. **Given** the editor confirms, **When** the dialog closes, **Then** the field's related content
     equals the dialog's selection; items that were already related and stayed checked are neither
     duplicated nor reordered.
@@ -370,8 +374,9 @@ its width against the form's other fields; compare the Status column's alignment
 - **FR-011**: The picker's selection MUST be an **accumulated set**, not a reading of the rows
   currently on screen. It MUST survive a page change, a search and a filter change; the field's
   already-related items MUST enter that set **in full** when the picker opens, including any that
-  fall outside the current result view; and the selection review (FR-014) MUST read from the set
-  rather than from a page of results. Confirmation reconciles against the whole set.
+  fall outside the current result view. Confirmation reconciles against the whole set.
+
+  The clause binding the selection review to this set went with FR-014.
 
   This is the requirement that keeps FR-013 safe. Today the picker fetches once and pages in the
   browser, so "the rows on screen" and "everything that matched" are accidentally the same thing.
@@ -384,8 +389,13 @@ its width against the form's other fields; compare the Status column's alignment
   selection is empty. Confirming with nothing selected removes **every** related item, which is the
   only reading consistent with FR-010: if unchecking a row unrelates it, unchecking the last row
   cannot be the one case that silently does nothing.
-- **FR-014**: The editor MUST be able to review their current selection before confirming, and
-  deselect from that review.
+- **FR-014**: ~~The editor MUST be able to review their current selection before confirming, and
+  deselect from that review.~~ **Withdrawn after sign-off.** The dialog this replaces met it with a
+  "Show Selected" toggle; the product decision is that the picker does not carry one. The
+  consequence is accepted and recorded here rather than left implicit: the selection is still
+  accumulated (FR-011), so an editor who picks across two searches confirms more than the screen
+  shows, and has no way to see or undo the earlier picks without reconstructing the search that
+  found them.
 - **FR-015**: Cancelling MUST leave the field's related content exactly as it was.
 - **FR-016**: When the field is disabled, or a single-cardinality field already holds its item, the
   picker MUST NOT be openable. **This bounds FR-007 rather than contradicting it**: the
