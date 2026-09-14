@@ -55,6 +55,25 @@ This spec assumes **#37465 lands first**. On merge, the now-moot criterion must 
 #37464 — see [FR-016](#fr-016). If #37464 lands first instead, this spec's FR-008/FR-009 still
 apply unchanged; only the withdrawal direction reverses.
 
+### Divergence from the issue's acceptance criteria
+
+The issue specifies a picker footer holding **one** button — *Today* / *Now* — with the value
+applied the moment the author selects it. During spec review the developer added a second action:
+an **Accept** button that **confirms** the selection on Date-and-time and Time-only fields. On
+those two types the picker no longer writes to the field as the author clicks; it holds a pending
+selection that reaches the field only on *Accept*.
+
+That is a deliberate scope addition, not a reading of the issue, and it changes behaviour the issue
+described as settled. Its shape was decided with the developer:
+
+| Question | Decision |
+|---|---|
+| Which types get the confirm gate? | **Date-and-time and Time-only only.** Date-only keeps today's one-click flow — selecting a day applies the value and closes — so the most common case gains no extra click and shows no *Accept* button. |
+| Dismissing without *Accept* (Escape, click outside)? | **The pending selection is discarded** and the field keeps the value it had before the picker opened. |
+
+**#37465's acceptance criteria still describe the single-button footer and must be corrected** —
+see [FR-016a](#cross-issue-bookkeeping).
+
 ### Out of scope
 
 - Hint and required-error **styling and wording** — owned by #37464. This feature only relocates the hint back into the field footer (FR-009); how it looks there is #37464's call.
@@ -118,31 +137,47 @@ under the input as it does for a Text field.
 
 ---
 
-### User Story 3 - Jump to today or now in one click (Priority: P2)
+### User Story 3 - Jump to today or now, and commit when I mean to (Priority: P2)
 
 An author filling a *Posting Date* usually means "now". The picker already offers a shortcut, but it
 reads from the browser's clock, which disagrees with the server timezone the field stores against —
 so on a server in another timezone it can set the wrong day. It also sits beside a *Clear* button
 that duplicates what the field's own clear control now does.
 
-**Why this priority**: The shortcut already exists; this corrects it and cleans up beside it. Real
-value, but the author is not blocked without it.
+Separately, on the two types that carry a time the author sets the value in two moves — pick a day,
+then adjust the hour — and today each move writes straight to the field. There is no point at which
+the author says "this is the one", and no way to back out of a half-made change except by retyping
+the old value. An **Accept** button gives them that point.
+
+**Why this priority**: The shortcut already exists; this corrects it and cleans up beside it. The
+confirm gate makes the two-move flow deliberate. Real value, but the author is not blocked without
+either.
 
 **Independent Test**: Set the server to a timezone whose current date differs from the browser's,
-click the footer button on each of the three field types, and confirm the value matches the
-**server's** current date/time.
+use the footer button on each of the three field types, and confirm the value matches the
+**server's** current date/time. Then, on a Date-and-time field, make a selection, dismiss without
+*Accept*, and confirm the field kept its original value.
 
-**Acceptance Scenarios**:
+**Acceptance Scenarios — Today / Now**:
 
-1. **Given** a *Date and time* field, **When** the author opens the picker, **Then** a single button sits at the **right** of the footer, reading **Today**, styled as a secondary outlined button.
+1. **Given** a *Date and time* field, **When** the author opens the picker, **Then** a **Today** button sits at the right of the footer, styled as a secondary outlined button.
 2. **Given** a *Time* field, **When** the author opens the picker, **Then** that button reads **Now**.
-3. **Given** a *Date* field, **When** the author opens the picker, **Then** that button reads **Today**.
-4. **Given** a *Date and time* field, **When** the author clicks **Today**, **Then** the field takes the server's current date **and** the server's current time.
-5. **Given** a *Date* field, **When** the author clicks **Today**, **Then** the field takes the server's current date.
-6. **Given** a *Time* field, **When** the author clicks **Now**, **Then** the field takes the server's current time.
-7. **Given** the browser and the server are in timezones where it is a different calendar day, **When** the author clicks the button, **Then** the value set is the **server's** day, not the browser's.
-8. **Given** the author clicks the button, **When** the picker settles, **Then** the field shows the new value and the content is considered edited.
-9. **Given** any of the three field types, **When** the author opens the picker, **Then** there is **no** *Clear* button anywhere in the footer.
+3. **Given** a *Date* field, **When** the author opens the picker, **Then** that button reads **Today** and is the footer's **only** button.
+4. **Given** a *Date* field, **When** the author uses **Today**, **Then** the field takes the server's current date, the content is considered edited, and the picker closes.
+5. **Given** a *Date and time* field, **When** the author uses **Today**, **Then** the picker's pending selection becomes the server's current date **and** current time — the field itself does not change yet.
+6. **Given** a *Time* field, **When** the author uses **Now**, **Then** the picker's pending selection becomes the server's current time — the field itself does not change yet.
+7. **Given** the browser and the server are in timezones where it is a different calendar day, **When** the author uses the button, **Then** the day resolved is the **server's**, not the browser's.
+8. **Given** any of the three field types, **When** the author opens the picker, **Then** there is **no** *Clear* button anywhere in the footer.
+
+**Acceptance Scenarios — Accept**:
+
+9. **Given** a *Date and time* or *Time* field, **When** the author opens the picker, **Then** an **Accept** button sits to the right of *Today* / *Now*, styled as the footer's primary action.
+10. **Given** a *Date* field, **When** the author opens the picker, **Then** there is **no** *Accept* button — selecting a day applies the value and closes the picker, as it does today.
+11. **Given** a *Date and time* field holding `09/04/2026 09:33`, **When** the author selects `15/04/2026` and sets the time to `14:00`, **Then** the field still reads `09/04/2026 09:33` until *Accept* is used.
+12. **Given** that pending selection, **When** the author uses **Accept**, **Then** the field takes `15/04/2026 14:00`, the content is considered edited, and the picker closes.
+13. **Given** that pending selection, **When** the author dismisses the picker with Escape or by clicking outside, **Then** the field still reads `09/04/2026 09:33` and the content is **not** considered edited.
+14. **Given** a *Date and time* field, **When** the author opens the picker, changes nothing, and uses **Accept**, **Then** the picker closes and the content is **not** marked as edited.
+15. **Given** the author is navigating by keyboard, **When** they reach the footer, **Then** both buttons are reachable and each announces a meaningful name.
 
 ---
 
@@ -172,6 +207,10 @@ right edges at several viewport widths.
 - **Clearing the expire-date field.** This field has its own placeholder semantics (*Never Expires*) and already had a clear control; it must end up with exactly one, behaving identically to the others.
 - **Typing a value directly** into the input rather than picking it: the clear control must appear once the input holds a value, and disappear when it is emptied by hand.
 - **The action button on a field that already holds a value**: it overwrites both date and time on a Date-and-time field, not just the missing half.
+- **Clearing the field while the picker is open** on a Date-and-time or Time-only field: the interaction between the field's X and a pending selection must be decided rather than left to chance — clearing empties the field, and reopening or accepting must not resurrect the discarded selection.
+- **Accept on a field whose value was never set**: the author opens an empty Date-and-time field, picks nothing, and accepts — the field stays empty rather than defaulting to the date the picker happened to be showing.
+- **Dismissing the picker by switching to another field** (tabbing away, clicking a different input) counts as a dismissal without *Accept* and discards the pending selection like Escape does.
+- **Reopening after a discard**: the picker must reopen showing the field's actual value, not the selection the author abandoned.
 - **A required field cleared and left empty on save**: validation must block the save exactly as it would for a required field never filled.
 - **Very long timezone labels** in a narrow picker: the footer must not push the action button out of the overlay.
 
@@ -202,20 +241,31 @@ right edges at several viewport widths.
 - **FR-008a**: Opening the picker on a **Date** field MUST NOT show timezone text. When the timezone is unavailable for any type, nothing MUST be rendered in its place — no empty slot, no change in the footer's height or in the action button's position.
 - **FR-009**: The timezone line under the input MUST be removed for all three field types, and the field's hint MUST render in the field footer under the input — the same placement the other field types use — rather than being displaced into the label.
 
-#### Picker footer — Today / Now
+#### Picker footer — actions
 
-- **FR-010**: The picker footer MUST hold exactly one button, at its right, styled as a secondary **outlined** button using the shared button styling rather than bespoke CSS.
-- **FR-011**: That button MUST read **Today** on Date and Date-and-time fields, and **Now** on Time-only fields.
-- **FR-012**: Activating it MUST set: today's date and the current time on a Date-and-time field; today's date on a Date-only field; the current time on a Time-only field.
-- **FR-013**: The value it sets MUST be derived from the **server** timezone through the field's existing server-time path, never from the browser's clock.
-- **FR-014**: After activation the field MUST show the new value, the underlying value MUST update, and the field MUST be marked touched and dirty.
-- **FR-014a**: Activating it MUST leave the picker open on Date-and-time and Time-only fields (so the time can still be adjusted) and MUST let the picker close on Date-only fields, as a completed date selection does today.
+- **FR-010**: The picker footer's actions MUST be grouped at its right, after the timezone text, using the shared button styling rather than bespoke CSS:
+  - **Date-only**: one button, **Today**, styled as secondary **outlined**.
+  - **Date-and-time and Time-only**: two buttons in this order — **Today** / **Now** styled as secondary **outlined**, then **Accept** styled as the footer's primary action.
+- **FR-011**: The first button MUST read **Today** on Date and Date-and-time fields, and **Now** on Time-only fields.
+- **FR-012**: **Today** / **Now** MUST resolve to today's date on a Date-only field, today's date and the current time on a Date-and-time field, and the current time on a Time-only field.
+- **FR-013**: The value it resolves MUST be derived from the **server** timezone through the field's existing server-time path, never from the browser's clock.
 - **FR-015**: The stock **Clear** button MUST NOT appear in the picker footer for any of the three field types.
-- **FR-015a**: The button label and any accessible name introduced by this feature MUST come from the localized message bundle under the existing calendar-field namespace, not from hardcoded strings.
+- **FR-015a**: Every button label and accessible name introduced by this feature — including **Accept** — MUST come from the localized message bundle under the existing calendar-field namespace, not from hardcoded strings.
+- **FR-015b**: Both footer buttons MUST be reachable by keyboard and MUST carry an accessible name.
+
+#### Picker footer — when the value reaches the field
+
+- **FR-014**: On a **Date-only** field the picker MUST continue to behave as it does today: selecting a day — or using **Today** — applies the value to the field, marks it touched and dirty, and closes the picker. Date-only fields MUST NOT show an *Accept* button.
+- **FR-014a**: On **Date-and-time** and **Time-only** fields the picker MUST hold the author's choices as a **pending selection**. Selecting a day, adjusting the time, or using **Today** / **Now** MUST change only that pending selection — the field's displayed value and underlying value MUST NOT change while the picker is open.
+- **FR-014b**: Using **Accept** on those two types MUST apply the pending selection to the field, mark it touched and dirty, and close the picker.
+- **FR-014c**: Dismissing the picker on those two types **without** using *Accept* — by Escape, by clicking outside, or by any other dismissal — MUST discard the pending selection. The field MUST keep the value it held when the picker opened, and MUST NOT be marked touched or dirty by the discarded selection.
+- **FR-014d**: Using **Accept** when the author has made no selection MUST close the picker without changing the field's value and without marking it touched or dirty.
+- **FR-014e**: The confirm gate MUST apply only to selections made **inside the picker**. A value the author types directly into the field's input MUST continue to reach the field as it does today, without requiring *Accept*.
 
 #### Cross-issue bookkeeping
 
 - **FR-016**: On merge, the criterion in #37464 governing the timezone-versus-hint collision MUST be withdrawn from that issue, since FR-009 removes the collision. *(Bookkeeping, not code — see [Relationship to #37464](#relationship-to-37464). Withdrawal from a GitHub issue requires developer approval; this requirement records the obligation, it does not authorize the edit.)*
+- **FR-016a**: #37465's own acceptance criteria MUST be corrected to describe the two-button footer and the confirm gate. As written they specify a single-button footer and a value applied on selection, which FR-010 and FR-014a–FR-014e supersede. Specifically: the criteria stating that *"the footer's right slot holds a single button"*, that **Today** *"sets"* the value on Date-and-time and Time-only fields, and that *"after clicking the button the field shows the new value"* no longer hold for those two types. *(Same standing as FR-016: records the obligation, does not authorize the edit.)*
 
 #### Preserved behaviour
 
@@ -238,8 +288,10 @@ right edges at several viewport widths.
 - **SC-002**: In a form containing a Date, Time or Date-and-time field beside any other field type in the same column, **0** fields stop short of the column edge, at every supported viewport width.
 - **SC-003**: The timezone governing a Date-and-time or Time value is visible to the author whenever they are choosing that value, on **100%** of such fields — up from only those fields that happen to carry a hint today.
 - **SC-004**: A field's hint is shown to the author on **100%** of Date, Time and Date-and-time fields that define one, in the same position as every other field type.
-- **SC-005**: With the server and the browser on calendar days that differ, the *Today* / *Now* shortcut sets the **server's** day and time in **100%** of attempts across all three field types.
-- **SC-006**: The picker footer offers exactly **one** action on all three field types; the redundant *Clear* action appears **0** times.
+- **SC-005**: With the server and the browser on calendar days that differ, the *Today* / *Now* shortcut resolves to the **server's** day and time in **100%** of attempts across all three field types.
+- **SC-006**: The picker footer offers exactly **one** action on Date-only fields and **two** on Date-and-time and Time-only fields; the redundant *Clear* action appears **0** times on all three.
+- **SC-006a**: On Date-and-time and Time-only fields, a selection abandoned in the picker reaches the field **0%** of the time — in **100%** of dismissals without *Accept*, the field still holds the value it had when the picker opened and the content is not flagged as edited.
+- **SC-006b**: Setting a value on a Date-only field still takes **one** interaction, unchanged by this feature — the confirm gate adds no step to the most common case.
 - **SC-007**: Every string this feature adds to the interface is translatable — **0** hardcoded user-visible strings.
 - **SC-008**: Values saved before the change and read after it are identical in **100%** of cases across the three field types, including Date-only, Time-only and default-valued fields.
 
@@ -261,7 +313,10 @@ right edges at several viewport widths.
 
 1. **#37465 lands first.** #37464 is open with no spec and no branch, so this spec is written as if the hint/error standardization has not happened. FR-009 puts the hint back in the field footer; #37464 later decides how it looks there.
 2. **Hint returns to the field footer** rather than remaining a label tooltip — confirmed with the developer, and consistent with the issue's statement that the field footer carries hint and required-error text only.
-3. **The picker's close behaviour on *Today* / *Now* follows the existing per-type behaviour** (closes on Date-only, stays open on Date-and-time and Time-only) — confirmed with the developer. Making it uniform was considered and rejected as a change nobody asked for.
+3. **The confirm gate is scoped to Date-and-time and Time-only** — confirmed with the developer. Applying it to all three types was considered and rejected: it would turn the most common case, setting a plain date, from one interaction into two. Date-only therefore keeps today's behaviour exactly and shows no *Accept* button.
+3a. **Dismissing without *Accept* discards the pending selection** — confirmed with the developer, and the normal semantics of a confirm gate. The cost is real and accepted: an author used to today's behaviour can lose a selection by clicking outside. The alternative, applying it anyway, was rejected because it would make *Accept* a close button wearing another name.
+3b. ***Accept* is styled as the footer's primary action** and *Today* / *Now* stays secondary outlined, so the confirming action is the visually dominant one. The issue only specified the styling of *Today*; this is an inference from *Accept* being the commit step, and is worth a reviewer's eye.
+3c. ***Accept* is always enabled**, including when nothing has been selected, in which case it simply closes the picker (FR-014d). Disabling it until a selection exists was considered and rejected as a state the author cannot explain to themselves.
 4. **Clearing is a value-level action, not a validation bypass.** A cleared required field is empty and invalid, and saving is blocked exactly as for a required field never filled.
 5. **The timezone in the footer is display-only.** It is not selectable, not editable, and does not change what the field stores.
 6. **"Current time" means the server's current time** at the moment the button is activated, at second precision, consistent with how the field already resolves a `now` default.
