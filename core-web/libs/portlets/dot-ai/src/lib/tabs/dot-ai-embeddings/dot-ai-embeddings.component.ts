@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, untracked } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -8,8 +8,6 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
-
-import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
@@ -124,9 +122,6 @@ export default class DotAiEmbeddingsComponent {
 
     protected readonly statuses = DOT_AI_INDEX_STATUS;
 
-    /** Whether a dialog is up, and so is the one rendering what the user must act on. */
-    readonly #dialogOpen = signal(false);
-
     /** Identity guard: each operation makes a fresh notice, so this toasts each one once. */
     #toasted: DotAiIndexNotice | null = null;
 
@@ -137,13 +132,19 @@ export default class DotAiEmbeddingsComponent {
         // is what the rest of the admin does. Nothing renders a standing banner on the tab.
         effect(() => {
             const notice = this.store.indexNotice();
-            const dialogOpen = this.#dialogOpen();
+            const owner = this.store.indexNoticeOwner();
 
             if (!notice || notice === this.#toasted) {
                 return;
             }
 
-            if (dialogOpen && notice.outcome !== 'ok') {
+            // A dialog renders only outcomes for the request it submitted, so ownership has to
+            // match the operation *and* the index. Suppressing on "a dialog is open" alone
+            // swallowed, say, a delete that failed while the build dialog happened to be up.
+            const ownedByDialog =
+                owner?.operation === notice.operation && owner.indexName === notice.indexName;
+
+            if (ownedByDialog && notice.outcome !== 'ok') {
                 // The dialog is showing it inline. Marked as reported all the same, so closing
                 // the dialog does not then toast the error the user has just read and dismissed.
                 this.#toasted = notice;
@@ -196,47 +197,26 @@ export default class DotAiEmbeddingsComponent {
      * reporting.
      */
     protected openCreateDialog(): void {
-        this.#dialogOpen.set(true);
-
-        // `onDestroy`, not `onClose`: `close()` fires `onClose` immediately and only then
-        // plays the leave animation, so the dialog component — and the `DestroyRef` hook that
-        // clears an outcome it has already shown — lives on for the length of it. Handing over
-        // at `onClose` would render that outcome on the tab for those frames before the
-        // dialog's own teardown withdrew it. `onDestroy` fires once, on every close path
-        // (cancel, success, Escape, the header X), after the dialog has let go.
-        this.#dialogService
-            .open(DotAiIndexCreateComponent, {
-                header: this.#messageService.get('dotai.index.create.header'),
-                width: '700px',
-                closable: true,
-                // Escape is handled by the dialog itself: PrimeNG binds its own listener once
-                // at open time and never rereads the flag, so it cannot be told to stand down
-                // while a request is in flight. See `watchIndexOperation`.
-                closeOnEscape: false,
-                draggable: false
-            })
-            .onDestroy.pipe(take(1))
-            .subscribe(() => this.#dialogOpen.set(false));
+        this.#dialogService.open(DotAiIndexCreateComponent, {
+            header: this.#messageService.get('dotai.index.create.header'),
+            width: '700px',
+            closable: true,
+            // Escape is handled by the dialog itself: PrimeNG binds its own listener once
+            // at open time and never rereads the flag, so it cannot be told to stand down
+            // while a request is in flight. See `watchIndexOperation`.
+            closeOnEscape: false,
+            draggable: false
+        });
     }
 
     protected openRemoveContentDialog(): void {
-        this.#dialogOpen.set(true);
-
-        this.#dialogService
-            .open(DotAiIndexRemoveContentComponent, {
-                header: this.#messageService.get('dotai.embeddings.remove-content.header'),
-                width: '700px',
-                closable: true,
-                // Escape is handled by the dialog itself: PrimeNG binds its own listener once
-                // at open time and never rereads the flag, so it cannot be told to stand down
-                // while a request is in flight. See `watchIndexOperation`.
-                closeOnEscape: false,
-                draggable: false
-            })
-            // Same reason as the build dialog: `onDestroy` fires once, on every close path,
-            // after the dialog has let go — `onClose` fires before the leave animation.
-            .onDestroy.pipe(take(1))
-            .subscribe(() => this.#dialogOpen.set(false));
+        this.#dialogService.open(DotAiIndexRemoveContentComponent, {
+            header: this.#messageService.get('dotai.embeddings.remove-content.header'),
+            width: '700px',
+            closable: true,
+            closeOnEscape: false,
+            draggable: false
+        });
     }
 
     /** The one place an outcome becomes words. Severity follows the outcome, not the action. */

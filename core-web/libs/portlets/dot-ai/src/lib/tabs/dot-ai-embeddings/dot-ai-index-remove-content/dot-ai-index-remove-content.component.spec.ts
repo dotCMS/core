@@ -26,6 +26,8 @@ describe('DotAiIndexRemoveContentComponent', () => {
         indexes: ReturnType<typeof signal<DotAiIndex[]>>;
         indexNotice: ReturnType<typeof signal<DotAiIndexNotice | null>>;
         removeFromIndex: ReturnType<typeof vi.fn>;
+        claimIndexOutcome: ReturnType<typeof vi.fn>;
+        releaseIndexOutcome: ReturnType<typeof vi.fn>;
     };
 
     const createComponent = createComponentFactory({
@@ -54,7 +56,9 @@ describe('DotAiIndexRemoveContentComponent', () => {
         store = {
             indexes: signal<DotAiIndex[]>([index('blogs'), index('product')]),
             indexNotice: signal<DotAiIndexNotice | null>(null),
-            removeFromIndex: vi.fn()
+            removeFromIndex: vi.fn(),
+            claimIndexOutcome: vi.fn(),
+            releaseIndexOutcome: vi.fn()
         };
 
         spectator = createComponent({ providers: [{ provide: DotAiStore, useValue: store }] });

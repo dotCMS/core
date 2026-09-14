@@ -26,7 +26,8 @@ describe('DotAiIndexCreateComponent', () => {
         indexes: ReturnType<typeof signal<DotAiIndex[]>>;
         indexNotice: ReturnType<typeof signal<DotAiIndexNotice | null>>;
         buildIndex: ReturnType<typeof vi.fn>;
-        dismissIndexNotice: ReturnType<typeof vi.fn>;
+        claimIndexOutcome: ReturnType<typeof vi.fn>;
+        releaseIndexOutcome: ReturnType<typeof vi.fn>;
     };
 
     const createComponent = createComponentFactory({
@@ -56,7 +57,8 @@ describe('DotAiIndexCreateComponent', () => {
             ]),
             indexNotice: signal<DotAiIndexNotice | null>(null),
             buildIndex: vi.fn(),
-            dismissIndexNotice: vi.fn()
+            claimIndexOutcome: vi.fn(),
+            releaseIndexOutcome: vi.fn()
         };
 
         spectator = createComponent({
@@ -219,18 +221,17 @@ describe('DotAiIndexCreateComponent', () => {
         expect(dialogRef.close).toHaveBeenCalledWith();
     });
 
-    it('should leave an unshown outcome standing for the tab to report', () => {
-        // PrimeNG's own header X and Escape call DynamicDialogRef.close directly, so a build
-        // abandoned mid-flight used to fail into silence. The tab toasts whatever this dialog
-        // was not around to render, which means the notice has to survive its teardown.
-        store.indexNotice.set({
-            operation: DOT_AI_INDEX_OPERATION.BUILD,
-            outcome: 'failed',
-            indexName: 'blogs'
-        });
+    it('should claim its outcome at submit and release it on teardown', () => {
+        // The tab reports everything no open dialog claimed. Claiming at submit rather than at
+        // render is what keeps it independent of which effect runs first.
+        fillValidForm();
+        clickButton('dotai-index-create-submit');
+
+        expect(store.claimIndexOutcome).toHaveBeenCalledWith(DOT_AI_INDEX_OPERATION.BUILD, 'blogs');
+
         spectator.fixture.destroy();
 
-        expect(store.dismissIndexNotice).not.toHaveBeenCalled();
+        expect(store.releaseIndexOutcome).toHaveBeenCalled();
     });
 
     it('should not offer a delete mode any more', () => {

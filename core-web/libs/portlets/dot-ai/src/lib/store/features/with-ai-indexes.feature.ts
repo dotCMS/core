@@ -203,18 +203,25 @@ export function withAiIndexes() {
                  * become `settingsIndexName`, for the rest of the grace period.
                  */
                 forgetIndexBuildSeeds(indexName?: string): void {
-                    if (!indexName) {
-                        patchState(store, { indexBuildSeeds: {} });
+                    // `undefined`, not falsy: '' is a real value in this module — `report`
+                    // passes it as the index name for a store-wide rebuild — and it must not
+                    // be mistaken for "all of them".
+                    if (indexName === undefined) {
+                        patchState(store, { indexBuildSeeds: {}, indexes: [] });
 
                         return;
                     }
 
+                    // The row goes with the seed. `markIndexBuilding` writes both, and leaving
+                    // the row for the refresh to clear left a deleted index standing — as a
+                    // plausible-looking READY row with zeroes — whenever that refresh failed.
                     patchState(store, {
                         indexBuildSeeds: Object.fromEntries(
                             Object.entries(store.indexBuildSeeds()).filter(
                                 ([name]) => name !== indexName
                             )
-                        )
+                        ),
+                        indexes: store.indexes().filter((index) => index.name !== indexName)
                     });
                 },
 

@@ -59,7 +59,9 @@ export class DotAiIndexCreateComponent {
     readonly #operation = watchIndexOperation(DOT_AI_INDEX_OPERATION.BUILD, {
         notice: this.store.indexNotice,
         close: () => this.#dialogRef.close(),
-        config: this.#dialogConfig
+        config: this.#dialogConfig,
+        claim: (operation, indexName) => this.store.claimIndexOutcome(operation, indexName),
+        release: () => this.store.releaseIndexOutcome()
     });
 
     protected readonly $submitting = this.#operation.$submitting;

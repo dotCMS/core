@@ -94,10 +94,11 @@ export function withAiEmbeddings() {
                 indexName: string,
                 error: HttpErrorResponse
             ) => {
+                // Every path notifies, 403 included. A dialog cannot be dismissed while its
+                // request is outstanding, and it settles only on a notice — so a branch that
+                // returns without one leaves a modal nobody can close but a page reload.
                 if (error?.status === 403) {
                     patchState(store, { indexesForbidden: true });
-
-                    return EMPTY;
                 }
 
                 notify({ operation, outcome: 'failed', indexName, detail: extractReason(error) });
@@ -108,6 +109,23 @@ export function withAiEmbeddings() {
             return {
                 setIndexFilter(indexFilter: string): void {
                     patchState(store, { indexFilter });
+                },
+
+                /**
+                 * Declares that an open dialog will render the outcome of this exact request.
+                 *
+                 * The tab reports everything else. Asking it to infer ownership from "is a
+                 * dialog open" was wrong: a dialog renders only outcomes matching its own
+                 * operation *and* index, so a delete that failed while the build dialog
+                 * happened to be up was suppressed by the tab, ignored by the dialog, and
+                 * never reported at all.
+                 */
+                claimIndexOutcome(owner: DotAiIndexNotice['operation'], indexName: string): void {
+                    patchState(store, { indexNoticeOwner: { operation: owner, indexName } });
+                },
+
+                releaseIndexOutcome(): void {
+                    patchState(store, { indexNoticeOwner: null });
                 },
 
                 buildIndex: rxMethod<DotAiEmbeddingsBuildForm>(

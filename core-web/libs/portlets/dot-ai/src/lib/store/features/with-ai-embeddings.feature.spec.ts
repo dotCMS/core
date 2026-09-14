@@ -218,6 +218,27 @@ describe('withAiEmbeddings', () => {
         });
     });
 
+    describe('a failure that settles nothing (FR-050)', () => {
+        it('should still notify on a 403, so a dialog waiting on it can settle', () => {
+            // The dialogs cannot be dismissed while their request is outstanding and settle
+            // only on a notice, so a branch that returns without one leaves a modal nobody can
+            // close but a page reload.
+            const error = new HttpErrorResponse({ status: 403 });
+            service.buildIndex = vi.fn().mockReturnValue(throwError(() => error));
+
+            store.buildIndex({ indexName: 'blogs', query: '+contentType:Blog' });
+
+            expect(store.indexesForbidden()).toBe(true);
+            expect(store.indexNotice()).toEqual(
+                expect.objectContaining({
+                    operation: DOT_AI_INDEX_OPERATION.BUILD,
+                    outcome: 'failed',
+                    indexName: 'blogs'
+                })
+            );
+        });
+    });
+
     describe('rebuildEmbeddingsDb', () => {
         it('should end every outstanding build, since every index went with the store', () => {
             service.getIndexes = vi.fn().mockReturnValue(of([]));

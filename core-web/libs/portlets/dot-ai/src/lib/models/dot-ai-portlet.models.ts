@@ -173,6 +173,12 @@ export interface DotAiPortletState {
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
     indexNotice: DotAiIndexNotice | null;
+    /**
+     * The operation and index whose outcome an open dialog will render itself.
+     *
+     * Declared at submit, not at render, so nothing depends on which effect runs first.
+     */
+    indexNoticeOwner: { operation: DotAiIndexOperation; indexName: string } | null;
 
     // image
     image: DotAiGeneratedImage | null;
@@ -247,6 +253,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
 
     indexFilter: '',
     indexNotice: null,
+    indexNoticeOwner: null,
 
     image: null,
     imageGenerating: false,

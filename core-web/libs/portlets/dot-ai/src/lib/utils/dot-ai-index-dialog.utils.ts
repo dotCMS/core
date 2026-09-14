@@ -52,6 +52,9 @@ export function watchIndexOperation(
         notice: Signal<DotAiIndexNotice | null>;
         close: () => void;
         config: DynamicDialogConfig;
+        /** Declares to the tab that this dialog will render the outcome itself. */
+        claim: (operation: DotAiIndexOperation, indexName: string) => void;
+        release: () => void;
     }
 ): DotAiIndexOperationDialog {
     const $submitting = signal(false);
@@ -75,14 +78,27 @@ export function watchIndexOperation(
     };
 
     const documentRef = inject(DOCUMENT);
-    const onEscape = (event: KeyboardEvent) => {
-        if (event.key === 'Escape' && !$submitting()) {
-            deps.close();
+    const unbindEscape = () => documentRef.removeEventListener('keydown', onEscape);
+
+    function onEscape(event: KeyboardEvent) {
+        // `defaultPrevented` leaves nested overlays — a select, a picker — to close themselves
+        // first. PrimeNG's own handler is gone (`closeOnEscape: false`), because it binds once
+        // at open and would not stand down mid-request.
+        if (event.key !== 'Escape' || event.defaultPrevented || $submitting()) {
+            return;
         }
-    };
+
+        // Unbound here rather than at teardown: DynamicDialog is destroyed only after its
+        // leave animation, and a live handler on a dialog already closing would close it twice.
+        unbindEscape();
+        deps.close();
+    }
 
     documentRef.addEventListener('keydown', onEscape);
-    inject(DestroyRef).onDestroy(() => documentRef.removeEventListener('keydown', onEscape));
+    inject(DestroyRef).onDestroy(() => {
+        unbindEscape();
+        deps.release();
+    });
 
     const $own = computed(() => {
         const notice = deps.notice();
@@ -121,6 +137,7 @@ export function watchIndexOperation(
             $target.set(indexName);
             $submitting.set(true);
             dismissable(false);
+            deps.claim(operation, indexName);
         }
     };
 }

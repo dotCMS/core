@@ -49,7 +49,7 @@ describe('DotAiEmbeddingsComponent', () => {
         // A real signal, not a mock fn: the component reads this inside an `effect`, which
         // only re-runs for tracked dependencies.
         indexNotice: signal<DotAiIndexNotice | null>(null),
-        dismissIndexNotice: vi.fn(),
+        indexNoticeOwner: signal<{ operation: string; indexName: string } | null>(null),
         removeFromIndex: vi.fn(),
         deleteIndex: vi.fn(),
         rebuildEmbeddingsDb: vi.fn()
@@ -81,6 +81,7 @@ describe('DotAiEmbeddingsComponent', () => {
         onClose = new Subject();
         onDialogDestroy = new Subject();
         storeMock.indexNotice.set(null);
+        storeMock.indexNoticeOwner.set(null);
         spectator = createComponent();
         dialogService = spectator.inject(DialogService, true);
         (dialogService.open as Mock).mockReturnValue({ onClose, onDestroy: onDialogDestroy });
@@ -163,28 +164,34 @@ describe('DotAiEmbeddingsComponent', () => {
             );
         });
 
-        it('should not discard an outcome that has not been reported yet', () => {
-            // Opening a dialog used to clear the notice unconditionally, so a delete that had
-            // failed a moment earlier was thrown away before anything announced it — the exact
-            // silence this change exists to remove. The dialogs filter by the index they
-            // themselves submitted, so a stale notice cannot greet them anyway.
+        it('should still report an outcome no open dialog owns', () => {
+            // A delete fails while the build dialog happens to be up. The dialog renders only
+            // outcomes for the request it submitted, so suppressing on "a dialog is open"
+            // alone left this reported by nobody at all.
+            clickButton('dotai-embeddings-new-index');
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'other'
+            });
             storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.DELETE_INDEX,
                 outcome: 'failed',
-                indexName: 'blogs'
+                indexName: 'blogs',
+                detail: 'boom'
             });
-            spectator = createComponent();
-            toastSpy = vi.spyOn(spectator.inject(MessageService, true), 'add');
+            spectator.detectChanges();
 
-            clickButton('dotai-embeddings-new-index');
-
-            expect(storeMock.dismissIndexNotice).not.toHaveBeenCalled();
+            expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
         });
 
         it('should stay quiet about an outcome the dialog is there to render', () => {
             // Otherwise the failure appears twice — once in the form holding the query, once
             // as a toast over a modal, which is the report nobody could act on.
             clickButton('dotai-embeddings-new-index');
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'blogs'
+            });
             storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.BUILD,
                 outcome: 'failed',
@@ -201,7 +208,7 @@ describe('DotAiEmbeddingsComponent', () => {
             // after the dialog is destroyed, so this tab is the only thing left that can show
             // it. It used to render the success only, so a failure disappeared.
             clickButton('dotai-embeddings-new-index');
-            onDialogDestroy.next(undefined);
+            storeMock.indexNoticeOwner.set(null);
             storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.BUILD,
                 outcome: 'failed',
@@ -217,6 +224,10 @@ describe('DotAiEmbeddingsComponent', () => {
             // Suppressed while the dialog is up, and marked reported all the same — otherwise
             // closing the dialog toasts the error the user has just read and dismissed.
             clickButton('dotai-embeddings-new-index');
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'blogs'
+            });
             storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.BUILD,
                 outcome: 'failed',
@@ -225,22 +236,27 @@ describe('DotAiEmbeddingsComponent', () => {
             });
             spectator.detectChanges();
 
-            onDialogDestroy.next(undefined);
+            storeMock.indexNoticeOwner.set(null);
             spectator.detectChanges();
 
             expect(toastSpy).not.toHaveBeenCalled();
         });
 
-        it('should hand back only when the dialog is really gone, not when it starts closing', () => {
+        it('should keep suppressing while the dialog is still closing', () => {
             // `close()` fires onClose and only then plays the leave animation, so the dialog is
-            // still up and still owns what the user has to act on.
+            // still up and still showing the outcome. Ownership is released in the dialog's own
+            // teardown, which runs after that — so this is about ownership, not the close event.
             clickButton('dotai-embeddings-new-index');
-            onClose.next(undefined);
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'blogs'
+            });
             storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.BUILD,
                 outcome: 'failed',
                 indexName: 'blogs'
             });
+            onClose.next(undefined);
             spectator.detectChanges();
 
             expect(toastSpy).not.toHaveBeenCalled();
@@ -317,10 +333,20 @@ describe('DotAiEmbeddingsComponent', () => {
             );
         });
 
-        it('should not discard an unreported outcome when it opens', () => {
+        it('should report a removal outcome for an index no open dialog claimed', () => {
             clickButton('dotai-embeddings-remove-content');
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                indexName: 'other'
+            });
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                outcome: 'failed',
+                indexName: 'blogs'
+            });
+            spectator.detectChanges();
 
-            expect(storeMock.dismissIndexNotice).not.toHaveBeenCalled();
+            expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
         });
 
         it('should be unavailable when there is no index to remove from', () => {

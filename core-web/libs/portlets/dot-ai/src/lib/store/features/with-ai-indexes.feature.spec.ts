@@ -222,6 +222,30 @@ describe('withAiIndexes', () => {
             expect(store.indexBuildSeeds()).toEqual({});
         });
 
+        it('should take the row with the seed, so a failed refresh leaves nothing behind', () => {
+            // loadIndexes' error branch leaves `indexes` untouched, so a row cleared only by
+            // the next successful refresh outlived the index it stood for.
+            stubIndexes([index({ name: 'blogs', fragments: 10 })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.forgetIndexBuildSeeds('blogs');
+
+            expect(store.indexes().map((row) => row.name)).not.toContain('blogs');
+        });
+
+        it('should treat an empty name as a name, not as "all of them"', () => {
+            // '' is what a store-wide rebuild reports as its index name, so a falsy check here
+            // would quietly clear every seed.
+            stubIndexes([index({ name: 'blogs' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.forgetIndexBuildSeeds('');
+
+            expect(store.indexBuildSeeds()).toHaveProperty('blogs');
+        });
+
         it('should forget every seed when the whole store is rebuilt', () => {
             stubIndexes([index({ name: 'blogs' }), index({ name: 'other' })]);
             store.loadIndexes();
