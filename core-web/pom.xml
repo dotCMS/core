@@ -468,8 +468,9 @@
 
                               Declared inside the `validate` profile on purpose: without
                               -Pvalidate the execution does not exist at all, so a plain local
-                              ./mvnw never pays for it. Developers are served by the pre-push hook
-                              instead (core-web/.husky/pre-push).
+                              ./mvnw never pays for it. Nothing runs this on a developer machine;
+                              to get the answer before pushing, run the harness yourself (see its
+                              README).
                             -->
                             <execution>
                                 <id>strict-gate</id>

@@ -1,16 +1,19 @@
 /**
- * The job summary must state how long the run took (issue #37536, FR-025).
+ * The job summary must state how long the run took, over how much diff (issue #37536, FR-018).
  *
- * Why this is worth pinning: shipping the gate non-blocking is justified entirely by the promise
- * to measure its real cost on real pull requests and revisit the blocking decision with data
- * (SC-005). The harness already measures every run — `durationMs.total` — and simply never
- * printed it, so the only way to honour that promise was to time runs by hand from CI logs. That
- * is the class of post-merge chore that does not get done, and the decision then gets retaken
- * with no more information than before.
+ * Why this is worth pinning: the gate blocks, so its cost is on the critical path of every
+ * frontend merge. The harness already measures every run — `durationMs.total` — and simply never
+ * printed it, so the only way to know the real distribution was to time runs by hand from CI
+ * logs, which is the class of chore that does not get done.
  *
- * Both the clean and the findings summary are covered on purpose. A duration emitted only when
- * there are findings would sample the fast and slow cases unevenly, and it is the tail that the
- * blocking decision turns on.
+ * Both the clean and the findings summary are covered on purpose: a duration emitted only when
+ * there are findings would sample the fast and slow cases unevenly, and it is the tail that
+ * matters.
+ *
+ * The count is of DISTINCT changed paths. Two of the cases below exist because the obvious
+ * implementation — summing `targets[].files.length` — is wrong in two ways at once: it
+ * double-counts a file claimed by two configs of one project, and it drops unmapped files
+ * entirely.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,14 +23,14 @@ import { formatMarkdown } from './lib/format.mjs';
 const SHA_A = 'a'.repeat(40);
 const SHA_B = 'b'.repeat(40);
 
-const reportWith = ({ findings = [], durationMs, targets = [] }) =>
+const reportWith = ({ findings = [], durationMs, targets = [], unmapped = [] }) =>
     buildReport({
         base: SHA_A,
         head: SHA_B,
         flagSet: 'strict',
         granularity: 'line',
         targets,
-        unmapped: [],
+        unmapped,
         findings,
         discarded: {
             byOrigin: { dependency: 0, untouched: 0, infrastructure: 0 },
@@ -97,6 +100,56 @@ test('the duration is paired with the size of the diff that produced it', () => 
     // 3 files across 2 project configs. A duration without the diff size it came from is not
     // comparable across pull requests, which makes it useless for the measurement SC-005 wants.
     assert.match(summary, /\b3\b[^|\n]*file/i, 'the summary must state how many files were checked');
+});
+
+test('a file claimed by two configs of one project counts once', () => {
+    // config-select claims a source under EVERY eligible config, so a lib/spec pair both holding
+    // the same file produces two target entries for one changed file. Summing `files.length`
+    // reports a one-file diff as two, which silently inflates the SC-005 evidence the cost line
+    // exists to provide.
+    const file = 'libs/utils/src/lib/dot-utils.ts';
+    const report = reportWith({
+        durationMs: { total: 5000, typescript: 4800, templateAware: 0 },
+        targets: [
+            { ...target('utils', [file]), configPath: 'libs/utils/tsconfig.lib.json' },
+            { ...target('utils', [file]), configPath: 'libs/utils/tsconfig.spec.json' }
+        ]
+    });
+
+    const summary = formatMarkdown(report);
+
+    assert.match(summary, /\b1\b[^|\n]*file/i, 'one changed file, claimed twice, is still one file');
+    assert.doesNotMatch(summary, /\b2\s*file/i);
+});
+
+test('a changed file no project claimed is counted, not dropped', () => {
+    // An unmapped file was changed and NOT examined. Leaving it out of the count understates the
+    // diff and, worse, hides that something went unchecked behind a passing run.
+    const report = reportWith({
+        durationMs: { total: 4000, typescript: 3900, templateAware: 0 },
+        targets: [target('utils', ['libs/utils/src/lib/a.ts'])],
+        unmapped: [{ path: 'libs/orphan/src/b.ts', reason: 'no configuration includes this file' }]
+    });
+
+    const summary = formatMarkdown(report);
+
+    assert.match(summary, /\b2\b[^|\n]*file/i, 'one mapped + one unmapped = two changed files');
+});
+
+test('unmapped files are named in the summary, not silently passed', () => {
+    // The gate blocks now. A changed TypeScript file that no project compiles must not read as a
+    // clean pass with nothing said about it.
+    const report = reportWith({
+        durationMs: { total: 4000, typescript: 3900, templateAware: 0 },
+        targets: [target('utils', ['libs/utils/src/lib/a.ts'])],
+        unmapped: [{ path: 'libs/orphan/src/b.ts', reason: 'no configuration includes this file' }]
+    });
+
+    const summary = formatMarkdown(report);
+
+    assert.equal(report.exitCode, 0, 'guard: this is the passing case');
+    assert.match(summary, /libs\/orphan\/src\/b\.ts/, 'the unexamined file must be named');
+    assert.match(summary, /unexamined|not examined|no project/i, 'and it must say it was not checked');
 });
 
 test('a sub-second run is not reported as 0s', () => {

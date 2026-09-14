@@ -84,7 +84,7 @@ nobody can read a run's cost — and now that the gate blocks, that cost is on e
 | Field | Source | Notes |
 |---|---|---|
 | Elapsed time | `report.durationMs.total`, already computed by the harness | Never printed before this feature — FR-018 surfaces it |
-| Diff size | `report.files.length` | Pairs the cost with what produced it; a duration without it is not comparable across pull requests |
+| Diff size | distinct paths across `report.targets[].files` **and** `report.unmapped[].path` | There is no `report.files`. The count must be of unique paths: `selectConfigs` claims a source under every eligible config, so one changed file can appear in two targets, and unmapped files were changed too — they just were not examined. |
 
 **Lifecycle**: emitted into the job summary on every run, read by a human, transcribed onto issue
 #37536 for at least five real pull requests (FR-022). Nothing is persisted by the system — the issue

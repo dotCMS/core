@@ -117,20 +117,42 @@ export function formatGithub(report) {
 /**
  * What the run cost, paired with the diff size that produced it.
  *
- * Emitted on every run, passing ones included. Shipping this gate non-blocking is justified
- * entirely by the promise to measure its real cost on real pull requests and revisit the blocking
- * decision with data; a duration printed only when there are findings would sample the fast and
- * slow cases unevenly, and it is the tail that the decision turns on. The diff size travels with
- * it because a duration alone is not comparable between a one-file pull request and a forty-file
- * one.
+ * Emitted on every run, passing ones included. The gate blocks, so its cost sits on the critical
+ * path of every frontend merge and the real distribution is worth knowing; a duration printed only
+ * when there are findings would sample the fast and slow cases unevenly, and it is the tail that
+ * matters. The diff size travels with it because a duration alone is not comparable between a
+ * one-file pull request and a forty-file one.
  *
  * One decimal place: the no-op case costs ~0.3s and rounding it to "0s" would make the cheapest
  * and most common outcome invisible in the evidence.
  */
 function costLine(report) {
     const seconds = (report.durationMs.total / 1000).toFixed(1);
-    const files = report.targets.reduce((n, t) => n + t.files.length, 0);
-    return `_Checked ${files} file(s) across ${report.targets.length} project config(s) in ${seconds}s._`;
+    // Distinct paths, not (config -> file) assignments. `selectConfigs` claims a source under
+    // EVERY eligible config, so a project whose lib and spec configs both include a file yields
+    // two target entries for one changed file; summing `files.length` would report a one-file
+    // diff as two. Unmapped files count as well: they were changed, they just were not examined,
+    // and leaving them out understates the diff this duration came from.
+    const changed = new Set([
+        ...report.targets.flatMap((t) => t.files),
+        ...report.unmapped.map((u) => u.path)
+    ]).size;
+    return `_Checked ${changed} changed file(s) across ${report.targets.length} project config(s) in ${seconds}s._`;
+}
+
+/**
+ * Changed files no project claimed. They were NOT examined, and with the gate blocking, silence
+ * about them reads as a clean pass — the edge case the spec calls out by name. Naming them is not
+ * a failure signal; it is the difference between "nothing was wrong" and "nothing was looked at".
+ */
+function unmappedNote(report) {
+    if (report.unmapped.length === 0) return null;
+    const rows = report.unmapped.map((u) => `- \`${u.path}\` — ${u.reason}`).join('\n');
+    return [
+        `**${report.unmapped.length} changed file(s) were not examined** — no project configuration claims them:`,
+        '',
+        rows
+    ].join('\n');
 }
 
 /** Markdown for the job summary — what a human opening the run sees first. */
@@ -143,7 +165,8 @@ export function formatMarkdown(report) {
             `No new strict-mode violations. ${total} pre-existing or dependency diagnostic(s) ignored, ` +
                 `across ${report.targets.length} project config(s).`,
             '',
-            costLine(report)
+            costLine(report),
+            ...(unmappedNote(report) ? ['', unmappedNote(report)] : [])
         ].join('\n');
     }
 
@@ -157,6 +180,7 @@ export function formatMarkdown(report) {
         `**Scope.** ${scopeRule(report.granularity)} ${total} diagnostic(s) from dependencies and untouched code were ignored — fix only what is listed.`,
         '',
         costLine(report),
+        ...(unmappedNote(report) ? ['', unmappedNote(report)] : []),
         '',
         '| File | Line | Code | Message |',
         '|---|---|---|---|',

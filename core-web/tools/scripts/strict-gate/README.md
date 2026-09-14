@@ -6,7 +6,9 @@
 > Procedure, inventory and preconditions:
 > [`specs/37401-diff-scoped-strict-typecheck-gate/DECOMMISSION.md`](../../../../specs/37401-diff-scoped-strict-typecheck-gate/DECOMMISSION.md)
 
-**This is spike output, not production tooling.** It exists to answer one question:
+**This began as spike output and is now a live, blocking CI gate** — still temporary by design
+(see the banner above), but not optional and not safe to delete casually. It exists to answer one
+question:
 
 > Can a diff-scoped strict typecheck block new non-strict TypeScript from landing on `main`,
 > without requiring the dependency libraries to be strict first?
