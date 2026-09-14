@@ -107,7 +107,8 @@ jobs:
     outputs:
       filename: ${{ steps.deploy-artifacts.outputs.filename }}
       url: ${{ steps.deploy-artifacts.outputs.url }}
-      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}      
+      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}
+      pull_request_url: ${{ steps.create-pull-request.outputs.pull-request-url }}
     steps:
       - name: 'Checkout repository'
         if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
@@ -195,7 +196,7 @@ jobs:
       - name: 'Create Pull Request'
         if: ${{ steps.update-pom.outcome == 'success' }}
         id: create-pull-request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
           branch: ${{ steps.update-pom.outputs.auxiliary-branch }}
@@ -223,8 +224,8 @@ jobs:
           ARTIFACT_URL="${{ needs.deploy-artifacts.outputs.url }}"
           OLD_ASSETS="${{ github.event.inputs.old-assets }}"
           CHANGELOG="${{ github.event.inputs.changelog }}"
-          PULL_REQUEST_URL="${{ needs.update-pom.outputs.pull-request-url }}"
-          if [ "$STARTER_TYPE" == "empty" ]; then
+          PULL_REQUEST_URL="${{ needs.deploy-artifacts.outputs.pull_request_url }}"
+          if [ "$STARTER_TYPE" == "empty" ] && [ -n "$PULL_REQUEST_URL" ]; then
             PR_ALERT="> :exclamation:*Approvals required*:exclamation: *PR* ${PULL_REQUEST_URL}"
           fi          
           
