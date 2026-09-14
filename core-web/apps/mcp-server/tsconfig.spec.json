@@ -4,6 +4,8 @@
         // TODO(#35932): base enables these two workspace-wide. These specs still trip
         // TS4111 (index-signature access) and TS4114 (missing `override`) — `strict`
         // itself already passes. Drop these two lines once those are cleaned up.
+        // Required of any project referenced by tsconfig.json (TS6306).
+        "composite": true,
         "outDir": "../../dist/out-tsc",
         "module": "esnext",
         "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"],

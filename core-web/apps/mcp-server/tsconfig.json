@@ -6,9 +6,18 @@
         "target": "es2017",
         "module": "preserve",
         "moduleResolution": "bundler",
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        // TODO(#35932): base enables these two workspace-wide. These sources still trip
+        // TS4111 (index-signature access) and TS4114 (missing `override`) — `strict` itself
+        // already passes. Same two lines as tsconfig.spec.json; drop both once cleaned up.
+        "noPropertyAccessFromIndexSignature": false,
+        "noImplicitOverride": false
     },
     "include": ["xmcp-env.d.ts", "src/**/*.ts"],
+    // The referenced spec project owns these files and emits them to its own outDir. Leaving
+    // them in this program too makes tsc treat them as that project's build output and demand
+    // it be built first (TS6305).
+    "exclude": ["src/test-setup.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
     "references": [
         {
             "path": "./tsconfig.spec.json"
