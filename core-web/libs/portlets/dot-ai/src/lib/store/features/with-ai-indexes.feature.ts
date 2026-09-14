@@ -193,6 +193,31 @@ export function withAiIndexes() {
                  * "a build just started here", so the first poll does not have to infer it
                  * from a delta that has not appeared yet.
                  */
+                /**
+                 * Drops build seeds, by name or all of them.
+                 *
+                 * Deleting an index, or rebuilding the store, ends any build outstanding for
+                 * it. Without this the seed outlives the index it was for and
+                 * `withPendingIndexes` puts the deleted index straight back in the table as a
+                 * zeroed BUILDING row — offered in the retrieval picker, and eligible to
+                 * become `settingsIndexName`, for the rest of the grace period.
+                 */
+                forgetIndexBuildSeeds(indexName?: string): void {
+                    if (!indexName) {
+                        patchState(store, { indexBuildSeeds: {} });
+
+                        return;
+                    }
+
+                    patchState(store, {
+                        indexBuildSeeds: Object.fromEntries(
+                            Object.entries(store.indexBuildSeeds()).filter(
+                                ([name]) => name !== indexName
+                            )
+                        )
+                    });
+                },
+
                 markIndexBuilding(indexName: string): void {
                     patchState(store, {
                         indexBuildSeeds: { ...store.indexBuildSeeds(), [indexName]: Date.now() },

@@ -205,6 +205,37 @@ describe('withAiIndexes', () => {
             }
         });
 
+        it('should forget a seed when its index is deleted, so no ghost row returns', () => {
+            // The seed outlived the index: `withPendingIndexes` put the deleted index straight
+            // back in the table as a zeroed BUILDING row, offered in the retrieval picker and
+            // eligible to become settingsIndexName, for the rest of the grace period.
+            stubIndexes([index({ name: 'blogs', fragments: 10 })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.forgetIndexBuildSeeds('blogs');
+            stubIndexes([]);
+            store.loadIndexes();
+
+            expect(store.indexes()).toEqual([]);
+            expect(store.indexStatuses()).toEqual({});
+            expect(store.indexBuildSeeds()).toEqual({});
+        });
+
+        it('should forget every seed when the whole store is rebuilt', () => {
+            stubIndexes([index({ name: 'blogs' }), index({ name: 'other' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+            store.markIndexBuilding('other');
+
+            store.forgetIndexBuildSeeds();
+            stubIndexes([]);
+            store.loadIndexes();
+
+            expect(store.indexes()).toEqual([]);
+            expect(store.indexBuildSeeds()).toEqual({});
+        });
+
         it('should stop waiting on a build that never materialises', () => {
             // Without an expiry the seed would keep the badge up and the poll running for the
             // life of the page.

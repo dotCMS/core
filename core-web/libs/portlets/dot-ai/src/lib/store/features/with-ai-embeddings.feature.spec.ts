@@ -185,6 +185,19 @@ describe('withAiEmbeddings', () => {
     });
 
     describe('deleteIndex (FR-034)', () => {
+        it('should end any build outstanding for the index it deletes', () => {
+            // A surviving seed put the deleted index straight back in the table as a zeroed
+            // BUILDING row, for the rest of the two-minute grace period.
+            service.getIndexes = vi.fn().mockReturnValue(of([]));
+            service.deleteIndex = vi.fn().mockReturnValue(of(4));
+            store.markIndexBuilding('blogs');
+
+            store.deleteIndex('blogs');
+
+            expect(store.indexBuildSeeds()).toEqual({});
+            expect(store.indexes().map((row) => row.name)).not.toContain('blogs');
+        });
+
         it('should let concurrent deletions of different indexes both complete', () => {
             const first = new Subject<number>();
             const second = new Subject<number>();
@@ -206,6 +219,18 @@ describe('withAiEmbeddings', () => {
     });
 
     describe('rebuildEmbeddingsDb', () => {
+        it('should end every outstanding build, since every index went with the store', () => {
+            service.getIndexes = vi.fn().mockReturnValue(of([]));
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(of(true));
+            store.markIndexBuilding('blogs');
+            store.markIndexBuilding('other');
+
+            store.rebuildEmbeddingsDb();
+
+            expect(store.indexBuildSeeds()).toEqual({});
+            expect(store.indexes()).toEqual([]);
+        });
+
         it('should rebuild and refresh', () => {
             service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(of(true));
 

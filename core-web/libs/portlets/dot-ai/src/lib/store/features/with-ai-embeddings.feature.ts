@@ -5,7 +5,7 @@ import { EMPTY, pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Signal } from '@angular/core';
 
-import { catchError, exhaustMap, mergeMap, tap } from 'rxjs/operators';
+import { catchError, concatMap, mergeMap, tap } from 'rxjs/operators';
 
 import { DotAiEmbeddingsService } from '@dotcms/data-access';
 import { DotAiEmbeddingsBuildForm, DotAiIndex } from '@dotcms/dotcms-models';
@@ -28,8 +28,12 @@ import {
  * then said nothing at all.
  *
  * The `rxMethod` operator per action is load-bearing:
- * - `exhaustMap` for build, rebuild and delete-from-index — each is one submit of one form, so
- *   a double click must not double-fire (FR-035)
+ * - `concatMap` for build and remove — these are submitted from a dialog that can be abandoned
+ *   mid-flight and reopened, so a second submit must neither be dropped (`exhaustMap`, which
+ *   left the new dialog spinning on a request that was never sent) nor cancel the first
+ *   (`switchMap`, which would abandon a build the server has already started). Double-submit
+ *   is prevented in the dialog, which disables its own button while a request is outstanding
+ *   (FR-035)
  * - `mergeMap` for `deleteIndex`, because that one is per row — deleting A must not cancel the
  *   delete of B (FR-034)
  */
@@ -41,6 +45,7 @@ export function withAiEmbeddings() {
             methods: {
                 loadIndexes: () => void;
                 markIndexBuilding: (indexName: string) => void;
+                forgetIndexBuildSeeds: (indexName?: string) => void;
             };
         }>(),
         withComputed((store) => ({
@@ -105,15 +110,10 @@ export function withAiEmbeddings() {
                     patchState(store, { indexFilter });
                 },
 
-                dismissIndexNotice(): void {
-                    patchState(store, { indexNotice: null });
-                },
-
                 buildIndex: rxMethod<DotAiEmbeddingsBuildForm>(
                     pipe(
                         tap(() => patchState(store, { indexNotice: null })),
-                        // exhaustMap: a double submit must not build twice.
-                        exhaustMap((form) =>
+                        concatMap((form) =>
                             embeddingsService.buildIndex(form).pipe(
                                 tap((result) => {
                                     // A query that matches nothing still answers 200, and the
@@ -162,7 +162,7 @@ export function withAiEmbeddings() {
                 removeFromIndex: rxMethod<{ indexName: string; query: string }>(
                     pipe(
                         tap(() => patchState(store, { indexNotice: null })),
-                        exhaustMap(({ indexName, query }) =>
+                        concatMap(({ indexName, query }) =>
                             embeddingsService.deleteFromIndex(indexName, query).pipe(
                                 tap((deleted) => {
                                     // The server answers 200 with `deleted: 0` when the query
@@ -195,6 +195,10 @@ export function withAiEmbeddings() {
                                         indexName,
                                         detail: `${deleted}`
                                     });
+                                    // The index is gone, so any build outstanding for it is
+                                    // too — a surviving seed would put it straight back in
+                                    // the table as a zeroed BUILDING row.
+                                    store.forgetIndexBuildSeeds(indexName);
                                     store.loadIndexes();
                                 }),
                                 catchError((error: HttpErrorResponse) =>
@@ -207,7 +211,7 @@ export function withAiEmbeddings() {
 
                 rebuildEmbeddingsDb: rxMethod<void>(
                     pipe(
-                        exhaustMap(() =>
+                        concatMap(() =>
                             embeddingsService.rebuildEmbeddingsDb().pipe(
                                 tap(() => {
                                     notify({
@@ -215,6 +219,8 @@ export function withAiEmbeddings() {
                                         outcome: 'ok',
                                         indexName: ''
                                     });
+                                    // Every index went with the store, and so does every seed.
+                                    store.forgetIndexBuildSeeds();
                                     store.loadIndexes();
                                 }),
                                 catchError((error: HttpErrorResponse) =>

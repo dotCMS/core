@@ -7,6 +7,8 @@ import {
 import { Subject } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
+import { signal } from '@angular/core';
+
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -15,7 +17,7 @@ import { DotAiIndex } from '@dotcms/dotcms-models';
 
 import DotAiEmbeddingsComponent from './dot-ai-embeddings.component';
 
-import { DOT_AI_INDEX_OPERATION } from '../../models/dot-ai-portlet.models';
+import { DOT_AI_INDEX_OPERATION, DotAiIndexNotice } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
 
 const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
@@ -44,7 +46,9 @@ describe('DotAiEmbeddingsComponent', () => {
         isConfigured: vi.fn().mockReturnValue(true),
         setIndexFilter: vi.fn(),
         buildIndex: vi.fn(),
-        indexNotice: vi.fn().mockReturnValue(null),
+        // A real signal, not a mock fn: the component reads this inside an `effect`, which
+        // only re-runs for tracked dependencies.
+        indexNotice: signal<DotAiIndexNotice | null>(null),
         dismissIndexNotice: vi.fn(),
         removeFromIndex: vi.fn(),
         deleteIndex: vi.fn(),
@@ -76,7 +80,7 @@ describe('DotAiEmbeddingsComponent', () => {
         storeMock.filteredIndexes.mockReturnValue([index()]);
         onClose = new Subject();
         onDialogDestroy = new Subject();
-        storeMock.indexNotice.mockReturnValue(null);
+        storeMock.indexNotice.set(null);
         spectator = createComponent();
         dialogService = spectator.inject(DialogService, true);
         (dialogService.open as Mock).mockReturnValue({ onClose, onDestroy: onDialogDestroy });
@@ -157,19 +161,29 @@ describe('DotAiEmbeddingsComponent', () => {
             );
         });
 
-        it('should clear a previous outcome so the dialog opens clean', () => {
-            // The dialog reads the same notice signal; a stale one would greet the next build
-            // with the last one's error.
+        it('should not discard an outcome that has not been reported yet', () => {
+            // Opening a dialog used to clear the notice unconditionally, so a delete that had
+            // failed a moment earlier was thrown away before anything announced it — the exact
+            // silence this change exists to remove. The dialogs filter by the index they
+            // themselves submitted, so a stale notice cannot greet them anyway.
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.DELETE_INDEX,
+                outcome: 'failed',
+                indexName: 'blogs'
+            });
+            spectator = createComponent();
+            toastSpy = vi.spyOn(spectator.inject(MessageService, true), 'add');
+
             clickButton('dotai-embeddings-new-index');
 
-            expect(storeMock.dismissIndexNotice).toHaveBeenCalled();
+            expect(storeMock.dismissIndexNotice).not.toHaveBeenCalled();
         });
 
         it('should stay quiet about an outcome the dialog is there to render', () => {
             // Otherwise the failure appears twice — once in the form holding the query, once
             // as a toast over a modal, which is the report nobody could act on.
             clickButton('dotai-embeddings-new-index');
-            storeMock.indexNotice.mockReturnValue({
+            storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.BUILD,
                 outcome: 'failed',
                 indexName: 'blogs',
@@ -186,7 +200,7 @@ describe('DotAiEmbeddingsComponent', () => {
             // it. It used to render the success only, so a failure disappeared.
             clickButton('dotai-embeddings-new-index');
             onDialogDestroy.next(undefined);
-            storeMock.indexNotice.mockReturnValue({
+            storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.BUILD,
                 outcome: 'failed',
                 indexName: 'blogs',
@@ -197,12 +211,30 @@ describe('DotAiEmbeddingsComponent', () => {
             expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
         });
 
+        it('should not toast a failure the dialog already showed inline', () => {
+            // Suppressed while the dialog is up, and marked reported all the same — otherwise
+            // closing the dialog toasts the error the user has just read and dismissed.
+            clickButton('dotai-embeddings-new-index');
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
+                indexName: 'blogs',
+                detail: 'Cannot parse query'
+            });
+            spectator.detectChanges();
+
+            onDialogDestroy.next(undefined);
+            spectator.detectChanges();
+
+            expect(toastSpy).not.toHaveBeenCalled();
+        });
+
         it('should hand back only when the dialog is really gone, not when it starts closing', () => {
             // `close()` fires onClose and only then plays the leave animation, so the dialog is
             // still up and still owns what the user has to act on.
             clickButton('dotai-embeddings-new-index');
             onClose.next(undefined);
-            storeMock.indexNotice.mockReturnValue({
+            storeMock.indexNotice.set({
                 operation: DOT_AI_INDEX_OPERATION.BUILD,
                 outcome: 'failed',
                 indexName: 'blogs'
@@ -281,10 +313,10 @@ describe('DotAiEmbeddingsComponent', () => {
             );
         });
 
-        it('should clear a previous outcome so the dialog opens clean', () => {
+        it('should not discard an unreported outcome when it opens', () => {
             clickButton('dotai-embeddings-remove-content');
 
-            expect(storeMock.dismissIndexNotice).toHaveBeenCalled();
+            expect(storeMock.dismissIndexNotice).not.toHaveBeenCalled();
         });
 
         it('should be unavailable when there is no index to remove from', () => {

@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -11,6 +11,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_AI_INDEX_OPERATION } from '../../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../../store/dot-ai.store';
+import { watchIndexOperation } from '../../../utils/dot-ai-index-dialog.utils';
 
 /**
  * The server stores whatever it is given — `bad name with spaces` is accepted verbatim, and
@@ -51,56 +52,21 @@ export class DotAiIndexCreateComponent {
     protected readonly store = inject(DotAiStore);
 
     /**
-     * A build is outstanding. Local rather than store state: it is this dialog's submit button
-     * that it disables, and nothing outside this component ever reads it.
+     * Settles and closes on this dialog's own build, and nothing else. Shared with the remove
+     * dialog because the two had already drifted apart once.
      */
-    protected readonly $submitting = signal(false);
+    readonly #operation = watchIndexOperation(DOT_AI_INDEX_OPERATION.BUILD, {
+        notice: this.store.indexNotice,
+        close: () => this.#dialogRef.close()
+    });
+
+    protected readonly $submitting = this.#operation.$submitting;
+    protected readonly $notice = this.#operation.$notice;
 
     protected readonly $indexName = signal('');
     protected readonly $query = signal('');
     protected readonly $fields = signal('');
     protected readonly $velocityTemplate = signal('');
-
-    /**
-     * The build outcome, while it is this dialog's to show.
-     *
-     * `built` is absent by construction — the effect below closes on it — so what is left is
-     * exactly the two outcomes the user has to act on: a query that matched nothing, and a
-     * query the server rejected.
-     */
-    protected readonly $notice = computed(() => {
-        const notice = this.store.indexNotice();
-
-        return notice?.operation === DOT_AI_INDEX_OPERATION.BUILD && notice.outcome !== 'ok'
-            ? notice
-            : null;
-    });
-
-    constructor() {
-        // A finished build is the only thing that dismisses this dialog; anything else is an
-        // outcome the form still has to show. The success message is left standing on the tab
-        // behind, next to the row it just created.
-        effect(() => {
-            const notice = this.store.indexNotice();
-
-            if (!notice) {
-                return;
-            }
-
-            untracked(() => {
-                this.$submitting.set(false);
-
-                if (notice.operation === DOT_AI_INDEX_OPERATION.BUILD && notice.outcome === 'ok') {
-                    this.#dialogRef.close();
-                }
-            });
-        });
-
-        // Nothing is cleared on teardown any more. A build abandoned with Escape or the
-        // header X while still in flight used to fail into silence; the tab now toasts
-        // whatever this dialog was not around to render, so the notice has to survive it.
-        inject(DestroyRef).onDestroy(() => this.$submitting.set(false));
-    }
 
     /** Empty until the field has been touched, so the form does not scold you on open. */
     protected readonly $nameError = computed<string | null>(() => {
@@ -134,9 +100,11 @@ export class DotAiIndexCreateComponent {
             return;
         }
 
-        this.$submitting.set(true);
+        const indexName = this.$indexName().trim();
+
+        this.#operation.submitted(indexName);
         this.store.buildIndex({
-            indexName: this.$indexName().trim(),
+            indexName,
             query: this.$query().trim(),
             // Both only shape what gets embedded, so they are omitted rather than sent blank.
             ...(this.$fields().trim() ? { fields: this.$fields().trim() } : {}),

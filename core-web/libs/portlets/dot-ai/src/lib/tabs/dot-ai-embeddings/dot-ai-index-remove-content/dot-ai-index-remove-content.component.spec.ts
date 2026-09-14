@@ -24,7 +24,6 @@ describe('DotAiIndexRemoveContentComponent', () => {
         indexes: ReturnType<typeof signal<DotAiIndex[]>>;
         indexNotice: ReturnType<typeof signal<DotAiIndexNotice | null>>;
         removeFromIndex: ReturnType<typeof vi.fn>;
-        dismissIndexNotice: ReturnType<typeof vi.fn>;
     };
 
     const createComponent = createComponentFactory({
@@ -49,8 +48,7 @@ describe('DotAiIndexRemoveContentComponent', () => {
         store = {
             indexes: signal<DotAiIndex[]>([index('blogs'), index('product')]),
             indexNotice: signal<DotAiIndexNotice | null>(null),
-            removeFromIndex: vi.fn(),
-            dismissIndexNotice: vi.fn()
+            removeFromIndex: vi.fn()
         };
 
         spectator = createComponent({ providers: [{ provide: DotAiStore, useValue: store }] });
@@ -71,12 +69,24 @@ describe('DotAiIndexRemoveContentComponent', () => {
         spectator.detectChanges();
     };
 
-    const notice = (outcome: DotAiIndexNotice['outcome'], detail?: string): DotAiIndexNotice => ({
+    const notice = (
+        outcome: DotAiIndexNotice['outcome'],
+        detail?: string,
+        indexName = 'blogs'
+    ): DotAiIndexNotice => ({
         operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
         outcome,
-        indexName: 'blogs',
+        indexName,
         detail
     });
+
+    /** Picks an index, since nothing is preselected for a destructive action. */
+    const pickIndex = (name: string) => {
+        (
+            spectator.component as unknown as { $indexName: { set: (v: string) => void } }
+        ).$indexName.set(name);
+        spectator.detectChanges();
+    };
 
     it('should offer the real indexes rather than a free-text name', () => {
         // As a free-text field on the old delete mode, a typo removed nothing and a near-miss
@@ -94,28 +104,32 @@ describe('DotAiIndexRemoveContentComponent', () => {
         );
     });
 
-    it('should default to the first index so the form is usable straight away', () => {
+    it('should preselect nothing, so the target is always a choice', () => {
+        // indexes() is a TreeMap from the server, so a default would silently be whichever
+        // index sorts first — often `cache`. This removes embeddings; it has to be picked.
         fillQuery('+contentType:Blog');
 
-        clickButton('dotai-index-remove-submit');
-
-        expect(store.removeFromIndex).toHaveBeenCalledWith(
-            expect.objectContaining({ indexName: 'blogs' })
-        );
+        expect(
+            spectator.query(byTestId('dotai-index-remove-submit'))?.querySelector('button')
+                ?.disabled
+        ).toBe(true);
     });
 
-    it('should keep submit disabled until a query is given', () => {
+    it('should keep submit disabled until both an index and a query are given', () => {
         const submit = () =>
             spectator.query(byTestId('dotai-index-remove-submit'))?.querySelector('button');
 
         expect(submit()?.disabled).toBe(true);
 
         fillQuery('+contentType:Blog');
+        expect(submit()?.disabled).toBe(true);
 
+        pickIndex('blogs');
         expect(submit()?.disabled).toBe(false);
     });
 
     it('should remove through the store rather than resolving the dialog', () => {
+        pickIndex('blogs');
         fillQuery('  +contentType:Blog  ');
 
         clickButton('dotai-index-remove-submit');
@@ -129,6 +143,7 @@ describe('DotAiIndexRemoveContentComponent', () => {
 
     it('should keep a query that matched nothing on screen to be corrected', () => {
         // The server answers 200 with `deleted: 0`, which would otherwise read as a success.
+        pickIndex('blogs');
         fillQuery('+contentType:NoSuchType');
         clickButton('dotai-index-remove-submit');
 
@@ -143,6 +158,7 @@ describe('DotAiIndexRemoveContentComponent', () => {
     });
 
     it('should show a rejected query inline', () => {
+        pickIndex('blogs');
         fillQuery('+++[');
         clickButton('dotai-index-remove-submit');
 
@@ -154,6 +170,7 @@ describe('DotAiIndexRemoveContentComponent', () => {
     });
 
     it('should close itself once something was actually removed', () => {
+        pickIndex('blogs');
         fillQuery('+contentType:Blog');
         clickButton('dotai-index-remove-submit');
 
@@ -165,6 +182,7 @@ describe('DotAiIndexRemoveContentComponent', () => {
 
     it('should ignore an outcome belonging to another operation', () => {
         // One notice channel serves all four operations, so each dialog has to read only its own.
+        pickIndex('blogs');
         fillQuery('+contentType:Blog');
         clickButton('dotai-index-remove-submit');
 
@@ -180,6 +198,7 @@ describe('DotAiIndexRemoveContentComponent', () => {
     });
 
     it('should block a second submit while a removal is outstanding', () => {
+        pickIndex('blogs');
         fillQuery('+contentType:Blog');
         clickButton('dotai-index-remove-submit');
         spectator.detectChanges();
@@ -189,5 +208,19 @@ describe('DotAiIndexRemoveContentComponent', () => {
                 ?.disabled
         ).toBe(true);
         expect(store.removeFromIndex).toHaveBeenCalledTimes(1);
+    });
+
+    it('should ignore an outcome for an index it did not submit', () => {
+        // Abandon a slow removal, reopen, submit another: both rxMethods live on the
+        // shell-scoped store and outlive the dialog that started them, so without matching the
+        // index this dialog would close on the first one's success and report the wrong index.
+        pickIndex('product');
+        fillQuery('+contentType:Blog');
+        clickButton('dotai-index-remove-submit');
+
+        store.indexNotice.set(notice('ok', '3', 'blogs'));
+        spectator.detectChanges();
+
+        expect(dialogRef.close).not.toHaveBeenCalled();
     });
 });

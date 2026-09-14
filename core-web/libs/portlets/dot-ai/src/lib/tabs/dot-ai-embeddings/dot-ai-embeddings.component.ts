@@ -23,7 +23,11 @@ import {
 import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-create.component';
 import { DotAiIndexRemoveContentComponent } from './dot-ai-index-remove-content/dot-ai-index-remove-content.component';
 
-import { DOT_AI_INDEX_OPERATION, DotAiIndexNotice } from '../../models/dot-ai-portlet.models';
+import {
+    DOT_AI_INDEX_OPERATION,
+    DotAiIndexNotice,
+    DotAiIndexOperation
+} from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
@@ -38,6 +42,47 @@ import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
  * itself and the theme defines no `p-button-primary` to ask for — `p-button-secondary` exists
  * there, `p-button-primary` does not. Setting one would resolve to nothing.
  */
+/**
+ * The message key per operation and outcome.
+ *
+ * Spelled out rather than assembled from the operation name at call time: interpolated keys
+ * are invisible to a grep, so a copy audit reports them as orphaned and a cleanup deletes
+ * them, and a combination nobody defined renders its own key to the user instead of failing.
+ * `Record` makes TypeScript require every one.
+ */
+const NOTICE_MESSAGE_KEYS: Record<
+    DotAiIndexOperation,
+    Record<DotAiIndexNotice['outcome'], string>
+> = {
+    [DOT_AI_INDEX_OPERATION.BUILD]: {
+        ok: 'dotai.embeddings.build.ok',
+        empty: 'dotai.embeddings.build.empty',
+        failed: 'dotai.embeddings.build.failed'
+    },
+    [DOT_AI_INDEX_OPERATION.REMOVE_CONTENT]: {
+        ok: 'dotai.embeddings.remove-content.ok',
+        empty: 'dotai.embeddings.remove-content.empty',
+        failed: 'dotai.embeddings.remove-content.failed'
+    },
+    [DOT_AI_INDEX_OPERATION.DELETE_INDEX]: {
+        ok: 'dotai.embeddings.delete.ok',
+        empty: 'dotai.embeddings.delete.ok',
+        failed: 'dotai.embeddings.delete.failed'
+    },
+    [DOT_AI_INDEX_OPERATION.REBUILD_DB]: {
+        ok: 'dotai.embeddings.rebuild.ok',
+        empty: 'dotai.embeddings.rebuild.ok',
+        failed: 'dotai.embeddings.rebuild.failed'
+    }
+} as const;
+
+/** Toast severity per outcome, and the summary key that goes with it. */
+const NOTICE_SEVERITY: Record<DotAiIndexNotice['outcome'], 'success' | 'warn' | 'error'> = {
+    ok: 'success',
+    empty: 'warn',
+    failed: 'error'
+} as const;
+
 const CONFIRM_BUTTONS = {
     rejectButtonStyleClass: 'p-button-outlined'
 } as const;
@@ -99,6 +144,10 @@ export default class DotAiEmbeddingsComponent {
             }
 
             if (dialogOpen && notice.outcome !== 'ok') {
+                // The dialog is showing it inline. Marked as reported all the same, so closing
+                // the dialog does not then toast the error the user has just read and dismissed.
+                this.#toasted = notice;
+
                 return;
             }
 
@@ -147,7 +196,6 @@ export default class DotAiEmbeddingsComponent {
      * reporting.
      */
     protected openCreateDialog(): void {
-        this.store.dismissIndexNotice();
         this.#dialogOpen.set(true);
 
         // `onDestroy`, not `onClose`: `close()` fires `onClose` immediately and only then
@@ -169,7 +217,6 @@ export default class DotAiEmbeddingsComponent {
     }
 
     protected openRemoveContentDialog(): void {
-        this.store.dismissIndexNotice();
         this.#dialogOpen.set(true);
 
         this.#dialogService
@@ -193,24 +240,18 @@ export default class DotAiEmbeddingsComponent {
         detail: string;
         life: number;
     } {
-        const severity =
-            notice.outcome === 'ok' ? 'success' : notice.outcome === 'empty' ? 'warn' : 'error';
-
-        const key = `dotai.embeddings.${
-            {
-                [DOT_AI_INDEX_OPERATION.BUILD]: 'build',
-                [DOT_AI_INDEX_OPERATION.REMOVE_CONTENT]: 'remove-content',
-                [DOT_AI_INDEX_OPERATION.DELETE_INDEX]: 'delete',
-                [DOT_AI_INDEX_OPERATION.REBUILD_DB]: 'rebuild'
-            }[notice.operation]
-        }.${notice.outcome}`;
+        const severity = NOTICE_SEVERITY[notice.outcome];
 
         return {
             severity,
             summary: this.#messageService.get(`dotai.embeddings.toast.${severity}`),
             // Every notice key takes the same two, in the same order: the index, then the
-            // count or the server's reason. Anything else and a generic mapper cannot exist.
-            detail: this.#messageService.get(key, notice.indexName, notice.detail ?? ''),
+            // count or the server's reason. Anything else and one mapper cannot serve them all.
+            detail: this.#messageService.get(
+                NOTICE_MESSAGE_KEYS[notice.operation][notice.outcome],
+                notice.indexName,
+                notice.detail ?? ''
+            ),
             life: severity === 'success' ? 4000 : 8000
         };
     }
