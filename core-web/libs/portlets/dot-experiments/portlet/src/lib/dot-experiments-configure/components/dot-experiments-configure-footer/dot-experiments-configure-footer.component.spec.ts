@@ -1,5 +1,6 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter } from '@angular/router';
@@ -36,19 +37,19 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const createStoreMock = () => ({
-    $isLocked: jest.fn().mockReturnValue(false),
-    $isSaving: jest.fn().mockReturnValue(false),
-    $hasUnsavedChanges: jest.fn().mockReturnValue(false),
-    $canSave: jest.fn().mockReturnValue(false),
-    $isScheduledStart: jest.fn().mockReturnValue(false),
-    $validationErrorCount: jest.fn().mockReturnValue(0),
-    $status: jest.fn().mockReturnValue(DotExperimentStatus.DRAFT)
+    $isLocked: vi.fn().mockReturnValue(false),
+    $isSaving: vi.fn().mockReturnValue(false),
+    $hasUnsavedChanges: vi.fn().mockReturnValue(false),
+    $canSave: vi.fn().mockReturnValue(false),
+    $isScheduledStart: vi.fn().mockReturnValue(false),
+    $validationErrorCount: vi.fn().mockReturnValue(0),
+    $status: vi.fn().mockReturnValue(DotExperimentStatus.DRAFT)
 });
 
 describe('DotExperimentsConfigureFooterComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureFooterComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
+    let dispatch: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureFooterComponent,
@@ -80,11 +81,11 @@ describe('DotExperimentsConfigureFooterComponent', () => {
     beforeEach(() => {
         storeMock = createStoreMock();
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('hint', () => {

@@ -1,7 +1,8 @@
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
-import { SpyObject, mockProvider } from '@openng/spectator/jest';
-import { Subject, of, throwError } from 'rxjs';
+import { SpyObject, mockProvider } from '@openng/spectator/vitest';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
@@ -93,16 +94,16 @@ describe('HostFolderFiledStore', () => {
             providers: [
                 HostFolderFiledStore,
                 mockProvider(DotHttpErrorManagerService, {
-                    handle: jest.fn()
+                    handle: vi.fn()
                 }),
                 mockProvider(DotBrowsingService, {
-                    getSitesPage: jest.fn(() =>
-                        of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))
-                    ),
-                    resolveSiteByHostname: jest.fn(),
-                    getCurrentSiteAsTreeNodeItem: jest.fn(),
-                    buildTreeByPaths: jest.fn(),
-                    searchFolders: jest.fn(() => of({ folders: [], pagination: mockPagination }))
+                    getSitesPage: vi.fn(() => of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))),
+                    resolveSiteByHostname: vi.fn(),
+                    // The store pipes this when the field is required; a bare vi.fn()
+                    // returns undefined and it dereferences nothing.
+                    getCurrentSiteAsTreeNodeItem: vi.fn(() => EMPTY),
+                    buildTreeByPaths: vi.fn(),
+                    searchFolders: vi.fn(() => of({ folders: [], pagination: mockPagination }))
                 })
             ]
         });

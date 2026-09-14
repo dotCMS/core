@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { ElementRef } from '@angular/core';
 
@@ -27,14 +28,14 @@ function bindBlurHarness(setup: (editor: TinyMceEditorStub) => void): {
     container.appendChild(bodyElement);
 
     const editor: TinyMceEditorStub = {
-        on: jest.fn(),
+        on: vi.fn(),
         targetElm,
         bodyElement,
-        getContent: jest.fn().mockReturnValue(''),
+        getContent: vi.fn().mockReturnValue(''),
         startContent: '',
         isNotDirty: true,
         target: document.createElement('div'),
-        destroy: jest.fn()
+        destroy: vi.fn()
     };
 
     setup(editor);
@@ -48,7 +49,7 @@ function bindBlurHarness(setup: (editor: TinyMceEditorStub) => void): {
         blurHandler({
             target: editor,
             type: 'blur',
-            stopImmediatePropagation: jest.fn()
+            stopImmediatePropagation: vi.fn()
         });
 
     return { editor, invokeBlur };
@@ -57,18 +58,18 @@ function bindBlurHarness(setup: (editor: TinyMceEditorStub) => void): {
 interface BlurEventStub {
     target: TinyMceEditorStub;
     type: string;
-    stopImmediatePropagation: jest.Mock;
+    stopImmediatePropagation: Mock;
 }
 
 interface TinyMceEditorStub {
-    on: jest.Mock;
+    on: Mock;
     targetElm: HTMLElement;
     bodyElement: HTMLElement;
-    getContent: jest.Mock;
+    getContent: Mock;
     startContent: string;
     isNotDirty: boolean;
     target: HTMLElement;
-    destroy: jest.Mock;
+    destroy: Mock;
 }
 
 describe('InlineEditService', () => {
@@ -82,7 +83,7 @@ describe('InlineEditService', () => {
         { mode: 'full', label: 'full' },
         { mode: '', label: 'default (minimal)' }
     ])('should pass convert_urls: false to tinymce.init ($label)', ({ mode }) => {
-        const initMock = jest.fn().mockResolvedValue([]);
+        const initMock = vi.fn().mockResolvedValue([]);
         const iframeWindow = {
             tinymce: { init: initMock }
         } as unknown as Window;
@@ -204,10 +205,12 @@ describe('InlineEditService', () => {
     });
 
     describe('TinyMCE blur → update-contentlet-inline-editing', () => {
-        let postMessageSpy: jest.SpyInstance;
+        let postMessageSpy: MockInstance;
 
         beforeEach(() => {
-            postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation();
+            postMessageSpy = vi
+                .spyOn(window.parent, 'postMessage')
+                .mockImplementation(() => undefined);
         });
 
         afterEach(() => {
@@ -215,7 +218,7 @@ describe('InlineEditService', () => {
         });
 
         function initAndGetSetup(): (editor: TinyMceEditorStub) => void {
-            const initMock = jest.fn().mockResolvedValue([]);
+            const initMock = vi.fn().mockResolvedValue([]);
             const iframeWindow = {
                 tinymce: { init: initMock }
             } as unknown as Window;

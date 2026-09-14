@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { HttpHeaders } from '@angular/common/http';
 
@@ -42,338 +42,350 @@ describe('DotWorkflowActionsFireService', () => {
 
     beforeEach(() => (spectator = createHttp()));
 
-    it('should SAVE and return a new contentlet', (done) => {
-        const mockResult = {
-            name: 'test'
-        };
-
-        const requestBody = {
-            contentlet: {
-                contentType: 'persona',
-                name: 'Test'
-            }
-        };
-
-        spectator.service.newContentlet('persona', { name: 'Test' }).subscribe((res) => {
-            expect(res).toEqual([mockResult]);
-            done();
-        });
-
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/NEW',
-            HttpMethod.PUT
-        );
-
-        expect(req.request.body).toEqual(requestBody);
-        expect(req.request.headers).toEqual(defaultHeaders);
-
-        req.flush({
-            entity: [mockResult]
-        });
-    });
-
-    it('should SAVE and return a new contentlet with FormData', (done) => {
-        const mockResult = {
-            name: 'test'
-        };
-
-        const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
-
-        const requestBody = {
-            contentlet: {
-                contentType: 'dotAsset',
-                file: file.name
-            }
-        };
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        spectator.service
-            .newContentlet('dotAsset', { file: file.name }, formData)
-            .subscribe((res) => {
-                expect(res).toEqual([mockResult]);
-                done();
-            });
-
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/NEW',
-            HttpMethod.PUT
-        );
-
-        expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
-
-        req.flush({
-            entity: [mockResult]
-        });
-    });
-
-    it('should fire NEW with a baseType (no contentType) in the body', (done) => {
-        const mockResult = { name: 'test' };
-
-        const requestBody = {
-            contentlet: {
-                baseType: 'FILEASSET',
-                name: 'Test'
-            }
-        };
-
-        spectator.service
-            .newContentletByBaseType('FILEASSET', { name: 'Test' })
-            .subscribe((res) => {
-                expect(res).toEqual([mockResult]);
-                done();
-            });
-
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/NEW',
-            HttpMethod.PUT
-        );
-
-        expect(req.request.body).toEqual(requestBody);
-        expect(req.request.body.contentlet.contentType).toBeUndefined();
-        expect(req.request.headers).toEqual(defaultHeaders);
-
-        req.flush({ entity: [mockResult] });
-    });
-
-    it('should fire NEW with a baseType and FormData', (done) => {
-        const mockResult = { name: 'test' };
-        const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
-
-        const requestBody = {
-            contentlet: {
-                baseType: 'FILEASSET',
-                file: file.name
-            }
-        };
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        spectator.service
-            .newContentletByBaseType('FILEASSET', { file: file.name }, formData)
-            .subscribe((res) => {
-                expect(res).toEqual([mockResult]);
-                done();
-            });
-
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/NEW',
-            HttpMethod.PUT
-        );
-
-        expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
-
-        req.flush({ entity: [mockResult] });
-    });
-
-    it('should EDIT and return the updated contentlet', (done) => {
-        const mockResult = {
-            inode: '123'
-        };
-
-        spectator.service
-            .saveContentlet({ inode: '123', title: 'hello world' })
-            .subscribe((res) => {
-                expect(res).toEqual([mockResult]);
-                done();
-            });
-
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/EDIT?inode=123',
-            HttpMethod.PUT
-        );
-        req.flush({
-            entity: [mockResult]
-        });
-    });
-
-    it('should DESTROY and return the deleted contentlet', (done) => {
-        const mockResult = {
-            inode: '123'
-        };
-
-        spectator.service.deleteContentlet({ inode: '123' }).subscribe((res) => {
-            expect(res).toEqual([mockResult]);
-            done();
-        });
-
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/DESTROY?inode=123',
-            HttpMethod.PUT
-        );
-
-        req.flush({
-            entity: [mockResult]
-        });
-    });
-
-    it('should PUBLISH and return a new contentlet', (done) => {
-        const mockResult = {
-            name: 'test'
-        };
-
-        const requestBody = {
-            contentlet: {
-                contentType: 'persona',
+    it('should SAVE and return a new contentlet', () =>
+        new Promise<void>((done) => {
+            const mockResult = {
                 name: 'test'
-            }
-        };
+            };
 
-        spectator.service.publishContentlet('persona', { name: 'test' }).subscribe((res) => {
-            expect(res).toEqual([mockResult]);
-            done();
-        });
+            const requestBody = {
+                contentlet: {
+                    contentType: 'persona',
+                    name: 'Test'
+                }
+            };
 
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/PUBLISH',
-            HttpMethod.PUT
-        );
-
-        expect(req.request.body).toEqual(requestBody);
-        expect(req.request.headers).toEqual(defaultHeaders);
-
-        req.flush({
-            entity: [mockResult]
-        });
-    });
-
-    it('should PUBLISH, wait for index and return a new contentlet', (done) => {
-        const mockResult = {
-            name: 'test'
-        };
-        const requestBody = {
-            contentlet: {
-                contentType: 'persona',
-                name: 'test'
-            }
-        };
-
-        spectator.service
-            .publishContentletAndWaitForIndex('persona', { name: 'test' })
-            .subscribe((res) => {
+            spectator.service.newContentlet('persona', { name: 'Test' }).subscribe((res) => {
                 expect(res).toEqual([mockResult]);
                 done();
             });
 
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
-            HttpMethod.PUT
-        );
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/NEW',
+                HttpMethod.PUT
+            );
 
-        expect(req.request.body).toEqual(requestBody);
-        expect(req.request.headers).toEqual(defaultHeaders);
+            expect(req.request.body).toEqual(requestBody);
+            expect(req.request.headers).toEqual(defaultHeaders);
 
-        req.flush({
-            entity: [mockResult]
-        });
-    });
+            req.flush({
+                entity: [mockResult]
+            });
+        }));
 
-    it('should PUBLISH and Wait For Index with Individual Permissions', (done) => {
-        const mockResult = {
-            name: 'test'
-        };
-
-        const requestBody = {
-            contentlet: {
-                contentType: 'persona',
+    it('should SAVE and return a new contentlet with FormData', () =>
+        new Promise<void>((done) => {
+            const mockResult = {
                 name: 'test'
-            },
-            individualPermissions: { READ: ['123'], WRITE: ['456'] }
-        };
+            };
 
-        spectator.service
-            .publishContentletAndWaitForIndex(
-                'persona',
-                { name: 'test' },
-                { READ: ['123'], WRITE: ['456'] }
-            )
-            .subscribe((res) => {
+            const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+
+            const requestBody = {
+                contentlet: {
+                    contentType: 'dotAsset',
+                    file: file.name
+                }
+            };
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            spectator.service
+                .newContentlet('dotAsset', { file: file.name }, formData)
+                .subscribe((res) => {
+                    expect(res).toEqual([mockResult]);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/NEW',
+                HttpMethod.PUT
+            );
+
+            expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
+
+            req.flush({
+                entity: [mockResult]
+            });
+        }));
+
+    it('should fire NEW with a baseType (no contentType) in the body', () =>
+        new Promise<void>((done) => {
+            const mockResult = { name: 'test' };
+
+            const requestBody = {
+                contentlet: {
+                    baseType: 'FILEASSET',
+                    name: 'Test'
+                }
+            };
+
+            spectator.service
+                .newContentletByBaseType('FILEASSET', { name: 'Test' })
+                .subscribe((res) => {
+                    expect(res).toEqual([mockResult]);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/NEW',
+                HttpMethod.PUT
+            );
+
+            expect(req.request.body).toEqual(requestBody);
+            expect(req.request.body.contentlet.contentType).toBeUndefined();
+            expect(req.request.headers).toEqual(defaultHeaders);
+
+            req.flush({ entity: [mockResult] });
+        }));
+
+    it('should fire NEW with a baseType and FormData', () =>
+        new Promise<void>((done) => {
+            const mockResult = { name: 'test' };
+            const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+
+            const requestBody = {
+                contentlet: {
+                    baseType: 'FILEASSET',
+                    file: file.name
+                }
+            };
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            spectator.service
+                .newContentletByBaseType('FILEASSET', { file: file.name }, formData)
+                .subscribe((res) => {
+                    expect(res).toEqual([mockResult]);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/NEW',
+                HttpMethod.PUT
+            );
+
+            expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
+
+            req.flush({ entity: [mockResult] });
+        }));
+
+    it('should EDIT and return the updated contentlet', () =>
+        new Promise<void>((done) => {
+            const mockResult = {
+                inode: '123'
+            };
+
+            spectator.service
+                .saveContentlet({ inode: '123', title: 'hello world' })
+                .subscribe((res) => {
+                    expect(res).toEqual([mockResult]);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/EDIT?inode=123',
+                HttpMethod.PUT
+            );
+            req.flush({
+                entity: [mockResult]
+            });
+        }));
+
+    it('should DESTROY and return the deleted contentlet', () =>
+        new Promise<void>((done) => {
+            const mockResult = {
+                inode: '123'
+            };
+
+            spectator.service.deleteContentlet({ inode: '123' }).subscribe((res) => {
                 expect(res).toEqual([mockResult]);
                 done();
             });
 
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
-            HttpMethod.PUT
-        );
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/DESTROY?inode=123',
+                HttpMethod.PUT
+            );
 
-        expect(req.request.body).toEqual(requestBody);
-        expect(req.request.headers).toEqual(defaultHeaders);
+            req.flush({
+                entity: [mockResult]
+            });
+        }));
 
-        req.flush({
-            entity: [mockResult]
-        });
-    });
+    it('should PUBLISH and return a new contentlet', () =>
+        new Promise<void>((done) => {
+            const mockResult = {
+                name: 'test'
+            };
 
-    it('should create and return a new Content', (done) => {
-        spectator.service
-            .fireTo({
-                inode: '123',
-                actionId: 'new',
-                data: { id: '123' }
-            })
-            .subscribe((res) => {
-                expect(res).toEqual(dotcmsContentletMock);
+            const requestBody = {
+                contentlet: {
+                    contentType: 'persona',
+                    name: 'test'
+                }
+            };
+
+            spectator.service.publishContentlet('persona', { name: 'test' }).subscribe((res) => {
+                expect(res).toEqual([mockResult]);
                 done();
             });
 
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/new/fire?indexPolicy=WAIT_FOR&inode=123',
-            HttpMethod.PUT
-        );
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/PUBLISH',
+                HttpMethod.PUT
+            );
 
-        req.flush({
-            entity: dotcmsContentletMock
-        });
-    });
+            expect(req.request.body).toEqual(requestBody);
+            expect(req.request.headers).toEqual(defaultHeaders);
 
-    it('should fire bulk request', (done) => {
-        const mockResult: DotActionBulkResult = {
-            skippedCount: 1,
-            successCount: 2,
-            fails: []
-        };
+            req.flush({
+                entity: [mockResult]
+            });
+        }));
 
-        spectator.service.bulkFire(mockBulkOptions).subscribe((res) => {
-            expect(res).toEqual(mockResult);
-            done();
-        });
+    it('should PUBLISH, wait for index and return a new contentlet', () =>
+        new Promise<void>((done) => {
+            const mockResult = {
+                name: 'test'
+            };
+            const requestBody = {
+                contentlet: {
+                    contentType: 'persona',
+                    name: 'test'
+                }
+            };
 
-        const req = spectator.expectOne(
-            '/api/v1/workflow/contentlet/actions/bulk/fire',
-            HttpMethod.PUT
-        );
-        req.flush({
-            entity: mockResult
-        });
-    });
+            spectator.service
+                .publishContentletAndWaitForIndex('persona', { name: 'test' })
+                .subscribe((res) => {
+                    expect(res).toEqual([mockResult]);
+                    done();
+                });
 
-    it('should fire a default system action over multiple inodes and return its summary', (done) => {
-        // The endpoint streams one entry per contentlet plus a summary. The summary is the only
-        // honest source of success/fail counts: individual items can fail while the request is 200.
-        const mockResult: DotFireDefaultActionResult = {
-            results: [],
-            summary: { affected: 2, successCount: 1, failCount: 1, time: 12 }
-        };
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
+                HttpMethod.PUT
+            );
 
-        spectator.service
-            .fireDefaultAction({ action: 'UNLOCK', inodes: ['1', '2'] })
-            .subscribe((res) => {
+            expect(req.request.body).toEqual(requestBody);
+            expect(req.request.headers).toEqual(defaultHeaders);
+
+            req.flush({
+                entity: [mockResult]
+            });
+        }));
+
+    it('should PUBLISH and Wait For Index with Individual Permissions', () =>
+        new Promise<void>((done) => {
+            const mockResult = {
+                name: 'test'
+            };
+
+            const requestBody = {
+                contentlet: {
+                    contentType: 'persona',
+                    name: 'test'
+                },
+                individualPermissions: { READ: ['123'], WRITE: ['456'] }
+            };
+
+            spectator.service
+                .publishContentletAndWaitForIndex(
+                    'persona',
+                    { name: 'test' },
+                    { READ: ['123'], WRITE: ['456'] }
+                )
+                .subscribe((res) => {
+                    expect(res).toEqual([mockResult]);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
+                HttpMethod.PUT
+            );
+
+            expect(req.request.body).toEqual(requestBody);
+            expect(req.request.headers).toEqual(defaultHeaders);
+
+            req.flush({
+                entity: [mockResult]
+            });
+        }));
+
+    it('should create and return a new Content', () =>
+        new Promise<void>((done) => {
+            spectator.service
+                .fireTo({
+                    inode: '123',
+                    actionId: 'new',
+                    data: { id: '123' }
+                })
+                .subscribe((res) => {
+                    expect(res).toEqual(dotcmsContentletMock);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/new/fire?indexPolicy=WAIT_FOR&inode=123',
+                HttpMethod.PUT
+            );
+
+            req.flush({
+                entity: dotcmsContentletMock
+            });
+        }));
+
+    it('should fire bulk request', () =>
+        new Promise<void>((done) => {
+            const mockResult: DotActionBulkResult = {
+                skippedCount: 1,
+                successCount: 2,
+                fails: []
+            };
+
+            spectator.service.bulkFire(mockBulkOptions).subscribe((res) => {
                 expect(res).toEqual(mockResult);
                 done();
             });
 
-        const req = spectator.expectOne(
-            '/api/v1/workflow/actions/default/fire/UNLOCK?indexPolicy=WAIT_FOR',
-            HttpMethod.POST
-        );
+            const req = spectator.expectOne(
+                '/api/v1/workflow/contentlet/actions/bulk/fire',
+                HttpMethod.PUT
+            );
+            req.flush({
+                entity: mockResult
+            });
+        }));
 
-        expect(req.request.body).toEqual({ contentlet: [{ inode: '1' }, { inode: '2' }] });
+    it('should fire a default system action over multiple inodes and return its summary', () =>
+        new Promise<void>((done) => {
+            // The endpoint streams one entry per contentlet plus a summary. The summary is the only
+            // honest source of success/fail counts: individual items can fail while the request is 200.
+            const mockResult: DotFireDefaultActionResult = {
+                results: [],
+                summary: { affected: 2, successCount: 1, failCount: 1, time: 12 }
+            };
 
-        req.flush({ entity: mockResult });
-    });
+            spectator.service
+                .fireDefaultAction({ action: 'UNLOCK', inodes: ['1', '2'] })
+                .subscribe((res) => {
+                    expect(res).toEqual(mockResult);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/UNLOCK?indexPolicy=WAIT_FOR',
+                HttpMethod.POST
+            );
+
+            expect(req.request.body).toEqual({ contentlet: [{ inode: '1' }, { inode: '2' }] });
+
+            req.flush({ entity: mockResult });
+        }));
 
     afterEach(() => {
         spectator.controller.verify();

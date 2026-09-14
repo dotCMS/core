@@ -1,4 +1,6 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
+import { firstValueFrom } from 'rxjs';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { DotBatchOutcome, DOT_JOB_STATES, DotJob, DotJobState } from '@dotcms/dotcms-models';
 
@@ -52,30 +54,26 @@ describe('DotJobService', () => {
             spectator.expectOne(STATUS_URL, HttpMethod.GET);
         });
 
-        it('should unwrap the response entity', (done) => {
-            spectator.service.status(JOB_ID).subscribe((result) => {
-                expect(result).toEqual(job({ state: 'SUCCESS' }));
-                done();
-            });
+        it('should unwrap the response entity', async () => {
+            const read = firstValueFrom(spectator.service.status(JOB_ID));
 
             spectator
                 .expectOne(STATUS_URL, HttpMethod.GET)
                 .flush({ entity: job({ state: 'SUCCESS' }) });
+
+            expect(await read).toEqual(job({ state: 'SUCCESS' }));
         });
 
-        it('should surface a transport failure rather than swallowing it', (done) => {
+        it('should surface a transport failure rather than swallowing it', async () => {
             // A run whose state cannot be read is not a run that finished cleanly. Reporting
             // nothing here would let a caller settle rows on no evidence (FR-024).
-            spectator.service.status(JOB_ID).subscribe({
-                error: (error) => {
-                    expect(error).toBeTruthy();
-                    done();
-                }
-            });
+            const read = firstValueFrom(spectator.service.status(JOB_ID));
 
             spectator
                 .expectOne(STATUS_URL, HttpMethod.GET)
                 .flush(null, { status: 404, statusText: 'Not Found' });
+
+            await expect(read).rejects.toBeTruthy();
         });
     });
 

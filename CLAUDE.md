@@ -69,6 +69,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
 - **Integration test registration**: A new integration test class not added to a `MainSuite*`/`Junit5Suite*` `@SuiteClasses` list compiles fine but is **silently never run in CI** (green build, zero coverage) — it only runs locally via `-Dit.test=`. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
+- **Integration tests can silently run zero tests**: the Maven build cache may short-circuit failsafe (`Skipping plugin execution (cached): failsafe:integration-test`) — BUILD SUCCESS, `<completed>0</completed>`, exit 0. Pass `-Dmaven.build.cache.enabled=false`, prefer class-level over `-Dit.test=Class#method` selection, and confirm `Tests run: N` in `target/failsafe-reports/*.txt` rather than trusting the exit code. See [Integration Tests → The build cache can skip the tests entirely](docs/testing/INTEGRATION_TESTS.md#the-build-cache-can-skip-the-tests-entirely).
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
 
 ### OpenAPI / Swagger

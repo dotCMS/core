@@ -1,5 +1,5 @@
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 
 import { DOT_AI_VECTOR_OPERATOR } from '@dotcms/dotcms-models';
 

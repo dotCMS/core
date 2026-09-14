@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
 
 import { DOT_BULK_UPLOAD_FAILURE_REASONS, DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
 

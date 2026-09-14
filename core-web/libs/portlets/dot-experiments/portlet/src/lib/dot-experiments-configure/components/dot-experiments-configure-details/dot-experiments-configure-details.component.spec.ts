@@ -1,5 +1,6 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Injector, signal, WritableSignal } from '@angular/core';
 import { disabled, form, maxLength } from '@angular/forms/signals';
@@ -117,7 +118,7 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('rendering the fields it is handed', () => {
@@ -340,7 +341,7 @@ describe('DotExperimentsConfigureDetailsComponent', () => {
         });
 
         it('should dispatch saveDraftRequested when pressed', () => {
-            const dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            const dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
             mountWith(EXPERIMENT_DETAILS, true);
 
             spectator.click(saveButton() as HTMLElement);

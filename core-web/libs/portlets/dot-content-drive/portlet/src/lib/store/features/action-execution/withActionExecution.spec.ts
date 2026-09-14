@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     AddToBundleService,
@@ -84,12 +84,12 @@ describe('withActionExecution', () => {
     let spectator: SpectatorService<InstanceType<typeof actionExecutionStoreMock>>;
     let store: InstanceType<typeof actionExecutionStoreMock>;
 
-    const fireDefaultAction = jest.fn();
-    const bulkFire = jest.fn();
-    const addToBundle = jest.fn();
-    const pushPublishAssets = jest.fn();
-    const refresh = jest.fn();
-    const handle = jest.fn();
+    const fireDefaultAction = vi.fn();
+    const bulkFire = vi.fn();
+    const addToBundle = vi.fn();
+    const pushPublishAssets = vi.fn();
+    const refresh = vi.fn();
+    const handle = vi.fn();
 
     /** Lets a test push a completion event onto the socket the feature subscribes to on init. */
     let socketEvents: Subject<DotBulkRefreshCompletedEvent>;
@@ -625,9 +625,10 @@ describe('withActionExecution', () => {
             // it: the completion event is the only thing that knows the batch is over.
             build();
             const runId = store.startExternalRun({
+                operation: 'upload:1',
                 actionName: 'Upload',
                 total: 1,
-                targets: []
+                targets: [] as string[]
             });
             store.trackUploadJob('upload-1', [], runId);
 

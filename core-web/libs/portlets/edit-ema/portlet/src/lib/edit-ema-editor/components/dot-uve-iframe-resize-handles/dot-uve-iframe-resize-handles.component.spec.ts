@@ -1,4 +1,5 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -21,12 +22,51 @@ function makePointerEvent(type: string, props: Partial<PointerEvent> = {}): Poin
     return event;
 }
 
+/**
+ * A jsdom-native AbortController for this file only.
+ *
+ * The component passes `{ signal }` to `addEventListener`, and zone.js handles that
+ * option by registering an `abort` listener ON THE SIGNAL using the jsdom
+ * `EventTarget.prototype.addEventListener` it captured at patch time. Under Vitest the
+ * global AbortSignal is Node's — `signal instanceof window.EventTarget` is false — so
+ * jsdom's brand check rejects it with "'addEventListener' called on an object that is
+ * not a valid instance of EventTarget", the drag listeners are never attached, and both
+ * pointermove and pointerup do nothing. Jest's older jsdom accepted it.
+ *
+ * Scoped to this spec rather than the project setup: it swaps a global, and this is the
+ * only component in the workspace that hands an AbortSignal to addEventListener.
+ */
+class JsdomAbortSignal extends EventTarget {
+    aborted = false;
+    reason: unknown = undefined;
+    onabort: ((this: AbortSignal, event: Event) => void) | null = null;
+
+    throwIfAborted(): void {
+        if (this.aborted) {
+            throw this.reason;
+        }
+    }
+}
+
+class JsdomAbortController {
+    readonly signal = new JsdomAbortSignal();
+
+    abort(reason?: unknown): void {
+        if (this.signal.aborted) {
+            return;
+        }
+        this.signal.aborted = true;
+        this.signal.reason = reason ?? new Error('AbortError');
+        this.signal.dispatchEvent(new Event('abort'));
+    }
+}
+
 describe('DotUveIframeResizeHandlesComponent', () => {
     let spectator: Spectator<DotUveIframeResizeHandlesComponent>;
-    let updateEditorResizeState: jest.Mock;
-    let updateEditorOnResizeEnd: jest.Mock;
-    let viewExitDevicePreset: jest.Mock;
-    let viewSetIframeSize: jest.Mock;
+    let updateEditorResizeState: Mock;
+    let updateEditorOnResizeEnd: Mock;
+    let viewExitDevicePreset: Mock;
+    let viewSetIframeSize: Mock;
 
     const createComponent = createComponentFactory({
         component: DotUveIframeResizeHandlesComponent,
@@ -45,12 +85,20 @@ describe('DotUveIframeResizeHandlesComponent', () => {
         ]
     });
 
+    let originalAbortController: typeof AbortController;
+
     beforeEach(() => {
-        updateEditorResizeState = jest.fn();
-        updateEditorOnResizeEnd = jest.fn();
-        viewExitDevicePreset = jest.fn();
-        viewSetIframeSize = jest.fn();
+        originalAbortController = globalThis.AbortController;
+        globalThis.AbortController = JsdomAbortController as unknown as typeof AbortController;
+        updateEditorResizeState = vi.fn();
+        updateEditorOnResizeEnd = vi.fn();
+        viewExitDevicePreset = vi.fn();
+        viewSetIframeSize = vi.fn();
         spectator = createComponent();
+    });
+
+    afterEach(() => {
+        globalThis.AbortController = originalAbortController;
     });
 
     /**
@@ -59,13 +107,13 @@ describe('DotUveIframeResizeHandlesComponent', () => {
      */
     function stubPointerCapture(handle: HTMLElement) {
         let captured = false;
-        handle.setPointerCapture = jest.fn(() => {
+        handle.setPointerCapture = vi.fn(() => {
             captured = true;
         });
-        handle.releasePointerCapture = jest.fn(() => {
+        handle.releasePointerCapture = vi.fn(() => {
             captured = false;
         });
-        handle.hasPointerCapture = jest.fn(() => captured);
+        handle.hasPointerCapture = vi.fn(() => captured);
         return {
             isCaptured: () => captured
         };
@@ -90,7 +138,7 @@ describe('DotUveIframeResizeHandlesComponent', () => {
         const handle = spectator.query(byTestId('resize-handle-right')) as HTMLElement;
         stubPointerCapture(handle);
         // Pin the handle's bounding rect so the math is deterministic.
-        handle.getBoundingClientRect = jest.fn(
+        handle.getBoundingClientRect = vi.fn(
             () =>
                 ({
                     left: 100,
@@ -129,7 +177,7 @@ describe('DotUveIframeResizeHandlesComponent', () => {
     it('cleans up listeners and resets state when destroyed mid-drag', () => {
         const handle = spectator.query(byTestId('resize-handle-right')) as HTMLElement;
         const cap = stubPointerCapture(handle);
-        handle.getBoundingClientRect = jest.fn(
+        handle.getBoundingClientRect = vi.fn(
             () => ({ left: 100, top: 0, width: 16, height: 100 }) as DOMRect
         );
 

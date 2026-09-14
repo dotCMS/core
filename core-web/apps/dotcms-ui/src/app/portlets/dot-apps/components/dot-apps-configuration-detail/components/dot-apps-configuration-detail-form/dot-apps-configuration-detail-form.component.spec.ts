@@ -1,6 +1,7 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { MarkdownComponent } from 'ngx-markdown';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
@@ -308,7 +309,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const field = secrets[4];
 
-            const openMock = jest.fn();
+            const openMock = vi.fn();
             window.open = openMock;
             const row = spectator.query(byTestId('integration'));
             const buttonElement = row.querySelector('button');
@@ -332,8 +333,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state when value changed', () => {
-            const spyDataOutput = jest.spyOn(spectator.component.data, 'emit');
-            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
+            const spyDataOutput = vi.spyOn(spectator.component.data, 'emit');
+            const spyValidOutput = vi.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('Test2');
             spectator.component.myFormGroup.get('password').setValue('Password2');
@@ -380,7 +381,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state disabled when required field empty', () => {
-            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
+            const spyValidOutput = vi.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);

@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
 
 import { DotBatchItemResult, DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
 
@@ -25,7 +25,10 @@ describe('describeUploadFailures', () => {
     const linesOf = (results: DotBatchItemResult<DotBulkUploadFailureReason>[] | undefined) =>
         describeUploadFailures(results, get).flatMap((group) => group.lines);
 
-    const failed = (key: string, reason: DotBulkUploadFailureReason): DotBatchItemResult => ({
+    const failed = (
+        key: string,
+        reason: DotBulkUploadFailureReason
+    ): DotBatchItemResult<DotBulkUploadFailureReason> => ({
         key,
         status: 'FAILED',
         reason

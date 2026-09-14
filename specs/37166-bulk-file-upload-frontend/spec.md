@@ -382,6 +382,13 @@ workflow action on rows selected in the listing.
   in-flight state in the portlet's persistent toolbar indicator.
 - **FR-008**: In-flight state MUST NOT be reported as a transient notification. Transient
   notifications are reserved for terminal states.
+- **FR-008a** (amended 2026-09-11): One exception. When a submission is accepted and the batch
+  passes to the server, the surface MAY raise a single notification saying the author can now leave
+  the page. This reports a change in what the *author* may do, not the run's position: until the
+  handle exists, navigating away loses the batch and the page guard says so; afterwards leaving
+  costs nothing. That rule changes with no visible cause, and the indicator cannot carry it —
+  it states that work is happening, not that the author is released from it. No other in-flight
+  notification is permitted, and this one MUST NOT claim progress or completion.
 - **FR-009**: The content listing's own loading state MUST mean only that the listing is being
   fetched. No operation may use it to report its own progress.
 - **FR-010**: The in-flight indicator MUST name the operation and what it is being applied to: the

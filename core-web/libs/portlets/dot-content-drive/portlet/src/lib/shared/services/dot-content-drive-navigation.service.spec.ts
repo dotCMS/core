@@ -1,11 +1,11 @@
-import { describe, expect, it } from '@jest/globals';
 import {
     createServiceFactory,
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, Mocked, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -36,41 +36,41 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 const mockStoreWithFlag = (enabled: boolean) =>
     mockProvider(DotContentDriveStore, {
         flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: enabled }),
-        getFilterValue: jest.fn().mockReturnValue(undefined),
-        defaultLanguageId: jest.fn().mockReturnValue(undefined)
+        getFilterValue: vi.fn().mockReturnValue(undefined),
+        defaultLanguageId: vi.fn().mockReturnValue(undefined)
     });
 
 describe('DotContentDriveNavigationService', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
     let service: DotContentDriveNavigationService;
-    let router: jest.Mocked<Router>;
-    let contentTypeService: jest.Mocked<DotContentTypeService>;
-    let dotRouterService: jest.Mocked<DotRouterService>;
+    let router: Mocked<Router>;
+    let contentTypeService: Mocked<DotContentTypeService>;
+    let dotRouterService: Mocked<DotRouterService>;
     let location: SpyObject<Location>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
-    let contentSearch: jest.Mocked<DotContentSearchService>;
+    let contentSearch: Mocked<DotContentSearchService>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
         providers: [
             mockProvider(Router, {
-                navigate: jest.fn()
+                navigate: vi.fn()
             }),
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn()
+                getContentType: vi.fn()
             }),
             mockProvider(DotRouterService, {
-                goToEditPage: jest.fn()
+                goToEditPage: vi.fn()
             }),
             mockProvider(Location, {
-                path: jest.fn()
+                path: vi.fn()
             }),
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn().mockReturnValue(of({}))
+                handle: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotContentSearchService, {
-                get: jest.fn()
+                get: vi.fn()
             }),
             // Side panel feature flag ON by default (read from the store's flags slice) so the
             // side-panel tests below apply; the "side panel disabled" block re-creates it off.
@@ -91,7 +91,7 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         location.path.mockReset();
     });
 
@@ -619,8 +619,8 @@ describe('DotContentDriveNavigationService', () => {
 describe('DotContentDriveNavigationService (side panel disabled)', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
     let service: DotContentDriveNavigationService;
-    let router: jest.Mocked<Router>;
-    let contentTypeService: jest.Mocked<DotContentTypeService>;
+    let router: Mocked<Router>;
+    let contentTypeService: Mocked<DotContentTypeService>;
 
     const newEditorType = () =>
         createFakeContentType({
@@ -633,14 +633,14 @@ describe('DotContentDriveNavigationService (side panel disabled)', () => {
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
         providers: [
-            mockProvider(Router, { navigate: jest.fn() }),
-            mockProvider(DotContentTypeService, { getContentType: jest.fn() }),
-            mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
-            mockProvider(Location, { path: jest.fn() }),
+            mockProvider(Router, { navigate: vi.fn() }),
+            mockProvider(DotContentTypeService, { getContentType: vi.fn() }),
+            mockProvider(DotRouterService, { goToEditPage: vi.fn() }),
+            mockProvider(Location, { path: vi.fn() }),
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn().mockReturnValue(of({}))
+                handle: vi.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotContentSearchService, { get: jest.fn() }),
+            mockProvider(DotContentSearchService, { get: vi.fn() }),
             mockStoreWithFlag(false)
         ]
     });
@@ -677,7 +677,7 @@ describe('DotContentDriveNavigationService (side panel disabled)', () => {
         // The param can outlive the flag being on (shared link, bookmark, staging→prod) — reading
         // the flag here (not skipping it) keeps this path honoring AC15 when the flag is off.
         const contentSearch = spectator.inject(DotContentSearchService);
-        (contentSearch.get as jest.Mock).mockReturnValue(
+        (contentSearch.get as Mock).mockReturnValue(
             of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'inode-y' })] } })
         );
 
@@ -698,12 +698,12 @@ describe('DotContentDriveNavigationService ($sidePanelEnabled)', () => {
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
         providers: [
-            mockProvider(Router, { navigate: jest.fn() }),
-            mockProvider(DotContentTypeService, { getContentType: jest.fn() }),
-            mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
-            mockProvider(Location, { path: jest.fn() }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn().mockReturnValue(of({})) }),
-            mockProvider(DotContentSearchService, { get: jest.fn() }),
+            mockProvider(Router, { navigate: vi.fn() }),
+            mockProvider(DotContentTypeService, { getContentType: vi.fn() }),
+            mockProvider(DotRouterService, { goToEditPage: vi.fn() }),
+            mockProvider(Location, { path: vi.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn().mockReturnValue(of({})) }),
+            mockProvider(DotContentSearchService, { get: vi.fn() }),
             mockProvider(DotContentDriveStore, { flags: flagsSignal })
         ]
     });

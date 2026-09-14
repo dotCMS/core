@@ -75,6 +75,42 @@ Verify the suite still resolves the new class:
 ./mvnw test-compile -pl :dotcms-integration -DskipTests
 ```
 
+### The build cache can skip the tests entirely ⚠️
+
+A second way to get a **green build that ran nothing** — distinct from the suite-registration gate
+above, and with the identical symptom.
+
+The Maven build cache can short-circuit the failsafe execution:
+
+```
+[INFO] Skipping plugin execution (cached): failsafe:integration-test
+[INFO] BUILD SUCCESS
+```
+
+`target/failsafe-reports/failsafe-summary.xml` then reads `<completed>0</completed>` and the exit
+code is **0**. Nothing ran, and nothing said so.
+
+**Disable the cache whenever you actually need the tests to execute:**
+
+```bash
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
+  -Dmaven.build.cache.enabled=false \
+  -Dit.test=com.dotcms.example.MyTest
+```
+
+(`just test-integration-ide` already passes this.)
+
+Two related traps in the same area:
+
+- **Select by class, not by method.** `-Dit.test=Class#method` — and the `#methodA+methodB` form —
+  have been observed selecting **nothing** on classes with a custom `@RunWith` runner. Run the
+  whole class.
+- **Use the fully-qualified class name** when the simple name is ambiguous. `MainSuite1a`, for
+  example, registers two different classes called `PublisherAPIImplTest`.
+
+**Always confirm `Tests run: N` in `dotcms-integration/target/failsafe-reports/*.txt`.** The exit
+code alone does not tell you whether anything executed.
+
 ## Testing Patterns
 
 ### Integration Test Structure

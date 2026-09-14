@@ -4,9 +4,10 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -76,7 +77,7 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
     });
 
     it('should saveForm when form is valid', async () => {
-        jest.spyOn(store, 'addVariant');
+        vi.spyOn(store, 'addVariant');
 
         const formValues = {
             name: 'name'

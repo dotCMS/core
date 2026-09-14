@@ -1,5 +1,12 @@
 # Fully Editable Page Using dotCMS + Next.js
 
+> [!NOTE]
+> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen
+> instance (always the current release). If your dotCMS instance is **not** on Evergreen — an
+> older self-hosted release, or an LTS server — installing as-is may fail with GraphQL
+> `FieldUndefined` errors. Check your server's version and replace `latest` with that exact
+> version for every `@dotcms/*` entry in `package.json` before installing.
+
 ## Introduction & Overview
 
 This project demonstrates how to build dynamic, fully editable pages using [dotCMS](https://dotcms.com/) as a headless CMS with a [Next.js](https://nextjs.org/) front end. By combining these technologies, you can:

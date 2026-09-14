@@ -1,12 +1,12 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { NEVER, of, Subject, throwError } from 'rxjs';
+import { Mock, Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
@@ -44,8 +44,7 @@ import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotContentDriveFolder,
-    DotContentDriveItem,
-    DotSystemConfig
+    DotContentDriveItem
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentSidePanelComponent,
@@ -59,7 +58,7 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotFolderListViewComponent, DotUploadTypeSelectorComponent } from '@dotcms/ui';
-import { mockLocales } from '@dotcms/utils-testing';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
@@ -105,7 +104,7 @@ const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(und
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
-    let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
     let messageService: SpyObject<MessageService>;
@@ -133,33 +132,28 @@ describe('DotContentDriveShellComponent', () => {
         providers: [
             GlobalStore,
             mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(MOCK_SITES[0]))
+                getCurrentSite: vi.fn().mockReturnValue(of(MOCK_SITES[0]))
             }),
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                get: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
-            // Returns a real observable: GlobalStore loads the configuration on init, and a mock
-            // that answers `undefined` throws inside that load the moment anything injects the
-            // store, surfacing as unrelated tests failing on `.pipe` of undefined.
-            mockProvider(DotSystemConfigService, {
-                getSystemConfig: () => of({} as DotSystemConfig)
-            }),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             // The folder context menu confirms folder deletes through this.
-            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
+            mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                getContentTypes: jest.fn().mockImplementation(() => of([]))
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                getContentTypes: vi.fn().mockImplementation(() => of([]))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of())
+                get: vi.fn().mockReturnValue(of())
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotUploadFileService, {
-                uploadFileByBaseType: jest.fn().mockReturnValue(of({})),
-                uploadFilesByBaseType: jest.fn().mockReturnValue(
+                uploadFileByBaseType: vi.fn().mockReturnValue(of({})),
+                uploadFilesByBaseType: vi.fn().mockReturnValue(
                     of({
                         kind: 'accepted',
                         handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
@@ -173,16 +167,16 @@ describe('DotContentDriveShellComponent', () => {
             provideHttpClientTesting(),
             // The store composes withFlags, which fetches feature flags on init; stub it.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn(),
-                createContent: jest.fn(),
-                closeEditPanel: jest.fn(),
-                openEditByIdentifier: jest.fn(),
+                editContent: vi.fn(),
+                createContent: vi.fn(),
+                closeEditPanel: vi.fn(),
+                openEditByIdentifier: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal
             }),
             LoggerService,
@@ -191,20 +185,20 @@ describe('DotContentDriveShellComponent', () => {
                 // The store resolves this on init, and both the Action Center's Push Publish row and
                 // the folder context menu's Push Publish item gate on the result. An empty answer
                 // disables them, which is all the shell's own tests need.
-                getEnvironments: jest.fn().mockReturnValue(of([]))
+                getEnvironments: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
-                getBundles: jest.fn().mockReturnValue(of([])),
-                addToBundle: jest.fn().mockReturnValue(of({}))
+                getBundles: vi.fn().mockReturnValue(of([])),
+                addToBundle: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({}))
+                getCurrentUser: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSidePanelNavController, {
-                shouldCollapse: jest.fn().mockReturnValue(false),
-                acquire: jest.fn(),
-                release: jest.fn()
+                shouldCollapse: vi.fn().mockReturnValue(false),
+                acquire: vi.fn(),
+                release: vi.fn()
             })
         ],
         componentProviders: [
@@ -235,55 +229,55 @@ describe('DotContentDriveShellComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(DotContentDriveStore, {
-                    initContentDrive: jest.fn(),
+                    initContentDrive: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
-                    uploadCeilings: jest.fn().mockReturnValue(null),
+                    uploadCeilings: vi.fn().mockReturnValue(null),
                     // Read by the toolbar (rendered for real here) and the drop zone: both gate
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
-                    currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
+                    currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
                     // Tree collapsed at start to render the toggle button on toolbar
-                    isTreeExpanded: jest.fn().mockReturnValue(false),
-                    removeFilter: jest.fn(),
-                    getFilterValue: jest.fn(),
-                    $request: jest.fn(),
-                    items: jest.fn().mockReturnValue(MOCK_ITEMS),
-                    pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
-                    setIsTreeExpanded: jest.fn(),
-                    isTreeVisuallyExpanded: jest.fn().mockReturnValue(false),
-                    isTreeForceCollapsed: jest.fn().mockReturnValue(false),
-                    setTreeForceCollapsed: jest.fn(),
-                    path: jest.fn().mockReturnValue('/test/path'),
+                    isTreeExpanded: vi.fn().mockReturnValue(false),
+                    removeFilter: vi.fn(),
+                    getFilterValue: vi.fn(),
+                    $request: vi.fn(),
+                    items: vi.fn().mockReturnValue(MOCK_ITEMS),
+                    pagination: vi.fn().mockReturnValue(DEFAULT_PAGINATION),
+                    setIsTreeExpanded: vi.fn(),
+                    isTreeVisuallyExpanded: vi.fn().mockReturnValue(false),
+                    isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                    setTreeForceCollapsed: vi.fn(),
+                    path: vi.fn().mockReturnValue('/test/path'),
                     filters: filtersSignal,
-                    clearFilters: jest.fn(),
+                    clearFilters: vi.fn(),
                     status: statusSignal,
-                    sort: jest
+                    sort: vi
                         .fn()
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
-                    pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
-                    setItems: jest.fn(),
-                    setStatus: jest.fn(),
-                    startExternalRun: jest.fn().mockReturnValue('run-1'),
-                    trackUploadJob: jest.fn(),
-                    updateExternalRun: jest.fn(),
+                    pages: vi.fn().mockReturnValue([DEFAULT_PAGE]),
+                    setItems: vi.fn(),
+                    setStatus: vi.fn(),
+                    startExternalRun: vi.fn().mockReturnValue('run-1'),
+                    trackUploadJob: vi.fn(),
+                    updateExternalRun: vi.fn(),
                     activeRunCount: signal(0),
                     toolbarRun: signal(undefined),
                     toolbarRunCount: signal(0),
                     busyRows: signal<string[]>([]),
-                    endExternalRun: jest.fn(),
-                    setPagination: jest.fn(),
-                    setSort: jest.fn(),
+                    endExternalRun: vi.fn(),
+                    setPagination: vi.fn(),
+                    setSort: vi.fn(),
                     selectedItems: selectedItemsSignal,
-                    setSelectedItems: jest.fn(),
+                    setSelectedItems: vi.fn(),
                     // Read by the Action Center, which the shell renders for real inside the dialog.
-                    currentUserIsAdmin: jest.fn().mockReturnValue(false),
+                    currentUserIsAdmin: vi.fn().mockReturnValue(false),
                     // Resolved on portlet init; `false` disables Push Publish everywhere it
                     // is gated, which is all the shell's own tests need.
-                    hasPushPublishEnvironments: jest.fn().mockReturnValue(false),
-                    patchFilters: jest.fn(),
-                    contextMenu: jest.fn().mockReturnValue(null),
+                    hasPushPublishEnvironments: vi.fn().mockReturnValue(false),
+                    patchFilters: vi.fn(),
+                    contextMenu: vi.fn().mockReturnValue(null),
                     dialog: dialogSignal,
                     dialogDrillDown: dialogDrillDownSignal,
                     // Read by the toolbar, which the shell renders for real.
@@ -291,39 +285,39 @@ describe('DotContentDriveShellComponent', () => {
                     // Read by the Locale chip inside that toolbar: the store resolves the languages
                     // once and seeds the environment default into the `languageId` filter.
                     languages: signal(mockLocales),
-                    defaultLanguageId: jest.fn().mockReturnValue(1),
+                    defaultLanguageId: vi.fn().mockReturnValue(1),
                     actionExecutionResult: actionExecutionResultSignal,
-                    clearActionExecutionResult: jest.fn(),
-                    setDialog: jest.fn(),
-                    setDialogDrillDown: jest.fn(),
-                    clearDialogDrillDown: jest.fn(),
-                    loadFolders: jest.fn(),
-                    loadChildFolders: jest.fn(),
-                    updateFolders: jest.fn(),
-                    folders: jest.fn(),
-                    selectedNode: jest.fn(),
-                    setSelectedNode: jest.fn(),
-                    sidebarLoading: jest.fn(),
-                    closeDialog: jest.fn(),
-                    patchContextMenu: jest.fn(),
-                    resetContextMenu: jest.fn(),
-                    setDragItems: jest.fn(),
-                    cleanDragItems: jest.fn(),
-                    dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
-                    loadItems: jest.fn(),
-                    reloadContentDrive: jest.fn(),
-                    setPath: jest.fn(),
-                    setShowAddToBundle: jest.fn(),
-                    userSearchableFields: jest.fn().mockReturnValue([]),
-                    userSearchableActive: jest.fn().mockReturnValue([]),
+                    clearActionExecutionResult: vi.fn(),
+                    setDialog: vi.fn(),
+                    setDialogDrillDown: vi.fn(),
+                    clearDialogDrillDown: vi.fn(),
+                    loadFolders: vi.fn(),
+                    loadChildFolders: vi.fn(),
+                    updateFolders: vi.fn(),
+                    folders: vi.fn(),
+                    selectedNode: vi.fn(),
+                    setSelectedNode: vi.fn(),
+                    sidebarLoading: vi.fn(),
+                    closeDialog: vi.fn(),
+                    patchContextMenu: vi.fn(),
+                    resetContextMenu: vi.fn(),
+                    setDragItems: vi.fn(),
+                    cleanDragItems: vi.fn(),
+                    dragItems: vi.fn().mockReturnValue({ folders: [], contentlets: [] }),
+                    loadItems: vi.fn(),
+                    reloadContentDrive: vi.fn(),
+                    setPath: vi.fn(),
+                    setShowAddToBundle: vi.fn(),
+                    userSearchableFields: vi.fn().mockReturnValue([]),
+                    userSearchableActive: vi.fn().mockReturnValue([]),
                     showInListFields: showInListFieldsSignal,
-                    setUserSearchableFields: jest.fn(),
-                    setShowInListFields: jest.fn(),
-                    addUserSearchableField: jest.fn(),
-                    clearUserSearchableFilters: jest.fn()
+                    setUserSearchableFields: vi.fn(),
+                    setShowInListFields: vi.fn(),
+                    addUserSearchableField: vi.fn(),
+                    clearUserSearchableFilters: vi.fn()
                 }),
                 mockProvider(Router, {
-                    createUrlTree: jest.fn(
+                    createUrlTree: vi.fn(
                         (
                             _commands: unknown[],
                             opts: { queryParams?: Record<string, string | null> }
@@ -341,17 +335,17 @@ describe('DotContentDriveShellComponent', () => {
                     )
                 }),
                 mockProvider(Location, {
-                    go: jest.fn(),
-                    replaceState: jest.fn(),
-                    path: jest.fn().mockReturnValue(''),
+                    go: vi.fn(),
+                    replaceState: vi.fn(),
+                    path: vi.fn().mockReturnValue(''),
                     // Return a real subscription so the shell's popstate listener can be captured
                     // and torn down without throwing on destroy.
-                    subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                    subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
                 }),
                 mockProvider(DotContentTypeService, {
-                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                    getContentTypesWithPagination: jest.fn().mockReturnValue(
+                    getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypesWithPagination: vi.fn().mockReturnValue(
                         of({
                             contentTypes: MOCK_BASE_TYPES,
                             pagination: {
@@ -365,10 +359,10 @@ describe('DotContentDriveShellComponent', () => {
                 // The Action Center child looks up bulk actions on init, which happens as soon as a
                 // selection is present in these tests.
                 mockProvider(DotWorkflowsActionsService, {
-                    getBulkActions: jest.fn().mockReturnValue(of({ schemes: [] }))
+                    getBulkActions: vi.fn().mockReturnValue(of({ schemes: [] }))
                 }),
                 mockProvider(DotWorkflowActionsFireService, {
-                    bulkFire: jest
+                    bulkFire: vi
                         .fn()
                         .mockReturnValue(of({ successCount: 1, skippedCount: 0, fails: [] }))
                 }),
@@ -378,9 +372,9 @@ describe('DotContentDriveShellComponent', () => {
                     clearObserver: of({})
                 }),
                 mockProvider(DotRouterService, {
-                    goToEditPage: jest.fn(),
-                    forbidRouteDeactivation: jest.fn(),
-                    allowRouteDeactivation: jest.fn(),
+                    goToEditPage: vi.fn(),
+                    forbidRouteDeactivation: vi.fn(),
+                    allowRouteDeactivation: vi.fn(),
                     pageLeaveRequest$: pageLeaveRequestSubject
                 })
             ]
@@ -396,7 +390,7 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     // US5 and US6 (issue #32591). Both claims are made in one batch, so the shell holds a single
@@ -420,11 +414,11 @@ describe('DotContentDriveShellComponent', () => {
             // `ZIndexUtils` is a module-level singleton shared by the whole file, and a dialog torn
             // down by an earlier test leaves its entry behind: this suite reads 1102 with nothing
             // visible. Pinned to an empty stack so each test states its own overlay state.
-            jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(0);
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(0);
             spectator.detectChanges();
         });
 
-        afterEach(() => jest.restoreAllMocks());
+        afterEach(() => vi.restoreAllMocks());
 
         describe('Escape', () => {
             it('should clear the selection and leave the filters alone', () => {
@@ -481,7 +475,7 @@ describe('DotContentDriveShellComponent', () => {
             // listener, which never consults `defaultPrevented`. Without declining here, Escape to
             // dismiss a dialog would also wipe the filters or the selection it was operating on.
             it('should do nothing while an overlay is above the listing', () => {
-                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 selectedItemsSignal.set([MOCK_ITEMS[0]]);
                 filtersSignal.set({ contentType: 'Blog' });
                 spectator.detectChanges();
@@ -498,7 +492,7 @@ describe('DotContentDriveShellComponent', () => {
             // matters is that the shell does not act, which the test above covers; that declining
             // falls through to the next claimant is covered in the registry's own spec.
             it('should resume clearing once the overlay closes', () => {
-                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 selectedItemsSignal.set([MOCK_ITEMS[0]]);
                 spectator.detectChanges();
 
@@ -557,7 +551,7 @@ describe('DotContentDriveShellComponent', () => {
             // closes. Declining also leaves the combination to whatever is on top, which may want
             // it — a rich text surface inside a dialog reads Cmd+B as bold.
             it('should do nothing while an overlay is above the listing', () => {
-                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 store.isTreeExpanded.mockReturnValue(true);
 
                 pressModB();
@@ -566,7 +560,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should resume toggling once the overlay closes', () => {
-                const stack = jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
                 store.isTreeExpanded.mockReturnValue(true);
 
                 pressModB();
@@ -578,7 +572,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('should leave the browser default alone when it declines', () => {
-                jest.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
 
                 const event = pressModB();
 
@@ -1154,15 +1148,15 @@ describe('DotContentDriveShellComponent', () => {
             // automatic filter seed is denied an entry.
             store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/first');
-            // `path` is a plain jest.fn, so it is not a tracked dependency. Each phase re-sets the
+            // `path` is a plain vi.fn, so it is not a tracked dependency. Each phase re-sets the
             // real `filters` signal (a fresh object reference) to drive the effect, which then reads
             // the current path.
             filtersSignal.set({ sharedAssets: 'true' });
             spectator.detectChanges();
             spectator.detectChanges();
 
-            (location.go as jest.Mock).mockClear();
-            (location.replaceState as jest.Mock).mockClear();
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
 
             store.path.mockReturnValue('/second');
             filtersSignal.set({ sharedAssets: 'true' });
@@ -1179,8 +1173,8 @@ describe('DotContentDriveShellComponent', () => {
             // the portlet instead of leaving it immediately.
             store.isTreeExpanded.mockReturnValue(false);
             store.path.mockReturnValue('/');
-            (location.go as jest.Mock).mockClear();
-            (location.replaceState as jest.Mock).mockClear();
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
 
             filtersSignal.set({ sharedAssets: 'true' });
             spectator.detectChanges();
@@ -1212,7 +1206,7 @@ describe('DotContentDriveShellComponent', () => {
                 queryParamsHandling: 'merge'
             });
 
-            jest.clearAllMocks(); // Clear previous calls
+            vi.clearAllMocks(); // Clear previous calls
 
             filtersSignal.set({});
             spectator.detectChanges();
@@ -1647,7 +1641,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(listView).toBeTruthy();
             expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
 
-            // Not asserting the clear here: `selectedItems` is mocked as a plain jest.fn rather than a
+            // Not asserting the clear here: `selectedItems` is mocked as a plain vi.fn rather than a
             // signal, so changing its return value cannot notify change detection. What matters is
             // that the input is bound to store state at all — the propagation is Angular's, and the
             // store's own spec covers that loadItems and hand-off empty that state.
@@ -1730,7 +1724,7 @@ describe('DotContentDriveShellComponent', () => {
 
     describe('message', () => {
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should show the message', () => {
@@ -1811,7 +1805,7 @@ describe('DotContentDriveShellComponent', () => {
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
             spectator.triggerEventHandler(toolbar, 'upload', {
                 currentTarget: document.createElement('button'),
-                stopPropagation: jest.fn()
+                stopPropagation: vi.fn()
             });
         }
 
@@ -1837,7 +1831,7 @@ describe('DotContentDriveShellComponent', () => {
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
             spectator.triggerEventHandler(toolbar, 'upload', {
                 currentTarget: document.createElement('button'),
-                stopPropagation: jest.fn()
+                stopPropagation: vi.fn()
             });
             spectator.detectChanges();
         };
@@ -1938,7 +1932,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should hide the button popover when a drag-and-drop opens the modal', () => {
             openViaButton(TARGET_FOLDER_DATA);
-            const hideSpy = jest.spyOn(spectator.component.$uploadSelectorPopover(), 'hide');
+            const hideSpy = vi.spyOn(spectator.component.$uploadSelectorPopover(), 'hide');
 
             dropFiles();
             spectator.detectChanges();
@@ -2347,7 +2341,7 @@ describe('DotContentDriveShellComponent', () => {
             // detail in the log. This branch already removed the same pattern from the folder
             // dialogs; the upload path had kept it, and reading a second body shape would have
             // spread it rather than closed it.
-            const log = jest.spyOn(console, 'error').mockImplementation();
+            const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(
@@ -2653,7 +2647,12 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should upload the file as dotAsset when Asset is selected', () => {
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             const file = createFile();
 
             selectUploadType({
@@ -2669,7 +2668,12 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should upload the file as FileAsset when File is selected', () => {
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             const file = createFile();
 
             selectUploadType({
@@ -2685,7 +2689,12 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should upload to the current site root when no folder is selected', () => {
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
             const file = createFile();
 
@@ -2702,7 +2711,12 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should fall back to empty hostFolder when no folder and no current site', () => {
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             store.currentSite.mockReturnValue(undefined);
             const file = createFile();
 
@@ -2718,12 +2732,19 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        it('should not announce the start of an upload with a notification', () => {
-            // FR-008: in-flight state belongs on the toolbar indicator, never as a transient
-            // notification. A toast that says only "this has begun" competes with the outcome that
-            // follows it and tells the author nothing they cannot already see.
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
+        it('should raise nothing but the handoff advisory while the upload is in flight', () => {
+            // FR-008 keeps in-flight state on the toolbar indicator rather than in a toast: one
+            // that says only "this has begun" competes with the outcome that follows it and tells
+            // the author nothing they cannot already see. The handoff is the single exception
+            // (FR-008a) — it reports that leaving is now safe, which is a fact about the author's
+            // obligation rather than about the run, and which the indicator cannot express.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const addSpy = vi.spyOn(messageService, 'add');
 
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
@@ -2731,14 +2752,23 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(addSpy).not.toHaveBeenCalledWith(expect.objectContaining({ severity: 'info' }));
+            expect(addSpy).toHaveBeenCalledTimes(1);
+            expect(addSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'info',
+                    summary: 'content-drive.upload.toast.backgrounded'
+                })
+            );
         });
 
         it('should not announce an upload the listing now shows', () => {
             uploadService.uploadFilesByBaseType.mockReturnValue(
-                of({ title: 'test.jpg', contentType: 'image/jpeg' } as DotCMSContentlet)
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
             );
-            const addSpy = jest.spyOn(messageService, 'add');
+            const addSpy = vi.spyOn(messageService, 'add');
 
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
@@ -2755,7 +2785,7 @@ describe('DotContentDriveShellComponent', () => {
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(() => new Error('Upload failed'))
             );
-            const addSpy = jest.spyOn(messageService, 'add');
+            const addSpy = vi.spyOn(messageService, 'add');
 
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
@@ -2779,7 +2809,7 @@ describe('DotContentDriveShellComponent', () => {
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 throwError(() => ({ error: { errors: [{ message: 'Upload failed' }] } }))
             );
-            const addSpy = jest.spyOn(messageService, 'add');
+            const addSpy = vi.spyOn(messageService, 'add');
 
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
@@ -2798,11 +2828,16 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should open the file picker after a type is chosen, then upload with that type', () => {
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             const file = createFile();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            const clickSpy = jest.spyOn(fileInput, 'click');
+            const clickSpy = vi.spyOn(fileInput, 'click');
 
             // Button flow: dialog opens with NO files in the payload.
             selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
@@ -2829,7 +2864,12 @@ describe('DotContentDriveShellComponent', () => {
             // drops the selection and the upload silently no-ops (the real Chrome bug).
             // jsdom doesn't model this, so we mock it faithfully: `.files` is one stable object
             // that is emptied when `.value` is cleared.
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             const file = createFile();
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
 
@@ -2881,7 +2921,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(
                 spectator.debugElement.query(By.css('[data-testid="toolbar"]')),
                 'upload',
-                { currentTarget: document.createElement('button'), stopPropagation: jest.fn() }
+                { currentTarget: document.createElement('button'), stopPropagation: vi.fn() }
             );
 
         it('should skip the prompt and open the file picker when the folder pins a base type', () => {
@@ -2889,7 +2929,7 @@ describe('DotContentDriveShellComponent', () => {
                 data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
             } as DotFolderTreeNodeItem);
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            const clickSpy = jest.spyOn(fileInput, 'click');
+            const clickSpy = vi.spyOn(fileInput, 'click');
 
             upload();
             spectator.detectChanges();
@@ -2899,7 +2939,12 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should upload with the folder base type after the picker returns (button flow)', () => {
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             store.selectedNode.mockReturnValue({
                 data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
             } as DotFolderTreeNodeItem);
@@ -2921,7 +2966,12 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should upload dropped files directly when the folder pins a base type (drag-and-drop)', () => {
-            uploadService.uploadFilesByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             const file = createFile();
 
             spectator.triggerEventHandler(
@@ -3923,7 +3973,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             const mockEvent = {
-                preventDefault: jest.fn()
+                preventDefault: vi.fn()
             } as unknown as MouseEvent;
             const contentlet = MOCK_ITEMS[0];
 
@@ -3975,13 +4025,13 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            const clickSpy = jest.spyOn(fileInput, 'click');
+            const clickSpy = vi.spyOn(fileInput, 'click');
 
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
 
             spectator.triggerEventHandler(toolbar, 'upload', {
                 currentTarget: document.createElement('button'),
-                stopPropagation: jest.fn()
+                stopPropagation: vi.fn()
             });
             spectator.detectChanges();
 
@@ -4079,8 +4129,8 @@ describe('DotContentDriveShellComponent', () => {
         it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
-            (location.go as jest.Mock).mockClear();
-            (location.replaceState as jest.Mock).mockClear();
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
 
             setPanelRequest(null);
             spectator.detectChanges();
@@ -4091,17 +4141,15 @@ describe('DotContentDriveShellComponent', () => {
 
         describe('browser Back (popstate)', () => {
             const getPopstateHandler = () =>
-                (location.subscribe as jest.Mock).mock.calls[0][0] as (event: {
-                    url: string;
-                }) => void;
+                (location.subscribe as Mock).mock.calls[0][0] as (event: { url: string }) => void;
 
             // The panel lives behind `@defer`, so the view child is not resolved synchronously —
             // the tests stub the signal instead. `$sidePanel` is protected, so it is absent from
-            // the public type `jest.spyOn` infers its keys from; cast to the shape being stubbed.
+            // the public type `vi.spyOn` infers its keys from; cast to the shape being stubbed.
             const stubSidePanel = () => {
-                const requestClose = jest.fn();
+                const requestClose = vi.fn();
 
-                jest.spyOn(
+                vi.spyOn(
                     spectator.component as unknown as {
                         $sidePanel: Signal<DotEditContentSidePanelComponent | undefined>;
                     },
@@ -4328,37 +4376,32 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         editContent: 'id-1'
     };
     // Held at describe scope so we can clear it before each mount (mockProvider reuses the same fn).
-    const openEditByIdentifier = jest.fn();
+    const openEditByIdentifier = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
         providers: [
             GlobalStore,
             mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(MOCK_SITES[0]))
+                getCurrentSite: vi.fn().mockReturnValue(of(MOCK_SITES[0]))
             }),
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                get: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(ActivatedRoute, {
                 snapshot: { queryParams: deepLinkQueryParams }
             }),
-            // Returns a real observable: GlobalStore loads the configuration on init, and a mock
-            // that answers `undefined` throws inside that load the moment anything injects the
-            // store, surfacing as unrelated tests failing on `.pipe` of undefined.
-            mockProvider(DotSystemConfigService, {
-                getSystemConfig: () => of({} as DotSystemConfig)
-            }),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             // The folder context menu confirms folder deletes through this.
-            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
+            mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                getContentTypes: jest.fn().mockImplementation(() => of([]))
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                getContentTypes: vi.fn().mockImplementation(() => of([]))
             }),
-            mockProvider(DotLanguagesService, { get: jest.fn().mockReturnValue(of()) }),
-            mockProvider(DotFolderService, { getFolders: jest.fn().mockReturnValue(of([])) }),
+            mockProvider(DotLanguagesService, { get: vi.fn().mockReturnValue(of()) }),
+            mockProvider(DotFolderService, { getFolders: vi.fn().mockReturnValue(of([])) }),
             mockProvider(DotUploadFileService, {
-                uploadFileByBaseType: jest.fn().mockReturnValue(of({}))
+                uploadFileByBaseType: vi.fn().mockReturnValue(of({}))
             }),
             provideHttpClient(),
             // The panel is behind `@defer`; once it resolves, it mounts the real editor chain,
@@ -4367,15 +4410,15 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             provideHttpClientTesting(),
             // The store composes withFlags, which fetches feature flags on init; stub it.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn(),
-                createContent: jest.fn(),
-                closeEditPanel: jest.fn(),
+                editContent: vi.fn(),
+                createContent: vi.fn(),
+                closeEditPanel: vi.fn(),
                 openEditByIdentifier,
                 $editPanelRequest: signal(null)
             }),
@@ -4385,20 +4428,20 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 // The store resolves this on init, and both the Action Center's Push Publish row and
                 // the folder context menu's Push Publish item gate on the result. An empty answer
                 // disables them, which is all the shell's own tests need.
-                getEnvironments: jest.fn().mockReturnValue(of([]))
+                getEnvironments: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
-                getBundles: jest.fn().mockReturnValue(of([])),
-                addToBundle: jest.fn().mockReturnValue(of({}))
+                getBundles: vi.fn().mockReturnValue(of([])),
+                addToBundle: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({}))
+                getCurrentUser: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSidePanelNavController, {
-                shouldCollapse: jest.fn().mockReturnValue(false),
-                acquire: jest.fn(),
-                release: jest.fn()
+                shouldCollapse: vi.fn().mockReturnValue(false),
+                acquire: vi.fn(),
+                release: vi.fn()
             })
         ],
         componentProviders: [
@@ -4423,88 +4466,88 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         createComponent({
             providers: [
                 mockProvider(DotContentDriveStore, {
-                    initContentDrive: jest.fn(),
+                    initContentDrive: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
-                    uploadCeilings: jest.fn().mockReturnValue(null),
+                    uploadCeilings: vi.fn().mockReturnValue(null),
                     // Read by the toolbar (rendered for real here) and the drop zone: both gate
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
-                    currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
-                    isTreeExpanded: jest.fn().mockReturnValue(false),
-                    items: jest.fn().mockReturnValue(MOCK_ITEMS),
-                    pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
-                    path: jest.fn().mockReturnValue('/test/path'),
+                    currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
+                    isTreeExpanded: vi.fn().mockReturnValue(false),
+                    items: vi.fn().mockReturnValue(MOCK_ITEMS),
+                    pagination: vi.fn().mockReturnValue(DEFAULT_PAGINATION),
+                    path: vi.fn().mockReturnValue('/test/path'),
                     filters: signal({}),
                     status: signal(DotContentDriveStatus.LOADING),
-                    sort: jest
+                    sort: vi
                         .fn()
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
-                    pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
-                    selectedItems: jest.fn().mockReturnValue([]),
-                    contextMenu: jest.fn().mockReturnValue(null),
+                    pages: vi.fn().mockReturnValue([DEFAULT_PAGE]),
+                    selectedItems: vi.fn().mockReturnValue([]),
+                    contextMenu: vi.fn().mockReturnValue(null),
                     dialog: signal(undefined),
-                    dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
-                    userSearchableFields: jest.fn().mockReturnValue([]),
-                    userSearchableActive: jest.fn().mockReturnValue([]),
+                    dragItems: vi.fn().mockReturnValue({ folders: [], contentlets: [] }),
+                    userSearchableFields: vi.fn().mockReturnValue([]),
+                    userSearchableActive: vi.fn().mockReturnValue([]),
                     showInListFields: signal([]),
                     languages: signal(mockLocales),
-                    defaultLanguageId: jest.fn().mockReturnValue(1),
-                    setIsTreeExpanded: jest.fn(),
-                    isTreeVisuallyExpanded: jest.fn().mockReturnValue(false),
-                    isTreeForceCollapsed: jest.fn().mockReturnValue(false),
-                    setTreeForceCollapsed: jest.fn(),
-                    removeFilter: jest.fn(),
-                    getFilterValue: jest.fn(),
-                    $request: jest.fn(),
-                    setItems: jest.fn(),
-                    setStatus: jest.fn(),
-                    startExternalRun: jest.fn().mockReturnValue('run-1'),
+                    defaultLanguageId: vi.fn().mockReturnValue(1),
+                    setIsTreeExpanded: vi.fn(),
+                    isTreeVisuallyExpanded: vi.fn().mockReturnValue(false),
+                    isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                    setTreeForceCollapsed: vi.fn(),
+                    removeFilter: vi.fn(),
+                    getFilterValue: vi.fn(),
+                    $request: vi.fn(),
+                    setItems: vi.fn(),
+                    setStatus: vi.fn(),
+                    startExternalRun: vi.fn().mockReturnValue('run-1'),
                     activeRunCount: signal(0),
                     toolbarRun: signal(undefined),
                     toolbarRunCount: signal(0),
                     busyRows: signal<string[]>([]),
-                    endExternalRun: jest.fn(),
-                    setPagination: jest.fn(),
-                    setSort: jest.fn(),
-                    setSelectedItems: jest.fn(),
-                    patchFilters: jest.fn(),
-                    setDialog: jest.fn(),
-                    loadFolders: jest.fn(),
-                    loadChildFolders: jest.fn(),
-                    updateFolders: jest.fn(),
-                    folders: jest.fn(),
-                    selectedNode: jest.fn(),
-                    setSelectedNode: jest.fn(),
-                    sidebarLoading: jest.fn(),
-                    closeDialog: jest.fn(),
-                    patchContextMenu: jest.fn(),
-                    resetContextMenu: jest.fn(),
-                    setDragItems: jest.fn(),
-                    cleanDragItems: jest.fn(),
-                    loadItems: jest.fn(),
-                    reloadContentDrive: jest.fn(),
-                    setPath: jest.fn(),
-                    setShowAddToBundle: jest.fn(),
-                    setUserSearchableFields: jest.fn(),
-                    setShowInListFields: jest.fn(),
-                    addUserSearchableField: jest.fn(),
-                    clearUserSearchableFilters: jest.fn()
+                    endExternalRun: vi.fn(),
+                    setPagination: vi.fn(),
+                    setSort: vi.fn(),
+                    setSelectedItems: vi.fn(),
+                    patchFilters: vi.fn(),
+                    setDialog: vi.fn(),
+                    loadFolders: vi.fn(),
+                    loadChildFolders: vi.fn(),
+                    updateFolders: vi.fn(),
+                    folders: vi.fn(),
+                    selectedNode: vi.fn(),
+                    setSelectedNode: vi.fn(),
+                    sidebarLoading: vi.fn(),
+                    closeDialog: vi.fn(),
+                    patchContextMenu: vi.fn(),
+                    resetContextMenu: vi.fn(),
+                    setDragItems: vi.fn(),
+                    cleanDragItems: vi.fn(),
+                    loadItems: vi.fn(),
+                    reloadContentDrive: vi.fn(),
+                    setPath: vi.fn(),
+                    setShowAddToBundle: vi.fn(),
+                    setUserSearchableFields: vi.fn(),
+                    setShowInListFields: vi.fn(),
+                    addUserSearchableField: vi.fn(),
+                    clearUserSearchableFilters: vi.fn()
                 }),
                 mockProvider(Router, {
-                    createUrlTree: jest.fn().mockReturnValue({ toString: () => '' })
+                    createUrlTree: vi.fn().mockReturnValue({ toString: () => '' })
                 }),
                 mockProvider(Location, {
-                    go: jest.fn(),
-                    replaceState: jest.fn(),
-                    path: jest.fn().mockReturnValue(''),
-                    subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                    go: vi.fn(),
+                    replaceState: vi.fn(),
+                    path: vi.fn().mockReturnValue(''),
+                    subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
                 }),
                 mockProvider(DotContentTypeService, {
-                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                    getContentTypesWithPagination: jest.fn().mockReturnValue(
+                    getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypesWithPagination: vi.fn().mockReturnValue(
                         of({
                             contentTypes: MOCK_BASE_TYPES,
                             pagination: {
@@ -4517,7 +4560,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 }),
                 mockProvider(DotWorkflowsActionsService),
                 mockProvider(DotWorkflowActionsFireService, {
-                    bulkFire: jest
+                    bulkFire: vi
                         .fn()
                         .mockReturnValue(of({ successCount: 1, skippedCount: 0, fails: [] }))
                 }),
@@ -4527,9 +4570,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     clearObserver: of({})
                 }),
                 mockProvider(DotRouterService, {
-                    goToEditPage: jest.fn(),
-                    forbidRouteDeactivation: jest.fn(),
-                    allowRouteDeactivation: jest.fn(),
+                    goToEditPage: vi.fn(),
+                    forbidRouteDeactivation: vi.fn(),
+                    allowRouteDeactivation: vi.fn(),
                     pageLeaveRequest$: NEVER
                 })
             ]

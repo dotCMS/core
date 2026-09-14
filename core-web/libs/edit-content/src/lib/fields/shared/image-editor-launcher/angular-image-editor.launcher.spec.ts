@@ -1,6 +1,6 @@
-import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { expect } from 'vitest';
 
 import { DialogService } from 'primeng/dynamicdialog';
 

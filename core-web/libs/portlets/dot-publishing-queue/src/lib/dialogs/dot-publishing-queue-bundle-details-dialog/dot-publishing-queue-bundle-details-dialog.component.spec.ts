@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -72,8 +78,8 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
                 canDownloadManifest
             }),
             mockProvider(DotPublishingQueueService, {
-                getBundleDownloadUrl: jest.fn((id: string) => `/api/bundle/_download/${id}`),
-                getBundleManifestUrl: jest.fn((id: string) => `/api/bundle/${id}/manifest`)
+                getBundleDownloadUrl: vi.fn((id: string) => `/api/bundle/_download/${id}`),
+                getBundleManifestUrl: vi.fn((id: string) => `/api/bundle/${id}/manifest`)
             }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ]

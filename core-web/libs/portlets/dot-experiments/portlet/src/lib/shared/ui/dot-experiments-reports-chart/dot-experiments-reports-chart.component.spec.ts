@@ -1,6 +1,7 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { ChartData } from 'chart.js';
 import { MockModule } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { ChartModule, UIChart } from 'primeng/chart';
 
@@ -21,8 +22,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.reports.chart.empty.description': 'y axis label'
 });
 
-// spyOn an exported function with Jest
-jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1-2-3-4-5');
+// spyOn an exported function with Vitest
+vi.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1-2-3-4-5');
 
 /** Two series, because the point of the legend is telling one from the other. */
 const TWO_SERIES: ChartData<'line'> = {

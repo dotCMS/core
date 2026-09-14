@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
@@ -19,12 +24,12 @@ import { mockItems } from './mocks';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
-    override preventDefault = jest.fn();
-    override stopPropagation = jest.fn();
+    override preventDefault = vi.fn();
+    override stopPropagation = vi.fn();
     dataTransfer: {
         effectAllowed?: string;
-        setData?: ReturnType<typeof jest.fn>;
-        setDragImage?: ReturnType<typeof jest.fn>;
+        setData?: ReturnType<typeof vi.fn>;
+        setDragImage?: ReturnType<typeof vi.fn>;
         types?: string[];
         files?: FileList | File[];
     } | null = null;
@@ -33,8 +38,8 @@ class DragEventMock extends Event {
         super(type);
         this.dataTransfer = {
             effectAllowed: '',
-            setData: jest.fn(),
-            setDragImage: jest.fn(),
+            setData: vi.fn(),
+            setDragImage: vi.fn(),
             types: [],
             files: []
         };
@@ -113,7 +118,7 @@ describe('DotFolderListViewComponent', () => {
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
             mockProvider(DotLanguagesService, {
-                get: jest.fn(() => of(mockLanguages))
+                get: vi.fn(() => of(mockLanguages))
             }),
             provideHttpClient()
         ],
@@ -182,7 +187,7 @@ describe('DotFolderListViewComponent', () => {
         it('should emit selectionChange event when selection changes', () => {
             spectator.setInput('items', mockItems);
 
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.triggerEventHandler(table, 'selectionChange', mockItems);
@@ -191,7 +196,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit paginate event when page changes', () => {
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.setInput('loading', false);
@@ -202,7 +207,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit sort event when sort changes', () => {
-            const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
+            const sortSpy = vi.spyOn(spectator.component.sort, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.triggerEventHandler(table, 'onSort', { field: 'title', order: 1 });
@@ -277,7 +282,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 50); // Enable pagination
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             const mockEvent = { first: 20, rows: 20 };
             spectator.component.onPage(mockEvent);
             spectator.detectChanges();
@@ -387,7 +392,7 @@ describe('DotFolderListViewComponent', () => {
         it('should stop a busy row being selected into another action', () => {
             // Asserted through the output rather than the checkbox's markup: what matters is that
             // the row cannot join a second action while the first is still running on it.
-            const selectionChange = jest.fn();
+            const selectionChange = vi.fn();
 
             spectator.output('selectionChange').subscribe(selectionChange);
             spectator.setInput('busyRows', [busyItem.inode]);
@@ -558,7 +563,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('lazy', false);
             spectator.setInput('loading', false);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.click('.p-paginator-next');
             spectator.detectChanges();
@@ -571,7 +576,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', false);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.component.onPage({ first: 20, rows: 20 });
 
@@ -586,7 +591,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', true);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.component.onPage({ first: 20, rows: 20 });
 
@@ -598,7 +603,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', true);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.setInput('loading', false);
             spectator.detectChanges();
@@ -709,7 +714,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should select a row by clicking it when not disabled', () => {
             spectator.detectChanges();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             spectator.click(byTestId('item-row'));
 
@@ -721,7 +726,7 @@ describe('DotFolderListViewComponent', () => {
             // leave a way straight around the freeze.
             spectator.setInput('disabled', true);
             spectator.detectChanges();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             spectator.click(byTestId('item-row'));
 
@@ -987,7 +992,7 @@ describe('DotFolderListViewComponent', () => {
         it('should not emit sort when a header is clicked while readOnly', () => {
             spectator.setInput('readOnly', true);
             spectator.detectChanges();
-            const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
+            const sortSpy = vi.spyOn(spectator.component.sort, 'emit');
 
             spectator.click(spectator.queryAll('thead th')[1]);
 
@@ -1069,7 +1074,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 50);
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             spectator.component.onPage({ first: 0, rows: 20 });
 
             // first=0 is falsy → page defaults to 1
@@ -1080,7 +1085,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 50);
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             spectator.component.onPage({ first: 20, rows: 20 });
 
             expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
@@ -1090,7 +1095,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 80);
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             spectator.component.onPage({ first: 40, rows: 20 });
 
             expect(paginateSpy).toHaveBeenCalledWith({ first: 40, rows: 20, page: 3 });
@@ -1436,7 +1441,7 @@ describe('DotFolderListViewComponent', () => {
 
             it('should not emit dragStart when a drag is started anyway', () => {
                 // The attribute only stops the user; the handler has to stop everything else.
-                const dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+                const dragStartSpy = vi.spyOn(spectator.component.dragStart, 'emit');
 
                 spectator.component.onDragStart(createDragStartEvent(), mockItems[0]);
 
@@ -1448,7 +1453,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not emit rightClick on context menu', () => {
-                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
 
                 spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'contextmenu');
 
@@ -1456,7 +1461,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not emit doubleClick on a double click', () => {
-                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+                const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
 
                 spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'dblclick');
 
@@ -1466,7 +1471,7 @@ describe('DotFolderListViewComponent', () => {
             it('should not open the item when its title is clicked', () => {
                 // The title and thumbnail carry their own click-to-open handlers, separate from the
                 // row's dblclick — both have to go or the dialog navigates out from under itself.
-                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+                const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
 
                 spectator.click(byTestId('item-title-text'));
 
@@ -1484,7 +1489,7 @@ describe('DotFolderListViewComponent', () => {
                 // status badge can silently drop that row from what Execute fires — with nothing
                 // suggesting the row was clickable. The table this replaced toggled on the checkbox
                 // alone.
-                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+                const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
                 spectator.click(spectator.query(byTestId('item-status')));
 
@@ -1632,7 +1637,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should emit rightClick when folder row is right clicked', () => {
-                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
                 const row = spectator.query(byTestId('item-row'));
 
                 spectator.dispatchFakeEvent(row, 'contextmenu');
@@ -1644,7 +1649,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should emit rightClick when folder kebab menu button is clicked', () => {
-                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
                 const kebabButton = spectator.debugElement.query(
                     By.css('[data-testId="kebab-menu-button"]')
                 );
@@ -1769,7 +1774,7 @@ describe('DotFolderListViewComponent', () => {
             it('should emit selectionChange without taking ownership of the set', () => {
                 // Controlled means the parent decides: this reports the user's intent and waits to
                 // be told the new set, rather than applying it locally and drifting from the parent.
-                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+                const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
                 spectator.setInput('selection', [firstItem]);
                 spectator.detectChanges();
@@ -1817,7 +1822,7 @@ describe('DotFolderListViewComponent', () => {
                 // `onDragStart` reads the effective selection; it must see the caller's, not a
                 // stale internal one. (The preview sets `readOnly`, but the input pair is
                 // independent of that and the grid should stay coherent either way.)
-                const dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+                const dragStartSpy = vi.spyOn(spectator.component.dragStart, 'emit');
 
                 spectator.setInput('selection', [firstItem, secondItem]);
                 spectator.detectChanges();
@@ -1851,7 +1856,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('items', mockItems);
             spectator.detectChanges();
 
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.triggerEventHandler(table, 'selectionChange', mockItems[0]);
@@ -1913,7 +1918,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('showActions', false);
             spectator.detectChanges();
 
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const event = new MouseEvent('contextmenu', { cancelable: true });
 
             spectator.component.onContextMenu(event, mockItems[0]);
@@ -1926,18 +1931,18 @@ describe('DotFolderListViewComponent', () => {
     describe('Drag Events', () => {
         const firstItem = mockItems[0];
         const secondItem = mockItems[1];
-        let dragStartSpy: ReturnType<typeof jest.spyOn>;
+        let dragStartSpy: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+            dragStartSpy = vi.spyOn(spectator.component.dragStart, 'emit');
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         describe('onDragStart', () => {
@@ -2011,7 +2016,7 @@ describe('DotFolderListViewComponent', () => {
 
         describe('onDragEnd', () => {
             it('should emit dragEnd with void', () => {
-                const dragEndSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
+                const dragEndSpy = vi.spyOn(spectator.component.dragEnd, 'emit');
 
                 spectator.component.onDragEnd();
 
@@ -2159,7 +2164,7 @@ describe('DotFolderListViewComponent', () => {
             it('should set dragOverRowId when dragging over a row with internal drag', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
-                const preventDefaultSpy = jest.spyOn(dragOverEvent, 'preventDefault');
+                const preventDefaultSpy = vi.spyOn(dragOverEvent, 'preventDefault');
 
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
@@ -2225,14 +2230,14 @@ describe('DotFolderListViewComponent', () => {
 
             it('should clear dragOverRowId when dropping on a row with internal drag', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropSpy = vi.spyOn(spectator.component.drop, 'emit');
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
                     value: {
                         types: [DOT_DRAG_ITEM],
                         files: [],
-                        preventDefault: jest.fn(),
-                        stopPropagation: jest.fn()
+                        preventDefault: vi.fn(),
+                        stopPropagation: vi.fn()
                     },
                     writable: true
                 });
@@ -2253,7 +2258,7 @@ describe('DotFolderListViewComponent', () => {
 
             it('should not handle file drops and let them bubble up', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropSpy = vi.spyOn(spectator.component.drop, 'emit');
                 const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
@@ -2272,7 +2277,7 @@ describe('DotFolderListViewComponent', () => {
 
             it('should not handle drops that are not internal drags', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropSpy = vi.spyOn(spectator.component.drop, 'emit');
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
                     value: {
@@ -2295,8 +2300,8 @@ describe('DotFolderListViewComponent', () => {
                     value: {
                         types: [DOT_DRAG_ITEM],
                         files: [],
-                        preventDefault: jest.fn(),
-                        stopPropagation: jest.fn()
+                        preventDefault: vi.fn(),
+                        stopPropagation: vi.fn()
                     },
                     writable: true
                 });
@@ -2411,7 +2416,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit rightClick event when row is right clicked', () => {
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const row = spectator.query(byTestId('item-row'));
 
             spectator.dispatchFakeEvent(row, 'contextmenu');
@@ -2423,7 +2428,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should prevent default when context menu is triggered', () => {
-            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+            const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
 
             spectator.component.onContextMenu(mockEvent, mockItems[0]);
 
@@ -2431,7 +2436,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit rightClick event when kebab menu button is clicked', () => {
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const kebabButton = spectator.debugElement.query(
                 By.css('[data-testId="kebab-menu-button"]')
             );
@@ -2446,7 +2451,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should call onContextMenu with correct item when kebab menu button is clicked', () => {
-            const onContextMenuSpy = jest.spyOn(spectator.component, 'onContextMenu');
+            const onContextMenuSpy = vi.spyOn(spectator.component, 'onContextMenu');
             const kebabButton = spectator.debugElement.query(
                 By.css('[data-testId="kebab-menu-button"]')
             );
@@ -2458,7 +2463,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit rightClick with correct item for different rows', () => {
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const rows = spectator.queryAll(byTestId('item-row'));
 
             // Right click on second row
@@ -2479,7 +2484,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit doubleClick event when row is double clicked', () => {
-            const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const row = spectator.query(byTestId('item-row'));
 
             spectator.dispatchFakeEvent(row, 'dblclick');
@@ -2488,7 +2493,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit doubleClick event when thumbnail is clicked', () => {
-            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
 
             spectator.click(thumbnail);
@@ -2497,7 +2502,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit doubleClick event when title text is clicked', () => {
-            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const titleText = spectator.query(byTestId('item-title-text'));
 
             spectator.click(titleText);
@@ -2508,7 +2513,7 @@ describe('DotFolderListViewComponent', () => {
         it('should swallow the title click so the row is not selected underneath', () => {
             // Content Drive's title is an "open" affordance, distinct from selecting the row.
             const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-            const stopPropagation = jest.spyOn(event, 'stopPropagation');
+            const stopPropagation = vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onTitleClick(event, mockItems[0]);
 
@@ -2531,7 +2536,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('titleOpensItem', false);
             spectator.detectChanges();
 
-            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             spectator.click(spectator.query(byTestId('item-title-text')));
 
             expect(emitSpy).not.toHaveBeenCalled();
@@ -2544,7 +2549,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-            const stopPropagation = jest.spyOn(event, 'stopPropagation');
+            const stopPropagation = vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onTitleClick(event, mockItems[0]);
 
@@ -2556,7 +2561,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('selectionMode', 'single');
             spectator.detectChanges();
 
-            const selectionSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
             spectator.click(spectator.query(byTestId('item-title-text')));
 
             expect(selectionSpy).toHaveBeenCalledWith([mockItems[0]]);
@@ -2571,11 +2576,11 @@ describe('DotFolderListViewComponent', () => {
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should emit scroll event when table body is scrolled', () => {
-            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollSpy = vi.spyOn(spectator.component.scroll, 'emit');
             const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
 
             const scrollEvent = new Event('scroll');
@@ -2586,14 +2591,14 @@ describe('DotFolderListViewComponent', () => {
 
         it('should add scroll event listener on ngAfterViewInit and emit scroll events', () => {
             const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
-            const addListenerSpy = jest.spyOn(tableBody, 'addEventListener');
+            const addListenerSpy = vi.spyOn(tableBody, 'addEventListener');
 
             spectator.component.ngAfterViewInit();
 
             expect(addListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
 
             // Verify the listener emits scroll events
-            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollSpy = vi.spyOn(spectator.component.scroll, 'emit');
             const scrollEvent = new Event('scroll');
             tableBody.dispatchEvent(scrollEvent);
 
@@ -2602,14 +2607,14 @@ describe('DotFolderListViewComponent', () => {
 
         it('should remove scroll event listener on ngOnDestroy and stop emitting', () => {
             const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
-            const removeListenerSpy = jest.spyOn(tableBody, 'removeEventListener');
+            const removeListenerSpy = vi.spyOn(tableBody, 'removeEventListener');
 
             spectator.component.ngOnDestroy();
 
             expect(removeListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
 
             // Verify scroll events are no longer emitted after destroy
-            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollSpy = vi.spyOn(spectator.component.scroll, 'emit');
             const scrollEvent = new Event('scroll');
             tableBody.dispatchEvent(scrollEvent);
 
@@ -3102,7 +3107,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
         };
 
-        const spyOnSelection = () => jest.spyOn(spectator.component.selectionChange, 'emit');
+        const spyOnSelection = () => vi.spyOn(spectator.component.selectionChange, 'emit');
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
@@ -3171,7 +3176,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should never paginate from a range', () => {
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             arrow(mockItems.length - 1, 'ArrowDown', true);
 
@@ -3241,7 +3246,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
         };
 
-        const spyOnSelection = () => jest.spyOn(spectator.component.selectionChange, 'emit');
+        const spyOnSelection = () => vi.spyOn(spectator.component.selectionChange, 'emit');
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
@@ -3340,7 +3345,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('selection', [mockItems[0]]);
             spectator.detectChanges();
 
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             extendRange(0, 2);
 
@@ -3481,7 +3486,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should not change the selection when moving focus', () => {
             renderRows();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             pressOnRow(0, 'ArrowDown');
 
@@ -3491,7 +3496,7 @@ describe('DotFolderListViewComponent', () => {
         // T009
         it('should keep focus on the last row rather than paginating', () => {
             renderRows();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             const lastIndex = mockItems.length - 1;
 
             pressOnRow(lastIndex, 'ArrowDown');
@@ -3532,7 +3537,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('items', mockItems);
             spectator.setInput('readOnly', true);
             spectator.detectChanges();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             pressOnRow(0, 'ArrowDown');
 
