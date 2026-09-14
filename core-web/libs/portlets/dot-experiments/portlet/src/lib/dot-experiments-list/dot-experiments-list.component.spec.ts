@@ -181,7 +181,13 @@ describe('DotExperimentsListComponent', () => {
      * for the portlet — exactly the `#panel === null` the contract tests. A per-test provider
      * override cannot be used: TestBed is already instantiated by the time a test runs.
      */
-    let panelStore: { pageId: Mock; languageId: Mock } | null;
+    let panelStore: {
+        pageId: Mock;
+        languageId: Mock;
+        showConfigure: Mock;
+        showResults: Mock;
+        showCreate: Mock;
+    } | null;
     let dispatch: MockInstance;
     let confirm: MockInstance;
     let navigate: MockInstance;
@@ -1388,7 +1394,10 @@ describe('DotExperimentsListComponent', () => {
         const createInPanel = () => {
             panelStore = {
                 pageId: vi.fn().mockReturnValue(PAGE_ID),
-                languageId: vi.fn().mockReturnValue(1)
+                languageId: vi.fn().mockReturnValue(1),
+                showConfigure: vi.fn(),
+                showResults: vi.fn(),
+                showCreate: vi.fn()
             };
 
             return createComponent({ detectChanges: false });
@@ -1554,6 +1563,94 @@ describe('DotExperimentsListComponent', () => {
                 renderRowWith(DotExperimentStatus.DRAFT);
 
                 expect(globalStore.addNewBreadcrumb).toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * FR-008, FR-013, D7. The point of the panel: reaching a configuration must not cost the
+         * editor the page. In the portlet these are routes; in the panel they are view changes on
+         * a store, and nothing navigates.
+         */
+        describe('opening a configuration without leaving the page', () => {
+            it('should show the configuration in the panel when a row is clicked', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(panelStore?.showConfigure).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should show the configuration from the kebab', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                runMenuItem(MENU_ITEM.configure);
+
+                expect(panelStore?.showConfigure).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should show results in the panel from the kebab', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.RUNNING);
+
+                runMenuItem(MENU_ITEM.results);
+
+                expect(panelStore?.showResults).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * A RUNNING experiment's row leads to its results rather than its configuration, in
+             * both modes. The difference is only whether that costs the editor the page.
+             */
+            it('should show results in the panel when a running row is clicked', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.RUNNING);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(panelStore?.showResults).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * FR-006a, FR-007, D11. The empty state's offer and the toolbar button are the same
+             * door, and in the panel it opens a view — a page with no experiments is a starting
+             * point, not a reason to leave the editor.
+             */
+            it('should start a new experiment in the panel', () => {
+                renderPanelRow();
+
+                spectator.component.onNewExperiment();
+
+                expect(panelStore?.showCreate).toHaveBeenCalledTimes(1);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The whole contract in one assertion: no door out of the panel's list is a
+             * navigation. Written as a sweep rather than per door so a door added later fails
+             * here instead of shipping as the one that still ejects the editor.
+             */
+            it('should never navigate, whichever door is taken', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                spectator.component.onConfigure(experiment);
+                spectator.component.onViewResults(experiment);
+                spectator.component.onNewExperiment();
+                spectator.component.onEmptyAction();
+
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should still navigate in portlet mode (FR-042)', () => {
+                const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(
+                    ['/experiments', experiment.id, 'configuration'],
+                    expect.anything()
+                );
             });
         });
 

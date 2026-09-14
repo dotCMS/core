@@ -20,6 +20,7 @@ import {
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -110,6 +111,8 @@ const createStoreMock = () => ({
 describe('DotExperimentsConfigureHeaderComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureHeaderComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: { backToList: Mock; showResults: Mock } | null;
     /** The address the screen arrived on, as `ActivatedRoute` reports it. */
     let routeQueryParams: Params;
     let dispatch: MockInstance;
@@ -118,6 +121,11 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureHeaderComponent,
         componentImports: [[DotAddToBundleComponent, MockAddToBundleComponent]],
+        // Component-level: the module injector is built once per test file, so a module provider
+        // would freeze `panelStore` at whatever the first `createComponent` saw.
+        componentProviders: [
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
+        ],
         providers: [
             provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),
@@ -180,6 +188,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         routeQueryParams = {};
         spectator = createComponent();
         dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
@@ -482,6 +491,41 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             expect(navigate).toHaveBeenCalledWith(['/experiments'], {
                 queryParams: { pageId: 'page-1' }
             });
+        });
+    });
+    /**
+     * The header's two doors inside the UVE panel (#37478). Both stay where they lead; neither
+     * costs the editor the page any more (FR-008, FR-013, FR-025b).
+     */
+    describe('panel mode (#37478)', () => {
+        const inPanel = () => {
+            panelStore = { backToList: vi.fn(), showResults: vi.fn() };
+            spectator = createComponent();
+            spectator.detectChanges();
+        };
+
+        it('should return to the list as a view, not a navigation', () => {
+            inPanel();
+            const navigate = vi
+                .spyOn(spectator.inject(Router), 'navigate')
+                .mockResolvedValue(true);
+
+            spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+            expect(navigate).not.toHaveBeenCalled();
+        });
+
+        it('should open results in the panel', () => {
+            inPanel();
+            const navigate = vi
+                .spyOn(spectator.inject(Router), 'navigate')
+                .mockResolvedValue(true);
+
+            spectator.component.onViewResults();
+
+            expect(panelStore?.showResults).toHaveBeenCalledWith(storeMock.experiment().id);
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 });

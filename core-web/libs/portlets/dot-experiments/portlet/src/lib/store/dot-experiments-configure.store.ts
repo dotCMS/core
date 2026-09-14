@@ -4,7 +4,7 @@ import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/si
 import { defer, from, merge, Observable, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, effect, EffectRef, inject, Injector, untracked } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import {
@@ -33,6 +33,7 @@ import {
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { isDotIdentifier } from '@dotcms/utils';
 
@@ -1180,9 +1181,68 @@ export const DotExperimentsConfigureStore = signalStore(
         const router = inject(Router);
         const dispatcher = inject(Dispatcher);
         const events = inject(Events);
+        /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+        const panel = inject(DotExperimentsPanelStore, { optional: true });
+        const injector = inject(Injector);
 
         let createdSubscription: SubscriptionLike;
         let routeSubscription: SubscriptionLike;
+        let panelEffect: EffectRef;
+
+        /**
+         * Which experiment the screen is about, and where a newly created one goes.
+         *
+         * The portlet answers both with the address. The panel cannot: the address is the
+         * editor's, and writing to it would move the editor off the page this whole feature exists
+         * to keep on screen (FR-031). So the panel store answers both instead — it is followed for
+         * the same reason `paramMap` is followed below, because the screen is reused across
+         * experiments without being destroyed.
+         */
+        const followThePanel = (): void => {
+            let knownExperimentId: string | null | undefined;
+
+            panelEffect = effect(
+                () => {
+                    const experimentId = panel?.experimentId() ?? null;
+
+                    if (experimentId === knownExperimentId) {
+                        return;
+                    }
+
+                    knownExperimentId = experimentId;
+
+                    untracked(() => {
+                        if (experimentId) {
+                            // Not for the experiment already loaded: it may carry edits a reload
+                            // would throw away. Same rule as the route path below.
+                            if (experimentId !== store.experiment()?.id) {
+                                dispatcher.dispatch(pageEvents.enterExisting(experimentId));
+                            }
+
+                            return;
+                        }
+
+                        dispatcher.dispatch(pageEvents.enterNew());
+
+                        const pageId = panel?.pageId() ?? null;
+
+                        if (pageId) {
+                            dispatcher.dispatch(
+                                pageEvents.pagePrefillRequested({
+                                    pageId,
+                                    url: null,
+                                    // Read live from the editor, so creation prefills the version
+                                    // they are standing on. It is prefill context only — the
+                                    // experiment belongs to the page (FR-015).
+                                    languageId: panel?.languageId() ?? null
+                                })
+                            );
+                        }
+                    });
+                },
+                { injector }
+            );
+        };
 
         return {
             onInit() {
@@ -1200,6 +1260,16 @@ export const DotExperimentsConfigureStore = signalStore(
                 createdSubscription = events
                     .on(dotExperimentsConfigureApiEvents.createSucceeded)
                     .subscribe(({ payload }) => {
+                        // In the panel there is no `/new` in the address to swap, and a navigate
+                        // here would eject the editor at the exact moment their experiment came
+                        // into being. Handing the id to the panel is the same move without the
+                        // address (FR-002, FR-016).
+                        if (panel) {
+                            panel.showConfigure(payload.id);
+
+                            return;
+                        }
+
                         router.navigate(['..', payload.id, CONFIGURATION_SEGMENT], {
                             relativeTo: route,
                             replaceUrl: true,
@@ -1215,6 +1285,12 @@ export const DotExperimentsConfigureStore = signalStore(
                  * otherwise leave the store showing the wrong experiment, or a creation form on an
                  * existing one's URL.
                  */
+                if (panel) {
+                    followThePanel();
+
+                    return;
+                }
+
                 routeSubscription = route.paramMap
                     .pipe(
                         map((params) => params.get('experimentId')),
@@ -1255,6 +1331,7 @@ export const DotExperimentsConfigureStore = signalStore(
             onDestroy() {
                 createdSubscription?.unsubscribe();
                 routeSubscription?.unsubscribe();
+                panelEffect?.destroy();
             }
         };
     })

@@ -77,8 +77,20 @@
         @case ('list') {
             <dot-experiments-list data-testid="experiments-panel-list" />
         }
-        @default {
-            <div class="flex min-h-0 flex-1 items-center justify-center p-6"></div>
+        @case ('create') {
+            <!-- Creation is the configuration screen with no experiment yet: same component, and
+                 `panel.experimentId()` being null is what puts it in that mode. -->
+            <dot-experiments-configure data-testid="experiments-panel-create" />
+        }
+        @case ('configure') {
+            <dot-experiments-configure data-testid="experiments-panel-configure" />
+        }
+        @case ('results') {
+            @defer {
+                <dot-experiments-results data-testid="experiments-panel-results" />
+            } @placeholder {
+                <div class="flex min-h-0 flex-1 items-center justify-center p-6"></div>
+            }
         }
     }
 </p-drawer>

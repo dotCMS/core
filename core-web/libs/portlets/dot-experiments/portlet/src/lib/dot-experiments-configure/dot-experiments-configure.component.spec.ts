@@ -29,6 +29,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -228,6 +229,11 @@ const createGlobalStoreMock = () => {
 describe('DotExperimentsConfigureComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
+    /**
+     * Panel mode is the presence of this store, so it is provided either way and holds `null` for
+     * the portlet — the `#panel === null` the contract tests.
+     */
+    let panelStore: { backToList: Mock; configProps: Mock; section: Mock } | null;
     let scrollIntoView: Mock;
     let dispatch: MockInstance;
     let globalStore: ReturnType<typeof createGlobalStoreMock>;
@@ -263,6 +269,7 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
                 { provide: GlobalStore, useFactory: () => globalStore },
+                { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -382,6 +389,7 @@ describe('DotExperimentsConfigureComponent', () => {
     beforeEach(() => {
         storeMock = createStoreMock();
         globalStore = createGlobalStoreMock();
+        panelStore = null;
         // jsdom does not implement scrollIntoView, so there is nothing to spy on.
         scrollIntoView = vi.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
@@ -1462,6 +1470,7 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
                 { provide: GlobalStore, useFactory: () => globalStore },
+                { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -1565,6 +1574,38 @@ describe('DotExperimentsConfigureComponent', () => {
             expect(formTree.scheduling.startDate().disabled()).toBe(true);
             expect(formTree.scheduling.endDate().disabled()).toBe(true);
             expect(formTree.variantWeights[0].weight().disabled()).toBe(true);
+        });
+    });
+    /**
+     * The configuration inside the UVE panel (#37478). Only the way out differs: in the portlet
+     * this screen is a route and Back is a navigation; in the panel it is a view, and navigating
+     * would take the editor off the page the panel exists to keep on screen (FR-008, FR-013).
+     */
+    describe('panel mode (#37478)', () => {
+        const createComponent = createComponentOn({ experimentId: 'exp-1' });
+
+        beforeEach(() => {
+            panelStore = {
+                backToList: vi.fn(),
+                configProps: vi.fn().mockReturnValue(null),
+                section: vi.fn().mockReturnValue(null)
+            };
+        });
+
+        it('should return to the panel list instead of navigating away', () => {
+            spectator = createComponent();
+            storeMock.status.set(ComponentStatus.ERROR);
+            spectator.detectChanges();
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+
+            spectator.click(
+                spectator
+                    .query(byTestId('experiments-configure-error'))
+                    ?.querySelector('[data-testid="message-button"]') as HTMLElement
+            );
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 });

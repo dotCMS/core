@@ -20,6 +20,7 @@ import {
     HealthStatusTypes,
     MINIMUM_SESSIONS_TO_SHOW_CHART
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
@@ -95,6 +96,8 @@ export class DotExperimentsResultsComponent {
 
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #events = inject(Events);
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #destroyRef = inject(DestroyRef);
@@ -110,10 +113,22 @@ export class DotExperimentsResultsComponent {
      * `paramMap`: the component is reused across experiments, and the resolver runs again on each
      * of them.
      */
-    readonly #healthStatus = toSignal(
+    readonly #routeHealthStatus = toSignal(
         this.#route.data.pipe(
             map((data) => data[HEALTH_STATUS_ROUTE_DATA_KEY] as HealthStatusTypes | undefined)
         )
+    );
+
+    /**
+     * Analytics health, from whichever of the two sources this screen has.
+     *
+     * The portlet gets it from a route resolver that re-runs per experiment. The panel has no
+     * routes and therefore no resolver — but it does not need one: the editor can only reach
+     * results through the panel's list, whose own gate already asked. Asking again here would
+     * spend a second request on a question already answered (FR-027, SC-005).
+     */
+    readonly #healthStatus = computed<HealthStatusTypes | undefined>(
+        () => this.#panel?.healthStatus() ?? this.#routeHealthStatus()
     );
 
     /** Anything but `OK` means the report cannot be trusted, so none of it is shown (AC22). */
@@ -216,6 +231,12 @@ export class DotExperimentsResultsComponent {
      * one page this experiment happens to run on.
      */
     onBackToList(): void {
+        if (this.#panel) {
+            this.#panel.backToList();
+
+            return;
+        }
+
         this.#router.navigate([EXPERIMENTS_URL], {
             queryParams: listReturnParams(this.#route.snapshot.queryParams)
         });

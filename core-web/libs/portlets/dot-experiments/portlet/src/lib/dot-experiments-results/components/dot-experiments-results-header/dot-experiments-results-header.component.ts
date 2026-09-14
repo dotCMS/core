@@ -10,6 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -77,6 +78,8 @@ export class DotExperimentsResultsHeaderComponent {
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
 
@@ -102,6 +105,14 @@ export class DotExperimentsResultsHeaderComponent {
      * one page this experiment happens to run on.
      */
     onBackToList(): void {
+        // The list is a view in the panel, and the narrowing this reads off the address does not
+        // exist there — the panel is already scoped to one page (FR-025b).
+        if (this.#panel) {
+            this.#panel.backToList();
+
+            return;
+        }
+
         this.#router.navigate([EXPERIMENTS_URL], {
             queryParams: listReturnParams(this.#route.snapshot.queryParams)
         });
@@ -111,11 +122,19 @@ export class DotExperimentsResultsHeaderComponent {
     onConfiguration(): void {
         const experimentId = this.store.experiment()?.id;
 
-        if (experimentId) {
-            this.#router.navigate(configureCommandsOf(experimentId), {
-                queryParams: listReturnParams(this.#route.snapshot.queryParams)
-            });
+        if (!experimentId) {
+            return;
         }
+
+        if (this.#panel) {
+            this.#panel.showConfigure(experimentId);
+
+            return;
+        }
+
+        this.#router.navigate(configureCommandsOf(experimentId), {
+            queryParams: listReturnParams(this.#route.snapshot.queryParams)
+        });
     }
 
     /**

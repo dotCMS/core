@@ -1,12 +1,19 @@
 import { Component, computed, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 
+import { take } from 'rxjs/operators';
+
+import { DotPropertiesService } from '@dotcms/data-access';
+import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotKeyboardShortcutService, DotMessagePipe, hasOverlayAbove } from '@dotcms/ui';
 
+import { DotExperimentsConfigureComponent } from '../dot-experiments-configure/dot-experiments-configure.component';
 import { DotExperimentsListComponent } from '../dot-experiments-list/dot-experiments-list.component';
+import { DotExperimentsResultsComponent } from '../dot-experiments-results/dot-experiments-results.component';
 import { PANEL_EXPANDED_WIDTH, PANEL_WIDTH } from '../shared/constants';
 
 /** localStorage key persisting the editor's expanded (wide) preference for this panel. */
@@ -80,7 +87,14 @@ function writeExpandedPreference(expanded: boolean): void {
  */
 @Component({
     selector: 'dot-experiments-panel',
-    imports: [DrawerModule, ButtonModule, DotExperimentsListComponent, DotMessagePipe],
+    imports: [
+        DrawerModule,
+        ButtonModule,
+        DotExperimentsListComponent,
+        DotExperimentsConfigureComponent,
+        DotExperimentsResultsComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-experiments-panel.component.html',
     // Click-outside closes the panel, bound at document level because `appendTo="body"` moves the
     // drawer (and its mask) out of this component's DOM subtree, so a template listener would
@@ -132,6 +146,23 @@ export class DotExperimentsPanelComponent {
     });
 
     constructor() {
+        /**
+         * What the portlet's route resolves for the Scheduling card, resolved here instead
+         * (#37478).
+         *
+         * The panel has no routes and therefore no resolver, and the card falls back to 7 and 90
+         * days when nobody tells it otherwise — an install that configured a different window
+         * would silently get the default one. Read once, at the panel's door, because the answer
+         * is about the install and cannot change while the editor is on the page.
+         */
+        inject(DotPropertiesService)
+            .getKeys([
+                ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION,
+                ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
+            ])
+            .pipe(take(1), takeUntilDestroyed())
+            .subscribe((configProps) => this.store.setConfigProps(configProps));
+
         // Escape through the shared registry rather than a listener of this component's own — see
         // the class docs. The claim is withdrawn when the component is destroyed, which is on
         // every close, because the shell mounts and destroys this panel rather than hiding it.

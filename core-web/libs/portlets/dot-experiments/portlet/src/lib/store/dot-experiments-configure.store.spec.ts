@@ -5,7 +5,7 @@ import { Mock, Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, ParamMap, Params, Router } from '@angular/router';
 
 import {
@@ -33,6 +33,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 
 import { dotExperimentsConfigureApiEvents } from './dot-experiments-configure-api.events';
@@ -2638,6 +2639,134 @@ describe('DotExperimentsConfigureStore', () => {
             dispatcher.dispatch(pageEvents.startRequested());
 
             expect(start).toHaveBeenCalledTimes(1);
+        });
+    });
+    /**
+     * The configuration screen inside the UVE panel (#37478).
+     *
+     * Everything about what a configuration *is* stays identical — the same store, the same
+     * autosave, the same validation (FR-040). What changes is where it learns which experiment it
+     * is about, and what happens after one is created: in the portlet both answers are the
+     * address, and in the panel the address belongs to the editor.
+     */
+    describe('panel mode (#37478)', () => {
+        let panelExperimentId: WritableSignal<string | null>;
+        let panelPageId: WritableSignal<string | null>;
+        let panelLanguageId: WritableSignal<number | null>;
+        const showConfigure = vi.fn();
+
+        const createInPanel = createServiceFactory({
+            service: DotExperimentsConfigureStore,
+            providers: [
+                mockProvider(DotExperimentsService, {
+                    getById,
+                    add,
+                    patch: patchExperiment,
+                    addVariant,
+                    editVariant,
+                    removeVariant,
+                    start,
+                    stop,
+                    cancelSchedule
+                }),
+                ...surroundingProviders(),
+                {
+                    provide: DotExperimentsPanelStore,
+                    useValue: {
+                        get experimentId() {
+                            return panelExperimentId;
+                        },
+                        get pageId() {
+                            return panelPageId;
+                        },
+                        get languageId() {
+                            return panelLanguageId;
+                        },
+                        showConfigure
+                    }
+                }
+            ]
+        });
+
+        const initPanelStore = () => {
+            // The editor's address is never empty, and in the portlet these very keys are what the
+            // store reads. Left populated on purpose: a panel that still read them would pass a
+            // test run against a bare route.
+            routeParams = { experimentId: 'from-the-address' };
+            routeQueryParams = { pageId: 'page-from-address', language_id: '9' };
+            spectator = createInPanel();
+            store = spectator.service;
+            dispatcher = spectator.inject(Dispatcher);
+            events = spectator.inject(Events);
+            spectator.flushEffects();
+        };
+
+        beforeEach(() => {
+            panelExperimentId = signal<string | null>(null);
+            panelPageId = signal<string | null>(PAGE.pageId);
+            panelLanguageId = signal<number | null>(1);
+            showConfigure.mockClear();
+            navigate.mockClear();
+        });
+
+        it('should take the experiment from the panel, not from the route', () => {
+            panelExperimentId.set(EXPERIMENT_ID);
+
+            initPanelStore();
+
+            expect(getById).toHaveBeenCalledWith(EXPERIMENT_ID);
+            expect(getById).not.toHaveBeenCalledWith('from-the-address');
+        });
+
+        /**
+         * Followed rather than read once, for the same reason the portlet follows `paramMap`: the
+         * panel swaps one experiment for another without destroying the screen, so a store that
+         * snapshotted its id would keep showing the experiment the editor left.
+         */
+        it('should follow the panel to another experiment', () => {
+            panelExperimentId.set(EXPERIMENT_ID);
+            initPanelStore();
+            getById.mockClear();
+
+            panelExperimentId.set('exp-other');
+            spectator.flushEffects();
+
+            expect(getById).toHaveBeenCalledWith('exp-other');
+        });
+
+        /**
+         * FR-015, FR-024. Asserted through the lookup the prefill actually makes, not through the
+         * event that asks for it: the query is what carries the page and the language, and it is
+         * where reading the wrong source would show up.
+         */
+        it('should prefill creation from the page in hand, not from the address', () => {
+            initPanelStore();
+
+            expect(contentSearchGet).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: expect.stringContaining(PAGE.pageId)
+                })
+            );
+            expect(contentSearchGet).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: expect.stringContaining('page-from-address')
+                })
+            );
+        });
+
+        /**
+         * FR-002, FR-016. The portlet swaps `/experiments/new` for the created experiment's URL so
+         * Back does not return to a creation form for something that already exists. The panel has
+         * no URL to swap — and a `router.navigate` here would eject the editor at the exact moment
+         * their experiment came into being.
+         */
+        it('should hand the created experiment to the panel instead of navigating', () => {
+            initPanelStore();
+
+            dispatcher.dispatch(apiEvents.createSucceeded(buildExperiment({ id: 'exp-created' })));
+
+            expect(showConfigure).toHaveBeenCalledWith('exp-created');
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 });

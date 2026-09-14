@@ -5,7 +5,7 @@ import { ChartData } from 'chart.js';
 import { merge, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, effect, EffectRef, inject, Injector, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, distinctUntilChanged, filter, map, mergeMap, switchMap } from 'rxjs/operators';
@@ -29,6 +29,7 @@ import {
     SummaryLegend,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { isDotIdentifier } from '@dotcms/utils';
 
 import { dotExperimentsResultsApiEvents } from './dot-experiments-results-api.events';
@@ -442,11 +443,44 @@ export const DotExperimentsResultsStore = signalStore(
     withHooks(() => {
         const route = inject(ActivatedRoute);
         const dispatcher = inject(Dispatcher);
+        /** Present only inside the UVE panel (#37478). */
+        const panel = inject(DotExperimentsPanelStore, { optional: true });
+        const injector = inject(Injector);
 
         let routeSubscription: SubscriptionLike;
+        let panelEffect: EffectRef;
 
         return {
             onInit() {
+                /**
+                 * Inside the panel the experiment is named by the panel, not by the address — the
+                 * address is the editor's (#37478, FR-025a, FR-031). Followed for the same reason
+                 * the route is followed below: the panel swaps one experiment for another without
+                 * destroying this screen.
+                 */
+                if (panel) {
+                    let knownExperimentId: string | null | undefined;
+
+                    panelEffect = effect(
+                        () => {
+                            const experimentId = panel.experimentId();
+
+                            if (!experimentId || experimentId === knownExperimentId) {
+                                return;
+                            }
+
+                            knownExperimentId = experimentId;
+
+                            untracked(() =>
+                                dispatcher.dispatch(pageEvents.enter(experimentId))
+                            );
+                        },
+                        { injector }
+                    );
+
+                    return;
+                }
+
                 /**
                  * Followed for as long as the screen lives rather than read once: the component is
                  * reused across experiments, so an id arriving while the screen is up must load
@@ -464,6 +498,7 @@ export const DotExperimentsResultsStore = signalStore(
             },
             onDestroy() {
                 routeSubscription?.unsubscribe();
+                panelEffect?.destroy();
             }
         };
     })

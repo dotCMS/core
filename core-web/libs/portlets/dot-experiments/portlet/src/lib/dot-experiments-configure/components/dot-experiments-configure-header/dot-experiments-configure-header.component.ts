@@ -12,6 +12,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -172,6 +173,8 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
@@ -189,11 +192,19 @@ export class DotExperimentsConfigureHeaderComponent {
     onViewResults(): void {
         const experimentId = this.store.experiment()?.id;
 
-        if (experimentId) {
-            this.#router.navigate(resultsCommandsOf(experimentId), {
-                queryParams: listReturnParams(this.#route.snapshot.queryParams)
-            });
+        if (!experimentId) {
+            return;
         }
+
+        if (this.#panel) {
+            this.#panel.showResults(experimentId);
+
+            return;
+        }
+
+        this.#router.navigate(resultsCommandsOf(experimentId), {
+            queryParams: listReturnParams(this.#route.snapshot.queryParams)
+        });
     }
 
     /**
@@ -204,6 +215,14 @@ export class DotExperimentsConfigureHeaderComponent {
      * on either side of that swap.
      */
     onBackToList(): void {
+        // In the panel the list is a view, and the narrowing this reads off the address does not
+        // exist there — the panel is already scoped to the page (FR-008, FR-013).
+        if (this.#panel) {
+            this.#panel.backToList();
+
+            return;
+        }
+
         this.#router.navigate([EXPERIMENTS_URL], {
             queryParams: listReturnParams(this.#route.snapshot.queryParams)
         });

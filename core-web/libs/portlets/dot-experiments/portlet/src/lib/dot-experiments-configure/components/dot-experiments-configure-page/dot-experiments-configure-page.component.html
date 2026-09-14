@@ -42,6 +42,13 @@
                     {{ 'experiments.configure.page.empty' | dm }}
                 </span>
             }
+            @if ($inPanel) {
+                <small
+                    class="p-field-hint ml-auto flex-none"
+                    data-testid="experiments-configure-page-fixed-hint">
+                    {{ 'experiments.configure.page.fixed-in-panel' | dm }}
+                </small>
+            } @else {
             <!-- One button either way, and the label is the whole difference: with a page in
                      place the gesture is to change it, not to empty the card and pick again. -->
             <p-button
@@ -61,6 +68,7 @@
                 tooltipPosition="top"
                 (onClick)="onChangePage()"
                 data-testid="experiments-configure-page-select-btn" />
+            }
         </div>
 
         <!-- Allocation only means something once there is a page to take traffic from, so it

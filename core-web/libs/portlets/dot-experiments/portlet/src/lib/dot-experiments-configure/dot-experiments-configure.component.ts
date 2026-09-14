@@ -55,6 +55,7 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     MAX_INPUT_TITLE_LENGTH
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
@@ -295,6 +296,8 @@ export class DotExperimentsConfigureComponent {
 
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #events = inject(Events);
     /** Only the weights are reported from here; everything else goes through `bindFormDiff`. */
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
@@ -308,9 +311,16 @@ export class DotExperimentsConfigureComponent {
     readonly #formatDate = (value: Date) => formatDate(value, 'medium', this.#locale);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
-    /** How long an experiment may run. Read once: a modal-free screen outlives no resolve. */
+    /**
+     * How long an experiment may run. Read once: a modal-free screen outlives no resolve.
+     *
+     * Two sources, one answer. The portlet's route resolves these properties; the panel has no
+     * routes and resolves them at its own door instead. Falling through to the route's copy keeps
+     * the portlet exactly as it was, and stops the panel from silently offering the 7-and-90-day
+     * defaults on an install that configured something else (#37478).
+     */
     readonly #durationBounds = resolveDurationBounds(
-        this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]
+        this.#panel?.configProps() ?? this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]
     );
 
     /** "Now" for the whole session. The pickers offer nothing before it. */
@@ -593,7 +603,12 @@ export class DotExperimentsConfigureComponent {
      * same reason, as {@link #scrollToFirstErrorOnFailedStart}.
      */
     #scrollToRequestedSection(): void {
-        const requested = this.#route.snapshot.queryParamMap.get(CONFIGURE_SECTION_PARAM);
+        // Two sources, one question. The portlet is asked through `?section=`; the panel has no
+        // address to be asked in, so the round trip's return says it on the panel store instead
+        // (#37478, FR-023).
+        const requested =
+            this.#panel?.section() ??
+            this.#route.snapshot.queryParamMap.get(CONFIGURE_SECTION_PARAM);
 
         if (requested !== CONFIGURE_SECTION_VARIANTS) {
             return;
@@ -729,6 +744,14 @@ export class DotExperimentsConfigureComponent {
      * answers with the same address. See {@link listReturnParams}.
      */
     onBackToList(): void {
+        // In the panel the list is a view, not an address. Navigating would take the editor off
+        // the page this screen is configuring an experiment for (FR-008, FR-013, FR-025b).
+        if (this.#panel) {
+            this.#panel.backToList();
+
+            return;
+        }
+
         this.#router.navigate([EXPERIMENTS_URL], {
             queryParams: listReturnParams(this.#route.snapshot.queryParams)
         });

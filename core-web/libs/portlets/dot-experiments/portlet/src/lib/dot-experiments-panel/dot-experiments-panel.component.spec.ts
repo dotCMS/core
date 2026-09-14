@@ -11,6 +11,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsPanelComponent } from './dot-experiments-panel.component';
 
+import { DotExperimentsConfigureComponent } from '../dot-experiments-configure/dot-experiments-configure.component';
 import { DotExperimentsListComponent } from '../dot-experiments-list/dot-experiments-list.component';
 import { PANEL_EXPANDED_WIDTH, PANEL_WIDTH } from '../shared/constants';
 
@@ -38,6 +39,7 @@ describe('DotExperimentsPanelComponent', () => {
                             // here would drag its store and every service behind it into a test
                             // that asserts nothing about them.
                             MockComponent(DotExperimentsListComponent),
+                            MockComponent(DotExperimentsConfigureComponent),
                             MockPipe(DotMessagePipe, (key: string) => key)
                         ]
                     }
@@ -144,6 +146,21 @@ describe('DotExperimentsPanelComponent', () => {
             expect(panel()).not.toBeNull();
             expect(surface('experiments-panel-list')).not.toBeNull();
             expect(title()).toBe('experiments.panel.title');
+        });
+
+        /**
+         * FR-008, FR-013. The configuration arrives beside the page rather than instead of it —
+         * the reason the panel exists at all. Asserted as the component being rendered, not as the
+         * store's view, because the store could say `configure` while the template showed nothing.
+         */
+        it('should render the configuration when the store opens one', () => {
+            openOn(() => store.open());
+            openOn(() => store.showConfigure('exp-1'));
+
+            expect(
+                spectator.query(DotExperimentsConfigureComponent, { root: true })
+            ).not.toBeNull();
+            expect(surface('experiments-panel-list')).toBeNull();
         });
 
         /**

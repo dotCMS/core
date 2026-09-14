@@ -144,7 +144,8 @@ export class DotExperimentsListComponent {
      * on a 1440px laptop. The layout is a property of where the screen is, not of how much room it
      * happens to have (FR-041).
      */
-    protected readonly $inPanel = !!inject(DotExperimentsPanelStore, { optional: true });
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    protected readonly $inPanel = !!this.#panel;
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
     readonly NO_GOAL_PLACEHOLDER = NO_GOAL_PLACEHOLDER;
@@ -589,12 +590,13 @@ export class DotExperimentsListComponent {
      * rather than a second status list that could drift from it.
      */
     onRowClick(experiment: DotExperiment): void {
-        this.#router.navigate(
-            isAllowed('results', experiment.status)
-                ? resultsCommandsOf(experiment.id)
-                : configureCommandsOf(experiment.id),
-            { queryParams: this.#pageFilterParams() }
-        );
+        if (isAllowed('results', experiment.status)) {
+            this.onViewResults(experiment);
+
+            return;
+        }
+
+        this.onConfigure(experiment);
     }
 
     /** Rebuilds the kebab menu for the given row before the popup opens. */
@@ -614,6 +616,15 @@ export class DotExperimentsListComponent {
      * the two cannot carry different addresses.
      */
     onNewExperiment(): void {
+        // A page with no experiments is a starting point, not a reason to leave the editor
+        // (FR-006a, FR-007, D11). The creation screen is the configuration screen with no
+        // experiment yet, so the panel shows it the same way.
+        if (this.#panel) {
+            this.#panel.showCreate();
+
+            return;
+        }
+
         this.#router.navigate(NEW_EXPERIMENT_COMMANDS, { queryParams: this.#pageFilterParams() });
     }
 
@@ -628,8 +639,20 @@ export class DotExperimentsListComponent {
         return pageFilterParams(this.store.selectedPageId(), this.store.languageId());
     }
 
-    /** Opens the Configure screen of an existing experiment. */
+    /**
+     * Opens the Configure screen of an existing experiment.
+     *
+     * In the panel this is a view change, not a route: the whole point of the panel is that
+     * reaching a configuration does not cost the editor the page they are standing on (FR-008,
+     * FR-013, D7).
+     */
     onConfigure(experiment: DotExperiment): void {
+        if (this.#panel) {
+            this.#panel.showConfigure(experiment.id);
+
+            return;
+        }
+
         this.#router.navigate(configureCommandsOf(experiment.id), {
             queryParams: this.#pageFilterParams()
         });
@@ -643,6 +666,12 @@ export class DotExperimentsListComponent {
      * experiment with nothing to count yet, so it is offered whatever the status (AC6).
      */
     onViewResults(experiment: DotExperiment): void {
+        if (this.#panel) {
+            this.#panel.showResults(experiment.id);
+
+            return;
+        }
+
         this.#router.navigate(resultsCommandsOf(experiment.id), {
             queryParams: this.#pageFilterParams()
         });
