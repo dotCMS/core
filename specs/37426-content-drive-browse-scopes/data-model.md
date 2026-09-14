@@ -45,24 +45,24 @@ The store's existing `path` becomes the single statement of where the user is. I
 
 | Value | Selection | Sent as |
 |---|---|---|
-| *(absent)* | All | `assetPath: //<site>/`, `browseScope: ALL` |
+| *(absent)* | All Site Content | `assetPath: //<site>/`, `browseScope: ALL` |
 | `/` | the site root | `assetPath: //<site>/`, `browseScope: ROOT` |
 | `/folder/…` | that folder | `assetPath: //<site>/folder/…`, no scope |
 | `SYSTEM_HOST` | System Host | `assetPath: //<site>/`, `browseScope: SYSTEM_HOST` |
 
 Two rules protect this table. Reserved words can never collide with a folder, because every real path begins with `/` and no reserved word does. And the mapping to `assetPath` must be explicit rather than template interpolation: the current expression at `dot-content-drive.store.ts:129` would produce `//demo.dotcms.comSYSTEM_HOST`.
 
-**Why absent rather than an explicit `ALL` token**: the URL writer already removes the `path` parameter when the path is empty (`DEFAULT_PATH = undefined`), so links already in circulation carry no path and must keep meaning "the whole site". Absent is not a gap in the model, it is the back-compatible spelling of All.
+**Why absent rather than an explicit `ALL` token**: the URL writer already removes the `path` parameter when the path is empty (`DEFAULT_PATH = undefined`), so links already in circulation carry no path and must keep meaning "the whole site". Absent is not a gap in the model, it is the back-compatible spelling of All Site Content.
 
 ---
 
 ## Sidebar selection (frontend)
 
-Exactly one of four things is selected: the All row, the site row, a folder node, or the System Host row. The tree's existing `selectedNode` continues to represent the middle two; the two new rows live outside the tree and must clear it when chosen, and be cleared by it.
+Exactly one of four things is selected: the All Site Content row, the site row, a folder node, or the System Host row. The tree's existing `selectedNode` continues to represent the middle two; the two new rows live outside the tree and must clear it when chosen, and be cleared by it. The System Host row is fixed at the bottom of the sidebar and the hierarchy scrolls beneath it, so a growing tree can never push it out of reach.
 
 | Selection | Drop target | Add content |
 |---|---|---|
-| All | no | no |
+| All Site Content | no | no |
 | site row | yes, as today | yes, as today |
 | folder | yes, as today | yes, as today |
 | System Host | yes, moves content there | yes, gated against System Host itself |
