@@ -50,6 +50,21 @@ cli: &cli
 sdk_libs:
   - 'core-web/libs/sdk/**'
 
+examples:
+  - 'examples/**'
+
+# The package.json shape guardrail's own source. Deliberately NOT folded into sdk_libs:
+# that filter also gates the trunk npm publish job (cicd_3-trunk.yml), and touching the
+# validator must not trigger an SDK release. Without this key the job that runs the
+# validator is not triggered by changes to the validator — you could break the guardrail
+# and keep a green build.
+sdk_package_shapes:
+  - '.github/scripts/validate-sdk-package-shapes/**'
+  - '.github/scripts/resolve-sdk-pin/**'
+  # resolve-sdk-pin's only caller, and the owner of the CLI's argument contract. Without it,
+  # changing a flag in the workflow does not run the tests that cover the module it invokes.
+  - '.github/workflows/cicd_comp_release-prepare-phase.yml'
+
 # PR area labeling filters
 # These are separate from test-triggering filters to avoid false positives
 # (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")

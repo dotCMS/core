@@ -1,11 +1,12 @@
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import '@analogjs/vitest-angular/setup-zone';
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
+import { provideZoneChangeDetection } from '@angular/core';
 
-setupZoneTestEnv({
-    errorOnUnknownElements: true,
-    errorOnUnknownProperties: true
-});
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
-/* global mocks for jsdom */
+// Global mocks for jsdom
 const mock = () => {
     let storage: { [key: string]: string } = {};
     return {
@@ -20,10 +21,10 @@ Object.defineProperty(window, 'localStorage', { value: mock() });
 Object.defineProperty(window, 'sessionStorage', { value: mock() });
 Object.defineProperty(window, 'getComputedStyle', {
     value: () => ({
-        getPropertyValue: (prop: string) => {
+        getPropertyValue: (_prop: string) => {
             return '';
         },
-        setProperty: (propertyName: string, value: string) => {
+        setProperty: (_propertyName: string, _value: string) => {
             return;
         }
     })

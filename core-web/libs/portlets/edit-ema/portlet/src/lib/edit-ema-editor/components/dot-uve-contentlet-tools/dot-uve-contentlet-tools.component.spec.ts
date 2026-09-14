@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -111,7 +117,7 @@ describe('DotUveContentletToolsComponent', () => {
                     // promoteHoverToSelected calls setSelected on the store
                     // before emitting select/quick-edit events. Stub it so
                     // the (click) handler doesn't throw and the output fires.
-                    setSelected: jest.fn()
+                    setSelected: vi.fn()
                 })
             }
         ],
@@ -309,7 +315,7 @@ describe('DotUveContentletToolsComponent', () => {
                 const paletteButton = spectator.query(
                     byTestId('hover-palette-button')
                 ) as HTMLElement;
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('selectContent').subscribe(handler);
                 spectator.click(paletteButton.querySelector('button') as Element);
 
@@ -322,7 +328,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('quick-edit (bolt) button', () => {
             it('should emit openQuickEdit when clicking the bolt button', () => {
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('openQuickEdit').subscribe(handler);
 
                 const boltButton = spectator.query(
@@ -336,7 +342,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('full-editor (pencil) button', () => {
             it('should emit openFullEditor with the hovered payload', () => {
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('openFullEditor').subscribe(handler);
 
                 const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
@@ -351,7 +357,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('deleteContent', () => {
             it('should emit deleteContent with context when clicking delete button', () => {
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('deleteContent').subscribe(handler);
 
                 const deleteButton = spectator.query(
@@ -374,7 +380,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the first command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[0].command?.({});
@@ -395,7 +401,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the second command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[1].command?.({});
@@ -416,7 +422,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the third command (form)
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[2].command?.({});
@@ -444,7 +450,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the first command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[0].command?.({});
@@ -464,7 +470,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the second command
-                const handler = jest.fn();
+                const handler = vi.fn();
                 spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[1].command?.({});
@@ -757,7 +763,7 @@ describe('DotUveContentletToolsComponent', () => {
 
     describe('Position flag behavior', () => {
         it('should emit addContent with "before" position when clicking top add button', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('addContent').subscribe(handler);
 
             const addTopButton = spectator.query(byTestId('hover-add-top-button'));
@@ -778,7 +784,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should emit addContent with "after" position when clicking bottom add button', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('addContent').subscribe(handler);
 
             const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));

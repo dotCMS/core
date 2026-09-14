@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ApplicationRef } from '@angular/core';
 
@@ -39,7 +40,7 @@ describe('DotAiPromptInputComponent', () => {
     });
 
     it('should emit typed text', () => {
-        const output = jest.fn();
+        const output = vi.fn();
         spectator.output('valueChange').subscribe(output);
 
         spectator.typeInElement('a prompt', textarea());
@@ -48,7 +49,7 @@ describe('DotAiPromptInputComponent', () => {
     });
 
     it('should submit on Enter', () => {
-        const output = jest.fn();
+        const output = vi.fn();
         spectator.output('submitted').subscribe(output);
 
         textarea().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
@@ -57,7 +58,7 @@ describe('DotAiPromptInputComponent', () => {
     });
 
     it('should insert a newline on Shift+Enter instead of submitting', () => {
-        const output = jest.fn();
+        const output = vi.fn();
         spectator.output('submitted').subscribe(output);
 
         textarea().dispatchEvent(

@@ -1,5 +1,11 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -69,13 +75,13 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
      * instantiated by the time a test body runs, so `createComponent({ providers })` throws
      * "Cannot override provider when the test module has already been instantiated".
      */
-    const searchMock = jest.fn();
+    const searchMock = vi.fn();
 
     /**
      * Mutable for the same reason `searchMock` is. Returns "nothing is claimed" by default so the
      * tests that are not about cardinality are unaffected.
      */
-    const constrainedMock = jest.fn();
+    const constrainedMock = vi.fn();
 
     const createComponent = createComponentFactory({
         component: AddRelationshipsComponent,
@@ -89,12 +95,12 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
                     }
                 }
             },
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentDriveService, { search: searchMock }),
             mockProvider(ConstrainedIdentifiersService, { get: constrainedMock }),
             // The store enriches rows with their language; without this the load never resolves
             // and every assertion below sees an empty table.
-            mockProvider(DotLanguagesService, { get: jest.fn().mockReturnValue(of([])) }),
+            mockProvider(DotLanguagesService, { get: vi.fn().mockReturnValue(of([])) }),
             // Without a current site there is no browsable scope, and the store correctly declines
             // to search at all — every assertion here would then see an empty table.
             mockProvider(SiteService, { currentSite: { hostname: 'demo.dotcms.com' } }),

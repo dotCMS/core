@@ -1,6 +1,6 @@
-import { describe, expect } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AddRelationshipsSiteChipComponent } from './add-relationships-site-chip.component';
 
@@ -17,7 +17,7 @@ import { AddRelationshipsStore } from '../../store/add-relationships.store';
  */
 describe('AddRelationshipsSiteChipComponent', () => {
     let spectator: Spectator<AddRelationshipsSiteChipComponent>;
-    const setScope = jest.fn();
+    const setScope = vi.fn();
 
     const createComponent = createComponentFactory({
         component: AddRelationshipsSiteChipComponent,

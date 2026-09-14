@@ -1,5 +1,6 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { MockInstance, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -85,7 +86,7 @@ const PROMOTED_VARIANT: Variant = {
 };
 
 /**
- * Real signals, not `jest.fn()`: the component is OnPush, so a plain mock whose return value is
+ * Real signals, not `vi.fn()`: the component is OnPush, so a plain mock whose return value is
  * swapped after the first render never reaches the template. `set()` marks it dirty the way the
  * real store does.
  */
@@ -101,8 +102,8 @@ const createStoreMock = () => ({
 describe('DotExperimentsResultsSummaryTableComponent', () => {
     let spectator: Spectator<DotExperimentsResultsSummaryTableComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
-    let confirm: jest.SpyInstance;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsResultsSummaryTableComponent,
@@ -136,16 +137,16 @@ describe('DotExperimentsResultsSummaryTableComponent', () => {
     beforeEach(() => {
         storeMock = createStoreMock();
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        confirm = jest
+        confirm = vi
             .spyOn(confirmationService, 'confirm')
-            .mockReturnValue(confirmationService) as jest.SpyInstance;
+            .mockReturnValue(confirmationService) as unknown as MockInstance;
         spectator.detectChanges();
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('session gate', () => {

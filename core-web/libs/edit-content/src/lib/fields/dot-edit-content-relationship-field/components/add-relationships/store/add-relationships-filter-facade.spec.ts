@@ -1,7 +1,7 @@
-import { describe } from '@jest/globals';
 import { patchState, unprotected } from '@ngrx/signals';
-import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotContentDriveService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
@@ -26,7 +26,7 @@ describe('AddRelationshipsFilterFacade', () => {
         service: AddRelationshipsStore,
         providers: [
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(
+                search: vi.fn().mockReturnValue(
                     of({
                         list: [],
                         contentCount: 0,

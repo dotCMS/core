@@ -1,7 +1,7 @@
-import { expect, it, describe, beforeEach } from '@jest/globals';
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MarkdownModule } from 'ngx-markdown';
 import { of, Subject } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -25,11 +25,11 @@ describe('DotAppsListComponent', () => {
 
     const mockDialogStore = {
         // Methods
-        openImport: jest.fn(),
-        openExport: jest.fn(),
-        close: jest.fn(),
-        exportConfiguration: jest.fn(),
-        importConfiguration: jest.fn(),
+        openImport: vi.fn(),
+        openExport: vi.fn(),
+        close: vi.fn(),
+        exportConfiguration: vi.fn(),
+        importConfiguration: vi.fn(),
         // Signals needed by dialog component
         visible: signal(false),
         action: signal(null),
@@ -44,7 +44,7 @@ describe('DotAppsListComponent', () => {
     };
 
     const mockDotAppsService = {
-        get: jest.fn().mockReturnValue(of(appsResponse))
+        get: vi.fn().mockReturnValue(of(appsResponse))
     };
 
     const messageServiceMock = new MockDotMessageService({
@@ -177,7 +177,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should call openImportDialog when import button is clicked in template', () => {
-            jest.spyOn(spectator.component, 'openImportDialog');
+            vi.spyOn(spectator.component, 'openImportDialog');
             const importBtn = spectator.query('.dot-apps-configuration__action_import_button');
             if (importBtn) {
                 spectator.click(importBtn);
@@ -187,7 +187,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should call openExportDialog when export button is clicked in template', () => {
-            jest.spyOn(spectator.component, 'openExportDialog');
+            vi.spyOn(spectator.component, 'openExportDialog');
             const exportBtn = spectator.query('.dot-apps-configuration__action_export_button');
             if (exportBtn) {
                 spectator.click(exportBtn);

@@ -1,6 +1,6 @@
-import { describe, expect } from '@jest/globals';
-import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotContentDriveService, DotLanguagesService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
@@ -37,8 +37,8 @@ const response = (
 describe('AddRelationshipsStore (US2 — selection)', () => {
     let spectator: SpectatorService<InstanceType<typeof AddRelationshipsStore>>;
     let store: InstanceType<typeof AddRelationshipsStore>;
-    const searchMock = jest.fn();
-    const constrainedMock = jest.fn();
+    const searchMock = vi.fn();
+    const constrainedMock = vi.fn();
 
     const createService = createServiceFactory({
         service: AddRelationshipsStore,

@@ -1,5 +1,11 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -28,7 +34,7 @@ describe('DotImageEditorFullscreenToggleComponent', () => {
         isFullscreen.set(false);
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
-        jest.spyOn(dispatcher, 'dispatch');
+        vi.spyOn(dispatcher, 'dispatch');
     });
 
     it('should dispatch fullscreenToggled when clicked', () => {

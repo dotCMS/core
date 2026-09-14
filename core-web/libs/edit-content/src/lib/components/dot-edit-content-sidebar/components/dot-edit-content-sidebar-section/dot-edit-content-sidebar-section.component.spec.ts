@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
+import { Mocked } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -98,7 +99,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
     });
 
     describe('Without key (backward-compatible)', () => {
-        let localStorageService: jest.Mocked<DotLocalstorageService>;
+        let localStorageService: Mocked<DotLocalstorageService>;
 
         beforeEach(() => {
             localStorageService = spectator.inject(DotLocalstorageService);
@@ -122,7 +123,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
     });
 
     describe('With key (collapsible + persistent)', () => {
-        let localStorageService: jest.Mocked<DotLocalstorageService>;
+        let localStorageService: Mocked<DotLocalstorageService>;
 
         beforeEach(() => {
             spectator = createHost(null, {

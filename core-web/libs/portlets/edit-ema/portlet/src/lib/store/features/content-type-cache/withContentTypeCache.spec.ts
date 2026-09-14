@@ -1,6 +1,7 @@
 import { signalStore } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -30,13 +31,13 @@ describe('withContentTypeCache', () => {
         service: TestStore,
         providers: [
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of(mockContentType))
+                getContentType: vi.fn().mockReturnValue(of(mockContentType))
             })
         ]
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         store = spectator.service;
         contentTypeService = spectator.inject(DotContentTypeService);
@@ -63,7 +64,7 @@ describe('withContentTypeCache', () => {
 
         it('should cache multiple distinct content types', () => {
             const mockBlog = { ...mockContentType, variable: 'Blog', name: 'Blog' };
-            jest.spyOn(contentTypeService, 'getContentType')
+            vi.spyOn(contentTypeService, 'getContentType')
                 .mockReturnValueOnce(of(mockContentType))
                 .mockReturnValueOnce(of(mockBlog as unknown as DotCMSContentType));
 
@@ -81,7 +82,7 @@ describe('withContentTypeCache', () => {
         });
 
         it('should not throw and return EMPTY on fetch error', () => {
-            jest.spyOn(contentTypeService, 'getContentType').mockReturnValue(
+            vi.spyOn(contentTypeService, 'getContentType').mockReturnValue(
                 throwError(() => new Error('network error'))
             );
 

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { TestBed } from '@angular/core/testing';
 import { UrlSegment } from '@angular/router';
 
@@ -16,7 +18,7 @@ describe('DotTemplateGuard', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jest.fn()
+                        gotoPortlet: vi.fn()
                     }
                 }
             ]

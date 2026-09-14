@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
-type SpyInstance = ReturnType<typeof jest.spyOn>;
+type SpyInstance = ReturnType<typeof vi.spyOn>;
 
 import {
     DotCMSContentType,
@@ -42,7 +42,7 @@ describe('Utils Functions', () => {
     const originalWarn = console.warn;
 
     beforeAll(() => {
-        console.warn = jest.fn();
+        console.warn = vi.fn();
     });
 
     afterAll(() => {
@@ -1221,11 +1221,11 @@ describe('Utils Functions', () => {
         beforeEach(() => {
             sessionStorage.clear();
             // eslint-disable-next-line @typescript-eslint/no-empty-function
-            jest.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
         });
 
         afterEach(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         describe('getStoredUIState', () => {
@@ -1277,7 +1277,7 @@ describe('Utils Functions', () => {
             });
 
             it('should return default state and warn when sessionStorage throws error', () => {
-                const mockGetItem = jest.fn(() => {
+                const mockGetItem = vi.fn(() => {
                     throw new Error('Storage error');
                 });
 
@@ -1677,9 +1677,9 @@ describe('Utils Functions', () => {
 
                 beforeEach(() => {
                     // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+                    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
                     // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+                    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
                 });
 
                 afterEach(() => {

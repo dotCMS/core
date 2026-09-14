@@ -9,6 +9,26 @@ public interface FeatureFlagName {
     // Experiments and Analytics
     String FEATURE_FLAG_EXPERIMENTS = "FEATURE_FLAG_EXPERIMENTS";
 
+    /**
+     * Selects which experiments experience the Universal Visual Editor's Experiments navigation
+     * item leads to: the new site-wide Experiments portlet when on, the legacy per-page screens
+     * when off. Off by default ({@code dotmarketing-config.properties} sets
+     * {@code FEATURE_FLAG_EXPERIMENTS_PORTLET=false}) so existing customers keep the flow they
+     * have until they opt in.
+     *
+     * <p><b>Not</b> a kill-switch for experiments. {@link #FEATURE_FLAG_EXPERIMENTS} is that, and
+     * this value has no bearing on whether experiments are served to site visitors, on experiment
+     * JavaScript injection, or on experiment resolution during page render.
+     *
+     * <p>The explicit {@code false} in the properties file is required rather than decorative: the
+     * shared frontend flag readers treat an absent property as <i>enabled</i>, so declaring this
+     * switch without shipping a value would deliver it on.
+     *
+     * <p>Retired by #37008, which removes the legacy per-page screens. Frontend equivalent:
+     * {@code FeaturedFlags.FEATURE_FLAG_EXPERIMENTS_PORTLET}.
+     */
+    String FEATURE_FLAG_EXPERIMENTS_PORTLET = "FEATURE_FLAG_EXPERIMENTS_PORTLET";
+
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
 
     String FEATURE_FLAG_CONTENT_ANALYTICS = "FEATURE_FLAG_CONTENT_ANALYTICS";

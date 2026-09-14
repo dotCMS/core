@@ -1,5 +1,10 @@
-import { describe, expect } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -55,7 +60,7 @@ describe('AddRelationshipsFooterComponent (US2)', () => {
     });
 
     it('emits confirm when pressed with an empty selection, so the relationship can be emptied', () => {
-        const confirmed = jest.fn();
+        const confirmed = vi.fn();
         spectator.output('confirm').subscribe(confirmed);
 
         const button = spectator
@@ -67,7 +72,7 @@ describe('AddRelationshipsFooterComponent (US2)', () => {
     });
 
     it('emits cancel when the cancel action is pressed', () => {
-        const cancelled = jest.fn();
+        const cancelled = vi.fn();
         spectator.output('cancel').subscribe(cancelled);
 
         const button = spectator

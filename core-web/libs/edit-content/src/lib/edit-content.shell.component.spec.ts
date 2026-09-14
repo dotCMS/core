@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { Toast } from 'primeng/toast';
