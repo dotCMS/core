@@ -38,7 +38,34 @@ export async function createContentlet(
     expect(response.status()).toBe(200);
 
     const responseData = await response.json();
-    const entity = responseData.entity;
+
+    return extractFiredContentlet(responseData.entity);
+}
+
+/**
+ * Unwraps a contentlet from a workflow `fire` response.
+ *
+ * The endpoint does not return the contentlet directly — it returns
+ * `{ results: [ { "<identifier>": { ...contentlet } } ], summary: {...} }`. Returning `entity`
+ * as-is yields an object whose `identifier` is `undefined`, which fails silently at every call
+ * site (a cleanup `deleteContentlets([undefined])` simply deletes nothing).
+ *
+ * Mirrors the unwrapping already done in `fixtures/relationship.fixture.ts`. Falls back to the
+ * raw entity so an endpoint that does return a bare contentlet keeps working.
+ */
+function extractFiredContentlet(entity: unknown): Contentlet {
+    const results = (entity as { results?: Record<string, unknown>[] })?.results;
+
+    if (Array.isArray(results) && results.length > 0) {
+        const payload = Object.values(results[0])[0];
+
+        expect(
+            payload != null && typeof payload === 'object',
+            `fire response result entry missing contentlet: ${JSON.stringify(results[0])}`
+        ).toBe(true);
+
+        return payload as Contentlet;
+    }
 
     return entity as Contentlet;
 }

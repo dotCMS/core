@@ -332,10 +332,34 @@ public abstract class PublisherAPI {
 	/**
 	 * Delete element from publishing_queue table by identifier
 	 * If the element is the last in the bundle, it will also delete the {@link PublishAuditStatus}
-	 * @param id ID of the element in the table
-	 * @return boolean
+	 * <p>
+	 * This overload is <b>bundle-agnostic</b>: it removes the asset from <i>every</i> bundle that
+	 * has it queued. When the asset is queued in more than one bundle - normal for shared content
+	 * included in several scheduled campaigns - that is almost never what the caller wants.
+	 * Prefer {@link #deleteElementFromPublishQueueTableAndAuditStatus(String, String)}, which
+	 * scopes the delete to a single bundle.
+	 *
+	 * @param identifier ID of the element in the table
+	 * @deprecated Use {@link #deleteElementFromPublishQueueTableAndAuditStatus(String, String)}.
 	 */
+	@Deprecated(since = "Sep 10th, 26", forRemoval = true)
 	public abstract void deleteElementFromPublishQueueTableAndAuditStatus(String identifier) throws DotPublisherException;
+
+	/**
+	 * Deletes the queue entries for the given asset <b>within a single bundle</b>, leaving the same
+	 * asset queued in other bundles untouched. If this removal empties the bundle's queue, the
+	 * bundle's {@link PublishAuditStatus} is deleted as well - the same rule the bundle-agnostic
+	 * overload applies.
+	 *
+	 * @param identifier ID of the asset in the table
+	 * @param bundleId   the bundle to remove it from; must not be null or blank
+	 * @throws IllegalArgumentException if {@code bundleId} is null or blank. A missing bundle must
+	 *         fail loudly rather than silently widen the delete to every bundle holding the asset -
+	 *         {@code publishing_queue.bundle_id} is nullable with no foreign key, so this is
+	 *         reachable rather than theoretical.
+	 */
+	public abstract void deleteElementFromPublishQueueTableAndAuditStatus(String identifier,
+			String bundleId) throws DotPublisherException;
 
 	/**
 	 * Deletes a record from the {@code publishing_queue} table based on its
