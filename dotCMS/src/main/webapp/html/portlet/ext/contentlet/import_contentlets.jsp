@@ -127,6 +127,11 @@
 	}
 
 	function downloadCSVExample() {
+		var structureInode = dijit.byId("structuresSelect").attr('value');
+		if (!structureInode) {
+			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "structure-type-is-required")) %>', true);
+			return;
+		}
 		var href =  '<portlet:actionURL>';
 			href +=		'<portlet:param name="struts_action" value="/ext/contentlet/import_contentlets" />';
 			href +=		'<portlet:param name="cmd" value="downloadCSVTemplate" />';
