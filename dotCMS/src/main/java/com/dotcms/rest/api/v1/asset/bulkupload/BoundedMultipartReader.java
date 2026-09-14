@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.asset.bulkupload;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
@@ -143,8 +144,26 @@ public class BoundedMultipartReader {
             return staging.stage(part.fileName(),
                     new CeilingBoundedInputStream(part.content(), part.fileName(),
                             perFileCeiling));
-        } catch (final PerFileCeilingExceededException refused) {
-            Logger.info(this, refused.getMessage() + "; recorded as that file's own failure");
+        } catch (final RuntimeException e) {
+            // MATCHED ON THE CAUSE, NOT ON THE THROWN TYPE, and that is the whole point.
+            //
+            // CeilingBoundedInputStream raises from read(...), which happens INSIDE
+            // TempFileAPI.createTempFile — whose catch(Exception) rewraps everything it sees in a
+            // DotRuntimeException (TempFileAPI:194). Java matches catch clauses on the thrown
+            // type, so a clause naming PerFileCeilingExceededException is unreachable through the
+            // only staging implementation that ships: what arrives here is a DotRuntimeException
+            // carrying ours as its cause, it matches nothing, and one over-size file takes the
+            // whole submission down with a 500 — the exact behaviour this class exists to prevent
+            // (FR-011).
+            //
+            // causedBy walks the chain including the exception itself, so this also covers a
+            // staging layer that does not wrap.
+            if (!ExceptionUtil.causedBy(e, PerFileCeilingExceededException.class)) {
+                throw e;
+            }
+            Logger.info(this, String.format(
+                    "'%s' crossed the staging layer's per-file ceiling of %d bytes; recorded as "
+                            + "that file's own failure", part.fileName(), perFileCeiling));
             return StagedPart.refused(part.fileName(), BatchFailureReason.OVER_SIZE_LIMIT);
         }
     }
