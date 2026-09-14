@@ -207,8 +207,7 @@ describe('ToolbarComponent — the link button is never gated (#36351)', () => {
             .queryAll('button')
             .find(
                 (button) =>
-                    button.querySelector('.material-symbols-outlined')?.textContent?.trim() ===
-                    icon
+                    button.querySelector('.material-symbols-outlined')?.textContent?.trim() === icon
             );
 
     const linkButton = () => buttonWithIcon('link');
