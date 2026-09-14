@@ -76,6 +76,14 @@ const ACTIONS_LABEL_KEY = 'content-drive.context-menu.actions';
 const GROUP_LABEL_STYLE_CLASS =
     'p-menu-submenu-label p-0! pointer-events-none [&_.p-contextmenu-item-content]:text-inherit';
 
+/**
+ * The row context menu.
+ *
+ * **None of these actions announce success.** The listing shows the result, so a notification
+ * would repeat what the author is already looking at; failures still speak, because nothing else
+ * reports those. Stated here once rather than at each call site, since four copies of one policy
+ * drift the first time the policy changes.
+ */
 @Component({
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
@@ -482,8 +490,7 @@ export class DotFolderListViewContextMenuComponent {
                     // after the first and would read as a jump.
                     this.#store.reloadContentDrive({ quiet: true });
 
-                    // Silent on success: the listing shows it, so a notification would repeat what the
-                    // author is already looking at. Failures still speak.
+                    // Silent on success: see the note on this class.
                 },
                 error: (error) => {
                     this.#messageService.add({
@@ -528,8 +535,7 @@ export class DotFolderListViewContextMenuComponent {
                 .subscribe({
                     next: () => {
                         this.#store.endExternalRun(runId);
-                        // Silent on success: the listing shows it, so a notification would repeat what the
-                        // author is already looking at. Failures still speak.
+                        // Silent on success: see the note on this class.
 
                         // Quiet: the row was marked busy, so a skeleton here is a second load
                         // straight after the first and reads as the table blinking.
@@ -559,8 +565,7 @@ export class DotFolderListViewContextMenuComponent {
                 .subscribe({
                     next: () => {
                         this.#store.endExternalRun(runId);
-                        // Silent on success: the listing shows it, so a notification would repeat what the
-                        // author is already looking at. Failures still speak.
+                        // Silent on success: see the note on this class.
                         // Quiet: the row was marked busy, so a skeleton here is a second load
                         // straight after the first and reads as the table blinking.
                         this.#store.reloadContentDrive({ quiet: true });
@@ -768,8 +773,7 @@ export class DotFolderListViewContextMenuComponent {
             .subscribe({
                 next: () => {
                     this.#store.endExternalRun(runId);
-                    // Silent on success: the listing shows it, so a notification would repeat what the
-                    // author is already looking at. Failures still speak.
+                    // Silent on success: see the note on this class.
                     // The tree serves this menu too, so the deleted folder can be an ancestor of
                     // the one being browsed — or the browsed folder itself. Reloading the current
                     // path would then fetch a path that no longer exists, leaving an empty grid

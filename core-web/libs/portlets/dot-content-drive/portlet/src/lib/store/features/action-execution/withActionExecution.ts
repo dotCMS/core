@@ -184,16 +184,6 @@ export function withActionExecution() {
                 destroyRef = inject(DestroyRef)
             ) => {
                 /**
-                 * Settles a finished run by publishing its result for the shell to present.
-                 *
-                 * Refreshing the grid is deliberately *not* done here. `loadItems` belongs to the base
-                 * store's own `withMethods`, and a feature cannot reach it: the accumulated methods
-                 * type at this point in the composition widens to `MethodsDictionary`, so declaring it
-                 * via `methods: type<...>()` does not compile. It would also be redundant — `loadItems`
-                 * already sets `LOADING` and clears the selection itself. The shell reloads when it
-                 * consumes the result, which is where the rest of the post-run UI work already lives.
-                 */
-                /**
                  * The key a run is stored under: what it is, and what it is about.
                  *
                  * Natural rather than generated. It has to be unique, and this already is: a second
@@ -260,6 +250,16 @@ export function withActionExecution() {
                     );
                 };
 
+                /**
+                 * Settles a finished run by publishing its result for the shell to present.
+                 *
+                 * Refreshing the grid is deliberately *not* done here. `loadItems` belongs to the base
+                 * store's own `withMethods`, and a feature cannot reach it: the accumulated methods
+                 * type at this point in the composition widens to `MethodsDictionary`, so declaring it
+                 * via `methods: type<...>()` does not compile. It would also be redundant — `loadItems`
+                 * already sets `LOADING` and clears the selection itself. The shell reloads when it
+                 * consumes the result, which is where the rest of the post-run UI work already lives.
+                 */
                 const onSettled = (
                     runId: string,
                     result: DotContentDriveActionExecutionResult
@@ -775,18 +775,6 @@ export function withActionExecution() {
                     },
 
                     /**
-                     * Publishes an outcome for a run this store did not fire itself.
-                     *
-                     * Add to Bundle and Push Publish from the row context menu hand off to shared
-                     * dialogs that own their own request. Fired from the Workflow Center the same
-                     * two operations settle through `onSettled` and are reported by the shell with
-                     * one wording; fired from the context menu they used to report nothing at all.
-                     *
-                     * Rather than give the context menu its own copy, it publishes here and the
-                     * shell's existing effect renders it — so the same operation reads the same way
-                     * whichever surface started it, and the reload behaviour matches too.
-                     */
-                    /**
                      * Remembers a batch this store submitted, so its completion can be told from
                      * another tab's.
                      *
@@ -916,6 +904,18 @@ export function withActionExecution() {
                         });
                     },
 
+                    /**
+                     * Publishes an outcome for a run this store did not fire itself.
+                     *
+                     * Add to Bundle and Push Publish from the row context menu hand off to shared
+                     * dialogs that own their own request. Fired from the Workflow Center the same
+                     * two operations settle through `onSettled` and are reported by the shell with
+                     * one wording; fired from the context menu they used to report nothing at all.
+                     *
+                     * Rather than give the context menu its own copy, it publishes here and the
+                     * shell's existing effect renders it — so the same operation reads the same way
+                     * whichever surface started it, and the reload behaviour matches too.
+                     */
                     reportExternalResult: (result: DotContentDriveActionExecutionResult): void => {
                         patchState(store, {
                             actionExecutionResults: [...store.actionExecutionResults(), result]

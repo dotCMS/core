@@ -175,14 +175,6 @@ export interface DotContentDriveActionExecution {
 }
 
 /**
- * One run held in the store's registry.
- *
- * Several may be in flight at once (FR-015), so each carries its own identity and the items it is
- * acting on. `runId` is allocated by the client at submission rather than taken from a server
- * handle: the window a double-click has to fire twice is exactly the window before any handle has
- * come back, so a server-side id would leave it unguarded.
- */
-/**
  * A batch this store submitted, kept until its completion signal arrives.
  *
  * Two things travel with it. The folders let the shell decide whether the listing the author is
@@ -206,6 +198,14 @@ export interface DotContentDriveUploadJob {
     baseType?: string;
 }
 
+/**
+ * One run held in the store's registry.
+ *
+ * Several may be in flight at once (FR-015), so each carries its own identity and the items it is
+ * acting on. `runId` is allocated by the client at submission rather than taken from a server
+ * handle: the window a double-click has to fire twice is exactly the window before any handle has
+ * come back, so a server-side id would leave it unguarded.
+ */
 export interface DotContentDriveRun extends DotContentDriveActionExecution {
     runId: string;
     /**

@@ -567,37 +567,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     /**
-     * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
-     * is still open.
-     *
-     * Lives in the shell rather than in the Action Center because the run outlives that dialog: the
-     * user may close it mid-flight and the result still has to be reported. The shell owns
-     * `<p-toast>` and is never destroyed while the portlet is open, so it is the only place that can
-     * present a result whose originating dialog may already be gone. It also keeps the store data-only.
-     *
-     * The reload lands here for the same reason, plus a mechanical one: `loadItems` belongs to the
-     * base store's `withMethods`, which `withActionExecution` cannot reach from inside the
-     * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
-     * whole post-run refresh.
-     *
-     * `failedCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
-     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
-     * unqualified success would be the one thing the user cannot recover from — the grid has already
-     * reloaded and the selection is gone.
-     */
-    /**
-     * Asks before the page is unloaded while a batch still has bytes in flight.
-     *
-     * The one moment the interface can intervene. Until the handle comes back there is no run: if
-     * the page goes, the request dies with it, nothing is recorded and nobody is notified, so there
-     * is nothing to resume and no outcome to report. Past the handle the run is the server's and
-     * leaving is safe, which is why this stops asking then instead of guarding the whole
-     * upload-and-run — the feature explicitly promises the author can walk away.
-     *
-     * `returnValue` alongside `preventDefault()`: the modern call is enough in current browsers,
-     * the legacy assignment is what older ones read.
-     */
-    /**
      * Whether the route may be left, asked by this portlet's own `canDeactivate`.
      *
      * **Answers, rather than holding.** The shared `CanDeactivateGuardService` refuses by filtering
@@ -628,6 +597,18 @@ export class DotContentDriveShellComponent implements OnDestroy {
         return false;
     }
 
+    /**
+     * Asks before the page is unloaded while a batch still has bytes in flight.
+     *
+     * The one moment the interface can intervene. Until the handle comes back there is no run: if
+     * the page goes, the request dies with it, nothing is recorded and nobody is notified, so there
+     * is nothing to resume and no outcome to report. Past the handle the run is the server's and
+     * leaving is safe, which is why this stops asking then instead of guarding the whole
+     * upload-and-run — the feature explicitly promises the author can walk away.
+     *
+     * `returnValue` alongside `preventDefault()`: the modern call is enough in current browsers,
+     * the legacy assignment is what older ones read.
+     */
     protected onBeforeUnload(event: BeforeUnloadEvent): void {
         if (!this.#uploadsInFlight()) {
             return;
@@ -683,6 +664,25 @@ export class DotContentDriveShellComponent implements OnDestroy {
             .map(normalizeFolderRef)
             .includes(toFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
 
+    /**
+     * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
+     * is still open.
+     *
+     * Lives in the shell rather than in the Action Center because the run outlives that dialog: the
+     * user may close it mid-flight and the result still has to be reported. The shell owns
+     * `<p-toast>` and is never destroyed while the portlet is open, so it is the only place that can
+     * present a result whose originating dialog may already be gone. It also keeps the store data-only.
+     *
+     * The reload lands here for the same reason, plus a mechanical one: `loadItems` belongs to the
+     * base store's `withMethods`, which `withActionExecution` cannot reach from inside the
+     * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
+     * whole post-run refresh.
+     *
+     * `failedCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
+     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
+     * unqualified success would be the one thing the user cannot recover from — the grid has already
+     * reloaded and the selection is gone.
+     */
     readonly actionExecutionResultEffect = effect(() => {
         const result = this.#store.actionExecutionResult();
 
@@ -1233,11 +1233,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * Drag-and-drop / sidebar flow: the files are already known. When the target folder pins a base
-     * type, upload the files directly; otherwise open the type menu (anchored to the content area)
-     * and carry the files into the payload to upload right after the user picks.
-     */
-    /**
      * Refuses a drop onto a folder the user cannot add content to, and says so.
      *
      * A drag onto a tree folder is a third route into that folder, alongside the New menu and the
@@ -1275,6 +1270,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
         return false;
     }
 
+    /**
+     * Drag-and-drop / sidebar flow: the files are already known. When the target folder pins a base
+     * type, upload the files directly; otherwise open the type menu (anchored to the content area)
+     * and carry the files into the payload to upload right after the user picks.
+     */
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
         if (!this.#canDropInto(targetFolder)) {
             return;

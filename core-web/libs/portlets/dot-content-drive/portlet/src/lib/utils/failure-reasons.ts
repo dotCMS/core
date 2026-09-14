@@ -1,21 +1,6 @@
 import { DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
 
 /**
- * The product copy that explains why a single file in a batch did not make it.
- *
- * FR-036: every reason the server can return must have its own copy, because a reason with no copy
- * is a hole the author sees. The reason vocabulary itself is the wire contract's and lives with the
- * other bulk wire types in `@dotcms/dotcms-models`; resolving one to copy is this portlet's
- * business and lives here. A `results[].reason` off the wire therefore resolves directly, with no
- * translation step in between.
- */
-
-/**
- * `Record` rather than a `switch`: the compiler then refuses a new member of the union that nobody
- * wrote copy for, which is the failure this whole mapping exists to prevent. That is what makes
- * adding a reason to the contract fail the build here until someone writes its copy.
- */
-/**
  * The folder-filter copy, in its two forms.
  *
  * The generic one names no rule, because the rule is the *folder's* and is not on the wire: a
@@ -29,6 +14,19 @@ export const FOLDER_FILTER_MISMATCH_KEY = 'content-drive.upload.failure.folder-f
 /** Same refusal, naming what the folder does accept. See {@link FOLDER_FILTER_MISMATCH_KEY}. */
 export const FOLDER_FILTER_MISMATCH_NAMED_KEY = `${FOLDER_FILTER_MISMATCH_KEY}-named`;
 
+/**
+ * The product copy that explains why a single file in a batch did not make it.
+ *
+ * FR-036: every reason the server can return must have its own copy, because a reason with no copy
+ * is a hole the author sees. The reason vocabulary itself is the wire contract's and lives with the
+ * other bulk wire types in `@dotcms/dotcms-models`; resolving one to copy is this portlet's
+ * business and lives here. A `results[].reason` off the wire therefore resolves directly, with no
+ * translation step in between.
+ *
+ * A `Record` rather than a `switch` so the compiler refuses a new member of the union that nobody
+ * wrote copy for: adding a reason to the contract fails the build here until someone writes its
+ * sentence, which is the hole this mapping exists to prevent.
+ */
 const MESSAGE_KEY_BY_REASON: Record<DotBulkUploadFailureReason, string> = {
     OVER_SIZE_LIMIT: 'content-drive.upload.failure.over-size-limit',
     // Named for the *type*, not the extension: the server resolves the media type by detection
