@@ -1,11 +1,16 @@
 # Search API Migration Guide
 
-This guide is intended for **dotCMS plugin and integration developers** who use the
-`ContentletAPI`, `ESSeachAPI`, or the `$estool` Velocity tool in their extensions.
+This guide is for two audiences:
+
+- **Plugin and integration developers** who call `ContentletAPI` or `ESSeachAPI` from Java —
+  sections 1, 2, 4 and 5.
+- **Template authors** who use the `$estool` Velocity tool — section 3, which is self-contained
+  and written entirely in Velocity rather than Java.
 
 The changes described here are part of the ongoing ES → OpenSearch migration. The
 deprecated methods listed below **will be removed** when dotCMS completes the cutover
-to OpenSearch. Migrate before that happens to avoid compilation failures in your plugins.
+to OpenSearch. Migrate before that happens: Java code will fail to compile, and templates
+will fail silently.
 
 ---
 
@@ -253,7 +258,7 @@ variables of type `ESSearchResults`, update them to `ContentSearchResults<Conten
 
 ```java
 // Before
-ESSearchResults results = (ESSearchResults) contentletAPI.esSearch(query, live, user, roles);
+ESSearchResults results = contentletAPI.esSearch(query, live, user, roles);
 
 // After
 ContentSearchResults<Contentlet> results = contentletAPI.search(query, live, user, roles);
