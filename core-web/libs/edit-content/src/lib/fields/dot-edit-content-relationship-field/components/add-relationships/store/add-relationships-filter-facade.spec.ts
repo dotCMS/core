@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotContentDriveService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
+import { LoggerService, SiteService } from '@dotcms/dotcms-js';
 import { DotFilterFacade } from '@dotcms/ui';
 import { testFilterFacadeConformance } from '@dotcms/ui/testing';
 
@@ -39,7 +39,8 @@ describe('AddRelationshipsFilterFacade', () => {
         service: AddRelationshipsStore,
         providers: [
             mockProvider(DotContentDriveService, { search: searchMock }),
-            mockProvider(SiteService, { currentSite: { hostname: 'demo.dotcms.com' } })
+            mockProvider(SiteService, { currentSite: { hostname: 'demo.dotcms.com' } }),
+            mockProvider(LoggerService)
         ]
     });
 

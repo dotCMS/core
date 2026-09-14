@@ -25,6 +25,12 @@
             data-testid="add-relationships-fullscreen"
             (onClick)="toggleFullscreen()">
             <ng-template #icon>
+                <!-- `text-[1.125rem]!` rather than `text-lg`, which is the same value: this is the
+                     literal class the Asset Picker's own header uses, and the two headers sit in the
+                     same product doing the same job. The `!` is load-bearing — PrimeNG's button
+                     styles an icon slot by font-size and wins on specificity otherwise. Matching the
+                     sibling surface beats matching the scale here; if that class changes, both
+                     should change together. -->
                 <i class="material-symbols-outlined text-[1.125rem]!">{{ $fullscreenIcon() }}</i>
             </ng-template>
         </p-button>
@@ -65,6 +71,18 @@
                      are real and pickable, but a child already held by another parent will not be
                      greyed out, so confirming one reparents it. Sits above the table because it
                      qualifies every row in it. -->
+                <!-- Not a miss: this scope cannot be searched at all, so the empty table below is
+                     not "nothing matched" and no search term will change it. Shared Assets is the
+                     case — its hostname cannot be parsed as a URI authority. -->
+                @if (store.scopeNotBrowsable()) {
+                    <p
+                        class="m-0 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700"
+                        role="status"
+                        data-testid="add-relationships-scope-note">
+                        {{ 'dot.relationship.add.dialog.scope.not.browsable' | dm }}
+                    </p>
+                }
+
                 @if (store.constraintCheckFailed()) {
                     <p
                         class="m-0 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-700"

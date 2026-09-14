@@ -164,6 +164,16 @@ export interface AddRelationshipsState {
      */
     constraintCheckFailed: boolean;
 
+    /**
+     * Whether the browsed scope cannot be searched at all.
+     *
+     * Distinct from an empty result. Shared Assets has a hostname with a space in it, which the
+     * endpoint cannot parse as a URI authority, so no request is issued — and the table then
+     * rendered exactly as it does for a search that matched nothing. The editor was told to try
+     * another search term when no search term would ever help.
+     */
+    scopeNotBrowsable: boolean;
+
     status: ComponentStatus;
 
     /** Translation key of the last failure, or null. */

@@ -6,7 +6,6 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { AddRelationshipsInput } from '../../models/add-relationships.models';
-import { AddRelationshipsStore } from '../../store/add-relationships.store';
 
 /**
  * The dialog's footer.
@@ -30,8 +29,6 @@ import { AddRelationshipsStore } from '../../store/add-relationships.store';
     templateUrl: './footer.component.html'
 })
 export class AddRelationshipsFooterComponent {
-    protected readonly store = inject(AddRelationshipsStore);
-
     readonly #config = inject<DynamicDialogConfig<AddRelationshipsInput>>(DynamicDialogConfig, {
         optional: true
     });

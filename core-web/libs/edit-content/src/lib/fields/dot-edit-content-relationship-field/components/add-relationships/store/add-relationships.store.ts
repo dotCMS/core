@@ -6,7 +6,7 @@ import { catchError, EMPTY, forkJoin, map, of, pipe, switchMap, tap } from 'rxjs
 import { computed, inject } from '@angular/core';
 
 import { DotContentDriveService, DotLanguagesService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
+import { LoggerService, SiteService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     DotCMSContentlet,
@@ -128,6 +128,7 @@ const initialState: AddRelationshipsState = {
     sort: { field: 'modDate', order: 'desc' },
     constrainedIdentifiers: new Set<string>(),
     constraintCheckFailed: false,
+    scopeNotBrowsable: false,
     status: ComponentStatus.INIT,
     errorMessage: null
 };
@@ -236,7 +237,8 @@ export const AddRelationshipsStore = signalStore(
             contentDriveService = inject(DotContentDriveService),
             languagesService = inject(DotLanguagesService),
             siteService = inject(SiteService),
-            constrainedIdentifiersService = inject(ConstrainedIdentifiersService)
+            constrainedIdentifiersService = inject(ConstrainedIdentifiersService),
+            logger = inject(LoggerService)
         ) => {
             /**
              * Builds the request for the current state.
@@ -288,11 +290,16 @@ export const AddRelationshipsStore = signalStore(
                             patchState(store, {
                                 items: [],
                                 status: ComponentStatus.LOADED,
-                                errorMessage: null
+                                errorMessage: null,
+                                // Flagged rather than left to look like a miss: the editor needs to
+                                // know the scope is the problem, because no search term will fix it.
+                                scopeNotBrowsable: true
                             });
 
                             return EMPTY;
                         }
+
+                        patchState(store, { scopeNotBrowsable: false });
 
                         return (
                             // Languages travel with the rows, not separately: `LanguagePipe` needs a whole
@@ -307,9 +314,20 @@ export const AddRelationshipsStore = signalStore(
                                 // before this enrichment existed. `forkJoin` fails on its first
                                 // error, so the recovery has to sit on this arm rather than around
                                 // the pair.
-                                languagesService
-                                    .get()
-                                    .pipe(catchError(() => of([] as DotLanguage[])))
+                                languagesService.get().pipe(
+                                    catchError((error) => {
+                                        // Degraded, but not invisible. Swallowing this silently
+                                        // meant a recurring languages outage surfaced only as a
+                                        // blank Locale column, with nothing anywhere pointing at
+                                        // the cause.
+                                        logger.error(
+                                            'AddRelationshipsStore: locale enrichment failed, the Locale column will be blank',
+                                            error
+                                        );
+
+                                        return of([] as DotLanguage[]);
+                                    })
+                                )
                             ]).pipe(
                                 map(([response, languages]) => ({
                                     ...response,

@@ -388,6 +388,29 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
             expect(spectator.component.store.page().number).toBe(2);
         });
 
+        /**
+         * The third of the list's outputs. `paginate` has two cases and `selectionChange` several;
+         * this one had none, and it is the one that translates PrimeNG's numeric order into the
+         * store's vocabulary — a translation is exactly where a silent inversion hides.
+         */
+        it('translates the list sort into the store vocabulary', () => {
+            mountWith(withResults);
+
+            spectator.query(DotFolderListViewComponent)?.sort.emit({ field: 'title', order: 1 });
+            spectator.detectChanges();
+
+            expect(spectator.component.store.sort()).toEqual({ field: 'title', order: 'asc' });
+        });
+
+        it('reads any order other than ascending as descending', () => {
+            mountWith(withResults);
+
+            spectator.query(DotFolderListViewComponent)?.sort.emit({ field: 'title', order: -1 });
+            spectator.detectChanges();
+
+            expect(spectator.component.store.sort()).toEqual({ field: 'title', order: 'desc' });
+        });
+
         it('stays on the first page when the list reports no page', () => {
             mountWith(withResults);
 

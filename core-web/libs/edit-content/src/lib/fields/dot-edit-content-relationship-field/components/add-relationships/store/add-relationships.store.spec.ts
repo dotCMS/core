@@ -3,8 +3,8 @@ import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotContentDriveService, DotLanguagesService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
-import { DotContentDriveSearchResponse } from '@dotcms/dotcms-models';
+import { LoggerService, SiteService } from '@dotcms/dotcms-js';
+import { ComponentStatus, DotContentDriveSearchResponse } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { ADD_RELATIONSHIPS_PAGE_SIZE, AddRelationshipsStore } from './add-relationships.store';
@@ -45,6 +45,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
         providers: [
             mockProvider(DotContentDriveService, { search: searchMock }),
             mockProvider(SiteService, { currentSite: { hostname: 'demo.dotcms.com' } }),
+            mockProvider(LoggerService),
             mockProvider(ConstrainedIdentifiersService, { get: constrainedMock }),
             mockProvider(DotLanguagesService, {
                 get: vi
@@ -476,6 +477,26 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
         });
 
         /**
+         * Reported in review: the short-circuit above rendered identically to a search that matched
+         * nothing, so the editor was told to try another search term when no term would help.
+         */
+        it('says the scope cannot be searched, rather than looking like a miss', () => {
+            store.initialize(baseInput);
+            store.setScope({ hostname: 'System Host' });
+
+            expect(store.scopeNotBrowsable()).toBe(true);
+        });
+
+        it('clears the note once the editor browses somewhere searchable', () => {
+            store.initialize(baseInput);
+            store.setScope({ hostname: 'System Host' });
+
+            store.setScope({ hostname: 'demo.dotcms.com' });
+
+            expect(store.scopeNotBrowsable()).toBe(false);
+        });
+
+        /**
          * `reset()` is what the shared bar's "Clear all" calls. Changing where you are looking is
          * not un-picking what you already picked.
          */
@@ -607,6 +628,70 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
 
             expect(store.$isSelected()('id-1')).toBe(false);
             expect(store.$isSelected()('id-2')).toBe(true);
+        });
+
+        /**
+         * The degraded pre-selection path, and the one Content Drive relies on.
+         *
+         * `DOT_RELATIONSHIP_PICKER` hands over inodes, not contentlets — that is what its signature
+         * carries — so the picker cannot seed `selection` directly. It holds them and resolves each
+         * one the moment a page contains it. Every test here seeds through the contentlet-based
+         * `selected` instead, so this whole branch was unexercised.
+         */
+        it('resolves an inode-only pre-selection as its row pages in', () => {
+            store.initialize({ ...baseInput, selectedInodes: ['inode-2'] });
+
+            // Nothing is selected yet: an inode alone is not a contentlet.
+            expect(store.$selectedCount()).toBe(0);
+
+            store.load();
+
+            expect(store.$isSelected()('id-2')).toBe(true);
+        });
+
+        it('keeps an inode pending until a page actually contains it', () => {
+            store.initialize({ ...baseInput, selectedInodes: ['inode-absent'] });
+            store.load();
+
+            expect(store.$selectedCount()).toBe(0);
+            expect(store.pendingInodes().has('inode-absent')).toBe(true);
+        });
+
+        /**
+         * A page-size change invalidates every cursor bookmark — they were taken against pages of
+         * the old size — so the list has to start again from the first page. Every other call here
+         * passes only a page number, leaving this branch uncovered.
+         */
+        it('returns to the first page and discards bookmarks when the page size changes', () => {
+            store.initialize(baseInput);
+            store.load();
+            store.setPage(2);
+
+            store.setPage(3, 40);
+
+            expect(store.page()).toEqual({ number: 1, limit: 40 });
+            expect(store.pages()).toEqual({});
+        });
+
+        it('honours the page it was given when the size is unchanged', () => {
+            store.initialize(baseInput);
+            store.setPage(2, ADD_RELATIONSHIPS_PAGE_SIZE);
+
+            expect(store.page().number).toBe(2);
+        });
+
+        /**
+         * The one thing between a failed search and an empty table that reads as "no matches".
+         * `add-relationships.component.html` renders this message in place of the results.
+         */
+        it('reports a failed search instead of showing an empty result', () => {
+            searchMock.mockReturnValue(throwError(() => new Error('boom')));
+
+            store.initialize(baseInput);
+            store.load();
+
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+            expect(store.errorMessage()).toBe('dot.relationship.add.dialog.search.failed');
         });
 
         it('pins contentTypes to the relationship target type', () => {
