@@ -128,6 +128,8 @@ export function withSelectionAnchor() {
                                 continue;
                             }
                             const actionPayload = s.getPageSavePayload(parsed as PositionPayload);
+                            const previousPayload = selected?.payload;
+
                             s.setSelected({
                                 bounds: {
                                     x: container.x + contentletBound.x,
@@ -135,7 +137,39 @@ export function withSelectionAnchor() {
                                     width: contentletBound.width,
                                     height: contentletBound.height
                                 },
-                                payload: actionPayload
+                                // Merge, don't replace. The payload holds two kinds of
+                                // data and a re-anchor must treat them differently:
+                                //
+                                //   store-sourced, per page — pageContainers,
+                                //     container.contentletsId, language_id, pageId,
+                                //     personaTag. getPageSavePayload() reads these live
+                                //     from $pageData() and they MUST keep refreshing:
+                                //     insertContentletInContainer({...payload}) and
+                                //     deleteContentletFromContainer(payload) read
+                                //     payload.pageContainers straight off this object, so
+                                //     a frozen copy would make add/delete write a stale
+                                //     container tree.
+                                //
+                                //   DOM-sourced, per contentlet — contentlet.baseType,
+                                //     onNumberOfPages, dotStyleProperties, and vtlFiles.
+                                //     The bounds snapshot carries only
+                                //     {identifier, title, inode, contentType, canEdit}
+                                //     (getDotCMSContentletsBound), so rebuilding from it
+                                //     DROPS the rest. Preserving them is what keeps the
+                                //     selection usable across a scroll or resize.
+                                //
+                                // Spread order: previous first so nothing is lost, the
+                                // fresh payload second so live values win. contentlet is
+                                // nest-merged for the same reason — a wholesale replace
+                                // is precisely the bug.
+                                payload: {
+                                    ...previousPayload,
+                                    ...actionPayload,
+                                    contentlet: {
+                                        ...previousPayload?.contentlet,
+                                        ...actionPayload.contentlet
+                                    }
+                                }
                             });
                             if (wasLocked) {
                                 s.setEditorState(EDITOR_STATE.IDLE);
