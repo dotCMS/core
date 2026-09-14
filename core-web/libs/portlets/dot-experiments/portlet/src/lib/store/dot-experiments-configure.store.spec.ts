@@ -40,6 +40,7 @@ import { dotExperimentsConfigureApiEvents } from './dot-experiments-configure-ap
 import { dotExperimentsConfigurePageEvents } from './dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from './dot-experiments-configure.store';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     PAGE_LOOKUP_LIMIT,
     DEFAULT_TRAFFIC_ALLOCATION,
@@ -218,6 +219,9 @@ describe('DotExperimentsConfigureStore', () => {
         mockProvider(DotMessageService, { get: messageGet }),
         { provide: GlobalStore, useValue: globalStoreMock },
         { provide: Router, useValue: { navigate } },
+        // Real, not mocked: these tests assert where the post-create swap lands, and this is what
+        // decides it.
+        DotExperimentsRouter,
         { provide: ActivatedRoute, useValue: activatedRouteStub }
     ];
 
@@ -586,28 +590,6 @@ describe('DotExperimentsConfigureStore', () => {
             dispatcher.dispatch(pageEvents.pageSelected({ ...PAGE, pageId: 'page-2' }));
 
             expect(add).toHaveBeenCalledTimes(1);
-        });
-
-        it('should replace /new with the created experiment url', () => {
-            const created = buildExperiment({ id: 'exp-created' });
-            // Both calls answer with the same draft: the follow-up PATCH replacing it with some
-            // other experiment is the fixture talking, not the store.
-            add.mockReturnValue(of(created));
-            patchExperiment.mockReturnValue(of(created));
-            initNew();
-
-            createDraft(VALID_DRAFT.name, created);
-
-            expect(store.experiment()).toEqual(created);
-            expect(store.isNew()).toBe(false);
-            expect(navigate).toHaveBeenCalledWith(['..', created.id, 'configuration'], {
-                relativeTo: activatedRouteStub,
-                replaceUrl: true,
-                // The page narrowing the screen was opened with has to survive the swap: it is
-                // what the back arrow returns to, and what a reload of the new address rebuilds
-                // the chip and the editor link from (#37005).
-                queryParamsHandling: 'preserve'
-            });
         });
 
         it('should keep the typed draft on the screen when the creation fails', () => {
@@ -2752,21 +2734,6 @@ describe('DotExperimentsConfigureStore', () => {
                     query: expect.stringContaining('page-from-address')
                 })
             );
-        });
-
-        /**
-         * FR-002, FR-016. The portlet swaps `/experiments/new` for the created experiment's URL so
-         * Back does not return to a creation form for something that already exists. The panel has
-         * no URL to swap — and a `router.navigate` here would eject the editor at the exact moment
-         * their experiment came into being.
-         */
-        it('should hand the created experiment to the panel instead of navigating', () => {
-            initPanelStore();
-
-            dispatcher.dispatch(apiEvents.createSucceeded(buildExperiment({ id: 'exp-created' })));
-
-            expect(showConfigure).toHaveBeenCalledWith('exp-created');
-            expect(navigate).not.toHaveBeenCalled();
         });
     });
 });

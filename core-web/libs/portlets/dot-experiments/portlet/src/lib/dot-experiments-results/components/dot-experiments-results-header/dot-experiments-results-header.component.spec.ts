@@ -13,6 +13,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsResultsHeaderComponent } from './dot-experiments-results-header.component';
 
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
 
 const EXPERIMENT = {
@@ -57,7 +58,11 @@ describe('DotExperimentsResultsHeaderComponent', () => {
         component: DotExperimentsResultsHeaderComponent,
         // Component-level: the module injector is built once per file, so a module provider would
         // freeze `panelStore` at whatever the first `createComponent` saw.
-        componentProviders: [{ provide: DotExperimentsPanelStore, useFactory: () => panelStore }],
+        componentProviders: [
+            // Real: these tests assert where a door leads, and this is what decides.
+            DotExperimentsRouter,
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
+        ],
         providers: [
             provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),

@@ -29,6 +29,7 @@ import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing'
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -199,6 +200,10 @@ describe('DotExperimentsListComponent', () => {
         componentProviders: [
             { provide: DotExperimentsListStore, useFactory: () => storeMock },
             { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
+            // The real one, not a mock: these tests assert where a door leads, and the service is
+            // the thing that decides. Mocking it would leave them asserting that a method was
+            // called.
+            DotExperimentsRouter,
             ConfirmationService
         ],
         providers: [

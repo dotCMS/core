@@ -29,7 +29,7 @@ import {
     minDate,
     validate
 } from '@angular/forms/signals';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -70,10 +70,10 @@ import { DotExperimentsConfigurePageComponent } from './components/dot-experimen
 import { DotExperimentsConfigureSchedulingComponent } from './components/dot-experiments-configure-scheduling/dot-experiments-configure-scheduling.component';
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     CONFIGURE_TITLE_KEY,
     EXPERIMENT_ID_ROUTE_PARAM,
-    EXPERIMENTS_URL,
     LIST_TITLE_KEY,
     MAX_TRAFFIC_ALLOCATION,
     MIN_PROGRESS_BAR_VISIBLE_MS,
@@ -169,6 +169,8 @@ function formKeyOf(experiment: DotExperiment | null | undefined): string | null 
     templateUrl: './dot-experiments-configure.component.html',
     styleUrl: './dot-experiments-configure.component.scss',
     providers: [
+        // Before the store: the store injects it for the post-create swap.
+        DotExperimentsRouter,
         DotExperimentsConfigureStore,
         ConfirmationService,
         DotExperimentsService,
@@ -298,9 +300,9 @@ export class DotExperimentsConfigureComponent {
     });
 
     readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
     /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
     readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #events = inject(Events);
     /** Only the weights are reported from here; everything else goes through `bindFormDiff`. */
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
@@ -599,7 +601,21 @@ export class DotExperimentsConfigureComponent {
         this.#events
             .on(dotExperimentsConfigureApiEvents.createSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(({ payload }) => this.#hydratedFormKey.set(formKeyOf(payload)));
+            .subscribe(({ payload }) => {
+                this.#hydratedFormKey.set(formKeyOf(payload));
+
+                /**
+                 * And the screen follows the experiment it just made — a URL swap in the portlet,
+                 * a view change in the panel, decided in one place (#37478, FR-016).
+                 *
+                 * Here rather than in the store, which is where it used to live: the store would
+                 * have to inject the navigation, the navigation reaches the panel store, and
+                 * Angular reports that as a circular dependency. It also leaves the rule the rest
+                 * of this portlet already follows — stores hold state, components move between
+                 * screens — true without an exception.
+                 */
+                this.#experimentsRouter.afterCreated(payload.id);
+            });
 
         // A save that settled as the screen was left would otherwise fire into a dead component.
         this.#destroyRef.onDestroy(() => this.#cancelProgressBarHide());
@@ -758,17 +774,7 @@ export class DotExperimentsConfigureComponent {
      * answers with the same address. See {@link listReturnParams}.
      */
     onBackToList(): void {
-        // In the panel the list is a view, not an address. Navigating would take the editor off
-        // the page this screen is configuring an experiment for (FR-008, FR-013, FR-025b).
-        if (this.#panel) {
-            this.#panel.backToList();
-
-            return;
-        }
-
-        this.#router.navigate([EXPERIMENTS_URL], {
-            queryParams: listReturnParams(this.#route.snapshot.queryParams)
-        });
+        this.#experimentsRouter.toList();
     }
 
     /** What the form is filled from, and diffed against. */

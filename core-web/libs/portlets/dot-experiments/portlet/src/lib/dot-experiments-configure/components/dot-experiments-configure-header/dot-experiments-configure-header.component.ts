@@ -1,7 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -12,11 +11,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
-import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import {
-    EXPERIMENTS_URL,
     NEW_EXPERIMENT_TITLE_KEY,
     STATUS_LABEL_KEYS,
     STATUS_SEVERITIES
@@ -24,7 +22,6 @@ import {
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-import { listReturnParams, resultsCommandsOf } from '../../../util/dot-experiments-list.util';
 
 /** Subline shown while no page is selected. */
 const NO_PAGE_SELECTED_KEY = 'experiments.configure.header.no-page';
@@ -171,10 +168,7 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly $addToBundleAssetId = signal<string | null>(null);
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
-    readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
-    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
-    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
@@ -192,19 +186,9 @@ export class DotExperimentsConfigureHeaderComponent {
     onViewResults(): void {
         const experimentId = this.store.experiment()?.id;
 
-        if (!experimentId) {
-            return;
+        if (experimentId) {
+            this.#experimentsRouter.toResults(experimentId);
         }
-
-        if (this.#panel) {
-            this.#panel.showResults(experimentId);
-
-            return;
-        }
-
-        this.#router.navigate(resultsCommandsOf(experimentId), {
-            queryParams: listReturnParams(this.#route.snapshot.queryParams)
-        });
     }
 
     /**
@@ -215,17 +199,7 @@ export class DotExperimentsConfigureHeaderComponent {
      * on either side of that swap.
      */
     onBackToList(): void {
-        // In the panel the list is a view, and the narrowing this reads off the address does not
-        // exist there — the panel is already scoped to the page (FR-008, FR-013).
-        if (this.#panel) {
-            this.#panel.backToList();
-
-            return;
-        }
-
-        this.#router.navigate([EXPERIMENTS_URL], {
-            queryParams: listReturnParams(this.#route.snapshot.queryParams)
-        });
+        this.#experimentsRouter.toList();
     }
 
     /**

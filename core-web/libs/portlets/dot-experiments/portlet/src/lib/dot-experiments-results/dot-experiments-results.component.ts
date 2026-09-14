@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -35,9 +35,9 @@ import { DotExperimentsResultsHeaderComponent } from './components/dot-experimen
 import { DotExperimentsResultsStatStripComponent } from './components/dot-experiments-results-stat-strip/dot-experiments-results-stat-strip.component';
 import { DotExperimentsResultsSummaryTableComponent } from './components/dot-experiments-results-summary-table/dot-experiments-results-summary-table.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     EXPERIMENT_ID_ROUTE_PARAM,
-    EXPERIMENTS_URL,
     LIST_TITLE_KEY,
     RESULTS_CONFIRM_DIALOG_KEY,
     RESULTS_TITLE_KEY,
@@ -89,7 +89,7 @@ const HEALTH_STATUS_ROUTE_DATA_KEY = 'healthStatus';
         DotExperimentsResultsSummaryTableComponent
     ],
     templateUrl: './dot-experiments-results.component.html',
-    providers: [DotExperimentsResultsStore, ConfirmationService],
+    providers: [DotExperimentsRouter, DotExperimentsResultsStore, ConfirmationService],
     host: {
         class: 'flex flex-col h-full min-h-0 overflow-hidden animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
     }
@@ -100,9 +100,9 @@ export class DotExperimentsResultsComponent {
     readonly CONFIRM_KEY = RESULTS_CONFIRM_DIALOG_KEY;
 
     readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
     /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
     readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #events = inject(Events);
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #destroyRef = inject(DestroyRef);
@@ -249,15 +249,7 @@ export class DotExperimentsResultsComponent {
      * one page this experiment happens to run on.
      */
     onBackToList(): void {
-        if (this.#panel) {
-            this.#panel.backToList();
-
-            return;
-        }
-
-        this.#router.navigate([EXPERIMENTS_URL], {
-            queryParams: listReturnParams(this.#route.snapshot.queryParams)
-        });
+        this.#experimentsRouter.toList();
     }
 
     /**

@@ -5,7 +5,7 @@ import { defer, from, merge, Observable, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, EffectRef, inject, Injector, untracked } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import {
     catchError,
@@ -45,7 +45,6 @@ import {
 
 import {
     PAGE_LOOKUP_LIMIT,
-    CONFIGURATION_SEGMENT,
     DEFAULT_TRAFFIC_ALLOCATION,
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
@@ -1178,14 +1177,11 @@ export const DotExperimentsConfigureStore = signalStore(
     ),
     withHooks((store) => {
         const route = inject(ActivatedRoute);
-        const router = inject(Router);
         const dispatcher = inject(Dispatcher);
-        const events = inject(Events);
         /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
         const panel = inject(DotExperimentsPanelStore, { optional: true });
         const injector = inject(Injector);
 
-        let createdSubscription: SubscriptionLike;
         let routeSubscription: SubscriptionLike;
         let panelEffect: EffectRef;
 
@@ -1257,26 +1253,6 @@ export const DotExperimentsConfigureStore = signalStore(
                  * screen had no way back to the list it came from — the back arrow landed on
                  * every experiment on the site (#37005, FR-021c).
                  */
-                createdSubscription = events
-                    .on(dotExperimentsConfigureApiEvents.createSucceeded)
-                    .subscribe(({ payload }) => {
-                        // In the panel there is no `/new` in the address to swap, and a navigate
-                        // here would eject the editor at the exact moment their experiment came
-                        // into being. Handing the id to the panel is the same move without the
-                        // address (FR-002, FR-016).
-                        if (panel) {
-                            panel.showConfigure(payload.id);
-
-                            return;
-                        }
-
-                        router.navigate(['..', payload.id, CONFIGURATION_SEGMENT], {
-                            relativeTo: route,
-                            replaceUrl: true,
-                            queryParamsHandling: 'preserve'
-                        });
-                    });
-
                 /**
                  * Followed for as long as the screen lives, not read once from the snapshot: one
                  * route serves both `/experiments/new` and `/experiments/:experimentId/configuration`
@@ -1329,7 +1305,6 @@ export const DotExperimentsConfigureStore = signalStore(
                     });
             },
             onDestroy() {
-                createdSubscription?.unsubscribe();
                 routeSubscription?.unsubscribe();
                 panelEffect?.destroy();
             }

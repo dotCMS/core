@@ -26,6 +26,7 @@ import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing'
 
 import { DotExperimentsConfigureHeaderComponent } from './dot-experiments-configure-header.component';
 
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import { STATUS_LABEL_KEYS } from '../../../shared/constants';
 import { DotExperimentConfigurePage, ExperimentListAction } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
@@ -124,6 +125,8 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
         // Component-level: the module injector is built once per test file, so a module provider
         // would freeze `panelStore` at whatever the first `createComponent` saw.
         componentProviders: [
+            // Real: these tests assert where a door leads, and this is what decides.
+            DotExperimentsRouter,
             { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
         ],
         providers: [

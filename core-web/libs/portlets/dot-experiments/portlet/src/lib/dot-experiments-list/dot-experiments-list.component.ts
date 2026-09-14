@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Params, Router } from '@angular/router';
+import { Params } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -56,14 +56,13 @@ import {
 } from '@dotcms/ui';
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
-    EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
     LIST_TABLE_STYLE,
     PANEL_LIST_TABLE_STYLE,
     PANEL_SKELETON_COLUMNS,
     LIST_TITLE_KEY,
-    NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
@@ -83,19 +82,14 @@ import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 import { experimentsListCrumb, putCrumbOnTrail } from '../util/dot-experiments-breadcrumb.util';
 import {
-    configureCommandsOf,
     ExperimentScheduleLabels,
     formatSchedule,
     goalTypeOf,
     isAllowed,
     pageFilterParams,
-    resultsCommandsOf,
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
-
-/** Where the New Experiment button goes: the Configure screen with nothing created yet. */
-const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
 
 @Component({
     selector: 'dot-experiments-list',
@@ -122,7 +116,12 @@ const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
     // `DotExperimentsService` is `@Injectable()` with no `providedIn` and is not in the app-wide
     // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
     // screens do the same in `old/dot-experiments-shell`.
-    providers: [DotExperimentsListStore, ConfirmationService, DotExperimentsService],
+    providers: [
+        DotExperimentsListStore,
+        DotExperimentsRouter,
+        ConfirmationService,
+        DotExperimentsService
+    ],
     host: {
         class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
     }
@@ -145,6 +144,7 @@ export class DotExperimentsListComponent {
      * happens to have (FR-041).
      */
     readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     protected readonly $inPanel = !!this.#panel;
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
@@ -250,7 +250,6 @@ export class DotExperimentsListComponent {
     // are listened to (never dispatched) here — see `#listenForActionSuccess`.
     readonly #dispatch = injectDispatch(dotExperimentsListPageEvents);
     readonly #events = inject(Events);
-    readonly #router = inject(Router);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
@@ -619,13 +618,7 @@ export class DotExperimentsListComponent {
         // A page with no experiments is a starting point, not a reason to leave the editor
         // (FR-006a, FR-007, D11). The creation screen is the configuration screen with no
         // experiment yet, so the panel shows it the same way.
-        if (this.#panel) {
-            this.#panel.showCreate();
-
-            return;
-        }
-
-        this.#router.navigate(NEW_EXPERIMENT_COMMANDS, { queryParams: this.#pageFilterParams() });
+        this.#experimentsRouter.toCreate(this.#pageFilterParams());
     }
 
     /**
@@ -647,15 +640,7 @@ export class DotExperimentsListComponent {
      * FR-013, D7).
      */
     onConfigure(experiment: DotExperiment): void {
-        if (this.#panel) {
-            this.#panel.showConfigure(experiment.id);
-
-            return;
-        }
-
-        this.#router.navigate(configureCommandsOf(experiment.id), {
-            queryParams: this.#pageFilterParams()
-        });
+        this.#experimentsRouter.toConfiguration(experiment.id, this.#pageFilterParams());
     }
 
     /**
@@ -666,15 +651,7 @@ export class DotExperimentsListComponent {
      * experiment with nothing to count yet, so it is offered whatever the status (AC6).
      */
     onViewResults(experiment: DotExperiment): void {
-        if (this.#panel) {
-            this.#panel.showResults(experiment.id);
-
-            return;
-        }
-
-        this.#router.navigate(resultsCommandsOf(experiment.id), {
-            queryParams: this.#pageFilterParams()
-        });
+        this.#experimentsRouter.toResults(experiment.id, this.#pageFilterParams());
     }
 
     confirmArchive(experiment: DotExperiment): void {
