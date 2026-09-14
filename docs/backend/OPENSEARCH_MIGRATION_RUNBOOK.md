@@ -220,9 +220,16 @@ the log. That is your early-warning system.
 
 **What this phase proves:** that OpenSearch can serve the customer's real query load correctly.
 
-**⚠ This is where customisations break.** Templates and plugins written against Elasticsearch keep
-working perfectly in Phase 1 — because Phase 1 still reads from Elasticsearch. They fail here. A clean
-Phase 1 tells you nothing about whether Phase 2 will be clean.
+**⚠ This is where any difference between the two engines becomes visible.** Everything on the
+supported path — content pulls in templates, the admin content search, URL maps, the REST and GraphQL
+APIs — switches engine here. If the two indices differ at all, this is where it shows: results in a
+different order where no explicit sort was given, or content missing because the copy was never
+completed. A clean Phase 1 tells you nothing about whether Phase 2 will be clean.
+
+**What does *not* happen here:** the legacy `$estool.esSearch` / `esRaw` templates and the plugins
+bound to Elasticsearch do not break. They keep reading Elasticsearch, so while the two indices agree
+they look untouched — and once the indices drift, they answer from a different engine than the page
+around them, with nothing in the log to say so. Their failure is deferred to Phase 3.
 
 **Your escape hatch:** set the phase back to `1`. It takes effect immediately, needs no restart, and
 Elasticsearch is completely current. Use it freely.
@@ -443,9 +450,11 @@ curl -sk -u <es-user>:<pass> "https://<es-host>:9200/_cat/indices?v"
 
 ### Step 0.2 — Audit the VTL templates
 
-**Why:** templates that call the legacy `$estool` methods receive Elasticsearch objects. They keep
-working in Phase 1 and **break in Phase 2**. This is the most common source of customer-visible
-breakage. Background: [R5](#r5-vtl-templates-and-viewtools).
+**Why:** templates that call the legacy `$estool` methods receive Elasticsearch objects, and they keep
+reading Elasticsearch in *every* phase — they never reach the phase router. So they do not break in
+Phase 2; they quietly go on answering from the engine the rest of the site has left behind, and they
+**fail outright in Phase 3** when it is gone. Find them now: the audit is cheap here and there is no
+symptom to find them by later. Background: [R5](#r5-vtl-templates-and-viewtools).
 
 **Do this** over the customer's templates, widgets, and `.vtl` files:
 
@@ -453,8 +462,9 @@ breakage. Background: [R5](#r5-vtl-templates-and-viewtools).
 grep -rn "esSearch\|esRaw" <path-to-customer-vtl>
 ```
 
-**Every hit is a template that must be reworked before Stage 4.** The safe replacements are
-`$estool.search(...)` and `$estool.raw(...)`.
+**Every hit is a template that must be reworked before Stage 5.** Do it during Stage 3 or 4, while
+Elasticsearch is still live and you can compare old and new output side by side. The safe replacements
+are `$estool.search(...)` and `$estool.raw(...)`.
 
 **Also look for** templates that walk aggregations — `.aggregations`, `.buckets`,
 `getKeyAsString()`, `getDocCount()`. These are supposed to keep working verbatim, but they are the
@@ -466,8 +476,9 @@ thing you will smoke-test hardest in Stage 4.
 
 ### Step 0.3 — Audit the OSGi plugins
 
-**Why:** a plugin compiled against Elasticsearch classes fails at Phase 2, and permanently once
-Elasticsearch is dropped. Unlike a template, you cannot fix it yourself. Background:
+**Why:** a plugin bound to Elasticsearch behaves the same way a legacy template does — it keeps
+reading Elasticsearch through every phase and fails once Elasticsearch is dropped. Unlike a template,
+you cannot fix it yourself, so the lead time matters more than the symptom. Background:
 [R7](#r7-osgi-plugins-in-detail).
 
 **Do this** for each of the customer's bundle jars:
@@ -1143,7 +1154,8 @@ mapping mismatches that a one-day run never reaches.
 - [ ] Every node reports the same phase.
 - [ ] The soak has run for the agreed period with no unexplained `WARN`s.
 - [ ] **Every Level-2/3 plugin and every `esSearch`/`esRaw` template from Stage 0 is fixed and
-      deployed.** They break in Stage 4, not here.
+      deployed.** They break in Stage 5, and nothing in Stage 4 will reveal them — fix them while you
+      still have a working Elasticsearch to compare against.
 
 ---
 
@@ -1152,8 +1164,16 @@ mapping mismatches that a one-day run never reaches.
 **Goal:** the customer's search results start coming from OpenSearch, with Elasticsearch still
 written and still available as a fallback.
 **Elapsed:** one working day, then a soak.
-**Risk to the customer:** **this is the stage where customisations break.** Templates and plugins that
-were fine in Phase 1 fail here. Everything in Stage 0's audit was for this moment.
+**Risk to the customer:** **this is where the two engines stop being interchangeable in practice.**
+Everything on the supported path switches to OpenSearch, so any difference between the indices reaches
+the customer here — most often a listing coming back in a different order because the query never
+specified a sort, or short because the copy is incomplete.
+
+> **The legacy customisations do not fail here — and that is the trap.** Anything still calling
+> `$estool.esSearch` / `esRaw`, and any plugin bound to Elasticsearch, keeps reading Elasticsearch in
+> this phase. While the indices agree it renders exactly as before, so walking the site proves nothing
+> about them. They fail in Stage 5, when Elasticsearch is gone. Stage 0's audit is what covers them;
+> this stage cannot.
 
 > **Your safety net:** if anything is wrong, set the phase back to `1`. It takes effect immediately,
 > needs no restart, and Elasticsearch is completely current. Do not debug in Phase 2 with the customer
