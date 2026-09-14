@@ -2162,6 +2162,7 @@
                         <package>com.dotcms.contenttype.model.field</package>
                         <package>com.dotcms.rendering.js</package>
                         <package>com.dotcms.ai.rest</package>
+                        <package>com.dotcms.inference.rest</package>
                         <package>com.dotcms.health</package>
                         <package>com.dotcms.auth.dotAuth.rest</package>
                     </resourcePackages>

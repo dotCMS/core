@@ -67,6 +67,8 @@ import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
+import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
+import com.dotcms.inference.rest.ChatCompletionsTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
@@ -444,6 +446,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CompletionsToolTest.class,
         ConfigServiceTest.class,
         AIProxyClientTest.class,
+        ChatCompletionsTest.class,
+        ChatCompletionsStreamingTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,

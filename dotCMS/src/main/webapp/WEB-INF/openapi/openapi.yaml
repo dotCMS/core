@@ -1336,6 +1336,74 @@ paths:
       summary: Search content using a search query (POST)
       tags:
       - Elasticsearch Content Search
+  /inference/v1/chat/completions:
+    post:
+      description: "Runs one chat completion against the model the resolved site has\
+        \ configured, in the OpenAI-compatible request and response shape. Set \"\
+        stream\": true to receive the answer as server-sent events, each frame a chat.completion.chunk,\
+        \ closing with data: [DONE] — a stream that failed ends on an error frame\
+        \ and never carries that marker. The model field is required and must be one\
+        \ the site has configured; there is no implicit default. Every response reports\
+        \ the serving site in the X-dotCMS-Resolved-Site header."
+      operationId: createChatCompletion
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatCompletionRequestView"
+        description: The completion to run
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatCompletionView"
+          description: "The completion, or the event stream when stream was requested"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: "Malformed request, or one asking for something unsupported"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested model is not configured for the resolved site
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Too many streamed completions are already in flight on this
+            node
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The model provider failed to complete the request
+      summary: Create a chat completion
+      tags:
+      - AI
   /integrity/_fixconflictsfromremote:
     post:
       operationId: fixConflictsFromRemote
@@ -26048,6 +26116,82 @@ components:
           type: string
         name:
           type: string
+    ChatCompletionRequestView:
+      type: object
+      description: Chat completion request in the OpenAI-compatible shape
+      properties:
+        max_tokens:
+          type: integer
+          format: int32
+          description: Maximum tokens to generate
+        messages:
+          type: array
+          description: "The conversation, oldest first"
+          items:
+            $ref: "#/components/schemas/MessageView"
+        model:
+          type: string
+          description: "Model id, as listed by GET /models"
+          example: gpt-4o
+        "n":
+          type: integer
+          format: int32
+          description: Number of choices; not supported
+        response_format:
+          $ref: "#/components/schemas/JsonNode"
+        stop:
+          type: array
+          description: Stop sequences
+          items:
+            type: string
+            description: Stop sequences
+        stream:
+          type: boolean
+          description: Stream the answer as server-sent events
+        stream_options:
+          $ref: "#/components/schemas/StreamOptionsView"
+        temperature:
+          type: number
+          format: double
+          description: Sampling temperature
+        tool_choice:
+          $ref: "#/components/schemas/JsonNode"
+        tools:
+          type: array
+          description: Tools the model may call
+          items:
+            $ref: "#/components/schemas/ToolView"
+        top_p:
+          type: number
+          format: double
+          description: Nucleus sampling
+    ChatCompletionView:
+      type: object
+      description: Chat completion response in the OpenAI-compatible shape
+      properties:
+        choices:
+          type: array
+          description: The answers
+          items:
+            $ref: "#/components/schemas/ChoiceView"
+        created:
+          type: integer
+          format: int64
+          description: Epoch seconds
+        id:
+          type: string
+          description: Completion id
+          example: chatcmpl-8f3a
+        model:
+          type: string
+          description: Model that served the request
+          example: gpt-4o
+        object:
+          type: string
+          description: Object type
+          example: chat.completion
+        usage:
+          $ref: "#/components/schemas/UsageView"
     CheckboxField:
       type: object
       allOf:
@@ -26112,6 +26256,17 @@ components:
             type: string
           variable:
             type: string
+    ChoiceView:
+      type: object
+      description: The answers
+      properties:
+        finish_reason:
+          type: string
+        index:
+          type: integer
+          format: int32
+        message:
+          $ref: "#/components/schemas/MessageView"
     ColumnField:
       type: object
       allOf:
@@ -29650,6 +29805,22 @@ components:
           $ref: "#/components/schemas/MultiPart"
         providers:
           type: object
+    FunctionCallView:
+      type: object
+      properties:
+        arguments:
+          type: string
+        name:
+          type: string
+    FunctionDefView:
+      type: object
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        parameters:
+          $ref: "#/components/schemas/JsonNode"
     GenerateBundleForm:
       type: object
       properties:
@@ -30702,6 +30873,12 @@ components:
         empty:
           type: boolean
       uniqueItems: true
+    InferenceErrorView:
+      type: object
+      description: Error response in the OpenAI-compatible error shape
+      properties:
+        error:
+          $ref: "#/components/schemas/Body"
     JSONObject:
       type: object
       additionalProperties:
@@ -31280,6 +31457,22 @@ components:
       properties:
         message:
           type: string
+    MessageView:
+      type: object
+      description: "The conversation, oldest first"
+      properties:
+        content:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        tool_call_id:
+          type: string
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCallView"
     Metric:
       type: object
       properties:
@@ -38245,6 +38438,12 @@ components:
             type: string
           variable:
             type: string
+    StreamOptionsView:
+      type: object
+      description: Streaming options
+      properties:
+        include_usage:
+          type: boolean
     SystemActionWorkflowActionMapping:
       type: object
       properties:
@@ -39346,6 +39545,23 @@ components:
           example: 2026-01-15T10:31:22Z
       required:
       - createDate
+    ToolCallView:
+      type: object
+      properties:
+        function:
+          $ref: "#/components/schemas/FunctionCallView"
+        id:
+          type: string
+        type:
+          type: string
+    ToolView:
+      type: object
+      description: Tools the model may call
+      properties:
+        function:
+          $ref: "#/components/schemas/FunctionDefView"
+        type:
+          type: string
     TotalSession:
       type: object
       properties:
@@ -39656,6 +39872,19 @@ components:
             type: object
             additionalProperties:
               type: object
+    UsageView:
+      type: object
+      description: Tokens consumed
+      properties:
+        completion_tokens:
+          type: integer
+          format: int32
+        prompt_tokens:
+          type: integer
+          format: int32
+        total_tokens:
+          type: integer
+          format: int32
     User:
       type: object
       properties:
