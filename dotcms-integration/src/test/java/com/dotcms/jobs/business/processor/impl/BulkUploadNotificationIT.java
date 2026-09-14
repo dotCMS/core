@@ -114,9 +114,21 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
     /** A finished job carrying an outcome, as the queue would hand the listener. */
     private Job finishedJob(final String userId, final JobState state,
                             final Map<String, Object> result) {
+        return finishedJob(userId, state, result, "DOTASSET");
+    }
+
+    /**
+     * The same, for a named base type.
+     * <p>
+     * Only the duplicate wording reads this, and it has to: a resubmission does two different
+     * things depending on it (FR-040b), so a test that fixes one shape and asserts the other's
+     * message proves nothing.
+     */
+    private Job finishedJob(final String userId, final JobState state,
+                            final Map<String, Object> result, final String baseType) {
         final Map<String, Object> parameters = new HashMap<>();
         parameters.put("userId", userId);
-        parameters.put("baseType", "DOTASSET");
+        parameters.put("baseType", baseType);
 
         return Job.builder()
                 .id(UUID.randomUUID().toString())
@@ -286,10 +298,12 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
     @Test
     public void test_completion_doesNotReportAResubmissionAsATotalFailure() throws Exception {
         final User author = new UserDataGen().nextPersisted();
-        // The shape a duplicate really arrives in: nothing succeeded, everything collided.
+        // The shape a FILEASSET duplicate really arrives in: nothing succeeded, everything
+        // collided on the unique index. Stated as FILEASSET because that index is what produces
+        // these counts — a DOTASSET resubmission has no name to lose and arrives the other way up.
         final Map<String, Object> result = outcome(0, 3);
         result.put("duplicateSubmission", true);
-        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, result);
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, result, "FILEASSET");
 
         final CapturingNotifications captured = listenTo(job);
 
@@ -299,6 +313,45 @@ public class BulkUploadNotificationIT extends Junit5WeldBaseTest {
                         + "consulted before them");
         assertFalse(NotificationLevel.ERROR.equals(captured.level),
                 "and it is not an error — nothing went wrong, the files were already there");
+    }
+
+    /**
+     * Method to test: {@link BulkUploadCompletionListener}
+     * <p>
+     * Given scenario: A recognised resubmission of a <b>DOTASSET</b> batch — which, unlike a
+     * fileAsset one, creates a second copy of every file and reports clean success.
+     * <p>
+     * Expected result: Its own wording, and not at {@code INFO}.
+     * <p>
+     * <b>One message for both base types was actively false here.</b> A dotAsset's
+     * {@code asset_name} is generated per contentlet ({@code IdentifierFactoryImpl}), so the unique
+     * index FR-042 rests on can never contend for one and the files really are uploaded twice
+     * (FR-040b). The shared copy told the author "nothing was uploaded twice" at {@code INFO} —
+     * the level that means there is nothing to do — while their folder had just acquired a
+     * duplicate of everything. On the durable channel, which is the one an author reads after
+     * walking away and therefore exactly when they cannot open the folder and see for themselves.
+     * <p>
+     * Found independently from both halves: by @zJaaal against a QA instance, where a resubmitted
+     * two-file batch left four rows with this notification beside them, and by
+     * {@code /speckit-converge} against FR-040b.
+     */
+    @Test
+    public void test_completion_tellsADotAssetResubmissionThatItDuplicated() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        // The shape a DOTASSET duplicate arrives in — the inverse of the fileAsset one above:
+        // nothing collided, everything was created a second time.
+        final Map<String, Object> result = outcome(3, 0);
+        result.put("duplicateSubmission", true);
+        final Job job = finishedJob(author.getUserId(), JobState.SUCCESS, result, "DOTASSET");
+
+        final CapturingNotifications captured = listenTo(job);
+
+        assertEquals("notification.bulkupload.duplicate.dotasset", captured.messageKey,
+                "a dotAsset resubmission duplicates the author's files, so it cannot be told with "
+                        + "the fileAsset copy, which promises the opposite");
+        assertEquals(NotificationLevel.WARNING, captured.level,
+                "and not INFO: the author is left with a decision — which copy to keep — and INFO "
+                        + "is the level that says there is nothing to decide");
     }
 
     /**

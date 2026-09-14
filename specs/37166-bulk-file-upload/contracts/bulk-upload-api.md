@@ -85,10 +85,24 @@ directly (spec FR-003a):
 {
   "entity": {
     "jobId": "e6d9bae8-657b-4e2f-8524-c0222db66355",
-    "statusUrl": "/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status"
+    "statusUrl": "/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status",
+    "submitted": 30
   }
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `jobId` | The run's handle. Everything the client can do afterwards is addressed by this |
+| `statusUrl` | Where to follow, cancel and read the outcome, ready to use — so no client assembles it by hand |
+| `submitted` | How many file parts the **server** read into the batch *(documented 2026-09-11)* |
+
+**`submitted` is the server's own count, and it is the one to display.** It equals the `total` the
+outcome will later report, so the first screen and the last agree by construction. It normally
+matches what the author selected — a part refused by the per-file ceiling still counts here,
+because it is carried into the batch as that file's own failure rather than dropped (FR-011). Where
+it does *not* match, something between the browser and the server lost parts, and a client
+rendering its own count would show a number no later screen ever confirms.
 
 | Status | When |
 |---|---|
@@ -254,6 +268,18 @@ durable notification so the outcome survives navigating away (FR-019 … FR-023)
 - **Fires on any terminal state** — completed, cancelled, or permanently failed (FR-019) — and
   **once per batch**, even across an interruption (FR-039)
 - **Best-effort**: a failed notification is logged and does not affect the recorded outcome (FR-023)
+
+**The durable notification's duplicate wording splits by base type** *(added 2026-09-14)*, because a
+resubmission does two different things (FR-040b) and the author reads this message precisely when
+they cannot open the folder and check:
+
+| Base type | Key | Level | What it says |
+|---|---|---|---|
+| `FILEASSET` | `notification.bulkupload.duplicate` | `INFO` | The files were already there and were not uploaded again — nothing was duplicated |
+| `DOTASSET` | `notification.bulkupload.duplicate.dotasset` | `WARNING` | The batch ran again, the folder now holds two copies of each file, and the author has to delete the ones they do not want |
+
+`WARNING` rather than `INFO` for the second is the point, not a detail: `INFO` is the level that
+says there is nothing to do, and here there is. The client toast mirrors the same split.
 
 ---
 

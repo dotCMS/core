@@ -4149,7 +4149,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BulkUploadSubmitResponse"
+                $ref: "#/components/schemas/ResponseEntityBulkUploadSubmitView"
           description: Batch queued
         "400":
           description: No files; malformed or missing `form`; unsupported base type;
@@ -33153,6 +33153,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/BulkResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityBulkUploadSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkUploadSubmitResponse"
         errors:
           type: array
           items:

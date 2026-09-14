@@ -12,7 +12,8 @@ stored and how it is keyed.
 
 Not a new entity. A batch is a row in the existing `job` table, queue `assetBulkUpload`, whose
 `parameters` JSONB carries the batch. Written once at `createJob` and **immutable thereafter** —
-which is why the checkpoint of §2 exists.
+which is why §2 proposed a checkpoint, and why, now that §2 is withdrawn, an interrupted run has
+nothing to resume from (FR-036a).
 
 | Parameter | Type | Notes |
 |---|---|---|
@@ -41,7 +42,22 @@ than report an anonymous gap.
 
 ---
 
-## 2. Job item result — NEW table, deliberately generic
+## 2. ~~Job item result — NEW table, deliberately generic~~ — WITHDRAWN
+
+> **WITHDRAWN 2026-09-10, shipped as nothing** *(recorded here 2026-09-11)*. The table, its
+> factory and its upgrade task were all removed; **no part of this section describes storage that
+> exists.** `spec.md` FR-036a withdrew FR-036 … FR-038 and SC-009 with it: the decision was that
+> one feature should not carry a private store for state the job framework does not offer, and
+> whether the framework should offer it is the subject of the proposed ADR *"Durable per-item state
+> for job-queue batch processors"*.
+>
+> **What replaced it**: nothing. The per-item results are accumulated in memory and harvested at
+> the terminal state, exactly as bulk refresh does — see the Note at the end of this section, which
+> now describes this feature too. An interrupted run restarts from the first file.
+>
+> **Kept rather than deleted**, following the same convention `spec.md` uses for FR-036 … FR-038:
+> the design was correct for the requirement it served, #37062 / #37063 will need it, and the ADR
+> may restore this schema unchanged. Read everything below as a proposal, not as a description.
 
 The one piece of new storage. Exists because the job framework persists no mid-run per-item state
 (research.md R1): `parameters` is immutable, `progress` is a single float, and `result` is harvested
@@ -116,7 +132,8 @@ durable per-item state, not the second.
 
 ## 3. Batch outcome — the shared shape
 
-Built from §2 at the terminal state and returned by `getResultMetadata(Job)`. **Generalizes what
+Accumulated in memory as the run goes and returned by `getResultMetadata(Job)` at the terminal
+state *(revised 2026-09-11: this read "built from §2", which is withdrawn)*. **Generalizes what
 bulk refresh already ships** (FR-018) rather than defining a second shape; #37062 / #37063 consume
 it for folder paths.
 
@@ -195,8 +212,10 @@ Two transitions this feature must handle explicitly:
 
 - **Interruption** — the abandoned-job sweep re-queues a stalled run to `PENDING` **without
   consulting the retry policy**, so it happens whether or not the processor is marked no-retry. The
-  resumed run reads §2 and continues (FR-036). Notification fires once for the batch, not once per
-  attempt (FR-039).
+  re-queued run **starts over from the first file**; there is nothing to resume from (FR-036a, §2
+  withdrawn). On `FILEASSET` the unique index rejects the second create, so only the report is
+  wrong; on `DOTASSET` the files are genuinely created twice (FR-040b). Notification still fires
+  once for the batch, not once per attempt (FR-039).
 - **Cancellation** — honoured between files, never mid-file (FR-027). Files already created stay
   (FR-026); the remainder is written `SKIPPED` so the outcome distinguishes them from failures
   (FR-028).

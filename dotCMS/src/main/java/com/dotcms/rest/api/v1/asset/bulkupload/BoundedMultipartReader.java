@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * Reads a bulk-upload submission part by part, staging as it goes and stopping the moment a
- * ceiling is crossed (spec FR-010a, FR-013c.2, FR-013d).
+ * ceiling is crossed.
  * <p>
  * <b>This is the only bound in the path.</b> Research R10 established that nothing below it caps a
  * request: {@code TEMP_RESOURCE_MAX_FILE_SIZE} ships as {@code -1} — the config comment says
@@ -123,10 +123,6 @@ public class BoundedMultipartReader {
     }
 
     /**
-     * Hands every part staged so far back for cleanup. Best-effort per part: one failure must not
-     * stop the rest being reclaimed, and none of it may mask the exception already unwinding.
-     */
-    /**
      * Stages one part, turning a crossing of the per-file ceiling into <b>that part's</b> refusal
      * rather than the whole submission's.
      * <p>
@@ -153,8 +149,22 @@ public class BoundedMultipartReader {
         }
     }
 
+    /**
+     * Hands every part staged so far back for cleanup. Best-effort per part: one failure must not
+     * stop the rest being reclaimed, and none of it may mask the exception already unwinding.
+     * <p>
+     * <b>Parts that were never staged are skipped, not reclaimed.</b> A part refused by the
+     * per-file ceiling has no {@code tempFileId} by construction — nothing of it reached the
+     * staging layer — so asking for it back would log the warning below about content that will
+     * never be collected, for content that was never written. That warning has to stay credible:
+     * it is the only notice anyone gets that a leak happened, and nothing purges staged content on
+     * a schedule to correct a false one.
+     */
     private void reclaimAll(final List<StagedPart> staged) {
         for (final StagedPart part : staged) {
+            if (!part.isStaged()) {
+                continue;
+            }
             try {
                 staging.reclaim(part.tempFileId());
             } catch (final Exception e) {
