@@ -1,11 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    DestroyRef,
-    inject,
-    OnInit
-} from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -36,7 +29,6 @@ import { AddRelationshipsStore } from '../../store/add-relationships.store';
     selector: 'dot-add-relationships-site-chip',
     imports: [ReactiveFormsModule, DotChipFilterComponent, DotHostFolderFieldComponent],
     templateUrl: './add-relationships-site-chip.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { 'data-filter-chip': 'site' }
 })
 export class AddRelationshipsSiteChipComponent implements OnInit {

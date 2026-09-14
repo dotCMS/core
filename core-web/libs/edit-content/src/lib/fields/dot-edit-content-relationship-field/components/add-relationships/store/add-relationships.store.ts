@@ -186,7 +186,7 @@ export const AddRelationshipsStore = signalStore(
          * So: while the bookmark for the page on screen reports more, claim one page beyond to keep
          * the arrow live; once it does not, the page is the last and the exact total is knowable.
          */
-        totalItems: computed(() => {
+        $totalItems: computed(() => {
             const { number, limit } = state.page();
 
             return state.pages()[number]?.hasMoreContent
@@ -369,16 +369,6 @@ export const AddRelationshipsStore = signalStore(
             );
 
             /**
-             * Fetches the identifiers already claimed by another parent.
-             *
-             * **Guarded, not unconditional.** The lookup only means something when the field is the
-             * parent side of a ONE_TO_ONE or ONE_TO_MANY relationship — the two cardinalities where
-             * a child belongs to exactly one parent. The filter-time consumer (Content Drive's
-             * field-filter chip) supplies none of this context, so the same guard is what keeps
-             * contract C3: a lookup computed from a partial set would disable rows for the wrong
-             * reason.
-             */
-            /**
              * Records the claimed identifiers and drops any the editor already picked.
              *
              * Shared by the async lookup and the public setter so the pruning cannot apply to one
@@ -399,6 +389,16 @@ export const AddRelationshipsStore = signalStore(
                 });
             };
 
+            /**
+             * Fetches the identifiers already claimed by another parent.
+             *
+             * **Guarded, not unconditional.** The lookup only means something when the field is the
+             * parent side of a ONE_TO_ONE or ONE_TO_MANY relationship — the two cardinalities where
+             * a child belongs to exactly one parent. The filter-time consumer (Content Drive's
+             * field-filter chip) supplies none of this context, so the same guard is what keeps
+             * contract C3: a lookup computed from a partial set would disable rows for the wrong
+             * reason.
+             */
             const loadConstrained = rxMethod<AddRelationshipsInput>(
                 pipe(
                     switchMap((input) => {

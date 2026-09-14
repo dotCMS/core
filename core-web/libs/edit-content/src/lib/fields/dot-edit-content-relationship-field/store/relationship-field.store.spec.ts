@@ -717,6 +717,47 @@ describe('RelationshipFieldStore', () => {
             expect(store.data()).toHaveLength(94);
         });
 
+        /**
+         * The acceptance criterion itself: "drag-reordering works across **all** related items (not
+         * just a single page)".
+         *
+         * Reported in review as the gap — the case below proves the negative (a drag inside the
+         * visible slice leaves the withheld rows alone) and nothing proved the positive. It works
+         * because the rendered rows are always a prefix of `data`, so the indices the table reports
+         * need no translation; that is precisely the kind of invariant worth pinning, because the
+         * day the list stops being a prefix this fails instead of silently reordering the wrong row.
+         */
+        it('moves a withheld item to the front of the list', () => {
+            const items = many(95);
+            store.setData(items);
+
+            // Item 90 is well past the 40 rendered, so it can only be dragged after `loadMore`.
+            store.loadMore();
+            store.loadMore();
+
+            const withheld = items[90];
+            const reordered = [withheld, ...items.filter((i) => i.inode !== withheld.inode)];
+            store.reorderData(reordered);
+
+            expect(store.data()[0].inode).toBe(withheld.inode);
+            expect(store.data()).toHaveLength(95);
+            expect(store.$visibleItems()[0].inode).toBe(withheld.inode);
+        });
+
+        /**
+         * `setData` is the picker's close path, and the one most likely to produce a "the table
+         * snapped back to 40 rows" report. It leaves `visibleCount` alone for the same reason
+         * `deleteItem` and `reorderData` do.
+         */
+        it('keeps revealed rows revealed when the picker writes a new set', () => {
+            store.setData(many(95));
+            store.loadMore();
+
+            store.setData(many(95));
+
+            expect(store.visibleCount()).toBe(80);
+        });
+
         it('does not reorder withheld items as a side effect of a drag', () => {
             const items = many(95);
             store.setData(items);

@@ -23,7 +23,11 @@ export class AddRelationshipsDialog {
     readonly table: Locator;
     readonly rows: Locator;
 
-    constructor(private page: Page) {
+    readonly #page: Page;
+
+    constructor(page: Page) {
+        this.#page = page;
+
         // The mask wrapper, not `.p-dialog`: PrimeNG renders the footer as a sibling of the dialog
         // body, so scoping to `.p-dialog` loses Cancel and Confirm.
         this.dialog = page.locator('.p-dialog-relationship-field');
@@ -143,7 +147,7 @@ export class AddRelationshipsDialog {
     }
 
     async closeViaEsc(): Promise<void> {
-        await this.page.keyboard.press('Escape');
+        await this.#page.keyboard.press('Escape');
     }
 
     // ─── Search / Filters ────────────────────────────────────────────

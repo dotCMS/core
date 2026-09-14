@@ -726,7 +726,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             store.initialize(baseInput);
             store.load();
 
-            expect(store.totalItems()).toBe(ADD_RELATIONSHIPS_PAGE_SIZE * 2);
+            expect(store.$totalItems()).toBe(ADD_RELATIONSHIPS_PAGE_SIZE * 2);
         });
 
         it('reports the exact total once the last page is on screen', () => {
@@ -734,7 +734,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             store.initialize(baseInput);
             store.load();
 
-            expect(store.totalItems()).toBe(2);
+            expect(store.$totalItems()).toBe(2);
         });
 
         /**

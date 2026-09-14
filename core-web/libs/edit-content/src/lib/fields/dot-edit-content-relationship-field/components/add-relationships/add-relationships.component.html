@@ -84,7 +84,7 @@
                         [loading]="store.$isLoading()"
                         [selection]="store.$selectedItems()"
                         [unselectable]="store.$constrainedList()"
-                        [totalItems]="store.totalItems()"
+                        [totalItems]="store.$totalItems()"
                         [offset]="store.$offset()"
                         (selectionChange)="onSelectionChange($event)"
                         (paginate)="onPaginate($event)"

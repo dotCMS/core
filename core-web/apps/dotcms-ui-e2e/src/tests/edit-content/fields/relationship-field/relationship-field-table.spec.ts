@@ -294,12 +294,12 @@ test.describe('Dialog Content Listing', () => {
 
 test.describe('Table Pagination', () => {
     /**
-     * Longer than the 60s default because the threshold is the point: proving that the list stops
-     * at 40 means creating more than 40 contentlets, each published with `indexPolicy=WAIT_FOR`.
-     * That is minutes of backend work on a loaded runner, against a default sized for tests that
-     * create three. It timed out in CI while passing locally.
+     * Longer than the 60s default. Proving the list stops at 40 means creating more than 40
+     * contentlets and then opening a contentlet that relates all of them, which resolves every one
+     * of them through `?depth=2`. That is real work even without the index wait, against a default
+     * sized for tests that create three.
      */
-    test.describe.configure({ timeout: 180_000 });
+    test.describe.configure({ timeout: 120_000 });
 
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -339,14 +339,20 @@ test.describe('Table Pagination', () => {
         const authors = await apiHelpers.createContentlets(
             authorTypeVariable,
             // 41, not a round 45: one past the threshold proves both halves — 40 rendered and the
-            // rest revealed — and every extra contentlet is another indexed publish on the runner.
+            // rest revealed — and every extra row is another publish on the runner.
             Array.from({ length: 41 }, (_, j) => {
                 const i = j + 1;
                 return {
                     title: `LoadMore Author ${String(i).padStart(2, '0')} ${testSuffix}`,
                     bio: `Bio ${i}`
                 };
-            })
+            }),
+            // No index wait. These rows are only ever read back through the blog they are related
+            // to, and the related-content list resolves from the parent through `?depth=2` — out of
+            // the database, not the index. Waiting cost 41 rounds of indexing and bought nothing:
+            // it is what pushed this test past 60s, then past 180s, and took its neighbours in the
+            // shard down with it.
+            false
         );
 
         const blog = await apiHelpers.createContentletWithRelationship(

@@ -1,14 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    inject,
-    OnInit,
-    Renderer2,
-    signal
-} from '@angular/core';
+import { Component, computed, effect, inject, OnInit, Renderer2, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -72,7 +63,6 @@ import { AddRelationshipsStore } from './store/add-relationships.store';
         AddRelationshipsFooterComponent
     ],
     templateUrl: './add-relationships.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [AddRelationshipsStore, provideAddRelationshipsFilterFacade()]
 })
 export class AddRelationshipsComponent implements OnInit {

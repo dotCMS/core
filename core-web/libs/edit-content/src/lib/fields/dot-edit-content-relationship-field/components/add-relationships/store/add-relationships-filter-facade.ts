@@ -45,8 +45,6 @@ export function createAddRelationshipsFilterFacade(store: Store): DotFilterFacad
 
         // Same reload as `patchFilters`: clearing a chip is a filter change like any other, and a
         // chip that changes the bag without changing the results is a control that does nothing.
-        // Same reload as `patchFilters`: clearing a chip is a filter change like any other, and a
-        // chip that changes the bag without changing the results is a control that does nothing.
         removeFilter: (key: string): void => {
             store.removeFilter(key);
             store.load();

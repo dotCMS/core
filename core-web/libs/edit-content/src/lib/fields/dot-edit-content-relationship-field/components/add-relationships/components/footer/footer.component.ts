@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { Component, computed, inject, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
@@ -27,8 +27,7 @@ import { AddRelationshipsStore } from '../../store/add-relationships.store';
 @Component({
     selector: 'dot-add-relationships-footer',
     imports: [ButtonModule, DotMessagePipe],
-    templateUrl: './footer.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './footer.component.html'
 })
 export class AddRelationshipsFooterComponent {
     protected readonly store = inject(AddRelationshipsStore);
