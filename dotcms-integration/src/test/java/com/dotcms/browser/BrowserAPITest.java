@@ -2873,6 +2873,68 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     /**
      * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#processSingleESQuery}, exercised via
+     *     {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A field filter matches more items than Elasticsearch's own
+     *     default page size of 10, and {@code BROWSER_SINGLE_PASS_CHUNK_SIZE} is left at its
+     *     production default (7,000) so every candidate lands inside a single ES sub-query --
+     *     comfortably under {@code calculateMaxInodesPerESQuery}'s ~876-inode cap, so the request
+     *     never fans out into {@code processMultipleESQueries} at all. Without an explicit
+     *     {@code "size"} bound on the ES query template, Elasticsearch silently caps a sub-query's
+     *     hits at its own default of 10, no matter how many candidate inodes it was scoped to.
+     *     None of the existing single-pass tests can catch a regression of that fix: every one of
+     *     them keeps its match count at or under 10 per sub-query (review finding on PR #37395 --
+     *     the fix shipped with no test that would fail if the {@code "size"} binding were
+     *     reverted).</li>
+     *     <li><b>Expected Result:</b> All matches are returned, not just the first 10.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_eligibleFieldFilter_denseMatchesInOneSubQuery_allReturned()
+            throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+
+        // Comfortably past ES's own default page size of 10 -- the exact cap the "size" fix
+        // removes -- and still far under the ~876-inode single-sub-query ceiling.
+        final int matchCount = 15;
+        final String matchValue = "denseMatch_" + uniqueId;
+        final Set<String> expectedIdentifiers = new HashSet<>();
+        for (int i = 0; i < matchCount; i++) {
+            expectedIdentifiers.add(new ContentletDataGen(fixture.contentType.id())
+                    .folder(folder)
+                    .setProperty("title", "ffDense_" + uniqueId + "_" + i)
+                    .setProperty(FF_TEXT_VAR, matchValue)
+                    .languageId(1)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted()
+                    .getIdentifier());
+        }
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .useElasticsearchFiltering(true)
+                .showFolders(false)
+                .showLinks(false)
+                .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
+                .maxResults(matchCount + 5)
+                .contentCursor(0)
+                .build());
+
+        final Set<String> returnedIdentifiers = result.list.stream()
+                .map(item -> (String) item.get("identifier"))
+                .collect(Collectors.toSet());
+
+        assertEquals("All " + matchCount + " matches must be returned -- a single ES sub-query "
+                        + "must not silently cap at Elasticsearch's own 10-hit default",
+                expectedIdentifiers, returnedIdentifiers);
+    }
+
+    /**
+     * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#isSinglePassEligible} via
      *     {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
      *     <li><b>Given Scenario:</b> The same single-pass assertion as above, repeated for
