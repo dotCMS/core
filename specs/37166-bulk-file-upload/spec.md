@@ -443,8 +443,17 @@ run reports a collision failure for it.
      own action rather than a limit being hit.
 
   FR-033 covers reclaim for runs that reach a terminal state. Neither path here ever becomes a run,
-  so nothing else would clean up after them — and nothing purges staged content on a schedule, so
-  what leaks here leaks permanently.
+  so nothing in this feature would clean up after them.
+
+  *(Corrected 2026-09-14 — this previously read "nothing purges staged content on a schedule, so
+  what leaks here leaks permanently", which is wrong. `BinaryCleanupJob` does sweep
+  `assets/tmp_upload`. What is true is that it is slow: it deletes files older than
+  `CLEANUP_TMP_FILES_OLDER_THAN_HOURS` (3h by default) and its default cron fires only during the
+  midnight hour, so debris sits on the shared assets volume for **up to about a day**, not for
+  ever. The requirement stands on that: a batch's abandoned bytes should not outlive the batch by a
+  day, and the author's own navigation away is the likeliest way to produce them. Note also that
+  `TEMP_RESOURCE_MAX_AGE_SECONDS`, the 30-minute value that reads like a cleanup, deletes nothing —
+  it is a TTL enforced on retrieval.)*
 
 **Outcome**
 

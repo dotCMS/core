@@ -28,10 +28,17 @@ import javax.inject.Inject;
 /**
  * Validates a bulk-upload submission and enqueues the run (#37166, spec FR-003, FR-004, FR-013c).
  * <p>
- * <b>Order matters here, and it is not arbitrary.</b> Everything decidable without the body is
- * decided first — the form's shape, the target's existence, the author's rights, and a declared
- * total already over the ceiling. Only then is the body read, because reading it writes bytes to
- * shared storage and every check performed afterwards is a check performed too late.
+ * <b>Order matters here, and it is not arbitrary.</b> Everything decidable without reading the
+ * parts is decided first — the form's shape, the target's existence, the author's rights, and a
+ * declared total already over the ceiling. Only then are the parts <b>staged</b>, because staging
+ * writes bytes to the shared assets volume — where what lands sits until the nightly sweep, which
+ * by default runs only in the midnight hour — and every check performed afterward is a check
+ * performed too late.
+ * <p>
+ * <b>Staged, not received.</b> The container has already read the request by the time any of this
+ * runs — Jersey binds the multipart entity before the resource method is entered. What this
+ * ordering protects is the assets volume, not the wire; see {@code BulkUploadResource}, where the
+ * residual risk is recorded.
  *
  * @author dotCMS
  */
@@ -105,7 +112,7 @@ public class BulkUploadHelper {
         }
 
         // 3. The authoritative read (FR-010a, FR-013c.2). Aborts at whichever ceiling is crossed
-        //    and reclaims what it staged; nothing purges staged content on a schedule.
+        //    and reclaims what it staged, rather than leaving it for the nightly sweep.
         // The staging layer's own per-file ceiling is passed in so THIS reader enforces it. Left
         // to the staging layer, crossing it raises the same exception, with the same wording, as a
         // dropped connection — so one over-size file refused the whole submission (FR-011 says it
@@ -268,6 +275,7 @@ public class BulkUploadHelper {
     private Optional<String> findSucceededSubmission(final String fingerprint) {
         try {
             final List<Map<String, Object>> rows = new DotConnect()
+                    // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, every runtime value bound via addParam
                     .setSQL("SELECT id FROM job WHERE queue_name = ? AND state = ? "
                             + "AND parameters->>'submissionFingerprint' = ? "
                             + "ORDER BY created_at DESC")

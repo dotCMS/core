@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.asset.bulkupload;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
@@ -11,21 +12,28 @@ import java.util.List;
  * Reads a bulk-upload submission part by part, staging as it goes and stopping the moment a
  * ceiling is crossed.
  * <p>
- * <b>This is the only bound in the path.</b> Research R10 established that nothing below it caps a
- * request: {@code TEMP_RESOURCE_MAX_FILE_SIZE} ships as {@code -1} — the config comment says
+ * <b>This is the only bound on what gets staged.</b> Research R10 established that nothing below it
+ * caps a request: {@code TEMP_RESOURCE_MAX_FILE_SIZE} ships as {@code -1} — the config comment says
  * "authenticated users are unlimited" — the staging layer counts neither files nor bytes, and the
- * servlet container has no multipart limit configured.
+ * servlet container has no multipart limit configured. That last point cuts both ways and is worth
+ * reading twice: it is why this class has to exist, and it is also why this class cannot be the
+ * bound on what the container <i>receives</i>.
  * <p>
  * Two behaviours are load-bearing and are why this is a class rather than a loop inside the
  * resource:
  * <ul>
- *   <li>It aborts <b>mid-body</b>, so a submission over a ceiling cannot commit more than the
- *       ceiling to disk. Checking after the body has arrived would let an author write an unbounded
- *       amount and only then be told no.</li>
+ *   <li>It aborts <b>part by part</b>, so no submission over a ceiling <b>stages</b> more than the
+ *       ceiling. Scoped deliberately: this bounds what reaches the <i>assets volume</i>, where
+ *       what lands stays until the nightly sweep collects it. It does <b>not</b> bound what the
+ *       container already received — Jersey deserializes the whole multipart entity before the
+ *       resource method is entered, spooling every part over the 4096-byte default threshold to
+ *       {@code java.io.tmpdir}. Bounding that needs a request-size limit at the connector or the
+ *       reverse proxy, and neither exists today (see {@code BulkUploadResource}).</li>
  *   <li>It reclaims over the <b>whole read</b>, not just its own refusal path. A read that dies
  *       underneath it — the author navigated away, the connection dropped — raises nothing from
- *       this side, and nothing purges staged content on a schedule, so a reclaim scoped to the
- *       refusal would leak permanently (spec FR-013d.2, C-001a1).</li>
+ *       this side, so a reclaim scoped to the refusal would leave it for {@code BinaryCleanupJob},
+ *       whose default cron only fires during the midnight hour: up to a day of a dead
+ *       submission's bytes on shared storage (spec FR-013d.2, C-001a1).</li>
  * </ul>
  *
  * @author dotCMS
@@ -77,7 +85,8 @@ public class BoundedMultipartReader {
         // here, so a narrower scope would still catch it — but a read that dies underneath (the
         // author navigated away, the connection dropped) raises nothing of ours, and that is the
         // likelier of the two because it is the author's own action rather than a limit being hit.
-        // Nothing purges staged content on a schedule, so anything missed here is missed for good.
+        // BinaryCleanupJob would eventually collect what is missed here, but its default cron only
+        // fires during the midnight hour, so "eventually" is up to a day on shared storage.
         try {
             for (final UploadPart part : parts) {
 
@@ -143,8 +152,26 @@ public class BoundedMultipartReader {
             return staging.stage(part.fileName(),
                     new CeilingBoundedInputStream(part.content(), part.fileName(),
                             perFileCeiling));
-        } catch (final PerFileCeilingExceededException refused) {
-            Logger.info(this, refused.getMessage() + "; recorded as that file's own failure");
+        } catch (final RuntimeException e) {
+            // MATCHED ON THE CAUSE, NOT ON THE THROWN TYPE, and that is the whole point.
+            //
+            // CeilingBoundedInputStream raises from read(...), which happens INSIDE
+            // TempFileAPI.createTempFile — whose catch(Exception) rewraps everything it sees in a
+            // DotRuntimeException (TempFileAPI:194). Java matches catch clauses on the thrown
+            // type, so a clause naming PerFileCeilingExceededException is unreachable through the
+            // only staging implementation that ships: what arrives here is a DotRuntimeException
+            // carrying ours as its cause, it matches nothing, and one over-size file takes the
+            // whole submission down with a 500 — the exact behaviour this class exists to prevent
+            // (FR-011).
+            //
+            // causedBy walks the chain including the exception itself, so this also covers a
+            // staging layer that does not wrap.
+            if (!ExceptionUtil.causedBy(e, PerFileCeilingExceededException.class)) {
+                throw e;
+            }
+            Logger.info(this, String.format(
+                    "'%s' crossed the staging layer's per-file ceiling of %d bytes; recorded as "
+                            + "that file's own failure", part.fileName(), perFileCeiling));
             return StagedPart.refused(part.fileName(), BatchFailureReason.OVER_SIZE_LIMIT);
         }
     }
@@ -156,9 +183,9 @@ public class BoundedMultipartReader {
      * <b>Parts that were never staged are skipped, not reclaimed.</b> A part refused by the
      * per-file ceiling has no {@code tempFileId} by construction — nothing of it reached the
      * staging layer — so asking for it back would log the warning below about content that will
-     * never be collected, for content that was never written. That warning has to stay credible:
-     * it is the only notice anyone gets that a leak happened, and nothing purges staged content on
-     * a schedule to correct a false one.
+     * outlive the batch, for content that was never written. That warning has to stay credible: it
+     * is the only notice anyone gets that this run left bytes behind, and the nightly sweep that
+     * would eventually collect them says nothing when it does.
      */
     private void reclaimAll(final List<StagedPart> staged) {
         for (final StagedPart part : staged) {
@@ -170,8 +197,8 @@ public class BoundedMultipartReader {
             } catch (final Exception e) {
                 Logger.warn(this, String.format(
                         "Could not reclaim staged content '%s' for an abandoned or refused bulk "
-                                + "upload; nothing purges staged content on a schedule, so this "
-                                + "will not be cleaned up later: %s",
+                                + "upload; it will sit on the assets volume until BinaryCleanupJob "
+                                + "collects it, which by default runs in the midnight hour: %s",
                         part.tempFileId(), e.getMessage()), e);
             }
         }

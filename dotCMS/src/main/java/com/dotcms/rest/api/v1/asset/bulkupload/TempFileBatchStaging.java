@@ -58,17 +58,33 @@ public class TempFileBatchStaging implements BatchStaging {
     /**
      * {@inheritDoc}
      * <p>
-     * Deletes the staged file outright rather than leaving it to expire. Expiry is enforced only on
-     * retrieval — nothing removes the content on a schedule — so content left here is left for
-     * good, in bytes the author cannot see and no run will ever collect.
+     * Deletes the staged file outright rather than leaving it to age out, because the two clocks
+     * that would otherwise collect it are both slower than they look:
+     * <ul>
+     *   <li>{@code TEMP_RESOURCE_MAX_AGE_SECONDS} (30 min) removes <b>nothing</b> — it is a TTL
+     *       enforced on retrieval, so past it {@code getTempFile} answers empty while the bytes
+     *       stay on disk;</li>
+     *   <li>{@code BinaryCleanupJob} does delete from {@code tmp_upload}, but only files older
+     *       than {@code CLEANUP_TMP_FILES_OLDER_THAN_HOURS} (3h), and only while its cron is
+     *       firing — which by default is every three minutes of the <b>midnight hour alone</b>
+     *       ({@code BINARY_CLEANUP_JOB_CRON_EXPRESSION}), not around the clock.</li>
+     * </ul>
+     * So content left here is collected, eventually — after up to about a day on the shared assets
+     * volume, in bytes the author cannot see and no run will ever use. Reclaiming now is what keeps
+     * a batch's debris from outliving the batch by a day.
      */
     @Override
     public void reclaim(final String tempFileId) {
         try {
             final Optional<DotTempFile> tempFile =
                     APILocator.getTempFileAPI().getTempFile(request, tempFileId);
-            if (tempFile.isPresent() && tempFile.get().file.exists()
-                    && !tempFile.get().file.delete()) {
+            // delete() first and exists() only if it failed: delete() already answers false for a
+            // file that is not there, so the old order paid a stat call on the shared assets volume
+            // for every staged file to learn what the delete reports anyway. The exists() survives
+            // on the failure side so the warning still means "it is still there", not "it was
+            // already gone" — a warning nobody can act on is one nobody reads.
+            if (tempFile.isPresent() && !tempFile.get().file.delete()
+                    && tempFile.get().file.exists()) {
                 Logger.warn(this, "Could not delete staged content: " + tempFileId);
             }
         } catch (final Exception e) {

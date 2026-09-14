@@ -33,6 +33,7 @@ import java.io.File;
 import java.util.Optional;
 import com.dotmarketing.util.Config;
 import com.dotcms.util.ConversionUtils;
+import io.vavr.Lazy;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadReasonResolver;
@@ -76,6 +77,17 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
     private final List<BatchItemResult> itemResults = new CopyOnWriteArrayList<>();
     private final BulkUploadReasonResolver reasons = new BulkUploadReasonResolver();
     private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
+
+    /**
+     * The per-file ceiling that applies where a content type declares none (FR-011.2).
+     * <p>
+     * Resolved once per run, not once per file. {@link #effectiveCeiling} is called from inside the
+     * per-file loop, so a batch at the configured maximum asked {@code Config} for the same
+     * constant key a hundred times. Only the content type's own {@code maxFileLength} varies
+     * between files; this value cannot.
+     */
+    private final Lazy<Long> fallbackCeiling = Lazy.of(() -> Config.getLongProperty(
+            "CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES", 209715200L));
 
     @Override
     public void process(final Job job) throws JobProcessingException {
@@ -439,8 +451,7 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
                 .map(value -> ConversionUtils.toLongFromByteCountHumanDisplaySize(value, -1L))
                 .orElse(-1L);
 
-        return declared > 0 ? declared : Config.getLongProperty(
-                "CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES", 209715200L);
+        return declared > 0 ? declared : fallbackCeiling.get();
     }
 
     /**
@@ -646,10 +657,19 @@ public class BulkUploadProcessor implements JobProcessor, Cancellable {
             final String tempFileId = String.valueOf(file.get("tempFileId"));
             try {
                 resolveStagedContent(job, tempFileId, user).ifPresent(binary -> {
-                    if (binary.exists() && !binary.delete()) {
+                    // delete() first, exists() only if it failed. These files live on the shared
+                    // assets volume, and the old order paid a stat call per staged file on every
+                    // terminal state to learn what delete() reports anyway.
+                    //
+                    // The exists() is kept on the failure side rather than dropped: without it the
+                    // warning below would also fire for a file that was already gone, which is not
+                    // a leak and is precisely the kind of false alarm that makes the real one
+                    // ignorable.
+                    if (!binary.delete() && binary.exists()) {
                         Logger.warn(this, String.format(
-                                "Bulk upload job [%s]: could not delete staged content '%s'; "
-                                        + "nothing purges it on a schedule, so it will remain",
+                                "Bulk upload job [%s]: could not delete staged content '%s'; it "
+                                        + "will remain until BinaryCleanupJob collects it, which "
+                                        + "by default runs in the midnight hour",
                                 job.id(), tempFileId));
                     }
                 });
