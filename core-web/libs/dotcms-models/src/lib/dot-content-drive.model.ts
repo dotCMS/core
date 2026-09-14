@@ -31,6 +31,14 @@ export interface DotContentDriveLazyLoadEvent {
 export interface DotContentDriveActionableFolder {
     type: 'folder';
     identifier: string;
+    /**
+     * The row's key in the listing, which the grid marks busy by.
+     *
+     * Optional because the search service only backfills it from `identifier` when the API returned
+     * none, leaving legacy data with whatever it has. A caller registering a run over this folder
+     * should target both, since neither is reliably the key the row carries.
+     */
+    inode?: string;
     /** The folder's own name (last path segment). */
     name: string;
     /** The folder's own full path, e.g. `/application/blog/`. */

@@ -1079,9 +1079,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         expect.objectContaining({
                             total: 1,
                             targetLabel: folderWithEdit.name,
-                            // Folder rows carry `inode === identifier`, backfilled by the search
-                            // service, so this is the key the grid marks busy by.
-                            targets: [folderWithEdit.identifier]
+                            // Both keys, because neither alone is reliably the one the row carries:
+                            // the search service backfills `inode` from `identifier` only when the
+                            // API returned none, so a folder that arrives with a distinct inode
+                            // would never be marked if this targeted the identifier alone.
+                            targets: [folderWithEdit.identifier, folderWithEdit.inode].filter(
+                                Boolean
+                            )
                         })
                     );
                 });

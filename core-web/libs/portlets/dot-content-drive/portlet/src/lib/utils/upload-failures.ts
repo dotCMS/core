@@ -138,7 +138,7 @@ function lineFor(
     context: DotUploadFailureContext,
     resolve: ResolveMessage
 ): string {
-    const folderFilter = readableFilter(context.folderFilter);
+    const folderFilter = escapeFileName(readableFilter(context.folderFilter));
 
     return FOLDER_FILTER_MISMATCH_KEY === key && folderFilter
         ? resolve(FOLDER_FILTER_MISMATCH_NAMED_KEY, subject, folderFilter)

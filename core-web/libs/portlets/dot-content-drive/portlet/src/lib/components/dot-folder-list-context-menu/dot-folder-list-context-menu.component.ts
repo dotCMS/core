@@ -47,7 +47,7 @@ import {
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     ROOT_PATH
 } from '../../shared/constants';
-import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
+import { DotContentDriveContextMenu } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { isFolder } from '../../utils/functions';
@@ -132,9 +132,11 @@ export class DotFolderListViewContextMenuComponent {
      * The memoized items are cleared to force a refresh of the menu options.
      */
     readonly statusEffect = effect(() => {
-        // Both read up front: a guard placed before a read drops that signal as a dependency.
-        const status = this.#store.status();
-        const items = this.#store.items();
+        // Read for their dependencies alone, and neither is consulted: the effect re-runs on
+        // either, and every run clears. Read up front on principle — a guard placed before a read
+        // drops that signal as a dependency — even though nothing guards here any more.
+        this.#store.status();
+        this.#store.items();
 
         // `items` is the load-agnostic trigger, and it is the one that matters. The memo used to be
         // dropped only on LOADING, which held while every reload blanked the listing. A reload that
@@ -146,9 +148,12 @@ export class DotFolderListViewContextMenuComponent {
         // so the same key comes back pointing at a stale menu. Dropping the memo when the rows
         // themselves arrive is the honest trigger, since that is exactly when what the menu was
         // built from stopped being true.
-        if (status === DotContentDriveStatus.LOADING || items) {
-            this.$memoizedMenuItems.set({});
-        }
+        // Cleared unconditionally, which is what the reasoning above actually describes. Both
+        // signals are still read, because the effect has to re-run on either — but the old
+        // `status === LOADING || items` could not gate anything: `items` is an array signal and an
+        // empty array is truthy, so the second half always held and the status check only looked
+        // like it still decided something.
+        this.$memoizedMenuItems.set({});
     });
 
     /**
@@ -470,8 +475,8 @@ export class DotFolderListViewContextMenuComponent {
         });
         this.#workflowActionsFireService
             .fireTo({ actionId, inode: contentletInode, data: payload })
-            .subscribe(
-                () => {
+            .subscribe({
+                next: () => {
                     this.#store.endExternalRun(runId);
                     // Quiet: this row was marked busy, so the skeleton would be a second load right
                     // after the first and would read as a jump.
@@ -480,7 +485,7 @@ export class DotFolderListViewContextMenuComponent {
                     // Silent on success: the listing shows it, so a notification would repeat what the
                     // author is already looking at. Failures still speak.
                 },
-                (error) => {
+                error: (error) => {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
@@ -494,7 +499,7 @@ export class DotFolderListViewContextMenuComponent {
                     this.#store.endExternalRun(runId);
                     console.error('Error firing workflow action', error);
                 }
-            );
+            });
     }
 
     #resolveLockAction(contentlet: DotCMSContentlet, canLockData: DotContentletCanLock) {
@@ -520,8 +525,8 @@ export class DotFolderListViewContextMenuComponent {
             this.#dotContentletService
                 .unlockContent(contentlet.inode)
                 .pipe(take(1))
-                .subscribe(
-                    () => {
+                .subscribe({
+                    next: () => {
                         this.#store.endExternalRun(runId);
                         // Silent on success: the listing shows it, so a notification would repeat what the
                         // author is already looking at. Failures still speak.
@@ -530,7 +535,7 @@ export class DotFolderListViewContextMenuComponent {
                         // straight after the first and reads as the table blinking.
                         this.#store.reloadContentDrive({ quiet: true });
                     },
-                    (error) => {
+                    error: (error) => {
                         this.#store.endExternalRun(runId);
                         console.error('Error unlocking content', error);
                         this.#messageService.add({
@@ -546,13 +551,13 @@ export class DotFolderListViewContextMenuComponent {
                         });
                         console.error('Error unlocking content', error);
                     }
-                );
+                });
         } else {
             this.#dotContentletService
                 .lockContent(contentlet.inode)
                 .pipe(take(1))
-                .subscribe(
-                    () => {
+                .subscribe({
+                    next: () => {
                         this.#store.endExternalRun(runId);
                         // Silent on success: the listing shows it, so a notification would repeat what the
                         // author is already looking at. Failures still speak.
@@ -560,7 +565,7 @@ export class DotFolderListViewContextMenuComponent {
                         // straight after the first and reads as the table blinking.
                         this.#store.reloadContentDrive({ quiet: true });
                     },
-                    (error) => {
+                    error: (error) => {
                         this.#store.endExternalRun(runId);
                         console.error('Error locking content', error);
                         this.#messageService.add({
@@ -573,7 +578,7 @@ export class DotFolderListViewContextMenuComponent {
                             life: ERROR_MESSAGE_LIFE
                         });
                     }
-                );
+                });
         }
     }
 
@@ -743,14 +748,18 @@ export class DotFolderListViewContextMenuComponent {
         // closes on accept, so the run outlives its trigger and belongs on the indicator (FR-007).
         // It reported nothing at all until its toast.
         //
-        // Targeted by `identifier`: a folder row's `inode` is backfilled to equal it by the search
-        // service, so this is the key the grid marks busy by.
+        // Both keys, because neither is reliably the one the grid marks by. The search service
+        // backfills a folder's `inode` from its identifier, but only when it has none
+        // (`dot-content-drive.service.ts`: "Any folder that does carry one is left alone, so legacy
+        // data keeps whatever it has"). A folder the API returns *with* a distinct inode would
+        // therefore never have its row marked, and the indicator would report a run over a row that
+        // shows nothing — the delete still working, but looking like nothing is happening.
         const runId = this.#store.startExternalRun({
             operation: 'DELETE_FOLDER',
             actionName: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
             total: 1,
             targetLabel: folder.name,
-            targets: [folder.identifier]
+            targets: [folder.identifier, folder.inode].filter(Boolean)
         });
 
         this.#dotFolderService
