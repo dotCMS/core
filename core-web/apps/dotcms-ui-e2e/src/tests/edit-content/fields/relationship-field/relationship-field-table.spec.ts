@@ -293,6 +293,14 @@ test.describe('Dialog Content Listing', () => {
 // ─── Table Pagination (>6 items) ────────────────────────────────
 
 test.describe('Table Pagination', () => {
+    /**
+     * Longer than the 60s default because the threshold is the point: proving that the list stops
+     * at 40 means creating more than 40 contentlets, each published with `indexPolicy=WAIT_FOR`.
+     * That is minutes of backend work on a loaded runner, against a default sized for tests that
+     * create three. It timed out in CI while passing locally.
+     */
+    test.describe.configure({ timeout: 180_000 });
+
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 
@@ -330,7 +338,9 @@ test.describe('Table Pagination', () => {
     }) => {
         const authors = await apiHelpers.createContentlets(
             authorTypeVariable,
-            Array.from({ length: 45 }, (_, j) => {
+            // 41, not a round 45: one past the threshold proves both halves — 40 rendered and the
+            // rest revealed — and every extra contentlet is another indexed publish on the runner.
+            Array.from({ length: 41 }, (_, j) => {
                 const i = j + 1;
                 return {
                     title: `LoadMore Author ${String(i).padStart(2, '0')} ${testSuffix}`,
@@ -356,8 +366,8 @@ test.describe('Table Pagination', () => {
 
         await relationshipField.clickLoadMore();
 
-        // The remaining five, appended — not a second page replacing the first.
-        await relationshipField.expectRowCount(45);
+        // The remainder, appended — not a second page replacing the first.
+        await relationshipField.expectRowCount(41);
         await relationshipField.expectLoadMoreHidden();
     });
 
