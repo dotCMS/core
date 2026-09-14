@@ -962,6 +962,64 @@
 			"name": "Search and Filtering Tests",
 			"item": [
 				{
+					"name": "Search - Unfiltered Baseline (for Alpha Filter narrowing check)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Captured for Text Search - Alpha Filter's narrowing assertion, run as an",
+									"// ordinary preceding request (not pm.sendRequest) so it inherits the",
+									"// collection's bearer auth like every other request here, and so the",
+									"// narrowing check stays a plain synchronous pm.test -- this repo's Postman",
+									"// collections have no other use of the async pm.test(name, done) pattern",
+									"// (found in review).",
+									"pm.test(\"Capture unfiltered baseline count\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('unfilteredBaselineCount', jsonData.entity.list.length);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"\"\n    },\n    \"maxResults\": 50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Text Search - Alpha Filter",
 					"event": [
 						{
@@ -1006,33 +1064,23 @@
 									"    pm.expect(alphaItem.body).to.not.include('>');",
 									"});",
 									"",
-									"pm.test(\"Search narrows results relative to the unfiltered baseline\", function (done) {",
-									"    // The prior version of this test could not assert narrowing because it had no",
-									"    // unfiltered baseline to compare against -- fetched here with a synchronous",
-									"    // sibling request rather than relying on collection run order, so this test",
-									"    // proves filtering rather than just repeating the contains-Alpha check above",
-									"    // (found in review).",
+									"pm.test(\"Search narrows results relative to the unfiltered baseline\", function () {",
+									"    // The unfiltered baseline is captured by the preceding \"Search - Unfiltered",
+									"    // Baseline\" request into a collection variable, rather than fetched here with",
+									"    // pm.sendRequest -- that call does not inherit the collection's bearer auth,",
+									"    // so the sibling request came back 401 and threw, and the done()-callback",
+									"    // pattern it required has no other user anywhere in this repo's Postman",
+									"    // collections and is not guaranteed to be supported by the collection",
+									"    // runner (found in review). A plain preceding request keeps this test",
+									"    // synchronous and correctly authenticated like every other request here,",
+									"    // while still proving filtering rather than just repeating the",
+									"    // contains-Alpha check above.",
 									"    var filteredCount = pm.response.json().entity.list.length;",
+									"    var unfilteredCount = parseInt(pm.collectionVariables.get('unfilteredBaselineCount'), 10);",
 									"    ",
-									"    pm.sendRequest({",
-									"        url: pm.variables.get('serverURL') + '/api/v1/drive/search',",
-									"        method: 'POST',",
-									"        header: { 'Content-Type': 'application/json' },",
-									"        body: {",
-									"            mode: 'raw',",
-									"            raw: JSON.stringify({",
-									"                assetPath: '//' + pm.variables.get('testSiteName') + '/',",
-									"                filters: { text: '' },",
-									"                maxResults: 50",
-									"            })",
-									"        }",
-									"    }, function (err, res) {",
-									"        pm.expect(err).to.be.null;",
-									"        var unfilteredCount = res.json().entity.list.length;",
-									"        pm.expect(filteredCount, 'Alpha-filtered result count')",
-									"            .to.be.below(unfilteredCount);",
-									"        done();",
-									"    });",
+									"    pm.expect(unfilteredCount, 'unfiltered baseline count').to.be.a('number').and.not.NaN;",
+									"    pm.expect(filteredCount, 'Alpha-filtered result count')",
+									"        .to.be.below(unfilteredCount);",
 									"});"
 								],
 								"type": "text/javascript"

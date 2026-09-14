@@ -109,14 +109,17 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
             return rawValue instanceof String ? (String) rawValue : StringPool.BLANK;
         }
         final String html = (String) rawValue;
-        final String preview = truncate(extractVisibleText(html, HTML_PARSE_BUDGET));
-        if (!preview.isEmpty() || html.length() <= HTML_PARSE_BUDGET) {
-            return preview;
+        final String raw = extractVisibleText(html, HTML_PARSE_BUDGET);
+        if (raw.length() >= MAX_PREVIEW_LENGTH || html.length() <= HTML_PARSE_BUDGET) {
+            return truncate(raw);
         }
-        // The narrow budget landed entirely inside a non-text span and came back empty, even
-        // though the raw value is long enough that it might carry real visible text further in.
-        // Retry once against the wider ceiling rather than shipping an empty preview for content
-        // that used to show something (found in review).
+        // The narrow budget's extracted text is shorter than the preview bound, even though the
+        // raw value is long enough that it might carry more visible text further in -- a body
+        // opening with a short intro before a large non-text span (a base64 image, a long <style>
+        // block) reads as empty or as a complete short value either way, when it is neither.
+        // Retrying only when the first pass came back completely empty (an earlier version of this
+        // fix) missed the "short intro, more text after" shape entirely. Retry once against the
+        // wider ceiling instead (found in review).
         return truncate(extractVisibleText(html, HTML_PARSE_BUDGET_CEILING));
     }
 
