@@ -90,16 +90,17 @@ candidate set.
 environment — see Verification below):
 
 Content Drive's global-search-alone request is served by
-`BrowserAPIImpl.doHybridSingleChunkedQueryES` (the default `HEURISTIC_TYPE`, per
-`BrowserAPIImpl.java:503`, `HYBRID_SINGLE_CHUNKED_QUERY_ES`), regardless of whether a
-content-type filter is present. This heuristic:
+`BrowserAPIImpl.doHybridSingleChunkedQueryES` (the default `HEURISTIC_TYPE`, read at
+`BrowserAPIImpl.java:500` and defaulting to `HYBRID_SINGLE_CHUNKED_QUERY_ES` at
+`BrowserAPIImpl.java:714`), regardless of whether a content-type filter is present. This
+heuristic:
 
 1. Scans the `identifier`/content SQL candidate set in fixed-size DB-order pages
-   (`BROWSER_CONTENT_CHUNK_SIZE`, default **900** — `BrowserAPIImpl.java:805-809`).
+   (`BROWSER_CONTENT_CHUNK_SIZE`, default **900** — `BrowserAPIImpl.java:564`).
 2. ES-filters each page's candidates against the free-text term.
 3. Stops as soon as either `maxResults` is satisfied, or the total rows scanned reaches
-   `BROWSER_DB_MAX_SCAN_ROWS` (default **50,000** — `BrowserAPIImpl.java:802-803`, enforced
-   at `BrowserAPIImpl.java:254`).
+   `BROWSER_DB_MAX_SCAN_ROWS` (default **50,000** — declared at `BrowserAPIImpl.java:751-752`,
+   enforced at `BrowserAPIImpl.java:266`).
 
 When **no content-type filter** is given, the SQL candidate set is effectively the whole
 site's content in DB order — matching rows for a given term can be far enough down that
@@ -107,15 +108,16 @@ order that the scan hits its stopping condition before those rows are ever loade
 ES-filtered. They are not failing the ES match; **they are never sent to ES at all.**
 
 When a content-type filter **is** given, the query adds `struc.inode in (...)`
-(`BrowserAPIImpl.java:2331`), sharply narrowing and reordering the SQL candidate set so the
+(`BrowserAPIImpl.java:2145`), sharply narrowing and reordering the SQL candidate set so the
 matching rows appear early in the scan and are reached before the cutoff.
 
 Two adjacent theories were checked and **refuted**, ruling out alternative root causes:
 
 - *"The ES query only searches `fileName` when a content type is specified"* — refuted:
-  `buildBaseESQuery` (`BrowserAPIImpl.java:1331-1369`) builds the identical
-  `GlobalSearchAttributeStrategy` clause against `catchall`/`title` regardless of
-  content-type filter state; the separate `fileName`/`metadata.name` clause only fires when
+  `buildBaseESQuery` (starts at `BrowserAPIImpl.java:1206`, `GlobalSearchAttributeStrategy`
+  clause appended at `BrowserAPIImpl.java:1219`) builds the identical clause against
+  `catchall`/`title` regardless of content-type filter state; the separate
+  `fileName`/`metadata.name` clause only fires when
   `browserQuery.fileName` is explicitly set, which Content Drive's text search never does
   (`ContentDriveHelper.java:183` only calls `.withFilter(...)`).
 - *"`catchall` doesn't index filenames, so ES itself can't match them"* — refuted:
