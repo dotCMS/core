@@ -879,6 +879,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         this.#seedRovingTabStop();
         this.#applyRovingTabStop();
         this.#trackFocusIntent();
+
+        // Hands the local page-change guard back to `$loading()` the moment the store's own status
+        // catches up with the click that set it (found in review, issue #37212).
+        effect(() => {
+            if (this.$loading()) {
+                this.#pageChangeAccepted = false;
+            }
+        });
     }
 
     readonly #onKeydownCapture = (event: KeyboardEvent): void => {
@@ -1178,6 +1186,20 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     }
 
     /**
+     * True from the moment a page-change click is accepted until `$loading()` first reflects it.
+     *
+     * `$loading()` mirrors the caller's request lifecycle one round trip away: this component emits
+     * `paginate`, the caller patches its store, and only once that store's own reactive pipeline
+     * reacts does `loading` flip to `true` and propagate back down here as an input. That round
+     * trip is at least one microtask, and during it `$loading()` still reads `false` — so a second
+     * click in that gap (a fast double click, or two rapid keyboard activations) would sail past the
+     * `$loading()` guard below and queue a second request the first click already started (found in
+     * review, issue #37212). This flag closes exactly that gap; once `$loading()` catches up (see the
+     * constructor's effect), that guard alone is sufficient for the rest of the request's lifetime.
+     */
+    #pageChangeAccepted = false;
+
+    /**
      * Handles pagination events from the PrimeNG Table
      * @param event The lazy load event containing pagination info
      */
@@ -1188,14 +1210,17 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return;
         }
 
-        // A search is already in flight. The paginator stays mounted while the rows are replaced by
-        // skeletons, so without this every further click fires another search for a page the user
-        // cannot see yet, and the last response to arrive wins regardless of which page was asked
-        // for last. The controls are also visually disabled via `$ptConfig`, but this is the part
-        // that has to hold: a keyboard activation or a fast double click does not wait for CSS.
-        if (this.$loading()) {
+        // A search is already in flight, or one was just accepted and the caller's `loading` has not
+        // caught up yet (see `#pageChangeAccepted`). The paginator stays mounted while the rows are
+        // replaced by skeletons, so without this every further click fires another search for a page
+        // the user cannot see yet, and the last response to arrive wins regardless of which page was
+        // asked for last. The controls are also visually disabled via `$ptConfig`, but this is the
+        // part that has to hold: a keyboard activation or a fast double click does not wait for CSS.
+        if (this.$loading() || this.#pageChangeAccepted) {
             return;
         }
+
+        this.#pageChangeAccepted = true;
 
         const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
         this.paginate.emit({ ...event, page });
