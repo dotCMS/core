@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.drive;
 
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.HostUtil;
+import com.liferay.util.StringPool;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -135,6 +138,47 @@ public interface AbstractDriveRequestForm {
     @Nullable
     @JsonProperty("browseScope")
     BrowseScope browseScope();
+
+    /**
+     * A browse scope is only meaningful at the site root, so one named alongside a folder path is
+     * refused.
+     * <p>
+     * <b>Refused rather than resolved by precedence.</b> A caller that names both has said two
+     * contradictory things, and honouring either one would quietly list somewhere they did not
+     * ask for. This follows {@code BulkUploadForm}, which refuses a submission naming both a
+     * folder and a site for the same reason. Ignoring the scope instead would be kinder to a
+     * sloppy caller and would hide the caller's bug.
+     * </p>
+     * <p>
+     * The path is split here rather than resolved: this asks only whether anything follows the
+     * site, which needs no site lookup and no database. Resolving the path is
+     * {@code AssetPathResolver}'s job and happens later, once the request is known to be coherent.
+     * </p>
+     */
+    @Value.Check
+    default void checkBrowseScopeIsAtTheSiteRoot() {
+        if (null == browseScope()) {
+            return;
+        }
+        final String pathWithinSite = pathWithinSite(assetPath());
+        if (!pathWithinSite.isEmpty() && !StringPool.FORWARD_SLASH.equals(pathWithinSite)) {
+            throw new BadRequestException(String.format(
+                    "browseScope is only valid at the site root; got '%s' with path '%s'",
+                    browseScope().name(), pathWithinSite));
+        }
+    }
+
+    /**
+     * The portion of {@code //site/some/path/} that follows the site, or an empty string when the
+     * path names a site and nothing else.
+     */
+    static String pathWithinSite(final String assetPath) {
+        final String withoutHostIndicator = assetPath.startsWith(HostUtil.HOST_INDICATOR)
+                ? assetPath.substring(HostUtil.HOST_INDICATOR.length())
+                : assetPath;
+        final int firstSlash = withoutHostIndicator.indexOf(StringPool.FORWARD_SLASH);
+        return firstSlash < 0 ? StringPool.BLANK : withoutHostIndicator.substring(firstSlash);
+    }
 
     /**
      * List of language identifiers to include in the search.

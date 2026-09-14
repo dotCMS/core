@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
+import javax.ws.rs.WebApplicationException;
 import org.junit.Test;
 
 /**
@@ -62,12 +63,25 @@ public class DriveRequestFormBrowseScopeTest {
             // The message assertions are what keep the broad type honest: an incidental
             // NullPointerException carries no message and fails here rather than passing as a
             // refusal that never happened.
-            final String message = String.valueOf(refused.getMessage());
+            final String message = reasonGivenToTheCaller(refused);
             assertTrue("the refusal must name the scope, got: " + message,
                     message.contains(scope.name()));
             assertTrue("the refusal must name the path, got: " + message,
                     message.contains("/application/"));
         }
+    }
+
+    /**
+     * The reason a refusal gives the caller, read from wherever the refusal carries it. A JAX-RS
+     * exception puts it in the response the caller receives rather than in {@code getMessage()},
+     * which returns only the status line; anything else is read the ordinary way. Written this way
+     * so the assertion is about the caller being told what went wrong, not about which exception
+     * the validation happens to raise.
+     */
+    private static String reasonGivenToTheCaller(final RuntimeException refused) {
+        return refused instanceof WebApplicationException
+                ? String.valueOf(((WebApplicationException) refused).getResponse().getEntity())
+                : String.valueOf(refused.getMessage());
     }
 
     /**
