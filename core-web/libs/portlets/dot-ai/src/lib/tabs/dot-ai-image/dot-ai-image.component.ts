@@ -9,8 +9,9 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAiPromptInputComponent } from '@dotcms/ai-ui';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotAIImageOrientation } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotAiStore } from '../../store/dot-ai.store';
 
@@ -24,6 +25,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
 @Component({
     selector: 'dot-ai-image',
     imports: [
+        DotEmptyContainerComponent,
         FormsModule,
         ButtonModule,
         SelectModule,
@@ -39,6 +41,15 @@ import { DotAiStore } from '../../store/dot-ai.store';
 })
 export default class DotAiImageComponent {
     protected readonly store = inject(DotAiStore);
+
+    readonly #messageService = inject(DotMessageService);
+
+    protected readonly emptyConfig: PrincipalConfiguration = {
+        title: this.#messageService.get('dotai.image.empty.title'),
+        subtitle: this.#messageService.get('dotai.image.empty.sub'),
+        icon: 'image',
+        iconStyle: 'material-symbols-rounded'
+    };
 
     protected readonly $prompt = signal('');
 

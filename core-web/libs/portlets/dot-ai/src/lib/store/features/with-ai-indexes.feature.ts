@@ -18,10 +18,24 @@ import { DotAiEmbeddingsService, DotHttpErrorManagerService } from '@dotcms/data
 import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
 
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
-import { deriveIndexStatuses, toIndexOptions } from '../../utils/dot-ai-index.utils';
+import {
+    deriveIndexStatuses,
+    toIndexOptions,
+    withPendingIndexes
+} from '../../utils/dot-ai-index.utils';
 
 /** Matches the legacy portlet's cadence; fast enough to feel live, slow enough to be cheap. */
 const INDEX_POLL_MS = 5000;
+
+/**
+ * How long a requested build may stay unaccounted for before the portlet stops waiting on it.
+ *
+ * A seed keeps its index BUILDING and keeps the poll running. Embedding normally writes its
+ * first rows within a second or two, so anything still missing after two minutes is a build
+ * that failed somewhere the client cannot see — and without a stop condition the poll would run
+ * for the life of the page.
+ */
+const BUILD_SEED_TTL_MS = 2 * 60 * 1000;
 
 /**
  * The embeddings index list — one owner, two readers.
@@ -46,20 +60,39 @@ export function withAiIndexes() {
             const httpErrorManager = inject(DotHttpErrorManagerService);
 
             const applyIndexes = (indexes: DotAiIndex[]) => {
-                const offered = toIndexOptions(indexes).map((option) => option.value);
+                const now = Date.now();
 
-                const seeds = new Set(store.indexBuildSeeds());
-                const statuses = deriveIndexStatuses(indexes, store.indexFragmentSnapshot(), seeds);
+                // Drop seeds that have outlived their welcome before anything derives from them,
+                // so an abandoned build stops both the BUILDING badge and the poll.
+                const liveSeeds = Object.fromEntries(
+                    Object.entries(store.indexBuildSeeds()).filter(
+                        ([, startedAt]) => now - startedAt < BUILD_SEED_TTL_MS
+                    )
+                );
+
+                const seeds = new Set(Object.keys(liveSeeds));
+
+                // The server's list plus a placeholder for each seeded build it has not caught
+                // up with, so a new index is in the table from the moment it is requested.
+                const merged = withPendingIndexes(indexes, seeds);
+                const offered = toIndexOptions(merged).map((option) => option.value);
+
+                const statuses = deriveIndexStatuses(merged, store.indexFragmentSnapshot(), seeds);
 
                 // An index that has settled is no longer a candidate for the next poll.
-                const stillBuilding = store
-                    .indexBuildSeeds()
-                    .filter((name) => statuses[name] === DOT_AI_INDEX_STATUS.BUILDING);
+                const stillBuilding = Object.fromEntries(
+                    Object.entries(liveSeeds).filter(
+                        ([name]) => statuses[name] === DOT_AI_INDEX_STATUS.BUILDING
+                    )
+                );
 
                 patchState(store, {
-                    indexes,
+                    indexes: merged,
                     indexStatuses: statuses,
                     indexBuildSeeds: stillBuilding,
+                    // Snapshotted from the server's own response, never from `merged`: a
+                    // placeholder recorded at zero fragments would look like a settled index on
+                    // the next poll and flip itself to READY before the build had begun.
                     indexFragmentSnapshot: indexes.reduce<Record<string, number>>(
                         (snapshot, index) => {
                             snapshot[index.name] = index.fragments;
@@ -113,8 +146,18 @@ export function withAiIndexes() {
                  * from a delta that has not appeared yet.
                  */
                 markIndexBuilding(indexName: string): void {
+                    const listed = store.indexes().some((index) => index.name === indexName);
+
                     patchState(store, {
-                        indexBuildSeeds: [...new Set([...store.indexBuildSeeds(), indexName])],
+                        indexBuildSeeds: { ...store.indexBuildSeeds(), [indexName]: Date.now() },
+                        // Stand the row up now rather than waiting for the next poll — the build
+                        // has been accepted, so the index exists whether or not `indexCount`
+                        // knows about it yet.
+                        ...(listed
+                            ? {}
+                            : {
+                                  indexes: withPendingIndexes(store.indexes(), new Set([indexName]))
+                              }),
                         indexStatuses: {
                             ...store.indexStatuses(),
                             [indexName]: DOT_AI_INDEX_STATUS.BUILDING

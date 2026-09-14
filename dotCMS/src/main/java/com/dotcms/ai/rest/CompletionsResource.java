@@ -193,7 +193,14 @@ public class CompletionsResource {
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
-        map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
+        // The site the configuration is being read for, and whether it actually came from that
+        // site. ConfigService falls back to the System Host's secrets when the site has none of
+        // its own, so the two hostnames differing is what "inherited" means here. Reported as
+        // separate fields rather than one concatenated English string so the client can label
+        // and translate it.
+        final String requestedHost = host.getHostname();
+        map.put(AiKeys.CONFIG_HOST, requestedHost);
+        map.put(AiKeys.CONFIG_HOST_INHERITED, !requestedHost.equalsIgnoreCase(appConfig.getHost()));
 
         final String providerConfig = appConfig.getProviderConfig();
         if (StringUtils.isNotBlank(providerConfig)) {

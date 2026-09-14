@@ -14,7 +14,8 @@ import DotAiConfigValuesComponent from './dot-ai-config-values.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 
 const resolved = (overrides: Partial<DotAiResolvedConfig> = {}): DotAiResolvedConfig => ({
-    configHost: 'demo.dotcms.com (falls back to system host)',
+    configHost: 'demo.dotcms.com',
+    configHostInherited: false,
     settings: { temperature: '0.7', debugLogging: 'false' },
     providerConfig: { chat: { apiKey: '*****', temperature: '0.7' } },
     chatModels: [],
@@ -50,9 +51,21 @@ describe('DotAiConfigValuesComponent', () => {
         expect(spectator.queryAll(byTestId('dotai-config-row')).length).toBeGreaterThan(0);
     });
 
-    it('should render configHost verbatim, since the server sends a display string', () => {
-        expect(spectator.query(byTestId('dotai-config-host'))).toContainText(
-            'falls back to system host'
+    it('should label the host from a message key rather than a server-built sentence', () => {
+        const messageService = spectator.inject(DotMessageService, true);
+
+        expect(messageService.get).toHaveBeenCalledWith('dotai.config.host', 'demo.dotcms.com');
+    });
+
+    it('should say when the configuration was inherited from System Host', () => {
+        // Two different facts: which site is on screen, and whose settings those are. The old
+        // server-built string claimed the fallback unconditionally.
+        storeMock.resolvedConfig.mockReturnValue(resolved({ configHostInherited: true }));
+        spectator = createComponent();
+
+        expect(spectator.inject(DotMessageService, true).get).toHaveBeenCalledWith(
+            'dotai.config.host.inherited',
+            'demo.dotcms.com'
         );
     });
 
@@ -71,27 +84,9 @@ describe('DotAiConfigValuesComponent', () => {
         expect(spectator.query(byTestId('dotai-config-table'))).toBeFalsy();
     });
 
-    describe('the provider JSON view', () => {
-        const viewProviderButton = (): HTMLButtonElement | null =>
-            spectator.query(byTestId('dotai-config-view-provider'))?.querySelector('button') ??
-            null;
-
-        it('should mask credentials rather than printing the server mask (FR-042)', () => {
-            spectator.click(viewProviderButton() as HTMLButtonElement);
-            const json = spectator.query(byTestId('dotai-config-provider-json'))?.textContent ?? '';
-
-            expect(json).toContain('••••••••');
-            expect(json).not.toContain('*****');
-        });
-
-        it('should not be offered when redaction failed', () => {
-            // providerConfig is null there while isConfigured stays true, so the dialog would
-            // open on `{}` — which reads as "no provider configuration" rather than "withheld".
-            storeMock.redactionFailed.mockReturnValue(true);
-            spectator = createComponent();
-
-            expect(viewProviderButton()?.hasAttribute('disabled')).toBe(true);
-        });
+    it('should not offer a provider config view at all', () => {
+        // Removed on review: the raw JSON dump was not something the screen needed to carry.
+        expect(spectator.query(byTestId('dotai-config-view-provider'))).toBeFalsy();
     });
 
     describe('the filter bar', () => {
@@ -115,16 +110,6 @@ describe('DotAiConfigValuesComponent', () => {
             // The host line takes the slack; that is what holds the filter left and the
             // action right without either being positioned.
             expect(host.className).toContain('flex-1');
-        });
-
-        it('should not let the view-provider label wrap', () => {
-            // PrimeNG sets no white-space on the button or its label, so a squeezed button
-            // broke "View provider config" across two lines — measured at 1100px, not just
-            // at narrow widths.
-            const button = spectator.query(byTestId('dotai-config-view-provider')) as HTMLElement;
-
-            expect(button.className).toContain('whitespace-nowrap');
-            expect(button.className).toContain('shrink-0');
         });
     });
 });

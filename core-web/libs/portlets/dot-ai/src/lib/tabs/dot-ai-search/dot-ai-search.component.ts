@@ -7,9 +7,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
-import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
@@ -25,7 +30,7 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 @Component({
     selector: 'dot-ai-search',
     imports: [
-        DotAiEmptyStateComponent,
+        DotEmptyContainerComponent,
         ButtonModule,
         InputGroupModule,
         InputGroupAddonModule,
@@ -41,6 +46,31 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 })
 export default class DotAiSearchComponent {
     protected readonly store = inject(DotAiStore);
+
+    readonly #messageService = inject(DotMessageService);
+
+    /** Resolved strings rather than keys: `dot-empty-container` renders `configuration` as-is. */
+    protected readonly firstRunConfig: PrincipalConfiguration = {
+        title: this.#messageService.get('dotai.search.first-run.title'),
+        subtitle: this.#messageService.get('dotai.search.first-run.sub'),
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
+    };
+
+    protected readonly noResultsConfig: PrincipalConfiguration = {
+        title: this.#messageService.get('dotai.search.no-results.title'),
+        subtitle: this.#messageService.get('dotai.search.no-results.sub'),
+        icon: 'search_off',
+        iconStyle: 'material-symbols-rounded'
+    };
+
+    /** The only one that has to be computed — the subtitle is the index name from the server. */
+    protected readonly $missingIndexConfig = computed<PrincipalConfiguration>(() => ({
+        title: this.#messageService.get('dotai.search.index-missing'),
+        subtitle: this.store.searchMissingIndex() ?? '',
+        icon: 'database_off',
+        iconStyle: 'material-symbols-rounded'
+    }));
 
     /**
      * Typed rather than `$any($event.target).value`, and a handler rather than `ngModel`:

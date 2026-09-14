@@ -112,6 +112,8 @@ export interface DotAiPortletState {
      */
     configLoadFailed: boolean;
     configHost: string;
+    /** The site has no dotAI configuration of its own; these settings came from System Host. */
+    configHostInherited: boolean;
     settings: Record<string, string>;
     chatModels: string[];
     redactionFailed: boolean;
@@ -121,7 +123,16 @@ export interface DotAiPortletState {
     indexes: DotAiIndex[];
     indexStatuses: Record<string, DotAiIndexStatus>;
     indexFragmentSnapshot: Record<string, number>;
-    indexBuildSeeds: string[];
+    /**
+     * Builds that have been requested but may not be in `indexes` yet — name to the epoch ms
+     * the build was requested. Embedding is asynchronous, so a freshly built index has no rows
+     * in `dot_embeddings` and does not come back from `indexCount` for a second or two; this is
+     * what lets the row show as Building in the meantime instead of not showing at all.
+     *
+     * The timestamp is the stop condition: a build that never materialises would otherwise poll
+     * for the lifetime of the page. See `BUILD_SEED_TTL_MS`.
+     */
+    indexBuildSeeds: Record<string, number>;
     indexesForbidden: boolean;
 
     // shared retrieval settings
@@ -149,6 +160,8 @@ export interface DotAiPortletState {
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
     indexBuildNotice: DotAiIndexBuildNotice | null;
+    /** A build request is outstanding. Read by the create dialog, which stays open until it settles. */
+    indexBuildInFlight: boolean;
 
     // image
     image: DotAiGeneratedImage | null;
@@ -192,6 +205,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     configLoaded: false,
     configLoadFailed: false,
     configHost: '',
+    configHostInherited: false,
     settings: {},
     chatModels: [],
     redactionFailed: false,
@@ -200,7 +214,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     indexes: [],
     indexStatuses: {},
     indexFragmentSnapshot: {},
-    indexBuildSeeds: [],
+    indexBuildSeeds: {},
     indexesForbidden: false,
 
     settingsIndexName: 'default',
@@ -223,6 +237,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
 
     indexFilter: '',
     indexBuildNotice: null,
+    indexBuildInFlight: false,
 
     image: null,
     imageGenerating: false,

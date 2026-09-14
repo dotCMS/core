@@ -48,11 +48,9 @@
                         }
                     </div>
                 } @else {
-                    <!-- The subtitle deliberately does not promise sources: only the
-                         non-streaming mode returns them, and this tab streams. -->
-                    <dot-ai-empty-state
-                        [title]="'dotai.chat.empty.title' | dm"
-                        [subtitle]="'dotai.chat.empty.sub' | dm"
+                    <dot-empty-container
+                        [configuration]="emptyConfig"
+                        [hideContactUsLink]="true"
                         data-testid="dotai-chat-empty" />
                 }
             </div>

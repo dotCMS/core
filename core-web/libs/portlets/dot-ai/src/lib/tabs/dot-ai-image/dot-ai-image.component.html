@@ -122,17 +122,11 @@
                     </div>
                 </div>
             } @else {
-                <div
-                    class="flex min-h-0 flex-1 items-center justify-center rounded-lg bg-surface-100 p-8 text-center"
-                    data-testid="dotai-image-empty">
-                    <div>
-                        <span
-                            class="material-symbols-outlined text-4xl! text-muted-color"
-                            aria-hidden="true">
-                            image
-                        </span>
-                        <p class="mt-2 text-muted-color">{{ 'dotai.image.empty.sub' | dm }}</p>
-                    </div>
+                <div class="flex min-h-0 flex-1 rounded-lg bg-surface-100 p-8">
+                    <dot-empty-container
+                        [configuration]="emptyConfig"
+                        [hideContactUsLink]="true"
+                        data-testid="dotai-image-empty" />
                 </div>
             }
         </div>

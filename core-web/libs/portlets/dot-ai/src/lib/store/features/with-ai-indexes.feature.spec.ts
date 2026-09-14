@@ -125,6 +125,82 @@ describe('withAiIndexes', () => {
         });
     });
 
+    describe('an index the server has not caught up with', () => {
+        // Embedding is asynchronous, so a freshly built index has nothing in dot_embeddings and
+        // indexCount does not return it. Every assertion here is about the window in between,
+        // which is what used to leave the user reloading the page to see their new index.
+        it('should put the new index in the table straight away', () => {
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+
+            store.markIndexBuilding('blogs');
+
+            expect(store.indexes().map((row) => row.name)).toContain('blogs');
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should keep it on a poll that still does not list it', () => {
+            // The regression: applyIndexes rebuilt the status map from the server's list alone,
+            // so this very refresh erased the BUILDING flag it was meant to act on.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.loadIndexes();
+
+            expect(store.indexes().map((row) => row.name)).toContain('blogs');
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should not settle it to READY off a placeholder that never moves', () => {
+            // The placeholder stands at zero fragments. Snapshotting that would make the next
+            // poll read "unchanged" and call the build finished before it started.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.loadIndexes();
+            store.loadIndexes();
+
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should hand over to the real row once the server lists it', () => {
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            stubIndexes([index({ name: 'existing' }), index({ name: 'blogs', fragments: 4 })]);
+            store.loadIndexes();
+
+            const blogs = store.indexes().find((row) => row.name === 'blogs');
+
+            expect(store.indexes().filter((row) => row.name === 'blogs')).toHaveLength(1);
+            expect(blogs?.fragments).toBe(4);
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should stop waiting on a build that never materialises', () => {
+            // Without an expiry the seed would keep the badge up and the poll running for the
+            // life of the page.
+            vi.useFakeTimers();
+
+            try {
+                stubIndexes([index({ name: 'existing' })]);
+                store.loadIndexes();
+                store.markIndexBuilding('blogs');
+
+                vi.advanceTimersByTime(3 * 60 * 1000);
+                store.loadIndexes();
+
+                expect(store.indexes().map((row) => row.name)).not.toContain('blogs');
+                expect(store.indexStatuses()['blogs']).toBeUndefined();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
+
     describe('index seeding (FR-018)', () => {
         it('should keep a restored index that is still offered', () => {
             // The old "seed once" flag was never persisted, so every visit arrived unseeded and

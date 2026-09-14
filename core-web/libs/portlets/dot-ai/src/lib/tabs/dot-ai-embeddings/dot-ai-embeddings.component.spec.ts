@@ -148,53 +148,17 @@ describe('DotAiEmbeddingsComponent', () => {
             );
         });
 
-        it('should build without forwarding the dialog-only mode field', () => {
-            // The server answers 400 "Unrecognized field 'mode'" rather than ignoring it, so
-            // passing the dialog result through verbatim broke every index build.
+        it('should clear a previous outcome so the dialog opens clean', () => {
+            // The dialog reads the same notice signal; a stale one would greet the next build
+            // with the last one's error.
             clickButton('dotai-embeddings-new-index');
 
-            onClose.next({ mode: 'add', indexName: 'blogs', query: '+contentType:Blog' });
-
-            expect(storeMock.buildIndex).toHaveBeenCalledWith({
-                indexName: 'blogs',
-                query: '+contentType:Blog'
-            });
-            expect(storeMock.buildIndex.mock.calls[0][0]).not.toHaveProperty('mode');
-            expect(storeMock.deleteFromIndex).not.toHaveBeenCalled();
+            expect(storeMock.dismissBuildNotice).toHaveBeenCalled();
         });
 
-        it('should still forward the optional build fields', () => {
-            clickButton('dotai-embeddings-new-index');
-
-            onClose.next({
-                mode: 'add',
-                indexName: 'blogs',
-                query: '+contentType:Blog',
-                fields: 'title,body',
-                velocityTemplate: '$!{title}'
-            });
-
-            expect(storeMock.buildIndex).toHaveBeenCalledWith({
-                indexName: 'blogs',
-                query: '+contentType:Blog',
-                fields: 'title,body',
-                velocityTemplate: '$!{title}'
-            });
-        });
-
-        it('should delete from the index on a delete-mode result (FR-030)', () => {
-            clickButton('dotai-embeddings-new-index');
-
-            onClose.next({ mode: 'delete', indexName: 'blogs', query: '+contentType:Blog' });
-
-            expect(storeMock.deleteFromIndex).toHaveBeenCalledWith({
-                indexName: 'blogs',
-                query: '+contentType:Blog'
-            });
-            expect(storeMock.buildIndex).not.toHaveBeenCalled();
-        });
-
-        it('should do nothing when the dialog is dismissed', () => {
+        it('should leave the build to the dialog rather than submitting on close', () => {
+            // The dialog owns the submit now: a rejected Lucene query has to be correctable in
+            // the form that produced it, not reported here after the modal took the query away.
             clickButton('dotai-embeddings-new-index');
 
             onClose.next(undefined);
@@ -278,11 +242,15 @@ describe('DotAiEmbeddingsComponent', () => {
             expect(classes).not.toContain('p-button-outlined');
         });
 
-        it('should keep Rebuild DB red, since that one drops every embedding', () => {
-            expect(
-                spectator.query(byTestId('dotai-embeddings-rebuild'))?.querySelector('button')
-                    ?.className
-            ).toContain('p-button-danger');
+        it('should keep Rebuild DB a plain outlined button, not a red one', () => {
+            // A permanently-red control in the toolbar read as a warning about the screen.
+            // The destructive step is the confirm dialog it opens.
+            const rebuild = spectator
+                .query(byTestId('dotai-embeddings-rebuild'))
+                ?.querySelector('button');
+
+            expect(rebuild?.className).toContain('p-button-outlined');
+            expect(rebuild?.className).not.toContain('p-button-danger');
         });
     });
 });

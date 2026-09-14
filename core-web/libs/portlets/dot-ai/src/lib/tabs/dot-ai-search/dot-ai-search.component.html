@@ -52,20 +52,20 @@
                             <p-skeleton height="5rem" />
                         }
                     </div>
-                } @else if (store.searchMissingIndex(); as missing) {
-                    <dot-ai-empty-state
-                        [title]="'dotai.search.index-missing' | dm"
-                        [subtitle]="missing"
+                } @else if (store.searchMissingIndex()) {
+                    <dot-empty-container
+                        [configuration]="$missingIndexConfig()"
+                        [hideContactUsLink]="true"
                         data-testid="dotai-search-missing-index" />
                 } @else if (!store.hasSearched()) {
-                    <dot-ai-empty-state
-                        [title]="'dotai.search.first-run.title' | dm"
-                        [subtitle]="'dotai.search.first-run.sub' | dm"
+                    <dot-empty-container
+                        [configuration]="firstRunConfig"
+                        [hideContactUsLink]="true"
                         data-testid="dotai-search-empty-first-run" />
                 } @else if (!store.searchResults().length) {
-                    <dot-ai-empty-state
-                        [title]="'dotai.search.no-results.title' | dm"
-                        [subtitle]="'dotai.search.no-results.sub' | dm"
+                    <dot-empty-container
+                        [configuration]="noResultsConfig"
+                        [hideContactUsLink]="true"
                         data-testid="dotai-search-no-results" />
                 } @else {
                     <ul class="flex flex-col gap-3" data-testid="dotai-search-results">

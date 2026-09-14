@@ -76,12 +76,30 @@
             <textarea
                 pTextarea
                 id="dotai-index-template"
-                rows="2"
+                rows="3"
                 [ngModel]="$velocityTemplate()"
                 [ngModelOptions]="{ standalone: true }"
                 (ngModelChange)="$velocityTemplate.set($event)"
+                [placeholder]="'dotai.index.create.template.placeholder' | dm"
                 data-testid="dotai-index-create-template"></textarea>
+            <small class="p-field-hint">{{ 'dotai.index.create.template.hint' | dm }}</small>
         </div>
+    }
+
+    <!-- The build outcome belongs here, not on the tab behind: a rejected Lucene query is a
+         correction to the field two rows up, and the dialog is still holding it. Only the
+         outcomes the user has to act on reach this — a success closes the dialog instead. -->
+    @if ($notice(); as notice) {
+        <p-message
+            class="mt-4 block"
+            [severity]="notice.kind === 'empty' ? 'warn' : 'error'"
+            data-testid="dotai-index-create-notice">
+            @if (notice.kind === 'empty') {
+                {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
+            } @else {
+                {{ 'dotai.embeddings.build.failed' | dm: [notice.indexName, notice.detail ?? ''] }}
+            }
+        </p-message>
     }
 
     <div class="mt-4 flex justify-end gap-2">
@@ -95,6 +113,7 @@
             type="submit"
             [severity]="$mode() === 'delete' ? 'danger' : 'primary'"
             [disabled]="!$canSubmit()"
+            [loading]="store.indexBuildInFlight()"
             [label]="$submitLabel() | dm"
             data-testid="dotai-index-create-submit" />
     </div>

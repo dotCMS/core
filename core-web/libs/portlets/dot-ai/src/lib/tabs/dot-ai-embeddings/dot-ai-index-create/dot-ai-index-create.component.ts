@@ -1,13 +1,16 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotAiStore } from '../../../store/dot-ai.store';
 
 export type DotAiIndexCreateMode = 'add' | 'delete';
 
@@ -18,20 +21,19 @@ export type DotAiIndexCreateMode = 'add' | 'delete';
  */
 const INDEX_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
-export interface DotAiIndexCreateResult {
-    mode: DotAiIndexCreateMode;
-    indexName: string;
-    query: string;
-    fields?: string;
-    velocityTemplate?: string;
-}
-
 /**
  * One dialog, two modes.
  *
  * Add mode embeds the content the query matches; delete mode removes it from the index. The
  * submit label flips with the toggle so the destructive mode never hides behind a neutral
  * word (FR-030) — the legacy screen did the same remap.
+ *
+ * Unusually for this codebase, the dialog calls the store itself rather than closing with a
+ * form value for the list component to submit. It has to: a build is the one action here whose
+ * *failure* is a correction to the form — a malformed Lucene query — and resolving the dialog
+ * first threw that message onto the tab behind a modal that had already taken the query with
+ * it. Owning the submit is what lets the query survive its own error. The store is still data
+ * only; nothing here is dispatched from it.
  */
 @Component({
     selector: 'dot-ai-index-create',
@@ -41,15 +43,15 @@ export interface DotAiIndexCreateResult {
         InputTextModule,
         TextareaModule,
         SelectButtonModule,
+        MessageModule,
         DotMessagePipe
     ],
     templateUrl: './dot-ai-index-create.component.html'
 })
 export class DotAiIndexCreateComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #config = inject(DynamicDialogConfig<{ indexes: string[] }>);
 
-    protected readonly existingIndexes = this.#config.data?.indexes ?? [];
+    protected readonly store = inject(DotAiStore);
 
     protected readonly $mode = signal<DotAiIndexCreateMode>('add');
     protected readonly $indexName = signal('');
@@ -68,6 +70,29 @@ export class DotAiIndexCreateComponent {
             : 'dotai.index.create.submit.add'
     );
 
+    /**
+     * The build outcome, while it is this dialog's to show.
+     *
+     * `built` is absent by construction — the effect below closes on it — so what is left is
+     * exactly the two outcomes the user has to act on: a query that matched nothing, and a
+     * query the server rejected.
+     */
+    protected readonly $notice = computed(() => {
+        const notice = this.store.indexBuildNotice();
+
+        return notice?.kind === 'built' ? null : notice;
+    });
+
+    constructor() {
+        // A finished build is the only thing that dismisses this dialog. The success message is
+        // left standing on the tab behind, next to the row it just created.
+        effect(() => {
+            if (this.store.indexBuildNotice()?.kind === 'built') {
+                untracked(() => this.#dialogRef.close());
+            }
+        });
+    }
+
     /** Empty until the field has been touched, so the form does not scold you on open. */
     protected readonly $nameError = computed<string | null>(() => {
         const name = this.$indexName().trim();
@@ -81,7 +106,7 @@ export class DotAiIndexCreateComponent {
         }
 
         // Only for a build: deleting names an index that must already exist.
-        if (this.$mode() === 'add' && this.existingIndexes.includes(name)) {
+        if (this.$mode() === 'add' && this.store.indexes().some((index) => index.name === name)) {
             return 'dotai.index.create.name.exists';
         }
 
@@ -89,7 +114,11 @@ export class DotAiIndexCreateComponent {
     });
 
     protected readonly $canSubmit = computed(
-        () => !!this.$indexName().trim() && !!this.$query().trim() && !this.$nameError()
+        () =>
+            !!this.$indexName().trim() &&
+            !!this.$query().trim() &&
+            !this.$nameError() &&
+            !this.store.indexBuildInFlight()
     );
 
     protected submit(): void {
@@ -97,27 +126,31 @@ export class DotAiIndexCreateComponent {
             return;
         }
 
-        const result: DotAiIndexCreateResult = {
-            mode: this.$mode(),
-            indexName: this.$indexName().trim(),
-            query: this.$query().trim()
-        };
+        const indexName = this.$indexName().trim();
+        const query = this.$query().trim();
 
-        // Only meaningful when embedding; a delete is driven purely by the query.
-        if (this.$mode() === 'add') {
-            if (this.$fields().trim()) {
-                result.fields = this.$fields().trim();
-            }
+        // A delete has no outcome to report back into the form — it either works or goes
+        // through the shared error handler — so it keeps the original resolve-and-close shape.
+        if (this.$mode() === 'delete') {
+            this.store.deleteFromIndex({ indexName, query });
+            this.#dialogRef.close();
 
-            if (this.$velocityTemplate().trim()) {
-                result.velocityTemplate = this.$velocityTemplate().trim();
-            }
+            return;
         }
 
-        this.#dialogRef.close(result);
+        this.store.buildIndex({
+            indexName,
+            query,
+            // Both only shape what gets embedded, so they are omitted rather than sent blank.
+            ...(this.$fields().trim() ? { fields: this.$fields().trim() } : {}),
+            ...(this.$velocityTemplate().trim()
+                ? { velocityTemplate: this.$velocityTemplate().trim() }
+                : {})
+        });
     }
 
     protected cancel(): void {
+        this.store.dismissBuildNotice();
         this.#dialogRef.close();
     }
 }

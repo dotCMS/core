@@ -20,11 +20,39 @@ export function toIndexOptions(indexes: DotAiIndex[]): { label: string; value: s
 }
 
 /**
+ * A build that has been requested but has not reached `indexCount` yet.
+ *
+ * Embedding is asynchronous — `EmbeddingsRunner` writes one row per contentlet as it finishes —
+ * so for the first second or two after a build the index genuinely exists but has nothing in
+ * `dot_embeddings`, and `indexCount` does not return it. Standing in for it with a zeroed row
+ * is what puts it in the table immediately, rather than leaving the user to reload the page.
+ */
+export function toPendingIndex(name: string): DotAiIndex {
+    return { name, fragments: 0, contents: 0, tokenTotal: 0, tokensPerChunk: 0, contentTypes: [] };
+}
+
+/**
+ * The server's list plus a placeholder row for every seeded build it has not caught up with.
+ *
+ * Ordered with the pending ones last so an in-flight build does not reshuffle the table.
+ */
+export function withPendingIndexes(indexes: DotAiIndex[], buildSeeds: Set<string>): DotAiIndex[] {
+    const listed = new Set(indexes.map((index) => index.name));
+    const pending = [...buildSeeds].filter((name) => !listed.has(name));
+
+    return pending.length ? [...indexes, ...pending.map(toPendingIndex)] : indexes;
+}
+
+/**
  * Build status per index, derived rather than read: `dot_embeddings` has no status column.
  *
  * An index counts as building while its fragment count is still moving. `buildSeeds` carries
  * the indexes a build was just requested for, which is what lets the very first poll report
  * BUILDING instead of guessing from a delta that has not appeared yet.
+ *
+ * A seeded index the server has not listed yet has no `previousFragments` entry — the snapshot
+ * is taken from the server's own response, never from the placeholder rows — so it stays
+ * BUILDING rather than settling to READY off a fragment count of zero that never moves.
  *
  * Deliberately per index. The legacy portlet derived one portlet-wide flag, so starting a
  * build on one index made every row claim to be building.

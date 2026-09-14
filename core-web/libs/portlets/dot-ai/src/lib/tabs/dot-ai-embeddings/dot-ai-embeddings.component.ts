@@ -9,19 +9,17 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSearchInputComponent } from '@dotcms/ui';
-
 import {
-    DotAiIndexCreateComponent,
-    DotAiIndexCreateResult
-} from './dot-ai-index-create/dot-ai-index-create.component';
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotSearchInputComponent,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
-import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
-import { DotAiIndexBuildNotice } from '../../models/dot-ai-portlet.models';
+import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-create.component';
+
 import { DotAiStore } from '../../store/dot-ai.store';
 
 /**
@@ -52,7 +50,7 @@ const CONFIRM_BUTTONS = {
 @Component({
     selector: 'dot-ai-embeddings',
     imports: [
-        DotAiEmptyStateComponent,
+        DotEmptyContainerComponent,
         ToolbarModule,
         MessageModule,
         TableModule,
@@ -75,56 +73,43 @@ export default class DotAiEmbeddingsComponent {
 
     protected readonly statuses = DOT_AI_INDEX_STATUS;
 
+    protected readonly emptyConfig: PrincipalConfiguration = {
+        title: this.#messageService.get('dotai.embeddings.empty.title'),
+        subtitle: this.#messageService.get('dotai.embeddings.empty.sub'),
+        icon: 'database',
+        iconStyle: 'material-symbols-rounded'
+    };
+
+    protected readonly forbiddenConfig: PrincipalConfiguration = {
+        title: this.#messageService.get('dotai.index.admin-required'),
+        subtitle: this.#messageService.get('dotai.index.admin-required.sub'),
+        icon: 'lock',
+        iconStyle: 'material-symbols-rounded'
+    };
+
     /** Fixed layout plus full height keeps the empty state from collapsing the table. */
     protected readonly tablePt = {
         table: { class: 'table-fixed' },
         wrapper: { class: 'h-full' }
     };
 
-    /** p-message severities for the three build outcomes. */
-    protected noticeSeverity(kind: DotAiIndexBuildNotice['kind']): 'success' | 'warn' | 'error' {
-        if (kind === 'built') {
-            return 'success';
-        }
-
-        return kind === 'empty' ? 'warn' : 'error';
-    }
-
+    /**
+     * Opens the build dialog and leaves it to it.
+     *
+     * No `onClose` handling any more: the dialog submits to the store itself so that a rejected
+     * Lucene query can be corrected in the form that produced it, rather than being reported
+     * onto this tab after the modal has closed over the query.
+     */
     protected openCreateDialog(): void {
-        this.#dialogService
-            .open(DotAiIndexCreateComponent, {
-                header: this.#messageService.get('dotai.index.create.header'),
-                width: '700px',
-                closable: true,
-                closeOnEscape: true,
-                draggable: false,
-                data: { indexes: this.store.indexes().map((index) => index.name) }
-            })
-            // `DialogService.onClose` is `Observable<any>`, so the annotation here is what
-            // makes the "mode must not travel any further" invariant below a compiler rule
-            // rather than a convention.
-            .onClose.pipe(take(1))
-            .subscribe((result: DotAiIndexCreateResult | undefined) => {
-                if (!result) {
-                    return;
-                }
+        this.store.dismissBuildNotice();
 
-                // `mode` picks the branch and must not travel any further: it is a dialog
-                // concept, and EmbeddingsForm rejects the whole request with
-                // "Unrecognized field 'mode'" rather than ignoring it.
-                const { mode, ...form } = result;
-
-                if (mode === 'delete') {
-                    this.store.deleteFromIndex({
-                        indexName: form.indexName,
-                        query: form.query
-                    });
-
-                    return;
-                }
-
-                this.store.buildIndex(form);
-            });
+        this.#dialogService.open(DotAiIndexCreateComponent, {
+            header: this.#messageService.get('dotai.index.create.header'),
+            width: '700px',
+            closable: true,
+            closeOnEscape: true,
+            draggable: false
+        });
     }
 
     protected confirmDeleteIndex(index: DotAiIndex): void {
