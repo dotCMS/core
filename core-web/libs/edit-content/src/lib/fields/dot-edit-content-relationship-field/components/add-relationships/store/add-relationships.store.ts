@@ -214,16 +214,8 @@ export const AddRelationshipsStore = signalStore(
                     : a !== b;
             });
         }),
-        /**
-         * What the list shows: the current page, or the editor's whole selection.
-         *
-         * The selected view reads from `selection` and not from `items`, so it lists picks the
-         * current page does not contain — including ones seeded by the caller that no search has
-         * ever returned.
-         */
-        $visibleItems: computed(() =>
-            state.items()
-        ),
+        /** What the list shows: the current page of results. */
+        $visibleItems: computed(() => state.items()),
         /** Whether every selectable row on the current page is selected. Drives the header box. */
         $allVisibleSelected: computed(() => {
             const constrained = state.constrainedIdentifiers();

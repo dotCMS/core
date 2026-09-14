@@ -188,7 +188,12 @@ export class AddRelationshipsComponent implements OnInit {
             return;
         }
 
-        this.store.setPage((event.page ?? 0) + 1, event.rows);
+        // `page` arrives 1-based — the shared list computes `Math.floor(first / rows) + 1` and
+        // falls back to 1 — and `setPage` takes it 1-based too. Adding one here shifted every
+        // request a page ahead of the paginator: the cursor for that page had never been
+        // bookmarked, so `buildRequest` fell back to `contentCursor: 0` and re-fetched page one
+        // while the footer showed page two. Same reading as the AssetPicker's handler.
+        this.store.setPage(event.page ?? 1, event.rows);
         this.store.load();
     }
 

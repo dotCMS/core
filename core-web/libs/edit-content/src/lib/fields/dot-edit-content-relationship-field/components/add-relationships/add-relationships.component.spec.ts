@@ -363,5 +363,38 @@ describe('AddRelationshipsComponent — shared surface (US1)', () => {
 
             expect(spectator.query(DotFolderListViewComponent)?.$unselectable()).toEqual([]);
         });
+
+        /**
+         * The paginator and the request have to agree on what page means.
+         *
+         * `dot-folder-list-view` emits `page` already 1-based (`Math.floor(first / rows) + 1`,
+         * falling back to 1) and the store takes it 1-based. Adding one on the way through sent
+         * every request a page ahead of the footer: the cursor for that page had never been
+         * bookmarked, so the request fell back to `contentCursor: 0` and re-fetched the first page
+         * while the paginator showed the second. Paging forward through a large content type
+         * silently showed the same rows over and over.
+         *
+         * Asserted on the store's page, because that is what `buildRequest` reads — a spy on
+         * `setPage` would have passed with the wrong number in it.
+         */
+        it('moves to the page the footer asked for, not one past it', () => {
+            mountWith(withResults);
+
+            const list = spectator.query(DotFolderListViewComponent);
+            // What the shared list emits when "next" is pressed from page one at 20 rows.
+            list?.paginate.emit({ first: 20, rows: 20, page: 2 });
+            spectator.detectChanges();
+
+            expect(spectator.component.store.page().number).toBe(2);
+        });
+
+        it('stays on the first page when the list reports no page', () => {
+            mountWith(withResults);
+
+            spectator.query(DotFolderListViewComponent)?.paginate.emit({ first: 0, rows: 20 });
+            spectator.detectChanges();
+
+            expect(spectator.component.store.page().number).toBe(1);
+        });
     });
 });
