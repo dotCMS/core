@@ -155,14 +155,6 @@ export interface AddRelationshipsState {
      */
     constrainedIdentifiers: Set<string>;
 
-    /**
-     * Whether the list shows every result or only what the editor has picked.
-     *
-     * The selected view reads from {@link selection}, never from {@link items} — otherwise it could
-     * only ever show the picks that happen to be on the current page.
-     */
-    viewMode: 'all' | 'selected';
-
     status: ComponentStatus;
 
     /** Translation key of the last failure, or null. */

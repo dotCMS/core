@@ -9,12 +9,10 @@ import {
     Renderer2,
     signal
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet, DotContentDriveBrowseItem } from '@dotcms/dotcms-models';
@@ -61,8 +59,6 @@ import { AddRelationshipsStore } from './store/add-relationships.store';
     imports: [
         ButtonModule,
         TooltipModule,
-        FormsModule,
-        ToggleSwitchModule,
         DotDialogComponent,
         DotDialogHeaderComponent,
         DotDialogContentComponent,
@@ -177,16 +173,6 @@ export class AddRelationshipsComponent implements OnInit {
                 this.store.toggleSelection(item as DotCMSContentlet);
             }
         }
-    }
-
-    /**
-     * Switches between the page of results and the editor's own selection.
-     *
-     * No reload: the selected view reads from the accumulated selection rather than from a search,
-     * which is the whole reason it can show picks the current page does not contain.
-     */
-    protected onViewModeChange(showSelected: boolean): void {
-        this.store.setViewMode(showSelected ? 'selected' : 'all');
     }
 
     /**

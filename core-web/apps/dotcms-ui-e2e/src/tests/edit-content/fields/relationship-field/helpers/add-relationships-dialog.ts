@@ -98,22 +98,22 @@ export class AddRelationshipsDialog {
         await expect(this.table.getByTestId('header-checkbox')).toBeVisible();
     }
 
-    // ─── Selection Review ────────────────────────────────────────────
+    // ─── Selection state ─────────────────────────────────────────────
 
     /**
-     * Flips the list between the page of results and the accumulated selection.
+     * Asserts how many of the rows on screen are checked.
      *
-     * It matters more here than in the dialog this replaced: the selection survives paging,
-     * searching and changing site, so what the editor is about to confirm is routinely not what is
-     * on screen.
+     * Read off the controls rather than off a tally the dialog prints: the control is what the
+     * editor acts on, and an assertion on a label can pass while the row it describes renders
+     * unchecked.
+     *
+     * Rows the current page does not contain are invisible to this — the selection outlives the
+     * page (FR-011), so a count here is "checked among these rows", not "picked in total".
      */
-    async toggleShowSelected(): Promise<void> {
-        await this.dialog.getByTestId('add-relationships-selected-toggle').click();
-    }
-
-    /** Asserts the running count beside the toggle, which is the only always-visible tally. */
-    async expectSelectedCount(count: number): Promise<void> {
-        await expect(this.dialog.getByText(`Show Selected (${count})`)).toBeVisible();
+    async expectCheckedRowCount(count: number): Promise<void> {
+        await expect(this.rows.locator('[data-testId="item-checkbox"] input:checked')).toHaveCount(
+            count
+        );
     }
 
     // ─── Confirm / Cancel ───────────────────────────────────────────

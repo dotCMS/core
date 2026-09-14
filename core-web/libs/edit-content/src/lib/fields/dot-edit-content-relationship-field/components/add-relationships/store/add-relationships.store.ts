@@ -127,7 +127,6 @@ const initialState: AddRelationshipsState = {
     pages: {},
     sort: { field: 'modDate', order: 'desc' },
     constrainedIdentifiers: new Set<string>(),
-    viewMode: 'all',
     status: ComponentStatus.INIT,
     errorMessage: null
 };
@@ -223,7 +222,7 @@ export const AddRelationshipsStore = signalStore(
          * ever returned.
          */
         $visibleItems: computed(() =>
-            state.viewMode() === 'selected' ? [...state.selection().values()] : state.items()
+            state.items()
         ),
         /** Whether every selectable row on the current page is selected. Drives the header box. */
         $allVisibleSelected: computed(() => {
@@ -596,11 +595,6 @@ export const AddRelationshipsStore = signalStore(
                  */
                 setConstrainedIdentifiers(constrainedIdentifiers: Set<string>): void {
                     patchState(store, { constrainedIdentifiers });
-                },
-
-                /** Switches between the page of results and the editor's own selection. */
-                setViewMode(viewMode: 'all' | 'selected'): void {
-                    patchState(store, { viewMode });
                 },
 
                 /** Re-sorts, returning to the first page — a cursor does not survive a re-sort. */

@@ -233,28 +233,6 @@ test.describe('Search and Filter', () => {
 
         await selectDialog.clickCancel();
     });
-
-    test('toggle show selected items', async ({ adminPage }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        await formPage.goToNew(blogTypeVariable);
-
-        const relationshipField = new RelationshipField(adminPage);
-        const selectDialog = new AddRelationshipsDialog(adminPage);
-
-        await relationshipField.clickRelateExisting();
-        await selectDialog.waitForVisible();
-        await selectDialog.waitForContentLoaded();
-
-        await selectDialog.selectItems([0, 1]);
-
-        await selectDialog.toggleShowSelected();
-        await selectDialog.expectRowCount(2);
-
-        await selectDialog.toggleShowSelected();
-        await selectDialog.expectRowCountAtLeast(5);
-
-        await selectDialog.clickCancel();
-    });
 });
 
 // ─── Dialog Lists All Items ─────────────────────────────────────

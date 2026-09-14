@@ -303,10 +303,10 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
-                await dialog.expectSelectedCount(2);
+                await dialog.expectCheckedRowCount(2);
 
                 await dialog.selectItems([0, 1]);
-                await dialog.expectSelectedCount(0);
+                await dialog.expectCheckedRowCount(0);
 
                 await dialog.expectConfirmAlwaysEnabled();
                 await dialog.clickApply();

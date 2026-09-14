@@ -47,7 +47,7 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             mockProvider(SiteService, { currentSite: { hostname: 'demo.dotcms.com' } }),
             mockProvider(ConstrainedIdentifiersService, { get: constrainedMock }),
             mockProvider(DotLanguagesService, {
-                get: jest
+                get: vi
                     .fn()
                     .mockReturnValue(
                         of([{ id: 1, language: 'English', languageCode: 'en', isoCode: 'en-us' }])
@@ -334,30 +334,6 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             store.toggleSelectAllVisible(true);
 
             expect(store.$isSelected()('id-1')).toBe(false);
-        });
-    });
-
-    describe('the selected-items review (FR-014)', () => {
-        /**
-         * It reads from the selection, never from the current page — otherwise it could only ever
-         * show the picks that happen to be on screen, which is the same bug as everywhere else in
-         * this file wearing a different hat.
-         */
-        it('lists the whole selection, including items not on the current page', () => {
-            store.initialize({ ...baseInput, selected: [item(9)] });
-            store.load();
-            store.setViewMode('selected');
-
-            expect(store.$visibleItems().map((c) => c.identifier)).toContain('id-9');
-        });
-
-        it('returns to the page of results when switched back', () => {
-            store.initialize(baseInput);
-            store.load();
-            store.setViewMode('selected');
-            store.setViewMode('all');
-
-            expect(store.$visibleItems().map((c) => c.identifier)).toEqual(['id-1', 'id-2']);
         });
     });
 

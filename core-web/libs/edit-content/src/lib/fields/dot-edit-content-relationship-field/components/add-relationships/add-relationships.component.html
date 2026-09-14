@@ -45,30 +45,10 @@
                  caller restriction, not a filter — offering it would let the editor widen the result
                  set past the type the field actually accepts. Status, shared-assets and the field
                  filters are absent because the design does not show them. -->
-            <!-- The selection review. It matters more here than in the dialog this replaced: the
-                 selection is accumulated across pages, searches and scopes, so what the editor is
-                 about to confirm is frequently not what is on screen. -->
-            <div class="flex items-center justify-between gap-4">
-                <dot-filter-bar class="min-w-0 flex-1">
-                    <dot-add-relationships-site-chip />
-                    <dot-language-filter-chip data-testid="add-relationships-locale-chip" />
-                </dot-filter-bar>
-
-                <div class="flex shrink-0 items-center gap-2">
-                    <p-toggleswitch
-                        inputId="add-relationships-selected-only"
-                        [ngModel]="store.viewMode() === 'selected'"
-                        (onChange)="onViewModeChange($event.checked)"
-                        [attr.aria-label]="'dot.relationship.add.dialog.show.selected' | dm"
-                        data-testid="add-relationships-selected-toggle" />
-                    <label
-                        class="cursor-pointer text-sm whitespace-nowrap text-primary-500"
-                        for="add-relationships-selected-only">
-                        {{ 'dot.relationship.add.dialog.show.selected' | dm }}
-                        ({{ store.$selectedCount() }})
-                    </label>
-                </div>
-            </div>
+            <dot-filter-bar>
+                <dot-add-relationships-site-chip />
+                <dot-language-filter-chip data-testid="add-relationships-locale-chip" />
+            </dot-filter-bar>
 
             @if (errorMessage) {
                 <div
