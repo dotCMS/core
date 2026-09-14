@@ -19,7 +19,7 @@ import { DOT_AI_INDEX_STATUS, DotAiIndex, DotAiIndexStatus } from '@dotcms/dotcm
 
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 import {
-    deriveIndexStatuses,
+    stillBuildingSeeds,
     toIndexOptions,
     toRetrievalIndexes,
     withPendingIndexes
@@ -86,32 +86,41 @@ export function withAiIndexes() {
             const embeddingsService = inject(DotAiEmbeddingsService);
             const httpErrorManager = inject(DotHttpErrorManagerService);
 
-            const applyIndexes = (indexes: DotAiIndex[]) => {
+            /**
+             * The seeds still worth waiting on: listed by the server, or still inside the
+             * grace period.
+             *
+             * Called from the failure paths as well as the success one. The poll runs while
+             * any seed is held, and a `loadIndexes` that keeps failing never reaches
+             * `applyIndexes` — so with the expiry enforced only there, a build started just
+             * before the server went away would poll every five seconds for the life of the
+             * page, raising an error dialog on each tick. Expiry is exactly the answer to
+             * that, and it has to run wherever the request lands.
+             */
+            const liveSeeds = (listed: Set<string>): Record<string, number> => {
                 const now = Date.now();
-                const listed = new Set(indexes.map((index) => index.name));
 
-                // A seed survives while the server still has not listed its index and the wait
-                // is within the grace period, or once it is listed — from then on
-                // `deriveIndexStatuses` decides, off the fragment delta.
-                const liveSeeds = Object.fromEntries(
+                return Object.fromEntries(
                     Object.entries(store.indexBuildSeeds()).filter(
                         ([name, requestedAt]) =>
                             listed.has(name) || now - requestedAt < PENDING_SEED_TTL_MS
                     )
                 );
+            };
 
-                const seeds = new Set(Object.keys(liveSeeds));
+            const applyIndexes = (indexes: DotAiIndex[]) => {
+                const listed = new Set(indexes.map((index) => index.name));
+                const live = liveSeeds(listed);
+                const seeds = new Set(Object.keys(live));
 
                 // The server's list plus a placeholder for each seeded build it has not caught
                 // up with, so a new index is in the table from the moment it is requested.
                 const merged = withPendingIndexes(indexes, seeds);
-                const statuses = deriveIndexStatuses(merged, store.indexFragmentSnapshot(), seeds);
 
                 // An index that has settled is no longer a candidate for the next poll.
+                const building = stillBuildingSeeds(merged, store.indexFragmentSnapshot(), seeds);
                 const stillBuilding = Object.fromEntries(
-                    Object.entries(liveSeeds).filter(
-                        ([name]) => statuses[name] === DOT_AI_INDEX_STATUS.BUILDING
-                    )
+                    Object.entries(live).filter(([name]) => building.has(name))
                 );
 
                 // Retrieval targets, for the picker's fallback below. Read off `merged` rather
@@ -152,15 +161,22 @@ export function withAiIndexes() {
                             embeddingsService.getIndexes().pipe(
                                 tap(applyIndexes),
                                 catchError((error: HttpErrorResponse) => {
+                                    // Nothing was listed, so only the grace period can keep a
+                                    // seed now — which is what stops the poll rather than
+                                    // letting it retry a dead endpoint forever.
+                                    const surviving = liveSeeds(new Set());
+
                                     if (error?.status === 403) {
                                         patchState(store, {
                                             indexesForbidden: true,
-                                            indexes: []
+                                            indexes: [],
+                                            indexBuildSeeds: surviving
                                         });
 
                                         return EMPTY;
                                     }
 
+                                    patchState(store, { indexBuildSeeds: surviving });
                                     httpErrorManager.handle(error);
 
                                     return EMPTY;

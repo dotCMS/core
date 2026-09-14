@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -8,6 +8,8 @@ import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
+
+import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
@@ -74,15 +76,27 @@ export default class DotAiEmbeddingsComponent {
 
     protected readonly statuses = DOT_AI_INDEX_STATUS;
 
+    /** Whether the create dialog is up, and so is the one rendering build outcomes. */
+    readonly #createDialogOpen = signal(false);
+
     /**
      * The build outcome this tab owns.
      *
-     * Only a success reaches here. The two outcomes that need the query fixed — nothing
-     * matched, and a query the server rejected — stay inside the create dialog, next to the
-     * field that produced them.
+     * While the dialog is up it owns everything the user has to act on — nothing matched, and
+     * a query the server rejected — because those are corrections to a field it is still
+     * holding; only the success reaches here, next to the row it just created.
+     *
+     * Once the dialog has gone, this tab is the only thing left that can report anything, so
+     * it reports all of it. Without that, a build dismissed with Escape or the header X while
+     * still in flight failed into silence: the notice arrived after the dialog was destroyed,
+     * and a success in the same situation was announced while a failure was not.
      */
-    protected readonly $builtNotice = computed(() => {
+    protected readonly $notice = computed(() => {
         const notice = this.store.indexBuildNotice();
+
+        if (!this.#createDialogOpen()) {
+            return notice;
+        }
 
         return notice?.kind === 'built' ? notice : null;
     });
@@ -118,22 +132,34 @@ export default class DotAiEmbeddingsComponent {
     };
 
     /**
-     * Opens the build dialog and leaves it to it.
+     * Opens the build dialog and leaves the submit to it.
      *
-     * No `onClose` handling any more: the dialog submits to the store itself so that a rejected
-     * Lucene query can be corrected in the form that produced it, rather than being reported
-     * onto this tab after the modal has closed over the query.
+     * `onClose` carries no form value any more — the dialog submits to the store itself, so a
+     * rejected Lucene query is corrected in the form that produced it rather than reported
+     * onto this tab after the modal has closed over the query. It is still subscribed, for
+     * the one thing this tab needs to know: whether the dialog is still there to do the
+     * reporting.
      */
     protected openCreateDialog(): void {
         this.store.dismissBuildNotice();
+        this.#createDialogOpen.set(true);
 
-        this.#dialogService.open(DotAiIndexCreateComponent, {
-            header: this.#messageService.get('dotai.index.create.header'),
-            width: '700px',
-            closable: true,
-            closeOnEscape: true,
-            draggable: false
-        });
+        // `onDestroy`, not `onClose`: `close()` fires `onClose` immediately and only then
+        // plays the leave animation, so the dialog component — and the `DestroyRef` hook that
+        // clears an outcome it has already shown — lives on for the length of it. Handing over
+        // at `onClose` would render that outcome on the tab for those frames before the
+        // dialog's own teardown withdrew it. `onDestroy` fires once, on every close path
+        // (cancel, success, Escape, the header X), after the dialog has let go.
+        this.#dialogService
+            .open(DotAiIndexCreateComponent, {
+                header: this.#messageService.get('dotai.index.create.header'),
+                width: '700px',
+                closable: true,
+                closeOnEscape: true,
+                draggable: false
+            })
+            .onDestroy.pipe(take(1))
+            .subscribe(() => this.#createDialogOpen.set(false));
     }
 
     protected confirmDeleteIndex(index: DotAiIndex): void {

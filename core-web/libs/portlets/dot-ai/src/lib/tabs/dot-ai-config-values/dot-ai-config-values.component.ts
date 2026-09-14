@@ -8,7 +8,8 @@ import {
     DotCopyButtonComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
-    DotSearchInputComponent
+    DotSearchInputComponent,
+    PrincipalConfiguration
 } from '@dotcms/ui';
 
 import { DotAiStore } from '../../store/dot-ai.store';
@@ -48,9 +49,15 @@ export default class DotAiConfigValuesComponent {
         icon: 'visibility_off'
     });
 
-    protected readonly noMatchesConfig = toEmptyStateConfig(this.#messageService, {
+    readonly #noMatchesConfig = toEmptyStateConfig(this.#messageService, {
         title: 'dotai.config.empty',
         icon: 'filter_alt_off'
+    });
+
+    readonly #unavailableConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.config.unavailable.title',
+        subtitle: 'dotai.config.unavailable.sub',
+        icon: 'cloud_off'
     });
 
     /**
@@ -88,6 +95,30 @@ export default class DotAiConfigValuesComponent {
             (row) =>
                 row.key.toLowerCase().includes(needle) || row.value.toLowerCase().includes(needle)
         );
+    });
+
+    /**
+     * Which empty state the pane owes the user, or null when it owes none.
+     *
+     * The rows being empty is not one fact but three, and they need different sentences.
+     * `resolvedConfig` is a computed that always returns an object, so the rows are empty
+     * during the initial async window and after a failed load as well as after a filter that
+     * matched nothing -- and blaming the filter in the first two cases is a lie told by the
+     * one screen that exists to be trusted when nothing else works (FR-048).
+     *
+     * Null while the config is still on its way: a brief blank pane says less than a wrong
+     * sentence does.
+     */
+    protected readonly $emptyConfig = computed<PrincipalConfiguration | null>(() => {
+        if (this.$filteredRows().length) {
+            return null;
+        }
+
+        if (this.$filter().trim()) {
+            return this.#noMatchesConfig;
+        }
+
+        return this.store.configUnavailable() ? this.#unavailableConfig : null;
     });
 
     protected severityFor(source: string): 'info' | 'secondary' {

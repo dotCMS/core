@@ -193,17 +193,26 @@ public class CompletionsResource {
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
+        final String providerConfig = appConfig.getProviderConfig();
+        final boolean configured = StringUtils.isNotBlank(providerConfig);
+
         // The site the configuration is being read for, and whether it actually came from that
         // site. ConfigService falls back to the System Host's secrets when the site has none of
         // its own, so the two hostnames differing is what "inherited" means here. Reported as
         // separate fields rather than one concatenated English string so the client can label
         // and translate it.
+        //
+        // Gated on there being a configuration at all: ConfigService reports the System Host as
+        // the resolved host whenever the site has no secrets of its own, whether or not the
+        // System Host had any either. Without this, an instance where nothing is configured
+        // anywhere claims to have inherited settings it never found.
         final String requestedHost = host.getHostname();
         map.put(AiKeys.CONFIG_HOST, requestedHost);
-        map.put(AiKeys.CONFIG_HOST_INHERITED, !requestedHost.equalsIgnoreCase(appConfig.getHost()));
+        map.put(
+                AiKeys.CONFIG_HOST_INHERITED,
+                configured && !requestedHost.equalsIgnoreCase(appConfig.getHost()));
 
-        final String providerConfig = appConfig.getProviderConfig();
-        if (StringUtils.isNotBlank(providerConfig)) {
+        if (configured) {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
 

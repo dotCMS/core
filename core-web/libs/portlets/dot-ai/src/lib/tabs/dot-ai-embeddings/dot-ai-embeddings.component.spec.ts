@@ -30,6 +30,7 @@ const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
 describe('DotAiEmbeddingsComponent', () => {
     let spectator: Spectator<DotAiEmbeddingsComponent>;
     let onClose: Subject<unknown>;
+    let onDialogDestroy: Subject<unknown>;
     let dialogService: DialogService;
     let confirmSpy: MockInstance;
 
@@ -69,9 +70,11 @@ describe('DotAiEmbeddingsComponent', () => {
         storeMock.indexesForbidden.mockReturnValue(false);
         storeMock.filteredIndexes.mockReturnValue([index()]);
         onClose = new Subject();
+        onDialogDestroy = new Subject();
+        storeMock.indexBuildNotice.mockReturnValue(null);
         spectator = createComponent();
         dialogService = spectator.inject(DialogService, true);
-        (dialogService.open as Mock).mockReturnValue({ onClose });
+        (dialogService.open as Mock).mockReturnValue({ onClose, onDestroy: onDialogDestroy });
         confirmSpy = vi.spyOn(spectator.inject(ConfirmationService, true), 'confirm');
     });
 
@@ -154,6 +157,51 @@ describe('DotAiEmbeddingsComponent', () => {
             clickButton('dotai-embeddings-new-index');
 
             expect(storeMock.dismissBuildNotice).toHaveBeenCalled();
+        });
+
+        it('should stay quiet about an outcome the dialog is there to render', () => {
+            // Otherwise the failure appears twice — once in the form holding the query, once
+            // on the tab behind the modal, which is the report nobody could act on.
+            clickButton('dotai-embeddings-new-index');
+            storeMock.indexBuildNotice.mockReturnValue({
+                kind: 'failed',
+                indexName: 'blogs',
+                detail: 'Cannot parse query'
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dotai-embeddings-build-notice'))).toBeFalsy();
+        });
+
+        it('should report a build abandoned mid-flight once the dialog has gone', () => {
+            // Escape or the header X while the build is still running: the outcome arrives
+            // after the dialog is destroyed, so this tab is the only thing left that can show
+            // it. It used to render `built` only, so a success was announced and a failure
+            // disappeared.
+            clickButton('dotai-embeddings-new-index');
+            onDialogDestroy.next(undefined);
+            storeMock.indexBuildNotice.mockReturnValue({
+                kind: 'failed',
+                indexName: 'blogs',
+                detail: 'Cannot parse query'
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dotai-embeddings-build-notice'))).toContainText(
+                'dotai.embeddings.build.failed'
+            );
+        });
+
+        it('should hand back only when the dialog is really gone, not when it starts closing', () => {
+            // `close()` fires onClose and only then plays the leave animation, so the dialog --
+            // and the teardown hook that withdraws an outcome it already showed -- is still
+            // up. Handing over there would flash that outcome onto the tab for those frames.
+            clickButton('dotai-embeddings-new-index');
+            onClose.next(undefined);
+            storeMock.indexBuildNotice.mockReturnValue({ kind: 'failed', indexName: 'blogs' });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dotai-embeddings-build-notice'))).toBeFalsy();
         });
 
         it('should leave the build to the dialog rather than submitting on close', () => {

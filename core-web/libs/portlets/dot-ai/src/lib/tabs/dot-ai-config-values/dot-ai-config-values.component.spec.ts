@@ -30,7 +30,8 @@ describe('DotAiConfigValuesComponent', () => {
     const storeMock = {
         resolvedConfig: vi.fn().mockReturnValue(resolved()),
         redactionFailed: vi.fn().mockReturnValue(false),
-        isConfigured: vi.fn().mockReturnValue(true)
+        isConfigured: vi.fn().mockReturnValue(true),
+        configUnavailable: vi.fn().mockReturnValue(false)
     };
 
     const createComponent = createComponentFactory({
@@ -44,6 +45,7 @@ describe('DotAiConfigValuesComponent', () => {
         vi.clearAllMocks();
         storeMock.resolvedConfig.mockReturnValue(resolved());
         storeMock.redactionFailed.mockReturnValue(false);
+        storeMock.configUnavailable.mockReturnValue(false);
         spectator = createComponent();
     });
 
@@ -82,6 +84,59 @@ describe('DotAiConfigValuesComponent', () => {
 
         expect(spectator.query(byTestId('dotai-config-redaction-failed'))).toBeTruthy();
         expect(spectator.query(byTestId('dotai-config-table'))).toBeFalsy();
+    });
+
+    describe('an empty table', () => {
+        // Three different reasons the rows can be empty, and the screen has to say which.
+        // resolvedConfig is a computed that always returns an object, so "no rows" is the
+        // state during the initial load and after a failed one as well as after a filter
+        // that matched nothing.
+        const empty = (): HTMLElement | null =>
+            spectator.query(byTestId('dotai-config-empty')) as HTMLElement | null;
+
+        it('should blame the filter only when there is a filter', () => {
+            storeMock.resolvedConfig.mockReturnValue(
+                resolved({ settings: {}, providerConfig: null })
+            );
+            spectator = createComponent();
+            spectator.triggerEventHandler(
+                byTestId('dotai-config-filter'),
+                'search',
+                'nothing-matches-this'
+            );
+            spectator.detectChanges();
+
+            expect(empty()).toBeTruthy();
+            expect(spectator.inject(DotMessageService, true).get).toHaveBeenCalledWith(
+                'dotai.config.empty'
+            );
+        });
+
+        it('should say the config could not be loaded rather than blaming an empty filter', () => {
+            // The regression: a failed load left the diagnostic screen telling the user their
+            // filter matched nothing, with the filter box empty.
+            storeMock.resolvedConfig.mockReturnValue(
+                resolved({ settings: {}, providerConfig: null })
+            );
+            storeMock.configUnavailable.mockReturnValue(true);
+            spectator = createComponent();
+
+            expect(empty()).toBeTruthy();
+            expect(spectator.inject(DotMessageService, true).get).toHaveBeenCalledWith(
+                'dotai.config.unavailable.title'
+            );
+        });
+
+        it('should show nothing at all while the config is still loading', () => {
+            // A brief blank pane says less than a wrong sentence does.
+            storeMock.resolvedConfig.mockReturnValue(
+                resolved({ settings: {}, providerConfig: null })
+            );
+            spectator = createComponent();
+
+            expect(empty()).toBeFalsy();
+            expect(spectator.query(byTestId('dotai-config-table'))).toBeFalsy();
+        });
     });
 
     it('should not offer a provider config view at all', () => {

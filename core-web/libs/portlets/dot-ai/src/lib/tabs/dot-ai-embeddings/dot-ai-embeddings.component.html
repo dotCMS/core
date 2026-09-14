@@ -24,14 +24,31 @@
         </ng-template>
     </p-toolbar>
 
-    @if ($builtNotice(); as notice) {
+    <!-- Everything the create dialog is not around to render itself. A build abandoned with
+         Escape while still in flight has nowhere else to report. -->
+    @if ($notice(); as notice) {
         <p-message
             class="block shrink-0 px-4 pb-2"
-            severity="success"
+            [severity]="
+                notice.kind === 'built' ? 'success' : notice.kind === 'empty' ? 'warn' : 'error'
+            "
             [closable]="true"
             (onClose)="store.dismissBuildNotice()"
             data-testid="dotai-embeddings-build-notice">
-            {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
+            @switch (notice.kind) {
+                @case ('built') {
+                    {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
+                }
+                @case ('empty') {
+                    {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
+                }
+                @default {
+                    {{
+                        'dotai.embeddings.build.failed'
+                            | dm: [notice.indexName, notice.detail ?? '']
+                    }}
+                }
+            }
         </p-message>
     }
 

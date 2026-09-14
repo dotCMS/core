@@ -263,6 +263,52 @@ describe('withAiIndexes', () => {
             expect(spectator.inject(DotAiEmbeddingsService).getIndexes).toHaveBeenCalledTimes(1);
         });
 
+        it('should give up on a build when the refresh itself keeps failing', () => {
+            // The expiry used to live only in applyIndexes, which a failing request never
+            // reaches — so a build started just before the server went away polled every five
+            // seconds for the life of the page, raising an error dialog on each tick.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+            spectator.flushEffects();
+
+            spectator.inject(DotAiEmbeddingsService).getIndexes = vi
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+            vi.advanceTimersByTime(3 * 60 * 1000);
+            spectator.flushEffects();
+
+            expect(store.indexBuildSeeds()).toEqual({});
+
+            const calls = (spectator.inject(DotAiEmbeddingsService).getIndexes as Mock).mock.calls
+                .length;
+            vi.advanceTimersByTime(20000);
+
+            expect(
+                (spectator.inject(DotAiEmbeddingsService).getIndexes as Mock).mock.calls.length
+            ).toBe(calls);
+        });
+
+        it('should stop polling a forbidden endpoint once the build expires', () => {
+            // A 403 mid-build (the admin role revoked in session) took the same path: nothing
+            // pruned the seed, so the poll retried an endpoint it would never be allowed on.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+            spectator.flushEffects();
+
+            spectator.inject(DotAiEmbeddingsService).getIndexes = vi
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+
+            vi.advanceTimersByTime(3 * 60 * 1000);
+            spectator.flushEffects();
+
+            expect(store.indexesForbidden()).toBe(true);
+            expect(store.indexBuildSeeds()).toEqual({});
+        });
+
         it('should re-fetch until the build settles, then stop', () => {
             stubIndexes([index({ name: 'blogs', fragments: 10 })]);
             store.loadIndexes();

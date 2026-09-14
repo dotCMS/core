@@ -24,14 +24,16 @@
                 [configuration]="redactionFailedConfig"
                 [hideContactUsLink]="true"
                 data-testid="dotai-config-redaction-failed" />
-        } @else if (!$filteredRows().length) {
+        } @else if ($emptyConfig(); as empty) {
             <!-- Same reason as the Embeddings table: a `<td>` is sized by its content, so an
-                 empty state nested in one cannot centre in the pane. -->
+                 empty state nested in one cannot centre in the pane. Which state this is --
+                 no match, or no config to show -- is decided in the component; an empty table
+                 is not one fact. -->
             <dot-empty-container
-                [configuration]="noMatchesConfig"
+                [configuration]="empty"
                 [hideContactUsLink]="true"
                 data-testid="dotai-config-empty" />
-        } @else {
+        } @else if ($filteredRows().length) {
             <p-table
                 [value]="$filteredRows()"
                 [rowHover]="true"

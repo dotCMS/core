@@ -1,4 +1,4 @@
-import { DOT_AI_INDEX_STATUS, DotAiIndex, DotAiIndexStatus } from '@dotcms/dotcms-models';
+import { DotAiIndex } from '@dotcms/dotcms-models';
 
 /**
  * Internal cache index. It is real and shows in the Embeddings table, but it is not a
@@ -44,31 +44,34 @@ export function withPendingIndexes(indexes: DotAiIndex[], buildSeeds: Set<string
 }
 
 /**
- * Build status per index, derived rather than read: `dot_embeddings` has no status column.
+ * The seeded builds that are still running.
  *
- * An index counts as building while its fragment count is still moving. `buildSeeds` carries
- * the indexes a build was just requested for, which is what lets the very first poll report
- * BUILDING instead of guessing from a delta that has not appeared yet.
+ * `dot_embeddings` has no status column, so this is derived: a build is finished when its
+ * index's fragment count stops moving. The seeds are what let the very first poll report a
+ * build instead of guessing from a delta that has not appeared yet.
  *
  * A seeded index the server has not listed yet has no `previousFragments` entry — the snapshot
- * is taken from the server's own response, never from the placeholder rows — so it stays
- * BUILDING rather than settling to READY off a fragment count of zero that never moves.
+ * is taken from the server's own response, never from the placeholder rows — so it keeps
+ * building rather than settling off a fragment count of zero that never moves.
  *
  * Deliberately per index. The legacy portlet derived one portlet-wide flag, so starting a
  * build on one index made every row claim to be building.
  */
-export function deriveIndexStatuses(
+export function stillBuildingSeeds(
     indexes: DotAiIndex[],
     previousFragments: Record<string, number>,
     buildSeeds: Set<string>
-): Record<string, DotAiIndexStatus> {
-    return indexes.reduce<Record<string, DotAiIndexStatus>>((statuses, index) => {
-        const previous = previousFragments[index.name];
-        const moved = previous !== undefined && previous !== index.fragments;
-        const building = buildSeeds.has(index.name) && (previous === undefined || moved);
+): Set<string> {
+    const fragments = new Map(indexes.map((index) => [index.name, index.fragments]));
 
-        statuses[index.name] = building ? DOT_AI_INDEX_STATUS.BUILDING : DOT_AI_INDEX_STATUS.READY;
+    return new Set(
+        [...buildSeeds].filter((name) => {
+            const current = fragments.get(name);
+            const previous = previousFragments[name];
 
-        return statuses;
-    }, {});
+            // Unlisted, or never snapshotted: there is nothing to compare, so it cannot have
+            // settled. Otherwise it is building exactly while the count is moving.
+            return current === undefined || previous === undefined || previous !== current;
+        })
+    );
 }
