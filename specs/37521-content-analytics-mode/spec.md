@@ -103,6 +103,9 @@ and confirm existing data for the tenant/project renders normally.
   contribute to (or read) the exact same dataset, with no environment distinction anywhere.
 - An instance that the Platform Team has not enabled for Content Analytics access at all has no
   Analytics Mode to set — that enablement gate is a precondition of this feature, not part of it.
+- An instance running an active Experiment (A/B test) that is switched to "Read Only" stops
+  collecting new experiment result data for that instance, for the same reason it stops
+  collecting any other analytics data — this is expected, not a defect.
 
 ## Requirements *(mandatory)*
 
@@ -119,11 +122,15 @@ and confirm existing data for the tenant/project renders normally.
   an instance ends up "Read Only" without an admin deliberately choosing it.
 - **FR-003**: When Analytics Mode is "Read & Write", system MUST continue sending analytics
   events to the Content Analytics infrastructure exactly as it does today.
-- **FR-004**: When Analytics Mode is "Read Only", system MUST NOT send any Content Analytics
-  ingest events (page views, impressions, clicks, and other tracked content-interaction events)
-  to the Content Analytics infrastructure. This is scoped strictly to Content Analytics ingest
-  traffic — it does not affect any other, unrelated telemetry, health-check, or usage-reporting
-  signal the instance emits.
+- **FR-004**: When Analytics Mode is "Read Only", system MUST NOT forward any event to the
+  Content Analytics infrastructure's ingest endpoint. Every collection method — dotCMS's
+  built-in page/impression/click tracking on server-rendered pages, and the headless/SPA SDK
+  used by external applications — always submits events through this same dotCMS instance
+  first, never directly from the browser or an external app to the Content Analytics
+  infrastructure; gating that one instance-side ingest hand-off is therefore sufficient to cover
+  every collection method, with no separate client-side path left ungated. This is scoped
+  strictly to Content Analytics ingest traffic — it does not affect any other, unrelated
+  telemetry, health-check, or usage-reporting signal the instance emits.
 - **FR-005**: System MUST apply an Analytics Mode change without requiring the dotCMS instance
   to be restarted.
 - **FR-006**: System MUST allow users to view existing analytics dashboards and reports
@@ -169,7 +176,9 @@ and confirm existing data for the tenant/project renders normally.
   feature) and the analytics event submission path from a dotCMS instance to the Content
   Analytics infrastructure. This is modern, actively-developed functionality — not legacy
   `com.dotmarketing.*` surface — though the underlying Apps/Integrations configuration framework
-  it builds on predates it.
+  it builds on predates it. Experiments (A/B testing) is a downstream consumer of the same
+  dataset (it queries the same analytics data to compute results) and is affected as a
+  consequence, though it is not itself modified by this feature.
 - **Backward-compatibility expectations**: Every instance with Content Analytics already
   configured must keep working exactly as before immediately after upgrade (default "Read &
   Write"). The only contract change is relaxing the recently-introduced required `environment`
@@ -188,8 +197,14 @@ and confirm existing data for the tenant/project renders normally.
   persist-vs-read-only behavior on top of that existing gate.
 - "Content Analytics app" refers to the existing per-instance App/Integration configuration
   screen for Content Analytics — this feature adds a field to it, not a new settings page.
-- Read Only is enforced by the dotCMS instance itself simply not submitting events; the Content
-  Analytics infrastructure requires no corresponding server-side rejection logic for this
-  feature.
+- Read Only is enforced entirely on the dotCMS instance side, at the single point through which
+  every event — regardless of collection method — already passes on its way to the Content
+  Analytics infrastructure; the infrastructure itself requires no new rejection logic of its
+  own for this feature.
+- Experiments (A/B testing) results are computed from the same Content Analytics dataset this
+  feature gates. Setting an instance to Read Only is expected to also stop new experiment
+  result data from that instance — this is accepted, not treated as a gap to work around, since
+  an instance an admin has deliberately chosen not to persist analytics from cannot
+  simultaneously produce live experiment measurements.
 - Users who can already edit the Content Analytics app configuration today are the same users
   authorized to change Analytics Mode — no new permission model is introduced.
