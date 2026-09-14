@@ -252,7 +252,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * same operation and its wording, severity and reload all come from one place. A second toast
      * here would say the same thing differently and drift the moment either is edited.
      */
-    protected readonly onBundleAdded = (): void => {
+    protected onBundleAdded(): void {
         this.#store.reportExternalResult({
             actionName: this.#dotMessageService.get('content-drive.action-center.add-to-bundle'),
             successCount: 1,
@@ -262,7 +262,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // few successes that still has to be said out loud.
             confirmSuccess: true
         });
-    };
+    }
 
     /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
     readonly $busyRows = this.#store.busyRows;
@@ -1537,15 +1537,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
             .subscribe({
                 next: (event) => {
                     if (event.kind === 'progress') {
-                        // Only where the browser could compute a length. Without one, reporting 0%
-                        // would render a bar stuck at nothing, which reads as stalled rather than
-                        // as unmeasurable — the indicator falls back to a bare spinner instead.
-                        if (event.total) {
-                            this.#store.updateExternalRun(runId, {
-                                percent: Math.round((event.loaded / event.total) * 100)
-                            });
-                        }
-
+                        // Ignored, deliberately. The app runs on Angular's fetch backend, which
+                        // never emits upload progress, and the XHR backend that would is
+                        // deprecated — so this never arrives here. The indicator reports the upload
+                        // as activity without a position, which is the honest rendering of a wait
+                        // whose denominator the browser will not give us (FR-041a).
                         return;
                     }
 

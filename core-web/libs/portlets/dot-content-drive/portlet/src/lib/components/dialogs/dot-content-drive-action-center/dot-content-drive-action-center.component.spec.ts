@@ -2067,10 +2067,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-1',
-                'id-2'
-            ], expect.any(Array));
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-1', 'id-2'],
+                expect.any(Array)
+            );
         });
 
         it('should collapse language versions of the same content into one asset', () => {
@@ -2087,9 +2089,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-1'
-            ], expect.any(Array));
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-1'],
+                expect.any(Array)
+            );
         });
 
         it('should not fire a workflow action', () => {
@@ -2128,9 +2133,12 @@ describe('DotContentDriveActionCenterComponent', () => {
             uncheckFirstRow();
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-2'
-            ], expect.any(Array));
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-2'],
+                expect.any(Array)
+            );
         });
 
         it('should step back from the preview to the bundle step', () => {

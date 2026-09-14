@@ -2667,27 +2667,14 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        it('should report how far the upload has got', () => {
-            // Bytes, because that is what the browser can tell us. At 100% the server has the body
-            // and has created nothing, which is why this is the upload phase and not the run.
+        it('should not claim a position for an upload', () => {
+            // The app runs on Angular's fetch backend, which never emits upload progress, and the
+            // XHR backend that would is deprecated. So the indicator reports the upload as activity
+            // without a position (FR-041a), and nothing here invents one. Asserted against a
+            // progress event on purpose: it is the shape that used to be turned into a percentage,
+            // so this is what would catch the plumbing coming back without a backend to feed it.
             uploadService.uploadFilesByBaseType.mockReturnValue(
                 of({ kind: 'progress', loaded: 40, total: 80 })
-            );
-
-            selectUploadType({
-                targetFolder: TARGET_FOLDER_DATA,
-                files: createFileList([createFile('a.png')]),
-                baseType: 'DOTASSET'
-            });
-
-            expect(store.updateExternalRun).toHaveBeenCalledWith('run-1', { percent: 50 });
-        });
-
-        it('should leave the position unclaimed when the body length is unknown', () => {
-            // Reporting 0% would render a bar stuck at nothing, which reads as stalled rather than
-            // as unmeasurable. A bare spinner is the honest answer.
-            uploadService.uploadFilesByBaseType.mockReturnValue(
-                of({ kind: 'progress', loaded: 40 })
             );
 
             selectUploadType({

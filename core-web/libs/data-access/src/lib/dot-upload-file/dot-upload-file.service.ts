@@ -178,8 +178,8 @@ export class DotUploadFileService {
      * The plural sibling of {@link uploadFileByBaseType}, and deliberately a separate method rather
      * than the same one taking an array: the two answer differently. The singular creates the
      * contentlet and hands it back, so a caller can show the row it just made. This one is
-     * job-backed and answers `202` with a handle before any file exists, so following the run is
-     * the caller's next move (`DotJobService`) and the outcome arrives later.
+     * job-backed and answers `202` with a handle before any file exists, so the outcome arrives
+     * later, over the `BULK_UPLOAD_COMPLETED` event rather than from anything the caller polls.
      *
      * That is also why the singular is untouched. The Asset Picker calls it and cannot follow a
      * job: it runs inside the legacy editor host, which has no `Router`.

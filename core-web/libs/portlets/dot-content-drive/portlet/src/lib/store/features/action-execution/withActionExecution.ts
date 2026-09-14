@@ -738,7 +738,7 @@ export function withActionExecution() {
                      */
                     updateExternalRun: (
                         runId: string,
-                        patch: Partial<Pick<DotContentDriveRun, 'percent' | 'processed'>>
+                        patch: Partial<Pick<DotContentDriveRun, 'processed'>>
                     ): void => {
                         const run = store.runs()[runId];
 
@@ -802,7 +802,10 @@ export function withActionExecution() {
                         // an inherited member. Server ids are UUIDs so it is unreachable today, and
                         // this is the shape the rest of the codebase already uses for a lookup keyed
                         // by a value that did not come from here.
-                        if (!event.jobId || !Object.prototype.hasOwnProperty.call(tracked, event.jobId)) {
+                        if (
+                            !event.jobId ||
+                            !Object.prototype.hasOwnProperty.call(tracked, event.jobId)
+                        ) {
                             // Not ours: another tab's batch, or one already settled. Silent by
                             // design — an error here would blame this author for someone else's.
                             return;

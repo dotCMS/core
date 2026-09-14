@@ -365,22 +365,16 @@ export class DotContentDriveToolbarComponent {
      * `undefined` and `0` are deliberately different answers: a run that has done nothing yet is not
      * the same as a run that cannot say. A truthiness check would collapse the two and show an empty
      * bar for a run that has no bar to show.
+     *
+     * Counts items, and only items. An upload measures itself in bytes, which this cannot express —
+     * but it has no position to report here anyway: the app runs on Angular's fetch backend, which
+     * never emits upload progress, and the XHR backend that would is deprecated. An upload shows the
+     * indeterminate spinner instead, which is the honest rendering of a wait with no denominator.
      */
     readonly $actionExecutionPercent = computed(() => {
         const execution = this.$actionExecution();
 
-        if (!execution) {
-            return undefined;
-        }
-
-        // A run that measures its own position wins. `processed / total` counts *items*, which an
-        // upload's progress is not: it reports bytes sent of bytes to send, and there is no honest
-        // item count in the middle of a single multipart request.
-        if (execution.percent !== undefined) {
-            return execution.percent;
-        }
-
-        if (execution.processed === undefined || !execution.total) {
+        if (!execution || execution.processed === undefined || !execution.total) {
             return undefined;
         }
 
