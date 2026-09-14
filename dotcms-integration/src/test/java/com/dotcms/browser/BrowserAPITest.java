@@ -32,10 +32,12 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.UserFactoryImpl;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -55,6 +57,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -70,6 +73,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2531,4 +2535,100 @@ public class BrowserAPITest extends IntegrationTestBase {
         FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
         return file;
     }
+
+    // --- Issue #37186 (User Story 1): warm-up eliminates the concurrent thundering herd ------
+    //
+    // Freshly-created users are guaranteed cache-misses on their first resolution, so no manual
+    // cache-flush is needed to set up a "cold" scenario — that is exactly what makes this test
+    // deterministic without touching shared cache state other concurrently-running tests rely on.
+
+    /**
+     * Method to test: {@link BrowserAPI#getPaginatedContents(BrowserQuery)}
+     * <p>Given a folder whose rows are authored by a handful of distinct, not-yet-cached users,
+     * a single listing request must resolve each distinct author exactly once — regardless of how
+     * many parallel hydration chunks the page is split into — and an immediate repeat request
+     * must hit the now-warm cache with zero further DB lookups. Before the fix (FR-001), this
+     * scenario reproduces reliably with a lookup count exceeding the number of distinct authors,
+     * because concurrent chunks race on the same not-yet-cached id.</p>
+     */
+    @Test
+    public void test_getPaginatedContents_warmUpResolvesEachDistinctAuthorExactlyOnce() throws Exception {
+        final List<User> authors = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            authors.add(new UserDataGen().nextPersisted());
+        }
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final var contentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        // 12 rows over 3 authors: hydrateContentletsInParallel's chunk size is
+        // max(1, min(10, total/4)) = 3 for 12 rows, i.e. 4 parallel chunks — enough for at least
+        // two chunks to need the same not-yet-cached author at the same time pre-fix.
+        //
+        // ContentletDataGen#user(User) is a no-op on this persist path: nextPersisted() with no
+        // categories calls the static checkin(Contentlet, IndexPolicy) overload
+        // (ContentletDataGen.java:317-326), which always uses AbstractDataGen's static `user`
+        // field (the system user) as the acting user, never the per-instance innerUser .user(...)
+        // sets. Every row would otherwise land with modUser=owner=system user -- one shared id
+        // that is also already cache-warm (AbstractDataGen's own static initializer resolves the
+        // system user), making the "resolves once per distinct author" assertion untestable.
+        // Reassign modUser/owner directly via SQL after creation instead.
+        final List<Contentlet> created = new ArrayList<>();
+        final Set<String> expectedIds = new LinkedHashSet<>();
+        for (int i = 0; i < 12; i++) {
+            final User author = authors.get(i % authors.size());
+            final Contentlet contentlet = new ContentletDataGen(contentType)
+                    .setProperty("title", "warmup-" + i)
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+            new DotConnect().executeUpdate("update contentlet set mod_user = ? where inode = ?",
+                    author.getUserId(), contentlet.getInode());
+            new DotConnect().executeUpdate("update identifier set owner = ? where id = ?",
+                    author.getUserId(), contentlet.getIdentifier());
+            // The raw SQL above bypasses cache invalidation for both the contentlet and its
+            // identifier. If the listing path served either from cache, getModUser()/getOwner()
+            // would still return the system user and the warm-up set would collapse to one
+            // already-warm id, making the assertion below depend on incidental cache state
+            // rather than the DB state it actually needs.
+            CacheLocator.getContentletCache().remove(contentlet.getInode());
+            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
+            created.add(contentlet);
+            expectedIds.add(author.getUserId());
+        }
+        assertFalse("Expected at least one distinct author id to warm up", expectedIds.isEmpty());
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showContent(true)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(0)
+                .maxResults(20)
+                .build();
+
+        UserFactoryImpl.resetDbLookupCountForTesting();
+        final PaginatedContents firstPage = browserAPI.getPaginatedContents(browserQuery);
+        // Intentionally <=, not ==: UserFactoryImpl.dbLookupCount is a single JVM-global
+        // AtomicLong, not scoped to this request/thread. Anything else in the JVM that resolves
+        // a user between the reset above and this assertion would inflate the count and fail
+        // this test for reasons unrelated to the warm-up fix. The upper bound is still a
+        // meaningful guarantee: without the fix, concurrent chunks racing on the same
+        // not-yet-cached id push the count above expectedIds.size().
+        assertTrue("First (cold) request must resolve each distinct author at most once, was "
+                        + UserFactoryImpl.getDbLookupCountForTesting(),
+                UserFactoryImpl.getDbLookupCountForTesting() <= expectedIds.size());
+        assertEquals("All 12 rows must still come back", created.size(), firstPage.contentCount);
+
+        UserFactoryImpl.resetDbLookupCountForTesting();
+        final PaginatedContents secondPage = browserAPI.getPaginatedContents(browserQuery);
+        assertEquals("An immediate repeat must hit the warm cache with zero DB lookups",
+                0L, UserFactoryImpl.getDbLookupCountForTesting());
+        assertEquals(created.size(), secondPage.contentCount);
+    }
+
 }
