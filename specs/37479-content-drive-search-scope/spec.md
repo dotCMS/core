@@ -1,18 +1,27 @@
-# Feature Specification: Content Drive — Title / All Fields search scope selector for the search box
+# Feature Specification: Content Drive — Title / All Fields search scope, with literal-text search terms
 
 **Feature Branch**: `issue-37479-content-drive-search-scope`
 
 **Created**: 2026-09-11
 
-**Last revised**: 2026-09-13 — review round 1 (see [Review Decisions](#review-decisions-settled-2026-09-13))
+**Last revised**: 2026-09-14 — review round 1, then merged with #37532 (see
+[Review Decisions](#review-decisions-settled-2026-09-13) and
+[Merge of #37532](#merge-of-37532-settled-2026-09-14))
 
 **Status**: Draft
 
 **Type**: New Feature
 
-**Related GitHub Issue**: [#37479](https://github.com/dotCMS/core/issues/37479) — related history: [#36688](https://github.com/dotCMS/core/issues/36688) (replaced the broad `catchall:*kw*` wildcard with the current strategy), [#36814](https://github.com/dotCMS/core/issues/36814) (search performance at scale). Sibling in flight: [#37426](https://github.com/dotCMS/core/issues/37426) / [PR #37487](https://github.com/dotCMS/core/pull/37487) (Content Drive **browse** scopes) — the two features land fields on the same request object and are deliberately named apart; see [Review Decision 5](#review-decisions-settled-2026-09-13).
+**Resolves**: [#37479](https://github.com/dotCMS/core/issues/37479) (search scope selector) **and**
+[#37532](https://github.com/dotCMS/core/issues/37532) (Lucene query-syntax characters in search
+terms — High severity, customer ticket
+[39185](https://helpdesk.dotcms.com/a/tickets/39185)). The two were specified separately and merged
+on 2026-09-14 once #37532's defect was found to live in the very clause this feature rewrites — see
+[Why #37532 lands here](#why-37532-lands-here).
 
-**Input**: User description: "Content Drive: add a Title / All Content scope selector to the search box. Default scope = All Content (no regression); Title mode matches strictly the contentlet title plus folder names, not fileName/metadata.name; scope persists only in the URL filters; sorting unchanged."
+**Related history**: [#36688](https://github.com/dotCMS/core/issues/36688) (replaced the broad `catchall:*kw*` wildcard with the current strategy), [#36814](https://github.com/dotCMS/core/issues/36814) (search performance at scale). Sibling in flight: [#37426](https://github.com/dotCMS/core/issues/37426) / [PR #37487](https://github.com/dotCMS/core/pull/37487) (Content Drive **browse** scopes) — the two features land fields on the same request object and are deliberately named apart; see [Review Decision 5](#review-decisions-settled-2026-09-13).
+
+**Input (#37479)**: User description: "Content Drive: add a Title / All Content scope selector to the search box. Default scope = All Content (no regression); Title mode matches strictly the contentlet title plus folder names, not fileName/metadata.name; scope persists only in the URL filters; sorting unchanged."
 
 > The issue's words are recorded verbatim above. The wide option is named **All Fields** in this spec — see [Review Decision 7](#review-decisions-settled-2026-09-13) for why "All Content" was rejected.
 
@@ -20,9 +29,10 @@
 
 ## Premise Corrections
 
-Five things the issue takes for granted do not survive verification against `main`. Three of them
-narrow the work; the fourth adds a rule the issue's file list has no place for; the fifth settles
-which query path the scope actually governs.
+Six things do not survive verification against `main`. Three of them narrow the work; the fourth
+adds a rule the issue's file list has no place for; the fifth settles which query path the search
+scope actually governs; the sixth is a live customer defect sitting in the clause this feature
+rewrites.
 
 ### 1. Results are **not** sorted by score when a term is present
 
@@ -103,6 +113,81 @@ clause alone. There is no second, SQL-shaped text match that a Title scope could
 narrow. This is also what settles the ADR-0018 question — see
 [ADR-0018 alignment](#adr-0018-alignment).
 
+### 6. The search box does not treat the term as literal text today
+
+The edge case "a term is never allowed to alter the structure of the query" was written into this
+spec as a property to preserve. It is not a property the search box has. `GlobalSearchAttributeStrategy`
+escapes **only its final clause**:
+
+```java
+// :37-38 — the MANDATORY gate, built from the RAW value
+luceneQuery.append("+(catchall:").append(value).append("*^10 OR ")
+        .append(fieldName).append("_dotraw:*").append(value).append("*^2)");
+// :46-48 — escaping happens here, and applies to this clause alone
+value = value.replaceAll(SPECIAL_CHARS_TO_ESCAPE, "\\\\$1");
+luceneQuery.append("title:").append(value).append("*");
+```
+
+Three distinct defects follow, and nothing sanitizes the value upstream — `ContentDriveHelper:183`
+passes `filters().text()` straight into `withFilter`, which reaches the strategy raw:
+
+1. **The gate is built from unescaped input.** A term such as `ABC (XETRA: DB)` produces
+   `+(catchall:ABC (XETRA: DB)*^10 OR ...)`, which is not valid `query_string` syntax.
+2. **The escape set is incomplete.** `SPECIAL_CHARS_TO_ESCAPE` (`:20`) is a private regex missing
+   `/`, while `LuceneQueryUtils.LUCENE_SPECIAL_CHARS` — vendor-neutral, documented, already used by
+   `TextFieldStrategy` — covers the full reserved set including `/`.
+3. **Consecutive separators emit empty clauses.** `:40-45` splits on `[,|\s+]` with no empty-token
+   filter, so `"a  b"` yields a `title:^5` clause with no term.
+
+A query that fails to parse is then **swallowed**: `BrowserAPIImpl:893-895` logs and returns an
+empty set, and the multi-query path does the same at every level. The user sees "no results" for
+content they know exists — the exact symptom of customer ticket 39185.
+
+**Consequence for this feature**: FR-027 to FR-030, and a carve-out in FR-009/SC-002, because
+fixing this **changes All Fields results** for affected terms. The parallel path is already correct
+and is the model to copy: Content Drive's *field* filters go through `TextFieldStrategy:45-46,53-54`,
+which escapes via `LuceneQueryUtils.escape` and filters empty tokens.
+
+---
+
+## Why #37532 lands here
+
+[#37532](https://github.com/dotCMS/core/issues/37532) was raised against the **Content Search
+portlet**, where `ContentletAjax.searchContentletsByUser()` builds field-filter clauses without
+escaping and swallows the resulting parse failure at `ContentletAjax.java:1058`. It is merged into
+this spec rather than kept separate for two reasons.
+
+**The issue asks for it.** It is explicitly filed as an enhancement rather than a defect fix, and
+says so in its own words: the legacy field-level query generation should be reworked rather than
+patched, and *"Content Drive is intended to replace the Content Search portlet, so the improved
+field-level search behaviour should land there."* This spec is that landing.
+
+**The defect is already here.** Premise Correction 6 shows all three failure modes — unescaped
+input, incomplete escape set, empty clauses — plus the silent swallow, living in Content Drive's
+own search box. Fixing #37479 without them would mean rewriting the exact clause that carries the
+bug and leaving the bug in it.
+
+**What this does NOT do, and it matters**: the Content Search portlet keeps its current behavior.
+A user filtering on a content type field in that portlet still gets a silent empty result set for a
+value containing `:` or `(`. Closing #37532 on this work is only honest if the team accepts that
+trade — it is the direction the issue itself sets, but the customer on ticket 39185 is using the
+portlet today, not Content Drive. If that is not acceptable, the portlet needs its own fix and
+#37532 should stay open against it. Flagged rather than assumed.
+
+Scope split, explicitly:
+
+| #37532 acceptance criterion | Where it lands |
+|---|---|
+| Values treated as literal text, not query syntax | **Here** — FR-027 (search box). Already satisfied for Content Drive field filters. |
+| Full reserved set `\ + - ! ( ) : ^ [ ] " { } ~ * ? \| & /` verified | **Here** — SC-010 |
+| Consecutive whitespace no longer emits `**` clauses | **Here** — FR-028 |
+| Failed query surfaces an error instead of a silent zero result | **Here** — FR-029 |
+| `/` added to the escape set of the global catchall path | **Here** — FR-027, by adopting `LuceneQueryUtils.escape` |
+| Regression test covering the reported headline value | **Here** — SC-009 |
+| Equivalent field-filter behaviour confirmed in Content Drive | **Here** — FR-030, as verification; the code already does it |
+| Rework of `ContentletAjax` field-filter construction | **Not here** — legacy portlet, slated for replacement |
+| Error state in the Content Search portlet's own UI | **Not here** — same reason |
+
 ---
 
 ## Decisions (settled 2026-09-11)
@@ -129,6 +214,13 @@ They are settled here and are part of what PR 1's approval signs off.
 | 6 | The wire name and its home | **`filters.searchScope`**, inside the existing filters object | `AbstractQueryFilters` is `{ text, filterFolders }` today, and `filterFolders`' Javadoc says "when text is provided". Both members exist to qualify the text search, which is exactly what the search scope does — it says which fields `text` reads and means nothing without `text`. Beside `text`, they travel together and a scope with no text is visibly nonsense rather than a validation rule someone must remember. The browse scope stays top level for the opposite reasons: it qualifies `assetPath`, and "Clear all" resets `filters`, which must never be able to navigate you elsewhere. |
 | 7 | The label of the wide option | **All Fields** (values `TITLE` / `ALL_FIELDS`) | "All Content" describes a *set of content*, which is what the browse scope's **All** genuinely means. This scope does not widen which content is searched — it widens which **fields** of each document the term is read against. Naming it "All Content" would have put two different meanings of the same word on the same request. |
 | 8 | ADR-0018's `DB ∪ Index` title routing | **Out of scope, explicitly** — Title scope inherits today's index-only routing | See [ADR-0018 alignment](#adr-0018-alignment). The union is gated on title-persistence work the ADR itself defers, and no text search consults the DB title column today. Title scope neither creates nor widens that gap, and it picks the union up for free when the gated work lands. |
+
+### Merge of #37532 (settled 2026-09-14)
+
+| # | Decision | Settled as | Why |
+|---|---|---|---|
+| 9 | Whether #37532 (literal-text search terms) joins this spec | **Merged in**, for the search box only | The defect lives in the clause FR-010 rewrites, and #37532 itself directs the improved behaviour to land in Content Drive. Keeping them apart would mean rewriting the buggy clause and leaving the bug in it. See [Why #37532 lands here](#why-37532-lands-here). |
+| 10 | FR-009's "no regression" promise vs. fixing the defect | **FR-009 yields** — a carve-out, written down | Escaping the gate *changes* All Fields results for terms containing reserved characters. That is the point, but it contradicts FR-009/SC-002 as originally approved, so the exception is stated rather than smuggled in. |
 
 ## ADR-0018 alignment
 
@@ -301,6 +393,42 @@ with no `searchScope` field and comparing the results to the current ones.
 
 ---
 
+### User Story 4 - A name that contains punctuation is found (Priority: P1)
+
+An author searches for `ABC Bank (XETRA: DBKGn.DB / NYSE: DB)` — the headline of a piece of content
+they are looking at in another tab. Today the drive reports "no results found". The colons,
+parentheses and slash are read as query syntax rather than as part of the name, the query fails to
+parse, the failure is logged and discarded, and the author is told their content does not exist.
+After this change the term is matched as the literal text it is, and the item is returned — in both
+search scopes.
+
+**Why this priority**: It is listed fourth but ranks P1. This is the live customer defect behind
+[#37532](https://github.com/dotCMS/core/issues/37532) (High severity, ticket 39185), and it is a
+silent wrong answer rather than a missing capability — the worst failure mode a search box has,
+because the author has no way to tell a broken query from an empty drive. Story 1 builds on the same
+clause, so the two are implemented together.
+
+**Independent Test**: Fully testable by seeding content whose title carries each character in the
+reserved set, searching for it verbatim, and confirming it is returned. Delivers the fix on its own,
+with or without the search scope control on screen.
+
+**Acceptance Scenarios**:
+
+1. **Given** content whose title is `ABC Bank (XETRA: DBKGn.DB / NYSE: DB)`, **When** the author
+   pastes that title into the search box in **All Fields** scope, **Then** the item is returned.
+2. **Given** that same content, **When** the author searches for it in **Title** scope, **Then** the
+   item is returned — the fix applies to the new clause as well as the existing one.
+3. **Given** a term containing any character of the reserved set
+   `\ + - ! ( ) : ^ [ ] " { } ~ * ? | & /`, **When** the search runs, **Then** the character is
+   matched as literal text and never alters the structure of the query.
+4. **Given** a term containing consecutive spaces or separators, **When** the search runs, **Then**
+   no empty clause is emitted and the results are the same as for the single-separator form.
+5. **Given** a search request that nonetheless fails to execute, **When** the drive renders the
+   response, **Then** the author is shown an error state, **not** an empty result list presented as
+   a successful search.
+
+---
+
 ### Edge Cases
 
 - **Search scope changed with an empty term.** No search is narrowed and nothing is re-fetched
@@ -312,8 +440,12 @@ with no `searchScope` field and comparing the results to the current ones.
   link matching is scope-independent ([Premise Correction 2](#2-folders-and-links-are-already-matched-on-name-only-in-both-scopes)).
 - **Multi-word term in Title scope.** The term narrows rather than widens: a row must be a name
   match for the phrase as entered, not merely for one of its words.
-- **Term containing characters the query syntax treats specially.** Handled the same way in both
-  scopes; a term is never allowed to alter the structure of the query.
+- **Term containing characters the query syntax treats specially.** Matched as literal text in both
+  scopes; a term is never allowed to alter the structure of the query. This does **not** hold today
+  ([Premise Correction 6](#6-the-search-box-does-not-treat-the-term-as-literal-text-today)) and is
+  made true by FR-027.
+- **Term that is only separators**, or that reduces to no usable token after splitting. It yields no
+  text clause at all rather than an empty one, and the drive lists as it would with no term.
 - **Search scope combined with the other Content Drive filters** — content type, language, status,
   workflow, shared assets, per-field filters. The search scope narrows the text match only; every
   other filter keeps applying as it does today, and combining them narrows further rather than
@@ -359,7 +491,11 @@ with no `searchScope` field and comparing the results to the current ones.
   the term. A contentlet whose term occurrence is confined to body copy, Story Block content or
   metadata MUST NOT be returned.
 - **FR-009**: In **All Fields** search scope, results MUST be identical to what Content Drive search
-  returns today for the same term and filters — no regression of any kind.
+  returns today for the same term and filters — no regression of any kind. **One carve-out, and only
+  one**: terms containing Lucene reserved characters or consecutive separators, whose results change
+  by design under FR-027 and FR-028 because today's behaviour for them is a malformed query and a
+  silent empty result set. Every term outside that carve-out MUST be unchanged, and the carve-out
+  MUST NOT be used to justify any other difference.
 - **FR-010**: In **Title** search scope, the query MUST NOT use an all-fields aggregate clause, and
   MUST NOT use a leading-wildcard term as its mandatory gate. This is the requirement that makes the
   search scope a genuine fast path rather than a display filter.
@@ -417,6 +553,29 @@ with no `searchScope` field and comparing the results to the current ones.
   and does not widen the index-lag gap that exists today
   ([ADR-0018 alignment](#adr-0018-alignment)).
 
+**Literal-text search terms (#37532)**
+
+- **FR-027**: A search term MUST be matched as literal text. **Every** clause built from the term
+  MUST escape the full Lucene `query_string` reserved set — `\ + - ! ( ) : ^ [ ] " { } ~ * ? | & /`
+  — not only the last one, and the mandatory gate in particular. The escaping MUST use the shared,
+  vendor-neutral utility rather than a strategy-private character set, so the reserved set has one
+  definition and `/` is covered. Wildcards the system adds itself MUST be applied **after** escaping
+  so they are not themselves escaped. This applies to **both** search scopes: the Title clause
+  introduced by FR-010 is subject to it exactly as the existing all-fields clause is.
+- **FR-028**: Consecutive separators in a term MUST NOT produce empty clauses. A term that reduces
+  to no usable token MUST produce no text clause at all, rather than a clause with an empty value.
+- **FR-029**: A search request whose query fails to execute MUST surface an error state to the
+  author. It MUST NOT be reported as a successful search that found nothing. The failure MUST
+  remain logged, but logging MUST NOT be the only response to it.
+- **FR-030**: Content Drive's per-field filters MUST match terms literally on the same reserved set
+  as FR-027, and this MUST be confirmed by test rather than by inspection. The implementation
+  already satisfies this; the requirement exists so a regression would be caught and so #37532's
+  corresponding criterion is demonstrably met.
+- **FR-031**: The all-fields search behaviour MUST remain shared with the Search portlet and the
+  Relationships dialog. FR-027's escaping corrects a defect in that shared path and therefore
+  benefits them too; it MUST NOT be implemented as a Content-Drive-only branch that leaves the
+  shared strategy broken for its other consumers.
+
 ### Key Entities
 
 - **Search scope**: Which fields of a document a Content Drive search term is matched against. Two
@@ -437,9 +596,11 @@ with no `searchScope` field and comparing the results to the current ones.
 - **SC-001**: On a drive containing a document whose body mentions the search term and a document
   whose name is the search term, an author in **Title** scope sees only the second — verified as a
   binary pass on a seeded dataset.
-- **SC-002**: For any term and filter combination, **All Fields** results are byte-identical to
-  the results the same drive returns before this change — zero regressions across the search cases
-  covered by the endpoint's test suite.
+- **SC-002**: For any term and filter combination **that contains no Lucene reserved character and
+  no consecutive separator**, All Fields results are byte-identical to the results the same drive
+  returns before this change — zero regressions across the search cases covered by the endpoint's
+  test suite. Terms inside the FR-009 carve-out are measured by SC-009 and SC-010 instead, and the
+  set of tests that change is enumerated in the PR rather than left implicit.
 - **SC-003**: On a large dataset, a **Title** search returns its first page faster than the same
   term in **All Fields** scope, and the before/after comparison is recorded on the issue. The
   target is a measurable reduction, not a fixed threshold; the comparison itself is the deliverable
@@ -458,6 +619,17 @@ with no `searchScope` field and comparing the results to the current ones.
 - **SC-008**: Every caller of the shared content listing is accounted for by name rather than by a
   blanket claim, and the three that are not Content Drive or the Asset Picker return identical
   results before and after the change.
+- **SC-009**: Searching the exact headline reported on customer ticket 39185 —
+  `ABC Bank (XETRA: DBKGn.DB / NYSE: DB) and PSL Launch independent European CLO Total Return Indices`
+  — returns the item, in both search scopes, as a regression test that fails before the change and
+  passes after it.
+- **SC-010**: Every character in the reserved set `\ + - ! ( ) : ^ [ ] " { } ~ * ? | & /` is
+  covered by a test that seeds a title containing it and finds that title by searching for it
+  verbatim — the full set, not a sample, in both search scopes.
+- **SC-011**: A search whose query fails to execute produces a visible error state in 100% of
+  attempts, and zero of those attempts render as a successful empty result list.
+- **SC-012**: Content Drive's per-field filters pass the same reserved-set coverage as SC-010,
+  confirming #37532's field-filter criterion by test rather than by inspection.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -473,6 +645,20 @@ with no `searchScope` field and comparing the results to the current ones.
   The all-fields query strategy is shared with the Search portlet and the Relationships dialog and
   must keep serving them unmodified — the Title scope is a sibling path, not a branch inside the
   existing one.
+- **Legacy surface deliberately left as-is**: the **Content Search portlet** keeps the behaviour
+  #37532 reports. Its `ContentletAjax.searchContentletsByUser()` field-filter branch
+  (`ContentletAjax.java:874-906`) still builds unescaped per-token clauses and still swallows the
+  parse failure at `:1058`. #37532 frames the legacy construction as something to replace rather
+  than patch, and names Content Drive as where the improved behaviour should land — so this spec
+  improves the replacement, not the thing being replaced. **Consequence to accept consciously**: a
+  user filtering in the Content Search portlet still sees a silent empty result set until Content
+  Drive replaces it. See [Why #37532 lands here](#why-37532-lands-here).
+- **Shared-path defect, shared-path fix**: FR-027 corrects `GlobalSearchAttributeStrategy`, which
+  also serves the Search portlet and the Relationships dialog. Unlike the Title scope — a sibling
+  path deliberately kept out of the shared strategy — the escaping defect is *in* the shared
+  strategy and is fixed there, so every consumer stops mis-parsing reserved characters. This is the
+  one place where this feature intentionally changes behaviour beyond Content Drive, and FR-031
+  states it so it is not mistaken for scope creep.
 - **Known related decisions**: [#36688](https://github.com/dotCMS/core/issues/36688) deliberately
   replaced a broad leading-wildcard all-fields query with the current strategy, for the same cost
   reasons argued here — the Title scope must not reintroduce what that issue removed.
@@ -519,4 +705,18 @@ with no `searchScope` field and comparing the results to the current ones.
   issue does not name one; producing it is part of the work, and the comparison is recorded on the
   issue rather than in the repository.
 - **No database, index-mapping or content-model change is required.** The search scope selects
-  between two ways of querying what is already indexed.
+  between two ways of querying what is already indexed, and the escaping fix is a pure string
+  transform over the term before it reaches the index.
+- **Escaping the reserved set does not degrade the matching #36688 tuned.** The characters are made
+  literal, not removed, so the mandatory catchall prefix gate and the boost structure keep the shape
+  that issue settled. Terms free of reserved characters produce a byte-identical query, which is
+  what makes SC-002's narrowed promise measurable.
+- **A visible error state is reachable from where the failure happens.** FR-029 assumes the drive
+  can distinguish "query failed" from "nothing matched" and carry that to the UI. Today the
+  distinction is destroyed at `BrowserAPIImpl:893-895`, which returns an empty set for both; how the
+  signal is carried out is an implementation decision, but the two cases must stop being the same
+  value.
+- **Closing #37532 on this work is the team's call, not this spec's.** The spec delivers every one
+  of its acceptance criteria that applies to Content Drive, and states plainly which two do not.
+  Whether that is enough to close the issue against the customer ticket is a decision for the issue
+  owner.
