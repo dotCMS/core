@@ -884,12 +884,6 @@ describe('DotContentDriveShellComponent', () => {
                 ]
             });
 
-            // Warned, not celebrated: nothing the author asked for happened, and on today's
-            // server the files may well have been created a second time. A green message invites
-            // them to move on; this one should make them look.
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({ severity: 'warn' })
-            );
             expect(dotMessageService.get).toHaveBeenCalledWith(
                 'content-drive.upload.toast.already-uploaded',
                 '3'
@@ -939,6 +933,49 @@ describe('DotContentDriveShellComponent', () => {
             expect(dotMessageService.get).toHaveBeenCalledWith(
                 'content-drive.upload.toast.already-uploaded',
                 '3'
+            );
+        });
+
+        it('should not warn about a file batch that was refused a second copy', () => {
+            // The contract sets the level by whether there is anything to do, and here there is
+            // not: the unique index refused the second writer, so the folder holds exactly what
+            // the author wanted. Warning would send them to inspect files that are already right.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 3,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'FILEASSET',
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'c.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'info' })
+            );
+        });
+
+        it('should warn about a dotAsset batch that now exists twice', () => {
+            // The other half of the same rule. Here the index can never contend, so the batch ran
+            // again and the folder holds two of everything: there is something to do, and `info`
+            // is the level that says there is not.
+            settle({
+                actionName: 'Upload',
+                successCount: 4,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
             );
         });
 
@@ -2127,6 +2164,99 @@ describe('DotContentDriveShellComponent', () => {
                     severity: 'info',
                     detail: 'content-drive.upload.toast.backgrounded-detail'
                 })
+            );
+        });
+
+        it('should report the count the server read, not the count the author chose', () => {
+            // The contract names `submitted` the number to display: it equals the `total` the
+            // outcome later reports, so the first screen and the last agree by construction. The
+            // author's own count is not that number. Where parts are lost between the browser and
+            // the server the two diverge, and rendering the local one puts up a figure no later
+            // screen ever confirms.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: {
+                        jobId: 'job-1',
+                        statusUrl: '/api/v1/jobs/job-1/status',
+                        // Deliberately not 3: the server read fewer parts than were chosen.
+                        submitted: 2
+                    }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([
+                    createFile('a.png'),
+                    createFile('b.png'),
+                    createFile('c.png')
+                ]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.backgrounded-detail',
+                '2'
+            );
+            expect(dotMessageService.get).not.toHaveBeenCalledWith(
+                'content-drive.upload.toast.backgrounded-detail',
+                '3'
+            );
+        });
+
+        it('should size the background run by what the server accepted', () => {
+            // Same number, same reason: the indicator and the outcome describe one batch, so a run
+            // sized by the local count would disagree with the completion that ends it.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: {
+                        jobId: 'job-1',
+                        statusUrl: '/api/v1/jobs/job-1/status',
+                        submitted: 2
+                    }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([
+                    createFile('a.png'),
+                    createFile('b.png'),
+                    createFile('c.png')
+                ]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
+            );
+        });
+
+        it('should fall back to the local count when the server states no total', () => {
+            // An instance that predates the field answers without it. Reporting nothing there
+            // would be worse than reporting the author's own count, which is right whenever no
+            // parts were lost — and no parts being lost is the ordinary case.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.backgrounded-detail',
+                '2'
             );
         });
 

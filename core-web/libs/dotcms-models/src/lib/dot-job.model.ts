@@ -165,6 +165,19 @@ export interface DotBulkUploadSubmitResponse {
     jobId: string;
     /** Absolute enough to follow on its own, so the queue name is not the client's to hardcode. */
     statusUrl: string;
+    /**
+     * File parts the **server** read into the batch, and the number a client displays.
+     *
+     * It equals the `total` the outcome later reports, so the first screen and the last agree by
+     * construction. It normally matches what the author chose: a part the per-file ceiling refused
+     * still counts, because it is carried into the batch as that file's own failure rather than
+     * dropped. Where it does not match, parts were lost between the browser and the server, and a
+     * client rendering its own count would show a figure no later screen confirms.
+     *
+     * Optional because an instance older than the field answers without it, not because it is
+     * discretionary. Absent, the caller's own count is the honest fallback.
+     */
+    submitted?: number;
 }
 
 /**

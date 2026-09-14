@@ -831,11 +831,20 @@ export class DotContentDriveShellComponent implements OnDestroy {
                           // A skip is a shortfall too — those items did not get the action — so it
                           // warns rather than reporting green, which is what it used to do.
                           //
-                          // A recognised resubmission warns as well, for a different reason:
-                          // nothing the author asked for happened. It is not the failure the counts
-                          // describe, but it is not an accomplishment either, and a green message
-                          // invites them to move on when they should look at the folder.
-                          severity: isPartial || duplicateSubmission ? 'warn' : 'success',
+                          // A recognised resubmission takes its level from whether anything is
+                          // left for the author to do, which splits by base type exactly where the
+                          // wording does (FR-040b). A file batch was refused its second copy, so
+                          // the folder already holds what they wanted and there is nothing to act
+                          // on. A dotAsset batch ran again and the folder now holds two of
+                          // everything, so someone has to delete the copies — and `info` is
+                          // precisely the level that says they need not look.
+                          severity: duplicateSubmission
+                              ? 'DOTASSET' === baseType
+                                  ? 'warn'
+                                  : 'info'
+                              : isPartial
+                                ? 'warn'
+                                : 'success',
                           summary: this.#dotMessageService.get(
                               isPartial || duplicateSubmission
                                   ? 'content-drive.upload.toast.incomplete'
@@ -1557,11 +1566,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
                     // Its own copy, because the words have to change with the guarantee: the first
                     // phase was an operation the author had to stay for, this one is work they have
                     // just been told they can walk away from.
+                    // The server's own count, which is the one to display: it equals the `total`
+                    // the outcome later reports, so the indicator and the message that ends it
+                    // describe the same batch. The author's count is the fallback for an instance
+                    // older than the field, and is right whenever no parts were lost in transit.
+                    const submitted = event.handle.submitted ?? files.length;
+
                     const backgroundRunId = this.#store.startExternalRun({
                         operation: `${UPLOAD_BATCH_OPERATION}:${event.handle.jobId}`,
                         actionName: this.#dotMessageService.get('content-drive.upload'),
                         labelKey: 'content-drive.upload.indicator.background',
-                        total: files.length,
+                        total: submitted,
                         targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
                         targets: []
                     });
@@ -1600,7 +1615,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
                         ),
                         detail: this.#dotMessageService.get(
                             'content-drive.upload.toast.backgrounded-detail',
-                            String(files.length)
+                            String(submitted)
                         ),
                         life: SUCCESS_MESSAGE_LIFE
                     });

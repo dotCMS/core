@@ -482,6 +482,22 @@ by this feature.)*
     screen anywhere, and the durable notification carries counts only. They survive in the job's own
     record, which the status endpoint returns, so this is a screen nobody has built rather than data
     the server discarded — see the task manager, #33331, where a list of ninety belongs.
+- **FR-023d** *(added by amendment, 2026-09-14, from the backend contract)*: **Where the server
+  states how many file parts it read, that count MUST be the one displayed, not the number of files
+  the author chose.** The `202` carries `submitted`, and it equals the `total` the outcome later
+  reports, so the first screen and the last agree by construction. The two normally match: a part
+  the per-file ceiling refused still counts, because it is carried into the batch as that file's own
+  failure rather than dropped. Where they do not match, parts were lost between the browser and the
+  server, and the author's own count is a figure no later screen will confirm. An instance older
+  than the field answers without it; the author's count is then the honest fallback, not a defect.
+- **FR-040c** *(added by amendment, 2026-09-14, from the backend contract)*: **A recognised
+  resubmission MUST take its severity from whether anything is left for the author to do, which
+  splits by base type exactly where FR-040b splits the wording.** A `FILEASSET` batch was refused
+  its second copy, so the folder already holds what the author wanted and the message is
+  informational. A `DOTASSET` batch ran again and the folder now holds two of every file, so someone
+  has to delete the copies and the message MUST warn. Reporting both at the same level defeats the
+  wording split it accompanies: the informational level is the one that says there is nothing to
+  look at, which is the opposite of what the dotAsset case needs.
 - **FR-023c** *(added by amendment, 2026-09-11)*: **An outcome MAY raise one message per severity
   rather than one message.** FR-021, FR-023 and FR-028 speak of "the message" in the singular; an
   outcome that carries both an error-severity reason and a warning-severity one raises two, errors
