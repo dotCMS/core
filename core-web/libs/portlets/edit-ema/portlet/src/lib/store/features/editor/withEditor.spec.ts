@@ -214,7 +214,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$areaContentType()).toBe(
-                    MOCK_CONTENTLET_AREA.payload.contentlet.contentType
+                    MOCK_CONTENTLET_AREA.payload.contentlet!.contentType
                 );
             });
         });
@@ -226,9 +226,9 @@ describe('withEditor', () => {
                         MOCK_RESPONSE_HEADLESS.containers
                     ),
                     id: MOCK_RESPONSE_HEADLESS.page.identifier,
-                    personalization: getPersonalization(MOCK_RESPONSE_HEADLESS.viewAs.persona),
-                    languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                    personaTag: MOCK_RESPONSE_HEADLESS.viewAs.persona.keyTag
+                    personalization: getPersonalization(MOCK_RESPONSE_HEADLESS.viewAs!.persona),
+                    languageId: MOCK_RESPONSE_HEADLESS.viewAs!.language.id,
+                    personaTag: MOCK_RESPONSE_HEADLESS.viewAs!.persona!.keyTag
                 });
             });
         });
@@ -588,7 +588,7 @@ describe('withEditor', () => {
                     pageAsset: {
                         ...MOCK_RESPONSE_HEADLESS,
                         vanityUrl: {
-                            ...MOCK_RESPONSE_HEADLESS.vanityUrl,
+                            ...MOCK_RESPONSE_HEADLESS.vanityUrl!,
                             url: 'first'
                         }
                     }
@@ -848,7 +848,7 @@ describe('withEditor', () => {
                 const { container, contentlet } = ACTION_PAYLOAD_MOCK;
 
                 // When variantId is not set in pageParams, $variantId() returns DEFAULT_VARIANT_ID
-                expect(store.getCurrentTreeNode(container, contentlet)).toEqual({
+                expect(store.getCurrentTreeNode(container, contentlet!)).toEqual({
                     containerId: 'container-identifier-123',
                     contentId: 'contentlet-identifier-123',
                     pageId: '123',
@@ -866,12 +866,13 @@ describe('withEditor', () => {
                 // Set variantName in pageParams
                 patchStoreState(store, {
                     pageParams: {
-                        ...store.pageParams(),
+                        // `pageParams()` is `| null` before the first load; `beforeEach` seeds it.
+                        ...store.pageParams()!,
                         variantName: testVariantName
                     }
                 });
 
-                const result = store.getCurrentTreeNode(container, contentlet);
+                const result = store.getCurrentTreeNode(container, contentlet!);
 
                 expect(result.variantId).toBe(testVariantName);
                 expect(result).toEqual({

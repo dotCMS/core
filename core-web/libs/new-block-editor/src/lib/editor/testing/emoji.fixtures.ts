@@ -247,7 +247,11 @@ export const MALFORMED_MARKS: JSONContent = {
         {
             type: 'paragraph',
             content: [
-                { type: 'text', marks: [{ type: 'link', attrs: null }], text: 'dotCMS ' },
+                {
+                    type: 'text',
+                    marks: [{ type: 'link', attrs: null }],
+                    text: 'dotCMS '
+                } as unknown as JSONContent,
                 emoji(),
                 { type: 'text', marks: {}, text: ' 2026' } as unknown as JSONContent
             ]

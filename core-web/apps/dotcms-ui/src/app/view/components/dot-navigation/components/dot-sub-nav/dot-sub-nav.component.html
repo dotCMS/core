@@ -1,21 +1,21 @@
-<ul [class.dot-nav-sub__collapsed]="collapsed" #ul class="dot-nav-sub">
-    @if (collapsed) {
+<ul [class.dot-nav-sub__collapsed]="collapsed()" #ul class="dot-nav-sub">
+    @if (collapsed()) {
         <li class="dot-nav-sub__group-header" data-testid="nav-sub-group-header">
             <span
                 class="dot-nav-sub__group-name"
                 data-testid="nav-sub-group-name"
                 (click)="$event.preventDefault(); $event.stopPropagation()">
-                {{ data.label }}
+                {{ data().label }}
             </span>
         </li>
     }
-    @for (subItem of data.menuItems; track $index) {
+    @for (subItem of data().menuItems; track $index) {
         <li class="dot-nav-sub__item">
             <a
                 (click)="onItemClick($event, subItem)"
                 [class.dot-nav-sub__link--active]="subItem.active"
                 [routerLink]="subItem.menuLink"
-                [state]="{ menuId: data.id }"
+                [state]="{ menuId: data().id }"
                 class="dot-nav-sub__link">
                 {{ subItem.label }}
             </a>

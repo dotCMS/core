@@ -1,4 +1,4 @@
-<dot-action-header [options]="actionHeaderOptions">
+<dot-action-header [options]="actionHeaderOptions()">
     <div class="flex gap-2 p-1">
         <ng-container [ngTemplateOutlet]="beforeSearchTemplate" />
 
@@ -21,25 +21,25 @@
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"
     [(selection)]="selected"
-    [columns]="columns"
+    [columns]="columns()"
     [contextMenu]="contextMenuComponent()"
-    [dataKey]="dataKey"
+    [dataKey]="dataKey()"
     [lazy]="true"
     [loading]="loading"
     [pageLinks]="maxLinksPage"
     [paginator]="true"
     [responsiveLayout]="'scroll'"
-    [rows]="paginationPerPage"
-    [selectionMode]="checkbox ? 'multiple' : 'single'"
-    [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
+    [rows]="paginationPerPage()"
+    [selectionMode]="checkbox() ? 'multiple' : 'single'"
+    [sortOrder]="sortOrder() && sortOrder().toLowerCase() === 'desc' ? -1 : 1"
     [totalRecords]="totalRecords"
     [value]="items"
     #dataTable
     loadingIcon="pi pi-spin pi-spinner">
     <ng-template let-columns pTemplate="header">
-        @if (items?.length) {
+        @if (items.length) {
             <tr data-testClass="testHeadTableRow">
-                @if (checkbox) {
+                @if (checkbox()) {
                     <th scope="col" style="width: 5%">
                         <p-tableHeaderCheckbox />
                     </th>
@@ -63,7 +63,7 @@
             [pSelectableRow]="rowData"
             [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
             data-testClass="testTableRow">
-            @if (checkbox) {
+            @if (checkbox()) {
                 <td>
                     @if (!rowData.disableInteraction) {
                         <p-tableCheckbox
@@ -105,7 +105,7 @@
 </ng-template>
 
 <ng-template #defaultRowTemplate let-rowData="rowData">
-    @for (col of columns; track col) {
+    @for (col of columns(); track col) {
         <td
             [style]="{ width: col.width, 'text-align': getAlign(col) }"
             [attr.data-testId]="col.fieldName">

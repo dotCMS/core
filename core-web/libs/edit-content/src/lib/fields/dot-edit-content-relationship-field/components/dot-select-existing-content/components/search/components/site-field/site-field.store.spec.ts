@@ -157,7 +157,8 @@ describe('SiteFieldStore', () => {
         it('should return null for valueToSave when node data is missing', () => {
             const mockNode: TreeNodeItem = {
                 label: 'Invalid Node',
-                data: null,
+                // `TreeNode.data` is optional, so a missing node payload is undefined.
+                data: undefined,
                 icon: 'pi pi-folder',
                 leaf: true,
                 children: []
@@ -190,7 +191,9 @@ describe('SiteFieldStore', () => {
                     id: '123',
                     hostname: 'test.com',
                     path: 'test',
-                    type: undefined as 'site' | 'folder' | undefined
+                    // Deliberately absent: `type` is the discriminant and is required on every
+                    // variant. This drives the store's handling of a malformed node.
+                    type: undefined as unknown as 'site' | 'folder'
                 },
                 icon: 'pi pi-folder',
                 leaf: true,
@@ -323,7 +326,8 @@ describe('SiteFieldStore', () => {
                 originalEvent: createFakeEvent('click'),
                 node: {
                     label: 'Invalid Node',
-                    data: null,
+                    // `TreeNode.data` is optional, so a missing node payload is undefined.
+                    data: undefined,
                     icon: 'pi pi-folder',
                     leaf: true,
                     children: []

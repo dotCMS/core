@@ -106,12 +106,12 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
-    form: UntypedFormGroup;
-    nameFieldLabel: string;
-    workflowsSelected$: Observable<DotCMSWorkflow[]>;
-    newContentEditorEnabled: boolean;
+    form!: UntypedFormGroup;
+    nameFieldLabel!: string;
+    workflowsSelected$!: Observable<DotCMSWorkflow[]>;
+    newContentEditorEnabled = false;
 
-    private originalValue: DotCMSContentType;
+    private originalValue!: DotCMSContentType;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
@@ -135,7 +135,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         }
 
         this.newContentEditorEnabled =
-            this.route.snapshot?.data?.featuredFlags[
+            this.route.snapshot?.data?.['featuredFlags'][
                 FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
             ];
     }
@@ -152,7 +152,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      * @param any field
      * @memberof ContentTypesFormComponent
      */
-    handleDateVarChange($event, field): void {
+    handleDateVarChange($event: { value: string }, field: string): void {
         if (field === 'publishDateVar') {
             this.updateExpireDateVar($event.value);
         } else {
@@ -258,9 +258,9 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.setOriginalValue();
         this.setDateVarFieldsState();
         this.setSystemWorkflow();
-        this.workflowsSelected$ = this.form
-            .get('workflows')
-            .valueChanges.pipe(startWith(this.form.get('workflows').value));
+        this.workflowsSelected$ = this.form.controls['workflows'].valueChanges.pipe(
+            startWith(this.form.controls['workflows'].value)
+        );
     }
 
     private getActionIdentifier(actionMap: DotCMSSystemActionMappings): string {
@@ -277,7 +277,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         return item && typeof item !== 'string' ? item.workflowAction.id : '';
     }
 
-    private getProp(item: string): string {
+    private getProp(item?: string | null): string {
         return item || '';
     }
 
@@ -287,7 +287,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
                 .getSystem()
                 .pipe(take(1))
                 .subscribe((workflow: DotCMSWorkflow) => {
-                    this.form.get('workflows').setValue([workflow]);
+                    this.form.controls['workflows'].setValue([workflow]);
                 });
         }
     }
@@ -348,8 +348,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         if (this.isLayoutSet()) {
             this.dateVarOptions = this.getDateVarOptions();
 
-            const publishDateVar = this.form.get('publishDateVar');
-            const expireDateVar = this.form.get('expireDateVar');
+            const publishDateVar = this.form.controls['publishDateVar'];
+            const expireDateVar = this.form.controls['expireDateVar'];
 
             if (this.dateVarOptions.length) {
                 publishDateVar.enable();
@@ -371,10 +371,9 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private enableWorkflowFormControls(): void {
-        const workflowControl = this.form.get('workflows');
-        const workflowActionControl = this.form
-            .get('systemActionMappings')
-            .get(DotCMSSystemActionType.NEW);
+        const workflowControl = this.form.controls['workflows'];
+        const systemActionMappings = this.form.controls['systemActionMappings'] as UntypedFormGroup;
+        const workflowActionControl = systemActionMappings.controls[DotCMSSystemActionType.NEW];
 
         workflowControl.enable();
         workflowActionControl.enable();
@@ -390,7 +389,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private updateExpireDateVar(value: string): void {
-        const expireDateVar = this.form.get('expireDateVar');
+        const expireDateVar = this.form.controls['expireDateVar'];
 
         if (expireDateVar.value === value) {
             expireDateVar.patchValue('');
@@ -398,20 +397,20 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private updatePublishDateVar(value: string): void {
-        const publishDateVar = this.form.get('publishDateVar');
+        const publishDateVar = this.form.controls['publishDateVar'];
 
         if (publishDateVar.value === value) {
             publishDateVar.patchValue('');
         }
     }
 
-    private getMetaDataProperty(_prop: string): string | number | boolean {
+    private getMetaDataProperty(_prop: string): string | number | boolean | undefined {
         return this.$contentType().metadata?.[_prop];
     }
 
     private addMetadataToForm(): DotCMSContentType {
         const metadata = this.$contentType().metadata || {};
-        const newEditContent = this.form.get('newEditContent').value;
+        const newEditContent = this.form.controls['newEditContent'].value;
         const form = this.form.value;
         delete form.newEditContent;
         metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = newEditContent;

@@ -12,6 +12,14 @@ export interface DotCMSContentlet {
     binaryVersion?: string;
     contentType: string;
     /**
+     * Whether the requesting user holds EDIT permission on this contentlet instance. Returned by
+     * the Page API and by GraphQL through `_map`.
+     *
+     * Optional and fail-open: a dotCMS release that predates the field omits it, and `undefined`
+     * must be treated as allowed. Mirrors `DotCMSBasicContentlet.canEdit` in `@dotcms/types`.
+     */
+    canEdit?: boolean;
+    /**
      * Whether the current user may edit the contentlet *right now* — stamped by the browser/drive
      * search, not by the contentlet itself.
      *
@@ -33,8 +41,10 @@ export interface DotCMSContentlet {
     language?: string | DotLanguage;
     live: boolean;
     locked: boolean;
-    lockedBy?: DotContentletLockUser | string;
-    lockedByName?: string;
+    /** Null once the content is unlocked — the unlock response sends null, not an absent key. */
+    lockedBy?: DotContentletLockUser | string | null;
+    /** Null once the content is unlocked — see {@link DotCMSContentlet.lockedBy}. */
+    lockedByName?: string | null;
     mimeType?: string;
     modDate: string;
     modUser: string;

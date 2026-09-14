@@ -8,6 +8,7 @@ import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { TableRowReorderEvent } from 'primeng/table';
 
 import {
     DotContentTypeService,
@@ -17,6 +18,7 @@ import {
     DotPropertiesService
 } from '@dotcms/data-access';
 import {
+    ContentTypeRelationshipField,
     DotCMSClazzes,
     DotCMSContentlet,
     DotCMSContentType,
@@ -93,9 +95,11 @@ const mockContentType: DotCMSContentType = {
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    // `| null`: one case drives the component with no contentlet, which the field supports
+    // (manual translation has none yet).
+    contentlet!: DotCMSContentlet | null;
 }
 
 describe('DotEditContentRelationshipFieldComponent', () => {
@@ -180,7 +184,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 }
             );
 
-            const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+            const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
             store = fieldComponent.store;
             dialogService = spectator.inject(DialogService);
         });
@@ -210,10 +214,10 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 const control = spectator.hostComponent.formGroup.get(
                     RELATIONSHIP_FIELD_MOCK.variable
                 );
-                control.disable();
+                control!.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 expect(fieldComponent.$isDisabled()).toBe(true);
             });
@@ -223,7 +227,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.deleteItem('1');
                 expect(deleteSpy).not.toHaveBeenCalled();
@@ -234,7 +238,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
                 expect(reorderDataSpy).not.toHaveBeenCalled();
@@ -245,7 +249,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showExistingContentDialog();
                 expect(openSpy).not.toHaveBeenCalled();
@@ -256,7 +260,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showCreateNewContentDialog();
                 expect(openSpy).not.toHaveBeenCalled();
@@ -270,7 +274,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should delete item when not disabled', () => {
                 const deleteSpy = vi.spyOn(store, 'deleteItem');
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.deleteItem('1');
                 expect(deleteSpy).toHaveBeenCalledWith('1');
@@ -278,7 +282,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should reorder items when not disabled', () => {
                 const reorderDataSpy = vi.spyOn(store, 'reorderData');
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
                 expect(reorderDataSpy).toHaveBeenCalledWith(store.data());
             });
@@ -286,11 +290,19 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             it('should not reorder items with invalid indices', () => {
                 const reorderDataSpy = vi.spyOn(store, 'reorderData');
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
-                fieldComponent.onRowReorder({ dragIndex: null, dropIndex: 1 });
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
+                // PrimeNG types these as `number | undefined`; the component guards with `== null`,
+                // which this test drives.
+                fieldComponent.onRowReorder({
+                    dragIndex: null,
+                    dropIndex: 1
+                } as unknown as TableRowReorderEvent);
                 expect(reorderDataSpy).not.toHaveBeenCalled();
 
-                fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: null });
+                fieldComponent.onRowReorder({
+                    dragIndex: 0,
+                    dropIndex: null
+                } as unknown as TableRowReorderEvent);
                 expect(reorderDataSpy).not.toHaveBeenCalled();
             });
         });
@@ -321,7 +333,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                     close: vi.fn()
                 };
                 openSpy.mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 expect(() => {
                     fieldComponent.showExistingContentDialog();
@@ -338,7 +350,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 vi.spyOn(dialogService, 'open').mockReturnValue(
                     mockDialogRef as unknown as DynamicDialogRef
                 );
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 expect(() => {
                     fieldComponent.showExistingContentDialog();
@@ -357,7 +369,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 );
                 const setDataSpy = vi.spyOn(store, 'setData');
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showExistingContentDialog();
                 spectator.flushEffects();
@@ -409,7 +421,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should open the new content dialog when the feature flag is enabled', async () => {
                 // Check initial state
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 expect(fieldComponent.$isDisabled()).toBe(false);
                 expect(store.contentType()).toEqual(mockContentType);
 
@@ -438,7 +450,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
@@ -450,7 +462,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 // Mock the store's contentType method to return null
                 vi.spyOn(store, 'contentType').mockReturnValue(null);
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
 
                 fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
@@ -462,7 +474,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
                 const setDataSpy = vi.spyOn(store, 'setData');
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 await fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
@@ -481,7 +493,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
         describe('Form Control Integration', () => {
             it('should implement ControlValueAccessor methods', () => {
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 expect(fieldComponent.writeValue).toBeDefined();
                 expect(fieldComponent.registerOnChange).toBeDefined();
                 expect(fieldComponent.registerOnTouched).toBeDefined();
@@ -490,7 +502,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             it('should handle writeValue with empty value', () => {
                 expect(() => {
-                    const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                    const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                     fieldComponent.writeValue('');
                 }).not.toThrow();
             });
@@ -502,7 +514,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should compute menu items correctly', () => {
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 const menuItems = fieldComponent.$menuItems();
 
                 expect(menuItems).toHaveLength(2);
@@ -516,7 +528,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotRelationshipFieldComponent);
+                const fieldComponent = spectator.query(DotRelationshipFieldComponent)!;
                 const menuItems = fieldComponent.$menuItems();
 
                 expect(menuItems[0].disabled).toBe(true);
@@ -559,14 +571,16 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             emptySpectator.flushEffects();
 
             const fieldComponent = emptySpectator.query(DotRelationshipFieldComponent);
-            expect(fieldComponent.store.data()).toEqual([]);
+            expect(fieldComponent!.store.data()).toEqual([]);
         });
 
         it('should handle invalid field data gracefully', () => {
             const invalidField = createFakeRelationshipField({
+                // Deliberately invalid: `relationships` is required on a relationship field.
+                // This exercises the guards that handle a field without one.
                 relationships: null,
                 variable: 'invalidField'
-            });
+            } as unknown as Partial<ContentTypeRelationshipField>);
 
             const invalidContentlet = createFakeContentlet({
                 [invalidField.variable]: null
@@ -591,7 +605,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             invalidSpectator.flushEffects();
 
             const fieldComponent = invalidSpectator.query(DotRelationshipFieldComponent);
-            expect(fieldComponent.store.data()).toBeDefined();
+            expect(fieldComponent!.store.data()).toBeDefined();
         });
 
         it('should handle null contentlet gracefully', () => {
@@ -614,7 +628,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             nullContentletSpectator.flushEffects();
 
             const fieldComponent = nullContentletSpectator.query(DotRelationshipFieldComponent);
-            expect(fieldComponent.store.data()).toBeDefined();
+            expect(fieldComponent!.store.data()).toBeDefined();
         });
     });
 
@@ -705,7 +719,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 byTestId(`hint-${HINTED_FIELD_MOCK.variable}`)
             );
             expect(hintElement).toBeTruthy();
-            expect(hintElement.textContent.trim()).toBe(HINTED_FIELD_MOCK.hint);
+            expect(hintElement!.textContent.trim()).toBe(HINTED_FIELD_MOCK.hint);
         });
 
         it('should not render the hint inside the relationship table', () => {

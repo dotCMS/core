@@ -5,13 +5,13 @@ import {
     ElementRef,
     HostListener,
     inject,
-    Input,
     OnChanges,
     OnInit,
     Renderer2,
     SecurityContext,
     ViewChild,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
@@ -68,27 +68,27 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
      * @type {DOT_EDITABLE_TEXT_MODE}
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() mode: DOT_EDITABLE_TEXT_MODE = 'plain';
+    readonly mode = input<DOT_EDITABLE_TEXT_MODE>('plain');
     /**
      * Represents the format of the editor which can be `text` or `html`
      *
      * @type {DOT_EDITABLE_TEXT_FORMAT}
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() format: DOT_EDITABLE_TEXT_FORMAT = 'text';
+    readonly format = input<DOT_EDITABLE_TEXT_FORMAT>('text');
     /**
      * Represents the `contentlet` that can be inline edited
      *
      * @type {DotCMSContentlet}
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() contentlet!: T;
+    readonly contentlet = input.required<T>();
     /**
      * Represents the field name of the `contentlet` that can be edited
      *
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() fieldName!: keyof T;
+    readonly fieldName = input.required<keyof T>();
 
     /**
      * Represents the content of the `contentlet` that can be edited
@@ -143,7 +143,7 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
      * @memberof DotCMSEditableTextComponent
      */
     get onNumberOfPages() {
-        return this.contentlet['onNumberOfPages'] || 1;
+        return this.contentlet()['onNumberOfPages'] || 1;
     }
 
     /**
@@ -161,13 +161,13 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
         }
 
         const { oldInode, inode, fieldName } = payload;
-        const currentInode = this.contentlet.inode;
+        const currentInode = this.contentlet().inode;
         const matchesInode = currentInode === oldInode || currentInode === inode;
 
         // Match the field too: a contentlet's fields all share one inode, so an
         // inode-only check focuses every editable field on the contentlet (the
         // last one wins) instead of the one the user clicked.
-        if (matchesInode && fieldName === this.fieldName) {
+        if (matchesInode && fieldName === this.fieldName()) {
             this.editorComponent.editor.focus();
 
             return;
@@ -188,15 +188,15 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
         }
 
         this.init = {
-            ...TINYMCE_CONFIG[this.mode],
+            ...TINYMCE_CONFIG[this.mode()],
             base_url: `${dotCMSHost}/ext/tinymcev7`
         };
     }
 
     ngOnChanges() {
-        this.content = (this.contentlet[this.fieldName] as string) || '';
+        this.content = (this.contentlet()[this.fieldName()] as string) || '';
         if (this.editor) {
-            this.editor.setContent(this.content, { format: this.format });
+            this.editor.setContent(this.content, { format: this.format() });
         }
     }
 
@@ -212,7 +212,7 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
             return;
         }
 
-        const { inode, languageId: language } = this.contentlet;
+        const { inode, languageId: language } = this.contentlet();
 
         event.stopPropagation();
         event.preventDefault();
@@ -224,7 +224,7 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
                     dataset: {
                         inode,
                         language,
-                        fieldName: this.fieldName
+                        fieldName: this.fieldName()
                     }
                 }
             });
@@ -243,13 +243,13 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
         if (!editor) {
             return;
         }
-        const content = editor.getContent({ format: this.format });
+        const content = editor.getContent({ format: this.format() });
 
         if (!editor.isDirty() || !this.didContentChange(content)) {
             return;
         }
 
-        const { inode, languageId: langId } = this.contentlet;
+        const { inode, languageId: langId } = this.contentlet();
 
         try {
             sendMessageToUVE({
@@ -259,7 +259,7 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
                     dataset: {
                         inode,
                         langId,
-                        fieldName: this.fieldName
+                        fieldName: this.fieldName()
                     }
                 }
             });

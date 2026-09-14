@@ -68,11 +68,15 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     private dotMenuService = inject(DotMenuService);
     private dotAddToMenuService = inject(DotAddToMenuService);
 
-    form: UntypedFormGroup;
-    menu$: Observable<DotMenu[]>;
+    form!: UntypedFormGroup;
+    menu$!: Observable<DotMenu[]>;
     placeholder = '';
     dialogShow = false;
-    dialogActions: DotDialogActions;
+    /**
+     * `accept` is required here even though `DotDialogActions` declares it optional: this component
+     * always builds one with a label, and updates its `disabled` flag by spreading it.
+     */
+    dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
 
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
     readonly cancel = output<boolean>();
@@ -95,7 +99,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.$contentType) {
+        if (changes['$contentType']) {
             this.dialogShow = !!this.$contentType();
             if (this.$contentType()) {
                 this.initForm();
@@ -124,9 +128,9 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     submit(): void {
         if (this.form.valid) {
             const params: DotCreateCustomTool = {
-                portletName: this.form.get('title').value,
+                portletName: this.form.controls['title'].value,
                 contentTypes: this.$contentType().variable,
-                dataViewMode: this.form.get('defaultView').value
+                dataViewMode: this.form.controls['defaultView'].value
             };
 
             this.dotAddToMenuService
@@ -137,8 +141,8 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
                         return this.dotAddToMenuService
                             .addToLayout({
                                 portletName: params.portletName,
-                                dataViewMode: this.form.get('defaultView').value,
-                                layoutId: this.form.get('menuOption').value
+                                dataViewMode: this.form.controls['defaultView'].value,
+                                layoutId: this.form.controls['menuOption'].value
                             })
                             .pipe(take(1));
                     })

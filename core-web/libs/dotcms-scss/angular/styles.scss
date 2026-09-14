@@ -2,11 +2,11 @@
 @use "../shared/material-symbols-outlined";
 @use "../shared/material-symbols-rounded";
 
-// @import "forms";
+// @use "forms";
 @use "mixins";
-// @import "typography";
+// @use "typography";
 @use "dotcms-theme/utils/theme-variables"; /* temporary */
-// @import "dotcms-theme/theme"; /* prime-ng */
+// @use "dotcms-theme/theme"; /* prime-ng */
 
 // INCLUDE FONT FACES
 @include assistant-font-face(400, "Regular");

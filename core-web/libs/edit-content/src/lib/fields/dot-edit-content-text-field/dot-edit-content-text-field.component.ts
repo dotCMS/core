@@ -6,7 +6,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { INPUT_TEXT_OPTIONS } from './utils';
+import { INPUT_TEXT_OPTIONS, INPUT_TYPE, InputTextOptions } from './utils';
 
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
@@ -45,7 +45,7 @@ export class DotEditContentTextFieldComponent extends BaseWrapperField {
      * A signal that holds the contentlet.
      * It is used to display the contentlet in the text field component.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * A computed signal that holds the initial value of the text field.
      * It is used to display the initial value in the text field component.
@@ -68,5 +68,17 @@ export class DotEditContentTextFieldComponent extends BaseWrapperField {
     /**
      * A readonly field that holds the input text options.
      */
-    readonly inputTextOptions = INPUT_TEXT_OPTIONS;
+    /**
+     * The input attributes for this field's data type.
+     *
+     * `DotCMSContentTypeField.dataType` is a plain `string` on the model, so it cannot index
+     * `INPUT_TEXT_OPTIONS` directly — the template did that three times. Resolved once here, with
+     * TEXT as the fallback: an unrecognised data type used to produce `undefined.type` in the
+     * template, which is a runtime error rather than a plain text input.
+     */
+    readonly $inputTextOptions = computed<InputTextOptions>(() => {
+        const dataType = this.$field().dataType as INPUT_TYPE;
+
+        return INPUT_TEXT_OPTIONS[dataType] ?? INPUT_TEXT_OPTIONS[INPUT_TYPE.TEXT];
+    });
 }

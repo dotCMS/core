@@ -1,5 +1,4 @@
 import { Observable, of as observableOf } from 'rxjs';
-import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -14,7 +13,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 
 @Injectable()
 class MockLoginService {
-    private _isLogin$: Observable<boolean>;
+    private _isLogin$!: Observable<boolean>;
     get isLogin$() {
         return this._isLogin$;
     }
@@ -38,12 +37,16 @@ describe('ValidPublicAuthGuardService', () => {
         publicAuthGuardService = TestBed.inject(PublicAuthGuardService);
         dotRouterService = TestBed.inject(DotRouterService);
         loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = { toString: vi.fn() } as unknown as RouterStateSnapshot;
-        mockActivatedRouteSnapshot = { toString: vi.fn() } as unknown as ActivatedRouteSnapshot;
+        // Minimal snapshots rather than `vi.fn<T>(name, methods)`: that shape is
+        // `jasmine.createSpyObj` migrated mechanically, and `vi.fn` takes neither argument — it
+        // produced a `Mock` standing in for a router snapshot, which is why these two
+        // declarations reported ~30 missing properties. The specs only ever read `url` and `params`.
+        mockRouterStateSnapshot = { url: '' } as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { params: {} } as ActivatedRouteSnapshot;
     });
 
     it('should redirect to to Main Portlet if User is logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(true),
             writable: true
@@ -56,7 +59,7 @@ describe('ValidPublicAuthGuardService', () => {
     });
 
     it('should allow access to the requested route if User is NOT logged in', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         Object.defineProperty(loginService, 'isLogin$', {
             value: observableOf(false),
             writable: true

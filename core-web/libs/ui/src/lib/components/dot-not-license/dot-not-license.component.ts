@@ -20,7 +20,7 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 export class DotNotLicenseComponent implements OnInit, OnDestroy {
     private dotLicense = inject(DotLicenseService);
 
-    unlicenseData: DotUnlicensedPortletData;
+    unlicenseData!: DotUnlicensedPortletData;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 

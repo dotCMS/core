@@ -39,11 +39,15 @@ export class DotAddPersonaDialogComponent implements OnInit {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     @Input() visible = false;
-    @Input() personaName: string;
+    @Input() personaName!: string;
     @Output() createdPersona: EventEmitter<DotPersona> = new EventEmitter();
-    @ViewChild('personaForm') personaForm: DotCreatePersonaFormComponent;
+    @ViewChild('personaForm') personaForm!: DotCreatePersonaFormComponent;
 
-    dialogActions: DotDialogActions;
+    /**
+     * `accept` is required here even though `DotDialogActions` declares it optional: the setter
+     * below always builds one, and the handlers toggle its `disabled` flag in place.
+     */
+    dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
 
     ngOnInit() {
         this.setDialogActions();

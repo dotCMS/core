@@ -1,7 +1,7 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
@@ -43,7 +43,6 @@ describe('TemplateBuilderBoxComponent', () => {
     const createHost = createHostFactory({
         component: TemplateBuilderBoxComponent,
         imports: [
-            NgClass,
             NgIf,
             NgFor,
             ButtonModule,
@@ -83,7 +82,7 @@ describe('TemplateBuilderBoxComponent', () => {
 
         it('should render with large variant (default)', () => {
             spectator = createHost(HOST_TEMPLATE, { hostProps: DEFAULT_HOST_PROPS });
-            expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
+            expect(spectator.query(byTestId('template-builder-box'))!.classList).toContain(
                 'template-builder-box--large'
             );
         });
@@ -92,7 +91,7 @@ describe('TemplateBuilderBoxComponent', () => {
             spectator = createHost(HOST_TEMPLATE, {
                 hostProps: { ...DEFAULT_HOST_PROPS, width: 3 }
             });
-            expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
+            expect(spectator.query(byTestId('template-builder-box'))!.classList).toContain(
                 'template-builder-box--medium'
             );
         });
@@ -167,7 +166,7 @@ describe('TemplateBuilderBoxComponent', () => {
         it('should trigger editClasses when clicking palette button', () => {
             const editStyleMock = vi.spyOn(spectator.component.editClasses, 'emit');
             spectator.dispatchFakeEvent(
-                spectator.query(byTestId('box-style-class-button')),
+                spectator.query(byTestId('box-style-class-button'))!,
                 'onClick'
             );
             expect(editStyleMock).toHaveBeenCalled();
@@ -228,7 +227,7 @@ describe('TemplateBuilderBoxComponent', () => {
             });
             const deleteMock = vi.spyOn(spectator.component.deleteColumn, 'emit');
 
-            spectator.dispatchFakeEvent(spectator.query(byTestId('btn-remove-item')), 'onClick');
+            spectator.dispatchFakeEvent(spectator.query(byTestId('btn-remove-item'))!, 'onClick');
             spectator.detectChanges();
 
             expect(deleteMock).toHaveBeenCalled();
@@ -243,7 +242,7 @@ describe('TemplateBuilderBoxComponent', () => {
 
             expect(spectator.query(byTestId('template-builder-box-small'))).toExist();
 
-            const plusButton = spectator.query(byTestId('btn-plus-small'));
+            const plusButton = spectator.query(byTestId('btn-plus-small'))!;
             spectator.dispatchFakeEvent(plusButton, 'onClick');
 
             await spectator.fixture.whenStable();

@@ -12,16 +12,28 @@ import { DEFAULT_LANG_ID } from '../../shared/utils';
     standalone: false
 })
 export class AssetFormComponent {
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() languageId = DEFAULT_LANG_ID;
-    @Input() type: EditorAssetTypes;
-    @Input() onSelectAsset: (payload: DotCMSContentlet | string) => void;
-    @Input() preventClose: (value: boolean) => void;
-    @Input() onHide: (value: boolean) => void;
+    // All four are set imperatively by `BubbleAssetFormExtension` right after it creates the
+    // component, before the first change detection pass.
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
+    @Input() type!: EditorAssetTypes;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
+    @Input() onSelectAsset!: (payload: DotCMSContentlet | string) => void;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
+    @Input() preventClose!: (value: boolean) => void;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
+    @Input() onHide!: (value: boolean) => void;
 
     public disableTabs = false;
     public activeTab = 0;
 
-    public onPreventClose(value) {
+    public onPreventClose(value: boolean) {
         this.preventClose(value);
         this.disableTabs = value;
     }

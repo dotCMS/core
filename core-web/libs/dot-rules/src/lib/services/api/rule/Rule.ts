@@ -58,7 +58,7 @@ export function getNextId(): string {
 
 export class RuleEngineState {
     showRules = true;
-    globalError: string = null;
+    globalError: string | null = null;
     loading = true;
     saving = false;
     hasError = false;
@@ -113,13 +113,20 @@ export interface IRule extends IRecord {
     deleting?: boolean;
     id?: string;
     priority?: number;
-    name?: string;
+    /** `DEFAULT_RULE` sets this to `null` explicitly: a new rule is unnamed, not absent. */
+    name?: string | null;
     fireOn?: string;
     enabled?: boolean;
     conditionGroups?: Record<string, unknown>;
     ruleActions?: Record<string, boolean>;
     set?(key: string, value: unknown): IRule;
 }
+
+/** What `/conditionlets` and `/actionlets` return: a map of type key to its definition. */
+type ServerSideTypesResponse = Record<
+    string,
+    { i18nKey: string; parameterDefinitions: Record<string, unknown> }
+>;
 
 export interface ParameterModel {
     key: string;
@@ -128,79 +135,101 @@ export interface ParameterModel {
 }
 
 export class ActionModel extends ServerSideFieldModel {
-    owningRule: string;
-    _owningRule: RuleModel;
+    /** Both are attached after construction — by `Action.ts` on the way out to the server, and
+     * by the container when it builds a brand new action for an unsaved rule. */
+    owningRule?: string;
+    _owningRule?: RuleModel;
 
-    constructor(key: string, type: ServerSideTypeModel, priority = 1) {
+    constructor(key: string | null, type: ServerSideTypeModel, priority = 1) {
         super(key, type, priority);
         this.priority = priority || 1;
         this.type = type;
     }
 
-    isValid(): boolean {
+    override isValid(): boolean {
         try {
             return super.isValid();
         } catch (e) {
-            this.loggerService.error(e);
+            this.loggerService?.error(e);
+
+            // Was an implicit `undefined`, which every caller read as falsy anyway. Saying
+            // `false` outright means the signature stops claiming a boolean it did not return.
+            return false;
         }
     }
 }
 
 export class ConditionModel extends ServerSideFieldModel {
     operator = 'AND';
-    conditionlet: string;
+    /** Absent on a condition the user has not given a type yet. */
+    conditionlet?: string;
 
     constructor(iCondition: ICondition) {
-        super(iCondition.id, iCondition._type);
+        // `?? new ServerSideTypeModel()` mirrors what the callers already do: every site that
+        // builds a condition without a type passes `new ServerSideTypeModel()`, whose key is
+        // 'NoSelection'. `ICondition._type` being optional made that implicit.
+        super(iCondition.id ?? null, iCondition._type ?? new ServerSideTypeModel());
         this.conditionlet = iCondition.conditionlet;
-        this.key = iCondition.id;
+        this.key = iCondition.id ?? null;
         this.priority = iCondition.priority || 1;
-        this.type = iCondition._type;
+        this.type = iCondition._type ?? new ServerSideTypeModel();
         this.operator = iCondition.operator || 'AND';
     }
 
-    isValid(): boolean {
+    override isValid(): boolean {
         try {
             return !!this.getParameterValue('comparison') && super.isValid();
         } catch (e) {
-            this.loggerService.error(e);
+            this.loggerService?.error(e);
+
+            return false;
         }
     }
 }
 
 export class ConditionGroupModel {
-    key: string;
+    /** `null` until saved — see `isPersisted()`. */
+    key: string | null;
     priority: number;
-
     operator: string;
     conditions: { [key: string]: boolean };
     _id: string;
     _conditions: ConditionModel[] = [];
 
     constructor(iGroup: IConditionGroup) {
+        // `Object.assign` still runs, for the `_`-prefixed view state a caller may pass in, but
+        // `priority` and `operator` are assigned outright: they are required on `IConditionGroup`
+        // and the compiler cannot see through `Object.assign` to know they arrive.
         Object.assign(this, iGroup);
-        this.key = iGroup.id;
+        this.priority = iGroup.priority;
+        this.operator = iGroup.operator;
+        this.key = iGroup.id ?? null;
         this._id = this.key != null ? this.key : getNextId();
         this.conditions = iGroup.conditions || {};
     }
 
-    isPersisted(): boolean {
+    /**
+     * A `this`-typed predicate rather than a plain boolean: it lets `if (model.isPersisted())`
+     * narrow `model.key` from `string | null` to `string`, which is what every caller inside such
+     * a branch goes on to do when it builds a URL from it.
+     */
+    isPersisted(): this is this & { key: string } {
         return this.key != null;
     }
 
     isValid(): boolean {
-        const valid = this.operator && (this.operator === 'AND' || this.operator === 'OR');
-
-        return valid;
+        return this.operator === 'AND' || this.operator === 'OR';
     }
 }
 
 export class RuleModel {
-    key: string;
-    name: string;
+    /** `null` until saved — see `isPersisted()`. */
+    key: string | null;
+    /** `null` for a rule the user has not named yet; `DEFAULT_RULE` seeds it that way. */
+    name: string | null;
     enabled = false;
-    priority: number;
-    fireOn: string;
+    priority = 1;
+    fireOn = 'EVERY_PAGE';
     conditionGroups: { [key: string]: ConditionGroupModel } = {};
     ruleActions: { [key: string]: boolean } = {};
 
@@ -211,11 +240,15 @@ export class RuleModel {
     _saved = true;
     _saving = false;
     _deleting = true;
-    _errors: { [key: string]: string | Error };
+    /** `null` clears the errors; the container assigns it directly in `ruleUpdating`. */
+    _errors: { [key: string]: string | Error } | null = null;
 
     constructor(iRule: IRule) {
+        // As in `ConditionGroupModel`: `Object.assign` carries everything, and the fields the
+        // compiler must see assigned are repeated below. The defaults above match `DEFAULT_RULE`.
         Object.assign(this, iRule);
-        this.key = iRule.id;
+        this.name = iRule.name ?? null;
+        this.key = iRule.id ?? null;
         this._id = this.key != null ? this.key : getNextId();
         const conGroups = Object.keys(iRule.conditionGroups || {});
         conGroups.forEach((groupId) => {
@@ -226,15 +259,17 @@ export class RuleModel {
         });
     }
 
-    isPersisted(): boolean {
+    /**
+     * A `this`-typed predicate rather than a plain boolean: it lets `if (model.isPersisted())`
+     * narrow `model.key` from `string | null` to `string`, which is what every caller inside such
+     * a branch goes on to do when it builds a URL from it.
+     */
+    isPersisted(): this is this & { key: string } {
         return this.key != null;
     }
 
     isValid(): boolean {
-        let valid = !!this.name;
-        valid = valid && this.name.trim().length > 0;
-
-        return valid;
+        return !!this.name && this.name.trim().length > 0;
     }
 }
 
@@ -262,8 +297,8 @@ export class RuleService {
     get rules(): RuleModel[] {
         return this._rules;
     }
-    ruleActionTypes$: BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
-    conditionTypes$: BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
+    ruleActionTypes$ = new BehaviorSubject<ServerSideTypeModel[]>([]);
+    conditionTypes$ = new BehaviorSubject<ServerSideTypeModel[]>([]);
 
     _ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
     _conditionTypes: { [key: string]: ServerSideTypeModel } = {};
@@ -282,10 +317,7 @@ export class RuleService {
 
     private _rules$: Subject<RuleModel[]> = new Subject();
 
-    private _ruleActionTypesAry: ServerSideTypeModel[] = [];
-    private _conditionTypesAry: ServerSideTypeModel[] = [];
-
-    private _rules: RuleModel[];
+    private _rules: RuleModel[] = [];
 
     constructor() {
         const _resources = this._resources;
@@ -335,18 +367,24 @@ export class RuleService {
             conditionGroups: Record<string, IConditionGroup>;
             key?: string;
         };
-        sendRule.key = rule.key;
+        sendRule.key = rule.key ?? undefined;
         delete sendRule.id;
         sendRule.conditionGroups = {};
-        sendRule._conditionGroups.forEach((conditionGroup: ConditionGroupModel) => {
+        // `?? []` because `_conditionGroups` is optional on `IRule` and the spread above comes
+        // from `Object.assign({}, DEFAULT_RULE, rule)` — a `RuleModel` always has the array.
+        (sendRule._conditionGroups ?? []).forEach((conditionGroup: ConditionGroupModel) => {
             if (conditionGroup.key) {
+                const conditions: Record<string, boolean> = {};
                 const sendGroup: IConditionGroup = {
-                    conditions: {} as Record<string, boolean>,
+                    conditions,
                     operator: conditionGroup.operator,
                     priority: conditionGroup.priority
                 };
                 conditionGroup._conditions.forEach((condition: ConditionModel) => {
-                    sendGroup.conditions[condition.key] = true;
+                    // An unsaved condition has no key and nothing to reference server-side.
+                    if (condition.key) {
+                        conditions[condition.key] = true;
+                    }
                 });
                 sendRule.conditionGroups[conditionGroup.key] = sendGroup;
             }
@@ -441,7 +479,7 @@ export class RuleService {
     }
 
     updateRule(id: string, rule: RuleModel): Observable<RuleModel | CwError> {
-        let result;
+        let result: Observable<RuleModel | CwError>;
         const siteId = this.loadRulesSiteId();
         if (!id) {
             result = this.createRule(rule);
@@ -456,7 +494,9 @@ export class RuleService {
                         const r = Object.assign({}, DEFAULT_RULE, res);
                         r.id = id;
 
-                        return r;
+                        // Same shape-lie as `loadRule` above: the server sends an `IRule`, not a
+                        // `RuleModel`, and every caller reads it as plain data.
+                        return r as unknown as RuleModel;
                     })
                 );
         }
@@ -466,30 +506,30 @@ export class RuleService {
 
     getConditionTypes(): Observable<ServerSideTypeModel[]> {
         return this.http
-            .get(this._conditionTypesEndpointUrl)
+            .get<ServerSideTypesResponse>(this._conditionTypesEndpointUrl)
             .pipe(map(this.fromServerServersideTypesTransformFn));
     }
 
     getRuleActionTypes(): Observable<ServerSideTypeModel[]> {
         return this.http
-            .get(this._ruleActionTypesEndpointUrl)
+            .get<ServerSideTypesResponse>(this._ruleActionTypesEndpointUrl)
             .pipe(map(this.fromServerServersideTypesTransformFn));
     }
 
     _doLoadRuleActionTypes(): Observable<ServerSideTypeModel[]> {
         return this.http
-            .get(this._ruleActionTypesEndpointUrl)
+            .get<ServerSideTypesResponse>(this._ruleActionTypesEndpointUrl)
             .pipe(map(this.fromServerServersideTypesTransformFn));
     }
 
     _doLoadConditionTypes(): Observable<ServerSideTypeModel[]> {
         return this.http
-            .get(this._conditionTypesEndpointUrl)
+            .get<ServerSideTypesResponse>(this._conditionTypesEndpointUrl)
             .pipe(map(this.fromServerServersideTypesTransformFn));
     }
 
     private fromServerServersideTypesTransformFn(
-        typesMap: Record<string, { i18nKey: string; parameterDefinitions: Record<string, unknown> }>
+        typesMap: ServerSideTypesResponse
     ): ServerSideTypeModel[] {
         const types = Object.keys(typesMap).map((key: string) => {
             const json = { ...typesMap[key], key };
@@ -527,17 +567,10 @@ export class RuleService {
     }
 
     private loadActionTypes(): Observable<ServerSideTypeModel[]> {
-        let obs;
-        if (this._ruleActionTypesAry.length) {
-            obs = observableFrom(this._ruleActionTypesAry);
-        } else {
-            return this.actionAndConditionTypeLoader(
-                this._doLoadRuleActionTypes(),
-                this._ruleActionTypes
-            );
-        }
-
-        return obs;
+        return this.actionAndConditionTypeLoader(
+            this._doLoadRuleActionTypes(),
+            this._ruleActionTypes
+        );
     }
 
     private actionAndConditionTypeLoader(
@@ -548,13 +581,15 @@ export class RuleService {
             mergeMap((types: ServerSideTypeModel[]) => {
                 return observableFrom(types).pipe(
                     mergeMap((type) => {
-                        return this._resources.get(type.i18nKey + '.name', type.i18nKey).pipe(
-                            map((label: string) => {
-                                type._opt = { value: type.key, label: label };
+                        return this._resources
+                            .get(`${type.i18nKey}.name`, type.i18nKey ?? undefined)
+                            .pipe(
+                                map((label: string) => {
+                                    type._opt = { value: type.key, label: label };
 
-                                return type;
-                            })
-                        );
+                                    return type;
+                                })
+                            );
                     }),
                     reduce((accTypes: ServerSideTypeModel[], type: ServerSideTypeModel) => {
                         accTypes.push(type);
@@ -577,30 +612,24 @@ export class RuleService {
     }
 
     private loadConditionTypes(): Observable<ServerSideTypeModel[]> {
-        let obs;
-        if (this._conditionTypesAry.length) {
-            obs = observableFrom(this._conditionTypesAry);
-        } else {
-            return this.actionAndConditionTypeLoader(
-                this._doLoadConditionTypes(),
-                this._conditionTypes
-            );
-        }
-
-        return obs;
+        return this.actionAndConditionTypeLoader(
+            this._doLoadConditionTypes(),
+            this._conditionTypes
+        );
     }
 
-    private getPageIdFromUrl(): string {
-        let query;
-
+    /** `null` when the current URL carries neither a realm id nor an edit-page path. */
+    private getPageIdFromUrl(): string | null {
         const hash = document.location.hash;
 
         if (hash.includes('fromCore')) {
-            query = hash.substr(hash.indexOf('?') + 1);
+            const query = hash.substr(hash.indexOf('?') + 1);
 
             return ApiRoot.parseQueryParam(query, 'realmId');
         } else if (hash.includes('edit-page') || hash.includes('edit-ema')) {
-            return hash.split('/').pop().split('?')[0];
+            // `split` on a non-empty string always yields at least one element, so `pop()` is
+            // only formally undefined here.
+            return hash.split('/').pop()?.split('?')[0] ?? null;
         }
 
         return null;

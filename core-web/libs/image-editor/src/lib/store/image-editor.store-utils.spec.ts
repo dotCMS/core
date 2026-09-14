@@ -225,7 +225,7 @@ describe('image-editor.store-utils', () => {
         it('removes a middle entry and rebuilds later snapshots without its delta', () => {
             const history = [
                 entry('a', 'adjust', { adjust: wide }),
-                entry('b', 'hue', { adjust: tall }),
+                entry('b', 'grayscale', { adjust: tall }),
                 entry('c', 'rotate', {
                     adjust: tall,
                     transform: { ...initialEditableSlices.transform, rotateDeg: 45 }

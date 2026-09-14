@@ -85,7 +85,10 @@ describe('DotNewRelationshipsComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({ detectChanges: false });
+        spectator = createComponent({
+            detectChanges: false,
+            props: { cardinality: 0, editing: false }
+        });
         contentTypeService = spectator.inject(DotContentTypeService, true);
         contentTypeService.getContentTypesWithPagination.mockReturnValue(
             of({
@@ -111,7 +114,9 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should initialize with default values', () => {
-            expect(spectator.component.contentType).toBeUndefined();
+            // `null`, not `undefined`: `contentType` is now seeded with the same value
+            // `onContentTypeChange(null)` and `loadContentType('')` set it back to.
+            expect(spectator.component.contentType).toBeNull();
             expect(spectator.component.currentCardinalityIndex).toBeUndefined();
         });
     });
@@ -154,7 +159,11 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should handle null contentType from service', () => {
-            contentTypeService.getContentType.mockReturnValue(of(null));
+            // `getContentType` declares a non-null content type; the component guards anyway,
+            // and this test is what drives that guard.
+            contentTypeService.getContentType.mockReturnValue(
+                of(null as unknown as DotCMSContentType)
+            );
 
             spectator.setInput('velocityVar', 'NonExistent');
             spectator.detectChanges();
@@ -353,7 +362,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             const contentTypeComponent = spectator.query('dot-content-type');
             expect(contentTypeComponent).toBeTruthy();
-            expect(spectator.component.editing).toBe(true);
+            expect(spectator.component.editing()).toBe(true);
         });
 
         it('should pass disabled prop to dot-cardinality-selector when editing', () => {
@@ -362,7 +371,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             const cardinalitySelector = spectator.query('dot-cardinality-selector');
             expect(cardinalitySelector).toBeTruthy();
-            expect(spectator.component.editing).toBe(true);
+            expect(spectator.component.editing()).toBe(true);
         });
 
         it('should pass cardinality value to dot-cardinality-selector', () => {
@@ -371,7 +380,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             const cardinalitySelector = spectator.query('dot-cardinality-selector');
             expect(cardinalitySelector).toBeTruthy();
-            expect(spectator.component.cardinality).toBe(2);
+            expect(spectator.component.cardinality()).toBe(2);
         });
     });
 

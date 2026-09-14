@@ -116,10 +116,10 @@ export class DotAppsService {
     /**
      * Export configuration(s) of a Service Integration
      * @param {DotAppsExportConfiguration} conf
-     * @returns Promise<string>
+     * @returns Promise<string> the error message, or an empty string on success
      * @memberof DotAppsService
      */
-    exportConfiguration(conf: DotAppsExportConfiguration): Promise<string | null> {
+    exportConfiguration(conf: DotAppsExportConfiguration): Promise<string> {
         let fileName = '';
 
         return fetch(`${API_URL}/export`, {

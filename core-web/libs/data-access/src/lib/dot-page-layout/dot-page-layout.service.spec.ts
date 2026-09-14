@@ -4,11 +4,19 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { mockDotLayout } from '@dotcms/utils-testing';
 
 import { DotPageLayoutService } from './dot-page-layout.service';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
+
+// `save` takes a DotTemplateDesigner and posts it verbatim; the spec previously passed a
+// bare DotLayout, which is not what any caller sends.
+const mockTemplateDesigner = (): DotTemplateDesigner => ({
+    layout: mockDotLayout(),
+    themeId: 'test-theme-id'
+});
 
 describe('DotPageLayoutService', () => {
     let dotPageLayoutService: DotPageLayoutService;
@@ -39,7 +47,7 @@ describe('DotPageLayoutService', () => {
         };
 
         dotPageLayoutService
-            .save('test38923-82393842-23823', mockDotLayout())
+            .save('test38923-82393842-23823', mockTemplateDesigner())
             .subscribe((result: any) => {
                 expect(result.params).toEqual(mockResponse.entity);
             });
@@ -48,7 +56,7 @@ describe('DotPageLayoutService', () => {
             '/api/v1/page/test38923-82393842-23823/layout?variantName=DEFAULT'
         );
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(mockDotLayout());
+        expect(req.request.body).toEqual(mockTemplateDesigner());
         req.flush(mockResponse);
     });
 
@@ -66,7 +74,7 @@ describe('DotPageLayoutService', () => {
         sessionStorage.setItem('variantName', 'variantTesting');
 
         dotPageLayoutService
-            .save('test38923-82393842-23823', mockDotLayout())
+            .save('test38923-82393842-23823', mockTemplateDesigner())
             .subscribe((result: any) => {
                 expect(result.params).toEqual(mockResponse.entity);
             });
@@ -75,7 +83,7 @@ describe('DotPageLayoutService', () => {
             '/api/v1/page/test38923-82393842-23823/layout?variantName=variantTesting'
         );
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(mockDotLayout());
+        expect(req.request.body).toEqual(mockTemplateDesigner());
         req.flush(mockResponse);
     });
 

@@ -17,10 +17,10 @@ export class RoutingService {
     private http = inject(HttpClient);
 
     private _menusChange$: Subject<Menu[]> = new Subject();
-    private menus: Menu[];
+    private menus: Menu[] = [];
     private urlMenus: string;
     private portlets: Map<string, string>;
-    private _currentPortletId: string;
+    private _currentPortletId = '';
 
     private _portletUrlSource$ = new Subject<string>();
     private _currentPortlet$ = new Subject<string>();
@@ -55,7 +55,7 @@ export class RoutingService {
         return this._portletUrlSource$.asObservable();
     }
 
-    get firstPortlet(): string {
+    get firstPortlet(): string | null {
         const porlets = this.portlets.entries().next().value;
 
         return porlets ? porlets[0] : null;
@@ -65,7 +65,7 @@ export class RoutingService {
         this.portlets.set(portletId.replace(' ', '_'), url);
     }
 
-    public getPortletURL(portletId: string): string {
+    public getPortletURL(portletId: string): string | undefined {
         return this.portlets.get(portletId);
     }
 

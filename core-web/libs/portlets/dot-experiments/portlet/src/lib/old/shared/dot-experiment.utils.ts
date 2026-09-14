@@ -6,6 +6,7 @@ import {
     DotCreditabilityInterval,
     ExperimentSteps,
     PROP_NOT_FOUND,
+    StepStatus,
     TIME_7_DAYS,
     TIME_90_DAYS
 } from '@dotcms/dotcms-models';
@@ -20,12 +21,14 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
  * @private
  */
 export const processExperimentConfigProps = (
-    configProps: Record<string, string | boolean>
+    configProps: Record<string, string | boolean> | null
 ): Record<string, number> => {
     const config: Record<string, number> = {};
 
-    const minDurationRaw = configProps['EXPERIMENTS_MIN_DURATION'];
-    const maxDurationRaw = configProps['EXPERIMENTS_MAX_DURATION'];
+    // Null until the route's `config` resolver has run. The two reads below already fall through
+    // to the defaults for a missing key, so an absent bag behaves the same as an empty one.
+    const minDurationRaw = configProps?.['EXPERIMENTS_MIN_DURATION'];
+    const maxDurationRaw = configProps?.['EXPERIMENTS_MAX_DURATION'];
 
     config['EXPERIMENTS_MIN_DURATION'] =
         typeof minDurationRaw !== 'string' || minDurationRaw === PROP_NOT_FOUND
@@ -43,15 +46,20 @@ export const daysToMilliseconds = (days: number): number => {
     return days * ONE_DAY;
 };
 
-export const checkIfExperimentDescriptionIsSaving = (stepStatusSidebar) =>
-    stepStatusSidebar &&
+export const checkIfExperimentDescriptionIsSaving = (
+    stepStatusSidebar: StepStatus | null
+): boolean =>
+    // `!!` on the chain: with no sidebar step the `&&` yields that falsy value itself, not a boolean,
+    // and every consumer declares this an `Observable<boolean>`.
+    !!stepStatusSidebar &&
     stepStatusSidebar.experimentStep === ExperimentSteps.EXPERIMENT_DESCRIPTION &&
     stepStatusSidebar.status === ComponentStatus.SAVING;
 
 /* Start function to extract data from the experiment and results endpoint
  *  To put together the summary table in the experiment results screen  */
 export const getConversionRateRage = (
-    data: DotCreditabilityInterval,
+    /** Absent for a variant the bayesian run did not cover — the `noDataLabel` case. */
+    data: DotCreditabilityInterval | undefined,
     noDataLabel: string,
     separatorLabel: string
 ): string => {
@@ -71,11 +79,15 @@ export const getConversionRate = (uniqueBySession: number, sessions: number): st
 export const getBayesianVariantResult = (
     variantName: string,
     results: DotBayesianVariantResult[]
-): DotBayesianVariantResult => {
+): DotBayesianVariantResult | undefined => {
+    // `find` reports no match, which happens for a variant the bayesian run did not cover.
     return results.find((variant) => variant.variant === variantName);
 };
 
-export const getProbabilityToBeBest = (probability: number, noDataLabel: string): string => {
+export const getProbabilityToBeBest = (
+    probability: number | undefined,
+    noDataLabel: string
+): string => {
     return probability ? getPercentageFormat(probability) : noDataLabel;
 };
 

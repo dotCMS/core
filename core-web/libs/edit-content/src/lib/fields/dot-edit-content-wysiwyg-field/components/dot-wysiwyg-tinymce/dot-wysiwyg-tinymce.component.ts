@@ -77,7 +77,9 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     /**
      * Represents a signal that contains the wide configuration properties for the TinyMCE WYSIWYG editor.
      */
-    $wideConfig = toSignal<RawEditorOptions>(this.#dotWysiwygTinymceService.getProps());
+    // `| null` because `getProps` maps a failed `/api/vtl/tinymceprops` request to `of(null)` —
+    // which `$editorConfig` below already handles with `this.$wideConfig() || {}`.
+    $wideConfig = toSignal<RawEditorOptions | null>(this.#dotWysiwygTinymceService.getProps());
 
     /**
      * A computed property that generates the configuration object for the TinyMCE editor.
@@ -111,8 +113,11 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
 
     /**
      * The #editor variable represents an instance of the Editor class, which provides functionality for text editing.
+     *
+     * Null before `handleEditorInit` fires and again after `removeEditor` tears the instance down,
+     * which is what the `if (this.#editor)` checks in `insertContent` and `ngOnDestroy` are for.
      */
-    #editor: Editor = null;
+    #editor: Editor | null = null;
 
     /**
      * Handles the initialization of the editor instance.
@@ -125,12 +130,14 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
 
     ngOnDestroy(): void {
         if (this.#editor) {
-            this.removeEditor();
+            this.removeEditor(this.#editor);
         }
     }
 
-    private removeEditor(): void {
-        this.#editor.remove();
+    // Takes the narrowed instance as a parameter: the null check in `ngOnDestroy` does not narrow
+    // the field across a method boundary.
+    private removeEditor(editor: Editor): void {
+        editor.remove();
         this.#editor = null;
     }
 }

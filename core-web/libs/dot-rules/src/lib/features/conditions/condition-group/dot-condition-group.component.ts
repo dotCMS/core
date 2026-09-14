@@ -16,8 +16,9 @@ import {
 import { ServerSideTypeModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
 import { I18nService } from '../../../services/i18n/i18n.service';
 import {
-    ConditionActionEvent,
-    ConditionGroupActionEvent
+    ConditionDeleteEmitEvent,
+    ConditionEmitEvent,
+    ConditionGroupEmitEvent
 } from '../../../services/models/rule-event.model';
 import { DotRuleConditionComponent } from '../rule-condition/dot-rule-condition.component';
 
@@ -56,12 +57,13 @@ export class DotConditionGroupComponent {
 
     // Outputs
     readonly deleteConditionGroup = output<ConditionGroupModel>();
-    readonly updateConditionGroupOperator = output<ConditionGroupActionEvent>();
-    readonly createCondition = output<ConditionActionEvent>();
-    readonly deleteCondition = output<ConditionActionEvent>();
-    readonly updateConditionType = output<ConditionActionEvent>();
-    readonly updateConditionParameter = output<ConditionActionEvent>();
-    readonly updateConditionOperator = output<ConditionActionEvent>();
+    readonly updateConditionGroupOperator = output<ConditionGroupEmitEvent>();
+    readonly createCondition = output<ConditionGroupEmitEvent>();
+    // Straight pass-throughs from `DotRuleConditionComponent`, which owns the condition.
+    readonly deleteCondition = output<ConditionDeleteEmitEvent>();
+    readonly updateConditionType = output<ConditionEmitEvent>();
+    readonly updateConditionParameter = output<ConditionEmitEvent>();
+    readonly updateConditionOperator = output<ConditionEmitEvent>();
 
     // i18n cache
     private readonly i18nCache: Record<string, Observable<string>> = {};
@@ -80,26 +82,29 @@ export class DotConditionGroupComponent {
 
     onCreateCondition(): void {
         this.logger.info('DotConditionGroupComponent', 'onCreateCondition');
+        // `type` belongs at the top level. It used to sit inside `payload`, where no handler
+        // reads it, and the top-level field the interface requires was missing — which is what
+        // the `as ConditionActionEvent` cast here was hiding.
         this.createCondition.emit({
+            type: RULE_CONDITION_CREATE,
             payload: {
                 conditionGroup: this.$group(),
-                index: this.$groupIndex(),
-                type: RULE_CONDITION_CREATE
+                index: this.$groupIndex()
             }
-        } as ConditionActionEvent);
+        });
     }
 
     toggleGroupOperator(): void {
         const group = this.$group();
         const newValue = group.operator === 'AND' ? 'OR' : 'AND';
         this.updateConditionGroupOperator.emit({
+            type: RULE_CONDITION_GROUP_UPDATE_OPERATOR,
             payload: {
                 conditionGroup: group,
                 index: this.$groupIndex(),
-                type: RULE_CONDITION_GROUP_UPDATE_OPERATOR,
                 value: newValue
             }
-        } as ConditionActionEvent);
+        });
     }
 
     trackByCondition(index: number, condition: ConditionModel): string {

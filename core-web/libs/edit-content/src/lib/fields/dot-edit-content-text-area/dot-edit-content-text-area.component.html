@@ -52,7 +52,7 @@
                 }
             </div>
         }
-        @if (!fieldHasError && field.hint) {
+        @if (!fieldHasError && field?.hint) {
             <div class="text-gray-600">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}

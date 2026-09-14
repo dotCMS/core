@@ -12,7 +12,7 @@
     dataKey="identifier"
     [(selection)]="$selectedContent"
     [globalFilterFields]="['title', 'modUserName']"
-    (onRowSelect)="onRowSelect.emit($event.data)"
+    (onRowSelect)="handleRowSelect($event)"
     styleClass="flex flex-col h-full justify-between">
     <ng-template pTemplate="emptymessage">
         <tr>

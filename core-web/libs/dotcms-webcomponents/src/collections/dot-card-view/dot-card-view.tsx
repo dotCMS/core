@@ -16,11 +16,14 @@ import {
 
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
 
-const getValueAsArray = (value: string): string[] => {
+const getValueAsArray = (value: string | undefined): string[] => {
     return value && typeof value === 'string' ? value.split(',') : [];
 };
 
-const getSelecttion = (items: DotCardContentletItem[], value: string): DotContentletItem[] => {
+const getSelecttion = (
+    items: DotCardContentletItem[],
+    value: string | undefined
+): DotContentletItem[] => {
     if (items && items.length && value && typeof value === 'string') {
         return items
             .filter(({ data: { inode } }: DotCardContentletItem) =>
@@ -38,24 +41,26 @@ const getSelecttion = (items: DotCardContentletItem[], value: string): DotConten
     shadow: true
 })
 export class DotCardView {
-    @Element() el: HTMLElement;
+    @Element() el!: HTMLElement;
     @Prop() items: DotCardContentletItem[] = [];
     @Prop({
         reflect: true,
         mutable: true
     })
-    value: string;
+    value?: string;
 
     @Prop() showVideoThumbnail = true;
 
-    @Event() selected: EventEmitter;
-    @Event() cardClick: EventEmitter;
+    @Event() selected!: EventEmitter;
+    @Event() cardClick!: EventEmitter;
 
     private selection: DotContentletItem[] = [];
 
-    private cards: NodeListOf<HTMLDotCardContentletElement>;
+    /** Resolved from the shadow root in `componentDidLoad`, before anything reads it. */
+    private cards!: NodeListOf<HTMLDotCardContentletElement>;
 
-    private lastChecked;
+    /** The card that anchored the last shift-click range; null until one has been checked. */
+    private lastChecked: HTMLDotCardContentletElement | null = null;
 
     @Watch('items')
     watchItems(newValue: DotCardContentletItem[]) {
@@ -125,7 +130,7 @@ export class DotCardView {
                                     if (card === originalTarget || card === this.lastChecked) {
                                         inBetween = !inBetween;
                                     }
-                                    if (inBetween) {
+                                    if (inBetween && card.item) {
                                         card.checked = true;
                                         this.setValue(originalTarget, card.item.data);
                                     }
@@ -158,6 +163,15 @@ export class DotCardView {
     }
 
     private getCards(): NodeListOf<HTMLDotCardContentletElement> {
-        return this.el.shadowRoot.querySelectorAll('dot-card-contentlet');
+        // The component declares `shadow: true`, so the root exists by the time this runs; the
+        // empty list keeps the `forEach` callers working if it somehow does not.
+        return (
+            this.el.shadowRoot?.querySelectorAll('dot-card-contentlet') ??
+            (document
+                .createDocumentFragment()
+                .querySelectorAll(
+                    'dot-card-contentlet'
+                ) as NodeListOf<HTMLDotCardContentletElement>)
+        );
     }
 }

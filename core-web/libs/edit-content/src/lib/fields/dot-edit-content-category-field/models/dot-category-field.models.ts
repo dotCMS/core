@@ -2,7 +2,9 @@ import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/d
 
 export interface DotCategoryField {
     field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    // Nullable: `getSelectedFromContentlet`, the only consumer, already declares it so and
+    // returns [] when absent — new content reaches the store with no contentlet yet.
+    contentlet: DotCMSContentlet | null;
 }
 
 /**
@@ -29,8 +31,14 @@ export type HierarchyParent = Pick<DotCategory, 'inode' | 'parentList' | 'key'> 
 
 /**
  * Represents an clicked item in a DotCategoryField.
+ *
+ * `item` is required: every `rowClicked` emit site supplies it (both breadcrumb commands and the
+ * row `(click)` handler), and the store already dereferences it as `event?.item.inode` — an
+ * optional chain on `event` followed by a plain `.` on `item`. "No item clicked" is modelled by
+ * the absence of the event itself, which is why the store's rxMethod takes
+ * `void | DotCategoryFieldItem`.
  */
-export type DotCategoryFieldItem = { index: number; item?: DotCategoryFieldKeyValueObj };
+export type DotCategoryFieldItem = { index: number; item: DotCategoryFieldKeyValueObj };
 
 /**
  * Represents an event when a row is selected in a table.

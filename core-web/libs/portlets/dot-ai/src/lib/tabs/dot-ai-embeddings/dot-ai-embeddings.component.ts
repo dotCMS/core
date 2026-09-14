@@ -91,40 +91,39 @@ export default class DotAiEmbeddingsComponent {
     }
 
     protected openCreateDialog(): void {
-        this.#dialogService
-            .open(DotAiIndexCreateComponent, {
-                header: this.#messageService.get('dotai.index.create.header'),
-                width: '700px',
-                closable: true,
-                closeOnEscape: true,
-                draggable: false,
-                data: { indexes: this.store.indexes().map((index) => index.name) }
-            })
-            // `DialogService.onClose` is `Observable<any>`, so the annotation here is what
-            // makes the "mode must not travel any further" invariant below a compiler rule
-            // rather than a convention.
-            .onClose.pipe(take(1))
-            .subscribe((result: DotAiIndexCreateResult | undefined) => {
-                if (!result) {
-                    return;
-                }
+        const ref = this.#dialogService.open(DotAiIndexCreateComponent, {
+            header: this.#messageService.get('dotai.index.create.header'),
+            width: '700px',
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            data: { indexes: this.store.indexes().map((index) => index.name) }
+        });
 
-                // `mode` picks the branch and must not travel any further: it is a dialog
-                // concept, and EmbeddingsForm rejects the whole request with
-                // "Unrecognized field 'mode'" rather than ignoring it.
-                const { mode, ...form } = result;
+        // `DialogService.open` returns null when it refuses to open a duplicate dialog, and
+        // `onClose` is `Observable<any>`, so the annotation is what makes the "mode must not
+        // travel any further" invariant below a compiler rule rather than a convention.
+        ref?.onClose.pipe(take(1)).subscribe((result: DotAiIndexCreateResult | undefined) => {
+            if (!result) {
+                return;
+            }
 
-                if (mode === 'delete') {
-                    this.store.deleteFromIndex({
-                        indexName: form.indexName,
-                        query: form.query
-                    });
+            // `mode` picks the branch and must not travel any further: it is a dialog
+            // concept, and EmbeddingsForm rejects the whole request with
+            // "Unrecognized field 'mode'" rather than ignoring it.
+            const { mode, ...form } = result;
 
-                    return;
-                }
+            if (mode === 'delete') {
+                this.store.deleteFromIndex({
+                    indexName: form.indexName,
+                    query: form.query
+                });
 
-                this.store.buildIndex(form);
-            });
+                return;
+            }
+
+            this.store.buildIndex(form);
+        });
     }
 
     protected confirmDeleteIndex(index: DotAiIndex): void {

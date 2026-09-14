@@ -8,7 +8,7 @@ import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
@@ -240,7 +240,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
             mockProvider(MessageService, { add: vi.fn() }),
             mockProvider(DotMessageService, {
-                get: vi.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key) => key as string)
             }),
             // Pulled in by the Content Drive grid, which the action preview renders for real.
             mockProvider(DotLanguagesService, { get: vi.fn(() => of([])) }),
@@ -360,7 +360,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
     /** Clicks a preview row's real checkbox, toggling it in or out of the included set. */
     const toggleRow = (index: number): void => {
-        spectator.click(previewRows()[index].querySelector('input'));
+        spectator.click(previewRows()[index].querySelector('input')!);
         spectator.detectChanges();
     };
 
@@ -1312,8 +1312,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             // redundant and made the button grow with the action name.
             const execute = spectator.query('[data-testid="action-preview-execute"]');
 
-            expect(execute.textContent).toContain('Execute');
-            expect(execute.textContent).not.toContain('Send for Review');
+            expect(execute!.textContent).toContain('Execute');
+            expect(execute!.textContent).not.toContain('Send for Review');
         });
 
         it('should keep the published header count in step with the checked rows', () => {
@@ -1369,7 +1369,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             const [, , contentletIds] = (store.executeWorkflowAction as unknown as Mock).mock
                 .calls[0] as [string, string, string[]];
 
-            expect(contentletIds.length).toBe(Number(badge.textContent.trim()));
+            expect(contentletIds.length).toBe(Number(badge!.textContent.trim()));
         });
 
         it('should disable Execute once nothing is included', () => {
@@ -1737,7 +1737,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(rows.length).toBe(1);
             // Identified by the title the row renders rather than an inode attribute: the grid
             // carries no per-row identity attribute, and the title is what the user reads anyway.
-            expect(rows[0].querySelector('[data-testid="item-title-text"]').textContent).toContain(
+            expect(rows[0].querySelector('[data-testid="item-title-text"]')!.textContent).toContain(
                 'Title blog-1'
             );
         });

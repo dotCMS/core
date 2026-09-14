@@ -20,7 +20,7 @@ interface GridBlockProps {
  */
 export const GridBlock = ({ node, blockEditorBlock, customRenderers }: GridBlockProps) => {
     const BlockEditorBlockComponent = blockEditorBlock;
-    const rawCols = Array.isArray(node.attrs?.columns) ? node.attrs.columns : [6, 6];
+    const rawCols = Array.isArray(node.attrs?.['columns']) ? node.attrs['columns'] : [6, 6];
     const cols =
         rawCols.length === 2 &&
         rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))

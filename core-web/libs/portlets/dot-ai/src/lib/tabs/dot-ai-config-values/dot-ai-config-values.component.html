@@ -12,7 +12,7 @@
         <!-- flex-1 takes the slack, which is what keeps the filter left and the action right;
              truncate because a long host string would otherwise do the squeezing itself. -->
         <span class="flex-1 truncate text-sm text-muted-color" data-testid="dotai-config-host">
-            {{ store.resolvedConfig()?.configHost }}
+            {{ store.resolvedConfig().configHost }}
         </span>
 
         <!-- redactionFailed leaves providerConfig null while isConfigured stays true, so

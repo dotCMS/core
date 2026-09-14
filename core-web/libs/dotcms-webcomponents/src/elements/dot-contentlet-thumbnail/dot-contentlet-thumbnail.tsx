@@ -40,14 +40,19 @@ export class DotContentletThumbnail {
     @Prop()
     playableVideo = false;
 
+    /**
+     * Required in practice, not optional: `componentWillLoad` destructures it on the first line, so
+     * a missing contentlet has always thrown rather than degraded. Declared with a definite
+     * assignment so the eighteen accesses below read it directly, as they already did.
+     */
     @Prop()
-    contentlet: DotContentletItem;
+    contentlet!: DotContentletItem;
 
     @Prop({ reflect: true })
     fieldVariable = '';
 
-    @State() renderImage: boolean;
-    @State() isSVG: boolean;
+    @State() renderImage!: boolean;
+    @State() isSVG!: boolean;
 
     componentWillLoad() {
         const { hasTitleImage, mimeType } = this.contentlet;
@@ -56,11 +61,16 @@ export class DotContentletThumbnail {
         if (typeof hasTitleImage === 'boolean' && hasTitleImage) {
             this.renderImage = hasTitleImage;
         } else {
-            this.renderImage =
+            // `!!` around the whole chain: `image` is a `string | undefined` on the model, so the
+            // `||` yields `string | boolean` while `renderImage` is declared `boolean` and is only
+            // ever read as a condition (line 85). It used to type-check because reading `image`
+            // through a bracket index gave `any`.
+            this.renderImage = !!(
                 hasTitleImage === 'true' ||
                 mimeType === 'application/pdf' ||
-                this.contentlet['image'] ||
-                this.shouldShowVideoThumbnail();
+                this.contentlet.image ||
+                this.shouldShowVideoThumbnail()
+            );
         }
     }
 
@@ -117,7 +127,7 @@ export class DotContentletThumbnail {
 
         if (this.isSVG) return `/contentAsset/image/${this.contentlet.inode}/asset`;
 
-        if (this.contentlet['image'])
+        if (this.contentlet.image)
             return `/dA/${this.contentlet.inode}/image/resize_w/250/quality_q/45`;
 
         return `/dA/${this.contentlet.inode}/500w/50q?r=${this.contentlet.modDateMilis || this.contentlet.modDate}`;

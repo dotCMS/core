@@ -26,14 +26,16 @@ class MockContainersDropdownComponent {}
 
 const sortedContainersMock = containersMock
     .map((container) => ({
-        label: container.title,
+        label: container.title ?? '',
         value: container,
         inactive: false
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
 function getGroupByHostContainersMock() {
-    const containerobj = sortedContainersMock.reduce((acc, option) => {
+    const containerobj = sortedContainersMock.reduce<
+        Record<string, { items: typeof sortedContainersMock }>
+    >((acc, option) => {
         const hostname = option.value.hostName || 'SYSTEM_HOST';
 
         if (!acc[hostname]) {
@@ -79,12 +81,12 @@ describe('ContainerOptionsDirective', () => {
 
     it('should set the group property of the dropdown to true', async () => {
         await spectator.fixture.whenStable();
-        const dropdown = spectator.query(Select);
+        const dropdown = spectator.query(Select)!;
         expect(dropdown.group).toBeTruthy();
     });
 
     it('should group containers by host', () => {
-        const dropdown = spectator.query(Select);
+        const dropdown = spectator.query(Select)!;
         expect(dropdown.options).toEqual(getGroupByHostContainersMock());
     });
 });

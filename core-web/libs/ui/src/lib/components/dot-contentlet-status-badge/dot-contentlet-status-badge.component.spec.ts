@@ -140,7 +140,7 @@ describe('DotContentletStatusBadgeComponent', () => {
             ({ state, value, severity }) => {
                 spectator.setInput('state', state);
 
-                const tag = getTag();
+                const tag = getTag()!;
                 expect(tag.value).toBe(value);
                 expect(tag.severity).toBe(severity);
             }
@@ -151,7 +151,7 @@ describe('DotContentletStatusBadgeComponent', () => {
         it('should hand the translated "New" label and info severity to the Tag', () => {
             spectator.setInput('state', null);
 
-            const tag = getTag();
+            const tag = getTag()!;
             expect(tag.value).toBe('New Translated');
             expect(tag.severity).toBe('info');
         });

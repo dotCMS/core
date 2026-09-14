@@ -36,7 +36,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotCheckboxComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Name that will be used as ID */
     @Prop({ reflect: true })
@@ -71,14 +71,14 @@ export class DotCheckboxComponent {
     value = '';
 
     @State()
-    _options: DotOption[];
+    _options!: DotOption[];
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     componentWillLoad() {
         this.value = this.value || '';
@@ -105,7 +105,7 @@ export class DotCheckboxComponent {
     @Watch('options')
     optionsWatch(): void {
         const validOptions = checkProp<DotCheckboxComponent, string>(this, 'options');
-        this._options = getDotOptionsFromFieldValue(validOptions);
+        this._options = getDotOptionsFromFieldValue(validOptions ?? '');
     }
 
     @Watch('value')
@@ -134,7 +134,7 @@ export class DotCheckboxComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <div
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         class="dot-checkbox__items">
                         {this._options.map((item: DotOption) => {
                             const trimmedValue = item.value.trim();
@@ -144,8 +144,8 @@ export class DotCheckboxComponent {
                                         class={getErrorClass(this.isValid())}
                                         name={getId(this.name)}
                                         type="checkbox"
-                                        disabled={this.disabled || null}
-                                        checked={this.value.indexOf(trimmedValue) >= 0 || null}
+                                        disabled={this.disabled || undefined}
+                                        checked={this.value.indexOf(trimmedValue) >= 0 || undefined}
                                         onInput={(event: Event) => this.setValue(event)}
                                         value={trimmedValue}
                                     />
@@ -166,8 +166,9 @@ export class DotCheckboxComponent {
     }
 
     // Todo: find how to set proper TYPE in TS
-    private setValue(event): void {
-        this.value = this.getValueFromCheckInputs(event.target.value.trim(), event.target.checked);
+    private setValue(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        this.value = this.getValueFromCheckInputs(input.value.trim(), input.checked);
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

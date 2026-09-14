@@ -11,11 +11,8 @@ import { createFakeSite } from '@dotcms/utils-testing';
 
 import { withDragging } from './withDragging';
 
-import {
-    DotContentDriveSortOrder,
-    DotContentDriveState,
-    DotContentDriveStatus
-} from '../../../shared/models';
+import { DotContentDriveState } from '../../../shared/models';
+import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
 
 const mockSite = createFakeSite();
 
@@ -86,15 +83,11 @@ const mockFolder2: DotContentDriveFolder = {
 };
 
 const initialState: DotContentDriveState = {
+    // Seeded from the store's own initial state so this fixture cannot drift from it; only the
+    // keys this feature's tests care about are overridden.
+    ...DOT_CONTENT_DRIVE_INITIAL_STATE,
     currentSite: mockSite,
     path: '/test/path',
-    filters: {},
-    items: [],
-    selectedItems: [],
-    status: DotContentDriveStatus.LOADING,
-    totalItems: 0,
-    pagination: { limit: 40, offset: 0 },
-    sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };
 

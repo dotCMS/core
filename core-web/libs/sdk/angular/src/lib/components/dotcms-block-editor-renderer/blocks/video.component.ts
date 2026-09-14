@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { BlockEditorNode } from '@dotcms/types';
 
@@ -10,10 +10,10 @@ import { BlockEditorNode } from '@dotcms/types';
             [controls]="true"
             preload="metadata"
             [poster]="this.$posterURL()"
-            [width]="attrs?.['width']"
-            [height]="attrs?.['height']">
+            [width]="attrs()?.['width']"
+            [height]="attrs()?.['height']">
             <track default kind="captions" srclang="en" />
-            <source [src]="this.$srcURL()" [type]="attrs?.['mimeType']" />
+            <source [src]="this.$srcURL()" [type]="attrs()?.['mimeType']" />
             Your browser does not support the
             <code>video</code>
             element.
@@ -21,9 +21,9 @@ import { BlockEditorNode } from '@dotcms/types';
     `
 })
 export class DotVideoBlock {
-    @Input() attrs!: BlockEditorNode['attrs'];
+    readonly attrs = input<BlockEditorNode['attrs']>();
 
-    protected readonly $srcURL = computed(() => this.attrs?.['src']);
+    protected readonly $srcURL = computed(() => this.attrs()?.['src']);
 
-    protected readonly $posterURL = computed(() => this.attrs?.['data']?.['thumbnail']);
+    protected readonly $posterURL = computed(() => this.attrs()?.['data']?.['thumbnail']);
 }

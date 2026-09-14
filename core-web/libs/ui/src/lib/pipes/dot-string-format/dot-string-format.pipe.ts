@@ -20,7 +20,7 @@ export class DotStringFormatPipe implements PipeTransform {
      * @memberof DotStringFormatPipe
      */
     transform(value: string, args?: string[]): string {
-        args.forEach((token: string, index) => {
+        args?.forEach((token: string, index) => {
             value = value.replace(`{${index}}`, token);
         });
 

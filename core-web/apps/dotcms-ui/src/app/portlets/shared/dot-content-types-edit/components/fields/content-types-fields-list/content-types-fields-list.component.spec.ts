@@ -115,11 +115,8 @@ describe('ContentTypesFieldsListComponent', () => {
     });
 
     describe('with FORM Content baseType ', () => {
-        let component: ContentTypesFieldsListComponent;
-
         beforeEach(() => {
-            component = fixture.componentInstance;
-            component.baseType = 'FORM';
+            fixture.componentRef.setInput('baseType', 'FORM');
             fixture.detectChanges();
             items = de.queryAll(By.css('li span'));
         });

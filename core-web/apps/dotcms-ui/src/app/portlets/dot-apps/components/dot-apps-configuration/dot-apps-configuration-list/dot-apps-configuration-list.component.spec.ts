@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 
-import { NgClass } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -41,7 +40,6 @@ describe('DotAppsConfigurationListComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
-                NgClass,
                 ButtonModule,
                 DotAppsConfigurationItemComponent,
                 HttpClientTestingModule,
@@ -74,7 +72,7 @@ describe('DotAppsConfigurationListComponent', () => {
                 fixture.debugElement
                     .queryAll(By.css('dot-apps-configuration-item'))[0]
                     .componentInstance.site()
-            ).toBe(component.siteConfigurations()[0]);
+            ).toBe(component.siteConfigurations()![0]);
             expect(
                 fixture.debugElement
                     .query(By.css('.dot-apps-configuration-list__show-more'))
@@ -127,7 +125,7 @@ describe('DotAppsConfigurationListComponent', () => {
 
             loadMore.triggerEventHandler('click', {});
             expect(component.loadData.emit).toHaveBeenCalledWith({
-                first: component.siteConfigurations().length,
+                first: component.siteConfigurations()!.length,
                 rows: component.itemsPerPage()
             });
         });

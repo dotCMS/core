@@ -14,7 +14,7 @@ import { getId, isFileAllowed } from '../../../../../utils';
 })
 export class DotBinaryUploadButtonComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Name that will be used as ID */
     @Prop({ reflect: true })
@@ -26,7 +26,7 @@ export class DotBinaryUploadButtonComponent {
 
     /** (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg  */
     @Prop({ reflect: true })
-    accept: string;
+    accept?: string;
 
     /** (optional) Disables field's interaction */
     @Prop({ reflect: true })
@@ -41,7 +41,7 @@ export class DotBinaryUploadButtonComponent {
     buttonLabel = '';
 
     @Event()
-    fileChange: EventEmitter<DotBinaryFileEvent>;
+    fileChange!: EventEmitter<DotBinaryFileEvent>;
 
     render() {
         return (
@@ -51,7 +51,7 @@ export class DotBinaryUploadButtonComponent {
                     disabled={this.disabled}
                     id={getId(this.name)}
                     onChange={(event: Event) => this.fileChangeHandler(event)}
-                    required={this.required || null}
+                    required={this.required || undefined}
                     type="file"
                 />
                 <button
@@ -87,7 +87,7 @@ export class DotBinaryUploadButtonComponent {
         }
     }
 
-    private emitFile(file: File, errorType?: DotBinaryMessageError): void {
+    private emitFile(file: File | null, errorType: DotBinaryMessageError | null = null): void {
         this.fileChange.emit({
             file: file,
             errorType: errorType

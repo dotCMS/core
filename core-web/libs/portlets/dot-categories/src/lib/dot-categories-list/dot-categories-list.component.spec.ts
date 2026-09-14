@@ -271,7 +271,7 @@ describe('DotCategoriesListComponent', () => {
         });
 
         it('should set menu items and toggle menu on openRowMenu', () => {
-            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+            spectator.component.openRowMenu(new MouseEvent('click'), MOCK_CATEGORIES[0]);
 
             const items = spectator.component.rowMenuItems;
             expect(items).toHaveLength(4);
@@ -283,21 +283,21 @@ describe('DotCategoriesListComponent', () => {
 
         it('should call openEditDialog from edit menu item', () => {
             const spy = vi.spyOn(spectator.component, 'openEditDialog');
-            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+            spectator.component.openRowMenu(new MouseEvent('click'), MOCK_CATEGORIES[0]);
             spectator.component.rowMenuItems[0].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
         it('should call openPermissionsDialog with category from permissions menu item', () => {
             const spy = vi.spyOn(spectator.component, 'openPermissionsDialog');
-            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+            spectator.component.openRowMenu(new MouseEvent('click'), MOCK_CATEGORIES[0]);
             spectator.component.rowMenuItems[1].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
         it('should call confirmDeleteSingle from delete menu item', () => {
             const spy = vi.spyOn(spectator.component, 'confirmDeleteSingle');
-            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+            spectator.component.openRowMenu(new MouseEvent('click'), MOCK_CATEGORIES[0]);
             spectator.component.rowMenuItems[3].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
@@ -355,7 +355,7 @@ describe('DotCategoriesListComponent', () => {
 
             spectator.component.openPermissionsDialog(MOCK_CATEGORIES[0]);
 
-            const callData = openSpy.mock.calls[0][1].data;
+            const callData = openSpy.mock.calls[0][1].data as { url: string };
             expect(callData.url).toContain('/html/portlet/ext/categories/permissions.jsp');
             expect(callData.url).toContain('categoryInode=inode-1');
             expect(callData.url).toContain('popup=true');

@@ -65,7 +65,8 @@ describe('PushPublishService', () => {
             givenName: 'John',
             surname: 'Doe',
             userId: '1234',
-            roleId: '1234'
+            roleId: '1234',
+            loginAs: false
         };
         vi.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(of(user));
 

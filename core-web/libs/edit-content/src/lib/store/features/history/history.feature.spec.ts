@@ -40,7 +40,7 @@ import {
 } from '../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
-import { initialRootState } from '../../edit-content.store';
+import { EditContentState, initialRootState } from '../../edit-content.store';
 
 // Mock data
 const mockContentletVersion: DotCMSContentletVersion = {
@@ -199,7 +199,9 @@ describe('HistoryFeature', () => {
 
     const withTest = () =>
         signalStoreFeature(
-            withState({
+            // Annotated so `contentlet` keeps the state's declared `| null`; inferred from the
+            // literal alone it narrows to the mock's type and `patchState` rejects null.
+            withState<EditContentState>({
                 ...initialRootState,
                 contentlet: mockContentlet
             }),

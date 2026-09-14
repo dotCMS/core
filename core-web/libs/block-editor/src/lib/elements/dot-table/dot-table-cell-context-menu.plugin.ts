@@ -248,13 +248,13 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
                 }
 
                 if (key === 'Enter') {
-                    componentRef.instance.execCommand();
+                    componentRef?.instance.execCommand();
 
                     return true;
                 }
 
                 if (key === 'ArrowDown' || key === 'ArrowUp') {
-                    componentRef.instance.updateSelection(event);
+                    componentRef?.instance.updateSelection(event);
 
                     return true;
                 }

@@ -133,7 +133,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      * Writes a new value to the form control.
      * Handles pre-populated values in "site:{id}" or "folder:{id}" format.
      */
-    writeValue(value: string): void {
+    writeValue(value: string | null): void {
         if (!value) {
             this.siteControl.setValue(null);
             this.store.clearSelection();

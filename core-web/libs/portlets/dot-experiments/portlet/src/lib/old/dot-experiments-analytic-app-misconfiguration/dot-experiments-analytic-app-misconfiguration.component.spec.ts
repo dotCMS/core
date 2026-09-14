@@ -28,7 +28,11 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsAnalyticAppMisconfigurationComponent>;
     let router: SpyObject<Router>;
 
-    let dynamicState = { healthStatus: HealthStatusTypes.NOT_CONFIGURED };
+    // Annotated, not inferred: from the initializer alone TypeScript pins `healthStatus` to the
+    // `NOT_CONFIGURED` literal, and each describe block below reassigns it to a different status.
+    let dynamicState: { healthStatus: HealthStatusTypes } = {
+        healthStatus: HealthStatusTypes.NOT_CONFIGURED
+    };
 
     const createComponent = createComponentFactory({
         component: DotExperimentsAnalyticAppMisconfigurationComponent,
@@ -52,7 +56,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
         it('should DotEmptyContainerComponent exist in the component with not configuration label', () => {
             const dotEmptyContainerComponent: DotEmptyContainerComponent = spectator.query(
                 DotEmptyContainerComponent
-            );
+            )!;
 
             expect(dotEmptyContainerComponent.configuration).toEqual({
                 title: 'not configured title',
@@ -63,7 +67,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
 
         it('should have the correct title in  DotExperimentsUiHeaderComponent', () => {
             const headerComponent = spectator.query(DotExperimentsUiHeaderComponent);
-            expect(headerComponent.$title()).toEqual('not configured title');
+            expect(headerComponent!.$title()!).toEqual('not configured title');
         });
     });
 
@@ -77,7 +81,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
         it('should DotEmptyContainerComponent exist in the component with not configuration label', () => {
             const dotEmptyContainerComponent: DotEmptyContainerComponent = spectator.query(
                 DotEmptyContainerComponent
-            );
+            )!;
 
             expect(dotEmptyContainerComponent.configuration).toEqual({
                 title: 'misconfiguration title',
@@ -88,7 +92,7 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
 
         it('should have the correct title in  DotExperimentsUiHeaderComponent and navigation', () => {
             const headerComponent = spectator.query(DotExperimentsUiHeaderComponent);
-            expect(headerComponent.$title()).toEqual('misconfiguration title');
+            expect(headerComponent!.$title()!).toEqual('misconfiguration title');
 
             spectator.triggerEventHandler(DotExperimentsUiHeaderComponent, 'goBack', true);
 

@@ -1,12 +1,12 @@
 import {
     Component,
     EventEmitter,
-    Input,
     OnChanges,
     Output,
     SimpleChanges,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -32,24 +32,25 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
 export class DotNewRelationshipsComponent implements OnChanges {
     private contentTypeService = inject(DotContentTypeService);
 
-    @Input() cardinality: number;
+    readonly cardinality = input.required<number>();
 
-    @Input() velocityVar: string;
+    readonly velocityVar = input<string>();
 
-    @Input() editing: boolean;
+    readonly editing = input.required<boolean>();
 
     @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    contentType: DotCMSContentType;
-    currentCardinalityIndex: number;
+    /** Null while no content type is selected, which is the state `onContentTypeChange` sets. */
+    contentType: DotCMSContentType | null = null;
+    currentCardinalityIndex!: number;
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.velocityVar) {
-            this.loadContentType(changes.velocityVar.currentValue);
+        if (changes['velocityVar']) {
+            this.loadContentType(changes['velocityVar'].currentValue);
         }
 
-        if (changes.cardinality) {
-            this.currentCardinalityIndex = changes.cardinality.currentValue;
+        if (changes['cardinality']) {
+            this.currentCardinalityIndex = changes['cardinality'].currentValue;
         }
     }
 
@@ -81,7 +82,7 @@ export class DotNewRelationshipsComponent implements OnChanges {
     triggerChanged(): void {
         this.switch.emit({
             velocityVar:
-                this.velocityVar || (this.contentType ? this.contentType.variable : undefined),
+                this.velocityVar() || (this.contentType ? this.contentType.variable : undefined),
             cardinality: this.currentCardinalityIndex
         });
     }

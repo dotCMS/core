@@ -90,8 +90,8 @@ describe('DotBulkInformationComponent', () => {
     });
 
     it('should load labels correctly', () => {
-        const success: HTMLElement = document.querySelector('[data-testId="successful"]');
-        const fail: HTMLElement = document.querySelector('[data-testId="fails"]');
+        const success = document.querySelector<HTMLElement>('[data-testId="successful"]')!;
+        const fail = document.querySelector<HTMLElement>('[data-testId="fails"]')!;
 
         expect(success.textContent?.trim()).toEqual('Template archived: 1');
         expect(fail.textContent?.trim()).toEqual('2 failed');

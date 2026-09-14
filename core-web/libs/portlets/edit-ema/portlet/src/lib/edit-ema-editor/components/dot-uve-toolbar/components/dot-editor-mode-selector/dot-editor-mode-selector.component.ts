@@ -77,7 +77,9 @@ export class DotEditorModeSelectorComponent implements OnInit {
         return menu;
     });
 
-    readonly $currentMode = computed(() => this.#store.pageParams().mode);
+    // `pageParams()` is null before the first page load, and `mode` is optional on it. `UNKNOWN` is
+    // the same stand-in `withView` already uses for a mode that is not set.
+    readonly $currentMode = computed(() => this.#store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
     readonly selectedModeModel = model<EditorModeOption | null>(null);
 
     /**
@@ -137,7 +139,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
         });
 
         /* More info here: https://github.com/dotCMS/core/issues/31719 */
-        this.#store.pageLoad({ mode: mode, publishDate: undefined });
+        this.#store['pageLoad']({ mode: mode, publishDate: undefined });
     }
 
     onModeOptionChange(option: EditorModeOption | null) {

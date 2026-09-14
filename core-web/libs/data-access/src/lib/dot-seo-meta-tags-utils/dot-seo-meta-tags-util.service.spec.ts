@@ -59,12 +59,16 @@ describe('DotSeoMetaTagsUtilService', () => {
     });
 
     it('should validate that all values are falsy or empty', () => {
-        const falsyValues: (string | NodeListOf<Element>)[] = [null, undefined, ''];
+        const falsyValues: (string | NodeListOf<Element> | null | undefined)[] = [
+            null,
+            undefined,
+            ''
+        ];
         const result = spectator.service.areAllFalsyOrEmpty(falsyValues);
 
         expect(result).toBe(true);
 
-        const nonEmptyValues: (string | NodeListOf<Element>)[] = [
+        const nonEmptyValues: (string | NodeListOf<Element> | null | undefined)[] = [
             null,
             undefined,
             'test',

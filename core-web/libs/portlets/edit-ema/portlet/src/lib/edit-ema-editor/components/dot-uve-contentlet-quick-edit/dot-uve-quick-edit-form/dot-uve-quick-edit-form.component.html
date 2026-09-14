@@ -10,7 +10,7 @@
         class="form flex min-h-0 w-full flex-1 flex-col overflow-auto px-6 pt-3 pb-6"
         [attr.inert]="loading() ? '' : null"
         tabindex="0">
-        @if (data().contentlet?.inode) {
+        @if (data().contentlet.inode) {
             <input type="hidden" formControlName="inode" />
         }
         <div class="mb-0! flex justify-end">

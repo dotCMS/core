@@ -28,7 +28,7 @@ export class DotSidebarHeaderComponent {
      * Title of the sidebar
      */
     @Input()
-    dotTitle: string;
+    dotTitle = '';
 
     /**
      * Action Button of the header
@@ -48,6 +48,6 @@ export class DotSidebarHeaderComponent {
      *
      */
     closePrimeNgSidebar() {
-        this.sidebarComponent.hide();
+        this.sidebarComponent?.hide();
     }
 }

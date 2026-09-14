@@ -213,7 +213,7 @@ describe('ExistingContentService', () => {
                 identifier: '456',
                 title: 'Test Content 2',
                 languageId: 2
-            })
+            } as unknown as Partial<DotCMSContentlet>)
         ];
 
         const mockResponse = {
@@ -240,7 +240,7 @@ describe('ExistingContentService', () => {
                         globalSearch: searchTerm,
                         page,
                         perPage
-                    })
+                    } as unknown as Partial<DotCMSContentlet>)
                     .subscribe((results) => {
                         expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
                         expect(results.contentlets.length).toBe(2);
@@ -584,13 +584,14 @@ describe('ExistingContentService', () => {
         it('should handle content without title', () => {
             const contentWithoutTitle = [
                 createFakeContentlet({
-                    identifier: '789',
+                    // See the note on the other "without title" test above.
                     title: null,
+                    identifier: '789',
                     description: 'Description 3',
                     field: 'Field 3',
                     languageId: mockLocales[0].id,
                     modDate: '2024-01-03T00:00:00Z'
-                })
+                } as unknown as Partial<DotCMSContentlet>)
             ];
 
             const responseWithoutTitle = {
@@ -602,12 +603,14 @@ describe('ExistingContentService', () => {
 
             dotContentSearchService.search.mockReturnValue(of(responseWithoutTitle));
 
-            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe(([_, response]) => {
+            // Narrowed before destructuring: the method emits `[...] | null`.
+            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe((result) => {
+                const [, response] = result!;
                 const item = {
                     identifier: response.contentlets[0].identifier,
                     title: response.contentlets[0].title,
-                    field: response.contentlets[0].field,
-                    description: response.contentlets[0].description,
+                    field: response.contentlets[0]['field'],
+                    description: response.contentlets[0]['description'],
                     language: response.contentlets[0].language
                 };
                 expect(item).toEqual({

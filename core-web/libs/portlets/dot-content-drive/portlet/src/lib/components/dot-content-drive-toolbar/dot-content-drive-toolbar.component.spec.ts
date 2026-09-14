@@ -218,6 +218,8 @@ describe('DotContentDriveToolbarComponent', () => {
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
         actionExecutionSignal.set(undefined);
+        userSearchableFieldsSignal.set([]);
+        userSearchableActiveSignal.set([]);
     });
 
     it('should render toolbar container', () => {
@@ -507,7 +509,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 (item) => item.label == 'content-drive.add-new.context-menu.folder'
             );
 
-            foldersItem?.command({});
+            foldersItem?.command?.({});
 
             expect(store.setDialog).toHaveBeenCalledWith({
                 type: DIALOG_TYPE.FOLDER,
@@ -792,11 +794,11 @@ describe('DotContentDriveToolbarComponent', () => {
 
     describe('field-filter chips', () => {
         it('should render a chip only for active variables resolved against loaded fields', () => {
-            store.userSearchableFields.set([
+            userSearchableFieldsSignal.set([
                 createFakeTextField({ variable: 'body', name: 'Body' })
             ]);
             // 'ghost' has no matching loaded field (the URL-restore / stale case) and must be dropped.
-            store.userSearchableActive.set(['body', 'ghost']);
+            userSearchableActiveSignal.set(['body', 'ghost']);
             spectator.detectChanges();
 
             expect(spectator.component.$activeFieldFilters().map((f) => f.variable)).toEqual([
@@ -821,13 +823,13 @@ describe('DotContentDriveToolbarComponent', () => {
             await withPermissions(['READ', 'EDIT']);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
-            expect(spectator.component.$canAddChildren()).toBe(false);
+            expect(spectator.component['$canAddChildren']()).toBe(false);
         });
 
         it('should enable them when the folder accepts children', async () => {
             await withPermissions(['READ', 'EDIT', 'CAN_ADD_CHILDREN']);
 
-            expect(spectator.component.$canAddChildren()).toBe(true);
+            expect(spectator.component['$canAddChildren']()).toBe(true);
         });
 
         // The site root: the parent is the host, not a folder, so the tree's site node carries no
@@ -841,13 +843,13 @@ describe('DotContentDriveToolbarComponent', () => {
             it('should refuse creation when the site root refuses children', async () => {
                 await atRootWithSite(false);
 
-                expect(spectator.component.$canAddChildren()).toBe(false);
+                expect(spectator.component['$canAddChildren']()).toBe(false);
             });
 
             it('should allow creation when the site root accepts children', async () => {
                 await atRootWithSite(true);
 
-                expect(spectator.component.$canAddChildren()).toBe(true);
+                expect(spectator.component['$canAddChildren']()).toBe(true);
             });
 
             // Optimistic while in flight, so the buttons do not start disabled and then flip on for
@@ -855,7 +857,7 @@ describe('DotContentDriveToolbarComponent', () => {
             it('should allow creation while the site lookup is still in flight', async () => {
                 await atRootWithSite(undefined);
 
-                expect(spectator.component.$canAddChildren()).toBe(true);
+                expect(spectator.component['$canAddChildren']()).toBe(true);
             });
 
             // A folder's own permissions are the more specific answer and must win: the root can
@@ -864,14 +866,14 @@ describe('DotContentDriveToolbarComponent', () => {
                 siteCanAddChildrenSignal.set(false);
                 await withPermissions(['READ', 'CAN_ADD_CHILDREN']);
 
-                expect(spectator.component.$canAddChildren()).toBe(true);
+                expect(spectator.component['$canAddChildren']()).toBe(true);
             });
         });
 
         it('should say why the buttons are off', async () => {
             await withPermissions(['READ']);
 
-            expect(spectator.component.$addChildrenTooltip()).toBe(
+            expect(spectator.component['$addChildrenTooltip']()).toBe(
                 'content-drive.add-new.no-add-children'
             );
         });
@@ -891,7 +893,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should carry no tooltip when creation is allowed', async () => {
             await withPermissions(['CAN_ADD_CHILDREN']);
 
-            expect(spectator.component.$addChildrenTooltip()).toBe('');
+            expect(spectator.component['$addChildrenTooltip']()).toBe('');
         });
     });
 });

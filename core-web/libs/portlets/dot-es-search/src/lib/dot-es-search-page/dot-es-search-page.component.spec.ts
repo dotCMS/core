@@ -147,7 +147,7 @@ describe('DotEsSearchPageComponent', () => {
         stubbed(store)['contentlets'] = vi.fn().mockReturnValue([
             { identifier: 'a', title: 'A', contentType: 'X', modDate: '', live: false },
             { identifier: 'b', title: 'B', contentType: 'X', modDate: '', live: true }
-        ]);
+        ]) as unknown as typeof store.contentlets;
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
 

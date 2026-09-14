@@ -8,18 +8,29 @@ import { CurrentContentActionsWithScheme } from '../models/dot-edit-content-fiel
  * @param {Object[]} data - The array of workflow data to be parsed.
  * @returns {Object} - The parsed object with key-value pairs.
  */
+/** What {@link parseWorkflows} produces: schemes keyed by id, each with its actions. */
+export type WorkflowsWithScheme = Record<
+    string,
+    { scheme: DotCMSWorkflow; actions: DotCMSWorkflowAction[]; firstStep: WorkflowStep }
+>;
+
 export const parseWorkflows = (
-    data: {
-        scheme: DotCMSWorkflow;
-        action: DotCMSWorkflowAction;
-        firstStep: WorkflowStep;
-    }[]
-) => {
+    // Nullable because the guard below handles it, and the callers pass through whatever the
+    // API returned — the spec exercises both null and undefined.
+    data:
+        | {
+              scheme: DotCMSWorkflow;
+              action: DotCMSWorkflowAction;
+              firstStep: WorkflowStep;
+          }[]
+        | null
+        | undefined
+): WorkflowsWithScheme => {
     if (!Array.isArray(data)) {
         return {};
     }
 
-    return data.reduce((acc, { scheme, action, firstStep }) => {
+    return data.reduce<WorkflowsWithScheme>((acc, { scheme, action, firstStep }) => {
         if (!acc[scheme.id]) {
             acc[scheme.id] = {
                 scheme: {

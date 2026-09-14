@@ -79,7 +79,11 @@ export class DotContentDriveDialogFolderComponent {
     #dotMessageService = inject(DotMessageService);
     #dotContentTypeService = inject(DotContentTypeService);
 
-    #hostName = this.#store.currentSite().hostname;
+    /**
+     * Empty string until the site resolves. `#getAssetPath` concatenates this into a `//host/path/`
+     * string, so `undefined` would have produced the literal text "undefined" in a saved path.
+     */
+    #hostName = this.#store.currentSite()?.hostname ?? '';
 
     /**
      * The folder being edited, or `undefined` in create mode. Typed as the narrow
@@ -111,7 +115,8 @@ export class DotContentDriveDialogFolderComponent {
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
         sortOrder: this.#fb.control<number | null>(1),
-        allowedFileExtensions: this.#fb.control([], { nonNullable: true }),
+        // Type argument given: from `[]` alone the control infers `FormControl<never[]>`.
+        allowedFileExtensions: this.#fb.control<string[]>([], { nonNullable: true }),
         defaultFileAssetType: this.#fb.control(DEFAULT_FILE_ASSET_TYPES[0].id, {
             nonNullable: true
         }),
@@ -124,10 +129,10 @@ export class DotContentDriveDialogFolderComponent {
     $currentSite = this.#store.currentSite;
 
     /** Signal tracking changes to the folder title form control */
-    $title = toSignal(this.folderForm.get('title')?.valueChanges);
+    $title = toSignal(this.folderForm.controls.title.valueChanges);
 
     /** Signal tracking changes to the folder URL form control */
-    $name = toSignal(this.folderForm.get('name')?.valueChanges);
+    $name = toSignal(this.folderForm.controls.name.valueChanges);
 
     /**
      * Suggestions offered while the user types; {@link onCompleteMethod} fills it per keystroke.
@@ -181,7 +186,8 @@ export class DotContentDriveDialogFolderComponent {
      * Ensures proper path formatting by removing trailing slashes
      */
     $finalPath = computed(() => {
-        const name = this.$name();
+        // `toSignal` has no initial value, so this is undefined until the control first emits.
+        const name = this.$name() ?? '';
 
         return this.#getAssetPath(name);
     });

@@ -1,0 +1,12 @@
+{
+  "src/lib/edit-ema-editor/components/dot-uve-toolbar/components/dot-ema-bookmarks/dot-ema-bookmarks.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/edit-ema-editor/components/dot-uve-toolbar/components/edit-ema-persona-selector/edit-ema-persona-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  }
+}

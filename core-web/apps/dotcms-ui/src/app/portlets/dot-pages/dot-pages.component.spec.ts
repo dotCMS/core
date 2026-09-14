@@ -232,7 +232,7 @@ describe('DotPagesComponent', () => {
         });
 
         it('toggleMenu should close when already visible (triggered by dot-pages-table openMenu)', () => {
-            const menu = spectator.component.menu() as unknown as MenuStubComponent;
+            const menu = spectator.component.menu() as unknown as TieredMenuStubComponent;
             menu.visible = true;
             const closeSpy = vi.spyOn(spectator.component, 'closeMenu');
 
@@ -245,7 +245,7 @@ describe('DotPagesComponent', () => {
         });
 
         it('toggleMenu should load items and show menu anchored to the click target (triggered by favorites panel openMenu)', () => {
-            const menu = spectator.component.menu() as unknown as MenuStubComponent;
+            const menu = spectator.component.menu() as unknown as TieredMenuStubComponent;
             menu.visible = false;
 
             const showSpy = vi.spyOn(menu, 'show');

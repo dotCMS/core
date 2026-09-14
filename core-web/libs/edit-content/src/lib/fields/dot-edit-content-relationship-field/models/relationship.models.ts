@@ -57,7 +57,9 @@ export interface ContentletFilterContext {
  * Parameters for initializing the existing content dialog store.
  */
 export interface InitLoadParams {
-    contentTypeId: string;
+    /** Nullable: the dialog can be opened before a content type resolves, which
+     *  `ExistingContentStore.initLoad` answers with an ERROR status rather than a request. */
+    contentTypeId: string | null;
     selectionMode: SelectionMode;
     selectedItemsIds: string[];
     showFields?: string[] | null;

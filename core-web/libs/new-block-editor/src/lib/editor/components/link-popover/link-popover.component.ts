@@ -89,7 +89,8 @@ export class LinkPopoverComponent {
     readonly #contentSearch = inject(DotContentSearchService);
     readonly #store = inject(EditorStore);
 
-    protected readonly relOptions = REL_OPTIONS;
+    // Spread into a mutable array: PrimeNG's `options` input does not accept `readonly`.
+    protected readonly relOptions: { label: string; value: string }[] = [...REL_OPTIONS];
 
     /**
      * Overlay options for the URL `<p-autoComplete>` and rel `<p-select>` panels, both of which
@@ -221,7 +222,7 @@ export class LinkPopoverComponent {
                             // Drop entries with no resolvable URL below so the field never gets
                             // the string "undefined" written into `href`.
                             name: c.title,
-                            url: c.path || c.urlMap || '',
+                            url: c['path'] || c['urlMap'] || '',
                             hasTitleImage: c.hasTitleImage,
                             inode: c.inode
                         }))

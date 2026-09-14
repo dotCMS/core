@@ -48,7 +48,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     readonly $valid = output<boolean>();
     readonly $save = output<DotFieldVariable[]>();
 
-    form: FormGroup;
+    form!: FormGroup;
     protected readonly systemOptions = [
         {
             key: 'allowURLImport',
@@ -95,7 +95,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
             next: (fieldVariables: DotFieldVariable[]) => {
                 fieldVariables.forEach((variable) => {
                     const { key, value } = variable;
-                    const control = this.form.get(key);
+                    const control = this.form.controls[key];
                     if (control instanceof FormGroup) {
                         const systemOptions = JSON.parse(value);
 
@@ -114,7 +114,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
 
     saveSettings(): void {
         const updateActions = Object.keys(this.form.controls).map((key) => {
-            const control = this.form.get(key);
+            const control = this.form.controls[key];
 
             const value =
                 control instanceof FormGroup ? JSON.stringify(control.value) : control.value;
@@ -144,9 +144,10 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1))
                 )
             )
-            .subscribe((value: DotFieldVariable[]) => {
+            .subscribe((value) => {
                 this.form.markAsPristine();
-                this.$save.emit(value);
+                // The stream carries the error handler's result alongside the saved variables.
+                this.$save.emit(value as DotFieldVariable[]);
             });
     }
 

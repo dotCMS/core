@@ -279,15 +279,15 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.showLoadMoreButton).toEqual(false);
             expect(data.favoritePages.total).toEqual(0);
             expect(data.isEnterprise).toEqual(false);
-            expect(data.languages).toEqual(null);
-            expect(data.loggedUser.id).toEqual(null);
+            expect(data.languages).toEqual([]);
+            expect(data.loggedUser.id).toEqual('');
             expect(data.loggedUser.canRead).toEqual({
-                contentlets: null,
-                htmlPages: null
+                contentlets: false,
+                htmlPages: false
             });
             expect(data.loggedUser.canWrite).toEqual({
-                contentlets: null,
-                htmlPages: null
+                contentlets: false,
+                htmlPages: false
             });
             expect(data.pages.items).toEqual([]);
             expect(data.pages.keyword).toEqual('');
@@ -655,17 +655,17 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             const menuActions = data.pages.menuActions;
 
-            expect(menuActions.length).toEqual(9);
+            expect(menuActions!.length).toEqual(9);
 
-            expect(menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
-            expect(menuActions[2].label).toEqual(undefined);
-            expect(menuActions[3].label).toEqual('Edit');
-            expect(menuActions[4].label).toEqual(mockWorkflowsActions[0].name);
-            expect(menuActions[5].label).toEqual(mockWorkflowsActions[1].name);
-            expect(menuActions[6].label).toEqual(mockWorkflowsActions[2].name);
-            expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
-            expect(menuActions[8].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(menuActions![0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(menuActions![2].label).toEqual(undefined);
+            expect(menuActions![3].label).toEqual('Edit');
+            expect(menuActions![4].label).toEqual(mockWorkflowsActions[0].name);
+            expect(menuActions![5].label).toEqual(mockWorkflowsActions[1].name);
+            expect(menuActions![6].label).toEqual(mockWorkflowsActions[2].name);
+            expect(menuActions![7].label).toEqual('contenttypes.content.push_publish');
+            expect(menuActions![8].label).toEqual('contenttypes.content.add_to_bundle');
 
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
@@ -725,7 +725,7 @@ describe('DotPageStore', () => {
                 const menuActions = data.pages?.menuActions;
                 if (!menuActions || menuActions.length < 9) return;
 
-                expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
+                expect(menuActions![7].label).toEqual('contenttypes.content.push_publish');
 
                 menuActions[7].command!({ originalEvent: createFakeEvent('click') });
 
@@ -779,9 +779,11 @@ describe('DotPageStore', () => {
         });
 
         await settled(dotPageStore.state$).then((data) => {
-            expect(data.pages.menuActions.length).toEqual(8);
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions!.length).toEqual(8);
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
+            expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
         });
     });
 
@@ -806,14 +808,16 @@ describe('DotPageStore', () => {
         });
 
         await settled(dotPageStore.state$).then((data) => {
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
-            expect(data.pages.menuActions[2]).toEqual({ separator: true });
-            expect(data.pages.menuActions[3].label).toEqual('Assign Workflow');
-            expect(data.pages.menuActions[4].label).toEqual('Save');
-            expect(data.pages.menuActions[5].label).toEqual('Save / Publish');
-            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.push_publish');
-            expect(data.pages.menuActions[7].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(data.pages.menuActions![0].label).toEqual(
+                'favoritePage.contextMenu.action.edit'
+            );
+            expect(data.pages.menuActions![1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions![2]).toEqual({ separator: true });
+            expect(data.pages.menuActions![3].label).toEqual('Assign Workflow');
+            expect(data.pages.menuActions![4].label).toEqual('Save');
+            expect(data.pages.menuActions![5].label).toEqual('Save / Publish');
+            expect(data.pages.menuActions![6].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions![7].label).toEqual('contenttypes.content.add_to_bundle');
         });
     });
 
@@ -897,7 +901,7 @@ describe('DotPageStore', () => {
                 // state$ replays intermediate states before the actions land.
                 if (!publishAction) return;
 
-                publishAction.command!({ originalEvent: createFakeEvent('click') });
+                publishAction!.command!({ originalEvent: createFakeEvent('click') });
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
                 done();

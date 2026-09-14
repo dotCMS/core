@@ -1,9 +1,9 @@
-@import "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/fonts";
 
 .dot-field__error-message,
 .dot-field__hint {
     display: block;
-    font-size: $font-size-xs;
+    font-size: fonts.$font-size-xs;
     line-height: 1rem;
     margin-top: 0.25rem;
     position: absolute;

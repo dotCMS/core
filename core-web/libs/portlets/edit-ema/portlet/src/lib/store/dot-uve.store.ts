@@ -86,7 +86,8 @@ const initialState: UVEState = {
  * 7. withMethods - updatePageResponse helper
  * 8. withLayout - Layout operations (needs page data)
  * 9. withView - View modes + zoom (needs page params)
- * 10. withEditor - Editor UI (needs PageComputed, WorkflowLockComputed, ViewComputed)
+ * 10. withEditor - Editor UI (needs the four signals in EditorDeps; see the note there on why
+ *     that constraint must stay narrow)
  * 11. withPageApi - Backend API (needs all above, provides pageReload)
  *
  * Note: withWorkflow needs pageReload() from withPageApi (accessed via type assertion).

@@ -259,7 +259,7 @@
             (onClick)="addExtraProperty()" />
     </div>
     <div class="section-card-body">
-        @if ((saml().extraProperties ?? []).length === 0) {
+        @if (saml().extraProperties.length === 0) {
             <div class="empty-placeholder">{{ 'dotauth.empty.extraProps' | dm }}</div>
         } @else {
             <div class="mt-2 rounded-md border border-(--surface-border)">

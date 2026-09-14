@@ -20,6 +20,7 @@ import {
     DotLanguagesService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
@@ -65,9 +66,17 @@ import {
     withFilterDefaults
 } from '../utils/functions';
 
-const initialState: DotContentDriveState = {
+/**
+ * The store's starting state.
+ *
+ * Exported so the per-feature test stores can seed from it instead of each keeping a hand-written
+ * partial copy: four of them had drifted, missing eight keys and still carrying a `totalItems`
+ * that stopped being state some time ago.
+ */
+export const DOT_CONTENT_DRIVE_INITIAL_STATE: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
     path: DEFAULT_PATH,
+    contextMenu: undefined,
     filters: {},
     items: [],
     selectedItems: [],
@@ -90,7 +99,7 @@ const initialState: DotContentDriveState = {
 };
 
 export const DotContentDriveStore = signalStore(
-    withState<DotContentDriveState>(initialState),
+    withState<DotContentDriveState>(DOT_CONTENT_DRIVE_INITIAL_STATE),
     // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
     // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
     // vs full-screen editor.
@@ -139,9 +148,17 @@ export const DotContentDriveStore = signalStore(
                             },
                             language: filters()?.languageId,
                             contentTypes: filters()?.contentType,
-                            baseTypes: filters()?.baseType?.map(
-                                (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
-                            ),
+                            // Unmapped numbers are dropped rather than sent as undefined: the map
+                            // is keyed by the nine known base types and the value comes from a URL
+                            // filter, so anything else is not a base type at all.
+                            baseTypes: filters()
+                                ?.baseType?.map(
+                                    (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                                )
+                                .filter(
+                                    (baseType): baseType is DotCMSBaseTypesContentTypes =>
+                                        !!baseType
+                                ),
                             workflow: filters()?.workflow?.length
                                 ? parseWorkflowFilter(filters()?.workflow)
                                 : undefined,
@@ -320,7 +337,14 @@ export const DotContentDriveStore = signalStore(
             setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
                 patchState(store, { isTreeForceCollapsed });
             },
-            getFilterValue(filter: string) {
+            /**
+             * The value of a single filter, or `undefined` when it is not set.
+             *
+             * The return type has to say `undefined` explicitly: `DotContentDriveFilters` declares its
+             * index signature as `string | string[]`, so an unset key reads as present. Every consumer
+             * already compensates (`?? []`, `|| ''`), which is the tell that absence is the normal case.
+             */
+            getFilterValue(filter: string): string | string[] | undefined {
                 return store.filters()[filter];
             },
             /**

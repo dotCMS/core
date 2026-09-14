@@ -12,11 +12,11 @@ import { Inplace, InplaceModule } from 'primeng/inplace';
 })
 export class DotInlineEditComponent {
     @Input()
-    inlineEditDisplayTemplate: TemplateRef<unknown>;
+    inlineEditDisplayTemplate!: TemplateRef<unknown>;
     @Input()
-    inlineEditContentTemplate: TemplateRef<unknown>;
+    inlineEditContentTemplate!: TemplateRef<unknown>;
 
-    @ViewChild('contentTypeInlineEdit') contentTypeInlineEdit: Inplace;
+    @ViewChild('contentTypeInlineEdit') contentTypeInlineEdit!: Inplace;
 
     /**
      * Manually hides the content/edit section of p-inplace

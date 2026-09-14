@@ -173,7 +173,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = vi
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
@@ -191,7 +191,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = vi
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
@@ -261,7 +261,7 @@ describe('DotEditContentSidePanelComponent', () => {
         document.body.appendChild(mask);
 
         if (ownedByPanel) {
-            spectator.query(Drawer).mask = mask;
+            spectator.query(Drawer)!.mask = mask;
         }
 
         mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -272,7 +272,7 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.setInput('data', EDIT_DATA);
         spectator.detectChanges();
 
-        const layout = spectator.query(DotEditContentLayoutComponent);
+        const layout = spectator.query(DotEditContentLayoutComponent)!;
         const confirmClose = vi
             .spyOn(layout, 'confirmClose')
             .mockImplementation((onProceed: () => void) => onProceed());
@@ -332,7 +332,7 @@ describe('DotEditContentSidePanelComponent', () => {
 
         // Asserted before dispatching on purpose: with an optional chain, a markup rename would
         // silently skip the click and leave the two negative assertions below passing anyway.
-        const inside = spectator.query(byTestId('side-panel-title'), { root: true });
+        const inside = spectator.query(byTestId('side-panel-title'), { root: true })!;
         expect(inside).toBeTruthy();
 
         // Bubbles up to the same document listener, but its target is not the mask.

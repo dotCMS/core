@@ -29,13 +29,15 @@ export class DotPageToolsSeoComponent {
 
     scannerToolClick = output<PageScannerToolType>();
 
-    dialogHeader: string;
+    dialogHeader = '';
     tools$: Observable<DotPageToolsSeoState> = this.dotPageToolsSeoStore.tools$;
     visible = false;
 
     public toggleDialog(): void {
-        if (!this.visible) {
-            this.dotPageToolsSeoStore.getTools(this.currentPageUrlParams());
+        const urlParams = this.currentPageUrlParams();
+
+        if (!this.visible && urlParams) {
+            this.dotPageToolsSeoStore.getTools(urlParams);
         }
 
         this.visible = !this.visible;

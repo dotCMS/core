@@ -55,7 +55,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     private fieldVariablesService = inject(DotFieldVariablesService);
 
     /** The content-type field whose variables are loaded and managed. */
-    readonly $field = input<DotCMSContentTypeField>(undefined, { alias: 'field' });
+    readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /** When `false`, hides the key-value table (used to embed without the table UI). */
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
@@ -67,7 +67,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     readonly save = output<void>();
 
     /** Local snapshot of the field, updated on every `$field` change. */
-    field: DotCMSContentTypeField;
+    field!: DotCMSContentTypeField;
 
     /** Signal holding the list of variables currently shown in the table. */
     $fieldVariables = signal<DotFieldVariable[]>([]);
@@ -96,7 +96,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * Per-field-type map of variable keys that must be hidden from the table.
      * These keys are owned by dedicated settings sections and should not be edited here.
      */
-    blackList = {
+    /** Variable keys hidden per field clazz — most clazzes have no entry. */
+    blackList: Record<string, Record<string, boolean>> = {
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true
             // contentAssets: true
@@ -114,14 +115,14 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.$field?.currentValue) {
+        if (changes['$field']?.currentValue) {
             this.field = this.$field();
             this.initTableData();
         }
 
         // The dialog owns the footer, so the buttons are handed over whenever this tab
         // becomes the visible one — the same way the Settings tabs do it.
-        if (changes.$showTable?.currentValue) {
+        if (changes['$showTable']?.currentValue) {
             this.#emitDialogActions();
         }
     }

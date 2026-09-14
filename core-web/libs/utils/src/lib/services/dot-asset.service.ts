@@ -5,7 +5,7 @@ import {
     DotHttpErrorResponse
 } from '@dotcms/dotcms-models';
 
-export const fallbackErrorMessages = {
+export const fallbackErrorMessages: { [key: number]: string } = {
     500: '500 Internal Server Error',
     400: '400 Bad Request',
     401: '401 Unauthorized Error'
@@ -19,7 +19,7 @@ export const fallbackErrorMessages = {
 export function createDotAsset(
     options: DotAssetCreateOptions
 ): Promise<DotCMSContentlet[] | DotHttpErrorResponse[]> {
-    const promises = [];
+    const promises: Promise<Response>[] = [];
     let filesCreated = 1;
     options.files.map((file: DotCMSTempFile) => {
         const data = {
@@ -70,7 +70,7 @@ export function createDotAsset(
     });
 }
 
-function fetchAsset(url, data): Promise<Response> {
+function fetchAsset(url: string, data: unknown): Promise<Response> {
     return fetch(url, {
         method: 'PUT',
         headers: {

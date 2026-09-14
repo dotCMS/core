@@ -1,17 +1,27 @@
 {
     "compilerOptions": {
-        "baseUrl": "../..",
         "paths": {
-            "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
-            "@dotcms/dotcms-models/*": ["libs/dotcms-models/src/*"]
+            "@dotcms/dotcms-models": ["../../libs/dotcms-models/src/index.ts"],
+            "@dotcms/dotcms-models/*": ["../../libs/dotcms-models/src/*"]
         },
         "allowSyntheticDefaultImports": true,
         "allowUnreachableCode": false,
         "declaration": false,
+        // Strict mode (#35943). Stencil type-checks during `build`, so these are load-bearing:
+        // breaking them breaks CI, and `dotcms-webcomponents:test` cannot run at all (Stencil
+        // supports Jest 27, the workspace is on 29) so the build is the only gate. Verify it by
+        // EXIT STATUS — its output prints "build finished" on the transpile step even when the
+        // type check then fails.
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
         "esModuleInterop": true,
         "experimentalDecorators": true,
         "lib": ["dom", "es2015"],
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "module": "esnext",
         "target": "es2017",
         "noUnusedLocals": true,

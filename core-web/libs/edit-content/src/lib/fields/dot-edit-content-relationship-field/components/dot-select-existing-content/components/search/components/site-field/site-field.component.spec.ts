@@ -329,7 +329,7 @@ describe('SiteFieldComponent', () => {
                 }
             };
 
-            const expectedValue = `${mockEvent.node.data.type}:${mockEvent.node.data.id}`;
+            const expectedValue = `${mockEvent.node.data!.type}:${mockEvent.node.data!.id}`;
 
             store.chooseNode(mockEvent);
             spectator.detectChanges();
@@ -370,7 +370,9 @@ describe('SiteFieldComponent', () => {
 
     describe('Edge Cases', () => {
         it('should handle undefined value in writeValue', () => {
-            component.writeValue(undefined);
+            // `undefined` is not part of the declared contract — Angular clears a control with
+            // `null` — but this test deliberately checks the accessor tolerates it.
+            component.writeValue(undefined as unknown as string);
             expect(component.siteControl.value).toBeNull();
         });
 

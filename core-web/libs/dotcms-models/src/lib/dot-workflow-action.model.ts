@@ -19,12 +19,15 @@ export interface DotCMSWorkflowAction {
     nextStep: string;
     nextStepCurrentStep: boolean;
     order: number;
-    owner?: string;
+    /** Null for system actions, which have no owning user. */
+    owner?: string | null;
     roleHierarchyForAssign: boolean;
     schemeId: string;
     showOn: string[];
     actionInputs: DotCMSWorkflowInput[];
-    metadata?: Record<string, string>;
+    /** Null when the action carries no metadata — the workflow endpoints send null rather than
+     *  omitting the key. */
+    metadata?: Record<string, string> | null;
     hasArchiveActionlet?: boolean;
     hasCommentActionlet?: boolean;
     hasDeleteActionlet?: boolean;

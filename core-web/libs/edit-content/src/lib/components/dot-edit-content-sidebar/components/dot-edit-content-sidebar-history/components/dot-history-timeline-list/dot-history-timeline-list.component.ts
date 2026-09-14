@@ -18,14 +18,14 @@ import { TimelineModule } from 'primeng/timeline';
 function getTimelineItemKey(item: unknown): string {
     if (item !== null && typeof item === 'object') {
         const record = item as Record<string, unknown>;
-        if (typeof record.inode === 'string') {
-            return record.inode;
+        if (typeof record['inode'] === 'string') {
+            return record['inode'];
         }
-        if (typeof record.bundleId === 'string') {
-            return record.bundleId;
+        if (typeof record['bundleId'] === 'string') {
+            return record['bundleId'];
         }
-        if (typeof record.id === 'string') {
-            return record.id;
+        if (typeof record['id'] === 'string') {
+            return record['id'];
         }
     }
     return String(item);

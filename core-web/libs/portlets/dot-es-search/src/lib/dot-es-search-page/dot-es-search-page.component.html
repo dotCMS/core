@@ -405,10 +405,7 @@
                                                         <th class="text-right">
                                                             {{ 'esSearch.agg.count' | dm }}
                                                         </th>
-                                                        @for (
-                                                            col of agg.buckets[0]?.subCols ?? [];
-                                                            track col
-                                                        ) {
+                                                        @for (col of subColsOf(agg); track col) {
                                                             <th class="text-right">
                                                                 {{
                                                                     col
