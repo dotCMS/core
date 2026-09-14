@@ -327,6 +327,35 @@ export class ContentDrivePage {
         ).toEqual([]);
     }
 
+    /**
+     * Waits until at least `count` *outcome* messages are on screen at once.
+     *
+     * For the case where two runs settle close together and each has to report. Asserted as a
+     * simultaneous count rather than one message at a time, because the failure being guarded
+     * against is one outcome *replacing* another: checked sequentially, the second would be found
+     * and the first's absence would never be noticed.
+     *
+     * The handoff advisory is excluded deliberately, and this is the whole difficulty of the
+     * assertion. Every upload raises one of those the moment its handle arrives, so two uploads put
+     * two toasts on screen before either has finished — counting messages indiscriminately passes
+     * whether or not the outcomes ever arrive, which is a test that proves nothing. Counted here by
+     * what the *outcome* copy says instead.
+     */
+    async expectOutcomeCountAtLeast(count: number) {
+        const outcomes = this.toasts.filter({ hasText: /uploaded|were not uploaded|file\(s\)/ });
+
+        await expect
+            .poll(
+                async () =>
+                    await outcomes
+                        .filter({ hasNotText: 'in the background' })
+                        .filter({ hasNotText: 'You can keep working' })
+                        .count(),
+                { timeout: OUTCOME_TIMEOUT }
+            )
+            .toBeGreaterThanOrEqual(count);
+    }
+
     async expectToastContaining(text: string) {
         await expect(this.toasts.filter({ hasText: text }).first()).toBeVisible({
             timeout: OUTCOME_TIMEOUT
