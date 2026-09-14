@@ -1234,6 +1234,57 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    // A search that failed to run must not be presented as a search that found nothing. The two
+    // were the same empty grid before issue #37532, which is how a customer came to believe content
+    // they were looking at had vanished.
+    //
+    // The status is set per test and restored afterwards: it is shared across this file, and
+    // leaving it on ERROR hides the listing from every test that follows.
+    describe('when a search fails to run', () => {
+        afterEach(() => {
+            statusSignal.set(DotContentDriveStatus.LOADING);
+            spectator.detectChanges();
+        });
+
+        const failSearch = () => {
+            statusSignal.set(DotContentDriveStatus.ERROR);
+            spectator.detectChanges();
+        };
+
+        it('should show an error state instead of the listing', () => {
+            failSearch();
+
+            expect(spectator.query(byTestId('search-error-state'))).toBeTruthy();
+        });
+
+        it('should keep the error visible alongside the listing it explains', () => {
+            failSearch();
+
+            // The banner sits above the grid rather than replacing it, so the user sees WHY the
+            // results are incomplete instead of an unexplained empty table.
+            expect(spectator.query(byTestId('search-error-state'))).toBeTruthy();
+            expect(spectator.query('dot-folder-list-view')).toBeTruthy();
+        });
+
+        it('should announce the failure to assistive technology', () => {
+            failSearch();
+
+            expect(spectator.query(byTestId('search-error-state'))?.getAttribute('role')).toBe(
+                'alert'
+            );
+        });
+
+        it('should re-run the search when the user retries', () => {
+            failSearch();
+
+            // The testid lands on the <p-button> host; the clickable element is the <button> it
+            // renders inside.
+            spectator.click('[data-testid="search-error-retry"] button');
+
+            expect(store.loadItems).toHaveBeenCalled();
+        });
+    });
+
     describe('onPaginate', () => {
         it('should set pagination with provided values', () => {
             const folderListView = spectator.debugElement.query(
