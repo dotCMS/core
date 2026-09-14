@@ -25,6 +25,7 @@ import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrateg
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -32,6 +33,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TabDividerField;
@@ -6213,11 +6215,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<com.dotcms.contenttype.model.field.Field> fields = Try.of(()->contentlet.getContentType().fields()).getOrElse(Collections.emptyList());
         final Map<String, Object> map = contentlet.getMap();
+        final Set<String> nullProperties = contentlet.getNullProperties();
         Logger.debug(this, ()-> "Setting default values for the contentlet: " + contentlet.getIdentifier());
         // check default values for fields not coming on the map
         for (final com.dotcms.contenttype.model.field.Field field : fields) {
 
-            if (!map.containsKey(field.variable()) && UtilMethods.isSet(field.defaultValue())) {
+            if (!map.containsKey(field.variable())
+                    && !isClearedSelectionField(field, nullProperties)
+                    && UtilMethods.isSet(field.defaultValue())) {
 
                 try {
                     this.setContentletProperty(contentlet, field, field.defaultValue());
@@ -6231,6 +6236,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return contentlet;
+    }
+
+    /**
+     * Tells whether the user deliberately emptied a multi-value selection field, rather than never
+     * submitting it at all.
+     * <p>
+     * {@code ContentletHashMap#put} removes a key outright when its value is null -- it extends
+     * {@link java.util.concurrent.ConcurrentHashMap}, which forbids null values -- so an absent key
+     * alone cannot tell those two cases apart. An explicit clear is recorded in the contentlet's
+     * null-properties set, which {@link #validateContentlet} already consults.
+     * <p>
+     * This only covers fields whose value is a set of selected options, where the empty set is
+     * itself a valid choice -- an unchecked "Show on Menu" on a new page, for instance. For a text
+     * or numeric field a null still means "not provided" and its default value is applied as
+     * before, which
+     * {@code ContentletJsonAPITest#Initialize_Fields_With_Default_Value_Test} relies on.
+     *
+     * @param field          the Content Type field being considered
+     * @param nullProperties the contentlet's explicitly-nulled property names
+     * @return {@code true} when this is a selection field the user cleared on purpose
+     */
+    private boolean isClearedSelectionField(final com.dotcms.contenttype.model.field.Field field,
+            final Set<String> nullProperties) {
+        return (field instanceof CheckboxField || field instanceof MultiSelectField)
+                && nullProperties.contains(field.variable());
     }
 
     private static boolean hasUniqueField(ContentType contentType) {
