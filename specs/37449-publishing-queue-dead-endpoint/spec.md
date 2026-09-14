@@ -149,9 +149,9 @@ Problem 2 alone reproduces with any bundle whose assets were added earlier, by r
 - **AC-001**: With an enabled endpoint whose connection attempts get no answer, a pushed
   bundle reaches `FAILED_TO_SEND_TO_ALL_GROUPS` within the configured connect timeout plus 15
   seconds, and the endpoint message names the timeout.
-- **AC-002**: In the AC-001 setup, a bundle pushed 7 seconds later to a healthy or refused
-  endpoint has its audit row within 30 seconds of its publish date, and the publisher keeps
-  running every minute.
+- **AC-002**: In the AC-001 setup, a bundle pushed afterwards to a healthy or refused endpoint
+  is processed without waiting on the unanswered endpoint, and the publisher's next run is not
+  skipped.
 - **AC-003**: An unexpected runtime error while processing one bundle leaves that bundle in a
   failed status with the message recorded and its queue rows removed; the remaining bundles in
   the same run are still processed.
@@ -170,7 +170,8 @@ Problem 2 alone reproduces with any bundle whose assets were added earlier, by r
   the first fails unexpectedly and asserting the second is still processed (AC-002, AC-003);
   one for AC-004 and AC-005 through the v1 API with a bundle whose queue entries carry a
   backdated entered date. The effect of the timeout on a real endpoint that drops connection
-  attempts is verified manually, since that behavior belongs to the network stack, not to this
+  attempts, and the publisher picking up later bundles within one job interval, are verified
+  manually, since that behavior belongs to the network stack and the scheduler, not to this
   code. Run with `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=<Class>`.
 
 ## Assumptions
