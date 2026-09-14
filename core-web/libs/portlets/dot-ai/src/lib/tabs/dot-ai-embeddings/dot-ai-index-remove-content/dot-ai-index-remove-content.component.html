@@ -2,10 +2,26 @@
     <!-- The three things the old delete mode never said, and which decide whether the query
          someone is about to run does what they think it does. -->
     <p-message class="block" severity="secondary" data-testid="dotai-index-remove-explainer">
-        {{ 'dotai.embeddings.remove-content.explainer' | dm: [indexName] }}
+        {{ 'dotai.embeddings.remove-content.explainer' | dm }}
     </p-message>
 
     <div class="field mt-4">
+        <label class="p-label-input-required" for="dotai-index-remove-index">
+            {{ 'dotai.embeddings.remove-content.index' | dm }}
+        </label>
+        <!-- Picked, never typed: as a free-text field this silently removed nothing on a typo
+             and hit a different index on a near-miss. -->
+        <p-select
+            inputId="dotai-index-remove-index"
+            [options]="$indexOptions()"
+            [ngModel]="$indexName()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="$indexName.set($event)"
+            [placeholder]="'dotai.embeddings.remove-content.index.placeholder' | dm"
+            data-testid="dotai-index-remove-index" />
+    </div>
+
+    <div class="field">
         <label class="p-label-input-required" for="dotai-index-remove-query">
             {{ 'dotai.embeddings.remove-content.query' | dm }}
         </label>

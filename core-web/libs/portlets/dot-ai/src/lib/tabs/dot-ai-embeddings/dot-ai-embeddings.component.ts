@@ -1,10 +1,9 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 
-import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -58,7 +57,6 @@ const CONFIRM_BUTTONS = {
     imports: [
         DotEmptyContainerComponent,
         ToolbarModule,
-        MenuModule,
         TableModule,
         TagModule,
         ToastModule,
@@ -84,33 +82,8 @@ export default class DotAiEmbeddingsComponent {
     /** Whether a dialog is up, and so is the one rendering what the user must act on. */
     readonly #dialogOpen = signal(false);
 
-    /** The index whose row menu is open; its actions are built from this. */
-    readonly #menuIndex = signal<DotAiIndex | null>(null);
-
     /** Identity guard: each operation makes a fresh notice, so this toasts each one once. */
     #toasted: DotAiIndexNotice | null = null;
-
-    protected readonly $rowActions = computed<MenuItem[]>(() => {
-        const index = this.#menuIndex();
-
-        if (!index) {
-            return [];
-        }
-
-        return [
-            {
-                label: this.#messageService.get('dotai.embeddings.remove-content'),
-                icon: 'pi pi-eraser',
-                command: () => this.openRemoveContentDialog(index)
-            },
-            {
-                label: this.#messageService.get('dotai.embeddings.delete'),
-                icon: 'pi pi-trash',
-                styleClass: 'p-error',
-                command: () => this.confirmDeleteIndex(index)
-            }
-        ];
-    });
 
     constructor() {
         // Every outcome is announced somewhere. A dialog that is still up owns anything the
@@ -195,26 +168,17 @@ export default class DotAiEmbeddingsComponent {
             .subscribe(() => this.#dialogOpen.set(false));
     }
 
-    /** Opens the row menu for one index. One menu instance serves every row. */
-    protected openRowMenu(index: DotAiIndex): void {
-        this.#menuIndex.set(index);
-    }
-
-    protected openRemoveContentDialog(index: DotAiIndex): void {
+    protected openRemoveContentDialog(): void {
         this.store.dismissIndexNotice();
         this.#dialogOpen.set(true);
 
         this.#dialogService
             .open(DotAiIndexRemoveContentComponent, {
-                header: this.#messageService.get(
-                    'dotai.embeddings.remove-content.header',
-                    index.name
-                ),
+                header: this.#messageService.get('dotai.embeddings.remove-content.header'),
                 width: '700px',
                 closable: true,
                 closeOnEscape: true,
-                draggable: false,
-                data: { indexName: index.name }
+                draggable: false
             })
             // Same reason as the build dialog: `onDestroy` fires once, on every close path,
             // after the dialog has let go — `onClose` fires before the leave animation.

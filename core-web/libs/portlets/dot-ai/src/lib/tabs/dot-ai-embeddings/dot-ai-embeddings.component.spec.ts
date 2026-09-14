@@ -7,7 +7,7 @@ import {
 import { Subject } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
-import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -89,23 +89,6 @@ describe('DotAiEmbeddingsComponent', () => {
             spectator.query(byTestId(testId))?.querySelector('button') as HTMLButtonElement
         );
 
-    /**
-     * Runs a row-menu item by its label key.
-     *
-     * The overlay itself is PrimeNG's and does not render in a shallow test, so this opens the
-     * menu for the row and invokes the command the component put on the model — which is the
-     * component's half of the contract.
-     */
-    const openRowMenuItem = (labelKey: string) => {
-        clickButton('dotai-embeddings-row-actions');
-        const item = (spectator.component as unknown as { $rowActions: () => MenuItem[] })
-            .$rowActions()
-            .find((action) => action.label === labelKey);
-
-        item?.command?.({} as never);
-        spectator.detectChanges();
-    };
-
     it('should render the table with the index rows', () => {
         expect(spectator.query(byTestId('dotai-embeddings-table'))).toBeTruthy();
         expect(spectator.queryAll(byTestId('dotai-embeddings-row'))).toHaveLength(1);
@@ -128,7 +111,7 @@ describe('DotAiEmbeddingsComponent', () => {
     const acceptConfirmation = () => confirmSpy.mock.calls[0][0].accept();
 
     it('should confirm before deleting an index (FR-031)', () => {
-        openRowMenuItem('dotai.embeddings.delete');
+        clickButton('dotai-embeddings-delete');
 
         expect(confirmSpy).toHaveBeenCalled();
         // Nothing happens until the confirmation is accepted.
@@ -138,7 +121,7 @@ describe('DotAiEmbeddingsComponent', () => {
     it('should delete once the confirmation is accepted (FR-031)', () => {
         // Asserting only the guard proves the dialog opens, not that accepting it does the
         // thing — a broken `accept` wiring would pass that test alone.
-        openRowMenuItem('dotai.embeddings.delete');
+        clickButton('dotai-embeddings-delete');
 
         acceptConfirmation();
 
@@ -245,7 +228,7 @@ describe('DotAiEmbeddingsComponent', () => {
         const config = () => confirmSpy.mock.calls[0][0];
 
         it('should give the delete confirmation a primary accept', () => {
-            openRowMenuItem('dotai.embeddings.delete');
+            clickButton('dotai-embeddings-delete');
 
             // Absent, not 'p-button-primary': the theme defines no such class — `.p-button`
             // carries the primary styling itself — so asking for one renders nothing.
@@ -253,7 +236,7 @@ describe('DotAiEmbeddingsComponent', () => {
         });
 
         it('should give the delete confirmation an outlined cancel', () => {
-            openRowMenuItem('dotai.embeddings.delete');
+            clickButton('dotai-embeddings-delete');
 
             expect(config().rejectButtonStyleClass).toBe('p-button-outlined');
         });
@@ -276,40 +259,53 @@ describe('DotAiEmbeddingsComponent', () => {
         });
     });
 
-    describe('the per-row action menu', () => {
-        const trigger = () =>
-            spectator.query(byTestId('dotai-embeddings-row-actions'))?.querySelector('button');
-
-        it('should offer removing content as well as deleting the index', () => {
-            // Removing content belongs on the index it acts on. It used to be a mode of the
-            // build dialog, where the index name was a free-text field: a typo removed nothing
-            // and a near-miss hit a different index, both silently.
-            clickButton('dotai-embeddings-row-actions');
-
-            const labels = (spectator.component as unknown as { $rowActions: () => MenuItem[] })
-                .$rowActions()
-                .map((action) => action.label);
-
-            expect(labels).toEqual(['dotai.embeddings.remove-content', 'dotai.embeddings.delete']);
+    describe('removing content', () => {
+        it('should be a toolbar action beside New Index, not a row action', () => {
+            // The two are the same shape of operation — a Lucene query plus an index to scope
+            // it to. On a row it implied it knew what was in that index, and nothing records
+            // the query that built one, so the query here is written blind either way.
+            expect(spectator.query(byTestId('dotai-embeddings-remove-content'))).toBeTruthy();
+            expect(spectator.query(byTestId('dotai-embeddings-row-actions'))).toBeFalsy();
         });
 
-        it('should open the remove-content dialog with the row as its index', () => {
-            openRowMenuItem('dotai.embeddings.remove-content');
+        it('should open its dialog at the mandated width and be dismissible', () => {
+            clickButton('dotai-embeddings-remove-content');
 
             expect(dialogService.open).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
                     width: '700px',
                     closable: true,
-                    closeOnEscape: true,
-                    data: { indexName: 'blogs' }
+                    closeOnEscape: true
                 })
             );
         });
 
+        it('should clear a previous outcome so the dialog opens clean', () => {
+            clickButton('dotai-embeddings-remove-content');
+
+            expect(storeMock.dismissIndexNotice).toHaveBeenCalled();
+        });
+
+        it('should be unavailable when there is no index to remove from', () => {
+            storeMock.indexes.mockReturnValue([]);
+            spectator = createComponent();
+
+            expect(
+                spectator
+                    .query(byTestId('dotai-embeddings-remove-content'))
+                    ?.querySelector('button')?.disabled
+            ).toBe(true);
+        });
+    });
+
+    describe('the per-row delete action', () => {
+        const trigger = () =>
+            spectator.query(byTestId('dotai-embeddings-delete'))?.querySelector('button');
+
         it('should be secondary, so a red control does not sit on every row', () => {
             // The destructive step is the confirm dialog, whose accept button carries
-            // p-button-danger; the row action only opens a menu.
+            // p-button-danger; the row action only opens it.
             expect(trigger()?.className).toContain('p-button-secondary');
             expect(trigger()?.className).not.toContain('p-button-danger');
         });

@@ -7,9 +7,10 @@ import {
 
 import { signal } from '@angular/core';
 
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotAiIndex } from '@dotcms/dotcms-models';
 
 import { DotAiIndexRemoveContentComponent } from './dot-ai-index-remove-content.component';
 
@@ -20,6 +21,7 @@ describe('DotAiIndexRemoveContentComponent', () => {
     let spectator: Spectator<DotAiIndexRemoveContentComponent>;
     let dialogRef: DynamicDialogRef;
     let store: {
+        indexes: ReturnType<typeof signal<DotAiIndex[]>>;
         indexNotice: ReturnType<typeof signal<DotAiIndexNotice | null>>;
         removeFromIndex: ReturnType<typeof vi.fn>;
         dismissIndexNotice: ReturnType<typeof vi.fn>;
@@ -29,14 +31,23 @@ describe('DotAiIndexRemoveContentComponent', () => {
         component: DotAiIndexRemoveContentComponent,
         providers: [
             mockProvider(DynamicDialogRef),
-            mockProvider(DotMessageService, { get: (key: string) => key }),
-            { provide: DynamicDialogConfig, useValue: { data: { indexName: 'blogs' } } }
+            mockProvider(DotMessageService, { get: (key: string) => key })
         ],
         shallow: true
     });
 
     beforeEach(() => {
+        const index = (name: string): DotAiIndex => ({
+            name,
+            fragments: 1,
+            contents: 1,
+            tokenTotal: 1,
+            tokensPerChunk: 1,
+            contentTypes: []
+        });
+
         store = {
+            indexes: signal<DotAiIndex[]>([index('blogs'), index('product')]),
             indexNotice: signal<DotAiIndexNotice | null>(null),
             removeFromIndex: vi.fn(),
             dismissIndexNotice: vi.fn()
@@ -67,12 +78,29 @@ describe('DotAiIndexRemoveContentComponent', () => {
         detail
     });
 
-    it('should take the index from the row rather than asking for it', () => {
-        // It used to be a free-text field on the build dialog: a typo removed nothing and a
-        // near-miss hit a different index, both silently.
-        expect(spectator.query(byTestId('dotai-index-create-name'))).toBeFalsy();
+    it('should offer the real indexes rather than a free-text name', () => {
+        // As a free-text field on the old delete mode, a typo removed nothing and a near-miss
+        // hit a different index, both silently.
+        expect(spectator.query(byTestId('dotai-index-remove-index'))).toBeTruthy();
+        expect(spectator.query('input[type="text"]#dotai-index-remove-index')).toBeFalsy();
+        expect(
+            (spectator.component as unknown as { $indexOptions: () => string[] }).$indexOptions()
+        ).toEqual(['blogs', 'product']);
+    });
+
+    it('should explain that it removes embeddings rather than content', () => {
         expect(spectator.query(byTestId('dotai-index-remove-explainer'))).toContainText(
             'dotai.embeddings.remove-content.explainer'
+        );
+    });
+
+    it('should default to the first index so the form is usable straight away', () => {
+        fillQuery('+contentType:Blog');
+
+        clickButton('dotai-index-remove-submit');
+
+        expect(store.removeFromIndex).toHaveBeenCalledWith(
+            expect.objectContaining({ indexName: 'blogs' })
         );
     });
 
