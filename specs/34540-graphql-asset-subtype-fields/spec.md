@@ -14,10 +14,14 @@
 
 ## Overview
 
-dotCMS lets a customer model their own kinds of assets by extending the two asset base types: a
-banner image that also carries a campaign name and an ad size, a PDF that also carries a category
-and a download count. The authoring side of that works today — the customer defines the fields,
-editors fill them in, the values are stored and versioned.
+dotCMS lets a customer model their own kinds of assets by extending either of the two asset base
+types. **Any** content type built that way is in scope here — there is no privileged set. The
+authoring side works today: the customer defines the fields, editors fill them in, the values are
+stored and versioned.
+
+*(Throughout this document, a banner image carrying a campaign name and a PDF carrying a category
+appear as illustrations only. Nothing in the requirements is specific to them; wherever an example
+is named, read it as "any content type extending that base type".)*
 
 The reading side does not. When another piece of content points at one of those assets through an
 Image or a File field, a GraphQL client can only ever see a fixed, six-property view of it. The
@@ -63,6 +67,14 @@ story already unblocks the tagging workflow and custom asset metadata.
 4. **Given** a customer adds a new property to an existing asset type, **When** a client requests
    that property through an Image or File field without any administrative action in between,
    **Then** the new property is available and returns its stored value.
+5. **Given** *any* content type extending either asset base type — not only the two used as
+   illustrations above — and any property the customer defined on it, **When** a client requests
+   that property through a field pointing at content of that type, **Then** the stored value is
+   returned. This scenario is the general case; scenarios 1-2 are instances of it and passing
+   them alone does not satisfy it.
+6. **Given** an Image field pointing at file-style content, or a File field pointing at
+   image-style content, **When** a client narrows to the actual type of what is referenced,
+   **Then** that type is offered and its properties are returned.
 
 ---
 
@@ -139,6 +151,15 @@ and confirm they match the asset's own record.
 
 - **FR-001**: A client MUST be able to request, through an Image or File field, any property the
   customer defined on the content type of the asset that field points at.
+- **FR-001a**: Every content type extending either asset base type MUST be reachable through an
+  asset-pointing field — the whole open-ended set, including types a customer creates later. No
+  subset may be privileged, and the capability MUST NOT be satisfiable by enumerating known types.
+- **FR-001b**: An asset-pointing field MUST be able to return, and a client MUST be able to narrow
+  to, content of **either** base type regardless of which kind of field is doing the pointing.
+  Verified against a running instance: an Image field accepts and resolves a reference to
+  file-style content (a plain-text file was returned through one), so a client narrowing on that
+  field MUST be offered file-style types as well as image-style ones. Typing the field by the
+  field's own kind would silently drop content the field can already hold today.
 - **FR-002**: A client MUST be able to request the tags carried by an asset through the Image or
   File field that points at it.
 - **FR-003**: The response MUST identify the specific content type of the asset that was returned,
@@ -177,6 +198,10 @@ and confirm they match the asset's own record.
   without descending a level — MUST be re-raised as a second, separately tracked stage of issue
   #34540, delivered after this one. Issue #34540 MUST remain open after this feature ships,
   carrying that remaining scope, so it is not lost.
+- **FR-014**: The existing automated check that locks the current shape of an asset-pointing field
+  MUST be corrected as part of this work. It currently asserts that the asset view exposes *no
+  property other than* the six it has today, while being named as though it asserts those six are
+  present. It must assert what it claims.
 - **FR-015**: The properties shared by every asset MUST be selectable **both** directly on an
   asset-pointing field and inside a clause that narrows to a specific type, without the client
   having to repeat itself or choose one place over the other.
@@ -184,16 +209,17 @@ and confirm they match the asset's own record.
   fail the request. It contributes nothing and the rest of the response is delivered normally.
   The response MUST additionally carry a non-fatal warning naming the clause that matched nothing,
   so a client can tell "this asset wasn't that type" apart from "I named the wrong type".
+- **FR-016a**: This MUST hold across a whole result set, not just a single asset. When one request
+  returns many assets of differing types, every asset that matches a clause MUST be returned with
+  those properties populated, every asset that does not MUST still be returned without them, and
+  the request as a whole MUST succeed. A single non-matching asset MUST NOT suppress the matching
+  ones. Warnings MUST identify which clause matched nothing rather than being a single opaque
+  flag on the response.
 - **FR-017**: A clause that narrows to a type that does not exist at all MUST fail the request.
   This is a client mistake with no valid reading, and failing loudly is correct.
 - **FR-018**: When more than one clause applies to the same returned asset — one narrowing to its
   base kind and another to its specific type — their properties MUST merge into a single result
   object, with no precedence rule needed and no duplication.
-- **FR-014**: The existing automated check that locks the current shape of an asset-pointing field
-  MUST be corrected as part of this work. It currently asserts that the asset view exposes *no
-  property other than* the six it has today, while being named as though it asserts those six are
-  present. It must assert what it claims.
-
 ### Key Entities
 
 - **Asset base types**: the two built-in kinds of asset content in dotCMS — one image-oriented,
