@@ -377,6 +377,23 @@ export const AddRelationshipsStore = signalStore(
              * contract C3: a lookup computed from a partial set would disable rows for the wrong
              * reason.
              */
+            /**
+             * Records the claimed identifiers and drops any the editor already picked.
+             *
+             * Shared by the async lookup and the public setter so the pruning cannot apply to one
+             * path and not the other — it was written on the setter first, which the tests drove
+             * and the dialog never uses.
+             */
+            const applyConstrained = (constrainedIdentifiers: Set<string>): void => {
+                const selection = new Map(store.selection());
+
+                for (const identifier of constrainedIdentifiers) {
+                    selection.delete(identifier);
+                }
+
+                patchState(store, { constrainedIdentifiers, selection });
+            };
+
             const loadConstrained = rxMethod<AddRelationshipsInput>(
                 pipe(
                     switchMap((input) => {
@@ -398,9 +415,7 @@ export const AddRelationshipsStore = signalStore(
                                 currentContentIdentifier: input.currentContentIdentifier ?? null
                             })
                             .pipe(
-                                tap((constrainedIdentifiers) =>
-                                    patchState(store, { constrainedIdentifiers })
-                                )
+                                tap(applyConstrained)
                             );
                     })
                 )
@@ -579,14 +594,24 @@ export const AddRelationshipsStore = signalStore(
                 },
 
                 /**
-                 * Records which identifiers are claimed by another parent.
+                 * Records which identifiers are claimed by another parent, and drops any already
+                 * picked.
                  *
                  * Left empty when the caller supplies no parent context — a filter-time caller has
                  * none, and a lookup computed from a partial set would disable rows for the wrong
                  * reason (contract C3).
+                 *
+                 * The pruning is the race this lost before. `initialize` fires the lookup and the
+                 * component fires the first search side by side; when the search won, the set was
+                 * still empty, `toggleSelection` had nothing to refuse, and a claimed row went into
+                 * the selection. Nothing removed it afterwards, so confirming took a child away
+                 * from the parent that already held it — the exact save the guard exists to stop.
+                 *
+                 * Refusing at pick time is not enough on its own, because the pick can happen
+                 * before the answer arrives.
                  */
                 setConstrainedIdentifiers(constrainedIdentifiers: Set<string>): void {
-                    patchState(store, { constrainedIdentifiers });
+                    applyConstrained(constrainedIdentifiers);
                 },
 
                 /** Re-sorts, returning to the first page — a cursor does not survive a re-sort. */

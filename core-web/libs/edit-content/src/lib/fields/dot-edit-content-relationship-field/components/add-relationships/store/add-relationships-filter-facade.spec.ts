@@ -22,22 +22,23 @@ import { AddRelationshipsInput } from '../models/add-relationships.models';
 describe('AddRelationshipsFilterFacade', () => {
     let spectator: SpectatorService<InstanceType<typeof AddRelationshipsStore>>;
 
+    /** Extracted from the provider so the reload assertions below can read its calls. */
+    const searchMock = vi.fn().mockReturnValue(
+        of({
+            list: [],
+            contentCount: 0,
+            folderCount: 0,
+            hasMoreContent: false,
+            hasMoreFolders: false,
+            nextContentCursor: 0,
+            nextFolderCursor: 0
+        })
+    );
+
     const createService = createServiceFactory({
         service: AddRelationshipsStore,
         providers: [
-            mockProvider(DotContentDriveService, {
-                search: vi.fn().mockReturnValue(
-                    of({
-                        list: [],
-                        contentCount: 0,
-                        folderCount: 0,
-                        hasMoreContent: false,
-                        hasMoreFolders: false,
-                        nextContentCursor: 0,
-                        nextFolderCursor: 0
-                    })
-                )
-            }),
+            mockProvider(DotContentDriveService, { search: searchMock }),
             mockProvider(SiteService, { currentSite: { hostname: 'demo.dotcms.com' } })
         ]
     });
@@ -84,6 +85,51 @@ describe('AddRelationshipsFilterFacade', () => {
         },
         { normalizes: false }
     );
+
+    /**
+     * A chip that changes the bag has to change the results.
+     *
+     * Reported in review: the Locale chip wrote through the facade, the store recorded the filter
+     * and reset paging — and nothing reloaded. The list kept showing the previous locale until some
+     * other control happened to fire a search. `clearFilters` already reloaded (it goes through
+     * `reset`), so the seam was answering two of its own methods differently.
+     */
+    describe('a filter change reloads the results', () => {
+        let store: InstanceType<typeof AddRelationshipsStore>;
+        let facade: DotFilterFacade;
+
+        beforeEach(() => {
+            spectator = createService();
+            store = spectator.service;
+            store.initialize(input);
+            facade = createAddRelationshipsFilterFacade(store);
+            store.load();
+            searchMock.mockClear();
+        });
+
+        it('searches again when a chip sets a filter', () => {
+            facade.patchFilters({ languageId: ['2'] });
+
+            expect(searchMock).toHaveBeenCalledTimes(1);
+            expect(searchMock.mock.calls[0][0].language).toEqual(['2']);
+        });
+
+        it('searches again when a chip clears its filter', () => {
+            facade.patchFilters({ languageId: ['2'] });
+            searchMock.mockClear();
+
+            facade.removeFilter('languageId');
+
+            expect(searchMock).toHaveBeenCalledTimes(1);
+            expect(searchMock.mock.calls[0][0].language).toBeUndefined();
+        });
+
+        it('does not search for a patch that changes nothing (O9 still holds)', () => {
+            facade.patchFilters({ languageId: ['1'] });
+
+            expect(searchMock).not.toHaveBeenCalled();
+        });
+    });
 
     /**
      * Beyond the shared obligations: on this surface the browsed site counts as something to

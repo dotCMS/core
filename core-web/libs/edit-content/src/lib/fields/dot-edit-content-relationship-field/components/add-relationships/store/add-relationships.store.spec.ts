@@ -1,5 +1,5 @@
 import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotContentDriveService, DotLanguagesService } from '@dotcms/data-access';
@@ -486,6 +486,75 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             store.reset();
 
             expect(store.$isSelected()('id-1')).toBe(true);
+        });
+
+        /**
+         * Reported in review: the constrained lookup and the first search race.
+         *
+         * `toggleSelection` refuses a claimed row by reading the set at pick time, so a row picked
+         * before the lookup resolves goes into the selection — and nothing took it out again when
+         * the set finally arrived. The editor could confirm a child already held by another parent,
+         * which is the exact save the guard exists to prevent.
+         *
+         * Asserted on the selection after the set lands, not on `toggleSelection`, because the bug
+         * is that the earlier pick survives.
+         */
+        it('drops a pick that the constrained set later refuses', () => {
+            store.initialize(baseInput);
+            store.load();
+
+            // The search won the race: nothing is known to be claimed yet.
+            store.toggleSelection(item(1));
+            expect(store.$isSelected()('id-1')).toBe(true);
+
+            store.setConstrainedIdentifiers(new Set(['id-1']));
+
+            expect(store.$isSelected()('id-1')).toBe(false);
+        });
+
+        /**
+         * The same guarantee through the path the dialog actually takes.
+         *
+         * The two above drive `setConstrainedIdentifiers`, which nothing in the dialog calls — the
+         * lookup patches state from inside its own `rxMethod`. Written after the first version of
+         * the fix landed on the setter alone: the tests went green while the real path stayed
+         * broken.
+         */
+        it('drops the pick when the lookup itself resolves', () => {
+            // Deferred on purpose. With a synchronous `of(...)` the set is already populated by the
+            // time the row is picked, so `toggleSelection` refuses it and the pruning is never
+            // exercised — the first version of this test passed against a broken real path.
+            const claimed = new Subject<Set<string>>();
+            constrainedMock.mockReturnValue(claimed);
+
+            store.initialize({
+                ...baseInput,
+                cardinality: 2,
+                isParentField: true,
+                parentContentTypeId: 'parent-type',
+                fieldVariable: 'rel'
+            });
+            store.load();
+
+            // The search won the race: nothing is known to be claimed yet, so the pick lands.
+            store.toggleSelection(item(1));
+            expect(store.$isSelected()('id-1')).toBe(true);
+
+            claimed.next(new Set(['id-1']));
+
+            expect(store.$isSelected()('id-1')).toBe(false);
+        });
+
+        it('leaves picks the constrained set does not name', () => {
+            store.initialize(baseInput);
+            store.load();
+            store.toggleSelection(item(1));
+            store.toggleSelection(item(2));
+
+            store.setConstrainedIdentifiers(new Set(['id-1']));
+
+            expect(store.$isSelected()('id-1')).toBe(false);
+            expect(store.$isSelected()('id-2')).toBe(true);
         });
 
         it('pins contentTypes to the relationship target type', () => {
