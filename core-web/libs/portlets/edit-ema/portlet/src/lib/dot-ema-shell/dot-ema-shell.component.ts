@@ -13,6 +13,7 @@ import {
     signal,
     untracked,
     ViewChild,
+    viewChild,
     ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -127,15 +128,19 @@ function hasOpenContentForEdit(component: unknown): component is RouteWithOpenCo
         DotMessagePipe
     ],
     /**
-     * `DotExperimentsPanelStore` is provided **here**, not by the panel it belongs to (#37478).
+     * `DotExperimentsPanelStore` is **not** here: it is provided by the route, beside `UVEStore`
+     * (#37478).
      *
-     * The panel component is mounted and destroyed by this template's `@if` on the store's
-     * `isOpen`, so a store owned by the panel would die with it — and the variant round trip
-     * needs the state to survive a period during which the panel is closed. This shell is the
-     * smallest scope that outlives that trip: leaving for a variant only changes the editor's
-     * query params, so the shell is never re-created.
+     * It lived here first, on the assumption that leaving for a variant only changes query params
+     * and so this component is never re-created. Measured in a running editor, that is false — the
+     * shell is destroyed and rebuilt on that navigation, and a component-provided store went with
+     * it, taking the panel's memory of which experiment and which screen the editor had open. The
+     * return then had nothing to return to.
+     *
+     * The route's injector outlives the component, which is the same reason `UVEStore` is there
+     * and the same trap #37005 fell into.
      */
-    providers: [ConfirmationService, DotExperimentsPanelStore]
+    providers: [ConfirmationService]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
@@ -169,8 +174,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         () => this.uveStore.pageAsset()?.page?.identifier ?? null
     );
 
-    @ViewChild('experimentsPanelHost', { read: ViewContainerRef })
-    experimentsPanelHost!: ViewContainerRef;
+    /**
+     * Where the panel is created (#37478).
+     *
+     * A **signal** query, not `@ViewChild`, and that is the difference between mounting and not.
+     * The effect below reads it, so it re-runs when the host resolves — a decorator query is not
+     * reactive, and the effect's first pass (before the view exists) would drop the request
+     * silently and never look again.
+     */
+    readonly $experimentsPanelHost = viewChild('experimentsPanelHost', { read: ViewContainerRef });
 
     /**
      * Creates the Experiments panel on its first open and destroys it on close (#37478).
@@ -187,17 +199,24 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      *
      * Destroying on close, rather than hiding, is what leaves nothing of the panel running behind
      * it (FR-039).
+     *
+     * **Both inputs are tracked, and the host is why.** The store outlives this component — it is
+     * provided by the route — so a rebuilt shell can find the panel *already* open, with `isOpen`
+     * never transitioning. An effect that only reacted to the store would run once, before the
+     * view existed, find no host and never look again: the state said open and nothing was on
+     * screen. That is what the variant round trip does on its way back.
      */
     readonly $experimentsPanelEffect = effect(() => {
         const isOpen = this.experimentsPanel.isOpen();
+        const host = this.$experimentsPanelHost();
 
         untracked(async () => {
-            if (!this.experimentsPanelHost) {
+            if (!host) {
                 return;
             }
 
             if (!isOpen) {
-                this.experimentsPanelHost.clear();
+                host.clear();
 
                 return;
             }
@@ -207,8 +226,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             // Re-checked after the await: the editor can dismiss the panel while the chunk is in
             // flight, and creating it then would show a panel nobody asked for any more.
-            if (this.experimentsPanel.isOpen() && this.experimentsPanelHost.length === 0) {
-                this.experimentsPanelHost.createComponent(DotExperimentsPanelComponent);
+            if (this.experimentsPanel.isOpen() && host.length === 0) {
+                host.createComponent(DotExperimentsPanelComponent);
             }
         });
     });
