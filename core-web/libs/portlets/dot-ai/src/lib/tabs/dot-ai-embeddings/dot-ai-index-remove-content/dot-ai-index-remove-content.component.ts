@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
@@ -44,6 +44,7 @@ import { watchIndexOperation } from '../../../utils/dot-ai-index-dialog.utils';
 })
 export class DotAiIndexRemoveContentComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #dialogConfig = inject(DynamicDialogConfig);
 
     protected readonly store = inject(DotAiStore);
 
@@ -63,7 +64,8 @@ export class DotAiIndexRemoveContentComponent {
     /** Settles and closes on this dialog's own removal, and nothing else. */
     readonly #operation = watchIndexOperation(DOT_AI_INDEX_OPERATION.REMOVE_CONTENT, {
         notice: this.store.indexNotice,
-        close: () => this.#dialogRef.close()
+        close: () => this.#dialogRef.close(),
+        config: this.#dialogConfig
     });
 
     protected readonly $submitting = this.#operation.$submitting;

@@ -60,6 +60,7 @@
             severity="secondary"
             [text]="true"
             [label]="'dotai.index.create.cancel' | dm"
+            [disabled]="$submitting()"
             (onClick)="cancel()"
             data-testid="dotai-index-remove-cancel" />
         <p-button

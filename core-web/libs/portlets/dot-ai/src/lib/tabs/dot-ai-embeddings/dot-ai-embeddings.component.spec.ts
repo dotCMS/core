@@ -156,7 +156,9 @@ describe('DotAiEmbeddingsComponent', () => {
                 expect.objectContaining({
                     width: '700px',
                     closable: true,
-                    closeOnEscape: true
+                    // The dialog handles Escape itself, so that it can decline while a
+                    // request is in flight — PrimeNG binds its own listener once at open.
+                    closeOnEscape: false
                 })
             );
         });
@@ -308,7 +310,9 @@ describe('DotAiEmbeddingsComponent', () => {
                 expect.objectContaining({
                     width: '700px',
                     closable: true,
-                    closeOnEscape: true
+                    // The dialog handles Escape itself, so that it can decline while a
+                    // request is in flight — PrimeNG binds its own listener once at open.
+                    closeOnEscape: false
                 })
             );
         });

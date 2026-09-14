@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TextareaModule } from 'primeng/textarea';
@@ -48,6 +48,7 @@ const INDEX_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 })
 export class DotAiIndexCreateComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #dialogConfig = inject(DynamicDialogConfig);
 
     protected readonly store = inject(DotAiStore);
 
@@ -57,7 +58,8 @@ export class DotAiIndexCreateComponent {
      */
     readonly #operation = watchIndexOperation(DOT_AI_INDEX_OPERATION.BUILD, {
         notice: this.store.indexNotice,
-        close: () => this.#dialogRef.close()
+        close: () => this.#dialogRef.close(),
+        config: this.#dialogConfig
     });
 
     protected readonly $submitting = this.#operation.$submitting;

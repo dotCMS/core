@@ -7,7 +7,7 @@ import {
 
 import { signal } from '@angular/core';
 
-import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAiIndex } from '@dotcms/dotcms-models';
@@ -16,6 +16,8 @@ import { DotAiIndexCreateComponent } from './dot-ai-index-create.component';
 
 import { DOT_AI_INDEX_OPERATION, DotAiIndexNotice } from '../../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../../store/dot-ai.store';
+
+const dialogConfig = { closable: true, closeOnEscape: true };
 
 describe('DotAiIndexCreateComponent', () => {
     let spectator: Spectator<DotAiIndexCreateComponent>;
@@ -29,11 +31,18 @@ describe('DotAiIndexCreateComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAiIndexCreateComponent,
-        providers: [mockProvider(DynamicDialogRef), mockProvider(DotMessageService)],
+        providers: [
+            mockProvider(DynamicDialogRef),
+            mockProvider(DotMessageService),
+            { provide: DynamicDialogConfig, useValue: dialogConfig }
+        ],
         shallow: true
     });
 
     beforeEach(() => {
+        dialogConfig.closable = true;
+        dialogConfig.closeOnEscape = true;
+
         store = {
             indexes: signal<DotAiIndex[]>([
                 {
@@ -60,6 +69,10 @@ describe('DotAiIndexCreateComponent', () => {
         spectator.typeInElement(value, spectator.query(byTestId(testId)) as HTMLElement);
 
     /** PrimeNG puts its click handler on the inner <button>, not the p-button host. */
+    /** PrimeNG binds its Escape listener once at open, so the dialog owns the key itself. */
+    const pressEscape = () =>
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
     const clickButton = (testId: string) =>
         spectator.click(
             spectator.query(byTestId(testId))?.querySelector('button') as HTMLButtonElement
@@ -243,5 +256,41 @@ describe('DotAiIndexCreateComponent', () => {
 
         expect(template.getAttribute('placeholder')).toBeTruthy();
         expect(spectator.query('label[for="dotai-index-template"]')).toBeTruthy();
+    });
+
+    it('should not be dismissible while a build is outstanding', () => {
+        // The answer is coming back into this form, so it has to still be here to receive it.
+        // PrimeNG drives its header X and Escape straight off the dialog config.
+        fillValidForm();
+        clickButton('dotai-index-create-submit');
+
+        expect(dialogConfig.closable).toBe(false);
+        pressEscape();
+        expect(dialogRef.close).not.toHaveBeenCalled();
+        expect(
+            spectator.query(byTestId('dotai-index-create-cancel'))?.querySelector('button')
+                ?.disabled
+        ).toBe(true);
+    });
+
+    it('should be dismissible again once the build settles', () => {
+        fillValidForm();
+        clickButton('dotai-index-create-submit');
+
+        store.indexNotice.set({
+            operation: DOT_AI_INDEX_OPERATION.BUILD,
+            outcome: 'failed',
+            indexName: 'blogs',
+            detail: 'bad query'
+        });
+        spectator.detectChanges();
+
+        expect(dialogConfig.closable).toBe(true);
+        pressEscape();
+        expect(dialogRef.close).toHaveBeenCalled();
+        expect(
+            spectator.query(byTestId('dotai-index-create-cancel'))?.querySelector('button')
+                ?.disabled
+        ).toBe(false);
     });
 });

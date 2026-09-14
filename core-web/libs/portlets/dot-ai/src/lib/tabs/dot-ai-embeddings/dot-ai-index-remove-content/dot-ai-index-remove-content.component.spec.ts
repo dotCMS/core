@@ -7,7 +7,7 @@ import {
 
 import { signal } from '@angular/core';
 
-import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAiIndex } from '@dotcms/dotcms-models';
@@ -16,6 +16,8 @@ import { DotAiIndexRemoveContentComponent } from './dot-ai-index-remove-content.
 
 import { DOT_AI_INDEX_OPERATION, DotAiIndexNotice } from '../../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../../store/dot-ai.store';
+
+const dialogConfig = { closable: true, closeOnEscape: true };
 
 describe('DotAiIndexRemoveContentComponent', () => {
     let spectator: Spectator<DotAiIndexRemoveContentComponent>;
@@ -30,12 +32,16 @@ describe('DotAiIndexRemoveContentComponent', () => {
         component: DotAiIndexRemoveContentComponent,
         providers: [
             mockProvider(DynamicDialogRef),
-            mockProvider(DotMessageService, { get: (key: string) => key })
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            { provide: DynamicDialogConfig, useValue: dialogConfig }
         ],
         shallow: true
     });
 
     beforeEach(() => {
+        dialogConfig.closable = true;
+        dialogConfig.closeOnEscape = true;
+
         const index = (name: string): DotAiIndex => ({
             name,
             fragments: 1,
@@ -56,6 +62,10 @@ describe('DotAiIndexRemoveContentComponent', () => {
     });
 
     /** PrimeNG puts its click handler on the inner <button>, not the p-button host. */
+    /** PrimeNG binds its Escape listener once at open, so the dialog owns the key itself. */
+    const pressEscape = () =>
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
     const clickButton = (testId: string) =>
         spectator.click(
             spectator.query(byTestId(testId))?.querySelector('button') as HTMLButtonElement
@@ -222,5 +232,32 @@ describe('DotAiIndexRemoveContentComponent', () => {
         spectator.detectChanges();
 
         expect(dialogRef.close).not.toHaveBeenCalled();
+    });
+
+    it('should not be dismissible while a removal is outstanding', () => {
+        pickIndex('blogs');
+        fillQuery('+contentType:Blog');
+        clickButton('dotai-index-remove-submit');
+
+        expect(dialogConfig.closable).toBe(false);
+        pressEscape();
+        expect(dialogRef.close).not.toHaveBeenCalled();
+        expect(
+            spectator.query(byTestId('dotai-index-remove-cancel'))?.querySelector('button')
+                ?.disabled
+        ).toBe(true);
+    });
+
+    it('should be dismissible again once the removal settles', () => {
+        pickIndex('blogs');
+        fillQuery('+contentType:Blog');
+        clickButton('dotai-index-remove-submit');
+
+        store.indexNotice.set(notice('empty', '0'));
+        spectator.detectChanges();
+
+        expect(dialogConfig.closable).toBe(true);
+        pressEscape();
+        expect(dialogRef.close).toHaveBeenCalled();
     });
 });

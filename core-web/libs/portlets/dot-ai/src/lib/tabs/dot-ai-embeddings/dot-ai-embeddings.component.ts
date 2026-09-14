@@ -209,7 +209,10 @@ export default class DotAiEmbeddingsComponent {
                 header: this.#messageService.get('dotai.index.create.header'),
                 width: '700px',
                 closable: true,
-                closeOnEscape: true,
+                // Escape is handled by the dialog itself: PrimeNG binds its own listener once
+                // at open time and never rereads the flag, so it cannot be told to stand down
+                // while a request is in flight. See `watchIndexOperation`.
+                closeOnEscape: false,
                 draggable: false
             })
             .onDestroy.pipe(take(1))
@@ -224,7 +227,10 @@ export default class DotAiEmbeddingsComponent {
                 header: this.#messageService.get('dotai.embeddings.remove-content.header'),
                 width: '700px',
                 closable: true,
-                closeOnEscape: true,
+                // Escape is handled by the dialog itself: PrimeNG binds its own listener once
+                // at open time and never rereads the flag, so it cannot be told to stand down
+                // while a request is in flight. See `watchIndexOperation`.
+                closeOnEscape: false,
                 draggable: false
             })
             // Same reason as the build dialog: `onDestroy` fires once, on every close path,
