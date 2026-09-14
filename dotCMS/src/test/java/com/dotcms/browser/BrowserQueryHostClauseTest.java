@@ -76,10 +76,38 @@ public class BrowserQueryHostClauseTest {
     }
 
     /**
+     * The other half of the same guarantee: when the caller asks for shared content — which is
+     * what the "Show System Host" chip sends, on by default — the site predicate widens to admit
+     * System Host as well.
+     * <p>
+     * Untested anywhere before this. The refactor that gives this flag a third state passes
+     * through here, so without this a broken "chip on" would ship in silence: shared assets would
+     * simply stop appearing, with every existing test still green.
+     */
+    @Test
+    public void testAskingForSharedContentWidensThePredicateToAdmitSystemHost() throws Exception {
+        final SelectResult result = buildSelect(true);
+
+        assertTrue("the site is still matched", result.sql.contains("id.host_inode = ?"));
+        assertTrue("and System Host is admitted alongside it",
+                result.sql.contains("id.host_inode = 'SYSTEM_HOST'"));
+        assertEquals("the site identifier is still the only bound value", SITE_ID,
+                String.valueOf(result.params.get(0)));
+    }
+
+    /**
      * Builds the statement for a query that names a site and a folder and nothing else, which is
      * the default shape of every non-Content-Drive caller.
      */
     private static SelectResult buildSelect() throws Exception {
+        return buildSelect(false);
+    }
+
+    /**
+     * @param askForSharedContent what the caller says about System Host. This is the one line the
+     *        three-state refactor changes in this file; the assertions above it must not move.
+     */
+    private static SelectResult buildSelect(final boolean askForSharedContent) throws Exception {
         final BrowserAPIImpl api = mock(BrowserAPIImpl.class, CALLS_REAL_METHODS);
         final BrowserQuery query = mock(BrowserQuery.class, CALLS_REAL_METHODS);
 
@@ -91,6 +119,8 @@ public class BrowserQueryHostClauseTest {
         setField(query, "baseTypes", Set.of(BaseContentType.ANY));
         setField(query, "fieldCriteria", List.of());
         setField(query, "mimeTypes", List.of());
+        setField(query, "systemHostMode",
+                askForSharedContent ? SystemHostMode.INCLUDE : SystemHostMode.EXCLUDE);
 
         // Both are mocked rather than constructed: `new Host()` resolves its content type through
         // the legacy cache, which calls APILocator.systemUser() and reaches for a database

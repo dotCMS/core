@@ -643,7 +643,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             ? browserQuery.site.getIdentifier()
             : browserQuery.folder.getHostId();
 
-        if (browserQuery.forceSystemHost || browserQuery.folder.isSystemFolder()) {
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            query.append("+conhost:SYSTEM_HOST ");
+        } else if (SystemHostMode.INCLUDE == browserQuery.systemHostMode
+                || browserQuery.folder.isSystemFolder()) {
+            // The system-folder half of this condition is deliberately preserved for now: it makes
+            // this builder disagree with the SQL one about a structural criterion, which is a
+            // defect in its own right and is fixed with its own test rather than silently here.
             query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
         } else {
             query.append("+conhost:").append(hostId).append(" ");
@@ -2034,9 +2040,9 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (shouldApplySiteFiltering) {
             if (browserQuery.site != null) {
                 appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
-                        browserQuery.forceSystemHost, parameters);
+                        browserQuery.systemHostMode, parameters);
             } else {
-                if (browserQuery.forceSystemHost) {
+                if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
                     appendSystemHostQuery(selectQuery);
                 }
             }
@@ -2195,9 +2201,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param siteIdentifier The site identifier to filter by.
      * @param parameters     The list of parameters to add the site identifier to.
      */
-    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier, boolean forceSystemHost,
-            List<Object> parameters) {
-        if(forceSystemHost){
+    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier,
+            SystemHostMode systemHostMode, List<Object> parameters) {
+        if (SystemHostMode.ONLY == systemHostMode) {
+            // The site is context rather than a filter here, so nothing is bound.
+            appendSystemHostQuery(sqlQuery);
+            return;
+        }
+        if (SystemHostMode.INCLUDE == systemHostMode) {
             sqlQuery.append(" and (id.host_inode = ? or id.host_inode = 'SYSTEM_HOST') ");
         } else {
             sqlQuery.append(" and (id.host_inode = ?) ");

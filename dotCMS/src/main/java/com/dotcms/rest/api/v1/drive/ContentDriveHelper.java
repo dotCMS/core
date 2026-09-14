@@ -5,6 +5,7 @@ import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
 import com.dotcms.browser.ContentStatus;
+import com.dotcms.browser.SystemHostMode;
 import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -174,7 +175,9 @@ public class ContentDriveHelper {
                 .ignoreSiteForFolders(true);
         }
         //This ensures that despite the site passed systemHost will be included too
-        builder.forceSystemHost(requestForm.includeSystemHost());
+        builder.systemHostMode(requestForm.includeSystemHost()
+                ? SystemHostMode.INCLUDE
+                : SystemHostMode.EXCLUDE);
 
         // Enable Elasticsearch filtering for text search when filter is provided
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
