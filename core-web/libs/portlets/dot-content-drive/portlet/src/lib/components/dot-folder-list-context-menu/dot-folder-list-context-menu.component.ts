@@ -686,26 +686,13 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
+        // Opened and left alone. The dialog signals success by closing and says nothing, which is
+        // how Push Publish behaves from every other surface in the app — the nine other callers
+        // pass no callback either. Content Drive matching them is the point: a confirmation only
+        // here would make the same action read differently depending on where it was fired.
         this.#dotPushPublishDialogService.open({
             assetIdentifier: identifier,
-            title: this.#dotMessageService.get('contenttypes.content.push_publish'),
-            // The dialog is opened globally and says nothing on success by design, so the caller
-            // reports it — through the same outcome the Workflow Center publishes, so Push Publish
-            // reads identically whichever surface fired it.
-            onSuccess: () =>
-                this.#store.reportExternalResult({
-                    // `Remote-Publish` is the key the Workflow Center labels this action with
-                    // (`action-center.ts`, PUSH_PUBLISH quick action). Same key, same wording.
-                    actionName: this.#dotMessageService.get('Remote-Publish'),
-                    successCount: 1,
-                    skippedCount: 0,
-                    failedCount: 0,
-                    // Nothing in the listing changes when an asset is pushed, so this is one of the
-                    // few successes that still has to be said out loud. Without it the shell's gate
-                    // (`isPartial || confirmSuccess || backgrounded`) drops the result, and the
-                    // dialog signals success only by closing — the outcome would appear nowhere.
-                    confirmSuccess: true
-                })
+            title: this.#dotMessageService.get('contenttypes.content.push_publish')
         });
     }
 

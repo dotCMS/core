@@ -826,28 +826,6 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     );
                 });
 
-                it('should report a push publish success out loud', async () => {
-                    // Nothing in the listing changes when an asset is pushed, so this is one of the
-                    // few successes that has to be announced. Without `confirmSuccess` the shell's
-                    // gate (`isPartial || confirmSuccess || backgrounded`) drops it, and the dialog
-                    // signals success only by closing — so the outcome would appear nowhere, which
-                    // is the defect this feature set out to remove.
-                    withEnvironments();
-
-                    await component.getMenuItems(folderContextMenuWithPublish);
-                    pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
-
-                    const opened = pushPublishDialogService.open.mock.lastCall?.[0];
-                    opened?.onSuccess?.();
-
-                    // Asserted on the state the shell actually reads, not on the call: this spec
-                    // provides the real store, and `confirmSuccess` only matters because the
-                    // shell's announce gate consults it.
-                    expect(store.actionExecutionResult()).toEqual(
-                        expect.objectContaining({ confirmSuccess: true })
-                    );
-                });
-
                 it('should enable the item, plainly labelled, once an environment is reachable', async () => {
                     withEnvironments();
 
@@ -1423,8 +1401,6 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockContextMenuData);
                 pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
-                // `objectContaining`: the call now also carries an `onSuccess` callback, which is
-                // how the caller says what to report without the shared dialog owning a message.
                 expect(pushPublishDialogService.open).toHaveBeenCalledWith(
                     expect.objectContaining({
                         assetIdentifier: mockContentlet.identifier,
