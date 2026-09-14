@@ -48,6 +48,14 @@
                 [configuration]="forbiddenConfig"
                 [hideContactUsLink]="true"
                 data-testid="dotai-embeddings-forbidden" />
+        } @else if (!store.filteredIndexes().length) {
+            <!-- Instead of the table, not inside it: a `<td>` is sized by its own content, so
+                 an empty state nested there cannot centre in the pane however the host is
+                 styled. Replacing the table also drops a header row with nothing under it. -->
+            <dot-empty-container
+                [configuration]="$emptyConfig()"
+                [hideContactUsLink]="true"
+                data-testid="dotai-embeddings-empty" />
         } @else {
             <p-table
                 [value]="store.filteredIndexes()"
@@ -139,17 +147,6 @@
                                     delete
                                 </span>
                             </p-button>
-                        </td>
-                    </tr>
-                </ng-template>
-
-                <ng-template pTemplate="emptymessage">
-                    <tr>
-                        <td colspan="6">
-                            <dot-empty-container
-                                [configuration]="emptyConfig"
-                                [hideContactUsLink]="true"
-                                data-testid="dotai-embeddings-empty" />
                         </td>
                     </tr>
                 </ng-template>

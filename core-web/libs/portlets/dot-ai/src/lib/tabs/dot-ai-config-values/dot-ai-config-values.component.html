@@ -24,6 +24,13 @@
                 [configuration]="redactionFailedConfig"
                 [hideContactUsLink]="true"
                 data-testid="dotai-config-redaction-failed" />
+        } @else if (!$filteredRows().length) {
+            <!-- Same reason as the Embeddings table: a `<td>` is sized by its content, so an
+                 empty state nested in one cannot centre in the pane. -->
+            <dot-empty-container
+                [configuration]="noMatchesConfig"
+                [hideContactUsLink]="true"
+                data-testid="dotai-config-empty" />
         } @else {
             <p-table
                 [value]="$filteredRows()"
@@ -60,17 +67,6 @@
                                 [severity]="severityFor(row.source)"
                                 [value]="row.source"
                                 data-testid="dotai-config-source" />
-                        </td>
-                    </tr>
-                </ng-template>
-
-                <ng-template pTemplate="emptymessage">
-                    <tr>
-                        <td colspan="3">
-                            <dot-empty-container
-                                [configuration]="noMatchesConfig"
-                                [hideContactUsLink]="true"
-                                data-testid="dotai-config-empty" />
                         </td>
                     </tr>
                 </ng-template>

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -73,12 +73,25 @@ export default class DotAiEmbeddingsComponent {
 
     protected readonly statuses = DOT_AI_INDEX_STATUS;
 
-    protected readonly emptyConfig: PrincipalConfiguration = {
-        title: this.#messageService.get('dotai.embeddings.empty.title'),
-        subtitle: this.#messageService.get('dotai.embeddings.empty.sub'),
-        icon: 'database',
-        iconStyle: 'material-symbols-rounded'
-    };
+    /**
+     * Two different empty states behind one slot: an instance with no indexes at all, and a
+     * filter that matched none of the ones there are. Telling someone to create their first
+     * index when they have six and mistyped the filter is the wrong instruction.
+     */
+    protected readonly $emptyConfig = computed<PrincipalConfiguration>(() =>
+        this.store.indexFilter().trim()
+            ? {
+                  title: this.#messageService.get('dotai.embeddings.no-matches'),
+                  icon: 'filter_alt_off',
+                  iconStyle: 'material-symbols-rounded'
+              }
+            : {
+                  title: this.#messageService.get('dotai.embeddings.empty.title'),
+                  subtitle: this.#messageService.get('dotai.embeddings.empty.sub'),
+                  icon: 'database',
+                  iconStyle: 'material-symbols-rounded'
+              }
+    );
 
     protected readonly forbiddenConfig: PrincipalConfiguration = {
         title: this.#messageService.get('dotai.index.admin-required'),
