@@ -670,7 +670,7 @@ export const DotContentDriveStore = signalStore(
          */
         $allSiteContentSelected: computed(() => !path())
     })),
-    withComputed(({ selectedNode, siteCanAddChildren }) => ({
+    withComputed(({ selectedNode, siteCanAddChildren, $allSiteContentSelected }) => ({
         /**
          * Whether the browsed folder accepts new children.
          *
@@ -690,6 +690,13 @@ export const DotContentDriveStore = signalStore(
          * the affordances off and on for the common case, and the server refuses the write anyway.
          */
         $canAddChildren: computed(() => {
+            // All site content spans every folder in the site, so there is no single place for
+            // new content to land. This is not a permission answer and it is not negotiable by
+            // one: the question is not whether the user may add content, it is where it would go.
+            if ($allSiteContentSelected()) {
+                return false;
+            }
+
             const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
                 ?.permissions;
 

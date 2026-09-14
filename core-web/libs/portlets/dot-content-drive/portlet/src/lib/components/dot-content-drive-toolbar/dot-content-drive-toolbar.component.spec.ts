@@ -67,6 +67,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
+    const allSiteContentSelectedSignal = signal(false);
     const filtersSignal = signal<DotContentDriveFilters>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
     const selectedNodeSignal = signal<
@@ -135,9 +136,14 @@ describe('DotContentDriveToolbarComponent', () => {
                 clearUserSearchableFilters: vi.fn(),
                 actionExecution: actionExecutionSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
+                $allSiteContentSelected: allSiteContentSelectedSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
-                // through the two signals it derives from, not through a hardcoded answer.
+                // through the signals it derives from, not through a hardcoded answer.
                 $canAddChildren: computed(() => {
+                    if (allSiteContentSelectedSignal()) {
+                        return false;
+                    }
+
                     const permissions = selectedNodeSignal()?.data?.permissions;
 
                     if (!permissions?.length) {
@@ -828,6 +834,42 @@ describe('DotContentDriveToolbarComponent', () => {
             await withPermissions(['READ', 'EDIT', 'CAN_ADD_CHILDREN']);
 
             expect(spectator.component.$canAddChildren()).toBe(true);
+        });
+
+        // All site content spans every folder in the site, so there is no single place for new
+        // content to land. The affordances are refused for a different reason than a permission
+        // denial, and have to say so.
+        describe('in all site content', () => {
+            afterEach(() => allSiteContentSelectedSignal.set(false));
+
+            it('should refuse creation even where the site accepts children', async () => {
+                siteCanAddChildrenSignal.set(true);
+                allSiteContentSelectedSignal.set(true);
+                await settleToolbarAnimation(spectator);
+
+                expect(spectator.component.$canAddChildren()).toBe(false);
+            });
+
+            it('should refuse creation even where the folder permits it', async () => {
+                allSiteContentSelectedSignal.set(true);
+                await withPermissions(['READ', 'CAN_ADD_CHILDREN']);
+
+                // The scope wins over the permission: the question is not whether the user may
+                // add content, it is where it would go.
+                expect(spectator.component.$canAddChildren()).toBe(false);
+            });
+
+            it('should explain the scope rather than blaming permissions', async () => {
+                allSiteContentSelectedSignal.set(true);
+                await withPermissions(['READ', 'CAN_ADD_CHILDREN']);
+
+                expect(spectator.component.$addChildrenTooltip()).not.toBe(
+                    'content-drive.add-new.no-add-children'
+                );
+                expect(spectator.component.$addChildrenTooltip()).toBe(
+                    'content-drive.add-new.no-place-to-add'
+                );
+            });
         });
 
         // The site root: the parent is the host, not a folder, so the tree's site node carries no
