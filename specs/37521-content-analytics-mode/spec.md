@@ -92,6 +92,10 @@ and confirm existing data for the tenant/project renders normally.
 
 - Switching Analytics Mode from "Read & Write" to "Read Only" does not delete, hide, or alter
   any analytics events already persisted — it only stops new events going forward.
+- "From that point forward" means no analytics event generated after the mode switch is saved
+  is submitted to the Content Analytics infrastructure — any event already queued or in flight
+  at the moment of the switch is not retroactively recalled once submission has started, but no
+  event generated after the switch is queued or sent.
 - An instance that has never had the Content Analytics app configured shows no Analytics Mode
   input and is unaffected by this feature.
 - Analytics data for a tenant + project is never split or labeled by which environment produced
@@ -109,10 +113,17 @@ and confirm existing data for the tenant/project renders normally.
 - **FR-002**: System MUST default Analytics Mode to "Read & Write" for every instance that had
   Content Analytics already configured before this feature existed, so no customer's event flow
   changes as a side effect of upgrading.
+- **FR-002a**: System MUST also default Analytics Mode to "Read & Write" when an admin
+  configures the Content Analytics app for the first time on an instance that never had it
+  configured before — new setups behave the same as upgraded ones; there is no scenario where
+  an instance ends up "Read Only" without an admin deliberately choosing it.
 - **FR-003**: When Analytics Mode is "Read & Write", system MUST continue sending analytics
   events to the Content Analytics infrastructure exactly as it does today.
-- **FR-004**: When Analytics Mode is "Read Only", system MUST NOT send any analytics events to
-  the Content Analytics infrastructure.
+- **FR-004**: When Analytics Mode is "Read Only", system MUST NOT send any Content Analytics
+  ingest events (page views, impressions, clicks, and other tracked content-interaction events)
+  to the Content Analytics infrastructure. This is scoped strictly to Content Analytics ingest
+  traffic — it does not affect any other, unrelated telemetry, health-check, or usage-reporting
+  signal the instance emits.
 - **FR-005**: System MUST apply an Analytics Mode change without requiring the dotCMS instance
   to be restarted.
 - **FR-006**: System MUST allow users to view existing analytics dashboards and reports
