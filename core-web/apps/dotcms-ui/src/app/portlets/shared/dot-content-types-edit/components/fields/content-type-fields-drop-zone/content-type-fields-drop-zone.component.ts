@@ -1,3 +1,8 @@
+// `dom-autoscroller` ships no types, and its declaration is an ambient `declare module`, so
+// there is nothing to import in the `import` style this rule asks for. A `paths` entry is the
+// other alternative and Vite resolves it at runtime, making the package an empty module under
+// Vitest. See the note in `dom-autoscroller.d.ts`.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./dom-autoscroller.d.ts" />
 import autoScroll from 'dom-autoscroller';
 import { DragulaService } from 'ng2-dragula';

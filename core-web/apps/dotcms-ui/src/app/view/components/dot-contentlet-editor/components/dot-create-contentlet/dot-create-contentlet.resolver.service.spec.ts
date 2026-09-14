@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, ParamMap } from '@angular/router';
+import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DotCreateContentletResolver } from './dot-create-contentlet.resolver.service';
 

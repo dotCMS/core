@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 
-import { NgClass } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';

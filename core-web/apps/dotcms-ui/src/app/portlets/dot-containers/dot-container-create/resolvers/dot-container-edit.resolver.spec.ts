@@ -16,9 +16,6 @@ import { DotContainerEditResolver } from './dot-container-edit.resolver';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 
-/** Both resolvers declare this parameter `_state` and never read it. */
-const UNUSED_STATE = null as unknown as RouterStateSnapshot;
-
 describe('DotContainerService', () => {
     let service: DotContainerEditResolver;
     let containersService: DotContainersService;

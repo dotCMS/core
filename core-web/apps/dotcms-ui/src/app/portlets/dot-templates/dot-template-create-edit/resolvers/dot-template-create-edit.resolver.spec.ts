@@ -35,9 +35,6 @@ const templateMock: DotTemplate = {
     working: true
 };
 
-/** Both resolvers declare this parameter `_state` and never read it. */
-const UNUSED_STATE = null as unknown as RouterStateSnapshot;
-
 describe('DotTemplateDesignerService', () => {
     let service: DotTemplateCreateEditResolver;
     let templateService: DotTemplatesService;

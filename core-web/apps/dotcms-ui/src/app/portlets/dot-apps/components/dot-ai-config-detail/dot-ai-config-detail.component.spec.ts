@@ -16,7 +16,7 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { DotAiProviderConfig, DotAiProviderMetadata } from '@dotcms/dotcms-models';
+import { DotAiProviderMetadata } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAiConfigDetailComponent } from './dot-ai-config-detail.component';
