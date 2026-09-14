@@ -478,7 +478,7 @@ For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element w
 |---|---|
 | `title` | Dialog title. |
 | `kinds` | What may be listed and returned: `"file"`, `"dotasset"`, `"page"`, `"folder"`, `"link"`. Defaults to `["file", "dotasset"]`. |
-| `status` | `"live"` (published only), `"working"`, or `"archived"`. Omit for the default, which **includes** working versions. |
+| `status` | `"live"` — published only; it also narrows the dialog's **Status** filter to *Locked*, since neither Archived nor Unpublished has a published version. `"working"` — the default, working versions included. `"archived"` — **archived only**: it pre-selects Archived in the Status filter, which the editor can clear from inside the dialog, and leaves the version state alone. |
 | `path` | Folder to start in, as `//site/folder/`. Omit to start where the editor last picked something. |
 | `mimeTypes` | Narrows file assets, e.g. `["image/*"]`. Cannot be combined with `"link"` — menu links carry no MIME type, so the server omits them. |
 | `sort` | `{ field, direction }`, e.g. `{ field: "title", direction: "asc" }`. |

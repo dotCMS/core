@@ -26,6 +26,10 @@ import {
     UpdatedContentlet
 } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
+import {
+    canEditContentletByInode,
+    notifyNoEditPermission
+} from '../../shared/contentlet-permission';
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
 import { PostMessage, ReorderMenuPayload, SetUrlPayload } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
@@ -402,7 +406,17 @@ export class DotUveActionsHandlerService {
         { type, data }: { type: DotCMSInlineEditingType; data?: DotCMSInlineEditingPayload },
         deps: ActionsHandlerDependencies
     ): void {
-        const { uveStore, blockSidebar, inlineEditingService } = deps;
+        const { uveStore, blockSidebar, inlineEditingService, contentWindow } = deps;
+
+        // The Block Editor inline flow arrives as a postMessage rather than a
+        // DOM event, so the owning contentlet is resolved from the payload's
+        // inode inside the iframe document. Same gate, same visible refusal as
+        // the WYSIWYG path.
+        if (!canEditContentletByInode(contentWindow?.document, data?.inode)) {
+            notifyNoEditPermission(this.messageService, this.dotMessageService);
+
+            return;
+        }
 
         // Note: Enterprise check should be done by caller if needed
         switch (type) {

@@ -9,6 +9,7 @@ import {
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
+import { castSingleSelectableValue } from '@dotcms/ui';
 
 import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
@@ -18,156 +19,16 @@ import {
     TAB_FIELD_CLAZZ,
     UNCASTED_FIELD_TYPES
 } from '../models/dot-edit-content-field.constant';
-import {
-    DotEditContentFieldSingleSelectableDataType,
-    FIELD_TYPES
-} from '../models/dot-edit-content-field.enum';
-import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
+import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { Tab } from '../models/dot-edit-content-form.interface';
 import { UIState } from '../models/dot-edit-content.model';
 
-// This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
-/**
- * String option values a True/False field may legitimately use for `true`.
- *
- * A True/False field's options are authored by the user, and dotCMS invites them to use the
- * database's own representation: the Radio field's help text gives `True|1 False|0` as the example,
- * `SelectableValuesField.check()` accepts those plus `y`/`n`, `t`/`f` and `on`/`off`, and the product
- * itself ships `Host.runDashboard` as `Yes|1 / No|0`. The backend coerces the whole set through
- * commons-lang `BooleanUtils.toBoolean` on save, so this mirrors it — matching only `'true'` made
- * every such option collapse to `false`, i.e. two options with the same value.
- */
-const BOOL_TRUE_TOKENS = new Set(['true', '1', 'y', 'yes', 't', 'on']);
-
-export const castSingleSelectableValue = (
-    value: unknown,
-    type: string
-): DotEditContentFieldSingleSelectableDataTypes | null => {
-    // Early return for null/undefined/empty values
-    if (value === null || value === undefined || value === '') {
-        return null;
-    }
-
-    switch (type) {
-        case DotEditContentFieldSingleSelectableDataType.BOOL: {
-            // For boolean type, handle both boolean and string values
-            return typeof value === 'boolean'
-                ? value
-                : BOOL_TRUE_TOKENS.has(String(value).toLowerCase().trim());
-        }
-
-        case DotEditContentFieldSingleSelectableDataType.INTEGER:
-
-        // fallthrough
-        case DotEditContentFieldSingleSelectableDataType.FLOAT: {
-            const num = Number(value);
-
-            return isNaN(num) ? null : num;
-        }
-
-        default: {
-            return String(value);
-        }
-    }
-};
-
-/**
- * Parses field options for single selectable fields (Checkbox, Radio, Select).
- *
- * The function handles the following formats:
- *
- * 1. Multi-line pipe format (standard format):
- *    ```
- *    label1|value1
- *    label2|value2
- *    ```
- *    Each line represents a separate option with label and value separated by pipe.
- *
- * 2. Special case for checkboxes:
- *    ```
- *    |true
- *    ```
- *    Creates a checkbox without label, using the value after the pipe.
- *
- * 3. Simple value format:
- *    ```
- *    value1,value2,value3
- *    ```
- *    When no pipes are present, each comma-separated value is used as both label and value.
- *
- * Note: If the input contains line breaks, it will be treated as a single option,
- * preserving the line breaks as part of the option text.
- *
- * Pipe detection is applied per option, so a single option (`label|value`),
- * multi-line options (`label|value` per line) and comma-separated options
- * (`label|value,label|value`) are all parsed correctly. Options without a pipe
- * use the whole string as both label and value.
- *
- * @param options - The string containing the options to parse
- * @param dataType - The data type of the field
- * @returns Array of parsed options with label and value
- */
-export const getSingleSelectableFieldOptions = (
-    options: string,
-    dataType: string
-): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
-    if (!options?.trim()) return [];
-
-    const LINE_BREAKS_REGEX = /\r\n|\n|\r/;
-    const hasLineBreaks = LINE_BREAKS_REGEX.test(options);
-
-    let items: string[] = [];
-
-    if (hasLineBreaks) {
-        // Multi-line format (standard dotCMS format)
-        items = options.split(LINE_BREAKS_REGEX).filter((line) => line.trim());
-    } else if (options.trim().startsWith('|')) {
-        // Special case: "|true" (checkbox without label)
-        items = [options.trim()];
-    } else {
-        // Comma-separated format
-        items = options
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean);
-    }
-
-    // Handle nested line breaks in single items
-    if (items.length === 1 && LINE_BREAKS_REGEX.test(items[0])) {
-        items = items[0].split(LINE_BREAKS_REGEX).filter((line) => line.trim());
-    }
-
-    return items
-        .map((item) => {
-            let label: string;
-            let value: string;
-
-            if (item.includes('|')) {
-                const parts = item.split('|');
-                // If a pipe is present, label is the first part and value the second;
-                // if there's no second part, value equals label
-                label = (parts[0] || '').trim();
-                value = parts[1]?.trim() || label;
-            } else {
-                // No pipe: label and value are the same
-                label = item.trim();
-                value = label;
-            }
-
-            if (!value) return null;
-
-            const castedValue = castSingleSelectableValue(value, dataType);
-
-            return castedValue !== null ? { label, value: castedValue } : null;
-        })
-        .filter(
-            (
-                item
-            ): item is { label: string; value: DotEditContentFieldSingleSelectableDataTypes } =>
-                item !== null
-        );
-};
+// Moved to `@dotcms/ui` so the shared field-filter chip can parse a Select/Radio/Checkbox field's
+// options without importing this library — that dependency runs the other way, in ~98 files, and
+// `@dotcms/ui` is bundled into a legacy host that must not pull `edit-content` in. Pure functions
+// with no Angular surface, re-exported here so every caller in this library is untouched.
+export { castSingleSelectableValue, getSingleSelectableFieldOptions } from '@dotcms/ui';
 
 /**
  * This function is used to cast the value to a correct type for the Angular Form

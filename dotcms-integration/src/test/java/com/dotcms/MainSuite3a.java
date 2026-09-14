@@ -38,6 +38,7 @@ import com.dotmarketing.business.SecondaryCategoryPermissionTest;
 import com.dotmarketing.db.InodeExistenceCheckIntegrationTest;
 import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerPermissionInheritanceTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
@@ -49,7 +50,13 @@ import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260320AddPluginsPortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifierTest;
 import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenuTest;
+import com.dotcms.job.system.event.SystemEventsClusterDeliveryIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsCursorIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsJobDelegateIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsReconciliationIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsRetentionIntegrationTest;
 import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLengthTest;
+import com.dotmarketing.startup.runonce.Task260826CreateSystemEventCursorTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -112,6 +119,16 @@ import org.junit.runners.Suite;
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
         RoleResourceIntegrationTest.class,
+        FileAssetContainerPermissionInheritanceTest.class,
+
+        // System event delivery in a cluster (issue #36827). The migration runs first so the
+        // cursor table exists before anything reads it.
+        Task260826CreateSystemEventCursorTableTest.class,
+        SystemEventsCursorIntegrationTest.class,
+        SystemEventsJobDelegateIntegrationTest.class,
+        SystemEventsClusterDeliveryIntegrationTest.class,
+        SystemEventsReconciliationIntegrationTest.class,
+        SystemEventsRetentionIntegrationTest.class
 })
 
 public class MainSuite3a {

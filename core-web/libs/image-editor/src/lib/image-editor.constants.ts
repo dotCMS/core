@@ -81,7 +81,7 @@ export const IMAGE_EDITOR_PANEL_STATE_KEY = 'DOT_IMAGE_EDITOR_PANEL_STATE';
 export const LIBVIPS_CONFIG_KEY = 'IMAGE_API_USE_LIBVIPS';
 
 /**
- * Full-screen dialog styling now lives in `@dotcms/ui`, shared with the AssetPicker.
+ * Full-screen dialog sizing now lives in `@dotcms/ui`, shared with the AssetPicker.
  * Re-exported here so existing imports keep resolving from this module.
  */
-export { DIALOG_SIZE_TRANSITION, FULLSCREEN_DIALOG_STYLE } from '@dotcms/ui';
+export { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '@dotcms/ui';

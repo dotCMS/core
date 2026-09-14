@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { EMPTY } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
@@ -13,7 +19,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRolesEditComponent } from './dot-roles-edit.component';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
-import { DotRoleNode } from '../models/dot-roles.models';
+import { DotRoleNode, ROOT_PARENT_OPTION_KEY } from '../models/dot-roles.models';
 
 const MESSAGES = {
     'roles.edit.title': 'Edit Role',
@@ -26,7 +32,7 @@ const MESSAGES = {
     'roles.form.name': 'Role',
     'roles.form.key': 'Key',
     'roles.form.parent': 'Parent',
-    'roles.form.parent.root': 'None (top level)',
+    'roles.form.parent.root': 'None (Top Level)',
     'roles.form.description': 'Description',
     'roles.form.can-grant': 'Can grant',
     'roles.form.users': 'Users',
@@ -56,7 +62,7 @@ describe('DotRolesEditComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(ConfirmationService, {
-                confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
+                confirm: vi.fn().mockImplementation((cfg) => cfg.accept?.()),
                 // p-confirmDialog subscribes to these on init
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
@@ -64,12 +70,12 @@ describe('DotRolesEditComponent', () => {
             })
         ],
         providers: [
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotRolesStore, {
-                roleTree: jest.fn().mockReturnValue([]),
-                searchRoleTree: jest.fn().mockResolvedValue([]),
-                updateRole: jest.fn().mockResolvedValue(BASE_ROLE),
-                deleteRole: jest
+                roleTree: vi.fn().mockReturnValue([]),
+                searchRoleTree: vi.fn().mockResolvedValue([]),
+                updateRole: vi.fn().mockResolvedValue(BASE_ROLE),
+                deleteRole: vi
                     .fn()
                     .mockResolvedValue({ deleted: true, roleId: 'r-eco', usersAffected: 2 })
             }),
@@ -82,18 +88,18 @@ describe('DotRolesEditComponent', () => {
         dialogConfig.data = { role: BASE_ROLE };
         spectator = createComponent();
         const store = spectator.inject(DotRolesStore, true);
-        (store.updateRole as jest.Mock).mockClear();
-        (store.updateRole as jest.Mock).mockResolvedValue(BASE_ROLE);
-        (store.deleteRole as jest.Mock).mockClear();
-        (store.deleteRole as jest.Mock).mockResolvedValue({
+        (store.updateRole as Mock).mockClear();
+        (store.updateRole as Mock).mockResolvedValue(BASE_ROLE);
+        (store.deleteRole as Mock).mockClear();
+        (store.deleteRole as Mock).mockResolvedValue({
             deleted: true,
             roleId: 'r-eco',
             usersAffected: 2
         });
-        // `mockProvider` builds its jest.fn()s once at factory scope, so an
+        // `mockProvider` builds its vi.fn()s once at factory scope, so an
         // implementation set by one test would otherwise become every later
         // test's behaviour.
-        (store.searchRoleTree as jest.Mock).mockReset().mockResolvedValue([]);
+        (store.searchRoleTree as Mock).mockReset().mockResolvedValue([]);
     });
 
     describe('parent picker search', () => {
@@ -107,7 +113,7 @@ describe('DotRolesEditComponent', () => {
             let resolveSearch: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock).mockReturnValueOnce(
+            (store.searchRoleTree as Mock).mockReturnValueOnce(
                 new Promise<DotRoleNode[]>((resolve) => {
                     resolveSearch = resolve;
                 })
@@ -132,7 +138,7 @@ describe('DotRolesEditComponent', () => {
             let resolveFirst: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock)
+            (store.searchRoleTree as Mock)
                 .mockReturnValueOnce(
                     new Promise<DotRoleNode[]>((resolve) => {
                         resolveFirst = resolve;
@@ -177,6 +183,42 @@ describe('DotRolesEditComponent', () => {
             expect.objectContaining({ roleName: 'Eco Role' })
         );
         expect(dialogRef.close).toHaveBeenCalledWith(BASE_ROLE);
+    });
+
+    it('shows "None (Top Level)" for a role that is already a root', () => {
+        // `BASE_ROLE` is a root: the BE marks one with a self-referential
+        // `parent`, which `#normalizeParentId` maps to null.
+        spectator.detectChanges();
+
+        expect(spectator.component['form'].controls.parent.value?.key).toBe(ROOT_PARENT_OPTION_KEY);
+    });
+
+    it('keeps the current parent selected rather than defaulting to root', () => {
+        dialogConfig.data = { role: { ...BASE_ROLE, parent: 'r-parent' } };
+        spectator = createComponent();
+        spectator.detectChanges();
+
+        expect(spectator.component['form'].controls.parent.value?.key).toBe('r-parent');
+    });
+
+    it('reparents to root when "None (Top Level)" is picked, sending null not the sentinel', async () => {
+        const store = spectator.inject(DotRolesStore, true);
+        (store.updateRole as Mock).mockClear();
+        spectator.detectChanges();
+
+        const [rootOption] = spectator.component['$parentTree']();
+        expect(rootOption.key).toBe(ROOT_PARENT_OPTION_KEY);
+
+        spectator.component['form'].controls.parent.setValue(rootOption);
+        spectator.component['onSave']();
+        await Promise.resolve();
+
+        // Sending the sentinel through would be read as a real id and answered
+        // with a 404 "parent role not found".
+        expect(store.updateRole).toHaveBeenCalledWith(
+            'r-eco',
+            expect.objectContaining({ parentRoleId: null })
+        );
     });
 
     it('closes on Cancel without calling updateRole', () => {

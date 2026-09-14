@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -28,15 +34,14 @@ describe('DotRolesDetailHeaderComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotRolesStore, {
-                selectedRole: jest.fn().mockReturnValue(null),
-                selectedRoleStatus: jest.fn().mockReturnValue('INIT'),
-                selectedRoleIsParent: jest.fn().mockReturnValue(false),
-                memberCount: jest.fn().mockReturnValue(0),
-                toolGroupCount: jest.fn().mockReturnValue(0),
-                isSystemRole: jest.fn().mockReturnValue(false),
-                canModifyRole: jest.fn().mockReturnValue(true)
+                selectedRole: vi.fn().mockReturnValue(null),
+                selectedRoleStatus: vi.fn().mockReturnValue('INIT'),
+                memberCount: vi.fn().mockReturnValue(0),
+                toolGroupCount: vi.fn().mockReturnValue(0),
+                isSystemRole: vi.fn().mockReturnValue(false),
+                canModifyRole: vi.fn().mockReturnValue(true)
             }),
-            mockProvider(DialogService, { open: jest.fn() })
+            mockProvider(DialogService, { open: vi.fn() })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
     });
@@ -53,12 +58,12 @@ describe('DotRolesDetailHeaderComponent', () => {
 
     it('should render the role name and Edit Role button when a role is selected', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.selectedRole as jest.Mock).mockReturnValue({
+        (store.selectedRole as Mock).mockReturnValue({
             id: 'r-eco',
             name: 'Eco Role',
             children: []
         });
-        (store.memberCount as jest.Mock).mockReturnValue(2);
+        (store.memberCount as Mock).mockReturnValue(2);
         spectator.detectChanges();
 
         expect(spectator.query('h1')?.textContent).toContain('Eco Role');
@@ -67,7 +72,7 @@ describe('DotRolesDetailHeaderComponent', () => {
 
     it('should render System and Locked chips when the role is system + locked', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.selectedRole as jest.Mock).mockReturnValue({
+        (store.selectedRole as Mock).mockReturnValue({
             id: 'r-cms',
             name: 'CMS Admin',
             system: true,
@@ -82,7 +87,7 @@ describe('DotRolesDetailHeaderComponent', () => {
     it('should open the Edit Role dialog when the button is clicked', () => {
         const dialogService = spectator.inject(DialogService, true);
         const store = spectator.inject(DotRolesStore, true);
-        (store.selectedRole as jest.Mock).mockReturnValue({ id: 'r-eco', name: 'Eco Role' });
+        (store.selectedRole as Mock).mockReturnValue({ id: 'r-eco', name: 'Eco Role' });
         spectator.detectChanges();
 
         spectator.click(byTestId('edit-role-btn'));

@@ -5,8 +5,9 @@ import {
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -47,8 +48,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     },
     {
         key: 'nico.dotcms.com',
@@ -59,8 +59,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     },
     {
         key: 'System Host',
@@ -71,8 +70,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     }
 ];
 
@@ -86,8 +84,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe',
+        icon: 'pi pi-globe',
         children: [
             {
                 key: 'demo.dotcms.comlevel1',
@@ -98,8 +95,6 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                     path: '/level1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 children: [
                     {
                         key: 'demo.dotcms.comlevel1child1',
@@ -109,9 +104,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
-                        },
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder'
+                        }
                     }
                 ]
             },
@@ -123,9 +116,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                     hostname: 'demo.dotcms.com',
                     path: '/level2/',
                     type: 'folder'
-                },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder'
+                }
             }
         ]
     },
@@ -138,8 +129,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     }
 ];
 
@@ -153,9 +143,9 @@ describe('DotBrowserSelectorStore', () => {
         service: DotBrowserSelectorStore,
         providers: [
             mockProvider(DotBrowsingService, {
-                getSitesPage: jest.fn().mockReturnValue(sitesPage(TREE_SELECT_SITES_MOCK)),
-                getContentByFolder: jest.fn().mockReturnValue(of([])),
-                searchFolders: jest.fn().mockReturnValue(
+                getSitesPage: vi.fn().mockReturnValue(sitesPage(TREE_SELECT_SITES_MOCK)),
+                getContentByFolder: vi.fn().mockReturnValue(of([])),
+                searchFolders: vi.fn().mockReturnValue(
                     of({
                         folders: [],
                         pagination: {
@@ -167,7 +157,7 @@ describe('DotBrowserSelectorStore', () => {
                 )
             }),
             mockProvider(DotUploadFileService, {
-                uploadDotAsset: jest.fn().mockReturnValue(of({}))
+                uploadDotAsset: vi.fn().mockReturnValue(of({}))
             })
         ]
     });

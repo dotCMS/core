@@ -34,7 +34,7 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -515,10 +515,14 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new UserDataFetcher()));
         containerFields.put("parentPermissionable", new TypeFetcher(
                 GraphQLTypeReference.typeRef(CustomFieldType.SITE.getTypeName()),
+                // Resolved from the Container's own Site and not from getParentPermissionable():
+                // a File Asset Container inherits its permissions from the Container folder, so its
+                // parent Permissionable is a Folder, and this field is declared as a Site.
                 PropertyDataFetcher.fetching((Function<ContainerRaw, Host>)
-                        (containerRaw)-> (Host) Try.of(()->
-                                containerRaw.getContainer().getParentPermissionable())
-                                .getOrElse((Permissionable) null))));
+                        (containerRaw)-> Try.of(()-> APILocator.getHostAPI().find(
+                                        containerRaw.getContainer().getHostId(),
+                                        APILocator.systemUser(), false))
+                                .getOrElse((Host) null))));
         containerFields.put("path", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)-> {

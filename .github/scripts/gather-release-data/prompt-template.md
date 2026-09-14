@@ -52,7 +52,7 @@ If the `rollbackUnsafe` array is non-empty, add a `[!CAUTION]` block at the top 
 
 ## Output Format
 
-Write the release notes to the file `/tmp/release-notes.md` using the Write tool.
+Write the release notes to the file `./release-notes.md` using the Write tool.
 
 The file must contain **only** the Markdown content below. No preamble, no commentary, no trailing summary. This exact content is published to BOTH the GitHub release and the dev.dotcms.com changelog, so it must not contain GitHub-only or site-only syntax (no heading anchors, no release-title heading — both destinations render their own titles).
 
@@ -84,4 +84,4 @@ The file must contain **only** the Markdown content below. No preamble, no comme
 - Omit any section that has no items (do not emit an empty heading)
 - If the release contains only internal changes with no customer-facing impact, keep the intro line and add a single line: `This release contains internal maintenance only.` — an entry is still produced (the site convention)
 - Do NOT include any text outside the release notes content
-- Do NOT run any shell commands — only use the Write tool to create `/tmp/release-notes.md`
+- Do NOT run any shell commands — only use the Write tool to create `./release-notes.md`

@@ -83,7 +83,7 @@ Integer batchValue = JandexClassMetadataScanner.getClassAnnotationIntValue(
 // ====== CLASS HIERARCHY ANALYSIS ======
 // Find all implementations of an interface
 List<String> implementationNames = JandexClassMetadataScanner.findImplementationsOf(
-    "com.dotcms.api.ContentTypeAPI", 
+    "com.dotcms.contenttype.business.ContentTypeAPI", 
     "com.dotcms"
 );
 
@@ -94,12 +94,12 @@ List<Class<?>> implementations = JandexClassMetadataScanner.findImplementationsO
 
 // Find all subclasses of a class
 List<String> subclassNames = JandexClassMetadataScanner.findSubclassesOf(
-    "com.dotcms.rest.BaseResource", 
+    "com.dotcms.rest.exception.HttpStatusCodeException", 
     "com.dotcms.rest"
 );
 
 List<Class<?>> subclasses = JandexClassMetadataScanner.findSubclassesOf(
-    BaseResource.class, 
+    HttpStatusCodeException.class, 
     "com.dotcms.rest"
 );
 
@@ -113,13 +113,13 @@ List<String> interfaces = JandexClassMetadataScanner.getInterfaceNames("com.dotc
 
 // Check inheritance relationships
 boolean implementsInterface = JandexClassMetadataScanner.implementsInterface(
-    "com.dotcms.rest.UserResource", 
-    "com.dotcms.rest.resource.DotRestResource"
+    "com.dotcms.contenttype.business.ContentTypeAPIImpl", 
+    "com.dotcms.contenttype.business.ContentTypeAPI"
 );
 
 boolean extendsSuperclass = JandexClassMetadataScanner.extendsSuperclass(
-    "com.dotcms.rest.UserResource", 
-    "com.dotcms.rest.BaseResource"
+    "com.dotcms.rest.exception.NotFoundException", 
+    "com.dotcms.rest.exception.HttpStatusCodeException"
 );
 
 // ====== METHOD AND FIELD METADATA ======
@@ -148,11 +148,11 @@ Index index = JandexClassMetadataScanner.getJandexIndex();
 
 if (index != null) {
     // Find all implementations of an interface
-    DotName interfaceName = DotName.createSimple("com.dotcms.api.ContentTypeAPI");
+    DotName interfaceName = DotName.createSimple("com.dotcms.contenttype.business.ContentTypeAPI");
     Collection<ClassInfo> implementations = index.getAllKnownImplementors(interfaceName);
     
     // Find all subclasses of a class
-    DotName className = DotName.createSimple("com.dotcms.rest.BaseResource");
+    DotName className = DotName.createSimple("com.dotcms.rest.exception.HttpStatusCodeException");
     Collection<ClassInfo> subclasses = index.getAllKnownSubclasses(className);
     
     // Get detailed class information
@@ -262,6 +262,8 @@ The index is automatically generated at `META-INF/jandex.idx` during build.
 - CDI bean scanning: **75% faster**
 - Interface implementation discovery: **95% faster**
 - Class hierarchy analysis: **80% faster**
+
+> **Note**: No benchmark, test, or code comment in the codebase currently substantiates the specific numbers above (neither the millisecond ranges nor the percentages). Origin/author unknown — flagged for someone with context to verify or remove.
 
 ## Current Usage in Codebase
 

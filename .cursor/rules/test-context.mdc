@@ -1,5 +1,5 @@
 ---
-description: "Testing with Spectator, Jest, data-testid, integration tests. Use when writing or editing *.spec.ts, *Test.java, or test files."
+description: "Testing with Spectator, Vitest, data-testid, integration tests. Use when writing or editing *.spec.ts, *Test.java, or test files."
 globs: **/*.spec.ts, **/*.test.ts, **/test/**/*, **/*Test.java
 alwaysApply: false
 ---

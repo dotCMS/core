@@ -205,6 +205,10 @@ jobs:
             exit 1
           fi
 
+          # Used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>), which
+          # cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
+          SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
+
           {
             echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}"
             echo "raw_suffix=${RAW_SUFFIX}"

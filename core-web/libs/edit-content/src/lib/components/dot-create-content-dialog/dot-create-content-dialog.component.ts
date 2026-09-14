@@ -11,12 +11,16 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
 import { pushFormBridge, popFormBridge } from '@dotcms/edit-content-bridge';
 import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
 
+import {
+    AngularImageEditorLauncher,
+    IMAGE_EDITOR_LAUNCHER
+} from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
@@ -59,8 +63,15 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
         // field — so the new AssetPicker belongs here as much as in the shell and the side
         // panel. Without it the three asset-selection entry points would silently fall back to
         // the legacy picker in both of those flows. The launcher borrows the caller's
-        // `DialogService`, so unlike `IMAGE_EDITOR_LAUNCHER` it needs no provider of its own.
-        { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher }
+        // `DialogService`, so it needs no provider of its own — but the image editor launcher
+        // below does, which is why `DialogService` is provided here as well.
+        { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher },
+        // Same host-capability reasoning for the image editor, and the same pair the shell and the
+        // side panel provide. Without them the file field's `inject(IMAGE_EDITOR_LAUNCHER,
+        // { optional: true })` resolved to `undefined` and Image/File fields opened the legacy Dojo
+        // editor instead of the new one — no error, just the wrong editor (#37398).
+        DialogService,
+        { provide: IMAGE_EDITOR_LAUNCHER, useClass: AngularImageEditorLauncher }
     ],
     templateUrl: './dot-edit-content-dialog.component.html',
     styleUrls: ['./dot-edit-content-dialog.component.scss'],

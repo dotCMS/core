@@ -37,3 +37,8 @@
 </dot-dialog>
 
 <p-confirmDialog [style]="{ width: '500px' }" />
+
+<!-- The editor's own toast outlet, fed by the `MessageService` this component provides. Rendered
+     here rather than borrowed from the host so the copy-URL toasts appear in every host — same
+     arrangement as `DotAssetPickerComponent`. -->
+<dot-toast position="top-center" />

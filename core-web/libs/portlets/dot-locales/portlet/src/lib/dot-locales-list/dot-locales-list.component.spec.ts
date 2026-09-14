@@ -1,5 +1,11 @@
-import { Spectator, createComponentFactory, mockProvider, byTestId } from '@openng/spectator/jest';
+import {
+    Spectator,
+    createComponentFactory,
+    mockProvider,
+    byTestId
+} from '@openng/spectator/vitest';
 import { of, NEVER } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -55,7 +61,7 @@ describe('DotLocalesListComponent', () => {
         componentProviders: [
             DotLocalesListStore,
             mockProvider(DialogService, {
-                open: jest.fn().mockReturnValue({ onClose: NEVER })
+                open: vi.fn().mockReturnValue({ onClose: NEVER })
             }),
             MessageService,
             mockProvider(DotPushPublishDialogService),
@@ -85,7 +91,7 @@ describe('DotLocalesListComponent', () => {
 
         const tableDe = spectator.debugElement.query(By.directive(Table));
         const table = tableDe?.componentInstance as Table;
-        jest.spyOn(table, 'filterGlobal');
+        vi.spyOn(table, 'filterGlobal');
 
         spectator.typeInElement('Spanish', byTestId('locale-search-input'));
 

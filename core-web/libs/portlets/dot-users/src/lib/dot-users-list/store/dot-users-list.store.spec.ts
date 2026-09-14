@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import {
     DotHttpErrorManagerService,
@@ -64,22 +65,22 @@ const MOCK_RESPONSE = {
 describe('DotUsersListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotUsersListStore>>;
     let store: InstanceType<typeof DotUsersListStore>;
-    let usersService: jest.Mocked<DotUsersService>;
+    let usersService: Mocked<DotUsersService>;
 
     const createService = createServiceFactory({
         service: DotUsersListStore,
         providers: [
             mockProvider(DotUsersService, {
-                getUsersPaginated: jest.fn().mockReturnValue(of(MOCK_RESPONSE)),
-                deleteUser: jest.fn().mockReturnValue(of({})),
-                createUser: jest.fn().mockReturnValue(of(MOCK_USERS[0])),
-                updateUser: jest.fn().mockReturnValue(of(MOCK_USERS[0]))
+                getUsersPaginated: vi.fn().mockReturnValue(of(MOCK_RESPONSE)),
+                deleteUser: vi.fn().mockReturnValue(of({})),
+                createUser: vi.fn().mockReturnValue(of(MOCK_USERS[0])),
+                updateUser: vi.fn().mockReturnValue(of(MOCK_USERS[0]))
             }),
             mockProvider(DotRolesService, {
-                getForUser: jest.fn().mockReturnValue(of([]))
+                getForUser: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }
         ]
     });
@@ -87,10 +88,10 @@ describe('DotUsersListStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        usersService = spectator.inject(DotUsersService) as jest.Mocked<DotUsersService>;
-        // Clear call history from other tests (mockProvider's jest.fn() is shared).
+        usersService = spectator.inject(DotUsersService) as Mocked<DotUsersService>;
+        // Clear call history from other tests (mockProvider's vi.fn() is shared).
         // Implementations set via mockReturnValue are preserved.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
         usersService.deleteUser.mockReturnValue(of({}));
         usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
@@ -115,7 +116,7 @@ describe('DotUsersListStore', () => {
 
     it('resolves each row roles through the shared roles service', () => {
         const rolesService = spectator.inject(DotRolesService);
-        (rolesService.getForUser as jest.Mock).mockImplementation((userId: string) =>
+        (rolesService.getForUser as Mock).mockImplementation((userId: string) =>
             of([{ id: `role-${userId}`, name: 'Publisher', roleKey: 'PUBLISHER' }])
         );
 

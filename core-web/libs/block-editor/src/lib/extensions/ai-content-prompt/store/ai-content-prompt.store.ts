@@ -6,7 +6,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { switchMap, withLatestFrom } from 'rxjs/operators';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 export interface AiGenerateContent {
@@ -141,7 +141,7 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
         error: ''
     }));
 
-    private readonly dotAiService = inject(DotAiService);
+    private readonly dotAiService = inject(DotAiContentService);
 
     constructor() {
         super({ ...initialState });

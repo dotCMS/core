@@ -22,7 +22,6 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -1124,7 +1123,11 @@ public class RoleResource implements Serializable {
 
 
 	/**
-	 * Get all layouts
+	 * Get all layouts (tool groups) in the system, each enriched with the localized titles of
+	 * the portlets it contains.
+	 * <p>
+	 * Requires an authenticated back-end user with access to the {@code roles} portlet, the same
+	 * gate every other endpoint on this resource enforces.
 	 *
 	 * @return {@link LayoutMapResponseEntityView} List of Layouts
 	 * @throws DotDataException
@@ -1133,17 +1136,19 @@ public class RoleResource implements Serializable {
 	@Operation(
 		operationId = "getAllLayouts",
 		summary = "Get all layouts",
-		description = "Get all layouts in the system"
+		description = "Get all layouts (tool groups) in the system. Requires an authenticated "
+				+ "back-end user with access to the Roles portlet."
 	)
 	@ApiResponses(value = {
-		@ApiResponse(responseCode = "200", 
+		@ApiResponse(responseCode = "200",
 					description = "Layouts retrieved successfully",
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = LayoutMapResponseEntityView.class))),
-		@ApiResponse(responseCode = "401", 
-					description = "Unauthorized - authentication required",
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required, or the caller is not a "
+							+ "backend user with access to the Roles portlet",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "500", 
+		@ApiResponse(responseCode = "500",
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
 	})
@@ -1154,13 +1159,19 @@ public class RoleResource implements Serializable {
 								  @Context final HttpServletResponse response)
 			throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException {
 
+		final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+		final User user = initData.getUser();
+
 		final List<Map<String, Object>> layoutsMap = new ArrayList<>();
 		final List<Layout> layouts = APILocator.getLayoutAPI().findAllLayouts();
 
 		for(final Layout layout: layouts) {
 
 			final Map<String, Object> layoutMap = layout.toMap();
-			layoutMap.put("portletTitles", getPorletTitlesFromLayout(layout, request));
+			layoutMap.put("portletTitles", getPorletTitlesFromLayout(layout, user));
 			layoutsMap.add(layoutMap);
 		}
 
@@ -1240,8 +1251,14 @@ public class RoleResource implements Serializable {
 		throw new ForbiddenException(forbiddenMessage);
 	}
 
-	private List<String> getPorletTitlesFromLayout (final Layout layout,
-													final HttpServletRequest request)
+	/**
+	 * Resolves the localized title of every portlet in the layout, in the given user's locale.
+	 *
+	 * @param layout the layout whose portlet titles are wanted
+	 * @param user   the authenticated caller; drives the locale of the titles
+	 * @return one title per entry in {@link Layout#getPortletIds()}, in the same order
+	 */
+	private List<String> getPorletTitlesFromLayout (final Layout layout, final User user)
 			throws LanguageException, DotRuntimeException, PortalException, SystemException {
 
 		final List<String> portletIds    = layout.getPortletIds();
@@ -1249,8 +1266,7 @@ public class RoleResource implements Serializable {
 		if(portletIds != null) {
 			for(final String portletId: portletIds) {
 
-				final String portletTitle = LanguageUtil.get(
-						WebAPILocator.getUserWebAPI().getLoggedInUser(request),
+				final String portletTitle = LanguageUtil.get(user,
 						"com.dotcms.repackage.javax.portlet.title." + portletId);
 				portletTitles.add(portletTitle);
 			}

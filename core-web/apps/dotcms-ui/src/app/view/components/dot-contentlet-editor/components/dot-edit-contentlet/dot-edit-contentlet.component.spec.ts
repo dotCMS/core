@@ -1,4 +1,5 @@
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpTestingController } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
@@ -61,7 +62,7 @@ describe('DotEditContentletComponent', () => {
                 {
                     provide: DotCustomEventHandlerService,
                     useValue: {
-                        handle: jest.fn()
+                        handle: vi.fn()
                     }
                 },
                 {
@@ -79,7 +80,7 @@ describe('DotEditContentletComponent', () => {
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
         httpMock = de.injector.get(HttpTestingController);
 
-        jest.spyOn(component.shutdown, 'emit');
+        vi.spyOn(component.shutdown, 'emit');
 
         fixture.detectChanges();
 

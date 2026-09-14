@@ -1,6 +1,6 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotCopyContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -25,12 +25,12 @@ const makeData = (overrides: Partial<DotCMSContentlet> = {}): ContentletEditData
 
 describe('DotUveCopyDecisionComponent', () => {
     let spectator: Spectator<DotUveCopyDecisionComponent>;
-    let copyInPage: jest.Mock;
-    let getCurrentTreeNode: jest.Mock;
-    let getPageSavePayload: jest.Mock;
-    let setSelectedPayload: jest.Mock;
-    let pageReload: jest.Mock;
-    let handleHttpError: jest.Mock;
+    let copyInPage: Mock;
+    let getCurrentTreeNode: Mock;
+    let getPageSavePayload: Mock;
+    let setSelectedPayload: Mock;
+    let pageReload: Mock;
+    let handleHttpError: Mock;
 
     const createComponent = createComponentFactory({
         component: DotUveCopyDecisionComponent,
@@ -57,12 +57,12 @@ describe('DotUveCopyDecisionComponent', () => {
     });
 
     beforeEach(() => {
-        copyInPage = jest.fn().mockReturnValue(of({}));
-        getCurrentTreeNode = jest.fn().mockReturnValue({ pageId: 'p1' });
-        getPageSavePayload = jest.fn().mockReturnValue({ payload: 'ok' });
-        setSelectedPayload = jest.fn();
-        pageReload = jest.fn();
-        handleHttpError = jest.fn().mockReturnValue(of(null));
+        copyInPage = vi.fn().mockReturnValue(of({}));
+        getCurrentTreeNode = vi.fn().mockReturnValue({ pageId: 'p1' });
+        getPageSavePayload = vi.fn().mockReturnValue({ payload: 'ok' });
+        setSelectedPayload = vi.fn();
+        pageReload = vi.fn();
+        handleHttpError = vi.fn().mockReturnValue(of(null));
     });
 
     it('renders both decision buttons', () => {
@@ -78,7 +78,7 @@ describe('DotUveCopyDecisionComponent', () => {
             spectator = createComponent({ props: { data: makeData() } });
             spectator.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.decisionMade.subscribe(emitSpy);
 
             spectator.click(byTestId('copy-mode-all-pages'));
@@ -103,7 +103,7 @@ describe('DotUveCopyDecisionComponent', () => {
             spectator = createComponent({ props: { data: makeData() } });
             spectator.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.decisionMade.subscribe(emitSpy);
 
             spectator.click(byTestId('copy-mode-this-page'));

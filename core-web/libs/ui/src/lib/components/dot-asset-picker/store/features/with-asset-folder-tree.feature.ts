@@ -48,19 +48,6 @@ const initialState: DotAssetPickerFolderTreeState = {
 };
 
 /**
- * Icons for the one root the picker renders.
- *
- * `mapSiteToTreeNode` gives site-typed nodes a globe, which is right for Content Drive — its root
- * *is* the site indicator. Here the globe already sits in the site selector above the tree, so
- * repeating it on the root would show the same idea twice and read as a second site control. The
- * root is reassigned the folder affordance of the nodes beneath it instead.
- */
-const ROOT_ICONS = {
-    expandedIcon: 'pi pi-folder-open',
-    collapsedIcon: 'pi pi-folder'
-} as const;
-
-/**
  * What a tree load resolves to: the roots to render, and the node to highlight.
  *
  * An absent `selectedNode` means "leave the highlight alone" — distinct from `null`, which clears it.
@@ -76,12 +63,21 @@ type TreeLoadResult = { folders: TreeNodeItem[]; selectedNode?: TreeNodeItem | n
  * identifier a folder node does not carry, and `selectNode` branches on `type === 'site'` to scope
  * the list to the whole site — both keep working untouched as long as this stays a site node. That
  * is what makes `All` a *presentation* change rather than a structural one.
+ *
+ * The globe is dropped rather than overridden (#37362). `mapSiteToTreeNode` marks site nodes with
+ * one, which is right for Content Drive — there the root *is* the site indicator. Here the globe
+ * already sits in the site selector above the tree, so repeating it on the root says the same thing
+ * twice and reads as a second site control. Leaving the node with no icon of its own is what lets
+ * `DotFolderTreeComponent` give it the same state-driven folder icon as the rows beneath it.
  */
 function buildSiteRoot(
     site: DotAssetPickerSite,
     browsingService: DotBrowsingService
 ): TreeNodeItem {
-    return { ...browsingService.mapSiteToTreeNode(site), ...ROOT_ICONS };
+    const root = { ...browsingService.mapSiteToTreeNode(site) };
+    delete root.icon;
+
+    return root;
 }
 
 /**

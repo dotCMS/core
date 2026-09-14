@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpTestingController } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -116,8 +117,8 @@ describe('DotRelationshipsPropertyComponent', () => {
         };
 
         const dotEditContentTypeCacheServiceMock = {
-            get: jest.fn().mockReturnValue({ id: 'test-content-type-id' }),
-            set: jest.fn()
+            get: vi.fn().mockReturnValue({ id: 'test-content-type-id' }),
+            set: vi.fn()
         };
 
         DOTTestBed.configureTestingModule({
@@ -132,9 +133,9 @@ describe('DotRelationshipsPropertyComponent', () => {
                 {
                     provide: DotContentTypeService,
                     useValue: {
-                        getContentType: jest.fn().mockReturnValue(of(mockContentType)),
-                        getContentTypes: jest.fn().mockReturnValue(of([mockContentType])),
-                        getContentTypesWithPagination: jest.fn().mockReturnValue(
+                        getContentType: vi.fn().mockReturnValue(of(mockContentType)),
+                        getContentTypes: vi.fn().mockReturnValue(of([mockContentType])),
+                        getContentTypesWithPagination: vi.fn().mockReturnValue(
                             of({
                                 contentTypes: [mockContentType],
                                 pagination: {
@@ -160,7 +161,7 @@ describe('DotRelationshipsPropertyComponent', () => {
                     {
                         provide: DotRelationshipService,
                         useValue: {
-                            loadCardinalities: jest.fn().mockReturnValue(of(mockCardinalities))
+                            loadCardinalities: vi.fn().mockReturnValue(of(mockCardinalities))
                         }
                     }
                 ]

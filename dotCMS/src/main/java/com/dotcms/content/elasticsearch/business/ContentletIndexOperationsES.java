@@ -5,6 +5,7 @@ import static com.dotmarketing.common.reindex.ReindexThread.BULK_PROCESSOR_AWAIT
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 
 import com.dotcms.content.index.ContentletIndexOperations;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -203,17 +204,40 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
         try {
             final BulkResponse response = RestHighLevelClientProvider.getInstance()
                     .getClient().bulk(bulkRequest, RequestOptions.DEFAULT);
-            if (response != null && response.hasFailures()) {
-                Logger.error(this,
-                        "Error reindexing (" + response.getItems().length + ") content(s): "
-                                + response.buildFailureMessage());
-            }
+            handleBulkResponse(response);
         } catch (final Exception e) {
             if (ExceptionUtil.causedBy(e, IllegalStateException.class)) {
                 ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             }
             Logger.warnAndDebug(ContentletIndexOperationsES.class, e);
             throw new DotRuntimeException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Decides what a bulk response means to the caller.
+     *
+     * <p>Extracted from {@link #putToIndex(IndexBulkRequest)} so the policy can be exercised
+     * without a cluster — the HTTP call is not what is interesting here, the verdict is.</p>
+     *
+     * @param response the response from the bulk call; {@code null} is tolerated
+     */
+    @VisibleForTesting
+    void handleBulkResponse(final BulkResponse response) {
+        if (response != null && response.hasFailures()) {
+            // A bulk can return normally while rejecting individual items — a saturated write
+            // queue, an unavailable shard, a version conflict. Logging and returning made those
+            // indistinguishable from success, so a caller could commit a content deletion whose
+            // index removal never landed (#37276, loss point L3). Raising lets the journal entry
+            // be marked failed and retried instead.
+            //
+            // The message says "index operations" rather than "reindexing": the batch may well
+            // have carried removals, and the old wording is why searching production logs for
+            // failed deletes came back empty.
+            final String message = "Error applying (" + response.getItems().length
+                    + ") index operation(s): " + response.buildFailureMessage();
+            Logger.error(this, message);
+            throw new DotRuntimeException(message);
         }
     }
 

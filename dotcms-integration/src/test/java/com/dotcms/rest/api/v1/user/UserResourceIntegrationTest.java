@@ -7,8 +7,17 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotmarketing.business.RoleAPI;
 import com.liferay.portal.ejb.UserTestUtil;
 import java.util.Collections;
-import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.business.Role;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.system.role.SmallRoleView;
+import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.util.PaginationUtil;
@@ -25,7 +34,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
@@ -34,9 +42,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
 import org.junit.AfterClass;
@@ -98,6 +103,11 @@ public class UserResourceIntegrationTest {
     }
 
     private static HttpServletRequest mockRequest() {
+        return mockRequestAs("admin@dotcms.com", "admin");
+    }
+
+    /** Builds a request authenticated (Basic) as the given user. */
+    private static HttpServletRequest mockRequestAs(final String email, final String password) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getHostname(), "/").request())
@@ -105,7 +115,7 @@ public class UserResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                "Basic " + Base64.getEncoder().encodeToString((email + ":" + password).getBytes()));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());
@@ -141,9 +151,10 @@ public class UserResourceIntegrationTest {
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> filterUserIdsByRoleKeys(final String filter, final List<String> roleKeys) {
+    private List<String> filterUserIdsByRoleKeys(final String filter, final List<String> roleKeys)
+            throws Exception {
         final Response resourceResponse = resource.filter(mockRequest(), response, filter, 0, 40,
-                null, "ASC", false, false, null, 0, roleKeys);
+                null, "ASC", false, false, null, 0, roleKeys, false);
         assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
         final List<Map<String, Object>> userMaps = (List<Map<String, Object>>)
                 ((ResponseEntityView<Object>) resourceResponse.getEntity()).getEntity();
@@ -476,5 +487,231 @@ public class UserResourceIntegrationTest {
         final List<Role> directRoles = roleAPI.loadRolesForUser(created.getUserId(), false);
         assertTrue("new user must receive the default Front-end User role",
                 directRoles.stream().anyMatch(role -> Role.DOTCMS_FRONT_END_USER.equals(role.getRoleKey())));
+    }
+
+    // ==================== GET /v1/users/filter — includeRoles (#37233) ====================
+
+    /**
+     * Invokes {@code GET /v1/users/filter} with the given query, paging, role-key filter and
+     * {@code includeRoles} flag; every other parameter keeps its default.
+     */
+    private Response filter(final String query, final int page, final int perPage,
+                            final List<String> roleKeys, final boolean includeRoles) throws Exception {
+        return resource.filter(mockRequest(), response, query, page, perPage, null, "ASC",
+                false, false, null, 0, roleKeys, includeRoles);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> items(final Response resourceResponse) {
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        return (List<Map<String, Object>>) ((ResponseEntityView<?>) resourceResponse.getEntity()).getEntity();
+    }
+
+    private static Map<String, Object> itemFor(final List<Map<String, Object>> items, final String userId) {
+        return items.stream()
+                .filter(item -> userId.equals(item.get("userId")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("user " + userId + " not in page"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<SmallRoleView> rolesOf(final Map<String, Object> item) {
+        assertTrue("item must carry a roles key", item.containsKey("roles"));
+        return (List<SmallRoleView>) item.get("roles");
+    }
+
+    private static Set<String> roleIds(final List<SmallRoleView> roles) {
+        return roles.stream().map(SmallRoleView::getId).collect(Collectors.toSet());
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A user holds a role; the list is requested WITHOUT {@code includeRoles}.
+     * Expected Result: The item has no {@code roles} key and its key set is exactly
+     * {@link User#toMap()} — the existing payload is untouched (opt-in contract).
+     */
+    @Test
+    public void test_filter_includeRolesOff_payloadUnchanged() throws Exception {
+        final User target = UserTestUtil.getUser("rolesoff" + uniq(), false, true);
+        final Role role = new RoleDataGen().key("rolesoff" + uniq()).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(role, target);
+
+        final Map<String, Object> item = itemFor(items(filter(target.getUserId(), 1, 40, null, false)),
+                target.getUserId());
+
+        assertFalse("roles must be absent when not requested", item.containsKey("roles"));
+        assertEquals("item keys must be exactly User#toMap()", target.toMap().keySet(), item.keySet());
+    }
+
+    /**
+     * Given Scenario: A user directly holds two user-assignable roles; {@code includeRoles=true}.
+     * Expected Result: The item carries {@code roles} with both roles, each exposing id, name and
+     * roleKey; the user's personal role is not listed.
+     */
+    @Test
+    public void test_filter_includeRolesOn_listsDirectRolesWithIdNameKey() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("rolesonuser" + uniq(), false, true);
+        final Role roleA = new RoleDataGen().key("rolesona" + uniq()).name("Roles On A " + uniq()).nextPersisted();
+        final Role roleB = new RoleDataGen().key("rolesonb" + uniq()).name("Roles On B " + uniq()).nextPersisted();
+        roleAPI.addRoleToUser(roleA, target);
+        roleAPI.addRoleToUser(roleB, target);
+        final Role personal = roleAPI.getUserRole(target);
+
+        final List<SmallRoleView> roles = rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId()));
+
+        final Set<String> ids = roleIds(roles);
+        assertTrue("role A must be listed", ids.contains(roleA.getId()));
+        assertTrue("role B must be listed", ids.contains(roleB.getId()));
+        assertFalse("the personal role must not be listed", ids.contains(personal.getId()));
+        final SmallRoleView viewA = roles.stream().filter(r -> roleA.getId().equals(r.getId())).findFirst().get();
+        assertEquals(roleA.getName(), viewA.getName());
+        assertEquals(roleA.getRoleKey(), viewA.getRoleKey());
+    }
+
+    /**
+     * Given Scenario: Role hierarchy parent -> child; the user directly holds ONLY the parent, so
+     * the child is held by inheritance (visible through {@code loadRolesForUser(id, true)}).
+     * Expected Result: {@code roles} lists the parent and NOT the child — direct memberships only.
+     */
+    @Test
+    public void test_filter_includeRolesOn_excludesInheritedChildRole() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("inheritroles" + uniq(), false, true);
+        final Role parent = new RoleDataGen().key("inheritparent" + uniq()).nextPersisted();
+        final Role child = new RoleDataGen().key("inheritchild" + uniq()).parent(parent.getId()).nextPersisted();
+        roleAPI.addRoleToUser(parent, target);
+        // sanity: the child really is implicit for this user
+        assertTrue(roleAPI.loadRolesForUser(target.getUserId(), true).stream()
+                .anyMatch(r -> child.getId().equals(r.getId())));
+
+        final Set<String> ids = roleIds(rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId())));
+
+        assertTrue("directly held parent must be listed", ids.contains(parent.getId()));
+        assertFalse("inherited child must not be listed", ids.contains(child.getId()));
+    }
+
+    /**
+     * Given Scenario: The user directly holds a role saved WITHOUT a role key (as the Roles
+     * portlet allows); {@code includeRoles=true}.
+     * Expected Result: The role is listed with its id and name and a null roleKey.
+     */
+    @Test
+    public void test_filter_includeRolesOn_keylessRoleListedWithNullKey() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("keylessroles" + uniq(), false, true);
+        final Role keyless = new RoleDataGen().key(null).name("Keyless " + uniq()).nextPersisted();
+        assertNull("precondition: the role must have no key", roleAPI.loadRoleById(keyless.getId()).getRoleKey());
+        roleAPI.addRoleToUser(keyless, target);
+
+        final List<SmallRoleView> roles = rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId()));
+
+        final SmallRoleView view = roles.stream().filter(r -> keyless.getId().equals(r.getId())).findFirst()
+                .orElseThrow(() -> new AssertionError("keyless role must be listed by id"));
+        assertEquals(keyless.getName(), view.getName());
+        assertNull(view.getRoleKey());
+    }
+
+    /**
+     * Given Scenario: Two users share role S (unique key); one of them also holds role E. The list
+     * is requested with {@code roleKey=S}, {@code per_page=1}, {@code includeRoles=true}, for
+     * pages 1 and 2.
+     * Expected Result: Each page carries exactly one item, both pages together cover both users,
+     * totalEntries is 2, every item lists S, and only the second user's item lists E.
+     */
+    @Test
+    public void test_filter_includeRolesOn_combinedWithRoleKeyFilterAndPaging() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final String prefix = "pageroles" + uniq();
+        final User userOne = UserTestUtil.getUser(prefix + "a", false, true);
+        final User userTwo = UserTestUtil.getUser(prefix + "b", false, true);
+        final Role shared = new RoleDataGen().key("pagerolesshared" + uniq()).nextPersisted();
+        final Role extra = new RoleDataGen().key("pagerolesextra" + uniq()).nextPersisted();
+        roleAPI.addRoleToUser(shared, userOne);
+        roleAPI.addRoleToUser(shared, userTwo);
+        roleAPI.addRoleToUser(extra, userTwo);
+
+        final Response pageOne = filter(prefix, 1, 1, List.of(shared.getRoleKey()), true);
+        final Response pageTwo = filter(prefix, 2, 1, List.of(shared.getRoleKey()), true);
+        final List<Map<String, Object>> first = items(pageOne);
+        final List<Map<String, Object>> second = items(pageTwo);
+
+        assertEquals(1, first.size());
+        assertEquals(1, second.size());
+        assertEquals(2, ((ResponseEntityView<?>) pageOne.getEntity()).getPagination().getTotalEntries());
+        final Set<String> seen = Set.of((String) first.get(0).get("userId"), (String) second.get(0).get("userId"));
+        assertEquals(Set.of(userOne.getUserId(), userTwo.getUserId()), seen);
+
+        for (final Map<String, Object> item : List.of(first.get(0), second.get(0))) {
+            final Set<String> ids = roleIds(rolesOf(item));
+            assertTrue("every page item must list the shared role", ids.contains(shared.getId()));
+            assertEquals("only userTwo holds the extra role",
+                    userTwo.getUserId().equals(item.get("userId")), ids.contains(extra.getId()));
+        }
+    }
+
+    /**
+     * Given Scenario: A plain back-end user -- not a CMS Administrator and without Users+Roles portlet
+     * access -- calls the list with and without {@code includeRoles}.
+     * Expected Result: Without the flag the call succeeds exactly as before (200); with the flag it is
+     * rejected with a {@link ForbiddenException} (403), matching the gate of
+     * {@code GET /v1/roles/users/{id}} so the flag does not widen who can read role membership.
+     */
+    @Test
+    public void test_filter_includeRolesOn_plainBackendUserForbidden_defaultPathUnchanged() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Role plain = new RoleDataGen().key("plainbackend" + suffix).nextPersisted();
+        final User caller = new UserDataGen().firstName("plain").lastName("Backend")
+                .emailAddress("plainbackend" + suffix + "@dotcms.com").password(password)
+                .roles(plain, TestUserUtils.getBackendRole()).nextPersisted();
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must lack Roles+Users portlet access",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                caller.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, false);
+        assertEquals("default path must keep working for any back-end user",
+                Status.OK.getStatusCode(), allowed.getStatus());
+        assertFalse(itemFor(items(allowed), caller.getUserId()).containsKey("roles"));
+
+        try {
+            resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                    caller.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, true);
+            fail("includeRoles=true must be forbidden for a non role-administrator");
+        } catch (final ForbiddenException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Given Scenario: The user directly holds an ordinary root role whose NAME starts with "User"
+     * ({@code Role#isUser()} is name-based and would flag it as a personal role) plus their real
+     * personal role; {@code includeRoles=true}.
+     * Expected Result: The "User ..." role is listed and only the personal role is left out --
+     * personal roles are recognized by their ID-based DBFQN under the cms_users root, as the legacy
+     * Users portlet did.
+     */
+    @Test
+    public void test_filter_includeRolesOn_rootRoleNamedUserIsNotTreatedAsPersonal() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("usernamedrole" + uniq(), false, true);
+        final Role userManagers = new RoleDataGen().key("usermanagers" + uniq()).name("User Managers " + uniq())
+                .nextPersisted();
+        assertTrue("precondition: the name-based check must misclassify this role",
+                roleAPI.loadRoleById(userManagers.getId()).isUser());
+        roleAPI.addRoleToUser(userManagers, target);
+        final Role personal = roleAPI.getUserRole(target);
+
+        final Set<String> ids = roleIds(rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId())));
+
+        assertTrue("a root role merely named 'User...' must be listed", ids.contains(userManagers.getId()));
+        assertFalse("the personal role must still be excluded", ids.contains(personal.getId()));
     }
 }

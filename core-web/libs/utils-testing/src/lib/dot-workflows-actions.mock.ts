@@ -408,3 +408,33 @@ export const MOCK_MULTIPLE_WORKFLOW_ACTIONS: DotCMSContentletWorkflowActions[] =
         }
     }
 ];
+
+/**
+ * Builds a workflow action shaped the way the **default/initial-action** endpoints actually
+ * return it: the raw `WorkflowAction` flags, and **no `actionInputs` key at all**.
+ *
+ * That omission is the point. `mockWorkflowsActions` always carries `actionInputs`, so it cannot
+ * stand in for the `WorkflowDefaultActionView` payload — using it would hide the very gap issue
+ * #36883 is about. Keep `actionInputs` out of the defaults; pass it in `overrides` when a test
+ * needs the per-inode (`WorkflowActionView`) shape instead.
+ */
+export function createFakeWorkflowAction(
+    overrides: Partial<DotCMSWorkflowAction> = {}
+): DotCMSWorkflowAction {
+    return {
+        assignable: false,
+        commentable: false,
+        condition: '',
+        icon: 'workflowIcon',
+        id: 'action-id',
+        name: 'Publish',
+        nextAssign: 'role-id',
+        nextStep: 'step-id',
+        nextStepCurrentStep: false,
+        order: 0,
+        roleHierarchyForAssign: false,
+        schemeId: 'scheme-id',
+        showOn: ['NEW', 'EDITING'],
+        ...overrides
+    } as DotCMSWorkflowAction;
+}

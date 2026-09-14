@@ -571,6 +571,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetBaseTypeToContentTypeStrategyImplTest.class,
         RoleResourceCountsIntegrationTest.class,
         RoleResourceUsersIntegrationTest.class,
+        com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
 })
 
 public class MainSuite2b {

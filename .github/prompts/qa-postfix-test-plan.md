@@ -54,6 +54,18 @@ Do **not** use `git show {{MERGE_SHA}}` — the repository here is checked out s
 pull-request ref, and the squash-merge commit is not in it, so that command fails. `gh pr diff`
 reads the API and always works. The merge SHA above is for the comment marker, not for git.
 
+Check whether any related issue has a spec. dotCMS keeps spec-driven work under `specs/`, one
+directory per issue named `<issue>-<slug>`:
+
+```
+ls -d specs/<number>-*/ 2>/dev/null
+```
+
+If one exists, read its `spec.md` only — not `data-model.md`, not `contracts/`. Its Acceptance
+Scenarios, Independent Tests and Edge Cases are better test material than the issue body, and
+SKILL.md section 6 says how to turn them into cases. Most issues have no spec; that is normal, and
+absence blocks nothing.
+
 Read each related issue for its description and acceptance criteria:
 
 ```

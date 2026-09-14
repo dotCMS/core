@@ -22,6 +22,7 @@ class GenericOAuth2ProviderTest {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 
@@ -61,13 +62,13 @@ class GenericOAuth2ProviderTest {
                 null,                           // missing authorization URL
                 "https://idp.example.com/token",
                 "https://idp.example.com/userinfo",
-                null, null, null, null));
+                null, null, null, null, null));
         assertThrows(DotRuntimeException.class, () -> new GenericOAuth2Provider(
                 "id", "secret".toCharArray(),
                 "https://idp.example.com/authorize",
                 null,                           // missing token URL
                 "https://idp.example.com/userinfo",
-                null, null, null, null));
+                null, null, null, null, null));
     }
 
     @Test

@@ -16,17 +16,6 @@
                 }
             ]
         },
-        "test": {
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        },
         "nx-release-publish": {
             "options": {
                 "packageRoot": "dist/libs/sdk/react"

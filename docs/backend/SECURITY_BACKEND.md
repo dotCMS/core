@@ -95,7 +95,11 @@ public class MySecureForm {
 ### Authentication Check Pattern
 ```java
 public Response secureEndpoint(HttpServletRequest request, HttpServletResponse response) {
-    InitDataObject initData = webResource.init(request, response, true);
+    InitDataObject initData = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requestAndResponse(request, response)
+            .rejectWhenNoUser(true)
+            .init();
     User user = initData.getUser();
     
     // Verify user is authenticated
@@ -121,7 +125,6 @@ public Response secureEndpoint(HttpServletRequest request, HttpServletResponse r
 ```java
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
 
 public class MySecureService {
     
@@ -180,7 +183,11 @@ public class MySecureService {
 ### Admin Permission Check
 ```java
 public Response adminOnlyEndpoint(HttpServletRequest request, HttpServletResponse response) {
-    InitDataObject initData = webResource.init(request, response, true);
+    InitDataObject initData = new WebResource.InitBuilder()
+            .requiredBackendUser(true)
+            .requestAndResponse(request, response)
+            .rejectWhenNoUser(true)
+            .init();
     User user = initData.getUser();
     
     // Check if user is admin
@@ -273,21 +280,14 @@ public class MyResponseBuilder {
 ```
 
 ### Input Sanitization Pattern
+
+> **Don't hand-roll HTML sanitization with regex** — stripping `<script>`/`javascript:`/`on*=`
+> patterns is well-known to be bypassable (case variation, malformed tags, encodings, event
+> handlers this list doesn't cover). Use the real `Xss.encodeForHTML(...)` pattern from
+> **XSS Prevention** above instead — that's the correct, maintained answer.
+
 ```java
 public class InputSanitizer {
-    
-    public String sanitizeHtml(String input) {
-        if (!UtilMethods.isSet(input)) {
-            return null;
-        }
-        
-        // Remove script tags and dangerous attributes
-        return input
-            .replaceAll("<script[^>]*>.*?</script>", "")
-            .replaceAll("javascript:", "")
-            .replaceAll("on\\w+\\s*=", "")
-            .replaceAll("<iframe[^>]*>.*?</iframe>", "");
-    }
     
     public String sanitizeForDatabase(String input) {
         if (!UtilMethods.isSet(input)) {

@@ -30,6 +30,18 @@ export class DotUploadTypeSelectorComponent {
     /** Files to upload — present for the drag-and-drop flow, absent for the Upload-button flow. */
     $files = input<FileList | undefined>(undefined, { alias: 'files' });
 
+    /**
+     * What the host allows, already translated (e.g. `"images"`) — empty when it allows everything.
+     *
+     * Set, the options describe themselves in terms of it instead of promising types the host would
+     * refuse. The option list itself is never filtered: an Asset and a File can each hold an image,
+     * a video or an audio file, and a folder's pinned default can be either.
+     *
+     * Deliberately a translated string rather than a mode or a message key — this component stays
+     * generic, and the host remains the one place that knows what its own restriction is called.
+     */
+    $restrictionLabel = input<string>('', { alias: 'restrictionLabel' });
+
     /** Emits the chosen base type plus the upload context when the user picks an option. */
     selectUploadType = output<DotUploadSelection>();
 

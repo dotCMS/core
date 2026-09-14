@@ -44,6 +44,14 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_LOGOUT_URL          = "logoutUrl";
     public static final String KEY_GROUPS_CLAIM        = "groupsClaim";
     public static final String KEY_GROUPS_URL          = "groupsUrl";
+    /**
+     * Optional dot-path selecting group names from a non-trivial {@code groupsUrl} response,
+     * e.g. {@code memberships[].groupKey.id} (Google Cloud Identity), {@code groups[].email}
+     * (Google Directory), {@code [].slug} (GitHub). Unset keeps the legacy shapes: a JSON
+     * string array, or an object with a {@code groups} string array. See
+     * {@code OAuthGroupsFetcher} for the worked Google Workspace configuration.
+     */
+    public static final String KEY_GROUPS_RESPONSE_PATH = "groupsResponsePath";
     public static final String KEY_EMAIL_CLAIM         = "emailClaim";
     public static final String KEY_FIRST_NAME_CLAIM    = "firstNameClaim";
     public static final String KEY_LAST_NAME_CLAIM     = "lastNameClaim";
@@ -76,6 +84,7 @@ public final class OAuthAppConfig implements Serializable {
     public final String   logoutUrl;
     public final String   groupsClaim;
     public final String   groupsUrl;
+    public final String   groupsResponsePath;
     public final String   emailClaim;
     public final String   firstNameClaim;
     public final String   lastNameClaim;
@@ -112,7 +121,8 @@ public final class OAuthAppConfig implements Serializable {
         this.revocationUrl    = validateUrl(str(secrets, KEY_REVOCATION_URL,    null), KEY_REVOCATION_URL);
         this.logoutUrl        = validateUrl(str(secrets, KEY_LOGOUT_URL,        null), KEY_LOGOUT_URL);
         this.groupsClaim      = str (secrets, KEY_GROUPS_CLAIM,     null);
-        this.groupsUrl        = validateUrl(str(secrets, KEY_GROUPS_URL,        null), KEY_GROUPS_URL);
+        this.groupsUrl        = validateUrlTemplate(str(secrets, KEY_GROUPS_URL, null), KEY_GROUPS_URL);
+        this.groupsResponsePath = str(secrets, KEY_GROUPS_RESPONSE_PATH, null);
         this.emailClaim       = str (secrets, KEY_EMAIL_CLAIM,     null);
         this.firstNameClaim   = str (secrets, KEY_FIRST_NAME_CLAIM, null);
         this.lastNameClaim    = str (secrets, KEY_LAST_NAME_CLAIM,  null);
@@ -158,7 +168,8 @@ public final class OAuthAppConfig implements Serializable {
         this.revocationUrl    = validateUrl(str(headlessSecrets, "revocationUrl", null), "revocationUrl");
         this.logoutUrl        = validateUrl(str(headlessSecrets, "logoutUrl", null), "logoutUrl");
         this.groupsClaim      = str (headlessSecrets, "groupsClaim", null);
-        this.groupsUrl        = validateUrl(str(headlessSecrets, "groupsUrl", null), "groupsUrl");
+        this.groupsUrl        = validateUrlTemplate(str(headlessSecrets, "groupsUrl", null), "groupsUrl");
+        this.groupsResponsePath = str(headlessSecrets, "groupsResponsePath", null);
         this.emailClaim       = str (headlessSecrets, "emailClaim", null);
         this.firstNameClaim   = str (headlessSecrets, "firstNameClaim", null);
         this.lastNameClaim    = str (headlessSecrets, "lastNameClaim", null);
@@ -293,6 +304,7 @@ public final class OAuthAppConfig implements Serializable {
         this.logoutUrl          = base.logoutUrl;
         this.groupsClaim        = base.groupsClaim;
         this.groupsUrl          = base.groupsUrl;
+        this.groupsResponsePath = base.groupsResponsePath;
         this.callbackUrl        = base.callbackUrl;
         this.sessionRefTtlMinutes = base.sessionRefTtlMinutes;
         this.clampToIdpExp      = base.clampToIdpExp;
@@ -369,6 +381,24 @@ public final class OAuthAppConfig implements Serializable {
             return null;
         }
         return url;
+    }
+
+    /**
+     * Validate a URL that may carry {@code {email}} / {@code {sub}} placeholders (only
+     * {@code groupsUrl} supports them). {@code new URI()} rejects literal braces, so the
+     * placeholders are swapped for representative encoded values before the standard
+     * validation runs; the original template is returned when the probe passes. This keeps
+     * every SSRF/TLS check while letting templates like Google's Cloud Identity query
+     * ({@code ?query=member_key_id=='{email}'}) survive config load.
+     */
+    private static String validateUrlTemplate(final String url, final String fieldName) {
+        if (!UtilMethods.isSet(url)) {
+            return null;
+        }
+        final String probe = url
+                .replace("{email}", "user%40example.com")
+                .replace("{sub}", "1234567890");
+        return validateUrl(probe, fieldName) == null ? null : url;
     }
 
     private static void rejectUrl(final String fieldName, final String reason) {

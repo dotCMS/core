@@ -1,5 +1,11 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { FieldTree } from '@angular/forms/signals';
 
@@ -105,18 +111,18 @@ describe('DotCustomFieldSettingsComponent', () => {
         ],
         providers: [
             mockProvider(DotFieldVariablesService, {
-                save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
+                save: vi.fn(() => of(MOCK_SAVED_VARIABLE))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn(() => of(null))
+                handle: vi.fn(() => of(null))
             })
         ],
         detectChanges: false
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createComponent();
         spectator.setInput('field', MOCK_FIELD);
         dotFieldVariablesService = spectator.inject(DotFieldVariablesService);
@@ -190,7 +196,7 @@ describe('DotCustomFieldSettingsComponent', () => {
 
     describe('$valid output', () => {
         it('should emit true when a section becomes dirty and valid', () => {
-            jest.spyOn(component.$valid, 'emit');
+            vi.spyOn(component.$valid, 'emit');
 
             const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
                 .formTree;
@@ -201,7 +207,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should emit false when a section is dirty but invalid', () => {
-            jest.spyOn(component.$valid, 'emit');
+            vi.spyOn(component.$valid, 'emit');
 
             const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
                 .formTree;
@@ -214,7 +220,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should not emit $valid when no section is dirty or changed', () => {
-            jest.spyOn(component.$valid, 'emit');
+            vi.spyOn(component.$valid, 'emit');
 
             // No dirtying or value changes — valueChanges$ should not emit (skip(1) consumed initial)
             spectator.flushEffects();
@@ -231,7 +237,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should not emit $save when no sections are dirty', () => {
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
 
             component.saveSettings();
 
@@ -239,7 +245,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should call save on the renderOptions section when it is dirty', () => {
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
 
             const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
                 .formTree;
@@ -253,7 +259,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should emit $save after successful save', () => {
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
 
             const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
                 .formTree;
@@ -265,10 +271,10 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should handle errors via DotHttpErrorManagerService and NOT emit $save on error', () => {
-            jest.spyOn(dotFieldVariablesService, 'save').mockReturnValueOnce(
+            vi.spyOn(dotFieldVariablesService, 'save').mockReturnValueOnce(
                 throwError(() => new Error('Network error'))
             );
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
 
             const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
                 .formTree;
@@ -281,7 +287,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should call save on the hideLabel section when it is dirty', () => {
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
 
             const ft = (spectator.query(DotHideLabelSettingsComponent) as WithHideLabelFormTree)
                 .formTree;
@@ -298,7 +304,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should call save on both sections and emit $save once when both are dirty', () => {
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
 
             const renderFt = (
                 spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree
@@ -320,7 +326,7 @@ describe('DotCustomFieldSettingsComponent', () => {
 
     describe('ngOnChanges / $changeControls output', () => {
         it('should emit $changeControls when $isVisible changes to true', () => {
-            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+            const emitSpy = vi.spyOn(component.$changeControls, 'emit');
 
             spectator.setInput('isVisible', true);
 
@@ -338,7 +344,7 @@ describe('DotCustomFieldSettingsComponent', () => {
 
         it('should not emit $changeControls when $isVisible changes to false', () => {
             spectator.setInput('isVisible', true);
-            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+            const emitSpy = vi.spyOn(component.$changeControls, 'emit');
 
             spectator.setInput('isVisible', false);
 
@@ -351,7 +357,7 @@ describe('DotCustomFieldSettingsComponent', () => {
             ft.showAsModal().value.set(true);
             ft().markAsDirty();
 
-            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+            const emitSpy = vi.spyOn(component.$changeControls, 'emit');
             spectator.setInput('isVisible', true);
 
             const emitted = emitSpy.mock.calls[0][0] as DotDialogActions;
@@ -359,8 +365,8 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should call saveSettings when the emitted accept.action is invoked', () => {
-            const saveSpy = jest.spyOn(component, 'saveSettings');
-            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+            const saveSpy = vi.spyOn(component, 'saveSettings');
+            const emitSpy = vi.spyOn(component.$changeControls, 'emit');
 
             spectator.setInput('isVisible', true);
 
