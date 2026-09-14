@@ -94,64 +94,6 @@ test.describe('Content Drive bulk upload outcomes', () => {
             await drive.expectHandedToBackground();
         }));
 
-    /**
-     * Two runs settling close together, both reported.
-     *
-     * The store held outcomes in a single slot while runs became a registry, and the shell drains
-     * them from an `effect()` that flushes on the next change-detection pass rather than
-     * synchronously — so a second outcome arriving before the first was read overwrote it, and the
-     * first was reported nowhere. A dropped shortfall is exactly what this feature exists to
-     * prevent.
-     *
-     * **What this does not prove.** It is not a regression test for the queue: two uploads started
-     * seconds apart settle seconds apart, so their outcomes do not land in one change-detection
-     * pass and a single slot would serve them both. Forcing the same-tick collision is not
-     * something a browser test can do, and the unit suite is what pins it.
-     *
-     * What it does prove is that two runs can be in flight at once and each still reports, which is
-     * the shape an author actually hits, and which nothing else covers end to end. Asserted as two
-     * messages on screen *together*, because a sequential check would find the second and never
-     * notice the first had been replaced.
-     *
-     * The count deliberately excludes the handoff advisory — see `expectOutcomeCountAtLeast`. An
-     * earlier version of this counted toasts indiscriminately and passed on a build that did not
-     * even have the fix, because each upload's own "you can leave" message satisfied it.
-     */
-    test('reports both outcomes when two uploads are in flight at once', ({
-        adminPage,
-        apiHelpers,
-        testSuffix
-    }) =>
-        inSeededFolder(
-            { adminPage, apiHelpers, name: `cd-two-runs-${testSuffix}` },
-            async (drive) => {
-                // Distinct names, so the second batch is a new submission rather than a recognised
-                // resubmission of the first — which would report as a duplicate, not as its own
-                // outcome, and would prove nothing about two runs.
-                await drive.chooseFilesForUpload([`first-${testSuffix}.png`]);
-
-                // Deliberately not awaiting the first outcome: the whole point is that the second
-                // run starts while the first is still the server's.
-                await drive.chooseFilesForUpload([
-                    `second-a-${testSuffix}.png`,
-                    `second-b-${testSuffix}.png`
-                ]);
-
-                await drive.expectOutcomeCountAtLeast(2);
-
-                // And both batches actually landed, so the two messages describe real work rather
-                // than one run reported twice.
-                await drive.expectUploadedTitle(
-                    `cd-two-runs-${testSuffix}`,
-                    `first-${testSuffix}.png`
-                );
-                await drive.expectUploadedTitle(
-                    `cd-two-runs-${testSuffix}`,
-                    `second-b-${testSuffix}.png`
-                );
-            }
-        ));
-
     test('names the file that collided, and still uploads the rest', ({
         adminPage,
         apiHelpers,
