@@ -593,7 +593,10 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(items[1].label).toBe('template2.vtl');
             });
 
-            it('should return undefined when no vtl files', () => {
+            // Was `toBeUndefined()`. The computed declares `MenuItem[]` and an
+            // undefined `[model]` made PrimeNG render an empty popup instead of
+            // the button being absent, so it now returns an empty array.
+            it('should return an empty array when no vtl files', () => {
                 const areaWithoutVtl = {
                     ...MOCK_CONTENTLET_AREA,
                     x: MOCK_CONTENTLET_AREA.x + 1, // Change position to make it different
@@ -610,7 +613,7 @@ describe('DotUveContentletToolsComponent', () => {
                 editorSelected.set(toSelected(areaWithoutVtl));
                 spectator.detectChanges();
 
-                expect(spectator.component.vtlMenuItems()).toBeUndefined();
+                expect(spectator.component.vtlMenuItems()).toEqual([]);
             });
         });
 
@@ -1195,6 +1198,130 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(spectator.component.isContainerEmpty()).toBe(true);
                 expect(spectator.component['canEditContentlet']()).toBe(true);
             });
+        });
+    });
+
+    /**
+     * #37499. The `</>` button is gated on the HOVERED contentlet
+     * (`hasVtlFiles()`), but `vtlMenuItems()` preferred the SELECTED one — and a
+     * SET_BOUNDS re-anchor strips `vtlFiles` from the selected payload. So after
+     * any layout shift the button appeared and the menu opened empty.
+     *
+     * Both now read the hovered contentlet, which is the only contentlet the
+     * button can belong to.
+     */
+    describe('VTL menu follows the hovered contentlet', () => {
+        const areaWithVtlFiles = (
+            label: string,
+            vtlFiles: VTLFile[] | undefined
+        ): ContentletArea => ({
+            ...MOCK_CONTENTLET_AREA,
+            payload: {
+                ...MOCK_CONTENTLET_AREA.payload,
+                contentlet: {
+                    ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                    inode: `inode-${label}`,
+                    identifier: `identifier-${label}`
+                },
+                vtlFiles
+            }
+        });
+
+        it('lists the hovered contentlet files after a re-anchor stripped them from the selection', () => {
+            // What applyBoundsForSelection used to leave behind: same contentlet,
+            // no vtlFiles. Before the fix this emptied the menu.
+            editorSelected.set(toSelected(areaWithVtlFiles('a', undefined)));
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            expect(spectator.component.vtlMenuItems().map((item) => item.label)).toEqual([
+                'template1.vtl',
+                'template2.vtl'
+            ]);
+        });
+
+        it('lists the hovered contentlet files when nothing is selected', () => {
+            editorSelected.set(null);
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            expect(spectator.component.vtlMenuItems().map((item) => item.label)).toEqual([
+                'template1.vtl',
+                'template2.vtl'
+            ]);
+        });
+
+        it("lists the HOVERED contentlet's files while a different contentlet is selected", () => {
+            editorSelected.set(
+                toSelected(areaWithVtlFiles('b', [{ inode: 'vtl-b', name: 'other.vtl' }]))
+            );
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            const labels = spectator.component.vtlMenuItems().map((item) => item.label);
+            expect(labels).toEqual(['template1.vtl', 'template2.vtl']);
+            expect(labels).not.toContain('other.vtl');
+        });
+
+        it('returns an empty array, never undefined, when the hovered contentlet has no VTL files', () => {
+            spectator.setInput('contentletArea', areaWithVtlFiles('c', undefined));
+            spectator.detectChanges();
+
+            expect(spectator.component.vtlMenuItems()).toEqual([]);
+        });
+
+        it('gives the collapsed actions menu the same VTL submenu as the full toolbar', () => {
+            editorSelected.set(toSelected(areaWithVtlFiles('a', undefined)));
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            const vtlEntry = spectator.component
+                .actionsMenuItems()
+                .find((item) => item.icon === 'pi pi-code');
+
+            expect(vtlEntry?.items).toEqual(spectator.component.vtlMenuItems());
+        });
+    });
+
+    /**
+     * Opening a VTL promotes the hovered contentlet to selected, so the selection
+     * border follows the contentlet whose file you just opened. Promotion sits on
+     * the menu COMMAND rather than the button click, so a menu opened and
+     * dismissed leaves the selection untouched.
+     */
+    describe('choosing a VTL file promotes the hovered contentlet', () => {
+        it('promotes the hovered contentlet and still emits the file', () => {
+            const store = spectator.inject(UVEStore);
+            const emitted: VTLFile[] = [];
+            spectator.component.editVTL.subscribe((file: VTLFile) => emitted.push(file));
+
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            spectator.component.vtlMenuItems()[0].command?.({} as never);
+
+            expect(store.setSelected).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    bounds: {
+                        x: MOCK_CONTENTLET_AREA.x,
+                        y: MOCK_CONTENTLET_AREA.y,
+                        width: MOCK_CONTENTLET_AREA.width,
+                        height: MOCK_CONTENTLET_AREA.height
+                    }
+                })
+            );
+            expect(emitted).toEqual([{ inode: 'vtl-inode-1', name: 'template1.vtl' }]);
+        });
+
+        it('does not promote merely because the menu was built', () => {
+            const store = spectator.inject(UVEStore);
+            (store.setSelected as ReturnType<typeof vi.fn>).mockClear();
+
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+            spectator.component.vtlMenuItems();
+
+            expect(store.setSelected).not.toHaveBeenCalled();
         });
     });
 });

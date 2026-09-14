@@ -228,13 +228,6 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Whether there is at least one VTL file associated with the selected contentlet.
-     */
-    readonly selectedHasVtlFiles = computed(() => {
-        return !!this.selectedContentContext()?.vtlFiles?.length;
-    });
-
-    /**
      * Whether the current user holds EDIT permission on the hovered contentlet.
      * Sourced from `data-dot-can-edit`, which the container renderer stamps on
      * every contentlet in EDIT mode from a WRITE-level check against the
@@ -325,16 +318,34 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Menu items corresponding to the VTL files of the selected contentlet.
-     * Each item represents a file and triggers the `editVTL` output when clicked.
+     * Menu items for the VTL files of the **hovered** contentlet — the same
+     * contentlet `hasVtlFiles()` gates the `</>` button on.
+     *
+     * Hover, not selection: the button lives only in the hover toolbar, so the
+     * hovered contentlet is the only one it can belong to. Reading the selection
+     * here meant the button could be offered from one contentlet and filled from
+     * another, and the selected payload loses `vtlFiles` on every SET_BOUNDS
+     * re-anchor — so the menu opened empty after any layout shift.
+     *
+     * Choosing a file promotes the hovered contentlet to selected, so the
+     * selection border follows the contentlet whose VTL was opened. Promotion is
+     * on the command rather than the button click deliberately: opening the menu
+     * and dismissing it without picking should leave the selection alone.
+     *
+     * Returns `[]` rather than `undefined` so PrimeNG is never handed an
+     * undefined `[model]`, and so this honors its own declared return type.
      */
     readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const context = this.selected() ? this.selectedContentContext() : this.contentContext();
-        const { vtlFiles } = context ?? {};
-        return vtlFiles?.map((file) => ({
-            label: file?.name,
-            command: () => this.editVTL.emit(file)
-        }));
+        const { vtlFiles } = this.contentContext() ?? {};
+        return (
+            vtlFiles?.map((file) => ({
+                label: file?.name,
+                command: () => {
+                    this.promoteHoverToSelected();
+                    this.editVTL.emit(file);
+                }
+            })) ?? []
+        );
     });
 
     /**
