@@ -1,5 +1,5 @@
-import { expect } from '@jest/globals';
-import { Spectator, byTestId, createRoutingFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createRoutingFactory } from '@openng/spectator/vitest';
+import { Mock, Mocked, expect, vi } from 'vitest';
 
 import { UVE_MODE } from '@dotcms/types';
 import * as uve from '@dotcms/uve';
@@ -11,8 +11,8 @@ import { DotCMSPageComponent } from '../../models';
 import { DotCMSStore } from '../../store/dotcms.store';
 import { PageResponseMock } from '../../utils/testing.utils';
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 const components: DotCMSPageComponent = {
@@ -21,8 +21,8 @@ const components: DotCMSPageComponent = {
 
 describe('DotCMSLayoutBodyComponent', () => {
     let spectator: Spectator<DotCMSLayoutBodyComponent>;
-    let dotCMSStore: jest.Mocked<DotCMSStore>;
-    const getUVEStateMock = uve.getUVEState as jest.Mock;
+    let dotCMSStore: Mocked<DotCMSStore>;
+    const getUVEStateMock = uve.getUVEState as Mock;
     const createComponent = createRoutingFactory({
         component: DotCMSLayoutBodyComponent,
         providers: [DotCMSStore]
@@ -47,7 +47,7 @@ describe('DotCMSLayoutBodyComponent', () => {
     });
 
     it('should call setStore on changes', () => {
-        const setStoreSpy = jest.spyOn(dotCMSStore, 'setStore');
+        const setStoreSpy = vi.spyOn(dotCMSStore, 'setStore');
 
         spectator.component.ngOnChanges();
 

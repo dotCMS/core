@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockProvider } from 'ng-mocks';
+import { Mocked, vi } from 'vitest';
 
 import { ButtonModule } from 'primeng/button';
 import { PanelModule } from 'primeng/panel';
@@ -46,7 +47,7 @@ const MOCK_FAVORITE_PAGES: DotCMSContentlet[] = [
 
 describe('DotPageFavoritesPanelComponent', () => {
     let spectator: Spectator<DotPageFavoritesPanelComponent>;
-    let mockLocalStorageService: jest.Mocked<DotLocalstorageService>;
+    let mockLocalStorageService: Mocked<DotLocalstorageService>;
 
     const createComponent = createComponentFactory({
         component: DotPageFavoritesPanelComponent,
@@ -65,22 +66,22 @@ describe('DotPageFavoritesPanelComponent', () => {
         spectator = createComponent({
             providers: [
                 MockProvider(DotLocalstorageService, {
-                    getItem: jest.fn().mockReturnValue(true),
-                    setItem: jest.fn(),
-                    removeItem: jest.fn()
+                    getItem: vi.fn().mockReturnValue(true),
+                    setItem: vi.fn(),
+                    removeItem: vi.fn()
                 })
             ]
         });
 
         mockLocalStorageService = spectator.inject(
             DotLocalstorageService
-        ) as unknown as jest.Mocked<DotLocalstorageService>;
+        ) as unknown as Mocked<DotLocalstorageService>;
 
         spectator.detectChanges();
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create', () => {
@@ -341,7 +342,7 @@ describe('DotPageFavoritesPanelComponent', () => {
             spectator.detectChanges();
 
             // Use a MouseEvent-like object so we can assert stopPropagation is called.
-            const stopPropagation = jest.fn();
+            const stopPropagation = vi.fn();
             const mockEvent = {
                 stopPropagation
             } as unknown as MouseEvent;

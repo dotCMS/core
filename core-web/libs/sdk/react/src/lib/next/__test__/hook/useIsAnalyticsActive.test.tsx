@@ -1,16 +1,17 @@
 import { act, renderHook } from '@testing-library/react';
+import { Mock, vi } from 'vitest';
 
 import { ANALYTICS_READY_EVENT, isDotAnalyticsActive } from '@dotcms/uve/internal';
 
 import { useIsAnalyticsActive } from '../../hooks/useIsAnalyticsActive';
 
-jest.mock('@dotcms/uve/internal', () => ({
-    isDotAnalyticsActive: jest.fn(() => false),
+vi.mock('@dotcms/uve/internal', () => ({
+    isDotAnalyticsActive: vi.fn(() => false),
     ANALYTICS_READY_EVENT: 'dotcms:analytics:ready'
 }));
 
 describe('useIsAnalyticsActive', () => {
-    const isDotAnalyticsActiveMock = isDotAnalyticsActive as jest.Mock;
+    const isDotAnalyticsActiveMock = isDotAnalyticsActive as Mock;
 
     beforeEach(() => {
         isDotAnalyticsActiveMock.mockReturnValue(false);
@@ -44,7 +45,7 @@ describe('useIsAnalyticsActive', () => {
     });
 
     test('should stop listening after unmount', () => {
-        const removeSpy = jest.spyOn(window, 'removeEventListener');
+        const removeSpy = vi.spyOn(window, 'removeEventListener');
 
         const { unmount } = renderHook(() => useIsAnalyticsActive());
         unmount();

@@ -1,5 +1,6 @@
 import { Spectator } from '@openng/spectator';
-import { createComponentFactory } from '@openng/spectator/jest';
+import { createComponentFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
@@ -84,7 +85,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
                 ]
             });
 
-            expect((blockEditorComponent as any).getParsedCustomBlocks()).toEqual({
+            expect(blockEditorComponent!['getParsedCustomBlocks']()).toEqual({
                 extensions: [
                     {
                         url: 'https://example.com/custom-gallery.js',
@@ -147,7 +148,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
         const setAllowedBlocks = (blocks: string[]) => internals.setAllowedBlocks(blocks.join(','));
 
         const loadRemoteExtensions = (): Promise<{ name?: string }[]> => {
-            jest.spyOn(component, 'loadCustomBlocks').mockResolvedValue([
+            vi.spyOn(component, 'loadCustomBlocks').mockResolvedValue([
                 {
                     status: 'fulfilled',
                     value: { customGallery: { name: 'customGallery' } }
@@ -244,7 +245,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             // Check that when editor exists, setEditable is called properly
             const mockEditor = {
-                setEditable: jest.fn()
+                setEditable: vi.fn()
             } as Partial<typeof blockEditorComponent.editor>;
             blockEditorComponent.editor = mockEditor as typeof blockEditorComponent.editor;
 
@@ -259,7 +260,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
         it('should not emit changes when disabled', () => {
             const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-            const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+            const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
             // Use the CVA method to set disabled state
             blockEditorComponent.setDisabledState(true);
@@ -272,7 +273,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
         it('should emit changes when not disabled', () => {
             const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-            const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+            const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
             // Use the CVA method to set disabled state
             blockEditorComponent.setDisabledState(false);
@@ -410,7 +411,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
         describe('doc attrs (charCount / wordCount / readingTime)', () => {
             it('should include charCount, wordCount and readingTime in the emitted value when content is not empty', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 // 265 words at 265 words-per-minute (Medium formula) → readingTime = Math.ceil(265/265) = 1
                 blockEditorComponent.editor = createMockEditor(100, 265);
@@ -436,7 +437,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             it('should not override existing attrs when patching doc attrs', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 blockEditorComponent.editor = createMockEditor(50, 10);
                 blockEditorComponent.setDisabledState(false);
@@ -459,7 +460,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             it('should emit value unchanged when the editor has no content (charCount = 0)', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 blockEditorComponent.editor = createMockEditor(0, 0);
                 blockEditorComponent.setDisabledState(false);
@@ -471,7 +472,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             it('should emit value unchanged when the editor is not yet initialized', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 // Force the editor to be null to simulate the case where the editor is not yet
                 // initialized (e.g., writeValue called before the async ngOnInit completes).

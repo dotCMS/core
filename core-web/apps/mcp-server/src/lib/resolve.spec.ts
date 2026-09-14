@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
 import { resolveLanguageId, resolveSite } from './resolve';
@@ -22,12 +24,12 @@ function fakeRuntime(options?: {
     contextThrows?: boolean;
 }) {
     const calls: RequestOptions[] = [];
-    const request = jest.fn(async (opts: RequestOptions) => {
+    const request = vi.fn(async (opts: RequestOptions) => {
         calls.push(opts);
 
         return options?.onRequest ? options.onRequest(opts) : {};
     });
-    const loadContext = jest.fn(async () => {
+    const loadContext = vi.fn(async () => {
         if (options?.contextThrows) {
             throw new Error('context boom');
         }

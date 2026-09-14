@@ -1,6 +1,12 @@
 import { patchState } from '@ngrx/signals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 
@@ -53,7 +59,7 @@ describe('DotAIImagePromptComponent', () => {
         dotAiService = spectator.inject(DotAiContentService, true);
         confirmationService = spectator.inject(ConfirmationService, true);
 
-        jest.spyOn(dotAiService, 'generateAndPublishImage');
+        vi.spyOn(dotAiService, 'generateAndPublishImage');
     });
 
     it('should create', () => {
@@ -61,7 +67,7 @@ describe('DotAIImagePromptComponent', () => {
     });
 
     it('should generate image', () => {
-        const generateImageSpy = jest.spyOn(store, 'generateImage');
+        const generateImageSpy = vi.spyOn(store, 'generateImage');
 
         const formMock: AIImagePrompt = {
             text: 'Test',
@@ -89,7 +95,7 @@ describe('DotAIImagePromptComponent', () => {
 
     it('should call confirm dialog when try to close dialog', () => {
         patchState(store, { images: [MOCK_GENERATED_AI_IMAGE] });
-        const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+        const confirmSpy = vi.spyOn(confirmationService, 'confirm');
         spectator.detectChanges();
 
         spectator.component.closeDialog();

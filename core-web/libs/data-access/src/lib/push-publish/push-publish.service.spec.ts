@@ -1,6 +1,7 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 import { format } from 'date-fns';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -66,7 +67,7 @@ describe('PushPublishService', () => {
             userId: '1234',
             roleId: '1234'
         };
-        jest.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(of(user));
+        vi.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(of(user));
 
         const response = [
             {

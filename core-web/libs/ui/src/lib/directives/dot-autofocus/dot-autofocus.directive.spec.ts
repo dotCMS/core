@@ -1,5 +1,7 @@
 /* tslint:disable:no-unused-variable */
 
+import { vi } from 'vitest';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -41,7 +43,7 @@ describe('Directive: DotAutofocus', () => {
     it('should call focus', fakeAsync(() => {
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));
-        jest.spyOn(inputEl.nativeElement, 'focus');
+        vi.spyOn(inputEl.nativeElement, 'focus');
 
         tick(100); // directive uses setTimeout(..., 100) before calling focus
 
@@ -52,7 +54,7 @@ describe('Directive: DotAutofocus', () => {
         component.setDisabled(true);
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));
-        jest.spyOn(inputEl.nativeElement, 'focus');
+        vi.spyOn(inputEl.nativeElement, 'focus');
 
         tick(100); // advance past directive's setTimeout; focus should not run when disabled
         expect(inputEl.nativeElement.focus).not.toHaveBeenCalled();

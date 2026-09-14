@@ -1,6 +1,7 @@
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
-import { mockProvider, SpyObject } from '@openng/spectator/jest';
+import { mockProvider, SpyObject } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -42,22 +43,22 @@ describe('ImageEditorStore', () => {
     let lifecycle: ReturnType<typeof injectDispatch<typeof imageEditorLifecycleEvents>>;
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
 
         TestBed.configureTestingModule({
             providers: [
                 ImageEditorStore,
                 Dispatcher,
                 mockProvider(DotImageEditorService, {
-                    getFileSize: jest.fn().mockReturnValue(of(1000)),
-                    loadAssetMeta: jest
+                    getFileSize: vi.fn().mockReturnValue(of(1000)),
+                    loadAssetMeta: vi
                         .fn()
                         .mockReturnValue(
                             of({ naturalWidth: 800, naturalHeight: 600, originalBytes: 5000 })
                         ),
-                    triggerDownload: jest.fn()
+                    triggerDownload: vi.fn()
                 }),
-                mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
+                mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })
             ]
         });
 
@@ -77,7 +78,7 @@ describe('ImageEditorStore', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('should start from the initial state', () => {
@@ -453,7 +454,7 @@ describe('ImageEditorStore', () => {
             adjust.brightnessChanged(10);
             adjust.brightnessChanged(20);
 
-            jest.advanceTimersByTime(250);
+            vi.advanceTimersByTime(250);
 
             expect(service.getFileSize).toHaveBeenCalledTimes(1);
             expect(store.fileInfo().currentBytes).toBe(4242);

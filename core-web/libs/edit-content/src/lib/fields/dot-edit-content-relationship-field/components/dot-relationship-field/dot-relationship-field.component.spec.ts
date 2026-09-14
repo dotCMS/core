@@ -2,10 +2,10 @@
 // without pulling in the real editor (and its module cycle). Placed before the imports so jest
 // hoists it ahead of the dynamic `import()` the component performs. Kept as a real standalone
 // component so `createComponent`/`setInput('data')`/`instance.closed` all work.
-jest.mock(
+vi.mock(
     '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component',
-    () => {
-        const { Component, Input, output } = jest.requireActual('@angular/core');
+    async () => {
+        const { Component, Input, output } = await vi.importActual('@angular/core');
 
         // `data` is a decorated property, not a signal input like the real panel's: these tests
         // run in JIT mode, where the compiler does not see a bare `data = input(...)` field, so
@@ -22,7 +22,14 @@ jest.mock(
     }
 );
 
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { EMPTY } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -40,7 +47,7 @@ import {
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
-// Resolves to the mock declared in the jest.mock above (same module path the component imports).
+// Resolves to the mock declared in the vi.mock above (same module path the component imports).
 import { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
@@ -112,58 +119,71 @@ let ngControlStub: { control: AbstractControl | null };
  */
 let hostStub: {
     inPlaceNavigation: boolean;
-    setContentTitle: jest.Mock;
-    addBreadcrumb: jest.Mock;
-    goToSavedContent: jest.Mock;
-    goToRestoredVersion: jest.Mock;
-    goToRelatedContent: jest.Mock;
-    goToCrumb: jest.Mock;
+    setContentTitle: Mock;
+    addBreadcrumb: Mock;
+    goToSavedContent: Mock;
+    goToRestoredVersion: Mock;
+    goToRelatedContent: Mock;
+    goToCrumb: Mock;
 };
 
 describe('DotRelationshipFieldComponent', () => {
     let spectator: Spectator<DotRelationshipFieldComponent>;
 
+    // `showCreateNewContentDialog()` reaches the centered dialog through a dynamic
+    // `import()`, and under Vitest that import is where the dialog component and its whole
+    // Angular graph get transformed — inside the 5s budget of whichever test calls it first.
+    // ts-jest resolved it at compile time, so it cost nothing there. On an idle machine the
+    // transform fits; with `nx run-many` running three projects at once it does not, and the
+    // suite failed with "Test timed out in 5000ms" plus a second, collateral failure in the
+    // next test (the timed-out call's `dialogService.open` landed during it, so the mock had
+    // been called twice). Warming the module here moves the transform outside every test's
+    // clock rather than widening the clock to hide it.
+    beforeAll(async () => {
+        await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
+    });
+
     beforeEach(() => {
         ngControlStub = { control: null };
         hostStub = {
             inPlaceNavigation: false,
-            setContentTitle: jest.fn(),
-            addBreadcrumb: jest.fn(),
-            goToSavedContent: jest.fn(),
-            goToRestoredVersion: jest.fn(),
-            goToRelatedContent: jest.fn(),
-            goToCrumb: jest.fn()
+            setContentTitle: vi.fn(),
+            addBreadcrumb: vi.fn(),
+            goToSavedContent: vi.fn(),
+            goToRestoredVersion: vi.fn(),
+            goToRelatedContent: vi.fn(),
+            goToCrumb: vi.fn()
         };
     });
 
     // i18n mock returns the key itself so header/empty-state assertions are deterministic.
     const messageServiceMock = {
-        get: jest.fn((key: string) => key)
+        get: vi.fn((key: string) => key)
     };
 
     const createStoreMock = (overrides: Record<string, unknown> = {}) => ({
-        data: jest.fn().mockReturnValue([buildItem()]),
-        paginatedData: jest.fn().mockReturnValue([buildItem()]),
-        columns: jest.fn().mockReturnValue([TITLE_COLUMN, LANGUAGE_COLUMN, STATUS_COLUMN]),
-        staticColumns: jest.fn().mockReturnValue(2),
-        totalPages: jest.fn().mockReturnValue(1),
-        pagination: jest.fn().mockReturnValue({ offset: 0, currentPage: 1, rowsPerPage: 6 }),
-        showThumbnail: jest.fn().mockReturnValue(false),
-        isDisabledCreateNewContent: jest.fn().mockReturnValue(false),
-        isNewEditorEnabled: jest.fn().mockReturnValue(true),
-        selectionMode: jest.fn().mockReturnValue('multiple'),
-        contentType: jest.fn().mockReturnValue({ id: 'ct-1' }),
-        formattedRelationship: jest.fn().mockReturnValue('id-1'),
-        lastChangeSource: jest.fn().mockReturnValue('load'),
+        data: vi.fn().mockReturnValue([buildItem()]),
+        paginatedData: vi.fn().mockReturnValue([buildItem()]),
+        columns: vi.fn().mockReturnValue([TITLE_COLUMN, LANGUAGE_COLUMN, STATUS_COLUMN]),
+        staticColumns: vi.fn().mockReturnValue(2),
+        totalPages: vi.fn().mockReturnValue(1),
+        pagination: vi.fn().mockReturnValue({ offset: 0, currentPage: 1, rowsPerPage: 6 }),
+        showThumbnail: vi.fn().mockReturnValue(false),
+        isDisabledCreateNewContent: vi.fn().mockReturnValue(false),
+        isNewEditorEnabled: vi.fn().mockReturnValue(true),
+        selectionMode: vi.fn().mockReturnValue('multiple'),
+        contentType: vi.fn().mockReturnValue({ id: 'ct-1' }),
+        formattedRelationship: vi.fn().mockReturnValue('id-1'),
+        lastChangeSource: vi.fn().mockReturnValue('load'),
         // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
-        flags: jest.fn().mockReturnValue({}),
-        initialize: jest.fn(),
-        setData: jest.fn(),
-        refreshItem: jest.fn(),
-        deleteItem: jest.fn(),
-        reorderData: jest.fn(),
-        nextPage: jest.fn(),
-        previousPage: jest.fn(),
+        flags: vi.fn().mockReturnValue({}),
+        initialize: vi.fn(),
+        setData: vi.fn(),
+        refreshItem: vi.fn(),
+        deleteItem: vi.fn(),
+        reorderData: vi.fn(),
+        nextPage: vi.fn(),
+        previousPage: vi.fn(),
         ...overrides
     });
 
@@ -179,16 +199,20 @@ describe('DotRelationshipFieldComponent', () => {
             provideHttpClientTesting(),
             mockProvider(DotMessageService, messageServiceMock),
             mockProvider(DotEditContentStore, {
-                contentType: jest.fn().mockReturnValue(null),
-                currentLocale: jest.fn().mockReturnValue(null),
-                isCopyingLocale: jest.fn().mockReturnValue(false),
-                contentlet: jest.fn().mockReturnValue(null),
-                translationSourceInode: jest.fn().mockReturnValue(null),
+                contentType: vi.fn().mockReturnValue(null),
+                currentLocale: vi.fn().mockReturnValue(null),
+                isCopyingLocale: vi.fn().mockReturnValue(false),
+                contentlet: vi.fn().mockReturnValue(null),
+                translationSourceInode: vi.fn().mockReturnValue(null),
                 // Every system language, which is what the endpoint behind this slice returns.
-                locales: jest.fn().mockReturnValue([ENGLISH_LANGUAGE, SPANISH_LANGUAGE])
+                locales: vi.fn().mockReturnValue([ENGLISH_LANGUAGE, SPANISH_LANGUAGE])
             }),
             mockProvider(DialogService, {
-                open: jest.fn()
+                // The component pipes `dialogRef.onClose` straight after open(), so a
+                // bare vi.fn() returning undefined made it dereference nothing. An
+                // EMPTY onClose keeps the dialog open forever from the component's point
+                // of view, which is what "opened and not yet closed" means here.
+                open: vi.fn().mockReturnValue({ onClose: EMPTY })
             }),
             { provide: EDIT_CONTENT_HOST, useFactory: () => hostStub }
         ]
@@ -240,10 +264,10 @@ describe('DotRelationshipFieldComponent', () => {
     describe('Empty state', () => {
         beforeEach(() =>
             setup({
-                data: jest.fn().mockReturnValue([]),
-                paginatedData: jest.fn().mockReturnValue([]),
-                totalPages: jest.fn().mockReturnValue(0),
-                formattedRelationship: jest.fn().mockReturnValue('')
+                data: vi.fn().mockReturnValue([]),
+                paginatedData: vi.fn().mockReturnValue([]),
+                totalPages: vi.fn().mockReturnValue(0),
+                formattedRelationship: vi.fn().mockReturnValue('')
             })
         );
 
@@ -268,7 +292,7 @@ describe('DotRelationshipFieldComponent', () => {
         it('wires the "New content" menu item to the create-new action', () => {
             // The menu item is the user-facing trigger; verify it calls the action (rather than
             // only exercising the method directly elsewhere).
-            const createSpy = jest
+            const createSpy = vi
                 .spyOn(spectator.component, 'showCreateNewContentDialog')
                 .mockResolvedValue();
 
@@ -279,12 +303,12 @@ describe('DotRelationshipFieldComponent', () => {
 
         it('opens the create-new content in the centered dialog when the side panel flag is off', async () => {
             const dialogService = spectator.inject(DialogService);
-            (dialogService.open as jest.Mock).mockClear();
+            (dialogService.open as Mock).mockClear();
 
             await spectator.component.showCreateNewContentDialog();
 
             expect(dialogService.open).toHaveBeenCalledTimes(1);
-            const [, config] = (dialogService.open as jest.Mock).mock.calls[0];
+            const [, config] = (dialogService.open as Mock).mock.calls[0];
             expect(config.data).toEqual(
                 expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
             );
@@ -292,7 +316,7 @@ describe('DotRelationshipFieldComponent', () => {
 
         it('opens the create-new content in the side panel when the flag is on', async () => {
             const dialogService = spectator.inject(DialogService);
-            (dialogService.open as jest.Mock).mockClear();
+            (dialogService.open as Mock).mockClear();
             storeMock.flags.mockReturnValue({
                 [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
             });
@@ -307,7 +331,7 @@ describe('DotRelationshipFieldComponent', () => {
 
         it('falls back to the centered dialog when the flag slice has not resolved', async () => {
             const dialogService = spectator.inject(DialogService);
-            (dialogService.open as jest.Mock).mockClear();
+            (dialogService.open as Mock).mockClear();
             // Empty slice = withFlags degraded on a failed config read, or a click before it
             // resolved. Either way the create-new action must not be a silent no-op: fall back to
             // the centered dialog (previous behavior).
@@ -316,7 +340,7 @@ describe('DotRelationshipFieldComponent', () => {
             await spectator.component.showCreateNewContentDialog();
 
             expect(dialogService.open).toHaveBeenCalledTimes(1);
-            const [, config] = (dialogService.open as jest.Mock).mock.calls[0];
+            const [, config] = (dialogService.open as Mock).mock.calls[0];
             expect(config.data).toEqual(
                 expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
             );
@@ -373,10 +397,10 @@ describe('DotRelationshipFieldComponent', () => {
     describe('Disabled state', () => {
         beforeEach(() => {
             setup({
-                data: jest.fn().mockReturnValue([]),
-                paginatedData: jest.fn().mockReturnValue([]),
-                totalPages: jest.fn().mockReturnValue(0),
-                formattedRelationship: jest.fn().mockReturnValue('')
+                data: vi.fn().mockReturnValue([]),
+                paginatedData: vi.fn().mockReturnValue([]),
+                totalPages: vi.fn().mockReturnValue(0),
+                formattedRelationship: vi.fn().mockReturnValue('')
             });
             spectator.component.setDisabledState(true);
             spectator.detectChanges();
@@ -409,7 +433,7 @@ describe('DotRelationshipFieldComponent', () => {
 
     describe('Summary template', () => {
         it('should not render hint or error text inside the table summary', () => {
-            setup({ totalPages: jest.fn().mockReturnValue(1) });
+            setup({ totalPages: vi.fn().mockReturnValue(1) });
 
             const hint = spectator.query(byTestId(`hint-${FIELD_MOCK.variable}`));
             expect(hint).toBeFalsy();
@@ -420,8 +444,8 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() => setup());
 
         it('should register the onChange/onTouched callbacks without throwing', () => {
-            const onChangeSpy = jest.fn();
-            const onTouchedSpy = jest.fn();
+            const onChangeSpy = vi.fn();
+            const onTouchedSpy = vi.fn();
 
             expect(() => {
                 spectator.component.registerOnChange(onChangeSpy);
@@ -444,20 +468,20 @@ describe('DotRelationshipFieldComponent', () => {
         // 'load' sync (initial load / locale re-init) must NOT, so a required empty
         // field shows no validation error on render and the unsaved-changes guard
         // does not fire on a content the user never touched.
-        let onChangeSpy: jest.Mock;
-        let onTouchedSpy: jest.Mock;
+        let onChangeSpy: Mock;
+        let onTouchedSpy: Mock;
 
         const setupWithSource = (source: 'load' | 'user') => {
             setup({
-                data: jest.fn().mockReturnValue([]),
-                paginatedData: jest.fn().mockReturnValue([]),
-                totalPages: jest.fn().mockReturnValue(0),
-                formattedRelationship: jest.fn().mockReturnValue(''),
-                lastChangeSource: jest.fn().mockReturnValue(source)
+                data: vi.fn().mockReturnValue([]),
+                paginatedData: vi.fn().mockReturnValue([]),
+                totalPages: vi.fn().mockReturnValue(0),
+                formattedRelationship: vi.fn().mockReturnValue(''),
+                lastChangeSource: vi.fn().mockReturnValue(source)
             });
 
-            onChangeSpy = jest.fn();
-            onTouchedSpy = jest.fn();
+            onChangeSpy = vi.fn();
+            onTouchedSpy = vi.fn();
             spectator.component.registerOnChange(onChangeSpy);
             spectator.component.registerOnTouched(onTouchedSpy);
         };
@@ -485,8 +509,8 @@ describe('DotRelationshipFieldComponent', () => {
 
     describe('openRelated (navigate to related content)', () => {
         const CURRENT = { inode: 'current-inode', title: 'Current content' };
-        let host: { goToRelatedContent: jest.Mock; goToCrumb: jest.Mock };
-        let editStore: { contentlet: jest.Mock; translationSourceInode: jest.Mock };
+        let host: { goToRelatedContent: Mock; goToCrumb: Mock };
+        let editStore: { contentlet: Mock; translationSourceInode: Mock };
 
         beforeEach(() => {
             setup();
@@ -494,7 +518,7 @@ describe('DotRelationshipFieldComponent', () => {
             editStore = spectator.inject(DotEditContentStore) as never;
             editStore.contentlet.mockReturnValue(CURRENT);
             editStore.translationSourceInode.mockReturnValue(null);
-            // The mock's jest.fn is created once in the factory config and shared
+            // The mock's vi.fn is created once in the factory config and shared
             // across tests, so reset call counts here.
             host.goToRelatedContent.mockClear();
             host.goToCrumb.mockClear();
@@ -574,7 +598,7 @@ describe('DotRelationshipFieldComponent', () => {
             title: 'Related content'
         });
 
-        let host: { goToRelatedContent: jest.Mock; goToCrumb: jest.Mock };
+        let host: { goToRelatedContent: Mock; goToCrumb: Mock };
 
         /**
          * Mounts the field as it is presented in one of the two editor chromes. `inPlaceNavigation`
@@ -592,21 +616,19 @@ describe('DotRelationshipFieldComponent', () => {
             hostStub.inPlaceNavigation = inPlaceNavigation;
 
             setup({
-                flags: jest
+                flags: vi
                     .fn()
                     .mockReturnValue(
                         sidePanelEnabled
                             ? { [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true }
                             : {}
                     ),
-                data: jest.fn().mockReturnValue([RELATED]),
-                paginatedData: jest.fn().mockReturnValue([RELATED])
+                data: vi.fn().mockReturnValue([RELATED]),
+                paginatedData: vi.fn().mockReturnValue([RELATED])
             });
 
             host = spectator.inject(EDIT_CONTENT_HOST) as never;
-            (spectator.inject(DotEditContentStore).contentlet as jest.Mock).mockReturnValue(
-                CURRENT
-            );
+            (spectator.inject(DotEditContentStore).contentlet as Mock).mockReturnValue(CURRENT);
             host.goToRelatedContent.mockClear();
             host.goToCrumb.mockClear();
         };

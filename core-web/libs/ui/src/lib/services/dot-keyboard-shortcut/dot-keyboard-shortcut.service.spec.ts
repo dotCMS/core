@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotKeyboardShortcutService } from './dot-keyboard-shortcut.service';
 import { DotKeyboardShortcut, DotKeyboardShortcutUnregister } from './models';
@@ -10,11 +10,8 @@ describe('DotKeyboardShortcutService', () => {
 
     const createService = createServiceFactory(DotKeyboardShortcutService);
 
-    /**
-     * `jest` here comes from `@jest/globals`, so a bare `jest.fn()` is `Mock<UnknownFunction>` and
-     * returns `unknown`, which is not assignable to a handler's `boolean | void`.
-     */
-    const handlerMock = () => jest.fn<(event: KeyboardEvent) => boolean | void>();
+    /** A bare `vi.fn()` returns `any`; the explicit signature keeps the handler contract. */
+    const handlerMock = () => vi.fn<(event: KeyboardEvent) => boolean | void>();
 
     /**
      * Registrations made through this are withdrawn after every test.
@@ -242,7 +239,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should restore the claims a batch was shadowing when it is withdrawn', () => {
-            const portletSearch = jest.fn();
+            const portletSearch = vi.fn();
             register({ combination: 'mod+k', label: 'portlet search', handler: portletSearch });
 
             const dialogSearch = handlerMock();
@@ -344,7 +341,7 @@ describe('DotKeyboardShortcutService', () => {
     describe('declining', () => {
         it('should fall through to the previous claimant when the newest declines', () => {
             const first = handlerMock();
-            const second = jest.fn(() => false);
+            const second = vi.fn(() => false);
             register({ combination: 'mod+k', label: 'search', handler: first });
             register({ combination: 'mod+k', label: 'search', handler: second });
 
@@ -634,7 +631,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should report the failure with the shortcut that caused it', () => {
-            const reported = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
             register({ combination: 'mod+k', label: 'broken', handler: boom });
 
             pressModK();
@@ -647,7 +644,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should leave the browser default alone when every claimant throws', () => {
-            jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
             register({ combination: 'mod+k', label: 'broken', handler: boom });
 
             const event = pressModK();
@@ -656,7 +653,7 @@ describe('DotKeyboardShortcutService', () => {
         });
 
         it('should not break the next press', () => {
-            jest.spyOn(console, 'error').mockImplementation(() => undefined);
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
             const withdraw = service.register({
                 combination: 'mod+k',
                 label: 'broken',

@@ -1,5 +1,6 @@
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DOT_AI_VECTOR_OPERATOR } from '@dotcms/dotcms-models';
 
@@ -32,16 +33,16 @@ describe('withDotAiPreferences', () => {
 
     const settleWrite = () => {
         spectator.flushEffects();
-        jest.advanceTimersByTime(400);
+        vi.advanceTimersByTime(400);
     };
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         localStorage.clear();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
         localStorage.clear();
     });
 
@@ -121,7 +122,7 @@ describe('withDotAiPreferences', () => {
         // is a synchronous localStorage round trip.
         spectator = createService();
         startTracking();
-        const setItem = jest.spyOn(Storage.prototype, 'setItem');
+        const setItem = vi.spyOn(Storage.prototype, 'setItem');
 
         spectator.service.setSettings({ settingsThreshold: 0.3 });
         spectator.flushEffects();

@@ -1,6 +1,7 @@
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -42,9 +43,7 @@ describe('withAiIndexes', () => {
     });
 
     const stubIndexes = (indexes: DotAiIndex[]) => {
-        spectator.inject(DotAiEmbeddingsService).getIndexes = jest
-            .fn()
-            .mockReturnValue(of(indexes));
+        spectator.inject(DotAiEmbeddingsService).getIndexes = vi.fn().mockReturnValue(of(indexes));
     };
 
     it('should load the indexes', () => {
@@ -75,7 +74,7 @@ describe('withAiIndexes', () => {
 
     describe('403 (FR-049, FR-050)', () => {
         it('should enter a forbidden state rather than surfacing an error dialog', () => {
-            spectator.inject(DotAiEmbeddingsService).getIndexes = jest
+            spectator.inject(DotAiEmbeddingsService).getIndexes = vi
                 .fn()
                 .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
 
@@ -87,7 +86,7 @@ describe('withAiIndexes', () => {
 
         it('should still route other failures through the error manager', () => {
             const error = new HttpErrorResponse({ status: 500 });
-            spectator.inject(DotAiEmbeddingsService).getIndexes = jest
+            spectator.inject(DotAiEmbeddingsService).getIndexes = vi
                 .fn()
                 .mockReturnValue(throwError(() => error));
 
@@ -149,15 +148,15 @@ describe('withAiIndexes', () => {
     });
 
     describe('polling while a build is outstanding (FR-027)', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should not talk to the server while nothing is building', () => {
             stubIndexes([index({ name: 'blogs' })]);
             store.loadIndexes();
             spectator.flushEffects();
 
-            jest.advanceTimersByTime(20000);
+            vi.advanceTimersByTime(20000);
 
             // Only the explicit load — an idle screen must stay quiet.
             expect(spectator.inject(DotAiEmbeddingsService).getIndexes).toHaveBeenCalledTimes(1);
@@ -171,21 +170,21 @@ describe('withAiIndexes', () => {
 
             // Count still moving, so still building.
             stubIndexes([index({ name: 'blogs', fragments: 20 })]);
-            jest.advanceTimersByTime(5000);
+            vi.advanceTimersByTime(5000);
             expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
 
             // Unchanged: the build has finished and the poll must unsubscribe itself.
             stubIndexes([index({ name: 'blogs', fragments: 20 })]);
-            jest.advanceTimersByTime(5000);
+            vi.advanceTimersByTime(5000);
             expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.READY);
             spectator.flushEffects();
 
-            const calls = (spectator.inject(DotAiEmbeddingsService).getIndexes as jest.Mock).mock
-                .calls.length;
-            jest.advanceTimersByTime(20000);
+            const calls = (spectator.inject(DotAiEmbeddingsService).getIndexes as Mock).mock.calls
+                .length;
+            vi.advanceTimersByTime(20000);
 
             expect(
-                (spectator.inject(DotAiEmbeddingsService).getIndexes as jest.Mock).mock.calls.length
+                (spectator.inject(DotAiEmbeddingsService).getIndexes as Mock).mock.calls.length
             ).toBe(calls);
         });
     });

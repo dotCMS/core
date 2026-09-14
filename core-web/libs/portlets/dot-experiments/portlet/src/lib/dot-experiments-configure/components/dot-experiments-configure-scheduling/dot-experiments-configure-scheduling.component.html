@@ -27,7 +27,7 @@
                     styleClass="w-full"
                     [formField]="$field().startDate"
                     [defaultDate]="$bounds().initialStartDate"
-                    [minDate]="$bounds().initialStartDate"
+                    [minDate]="$startMinDate()"
                     [showTime]="true"
                     [showIcon]="true"
                     [showClear]="true"
@@ -54,8 +54,8 @@
                     styleClass="w-full"
                     [formField]="$field().endDate"
                     [defaultDate]="$bounds().minEndDate"
-                    [minDate]="$bounds().minEndDate"
-                    [maxDate]="$bounds().maxEndDate"
+                    [minDate]="$endMinDate()"
+                    [maxDate]="$endMaxDate()"
                     [showTime]="true"
                     [showIcon]="true"
                     [showClear]="true"
@@ -78,10 +78,7 @@
             data-testid="experiments-configure-scheduling-note">
             <span class="text-sm text-surface-600">
                 @if ($startDate(); as startDate) {
-                    {{
-                        'experiments.configure.scheduling.note.scheduled'
-                            | dm: [(startDate | date: 'medium') ?? '']
-                    }}
+                    {{ $startNoteKey() | dm: [(startDate | date: 'medium') ?? ''] }}
                 } @else {
                     {{ 'experiments.configure.scheduling.note.immediate' | dm }}
                 }
