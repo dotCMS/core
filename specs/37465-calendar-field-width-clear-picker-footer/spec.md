@@ -46,10 +46,11 @@ All three field types are rendered by the **same** field component, so one chang
 ### Relationship to #37464
 
 [#37464](https://github.com/dotCMS/core/issues/37464) (*Standardize field hint and required-error
-presentation*) is **open and unstarted** — it has no spec and no branch. It contains one criterion
-saying that when a Date/Time field has both a timezone and a hint, only the hint is shown. This
-feature **removes the timezone from the field footer entirely**, so that collision cannot occur and
-that criterion becomes moot.
+presentation*) is **open and unstarted** — it has no spec and no branch. Four passages in its
+description are written around the timezone line that currently sits under the input: how it
+collides with a hint, how it renders without one, a test for that collision, and a refinement-table
+row deciding it. This feature **removes that line entirely**, so all four describe an element that
+will no longer be on the screen.
 
 This spec assumes **#37465 lands first**. On merge, the now-moot criterion must be withdrawn from
 #37464 — see [FR-016](#fr-016). If #37464 lands first instead, this spec's FR-008/FR-009 still
@@ -215,7 +216,18 @@ right edges at several viewport widths.
 
 #### Cross-issue bookkeeping
 
-- **FR-016**: On merge, the criterion in #37464 governing the timezone-versus-hint collision MUST be withdrawn from that issue, since FR-009 removes the collision. *(Bookkeeping, not code — see [Relationship to #37464](#relationship-to-37464). Withdrawal from a GitHub issue requires developer approval; this requirement records the obligation, it does not authorize the edit.)*
+- **FR-016**: On merge, **four** passages MUST be withdrawn from #37464's description. FR-009 removes the timezone line from under the input, so each of them instructs a future implementer to reconcile an element that will no longer be on the screen:
+
+  | Where in #37464 | Passage to withdraw |
+  |---|---|
+  | *Acceptance Criteria → Date and time (mock reference)* | "When a Date/Time field has **both** a timezone line and a hint, only the **hint** is shown — the timezone line is dropped." |
+  | *Acceptance Criteria → Date and time (mock reference)* | "When a Date/Time field has a timezone and **no** hint, the timezone line renders as it does today." |
+  | *Acceptance Criteria → Tests* | "A test asserts the Date/Time timezone-plus-hint case shows the hint only." |
+  | *Resolved during refinement* table | Row "Date/Time with both timezone and hint → Show the **hint only**" |
+
+  The issue's own text calls for this — *"Whichever issue lands second should drop the now-moot criterion from the other"* — but names it in the singular; the verified count is four. All four MUST go together: withdrawing only the collision criterion would leave the other three describing the same absent element.
+
+  *(Bookkeeping, not code. It edits the description of a **different** GitHub issue, changes nothing in this repository, and happens after merge — see [Relationship to #37464](#relationship-to-37464). Editing a GitHub issue requires developer approval; this requirement records the obligation, it does not authorize the edit.)*
 
 #### Preserved behaviour
 
