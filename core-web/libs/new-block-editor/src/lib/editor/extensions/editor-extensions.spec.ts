@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 import type { Injector } from '@angular/core';
 
 import { Extension, flattenExtensions, getSchema } from '@tiptap/core';
+import Link from '@tiptap/extension-link';
 import { Node as PMNode } from '@tiptap/pm/model';
 
 import type { DotMessageService } from '@dotcms/data-access';
@@ -177,13 +178,21 @@ describe('createEditorExtensions', () => {
             expect(doc.firstChild?.firstChild?.type.name).toBe('emoji');
         });
 
-        // The schema keeps the extensions so stored content loads; for `link`, these flags are
-        // what actually enforce the restriction, alongside the toolbar's `@if (isAllowed(...))`.
-        it('disables the implicit LINK authoring paths when the block is not allowed', () => {
+        /**
+         * #36351 — this assertion is the INVERSE of what it was, for the same reason the emoji
+         * one below is.
+         *
+         * `link` is not selectable in Allowed Blocks either, so `has('link')` was true ONLY on a
+         * field with no restriction at all. Restricting any block silently disabled auto-linking
+         * and link-on-paste — and hid the toolbar button — with no admin having chosen it and no
+         * control anywhere to undo it. The gate could only ever misfire, so it is gone; these
+         * flags are now unconditional.
+         */
+        it('keeps the implicit LINK authoring paths on a restricted field', () => {
             const extensions = restricted();
 
-            expect(byName(extensions, 'link')?.options.autolink).toBe(false);
-            expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(false);
+            expect(byName(extensions, 'link')?.options.autolink).toBe(true);
+            expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(true);
         });
 
         /**
@@ -303,45 +312,37 @@ describe('createEditorExtensions', () => {
     });
 
     /**
-     * #37175 AC3 — `linkOnPaste: false` alone did not close the link-on-paste path: TipTap's
-     * Link returns its URL paste rule ungated, so pasting text containing a URL still created
-     * a link mark on a field where `link` is not allowed. `DotLink` overrides `addPasteRules`.
+     * #36351 — the replacement for the `#37175 AC3` describe that used to live here.
+     *
+     * That block tested `DotLink.addPasteRules()`, an override which suppressed TipTap's URL
+     * paste rule whenever `link` was not an allowed block. #37175 added it because
+     * `linkOnPaste: false` alone did not close the link-on-paste path. #36351 removes the gate
+     * that fed it, so the override is gone and with it the only dotCMS code those tests could
+     * exercise — what remains is upstream TipTap's own paste rule, which is not ours to test.
+     *
+     * What IS still worth pinning is that `DotLink` does not reintroduce a suppression. This is
+     * structural on purpose: a behavioural test would have to drive a real paste through
+     * ProseMirror to assert a rule that upstream already guarantees, while this fails the moment
+     * someone adds an `addPasteRules` override again — which is exactly the regression to catch.
+     *
+     * The authoring-path flags themselves are covered above by
+     * `keeps the implicit LINK authoring paths on a restricted field`.
      */
-    describe('link-on-paste follows the authoring gate (#37175 AC3)', () => {
-        const pasteRulesFor = (allowedBlocks: string[] | undefined) => {
-            const link = flattenExtensions(
-                createEditorExtensions(menuService, allowedBlocks, injector, messageService)
-            ).find((ext) => ext.name === 'link');
-
-            return link?.config.addPasteRules?.call({
-                options: link.options,
-                parent: () => [{ find: /url/, handler: () => undefined }]
-            });
-        };
-
-        it('drops the URL paste rule when link is not an allowed block', () => {
-            expect(pasteRulesFor(['bulletList', 'orderedList'])).toEqual([]);
+    describe('link-on-paste is never gated (#36351)', () => {
+        it('does not override the base paste rules', () => {
+            expect(DotLink.config.addPasteRules).toBe(Link.config.addPasteRules);
         });
 
-        it('keeps the URL paste rule on an unrestricted field', () => {
-            expect(pasteRulesFor(undefined)).toHaveLength(1);
-        });
+        it('leaves the authoring flags on regardless of allowedBlocks', () => {
+            const linkFor = (allowedBlocks: string[] | undefined) =>
+                flattenExtensions(
+                    createEditorExtensions(menuService, allowedBlocks, injector, messageService)
+                ).find((ext) => ext.name === 'link');
 
-        /**
-         * The rule being suppressed is the auto-link-on-paste rule, so it follows `autolink`
-         * too — not `linkOnPaste` alone. `createEditorExtensions()` sets both from the same
-         * `has('link')` and cannot produce this combination, which is exactly why it needs
-         * pinning: nothing else would catch the gate silently killing the linkifying.
-         */
-        it('keeps the URL paste rule when only autolink is enabled', () => {
-            const link = DotLink.configure({ autolink: true, linkOnPaste: false });
-
-            expect(
-                link.config.addPasteRules?.call({
-                    options: link.options,
-                    parent: () => [{ find: /url/, handler: () => undefined }]
-                })
-            ).toHaveLength(1);
+            for (const allowedBlocks of [undefined, ['bulletList', 'orderedList'], ['image']]) {
+                expect(linkFor(allowedBlocks)?.options.autolink).toBe(true);
+                expect(linkFor(allowedBlocks)?.options.linkOnPaste).toBe(true);
+            }
         });
     });
 });
