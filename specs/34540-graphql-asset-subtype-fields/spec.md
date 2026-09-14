@@ -117,6 +117,10 @@ and confirm they match the asset's own record.
 ### Edge Cases
 
 - An Image or File field that is empty must return an explicit empty result, not an error.
+- A client narrowing to a type the asset is not must receive the rest of its data plus a warning,
+  never a failed request (FR-016) — whereas naming a type that does not exist must fail (FR-017).
+- A client narrowing to both the base kind and the specific type in one request must receive one
+  merged object, not two partial ones (FR-018).
 - A field that points at an asset that has since been archived or deleted must degrade
   predictably rather than failing the whole query.
 - A field pointing at an asset in a language the request did not ask for must follow the same
@@ -173,6 +177,18 @@ and confirm they match the asset's own record.
   without descending a level — MUST be re-raised as a second, separately tracked stage of issue
   #34540, delivered after this one. Issue #34540 MUST remain open after this feature ships,
   carrying that remaining scope, so it is not lost.
+- **FR-015**: The properties shared by every asset MUST be selectable **both** directly on an
+  asset-pointing field and inside a clause that narrows to a specific type, without the client
+  having to repeat itself or choose one place over the other.
+- **FR-016**: A clause that narrows to a type the returned asset does not happen to be MUST NOT
+  fail the request. It contributes nothing and the rest of the response is delivered normally.
+  The response MUST additionally carry a non-fatal warning naming the clause that matched nothing,
+  so a client can tell "this asset wasn't that type" apart from "I named the wrong type".
+- **FR-017**: A clause that narrows to a type that does not exist at all MUST fail the request.
+  This is a client mistake with no valid reading, and failing loudly is correct.
+- **FR-018**: When more than one clause applies to the same returned asset — one narrowing to its
+  base kind and another to its specific type — their properties MUST merge into a single result
+  object, with no precedence rule needed and no duplication.
 - **FR-014**: The existing automated check that locks the current shape of an asset-pointing field
   MUST be corrected as part of this work. It currently asserts that the asset view exposes *no
   property other than* the six it has today, while being named as though it asserts those six are
@@ -281,6 +297,19 @@ on each of the following, all of which are visible in the PR as it stands:
 view. This feature replaces that fixed view with per-type descriptions, which is how FR-001 and
 FR-003 get satisfied — so those twelve properties do not come along, and the queries #35363
 enables would stop working unless carried over.
+
+### Depth of the type hierarchy
+
+Verified by introspection against a running instance: the hierarchy an asset-pointing field
+exposes is exactly **two levels deep, always** — the asset's base kind, then its specific content
+type. It cannot grow deeper, because a dotCMS content type may only extend one of the fixed base
+types; it can never extend another content type. The base kind is a plain shared description that
+itself sits under nothing, and a specific type names its shared descriptions side by side, not
+nested.
+
+So a client never faces a chain of narrowing clauses. It faces at most one clause for the base
+kind and one for the specific type, and per FR-018 those merge. A deeper case does not arise and
+the design need not account for one.
 
 ### Decision: this feature supersedes PR #35363
 
