@@ -693,6 +693,37 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(button?.disabled).toBe(true);
         });
 
+        it('should stay disabled when several actions are running at once', async () => {
+            // `toolbarRun` names a run only when there is exactly one: with several it is
+            // deliberately undefined so the indicator falls back to a count rather than naming one
+            // arbitrarily. Gating on its truthiness therefore un-gated the button exactly when the
+            // most was happening — and this branch makes that reachable, because a backgrounded
+            // upload outlives its request and can sit alongside a second run.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should still explain itself when several actions are running at once', async () => {
+            // The tooltip is the only thing that says why the button cannot be used, so it has to
+            // survive the same case rather than going quiet when there is more to explain.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe(
+                'content-drive.action-center.busy'
+            );
+        });
+
         it('should explain why it is disabled while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
@@ -729,7 +760,10 @@ describe('DotContentDriveToolbarComponent', () => {
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
+            // A settled run leaves neither a name nor a count. Clearing only the name described a
+            // state the store cannot be in, and passed only while the gate read the name.
             actionExecutionSignal.set(undefined);
+            activeRunCountSignal.set(0);
             spectator.detectChanges();
 
             const button = spectator

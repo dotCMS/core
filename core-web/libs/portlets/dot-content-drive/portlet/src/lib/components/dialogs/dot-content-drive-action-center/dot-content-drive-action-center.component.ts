@@ -278,7 +278,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * local signal would reset to `false` on the new instance and let the same action be fired twice
      * over the same rows.
      */
-    protected readonly $executing = computed(() => !!this.#store.actionExecution());
+    protected readonly $executing = computed(() => this.#store.activeRunCount() > 0);
     /**
      * Which screen is showing.
      *

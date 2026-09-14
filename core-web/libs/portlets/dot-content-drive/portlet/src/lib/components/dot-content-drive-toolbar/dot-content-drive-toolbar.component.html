@@ -64,7 +64,7 @@
                             animate.enter="toolbar-enter"
                             animate.leave="toolbar-leave"
                             [label]="'content-drive.action-center.header' | dm"
-                            [disabled]="!!$actionExecution()"
+                            [disabled]="$hasRunInFlight()"
                             [pTooltip]="$actionCenterTooltip() | dm"
                             data-testid="action-center-button"
                             (click)="onOpenActionCenter()" />

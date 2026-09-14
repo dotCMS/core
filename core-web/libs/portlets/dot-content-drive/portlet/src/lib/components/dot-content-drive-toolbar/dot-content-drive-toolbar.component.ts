@@ -465,7 +465,10 @@ export class DotContentDriveToolbarComponent {
     protected onOpenActionCenter(): void {
         // The button is disabled during a run, but the guard lives here too: a disabled attribute
         // is a UI affordance, not a lock on the store.
-        if (this.$actionExecution()) {
+        //
+        // Counted rather than read off `$actionExecution`: that one names a run only when there is
+        // exactly one, so gating on it let the dialog open precisely when several were in flight.
+        if (this.$hasRunInFlight()) {
             return;
         }
 
@@ -485,7 +488,7 @@ export class DotContentDriveToolbarComponent {
      * run while one is in flight.
      */
     readonly $actionCenterTooltip = computed(() =>
-        this.$actionExecution() ? 'content-drive.action-center.busy' : ''
+        this.$hasRunInFlight() ? 'content-drive.action-center.busy' : ''
     );
 
     /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */

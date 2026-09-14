@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
-import { Observable, of as observableOf, of } from 'rxjs';
+import { Observable, of as observableOf, of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -241,6 +241,29 @@ describe('DotPushPublishDialogComponent', () => {
                 expect(comp.cancel.emit).toHaveBeenCalled();
                 expect(comp.dialogShow).toEqual(false);
                 expect(comp.eventData).toEqual(null);
+            });
+
+            it('should still call back when the dialog is closed before the push answers', () => {
+                // `close()` clears `eventData`, and the callback was read off it inside the
+                // subscribe — so closing while the request was in flight dropped the callback on a
+                // push that then succeeded. The caller never learns its content went out. Same
+                // shape if a second `showDialog` replaces the data first, since the service is
+                // `providedIn: 'root'` and there is one dialog for the whole app.
+                const answer = new Subject<DotAjaxActionResponseView>();
+                vi.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                    answer.asObservable()
+                );
+                const onSuccess = vi.fn();
+
+                comp.eventData = { ...publishData, onSuccess };
+                comp.formData = mockFormValue;
+                comp.formValid = true;
+                comp.submitPushAction();
+
+                comp.close();
+                answer.next({ errors: 0 } as unknown as DotAjaxActionResponseView);
+
+                expect(onSuccess).toHaveBeenCalled();
             });
 
             it('should submit on accept with assetIdentifier and bundle', () => {

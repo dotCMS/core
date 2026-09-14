@@ -112,6 +112,13 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     submitPushAction(): void {
         if (this.formValid) {
             this.isSaving = true;
+            // Captured before the request, not read after it. `close()` clears `eventData`, and
+            // there is one dialog for the whole app (the service is `providedIn: 'root'`), so both
+            // closing mid-flight and a second `showDialog` left the subscribe reading data that no
+            // longer belonged to the push it was answering — dropping the callback on a push that
+            // then succeeded, with the caller never learning its content went out.
+            const onSuccess = this.eventData?.onSuccess;
+
             this.pushPublishService
                 .pushPublishContent(
                     this.eventData.assetIdentifier,
@@ -124,7 +131,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                     if (!result?.errors) {
                         // The caller decides what to say, if anything; this dialog stays free of a
                         // messaging concern it cannot satisfy everywhere it is opened.
-                        this.eventData?.onSuccess?.();
+                        onSuccess?.();
                         this.close();
                     } else {
                         this.errorMessage = result.errors;
