@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.TransformerLocator;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -25,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 
@@ -100,6 +102,35 @@ public class UserFactoryImpl implements UserFactory {
         return defaultUser;
     }
 
+    /**
+     * Counts how many times {@link #loadUserById(String)} has actually queried the database
+     * (i.e. every cache miss), so tests can observe the thundering-herd fix for issue #37186
+     * (SC-001). No production code reads this — it exists purely to make DB round trips
+     * observable in unit/integration tests, since no query-counting harness existed before.
+     */
+    @VisibleForTesting
+    static final AtomicLong dbLookupCount = new AtomicLong(0);
+
+    @VisibleForTesting
+    static void incrementDbLookupCount() {
+        dbLookupCount.incrementAndGet();
+    }
+
+    /**
+     * Public (not package-private) despite {@code @VisibleForTesting}: the integration test for
+     * this counter lives in the separate {@code dotcms-integration} module, in package
+     * {@code com.dotcms.browser}, so package-private visibility would not reach it.
+     */
+    @VisibleForTesting
+    public static long getDbLookupCountForTesting() {
+        return dbLookupCount.get();
+    }
+
+    @VisibleForTesting
+    public static void resetDbLookupCountForTesting() {
+        dbLookupCount.set(0);
+    }
+
     @Override
     public User loadUserById(final String userId) throws DotDataException, NoSuchUserException {
         User user = userCache.get(userId);
@@ -110,6 +141,7 @@ public class UserFactoryImpl implements UserFactory {
                 dc.setSQL("select * from user_ where userid=?");
                 dc.addParam(userId.trim().toLowerCase());
                 List<Map<String, Object>> list = dc.loadObjectResults();
+                incrementDbLookupCount();
                 if(list.isEmpty()) {
                     throw new NoSuchUserException(userId);
                 }else{
