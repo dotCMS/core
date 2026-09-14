@@ -2327,6 +2327,24 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,id-2', BUNDLE);
         });
 
+        it('should mark the rows it is acting on, not the assets it is sending', () => {
+            // The request takes identifiers, because a bundle holds one entry per asset and the
+            // language versions of a contentlet are one entry. The *rows* are keyed by inode, so a
+            // run whose targets were identifiers marked nothing: the listing dimmed no row while
+            // the action ran, and a workflow run over the same rows was not refused, because the
+            // overlap check compares two vocabularies that never intersect.
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+
+            store.executeAddToBundle(
+                'Add to Bundle',
+                BUNDLE,
+                ['id-1', 'id-2'],
+                ['inode-1', 'inode-2']
+            );
+
+            expect(store.busyRows()).toEqual(['inode-1', 'inode-2']);
+        });
+
         it('should report the server count of assets queued, not the number sent', () => {
             // The server dedupes by identifier and drops anything already in the bundle, so `total`
             // can be lower than what was posted. Reporting the input would overstate the result.

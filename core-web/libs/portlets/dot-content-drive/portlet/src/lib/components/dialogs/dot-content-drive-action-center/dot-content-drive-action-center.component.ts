@@ -805,7 +805,10 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executeAddToBundle(
             this.#dotMessageService.get(quickAction.name),
             bundle,
-            identifiers
+            identifiers,
+            // The rows this is acting on. Sent alongside the identifiers because the two are
+            // different vocabularies: the request queues assets, the listing marks rows.
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }
@@ -828,7 +831,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executePushPublish(
             this.#dotMessageService.get(quickAction.name),
             identifiers,
-            settings
+            settings,
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }

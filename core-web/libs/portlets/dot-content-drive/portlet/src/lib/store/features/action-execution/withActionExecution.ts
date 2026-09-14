@@ -294,17 +294,30 @@ export function withActionExecution() {
                     actionName: string,
                     identifiers: string[],
                     request: () => Observable<DotAjaxActionResponseView>,
-                    noResultMessage: string
+                    noResultMessage: string,
+                    rowTargets: string[] = []
                 ): void => {
-                    if (!identifiers.length || isRunning(actionName, identifiers)) {
+                    // Falls back to the identifiers when a caller has no rows to name. Defaulting
+                    // to an empty list instead would key every run of this action to the same
+                    // string, so bundling one asset would refuse to bundle a different one — the
+                    // exact repeat-fire collision the key exists to make impossible.
+                    const targets = rowTargets.length ? rowTargets : identifiers;
+
+                    if (!identifiers.length || isRunning(actionName, targets)) {
                         return;
                     }
 
                     const runId = startRun({
                         operation: actionName,
                         actionName,
+                        // Counted in identifiers, because that is what the server queues: language
+                        // versions of one contentlet are one asset.
                         total: identifiers.length,
-                        targets: identifiers
+                        // Targeted by inode, because that is what a *row* is. These two actions are
+                        // the only ones whose request vocabulary differs from the listing's, and
+                        // registering the run under identifiers meant it marked no row and could
+                        // not overlap with an inode-keyed run over the same content.
+                        targets
                     });
 
                     request()
@@ -654,7 +667,8 @@ export function withActionExecution() {
                     executeAddToBundle: (
                         actionName: string,
                         bundle: DotBundle,
-                        identifiers: string[]
+                        identifiers: string[],
+                        inodes: string[] = []
                     ): void =>
                         fireLegacyServletBulk(
                             actionName,
@@ -662,7 +676,8 @@ export function withActionExecution() {
                             // Comma-joined: the servlet splits `assetIdentifier` on "," and has
                             // always accepted several ids that way, so bulk needs no new endpoint.
                             () => addToBundleService.addToBundle(identifiers.join(','), bundle),
-                            'Adding to the bundle returned no result'
+                            'Adding to the bundle returned no result',
+                            inodes
                         ),
 
                     /**
@@ -685,7 +700,8 @@ export function withActionExecution() {
                     executePushPublish: (
                         actionName: string,
                         identifiers: string[],
-                        settings: DotWorkflowPushPublishValue
+                        settings: DotWorkflowPushPublishValue,
+                        inodes: string[] = []
                     ): void =>
                         fireLegacyServletBulk(
                             actionName,
@@ -695,7 +711,8 @@ export function withActionExecution() {
                                     identifiers.join(','),
                                     settings
                                 ),
-                            'The push publish returned no result'
+                            'The push publish returned no result',
+                            inodes
                         ),
 
                     /**
@@ -780,7 +797,12 @@ export function withActionExecution() {
                     ): void => {
                         const tracked = store.uploadJobs();
 
-                        if (!event.jobId || !(event.jobId in tracked)) {
+                        // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
+                        // jobId of `constructor` or `toString` would read as tracked and destructure
+                        // an inherited member. Server ids are UUIDs so it is unreachable today, and
+                        // this is the shape the rest of the codebase already uses for a lookup keyed
+                        // by a value that did not come from here.
+                        if (!event.jobId || !Object.prototype.hasOwnProperty.call(tracked, event.jobId)) {
                             // Not ours: another tab's batch, or one already settled. Silent by
                             // design — an error here would blame this author for someone else's.
                             return;

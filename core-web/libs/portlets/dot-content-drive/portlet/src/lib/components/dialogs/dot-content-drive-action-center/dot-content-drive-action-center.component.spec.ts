@@ -1935,7 +1935,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-1', 'id-2'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
             expect(store.closeDialog).toHaveBeenCalled();
         });
@@ -1958,7 +1959,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-drop'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
         });
 
@@ -1983,7 +1985,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-1', 'folder-1'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
         });
 
@@ -2067,7 +2070,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
                 'id-1',
                 'id-2'
-            ]);
+            ], expect.any(Array));
         });
 
         it('should collapse language versions of the same content into one asset', () => {
@@ -2086,7 +2089,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
                 'id-1'
-            ]);
+            ], expect.any(Array));
         });
 
         it('should not fire a workflow action', () => {
@@ -2127,7 +2130,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
                 'id-2'
-            ]);
+            ], expect.any(Array));
         });
 
         it('should step back from the preview to the bundle step', () => {
