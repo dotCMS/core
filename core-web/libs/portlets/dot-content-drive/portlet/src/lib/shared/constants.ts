@@ -74,6 +74,16 @@ export const DEFAULT_PATH = undefined;
  */
 export const ROOT_PATH = '/';
 
+/**
+ * The location value that means System Host rather than a place inside the current site.
+ *
+ * A reserved word can never be mistaken for a folder, because every real path begins with `/` and
+ * this does not. That is what lets one value in the URL say all four things the sidebar can
+ * select — absent for all site content, `/` for the site root, a path for a folder, and this —
+ * without a second value beside it that could disagree.
+ */
+export const SYSTEM_HOST_PATH = 'SYSTEM_HOST';
+
 export const DEFAULT_PAGE: DotContentDrivePage = {
     hasMoreContent: true,
     hasMoreFolders: true,

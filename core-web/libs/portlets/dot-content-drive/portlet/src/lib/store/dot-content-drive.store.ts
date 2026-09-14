@@ -60,8 +60,10 @@ import {
     buildUserSearchablePayload,
     decodeFilters,
     getUserSearchableActive,
+    listsFolders,
     parseWorkflowFilter,
     sortedEncodedFilters,
+    toRequestLocation,
     withFilterDefaults
 } from '../utils/functions';
 
@@ -125,8 +127,14 @@ export const DotContentDriveStore = signalStore(
                             userSearchableFields()
                         );
 
+                        // One value says where the user is; this is where it becomes the two the
+                        // endpoint expects. Mapped rather than interpolated: pasting the location
+                        // into the path yields `//demo.dotcms.comSYSTEM_HOST` for a reserved word.
+                        const location = toRequestLocation(currentSite()?.hostname, path());
+
                         return {
-                            assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                            assetPath: location.assetPath,
+                            browseScope: location.browseScope,
                             // Off only when explicitly turned off. The key is seeded on every path
                             // that builds filters (see `withFilterDefaults`), so a missing one means
                             // state that predates the seeding, not a deliberate opt-out.
@@ -162,6 +170,9 @@ export const DotContentDriveStore = signalStore(
                             // and pinning it would contradict an Archived selection.
                             status: filters()?.status?.length ? filters()?.status : undefined,
                             showFolders:
+                                // Folders are not results in a listing that spans the whole site,
+                                // and System Host has none.
+                                listsFolders(location.browseScope) &&
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
