@@ -67,8 +67,13 @@ public class TempFileBatchStaging implements BatchStaging {
         try {
             final Optional<DotTempFile> tempFile =
                     APILocator.getTempFileAPI().getTempFile(request, tempFileId);
-            if (tempFile.isPresent() && tempFile.get().file.exists()
-                    && !tempFile.get().file.delete()) {
+            // delete() first and exists() only if it failed: delete() already answers false for a
+            // file that is not there, so the old order paid a stat call on the shared assets volume
+            // for every staged file to learn what the delete reports anyway. The exists() survives
+            // on the failure side so the warning still means "it is still there", not "it was
+            // already gone" — a warning nobody can act on is one nobody reads.
+            if (tempFile.isPresent() && !tempFile.get().file.delete()
+                    && tempFile.get().file.exists()) {
                 Logger.warn(this, "Could not delete staged content: " + tempFileId);
             }
         } catch (final Exception e) {
