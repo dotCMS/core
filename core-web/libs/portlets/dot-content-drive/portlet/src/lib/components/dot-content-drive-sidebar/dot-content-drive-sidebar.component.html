@@ -5,25 +5,22 @@
 -->
 <button
     type="button"
-    class="mt-5 flex w-full shrink-0 items-center gap-2 rounded-sm px-3 py-2 text-left"
+    class="p-tree-node-content mt-5 w-full shrink-0 cursor-pointer text-left"
     data-testid="all-site-content"
-    [attr.aria-selected]="$allSiteContentSelected()"
+    [class.p-tree-node-selected]="$allSiteContentSelected()"
+    [attr.aria-current]="$allSiteContentSelected() ? 'true' : null"
     (click)="onSelectAllSiteContent()">
     <i class="pi pi-list"></i>
     <span>{{ 'content-drive.sidebar.all-site-content' | dm }}</span>
 </button>
 
-<span class="shrink-0 px-3 text-xs uppercase" data-testid="site-hierarchy-label">
-    {{ 'content-drive.sidebar.site-hierarchy' | dm }}
-</span>
-
 <!--
-    The hierarchy is the only part of the column that scrolls. It loads lazily and grows as folders
-    are expanded, so anything placed after it in the flow would drift further out of reach with
-    every expansion; giving the tree its own overflow keeps whatever follows it exactly where it is,
-    with no sticky or fixed positioning involved.
+    The hierarchy is the only part of the column that scrolls, so anything placed after it stays
+    where it is however many folders are expanded — no sticky or fixed positioning involved. The
+    tree already carries its own `overflow-y-auto`, so this only has to give it a bounded height to
+    scroll within; adding a second scrolling box here would put two scrollbars in one column.
 -->
-<div class="min-h-0 flex-1 overflow-y-auto" data-testid="hierarchy-scroll">
+<div class="min-h-0 flex-1" data-testid="hierarchy-scroll">
     <dot-tree-folder
         #treeFolder
         [folders]="$folders()"
@@ -36,3 +33,19 @@
         (uploadFiles)="uploadFiles.emit($event)"
         (moveItems)="moveItems.emit($event)" />
 </div>
+
+<!--
+    Below the hierarchy, not inside it: System Host belongs to no site, so it reads as the other
+    place you can be rather than as part of this site's structure. It stays reachable however many
+    folders are expanded, because the hierarchy above it is what scrolls.
+-->
+<button
+    type="button"
+    class="p-tree-node-content w-full shrink-0 cursor-pointer text-left"
+    data-testid="system-host"
+    [class.p-tree-node-selected]="$systemHostSelected()"
+    [attr.aria-current]="$systemHostSelected() ? 'true' : null"
+    (click)="onSelectSystemHost()">
+    <i class="pi pi-cloud"></i>
+    <span>{{ 'content-drive.sidebar.system-host' | dm }}</span>
+</button>

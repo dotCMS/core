@@ -46,6 +46,7 @@ import {
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
@@ -668,7 +669,10 @@ export const DotContentDriveStore = signalStore(
          * Derived from the location rather than stored beside it: an absent location *is* what all
          * site content means, so a second piece of state saying so could only ever disagree.
          */
-        $allSiteContentSelected: computed(() => !path())
+        $allSiteContentSelected: computed(() => !path()),
+
+        /** Whether the sidebar's last entry, System Host, is the selected one. */
+        $systemHostSelected: computed(() => path() === SYSTEM_HOST_PATH)
     })),
     withComputed(({ selectedNode, siteCanAddChildren, $allSiteContentSelected }) => ({
         /**

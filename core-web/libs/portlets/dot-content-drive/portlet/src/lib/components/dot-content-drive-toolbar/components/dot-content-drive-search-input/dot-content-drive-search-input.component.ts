@@ -109,11 +109,13 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
      * A new search resets the folder scope: results are drive-wide, so leaving the tree pinned to
      * the previously selected folder would contradict what the list shows.
      *
-     * `selectRootNode()` rather than pinning a synthetic node: the tree's root is the real site
-     * row now (see `createSiteNode`), so there is no "All folders" node left to select.
+     * All site content is exactly that scope, and selecting it is now the honest way to say so.
+     * This used to select the tree's site row, with a comment regretting that there was no "All
+     * folders" node left to choose; there is one again, and the site row has since come to mean
+     * the root alone, which is narrower than what a search returns.
      */
     protected onSearch(term: string): void {
         this.#store.setGlobalSearch(term);
-        this.#store.selectRootNode();
+        this.#store.selectAllSiteContent();
     }
 }

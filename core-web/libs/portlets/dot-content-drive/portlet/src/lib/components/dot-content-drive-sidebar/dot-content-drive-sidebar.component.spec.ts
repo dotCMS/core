@@ -108,6 +108,7 @@ describe('DotContentDriveSidebarComponent', () => {
     // A real signal, not a vi.fn: the row's selected state is read in an OnPush template, so it
     // only re-renders when a signal it reads is invalidated. Same pattern the toolbar spec uses.
     const allSiteContentSelected = signal(false);
+    const systemHostSelected = signal(false);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveSidebarComponent,
@@ -140,7 +141,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 updateFolders: vi.fn(),
                 setSelectedNode: vi.fn(),
                 selectAllSiteContent: vi.fn(),
-                $allSiteContentSelected: allSiteContentSelected
+                selectSystemHost: vi.fn(),
+                $allSiteContentSelected: allSiteContentSelected,
+                $systemHostSelected: systemHostSelected
             }),
             mockProvider(DotMessageService, {
                 get: vi.fn().mockImplementation((key: string) => key)
@@ -150,6 +153,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     beforeEach(() => {
         allSiteContentSelected.set(false);
+        systemHostSelected.set(false);
 
         spectator = createComponent({
             providers: [
@@ -183,17 +187,59 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(row()?.tagName.toLowerCase()).toBe('button');
         });
 
-        it('should not read as selected while a folder is being browsed', () => {
+        it('should not read as current while a folder is being browsed', () => {
             // The default mock browses '/test/path'.
-            expect(row()?.getAttribute('aria-selected')).toBe('false');
+            expect(row()?.getAttribute('aria-current')).toBeNull();
         });
 
-        it('should read as selected when the drive carries no location', () => {
+        it('should read as current when the drive carries no location', () => {
+            // `aria-current`, not `aria-selected`: the latter is only meaningful on roles like
+            // option, tab or treeitem, and on a button it is dropped from the accessibility tree
+            // outright — which is how this was caught, as a row that announced nothing and looked
+            // identical whether or not it was the view you were on.
             allSiteContentSelected.set(true);
 
             spectator.detectChanges();
 
-            expect(row()?.getAttribute('aria-selected')).toBe('true');
+            expect(row()?.getAttribute('aria-current')).toBe('true');
+        });
+    });
+
+    describe('System Host', () => {
+        const row = () => spectator.query(byTestId('system-host'));
+
+        it('should offer a row below the hierarchy', () => {
+            expect(row()).toBeTruthy();
+        });
+
+        it('should sit after the hierarchy in document order', () => {
+            // Below the tree, not above it: System Host belongs to no site, so it reads as the
+            // other place you can be rather than as part of this site's structure.
+            const hierarchy = spectator.query(byTestId('hierarchy-scroll'));
+
+            expect(
+                hierarchy?.compareDocumentPosition(row() as Node) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('should ask the store for System Host when the row is chosen', () => {
+            spectator.click(byTestId('system-host'));
+
+            expect(contentDriveStore.selectSystemHost).toHaveBeenCalled();
+        });
+
+        it('should be reachable by keyboard, not only by pointer', () => {
+            expect(row()?.tagName.toLowerCase()).toBe('button');
+        });
+
+        it('should read as current only while System Host is what is being shown', () => {
+            expect(row()?.getAttribute('aria-current')).toBeNull();
+
+            systemHostSelected.set(true);
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('aria-current')).toBe('true');
         });
     });
 

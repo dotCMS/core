@@ -277,7 +277,9 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedNode: vi.fn(),
                     // The shell renders the sidebar, which asks the store which entry is selected.
                     $allSiteContentSelected: vi.fn().mockReturnValue(false),
+                    $systemHostSelected: vi.fn().mockReturnValue(false),
                     selectAllSiteContent: vi.fn(),
+                    selectSystemHost: vi.fn(),
                     sidebarLoading: vi.fn(),
                     closeDialog: vi.fn(),
                     patchContextMenu: vi.fn(),
@@ -2842,6 +2844,33 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(store.setPath).toHaveBeenCalledWith('/documents/');
+        });
+
+        it('should read the site row as the site root, not as no location at all', () => {
+            // The tree tells its site row apart from a folder by carrying an empty path. As a
+            // *location* that means the site root, which is a different thing from all site
+            // content — and all site content is what an absent location means. Without this
+            // translation the two collapse into each other and choosing the site row silently
+            // lands on the flat whole-site view.
+            const siteRow: DotFolderTreeNodeItem = {
+                key: 'site',
+                label: 'demo.dotcms.com',
+                data: {
+                    id: 'site-123',
+                    hostname: 'demo.dotcms.com',
+                    path: '',
+                    type: 'site'
+                },
+                leaf: false
+            };
+
+            store.selectedNode.mockReturnValue(siteRow);
+            store.setPath.mockClear();
+
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(store.setPath).toHaveBeenCalledWith('/');
         });
 
         it('should not set path when selectedNode is null', () => {

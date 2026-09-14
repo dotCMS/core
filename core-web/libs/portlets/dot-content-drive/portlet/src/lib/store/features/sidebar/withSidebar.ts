@@ -16,7 +16,12 @@ import { catchError } from 'rxjs/operators';
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
-import { DEFAULT_PAGE, DEFAULT_PATH, SYSTEM_HOST } from '../../../shared/constants';
+import {
+    DEFAULT_PAGE,
+    DEFAULT_PATH,
+    SYSTEM_HOST,
+    SYSTEM_HOST_PATH
+} from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
 import {
     applyLoadMoreToHierarchy,
@@ -117,7 +122,11 @@ export function withSidebar() {
                                     // nothing, and expanding it fetched them a second time — the
                                     // tree showed every root folder twice.
                                     folders: [{ ...siteNode, children: rootsWithLoadMore }],
-                                    selectedNode: selectedNode
+                                    // No location means all site content, which is not a place in
+                                    // the hierarchy. Preselecting the site row there would have the
+                                    // sidebar claiming the root is what you are looking at, and the
+                                    // root and the flat whole-site view are different things.
+                                    selectedNode: urlFolderPath ? selectedNode : undefined
                                 });
                             })
                         );
@@ -172,6 +181,20 @@ export function withSidebar() {
             selectAllSiteContent: () => {
                 patchState(store, {
                     path: DEFAULT_PATH,
+                    selectedNode: undefined,
+                    pagination: { ...store.pagination(), page: 1, offset: 0 },
+                    pages: [DEFAULT_PAGE]
+                });
+            },
+
+            /**
+             * Selects System Host: shared content on its own, which belongs to no site and so has
+             * no place in the hierarchy either. Same shape as choosing all site content — one
+             * entry selected, the tree's own selection cleared.
+             */
+            selectSystemHost: () => {
+                patchState(store, {
+                    path: SYSTEM_HOST_PATH,
                     selectedNode: undefined,
                     pagination: { ...store.pagination(), page: 1, offset: 0 },
                     pages: [DEFAULT_PAGE]

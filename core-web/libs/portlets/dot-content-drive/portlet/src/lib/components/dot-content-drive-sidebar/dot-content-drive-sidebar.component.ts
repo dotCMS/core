@@ -59,6 +59,9 @@ export class DotContentDriveSidebarComponent {
 
     /** Whether the sidebar's first entry, all site content, is the selected one. */
     readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
+
+    /** Whether the sidebar's last entry, System Host, is the selected one. */
+    readonly $systemHostSelected = this.#store.$systemHostSelected;
     readonly $folders = this.#store.folders;
     readonly $selectedNode = this.#store.selectedNode;
     readonly $currentSite = this.#store.currentSite;
@@ -163,6 +166,13 @@ export class DotContentDriveSidebarComponent {
      */
     protected onSelectAllSiteContent(): void {
         this.#store.selectAllSiteContent();
+    }
+
+    /**
+     * Chooses System Host, which belongs to no site and so clears the tree's selection too.
+     */
+    protected onSelectSystemHost(): void {
+        this.#store.selectSystemHost();
     }
 
     /**

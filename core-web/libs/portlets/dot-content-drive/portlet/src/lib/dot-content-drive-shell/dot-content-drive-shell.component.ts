@@ -82,7 +82,8 @@ import {
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
-    NEW_CONTENT_MARKER
+    NEW_CONTENT_MARKER,
+    ROOT_PATH
 } from '../shared/constants';
 import {
     DotContentDriveContentTypeSelectorPayload,
@@ -721,8 +722,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
-        if (data.path != currentPath) {
-            this.#store.setPath(data.path);
+        // The tree tells its site row apart from a folder by giving it an empty path. As a
+        // *location* that means the site root, `/`, which is a different thing from all site
+        // content — and all site content is what an absent location means. Translating here keeps
+        // the tree's own representation untouched while stopping the two collapsing into one.
+        const location = data.path === '' ? ROOT_PATH : data.path;
+
+        if (location != currentPath) {
+            this.#store.setPath(location);
         }
     });
 
