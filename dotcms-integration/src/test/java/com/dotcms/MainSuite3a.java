@@ -11,6 +11,7 @@ import com.dotcms.publisher.business.PublisherQueueJobTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveLiteralTextSearchTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveLinksTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
@@ -82,6 +83,7 @@ import org.junit.runners.Suite;
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         ContentDriveKeywordSearchTest.class,
+        ContentDriveLiteralTextSearchTest.class,
         ContentDriveLinksTest.class,
         ContentDriveWorkflowArchiveStepTest.class,
         ContentDriveWorkflowFilterTest.class,

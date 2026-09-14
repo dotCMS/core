@@ -891,7 +891,17 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
+            // Log first, always — this is the only record for callers that do not opt in.
             Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
+            // Then, only if the caller asked for it, stop pretending the search found nothing.
+            // Collapsing "the query failed" into an empty result is what let a malformed query
+            // reach a user as "No results found" for content they were looking at (issue #37532).
+            // Off by default, so the assets REST API, the legacy admin browser and the Velocity
+            // viewtool keep behaving exactly as they do today.
+            if (browserQuery.surfaceQueryFailures) {
+                throw new DotRuntimeException(
+                        "Content search query failed to execute: " + getErrorMessage(e), e);
+            }
         }
 
         return new LinkedHashSet<>(collectedInodes);
