@@ -34,7 +34,8 @@ import {
     DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
-    DotLanguage
+    DotLanguage,
+    isActionableBrowseItem
 } from '@dotcms/dotcms-models';
 
 import {
@@ -1185,7 +1186,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
         // A menu link carries no workflow state, so every action the menu offers is meaningless for
         // one. Content Drive never lists links, so this only ever fires in the asset picker.
-        if (!isActionable(contentlet)) {
+        if (!isActionableBrowseItem(contentlet)) {
             return;
         }
 
@@ -1327,7 +1328,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         // permissions and nowhere to be moved to, so they are never part of a drag payload.
         const itemsToDrag = (
             isDraggingSelectedItem && selected.length > 0 ? selected : [contentlet]
-        ).filter(isActionable);
+        ).filter(isActionableBrowseItem);
 
         if (!itemsToDrag.length) {
             return;
@@ -1380,7 +1381,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         event.stopPropagation();
         patchState(this.state, { dragOverRowId: null });
 
-        if (!isActionable(targetItem)) {
+        if (!isActionableBrowseItem(targetItem)) {
             return;
         }
 
@@ -1492,16 +1493,4 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             dataTable.first = this.$offset();
         }
     }
-}
-
-/**
- * Whether a row is something the shared folder actions can act on.
- *
- * Everything except a menu link: links have no workflow state, no permissions of their own and no
- * editor to open, so they are displayed and selectable but never actionable.
- */
-function isActionable(item: DotContentDriveBrowseItem): item is DotContentDriveItem {
-    const row = item as { type?: string; extension?: string };
-
-    return row.type !== 'link' && row.extension !== 'link';
 }

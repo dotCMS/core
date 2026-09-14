@@ -1698,6 +1698,29 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.setSelectedItems).toHaveBeenCalledWith(selectedItems);
         });
 
+        it('should not select a menu link, which nothing here can act on', () => {
+            // The table emits `DotContentDriveBrowseItem`, which includes links, so the shared
+            // component can serve the Asset Picker. Content Drive never asks for links, but the
+            // handler took the narrower type and passed everything straight through — so the types
+            // said one thing and the code assumed another, and under strict templates that stops
+            // compiling rather than staying a latent mismatch.
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+            const link = {
+                type: 'link',
+                extension: 'link',
+                identifier: 'link-1',
+                inode: 'link-inode-1',
+                title: 'A menu link',
+                url: '/somewhere'
+            };
+
+            spectator.triggerEventHandler(folderListView, 'selectionChange', [MOCK_ITEMS[0], link]);
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([MOCK_ITEMS[0]]);
+        });
+
         it('should update store with empty array when selection is cleared', () => {
             const folderListView = spectator.debugElement.query(
                 By.directive(DotFolderListViewComponent)

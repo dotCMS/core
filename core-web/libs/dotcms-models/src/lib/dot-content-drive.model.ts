@@ -130,6 +130,24 @@ export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
 export type DotContentDriveBrowseItem = DotContentDriveItem | DotContentDriveLink;
 
 /**
+ * Whether a browse row is one the content actions can act on.
+ *
+ * Everything except a menu link: links have no workflow state, no permissions of their own and no
+ * editor to open, so they are displayed and selectable but never actionable.
+ *
+ * Lives with the union rather than beside either consumer, because both the shared listing and the
+ * portlets that bind to it have to narrow the same way. A caller that takes the narrower type
+ * without going through this is asserting something the emitter does not promise.
+ */
+export function isActionableBrowseItem(
+    item: DotContentDriveBrowseItem
+): item is DotContentDriveItem {
+    const row = item as { type?: string; extension?: string };
+
+    return row.type !== 'link' && row.extension !== 'link';
+}
+
+/**
  * An item the shared folder actions (context menu, Edit-folder dialog) can act on.
  *
  * Wider than {@link DotContentDriveItem} on the folder side: the table passes a full

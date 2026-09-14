@@ -43,8 +43,10 @@ import {
     DotCMSDataTypes,
     DotCMSFieldTypes,
     DotContentDriveActionableFolder,
+    DotContentDriveBrowseItem,
     DotContentDriveItem,
-    DotContentDrivePaginateEvent
+    DotContentDrivePaginateEvent,
+    isActionableBrowseItem
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
@@ -1151,7 +1153,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * Handles double click event on a content item
      * @param contentlet The content item that was double clicked
      */
-    protected onDoubleClick(contentlet: DotContentDriveItem) {
+    protected onDoubleClick(contentlet: DotContentDriveBrowseItem) {
+        // Same narrowing as the selection, for the same reason: a link has no editor to open.
+        if (!isActionableBrowseItem(contentlet)) {
+            return;
+        }
+
         if (isFolder(contentlet)) {
             this.#store.setSelectedNode({
                 data: {
@@ -1822,8 +1829,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
         };
     }
 
-    protected onSelectItems(items: DotContentDriveItem[]) {
-        this.#store.setSelectedItems(items);
+    protected onSelectItems(items: DotContentDriveBrowseItem[]) {
+        // Takes what the table emits, which includes menu links so the shared listing can serve the
+        // Asset Picker, and narrows here. Content Drive never asks for links, but a handler typed to
+        // the narrower union was asserting that rather than checking it — and the selection feeds
+        // every action, none of which a link can be the subject of.
+        this.#store.setSelectedItems(items.filter(isActionableBrowseItem));
     }
 
     protected onTableScroll() {
