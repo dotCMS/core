@@ -2519,6 +2519,18 @@ describe('DotFolderListViewComponent', () => {
             expect(emitSpy).not.toHaveBeenCalled();
         });
 
+        it('should not open the item when its thumbnail is clicked with Shift held', () => {
+            // The third open affordance. It routes through the same handler as the title, but a
+            // guard that covered only the two the report mentioned would leave this one opening.
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+
+            thumbnail.dispatchEvent(new MouseEvent('click', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
         it('should still open the item on a plain double click', () => {
             // The guard is about the modifier, not the gesture: without this the fix could pass by
             // disabling opening altogether.
@@ -2547,6 +2559,25 @@ describe('DotFolderListViewComponent', () => {
             spectator.click(titleText);
 
             expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
+        it('should let a Shift title click through so the row still selects', () => {
+            // The swallow exists to stop the row selecting *on the way out* of an open. A Shift
+            // click does not open, so there is nothing to swallow it for, and stopping it there
+            // made the title a dead spot: the gesture neither opened the item nor extended the
+            // selection it belongs to. Asserted on the row rather than on the spy, because what
+            // matters is that the click reaches the element that does the selecting.
+            const row = spectator.query(byTestId('item-row'));
+            const titleText = spectator.query(byTestId('item-title-text'));
+            let reachedRow = false;
+
+            row.addEventListener('click', () => (reachedRow = true));
+            titleText.dispatchEvent(
+                new MouseEvent('click', { shiftKey: true, bubbles: true, cancelable: true })
+            );
+            spectator.detectChanges();
+
+            expect(reachedRow).toBe(true);
         });
 
         it('should swallow the title click so the row is not selected underneath', () => {

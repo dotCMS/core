@@ -1285,6 +1285,15 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return;
         }
 
+        // Shift never opens, so by the rule above there is nothing to swallow the click for, and
+        // it has to reach the row that does the selecting. Ahead of the swallow rather than inside
+        // `onDoubleClick`: that one only decides whether to open, and returning from it while the
+        // `stopPropagation()` below still ran left the title a dead spot where the gesture neither
+        // opened the item nor extended the selection it belongs to.
+        if ((event as MouseEvent).shiftKey) {
+            return;
+        }
+
         this.onDoubleClick(contentlet, event as MouseEvent);
         event.stopPropagation();
     }
