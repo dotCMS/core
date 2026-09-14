@@ -122,7 +122,11 @@
                     </div>
                 </div>
             } @else {
-                <div class="flex min-h-0 flex-1 rounded-lg bg-surface-100 p-8">
+                <!-- `justify-center` on the wrapper, not just inside the host: the host is a
+                     flex *item* here, so it is sized to its own content (a 30rem column) and
+                     sat against the left edge of the panel. Its own `justify-center` only
+                     centres text within that column. -->
+                <div class="flex min-h-0 flex-1 justify-center rounded-lg bg-surface-100 p-8">
                     <dot-empty-container
                         [configuration]="emptyConfig"
                         [hideContactUsLink]="true"
