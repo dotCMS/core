@@ -12,17 +12,23 @@ import java.util.List;
  * Reads a bulk-upload submission part by part, staging as it goes and stopping the moment a
  * ceiling is crossed.
  * <p>
- * <b>This is the only bound in the path.</b> Research R10 established that nothing below it caps a
- * request: {@code TEMP_RESOURCE_MAX_FILE_SIZE} ships as {@code -1} — the config comment says
+ * <b>This is the only bound on what gets staged.</b> Research R10 established that nothing below it
+ * caps a request: {@code TEMP_RESOURCE_MAX_FILE_SIZE} ships as {@code -1} — the config comment says
  * "authenticated users are unlimited" — the staging layer counts neither files nor bytes, and the
- * servlet container has no multipart limit configured.
+ * servlet container has no multipart limit configured. That last point cuts both ways and is worth
+ * reading twice: it is why this class has to exist, and it is also why this class cannot be the
+ * bound on what the container <i>receives</i>.
  * <p>
  * Two behaviours are load-bearing and are why this is a class rather than a loop inside the
  * resource:
  * <ul>
- *   <li>It aborts <b>mid-body</b>, so a submission over a ceiling cannot commit more than the
- *       ceiling to disk. Checking after the body has arrived would let an author write an unbounded
- *       amount and only then be told no.</li>
+ *   <li>It aborts <b>part by part</b>, so no submission over a ceiling <b>stages</b> more than the
+ *       ceiling. Scoped deliberately: this bounds what reaches the <i>assets volume</i>, where
+ *       nothing purges on a schedule and what lands stays. It does <b>not</b> bound what the
+ *       container already received — Jersey deserializes the whole multipart entity before the
+ *       resource method is entered, spooling every part over the 4096-byte default threshold to
+ *       {@code java.io.tmpdir}. Bounding that needs a request-size limit at the connector or the
+ *       reverse proxy, and neither exists today (see {@code BulkUploadResource}).</li>
  *   <li>It reclaims over the <b>whole read</b>, not just its own refusal path. A read that dies
  *       underneath it — the author navigated away, the connection dropped — raises nothing from
  *       this side, and nothing purges staged content on a schedule, so a reclaim scoped to the

@@ -28,10 +28,16 @@ import javax.inject.Inject;
 /**
  * Validates a bulk-upload submission and enqueues the run (#37166, spec FR-003, FR-004, FR-013c).
  * <p>
- * <b>Order matters here, and it is not arbitrary.</b> Everything decidable without the body is
- * decided first — the form's shape, the target's existence, the author's rights, and a declared
- * total already over the ceiling. Only then is the body read, because reading it writes bytes to
- * shared storage and every check performed afterwards is a check performed too late.
+ * <b>Order matters here, and it is not arbitrary.</b> Everything decidable without reading the
+ * parts is decided first — the form's shape, the target's existence, the author's rights, and a
+ * declared total already over the ceiling. Only then are the parts <b>staged</b>, because staging
+ * writes bytes to the shared assets volume where nothing purges them on a schedule, and every
+ * check performed afterwards is a check performed too late.
+ * <p>
+ * <b>Staged, not received.</b> The container has already read the request by the time any of this
+ * runs — Jersey binds the multipart entity before the resource method is entered. What this
+ * ordering protects is the assets volume, not the wire; see {@code BulkUploadResource}, where the
+ * residual risk is recorded.
  *
  * @author dotCMS
  */

@@ -124,6 +124,21 @@ public class BulkUploadResource {
         // inherited by calling TempFileAPI directly. No global filter supplies them either: the
         // product's referer interceptor protects a fixed list of paths that does not include
         // /api/. Content import omits both, which is a gap to close here rather than copy.
+        //
+        // THEY REFUSE THE SUBMISSION, NOT THE BYTES, and the difference is worth stating because
+        // an earlier version of this comment claimed otherwise. `body` is a JAX-RS entity
+        // parameter, so Jersey's multipart MessageBodyReader has already deserialized the whole
+        // request before this method is entered — that is entity binding, and no ordering of
+        // statements in here can precede it. DotRestApplication registers MultiPartFeature with no
+        // MultiPartProperties, so the default 4096-byte buffer threshold applies and every larger
+        // part is already spooled to java.io.tmpdir by now.
+        //
+        // RESIDUAL RISK, recorded rather than papered over: a cross-origin or unauthenticated
+        // caller can still make the container receive and spool an unbounded body. Bounding that
+        // needs a request-size limit at the connector or the reverse proxy, and neither exists
+        // today. It is not introduced here — it is true of every multipart endpoint under /api,
+        // content import included — which is exactly why fixing it here alone would be the wrong
+        // shape: it belongs at the layer that serves all of them.
         verifyStagingEnabled();
         if (!new SecurityUtils().validateReferer(request)) {
             throw new BadRequestException("Invalid Origin or referer");
