@@ -275,6 +275,9 @@ describe('DotContentDriveShellComponent', () => {
                     folders: vi.fn(),
                     selectedNode: vi.fn(),
                     setSelectedNode: vi.fn(),
+                    // The shell renders the sidebar, which asks the store which entry is selected.
+                    $allSiteContentSelected: vi.fn().mockReturnValue(false),
+                    selectAllSiteContent: vi.fn(),
                     sidebarLoading: vi.fn(),
                     closeDialog: vi.fn(),
                     patchContextMenu: vi.fn(),

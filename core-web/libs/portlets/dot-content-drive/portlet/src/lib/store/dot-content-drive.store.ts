@@ -661,6 +661,15 @@ export const DotContentDriveStore = signalStore(
     withActionExecution(),
     withPushPublishEnvironments(),
     withSitePermissions(),
+    withComputed(({ path }) => ({
+        /**
+         * Whether the sidebar's first entry, all site content, is the selected one.
+         *
+         * Derived from the location rather than stored beside it: an absent location *is* what all
+         * site content means, so a second piece of state saying so could only ever disagree.
+         */
+        $allSiteContentSelected: computed(() => !path())
+    })),
     withComputed(({ selectedNode, siteCanAddChildren }) => ({
         /**
          * Whether the browsed folder accepts new children.

@@ -16,7 +16,7 @@ import { catchError } from 'rxjs/operators';
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
-import { SYSTEM_HOST } from '../../../shared/constants';
+import { DEFAULT_PAGE, DEFAULT_PATH, SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
 import {
     applyLoadMoreToHierarchy,
@@ -155,6 +155,26 @@ export function withSidebar() {
             setSelectedNode: (selectedNode: DotFolderTreeNodeItem) => {
                 patchState(store, {
                     selectedNode
+                });
+            },
+
+            /**
+             * Selects all site content: the whole current site at any depth, which is the one
+             * sidebar entry that names no place inside the hierarchy.
+             *
+             * Clearing the selected node is half the job. Exactly one thing in the sidebar is ever
+             * selected, and the tree cannot represent this entry, so leaving a node selected would
+             * have the sidebar claiming the user is in two places at once.
+             *
+             * The location is cleared rather than set to the root: absent is what all site content
+             * looks like in the URL, which is also what links made before this feature carry.
+             */
+            selectAllSiteContent: () => {
+                patchState(store, {
+                    path: DEFAULT_PATH,
+                    selectedNode: undefined,
+                    pagination: { ...store.pagination(), page: 1, offset: 0 },
+                    pages: [DEFAULT_PAGE]
                 });
             },
 

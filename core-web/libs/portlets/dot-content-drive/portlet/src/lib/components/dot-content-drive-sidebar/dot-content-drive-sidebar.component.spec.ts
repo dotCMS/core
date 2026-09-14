@@ -1,7 +1,13 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
@@ -99,6 +105,10 @@ describe('DotContentDriveSidebarComponent', () => {
         }
     ];
 
+    // A real signal, not a vi.fn: the row's selected state is read in an OnPush template, so it
+    // only re-renders when a signal it reads is invalidated. Same pattern the toolbar spec uses.
+    const allSiteContentSelected = signal(false);
+
     const createComponent = createComponentFactory({
         component: DotContentDriveSidebarComponent,
         imports: [DotTreeFolderComponent],
@@ -128,7 +138,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 loadChildFolders: vi.fn(),
                 patchContextMenu: vi.fn(),
                 updateFolders: vi.fn(),
-                setSelectedNode: vi.fn()
+                setSelectedNode: vi.fn(),
+                selectAllSiteContent: vi.fn(),
+                $allSiteContentSelected: allSiteContentSelected
             }),
             mockProvider(DotMessageService, {
                 get: vi.fn().mockImplementation((key: string) => key)
@@ -137,6 +149,8 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     beforeEach(() => {
+        allSiteContentSelected.set(false);
+
         spectator = createComponent({
             providers: [
                 mockProvider(DotFolderService, {
@@ -148,6 +162,39 @@ describe('DotContentDriveSidebarComponent', () => {
         contentDriveStore = spectator.inject(DotContentDriveStore, true);
 
         spectator.detectChanges();
+    });
+
+    describe('all site content', () => {
+        const row = () => spectator.query(byTestId('all-site-content'));
+
+        it('should offer a row above the hierarchy', () => {
+            expect(row()).toBeTruthy();
+        });
+
+        it('should ask the store for all site content when the row is chosen', () => {
+            spectator.click(byTestId('all-site-content'));
+
+            expect(contentDriveStore.selectAllSiteContent).toHaveBeenCalled();
+        });
+
+        it('should be reachable by keyboard, not only by pointer', () => {
+            // The hierarchy beside it is a tree with its own arrow-key handling, so this row has to
+            // carry its own semantics rather than inheriting the tree's.
+            expect(row()?.tagName.toLowerCase()).toBe('button');
+        });
+
+        it('should not read as selected while a folder is being browsed', () => {
+            // The default mock browses '/test/path'.
+            expect(row()?.getAttribute('aria-selected')).toBe('false');
+        });
+
+        it('should read as selected when the drive carries no location', () => {
+            allSiteContentSelected.set(true);
+
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('aria-selected')).toBe('true');
+        });
     });
 
     describe('HTML Rendering', () => {

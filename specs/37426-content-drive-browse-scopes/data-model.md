@@ -58,7 +58,7 @@ Two rules protect this table. Reserved words can never collide with a folder, be
 
 ## Sidebar selection (frontend)
 
-Exactly one of four things is selected: the All Site Content row, the site row, a folder node, or the System Host row. The tree's existing `selectedNode` continues to represent the middle two; the two new rows live outside the tree and must clear it when chosen, and be cleared by it. The System Host row is fixed at the bottom of the sidebar and the hierarchy scrolls beneath it, so a growing tree can never push it out of reach.
+Exactly one of four things is selected: the All Site Content row, the site row, a folder node, or the System Host row. The tree's existing `selectedNode` continues to represent the middle two; the two new rows live outside the tree and must clear it when chosen, and be cleared by it. The System Host row sits below the hierarchy, which scrolls within its own area, so a growing tree can never push it out of reach.
 
 | Selection | Drop target | Add content |
 |---|---|---|

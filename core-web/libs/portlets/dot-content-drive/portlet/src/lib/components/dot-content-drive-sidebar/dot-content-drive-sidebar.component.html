@@ -1,11 +1,38 @@
-<dot-tree-folder
-    #treeFolder
-    [folders]="$folders()"
-    [loading]="$loading()"
-    [selectedNode]="$selectedNode() ?? null"
-    (onNodeSelect)="onNodeSelect($event)"
-    (onNodeExpand)="onNodeExpand($event)"
-    (loadMore)="onLoadMore($event)"
-    (rightClick)="onNodeRightClick($event)"
-    (uploadFiles)="uploadFiles.emit($event)"
-    (moveItems)="moveItems.emit($event)" />
+<!--
+    The one entry that names no place inside the hierarchy, which is why it sits above the section
+    rather than in it. A button, not a tree node: the hierarchy beside it handles arrow keys, and a
+    row that expands nothing must not offer a disclosure control that does nothing.
+-->
+<button
+    type="button"
+    class="mt-5 flex w-full shrink-0 items-center gap-2 rounded-sm px-3 py-2 text-left"
+    data-testid="all-site-content"
+    [attr.aria-selected]="$allSiteContentSelected()"
+    (click)="onSelectAllSiteContent()">
+    <i class="pi pi-list"></i>
+    <span>{{ 'content-drive.sidebar.all-site-content' | dm }}</span>
+</button>
+
+<span class="shrink-0 px-3 text-xs uppercase" data-testid="site-hierarchy-label">
+    {{ 'content-drive.sidebar.site-hierarchy' | dm }}
+</span>
+
+<!--
+    The hierarchy is the only part of the column that scrolls. It loads lazily and grows as folders
+    are expanded, so anything placed after it in the flow would drift further out of reach with
+    every expansion; giving the tree its own overflow keeps whatever follows it exactly where it is,
+    with no sticky or fixed positioning involved.
+-->
+<div class="min-h-0 flex-1 overflow-y-auto" data-testid="hierarchy-scroll">
+    <dot-tree-folder
+        #treeFolder
+        [folders]="$folders()"
+        [loading]="$loading()"
+        [selectedNode]="$selectedNode() ?? null"
+        (onNodeSelect)="onNodeSelect($event)"
+        (onNodeExpand)="onNodeExpand($event)"
+        (loadMore)="onLoadMore($event)"
+        (rightClick)="onNodeRightClick($event)"
+        (uploadFiles)="uploadFiles.emit($event)"
+        (moveItems)="moveItems.emit($event)" />
+</div>

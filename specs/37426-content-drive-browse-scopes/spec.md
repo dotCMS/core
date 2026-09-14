@@ -89,7 +89,7 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 #### Sidebar structure
 
 - **FR-001**: The sidebar MUST offer three kinds of selection: an **All Site Content** entry at the top, the **site hierarchy** (the site row and its folders), and a **System Host** entry at the bottom.
-- **FR-001a**: The **System Host** entry MUST stay fixed at the bottom of the sidebar while the hierarchy scrolls beneath it. The hierarchy loads lazily and grows as folders are expanded, so its bottom edge moves; an entry positioned after it would become progressively harder to reach. The top entry needs no such treatment, since scrolling back to the top is a known, cheap gesture.
+- **FR-001a**: The hierarchy MUST scroll within its own area rather than growing the sidebar, so that the **System Host** entry below it stays visible without hunting for it. The hierarchy loads lazily and grows as folders are expanded, so an entry that merely followed it in the page flow would drift further out of reach with every expansion. The entry above the hierarchy needs nothing special: scrolling back to the top is a cheap, known gesture.
 - **FR-002**: **All Site Content** and **System Host** MUST be presented as plain sidebar sections, not as nodes of the site hierarchy: no expansion control, no children, and nothing beneath them to navigate into. This is about structure only. It does not stop System Host accepting content, which the rules below require of it.
 - **FR-003**: Exactly one entry MUST be selected at any time; selecting one clears the previous selection.
 - **FR-004**: The sidebar MUST NOT show item counts next to any entry.

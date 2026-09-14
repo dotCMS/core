@@ -24,6 +24,7 @@ import {
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions';
@@ -37,14 +38,16 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
     selector: 'dot-content-drive-sidebar',
     templateUrl: './dot-content-drive-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent],
-    host: { class: 'block w-full h-full' },
+    imports: [DotTreeFolderComponent, DotMessagePipe],
+    host: { class: 'flex h-full w-full flex-col' },
     styles: `
-        /* The top inset used to come from the site-name header that sat above the tree. With the
-           site now named by the tree's own root row, the tree owns that spacing — and the amount is
-           what centers that first row on the toolbar's search box and tree toggler beside it. */
+        /* The top inset used to come from the site-name header that sat above the tree, then from
+           the tree itself once the site was named by its own root row. It now belongs to whatever
+           is first in the column, which is the all-site-content row — the amount is what centers
+           that first row on the toolbar's search box and tree toggler beside it, so it has to
+           travel with the row rather than stay on the tree. */
         :host ::ng-deep .p-tree {
-            padding: 1.25rem 0.75rem 0.75rem;
+            padding: 0 0.75rem 0.75rem;
         }
     `
 })
@@ -53,6 +56,9 @@ export class DotContentDriveSidebarComponent {
     readonly #injector = inject(Injector);
 
     readonly $loading = this.#store.sidebarLoading;
+
+    /** Whether the sidebar's first entry, all site content, is the selected one. */
+    readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
     readonly $folders = this.#store.folders;
     readonly $selectedNode = this.#store.selectedNode;
     readonly $currentSite = this.#store.currentSite;
@@ -151,6 +157,14 @@ export class DotContentDriveSidebarComponent {
             { injector: this.#injector }
         );
     }
+    /**
+     * Chooses the whole site. The store clears the tree's selection as it does so, because exactly
+     * one entry in the sidebar is ever selected and the tree cannot represent this one.
+     */
+    protected onSelectAllSiteContent(): void {
+        this.#store.selectAllSiteContent();
+    }
+
     /**
      * Handles node selection events
      *
