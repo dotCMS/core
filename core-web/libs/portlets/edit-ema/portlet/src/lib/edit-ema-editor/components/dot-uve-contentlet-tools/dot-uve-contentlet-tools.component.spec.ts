@@ -730,38 +730,6 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
-        describe('dragPayload', () => {
-            it('should return valid drag payload when contentlet exists', () => {
-                const payload = spectator.component.dragPayload();
-                expect(payload).toEqual({
-                    container: MOCK_CONTENTLET_AREA.payload.container,
-                    contentlet: MOCK_CONTENTLET_AREA.payload.contentlet,
-                    showLabelImage: true,
-                    move: true
-                });
-            });
-
-            it('should return null values when contentlet does not exist', () => {
-                const areaWithoutContentlet = {
-                    ...MOCK_CONTENTLET_AREA,
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        contentlet: undefined as unknown as ContentletPayload
-                    }
-                };
-                spectator.setInput('contentletArea', areaWithoutContentlet);
-                editorSelected.set(toSelected(areaWithoutContentlet));
-                spectator.detectChanges();
-
-                const payload = spectator.component.dragPayload();
-                expect(payload).toEqual({
-                    container: null,
-                    contentlet: null,
-                    showLabelImage: false,
-                    move: false
-                });
-            });
-        });
     });
 
     describe('Position flag behavior', () => {
@@ -896,90 +864,6 @@ describe('DotUveContentletToolsComponent', () => {
             expect(parsedItem.container).toEqual(MOCK_CONTENTLET_AREA.payload.container);
             expect(parsedItem.showLabelImage).toBe(true);
             expect(parsedItem.move).toBe(true);
-        });
-    });
-
-    describe('isSameContentlet', () => {
-        it('should return true when both identifier and uuid match', () => {
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, MOCK_CONTENTLET_AREA)
-            ).toBe(true);
-        });
-
-        it('should return false when same contentlet is in a different container', () => {
-            const differentContainer: ContentletArea = {
-                ...MOCK_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    container: {
-                        ...MOCK_CONTENTLET_AREA.payload.container,
-                        identifier: 'container-identifier-456',
-                        uuid: 'uuid-123'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentContainer)
-            ).toBe(false);
-        });
-
-        it('should return false when same contentlet is in a different instance of the same container type', () => {
-            const differentInstance: ContentletArea = {
-                ...MOCK_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    container: {
-                        ...MOCK_CONTENTLET_AREA.payload.container,
-                        identifier: 'container-identifier-123',
-                        uuid: 'uuid-456'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentInstance)
-            ).toBe(false);
-        });
-
-        it('should return false when uuid matches but identifier differs', () => {
-            const differentContentlet: ContentletArea = {
-                ...MOCK_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    contentlet: {
-                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
-                        identifier: 'other-id'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentContentlet)
-            ).toBe(false);
-        });
-
-        it('should return false for two different empty containers', () => {
-            const emptyContainer2: ContentletArea = {
-                ...MOCK_EMPTY_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_EMPTY_CONTENTLET_AREA.payload,
-                    container: {
-                        ...MOCK_EMPTY_CONTENTLET_AREA.payload.container,
-                        identifier: 'container-identifier-999',
-                        uuid: 'uuid-123'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_EMPTY_CONTENTLET_AREA, emptyContainer2)
-            ).toBe(false);
-        });
-
-        it('should return false when either area is null', () => {
-            expect(spectator.component.isSameContentlet(null, MOCK_CONTENTLET_AREA)).toBe(false);
-            expect(spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, null)).toBe(false);
         });
     });
 
@@ -1311,6 +1195,51 @@ describe('DotUveContentletToolsComponent', () => {
                 })
             );
             expect(emitted).toEqual([{ inode: 'vtl-inode-1', name: 'template1.vtl' }]);
+        });
+
+        /**
+         * Pins a consequence that is deliberate, not incidental.
+         *
+         * `editorEditPanelOpen` is state of its own and survives a selection
+         * change, and both side-panel tabs bind to `editorSelected` — so
+         * promoting while a panel is open on a DIFFERENT contentlet retargets
+         * that panel. Raised in review as a possible side effect.
+         *
+         * It is kept because it is not new: the SET_SELECTED_CONTENTLET handler
+         * already documents that one write "drives both the floating overlay and
+         * the side panel's data binding", so plain-clicking a contentlet does
+         * exactly the same thing. Promotion makes `</>` consistent with a click
+         * rather than introducing a new behaviour. Without it the editor would
+         * be left incoherent — VTL dialog on A, border and panel on B.
+         */
+        it('retargets the selection even when a panel is open on another contentlet', () => {
+            const store = spectator.inject(UVEStore);
+            const otherContentlet = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                        identifier: 'panel-is-open-on-this-one',
+                        inode: 'other-inode'
+                    }
+                }
+            };
+
+            // Panel open on B…
+            editorSelected.set(toSelected(otherContentlet));
+            // …while A is hovered.
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+            (store.setSelected as ReturnType<typeof vi.fn>).mockClear();
+
+            spectator.component.vtlMenuItems()[0].command?.({} as never);
+
+            const promoted = (store.setSelected as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            expect(promoted.payload.contentlet.identifier).toBe(
+                MOCK_CONTENTLET_AREA.payload.contentlet?.identifier
+            );
+            expect(promoted.payload.contentlet.identifier).not.toBe('panel-is-open-on-this-one');
         });
 
         it('does not promote merely because the menu was built', () => {

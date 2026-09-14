@@ -133,40 +133,6 @@ export class DotUveContentletToolsComponent {
     protected readonly buttonPosition = signal<'after' | 'before'>('after');
 
     /**
-     * Helper function to compare two contentlets by their identifier and container uuid.
-     * Returns true if they represent the same contentlet in the same container instance.
-     * Accepts any record carrying a `payload` field — works for both
-     * `ContentletArea` (hover) and `SelectedContentlet` (selected).
-     */
-    isSameContentlet(
-        a: { payload?: ActionPayload } | null | undefined,
-        b: { payload?: ActionPayload } | null | undefined
-    ): boolean {
-        if (!a || !b) {
-            return false;
-        }
-
-        const id1 = a.payload?.contentlet?.identifier;
-        const id2 = b.payload?.contentlet?.identifier;
-        const containerKey1 = `${a.payload?.container?.identifier}:${a.payload?.container?.uuid}`;
-        const containerKey2 = `${b.payload?.container?.identifier}:${b.payload?.container?.uuid}`;
-
-        return id1 !== undefined && id1 === id2 && containerKey1 === containerKey2;
-    }
-
-    /**
-     * Computed property to determine if the hovered contentlet is different from the selected one.
-     */
-    readonly isHoveredDifferentFromSelected = computed(() => {
-        const hovered = this.contentletArea();
-        const selected = this.selected();
-        if (!hovered || !selected) {
-            return true;
-        }
-        return !this.isSameContentlet(hovered, selected);
-    });
-
-    /**
      * Show the hover overlay whenever a contentlet is hovered. The hover
      * overlay is the only place that renders the action toolbar (drag,
      * edit, delete, etc.); the selected overlay is just a persistent
@@ -218,13 +184,6 @@ export class DotUveContentletToolsComponent {
      */
     readonly isContainerEmpty = computed(() => {
         return this.contentContext()?.contentlet?.identifier === 'TEMP_EMPTY_CONTENTLET';
-    });
-
-    /**
-     * Whether the selected container is represented by a temporary "empty" contentlet.
-     */
-    readonly isSelectedContainerEmpty = computed(() => {
-        return this.selectedContentContext()?.contentlet?.identifier === 'TEMP_EMPTY_CONTENTLET';
     });
 
     /**
@@ -494,35 +453,9 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Describes the draggable payload for the selected contentlet controls.
-     * Returns null-like values when the source data is incomplete, allowing
-     * the template to disable the drag affordance gracefully.
-     */
-    readonly dragPayload = computed(() => {
-        const selectedContext = this.selectedContentContext();
-        const { container, contentlet } = selectedContext;
-
-        if (!contentlet) {
-            return {
-                container: null,
-                contentlet: null,
-                showLabelImage: false,
-                move: false
-            };
-        }
-
-        return {
-            container,
-            contentlet,
-            showLabelImage: true,
-            move: true
-        };
-    });
-
-    /**
-     * Drag payload for the hovered contentlet's action toolbar. Mirrors
-     * `dragPayload` but reads from the hover context so the hover toolbar's
-     * drag handle dispatches the right contentlet.
+     * Drag payload for the hovered contentlet's action toolbar — reads the
+     * hover context so the drag handle dispatches the contentlet under the
+     * pointer.
      */
     readonly hoverDragPayload = computed(() => {
         const { container, contentlet } = this.contentContext();
