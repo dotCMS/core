@@ -268,6 +268,7 @@ public class BulkUploadHelper {
     private Optional<String> findSucceededSubmission(final String fingerprint) {
         try {
             final List<Map<String, Object>> rows = new DotConnect()
+                    // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, every runtime value bound via addParam
                     .setSQL("SELECT id FROM job WHERE queue_name = ? AND state = ? "
                             + "AND parameters->>'submissionFingerprint' = ? "
                             + "ORDER BY created_at DESC")
