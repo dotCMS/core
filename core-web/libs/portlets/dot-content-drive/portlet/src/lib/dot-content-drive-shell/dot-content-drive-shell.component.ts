@@ -1201,10 +1201,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
     protected uploadByBaseType(file: File, baseType: string, hostFolder?: DotFolderTreeNodeData) {
         this.#fileService
             .uploadFileByBaseType(file, baseType, {
-                // A folder id carries its site; at the site root (no folder) fall back to the
-                // current site identifier so the upload lands on the site being browsed, not the
-                // backend default host.
-                hostFolder: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? '',
+                // A folder id carries its site, so a selected folder is the most specific answer
+                // and wins. With no folder the destination is whichever host the sidebar is
+                // showing — the site being browsed, or System Host when that is what is selected,
+                // which is not the same as the site in the switcher.
+                hostFolder: hostFolder?.id ?? this.#store.$newContentHostId() ?? '',
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({

@@ -674,49 +674,82 @@ export const DotContentDriveStore = signalStore(
         /** Whether the sidebar's last entry, System Host, is the selected one. */
         $systemHostSelected: computed(() => path() === SYSTEM_HOST_PATH)
     })),
-    withComputed(({ selectedNode, siteCanAddChildren, $allSiteContentSelected }) => ({
+    withComputed(({ currentSite, $systemHostSelected }) => ({
         /**
-         * Whether the browsed folder accepts new children.
+         * The host that would receive new content here.
          *
-         * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
-         * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
-         * the contentlet checkin path never checks it, so that one is gated here for consistency
-         * rather than as a preview of a refusal — otherwise uploading would quietly allow what
-         * creating a folder in the same place forbids.
+         * Three paths ask this and used to answer it separately: the upload button, a drag and
+         * drop, and the New menu. Each fell back to the current site when no folder was selected,
+         * which is right everywhere except System Host, where the current site is context rather
+         * than the destination. The New menu was worse than wrong — it built its target by pasting
+         * the location onto the hostname, which with a reserved word yields
+         * `demo.dotcms.comSYSTEM_HOST` and resolves to nothing.
          *
-         * Computed here rather than in each consumer because three surfaces gate on it — the New
-         * menu, the Upload button and the drop zone — and three copies of the folder-then-site
-         * fallback would be three chances to disagree.
-         *
-         * A node with no permissions is the site root, whose parent is the host rather than a
-         * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
-         * in flight, and an instance too old to report the field. Starting disabled would flicker
-         * the affordances off and on for the common case, and the server refuses the write anyway.
+         * A folder, when one is selected, is still more specific than this and wins.
          */
-        $canAddChildren: computed(() => {
-            // All site content spans every folder in the site, so there is no single place for
-            // new content to land. This is not a permission answer and it is not negotiable by
-            // one: the question is not whether the user may add content, it is where it would go.
-            if ($allSiteContentSelected()) {
-                return false;
-            }
-
-            const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
-                ?.permissions;
-
-            if (!permissions?.length) {
-                return siteCanAddChildren() !== false;
-            }
-
-            return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-        })
+        $newContentHostId: computed(() =>
+            $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
+        )
     })),
+    withComputed(
+        ({
+            selectedNode,
+            siteCanAddChildren,
+            systemHostCanAddChildren,
+            $allSiteContentSelected,
+            $systemHostSelected
+        }) => ({
+            /**
+             * Whether the browsed folder accepts new children.
+             *
+             * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+             * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+             * the contentlet checkin path never checks it, so that one is gated here for consistency
+             * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+             * creating a folder in the same place forbids.
+             *
+             * Computed here rather than in each consumer because three surfaces gate on it — the New
+             * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+             * fallback would be three chances to disagree.
+             *
+             * A node with no permissions is the site root, whose parent is the host rather than a
+             * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+             * in flight, and an instance too old to report the field. Starting disabled would flicker
+             * the affordances off and on for the common case, and the server refuses the write anyway.
+             */
+            $canAddChildren: computed(() => {
+                // All site content spans every folder in the site, so there is no single place for
+                // new content to land. This is not a permission answer and it is not negotiable by
+                // one: the question is not whether the user may add content, it is where it would go.
+                if ($allSiteContentSelected()) {
+                    return false;
+                }
+
+                // System Host is a real destination, so this is a permission answer again — but about
+                // System Host, not about whichever site the switcher happens to show.
+                if ($systemHostSelected()) {
+                    return systemHostCanAddChildren() !== false;
+                }
+
+                const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
+                    ?.permissions;
+
+                if (!permissions?.length) {
+                    return siteCanAddChildren() !== false;
+                }
+
+                return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+            })
+        })
+    ),
     withHooks((store) => ({
         onInit() {
             // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
             // emission and `switchMap` drops the previous site's in-flight answer, so switching
             // sites quickly can never settle the gate with the wrong site's result.
             store.loadSitePermissions(store.currentSite);
+            // Once, not per site: System Host belongs to none of them.
+            store.loadSystemHostPermissions();
         }
     }))
 );

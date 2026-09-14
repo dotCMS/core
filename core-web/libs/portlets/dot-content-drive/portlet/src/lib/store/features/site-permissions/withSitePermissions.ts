@@ -24,6 +24,16 @@ interface WithSitePermissionsState {
      * inherits from SYSTEM_HOST and so answers identically no matter which site is open.
      */
     siteCanAddChildren: boolean | undefined;
+
+    /**
+     * CAN_ADD_CHILDREN on System Host itself.
+     *
+     * Kept apart from {@link siteCanAddChildren} rather than folded into it. That one is reset and
+     * re-fetched every time the site changes, and System Host belongs to no site, so sharing the
+     * slot would have each switch throw away an answer that had not changed and briefly ungate
+     * the affordances for a destination nobody navigated away from.
+     */
+    systemHostCanAddChildren: boolean | undefined;
 }
 
 /**
@@ -37,7 +47,8 @@ export function withSitePermissions() {
     // the only slice it touches, so nothing here needs the host store's shape.
     return signalStoreFeature(
         withState<WithSitePermissionsState>({
-            siteCanAddChildren: undefined
+            siteCanAddChildren: undefined,
+            systemHostCanAddChildren: undefined
         }),
         withMethods((store, dotPermissionsService = inject(DotPermissionsService)) => ({
             /**
@@ -49,6 +60,34 @@ export function withSitePermissions() {
              * the permission. Push Publish disables on failure because offering a push with nowhere
              * to send it fails later and less legibly.
              */
+            /**
+             * Looks up CAN_ADD_CHILDREN on System Host.
+             *
+             * Separate from the site lookup, which filters System Host out deliberately: there it
+             * arrives as the seed the drive holds before a real site resolves, and answering for
+             * it would answer about the wrong asset. Here it is the destination the user chose, so
+             * the same identifier means the opposite thing and needs its own way in.
+             *
+             * Same failure posture as the site lookup: a transient error settles on allowed, since
+             * this only softens an affordance the server still guards.
+             */
+            loadSystemHostPermissions: rxMethod<void>(
+                pipe(
+                    switchMap(() =>
+                        dotPermissionsService.canAddChildren(SYSTEM_HOST.identifier).pipe(
+                            tapResponse({
+                                next: (canAddChildren) =>
+                                    patchState(store, {
+                                        systemHostCanAddChildren: canAddChildren
+                                    }),
+                                error: () =>
+                                    patchState(store, { systemHostCanAddChildren: true })
+                            })
+                        )
+                    )
+                )
+            ),
+
             loadSitePermissions: rxMethod<DotSite | null | undefined>(
                 pipe(
                     // SYSTEM_HOST is the seed the drive holds before a real site resolves, and it

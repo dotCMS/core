@@ -215,6 +215,9 @@ describe('DotContentDriveShellComponent', () => {
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
 
+        const currentSiteMock = vi.fn().mockReturnValue(MOCK_SITES[0]);
+        const systemHostSelectedMock = vi.fn().mockReturnValue(false);
+
         spectator = createComponent({
             providers: [
                 mockProvider(DotContentDriveStore, {
@@ -223,7 +226,7 @@ describe('DotContentDriveShellComponent', () => {
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
-                    currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
+                    currentSite: currentSiteMock,
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: vi.fn().mockReturnValue(false),
                     removeFilter: vi.fn(),
@@ -277,7 +280,13 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedNode: vi.fn(),
                     // The shell renders the sidebar, which asks the store which entry is selected.
                     $allSiteContentSelected: vi.fn().mockReturnValue(false),
-                    $systemHostSelected: vi.fn().mockReturnValue(false),
+                    $systemHostSelected: systemHostSelectedMock,
+                    // Mirrors the store's own computed rather than hardcoding an answer, so these
+                    // tests keep driving the destination through the signals they already control:
+                    // System Host when that is selected, the current site otherwise.
+                    $newContentHostId: vi.fn(() =>
+                        systemHostSelectedMock() ? 'SYSTEM_HOST' : currentSiteMock()?.identifier
+                    ),
                     selectAllSiteContent: vi.fn(),
                     selectSystemHost: vi.fn(),
                     sidebarLoading: vi.fn(),
