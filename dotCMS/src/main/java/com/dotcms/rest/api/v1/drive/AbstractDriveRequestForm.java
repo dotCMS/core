@@ -113,6 +113,30 @@ public interface AbstractDriveRequestForm {
     default boolean includeSystemHost(){return true;}
 
     /**
+     * Which slice of content to list: the whole site, the site root alone, or System Host.
+     * <p>
+     * <b>Omitting it means today's behavior, exactly.</b> It carries no default on purpose: at the
+     * site root an omitted scope and {@link BrowseScope#ALL} agree, but inside a folder they do
+     * not, and defaulting the field would silently turn every existing folder request recursive.
+     * That guarantee is what leaves the Asset Picker, which calls this same endpoint, untouched.
+     * </p>
+     * <p>
+     * Only valid with a site-root {@link #assetPath()}. The three scopes are things you can only
+     * be in at the top of a site; a folder is addressed by its path, so a scope named alongside a
+     * folder path is two contradictory statements and is refused rather than resolved.
+     * </p>
+     * <p>
+     * {@link #includeSystemHost()} is read only when this is {@code ALL} or omitted — the other
+     * two scopes already answer the System Host question themselves.
+     * </p>
+     *
+     * @return the requested browse scope, or null for today's behavior
+     */
+    @Nullable
+    @JsonProperty("browseScope")
+    BrowseScope browseScope();
+
+    /**
      * List of language identifiers to include in the search.
      * <p>
      * Supports both language codes (e.g., "en", "es") and language IDs.
