@@ -1,6 +1,7 @@
 package com.dotcms.ai.client.langchain4j;
 
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.inference.model.CallerSafeException;
 import com.dotcms.inference.model.InferenceError;
 import com.dotcms.inference.model.InferenceLimits;
 import com.dotcms.inference.model.MultipleImagesUnsupportedException;
@@ -695,11 +696,20 @@ public final class InferenceAIClient {
      * @param throwable what went wrong
      * @return the error to report
      */
-    private static InferenceError toInferenceError(final Throwable throwable) {
+    static InferenceError toInferenceError(final Throwable throwable) {
+        if (throwable instanceof CallerSafeException
+                && !nullToEmpty(throwable.getMessage()).isBlank()) {
+            // dotCMS wrote this sentence, so it is returned: it names something about the site's
+            // configuration that the caller or an operator can actually act on.
+            return InferenceError.invalidRequest(throwable.getMessage(), null);
+        }
         if (throwable instanceof IllegalArgumentException) {
-            return InferenceError.invalidRequest(nullToEmpty(throwable.getMessage()).isBlank()
-                    ? "The request could not be served with this site's configuration"
-                    : throwable.getMessage(), null);
+            // dotCMS did not write this one. The fallback chain reports a failed model
+            // initialisation as an IllegalArgumentException with the provider client's own message
+            // appended, and that message can carry the provider's endpoint, its account
+            // identifiers, or a fragment of the prompt. Logged in full, never returned.
+            return InferenceError.invalidRequest(
+                    "The request could not be served with this site's configuration", null);
         }
         // A streamed exchange is rate limited exactly as often as a buffered one, and a client
         // reading an error event backs off on the same status, so the translation belongs here too.
