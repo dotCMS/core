@@ -43,7 +43,11 @@ public class TextResource {
      * @param prompt the prompt to generate text from
      * @return a Response object containing the generated text
      * @throws IOException if an I/O error occurs
+     * @deprecated Superseded by {@code POST /api/inference/v1/chat/completions}, which answers in the
+     *             OpenAI-compatible shape any standard client and agent framework already
+     *             speaks. Not marked {@code forRemoval}: no removal date is committed.
      */
+    @Deprecated(since = "Sep 14th, 26")
     @Path("/generate")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -62,7 +66,11 @@ public class TextResource {
      * @param form the form data containing the prompt
      * @return a Response object containing the generated text
      * @throws IOException if an I/O error occurs
+     * @deprecated Superseded by {@code POST /api/inference/v1/chat/completions}, which answers in the
+     *             OpenAI-compatible shape any standard client and agent framework already
+     *             speaks. Not marked {@code forRemoval}: no removal date is committed.
      */
+    @Deprecated(since = "Sep 14th, 26")
     @Path("/generate")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
