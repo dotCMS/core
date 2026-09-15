@@ -40,15 +40,7 @@
         -->
         <div class="flex w-full items-center justify-between gap-2">
             @if ($showFooterTimezone()) {
-                <!--
-                    min-w-0 + truncate: a long zone label must give way rather than push the
-                    action out of the overlay. Without min-w-0 a flex item refuses to shrink
-                    below its content, so the text would win the tug-of-war against the button.
-                -->
-                <span
-                    class="min-w-0 truncate text-sm text-muted-color"
-                    [title]="$systemTimezone().label"
-                    data-testid="calendar-field-timezone">
+                <span class="text-sm text-muted-color" data-testid="calendar-field-timezone">
                     {{ $systemTimezone().label }}
                 </span>
             }

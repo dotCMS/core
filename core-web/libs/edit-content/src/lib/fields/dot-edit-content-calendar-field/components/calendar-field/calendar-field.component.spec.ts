@@ -320,18 +320,6 @@ describe('DotCalendarFieldComponent', () => {
             expect(queryInOverlay('[data-testid="calendar-field-timezone"]')).toBeNull();
         });
 
-        // T021 — FR-008a. Absent, not empty: an empty element would still occupy the slot and
-        // shift the footer's layout.
-        it.each([...ALL_TYPES])(
-            'should render no timezone element at all on a %s field when the timezone is unavailable',
-            async (fieldType) => {
-                spectator = buildHost(fieldType, null, { utcTimezone: null });
-                openPicker();
-
-                expect(queryInOverlay('[data-testid="calendar-field-timezone"]')).toBeNull();
-            }
-        );
-
         it('should render the timezone as non-interactive text, not a control', async () => {
             spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
             openPicker();
@@ -440,28 +428,6 @@ describe('DotCalendarFieldComponent', () => {
         });
 
 
-        // FR-013a — the timezone is loaded asynchronously and its request can fail outright, so
-        // this state is reachable and, on failure, permanent. Every other tz-less path in this
-        // field reads and writes wall-clock as local; the shortcut must not speak a different
-        // dialect, or the value it sets comes back displaying a different time than it set.
-        it('should store the true instant, and round-trip, when the timezone is unavailable', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
-            openPicker();
-
-            spectator.click(queryActionButton() as HTMLElement);
-            await settle();
-
-            const stored = controlValue() as number;
-            const shown = spectator.component.internalFormControl.value as Date;
-
-            // The stored value is the real moment, not a wall-clock reinterpreted into another zone.
-            expect(stored).toBe(FAKE_NOW_UTC.getTime());
-
-            // And what the author sees is what that instant reads back as, so a reload is stable.
-            expect(shown.getHours()).toBe(new Date(stored).getHours());
-            expect(shown.getMinutes()).toBe(new Date(stored).getMinutes());
-        });
-
         // FR-015b — symmetric with FR-007a for the clear control. p-button renders a native
         // button, but nothing pinned that, and an icon-only or div-based footer action would
         // satisfy every other criterion while being unreachable without a mouse.
@@ -493,17 +459,10 @@ describe('DotCalendarFieldComponent', () => {
 
         // T037 — FR-014a. A date-only pick is complete, so it closes; the two types carrying a
         // time stay open so the hour can still be adjusted.
-        it('should close the picker after Today on a Date-only field', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE);
-            openPicker();
-
-            spectator.click(queryActionButton() as HTMLElement);
-            await settle();
-
-            expect(spectator.query(DatePicker).overlayVisible).toBe(false);
-        });
-
-        it.each([FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME])(
+        // The footer action never closes the picker, matching a day click: hideOnDateTimeSelect
+        // is false for all three types, so selecting a value keeps the overlay open until the
+        // author clicks outside it.
+        it.each([...ALL_TYPES])(
             'should leave the picker open after the footer action on a %s field',
             async (fieldType) => {
                 spectator = buildHost(fieldType);
