@@ -9,6 +9,7 @@ import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
+import { Tooltip } from 'primeng/tooltip';
 import { ZIndexUtils } from 'primeng/utils';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -100,11 +101,20 @@ describe('DotContentDriveSearchInputComponent', () => {
                 key === 'searchScope' ? scope : undefined
             );
 
-        it('should render the scope control next to the search input', () => {
+        it('should render the scope trigger next to the search input', () => {
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('search-scope'))).toBeTruthy();
+            expect(spectator.query(byTestId('search-scope-trigger'))).toBeTruthy();
             expect(searchInput()).toBeTruthy();
+        });
+
+        it('should show the active scope on the trigger', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(spectator.component['$activeScopeLabel']()).toBe(
+                'content-drive.search.scope.title'
+            );
         });
 
         it('should start on All Fields when nothing is stored', () => {
@@ -162,10 +172,12 @@ describe('DotContentDriveSearchInputComponent', () => {
 
         it('should name the control for assistive technology', () => {
             spectator.detectChanges();
+            const trigger = spectator.query(byTestId('search-scope-trigger'));
 
-            expect(
-                spectator.query(byTestId('search-scope'))?.getAttribute('aria-label')
-            ).toBeTruthy();
+            expect(trigger?.getAttribute('aria-label')).toBeTruthy();
+            // The trigger opens a listbox panel, and a screen reader has to be told so.
+            expect(trigger?.getAttribute('aria-haspopup')).toBe('listbox');
+            expect(trigger?.getAttribute('aria-expanded')).toBe('false');
         });
 
         it('should offer an explanation of what each option matches', () => {
@@ -173,7 +185,12 @@ describe('DotContentDriveSearchInputComponent', () => {
 
             // Two labels do not carry the distinction between "the item's name" and "anything
             // written inside it", and the control is new.
-            expect(spectator.query(byTestId('search-scope-help'))).toBeTruthy();
+            // Asserted through the directive instance rather than an ng-reflect attribute, which
+            // Angular only emits in development mode.
+            const tooltip = spectator.query(Tooltip);
+
+            expect(tooltip).toBeTruthy();
+            expect(tooltip?.content).toBeTruthy();
         });
     });
 

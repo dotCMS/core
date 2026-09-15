@@ -3,12 +3,14 @@ import {
     Component,
     computed,
     inject,
+    signal,
     OnDestroy,
     viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { SelectButtonModule } from 'primeng/selectbutton';
+import { ListboxModule } from 'primeng/listbox';
+import { PopoverModule } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -34,35 +36,62 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 @Component({
     selector: 'dot-content-drive-search-input',
     template: `
-        <div class="flex w-full items-center gap-2">
-            <!-- The tooltip is a directive on a real wrapper, not a SelectButton input, and the
-                 label is a plain aria-label: ariaLabelledBy takes an element id, not text. -->
-            <span
-                [pTooltip]="'content-drive.search.scope.help' | dm"
-                data-testid="search-scope-help"
-                tooltipPosition="bottom"
-                class="inline-flex">
-                <p-selectButton
-                    [options]="scopeOptions"
-                    [ngModel]="$searchScope()"
-                    [allowEmpty]="false"
-                    [attr.aria-label]="'content-drive.search.scope.label' | dm"
-                    optionLabel="label"
-                    optionValue="value"
-                    data-testid="search-scope"
-                    (onOptionClick)="onScopeChange($event.option.value)" />
-            </span>
+        <!-- Input and scope read as one control: the wrapper owns the border and the rounding, and
+             the two children sit flush inside it, divided by a single hairline. Matching the ticket's
+             mock, and the panel reuses the popover + listbox the filter chips already use so the
+             drive has one dropdown idiom rather than two. -->
+        <div
+            class="dot-search-scope flex w-full items-stretch overflow-hidden rounded-md border border-slate-300 focus-within:border-slate-400">
             <dot-search-input
                 [value]="$searchTerm()"
                 [placeholder]="$placeholder()"
                 (search)="onSearch($event)"
-                class="flex-1" />
+                class="min-w-0 flex-1" />
+
+            <button
+                type="button"
+                class="flex shrink-0 items-center gap-2 border-l border-slate-300 px-3 text-sm hover:bg-slate-50"
+                [attr.aria-label]="'content-drive.search.scope.label' | dm"
+                [attr.aria-expanded]="$panelOpen()"
+                [pTooltip]="'content-drive.search.scope.help' | dm"
+                aria-haspopup="listbox"
+                data-testid="search-scope-trigger"
+                tooltipPosition="bottom"
+                (click)="panel.toggle($event)">
+                {{ $activeScopeLabel() | dm }}
+                <i class="pi text-xs" [class.pi-chevron-down]="!$panelOpen()" [class.pi-chevron-up]="$panelOpen()" aria-hidden="true"></i>
+            </button>
         </div>
+
+        <p-popover
+            #panel
+            styleClass="dot-popover-flush"
+            (onShow)="$panelOpen.set(true)"
+            (onHide)="$panelOpen.set(false)">
+            <!-- checkmark is the component's own way of marking the active option, which is what
+                 the mock shows. The item template only translates the label. -->
+            <p-listbox
+                [options]="scopeOptions"
+                [ngModel]="$searchScope()"
+                [ngModelOptions]="{ standalone: true }"
+                [checkmark]="true"
+                optionValue="value"
+                class="w-48"
+                data-testid="search-scope-panel"
+                (ngModelChange)="onScopeChange($event); panel.hide()">
+                <ng-template let-item pTemplate="item">
+                    <span [attr.data-testid]="'search-scope-option-' + item.value">
+                        {{ item.label | dm }}
+                    </span>
+                </ng-template>
+            </p-listbox>
+        </p-popover>
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DotSearchInputComponent,
-        SelectButtonModule,
+        ListboxModule,
+        PopoverModule,
         TooltipModule,
         DotMessagePipe,
         FormsModule
@@ -107,6 +136,16 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
         () =>
             (this.#store.getFilterValue(SEARCH_SCOPE_FILTER_KEY) as DotContentDriveSearchScope) ??
             DEFAULT_SEARCH_SCOPE
+    );
+
+    /** Whether the panel is open, so the chevron can point the right way. */
+    protected readonly $panelOpen = signal(false);
+
+    /** The trigger shows the active scope, as the mock does. */
+    protected readonly $activeScopeLabel = computed(
+        () =>
+            this.scopeOptions.find((option) => option.value === this.$searchScope())?.label ??
+            'content-drive.search.scope.all-fields'
     );
 
     /** The box says what it will do before the user types again. */
