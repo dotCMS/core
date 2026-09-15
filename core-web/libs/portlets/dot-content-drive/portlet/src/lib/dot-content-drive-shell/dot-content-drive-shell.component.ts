@@ -1481,9 +1481,19 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return hostFolder.path;
         }
 
-        return this.#store.$systemHostSelected()
-            ? this.#dotMessageService.get('content-drive.sidebar.system-host')
-            : this.#store.currentSite()?.hostname;
+        if (this.#store.$systemHostSelected()) {
+            return this.#dotMessageService.get('content-drive.sidebar.system-host');
+        }
+
+        // The site ROOT, not just the site. With no folder chosen the files land at the root, and
+        // in the flat view there is no path column to show that afterwards -- so this sentence is
+        // the only thing that says where they went. A bare hostname reads as "somewhere on this
+        // site", which on a site with folders is the question rather than the answer.
+        const hostname = this.#store.currentSite()?.hostname;
+
+        return hostname
+            ? this.#dotMessageService.get('content-drive.upload.target.site-root', hostname)
+            : undefined;
     }
 
     protected uploadByBaseType(

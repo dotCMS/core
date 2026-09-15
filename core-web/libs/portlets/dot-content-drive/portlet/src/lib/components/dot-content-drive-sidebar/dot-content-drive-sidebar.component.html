@@ -5,12 +5,13 @@
 -->
 <button
     type="button"
-    class="p-tree-node-content mt-5 w-full shrink-0 cursor-pointer text-left"
+    class="p-tree-node-content mt-[16.7px] w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
     data-testid="all-site-content"
     [class.p-tree-node-selected]="$allSiteContentSelected()"
     [attr.aria-current]="$allSiteContentSelected() ? 'true' : null"
     (click)="onSelectAllSiteContent()">
-    <i class="pi pi-list"></i>
+    <i
+        class="pi pi-list flex! size-[16px] shrink-0 items-center justify-center text-[16px]! leading-none!"></i>
     <span>{{ 'content-drive.sidebar.all-site-content' | dm }}</span>
 </button>
 
@@ -41,11 +42,12 @@
 -->
 <button
     type="button"
-    class="p-tree-node-content w-full shrink-0 cursor-pointer text-left"
+    class="p-tree-node-content mb-3 w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
     data-testid="system-host"
     [class.p-tree-node-selected]="$systemHostSelected()"
     [attr.aria-current]="$systemHostSelected() ? 'true' : null"
     (click)="onSelectSystemHost()">
-    <i class="pi pi-cloud"></i>
+    <i
+        class="pi pi-cloud flex! size-[16px] shrink-0 items-center justify-center text-[16px]! leading-none!"></i>
     <span>{{ 'content-drive.sidebar.system-host' | dm }}</span>
 </button>

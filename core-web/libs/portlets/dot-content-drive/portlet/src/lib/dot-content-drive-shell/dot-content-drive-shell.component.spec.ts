@@ -2097,6 +2097,23 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should name the site ROOT, not just the site, when no folder is chosen', () => {
+            // The flat view has no path column, so the indicator is the only thing that says where
+            // a file went. "demo.com" reads as "somewhere on this site"; the root is the answer.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(false);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ targetLabel: 'content-drive.upload.target.site-root' })
+            );
+        });
+
         it('should name System Host as the upload destination, not the switcher site', () => {
             // The indicator is the only surface an upload has before the handle comes back, so a
             // wrong destination there tells the author their files are going somewhere else.
