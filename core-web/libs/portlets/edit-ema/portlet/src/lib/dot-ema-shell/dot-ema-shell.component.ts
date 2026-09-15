@@ -1,6 +1,6 @@
 import { patchState, signalMethod } from '@ngrx/signals';
 
-import { Location } from '@angular/common';
+import { Location, NgComponentOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,10 +11,9 @@ import {
     OnDestroy,
     OnInit,
     signal,
+    Type,
     untracked,
-    ViewChild,
-    viewChild,
-    ViewContainerRef
+    ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
@@ -125,7 +124,8 @@ function hasOpenContentForEdit(component: unknown): component is RouteWithOpenCo
         DotInfoPageComponent,
         DotNotLicenseComponent,
         MessageModule,
-        DotMessagePipe
+        DotMessagePipe,
+        NgComponentOutlet
     ],
     /**
      * `DotExperimentsPanelStore` is **not** here: it is provided by the route, beside `UVEStore`
@@ -175,62 +175,46 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     );
 
     /**
-     * Where the panel is created (#37478).
+     * The Experiments panel's component class, once its chunk has landed (#37478).
      *
-     * A **signal** query, not `@ViewChild`, and that is the difference between mounting and not.
-     * The effect below reads it, so it re-runs when the host resolves — a decorator query is not
-     * reactive, and the effect's first pass (before the view exists) would drop the request
-     * silently and never look again.
+     * Null until the editor first opens the panel. The template renders it through
+     * `NgComponentOutlet`, so this signal is the whole of the panel's mounting contract: the
+     * effect below resolves the class, the template decides whether it is on screen.
      */
-    readonly $experimentsPanelHost = viewChild('experimentsPanelHost', { read: ViewContainerRef });
+    protected readonly $experimentsPanelComponent = signal<Type<unknown> | null>(null);
 
     /**
-     * Creates the Experiments panel on its first open and destroys it on close (#37478).
+     * Loads the Experiments panel's chunk the first time the editor opens it (#37478).
      *
-     * **Imperative rather than `@defer`, and that is forced.** The experiments portlet lib is
-     * reached only through dynamic imports — `app.routes.ts` and this lib's own `lib.routes.ts`
-     * both `import()` it — so Nx marks it lazy-loaded and `@nx/enforce-module-boundaries` rejects
-     * any static import of it. A `@defer` block still needs the component in `imports:`, which is
-     * a static import, so the rule fires on it too. `import()` here is what `@defer` compiles to
-     * anyway; the only thing lost is the template sugar.
+     * **A dynamic `import()` rather than `@defer`, and that is forced twice over.** The experiments
+     * portlet lib is reached only through dynamic imports — `app.routes.ts` and this lib's own
+     * `lib.routes.ts` both `import()` it — so Nx marks it lazy-loaded and
+     * `@nx/enforce-module-boundaries` rejects any static import of it, which is what a `@defer`
+     * block still needs in `imports:`. And even past that rule there would be no chunk: `@defer`
+     * would reach the component through the lib's barrel, and a bundler keeps a barrel's exports
+     * together, so the whole lib would land in this one's bundle anyway.
      *
-     * The split is the point: the whole lib — three screens, four stores and chart.js — stays out
-     * of what the editor loads until the panel is first opened (FR-037, SC-006).
+     * The split is the point: three screens, four stores and chart.js stay out of what the editor
+     * loads until the panel is first opened (FR-037, SC-006).
      *
-     * Destroying on close, rather than hiding, is what leaves nothing of the panel running behind
-     * it (FR-039).
-     *
-     * **Both inputs are tracked, and the host is why.** The store outlives this component — it is
-     * provided by the route — so a rebuilt shell can find the panel *already* open, with `isOpen`
-     * never transitioning. An effect that only reacted to the store would run once, before the
-     * view existed, find no host and never look again: the state said open and nothing was on
-     * screen. That is what the variant round trip does on its way back.
+     * Once loaded the class is kept, and `@if` in the template mounts and destroys the panel from
+     * there — so closing still leaves nothing of it running (FR-039) without re-fetching the chunk
+     * on the next open. Nothing here has to survive the `await`: if the editor dismissed the panel
+     * while it was in flight, the template simply never renders it.
      */
-    readonly $experimentsPanelEffect = effect(() => {
-        const isOpen = this.experimentsPanel.isOpen();
-        const host = this.$experimentsPanelHost();
+    readonly $experimentsPanelLoader = effect(() => {
+        if (!this.experimentsPanel.isOpen() || this.$experimentsPanelComponent()) {
+            return;
+        }
 
         untracked(async () => {
-            if (!host) {
-                return;
-            }
-
-            if (!isOpen) {
-                host.clear();
-
-                return;
-            }
-
             const { DotExperimentsPanelComponent } =
                 await import('@dotcms/portlets/dot-experiments/portlet');
 
-            // Re-checked after the await: the editor can dismiss the panel while the chunk is in
-            // flight, and creating it then would show a panel nobody asked for any more.
-            if (this.experimentsPanel.isOpen() && host.length === 0) {
-                host.createComponent(DotExperimentsPanelComponent);
-            }
+            this.$experimentsPanelComponent.set(DotExperimentsPanelComponent);
         });
     });
+
     readonly #dotMessageService = inject(DotMessageService);
     protected readonly $lockOptions = this.uveStore.$lockOptions;
     protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
