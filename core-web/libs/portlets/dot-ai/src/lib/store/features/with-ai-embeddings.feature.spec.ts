@@ -1,6 +1,7 @@
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -38,7 +39,7 @@ const TestStore = signalStore(
 describe('withAiEmbeddings', () => {
     let spectator: SpectatorService<InstanceType<typeof TestStore>>;
     let store: InstanceType<typeof TestStore>;
-    let service: jest.Mocked<DotAiEmbeddingsService>;
+    let service: Mocked<DotAiEmbeddingsService>;
 
     const createService = createServiceFactory({
         service: TestStore,
@@ -48,13 +49,13 @@ describe('withAiEmbeddings', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotAiEmbeddingsService) as jest.Mocked<DotAiEmbeddingsService>;
-        service.getIndexes = jest.fn().mockReturnValue(of([index()]));
+        service = spectator.inject(DotAiEmbeddingsService) as Mocked<DotAiEmbeddingsService>;
+        service.getIndexes = vi.fn().mockReturnValue(of([index()]));
     });
 
     describe('buildIndex', () => {
         it('should post an EmbeddingsForm and refresh the list (FR-033)', () => {
-            service.buildIndex = jest.fn().mockReturnValue(of(buildResult()));
+            service.buildIndex = vi.fn().mockReturnValue(of(buildResult()));
 
             store.buildIndex({ indexName: 'blogs', query: '+contentType:Blog' });
 
@@ -66,7 +67,7 @@ describe('withAiEmbeddings', () => {
         });
 
         it('should seed BUILDING from the index the build response names (FR-027)', () => {
-            service.buildIndex = jest.fn().mockReturnValue(of(buildResult('blogs')));
+            service.buildIndex = vi.fn().mockReturnValue(of(buildResult('blogs')));
 
             store.buildIndex({ indexName: 'blogs', query: 'q' });
 
@@ -75,7 +76,7 @@ describe('withAiEmbeddings', () => {
 
         it('should not fire twice on a double submit (exhaustMap, FR-035)', () => {
             const pending = new Subject<DotAiEmbeddingsBuildResult>();
-            service.buildIndex = jest.fn().mockReturnValue(pending);
+            service.buildIndex = vi.fn().mockReturnValue(pending);
 
             store.buildIndex({ indexName: 'blogs', query: 'q' });
             store.buildIndex({ indexName: 'blogs', query: 'q' });
@@ -90,7 +91,7 @@ describe('withAiEmbeddings', () => {
                 status: 500,
                 error: { error: 'Index -1 out of bounds for length 0' }
             });
-            service.buildIndex = jest.fn().mockReturnValue(throwError(() => error));
+            service.buildIndex = vi.fn().mockReturnValue(throwError(() => error));
 
             store.buildIndex({ indexName: 'blogs', query: '+++[' });
 
@@ -105,7 +106,7 @@ describe('withAiEmbeddings', () => {
         it('should flag a build that matched nothing rather than looking successful', () => {
             // The server answers 200 with totalToEmbed 0, and the empty index never comes back
             // from indexCount — so silence here reads as "the build did nothing".
-            service.buildIndex = jest
+            service.buildIndex = vi
                 .fn()
                 .mockReturnValue(
                     of({ indexName: 'blogs', totalToEmbed: 0, timeToEmbeddings: '3ms' })
@@ -117,7 +118,7 @@ describe('withAiEmbeddings', () => {
         });
 
         it('should report how much was embedded on success', () => {
-            service.buildIndex = jest
+            service.buildIndex = vi
                 .fn()
                 .mockReturnValue(
                     of({ indexName: 'blogs', totalToEmbed: 6, timeToEmbeddings: '3ms' })
@@ -135,7 +136,7 @@ describe('withAiEmbeddings', () => {
 
     describe('deleteFromIndex', () => {
         it('should send the query as a deletion criterion, not as content to embed', () => {
-            service.deleteFromIndex = jest.fn().mockReturnValue(of(3));
+            service.deleteFromIndex = vi.fn().mockReturnValue(of(3));
 
             store.deleteFromIndex({ indexName: 'blogs', query: '+contentType:Blog' });
 
@@ -148,7 +149,7 @@ describe('withAiEmbeddings', () => {
         it('should let concurrent deletions of different indexes both complete', () => {
             const first = new Subject<number>();
             const second = new Subject<number>();
-            service.deleteIndex = jest.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+            service.deleteIndex = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
 
             store.deleteIndex('a');
             store.deleteIndex('b');
@@ -167,7 +168,7 @@ describe('withAiEmbeddings', () => {
 
     describe('rebuildEmbeddingsDb', () => {
         it('should rebuild and refresh', () => {
-            service.rebuildEmbeddingsDb = jest.fn().mockReturnValue(of(true));
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(of(true));
 
             store.rebuildEmbeddingsDb();
 
@@ -177,7 +178,7 @@ describe('withAiEmbeddings', () => {
 
         it('should not fire twice on a double click (exhaustMap)', () => {
             const pending = new Subject<boolean>();
-            service.rebuildEmbeddingsDb = jest.fn().mockReturnValue(pending);
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(pending);
 
             store.rebuildEmbeddingsDb();
             store.rebuildEmbeddingsDb();
@@ -193,7 +194,7 @@ describe('withAiEmbeddings', () => {
         const forbidden = () => throwError(() => new HttpErrorResponse({ status: 403 }));
 
         it('should put the tab in its forbidden state rather than raising a dialog', () => {
-            service.deleteIndex = jest.fn().mockReturnValue(forbidden());
+            service.deleteIndex = vi.fn().mockReturnValue(forbidden());
 
             store.deleteIndex('blogs');
 
@@ -203,7 +204,7 @@ describe('withAiEmbeddings', () => {
 
         it('should still route other failures through the error manager', () => {
             const error = new HttpErrorResponse({ status: 500 });
-            service.rebuildEmbeddingsDb = jest.fn().mockReturnValue(throwError(() => error));
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(throwError(() => error));
 
             store.rebuildEmbeddingsDb();
 
@@ -214,7 +215,7 @@ describe('withAiEmbeddings', () => {
 
     describe('client-side filtering (FR-028)', () => {
         beforeEach(() => {
-            service.getIndexes = jest
+            service.getIndexes = vi
                 .fn()
                 .mockReturnValue(of([index({ name: 'blogs' }), index({ name: 'news' })]));
             store.loadIndexes();

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { Editor } from '@tiptap/core';
 import { Slice } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
@@ -39,7 +41,7 @@ function hasNodeType(editor: Editor, name: string): boolean {
 function buildDropEvent(files: File[]): DragEvent {
     return {
         dataTransfer: { files },
-        preventDefault: jest.fn(),
+        preventDefault: vi.fn(),
         clientX: 0,
         clientY: 0
     } as unknown as DragEvent;
@@ -95,7 +97,7 @@ describe('handleMediaDrop — audio', () => {
     it('handles an audio file: inserts a placeholder then replaces it with a dotAudio node', async () => {
         editor = buildEditor();
         // jsdom has no layout, so resolve the drop position via the selection fallback.
-        jest.spyOn(editor.view, 'posAtCoords').mockReturnValue(null);
+        vi.spyOn(editor.view, 'posAtCoords').mockReturnValue(null);
         const audioFile = new File(['x'], 'song.mp3', { type: 'audio/mpeg' });
         const event = buildDropEvent([audioFile]);
 
@@ -110,7 +112,7 @@ describe('handleMediaDrop — audio', () => {
             },
             mimeType: 'audio/mpeg'
         };
-        const uploadAudio = jest.fn().mockResolvedValue(uploaded);
+        const uploadAudio = vi.fn().mockResolvedValue(uploaded);
 
         const handled = handleMediaDrop(
             editor,
@@ -140,10 +142,10 @@ describe('handleMediaDrop — audio', () => {
 
     it('removes the placeholder when the audio upload fails', async () => {
         editor = buildEditor();
-        jest.spyOn(editor.view, 'posAtCoords').mockReturnValue(null);
+        vi.spyOn(editor.view, 'posAtCoords').mockReturnValue(null);
         const event = buildDropEvent([new File(['x'], 'song.mp3', { type: 'audio/mpeg' })]);
-        const uploadAudio = jest.fn().mockRejectedValue(new Error('boom'));
-        jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        const uploadAudio = vi.fn().mockRejectedValue(new Error('boom'));
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
         handleMediaDrop(
             editor,

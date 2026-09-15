@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Observable, of, Subject, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -63,7 +64,7 @@ const MOCK_ROW: StudioPageRow = {
 describe('A11yPageListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof A11yPageListStore>>;
     let store: InstanceType<typeof A11yPageListStore>;
-    let searchService: jest.Mocked<DotContentSearchService>;
+    let searchService: Mocked<DotContentSearchService>;
     let currentSiteIdSignal: ReturnType<typeof signal<string | null>>;
     /** What `DotLanguagesService.get()` returns for the next store instance. */
     let languagesResponse: () => Observable<DotLanguage[]>;
@@ -72,13 +73,13 @@ describe('A11yPageListStore', () => {
         service: A11yPageListStore,
         providers: [
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_ENTITY))
+                get: vi.fn().mockReturnValue(of(MOCK_SEARCH_ENTITY))
             }),
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn().mockReturnValue(of(null))
+                handle: vi.fn().mockReturnValue(of(null))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn(() => languagesResponse())
+                get: vi.fn(() => languagesResponse())
             }),
             mockProvider(GlobalStore, {
                 get currentSiteId() {
@@ -89,7 +90,7 @@ describe('A11yPageListStore', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         currentSiteIdSignal = signal<string | null>('site-1');
         languagesResponse = () =>
             of([
@@ -100,7 +101,7 @@ describe('A11yPageListStore', () => {
         store = spectator.service;
         searchService = spectator.inject(
             DotContentSearchService
-        ) as jest.Mocked<DotContentSearchService>;
+        ) as Mocked<DotContentSearchService>;
         // The onInit effect loads the page list — this store is page-list-only, no gate.
         spectator.flushEffects();
     });

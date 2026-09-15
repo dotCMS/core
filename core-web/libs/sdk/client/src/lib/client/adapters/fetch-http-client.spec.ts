@@ -1,3 +1,5 @@
+import { Mock, MockedFunction, vi } from 'vitest';
+
 import { DotHttpError } from '@dotcms/types';
 
 import { FetchHttpClient } from './fetch-http-client';
@@ -5,21 +7,21 @@ import { FetchHttpClient } from './fetch-http-client';
 import { checkSdkCompatibility } from '../../utils/sdk-compatibility';
 
 // Mock fetch globally
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
-jest.mock('../../utils/sdk-compatibility', () => ({
-    checkSdkCompatibility: jest.fn()
+vi.mock('../../utils/sdk-compatibility', () => ({
+    checkSdkCompatibility: vi.fn()
 }));
 
 describe('FetchHttpClient', () => {
     let httpClient: FetchHttpClient;
-    let mockFetch: jest.MockedFunction<typeof fetch>;
+    let mockFetch: MockedFunction<typeof fetch>;
 
     beforeEach(() => {
         httpClient = new FetchHttpClient();
-        mockFetch = fetch as jest.MockedFunction<typeof fetch>;
+        mockFetch = fetch as MockedFunction<typeof fetch>;
         mockFetch.mockClear();
-        (checkSdkCompatibility as jest.Mock).mockClear();
+        (checkSdkCompatibility as Mock).mockClear();
     });
 
     describe('SDK compatibility check', () => {
@@ -33,7 +35,7 @@ describe('FetchHttpClient', () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 headers: mockHeaders,
-                json: jest.fn().mockResolvedValue({ data: 'test' })
+                json: vi.fn().mockResolvedValue({ data: 'test' })
             } as unknown as Response);
 
             await httpClient.request('https://api.example.com/test');
@@ -54,7 +56,7 @@ describe('FetchHttpClient', () => {
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
                     headers: mockHeaders,
-                    json: jest.fn().mockResolvedValue(mockResponse)
+                    json: vi.fn().mockResolvedValue(mockResponse)
                 } as unknown as Response);
 
                 const result = await httpClient.request('https://api.example.com/test');
@@ -71,7 +73,7 @@ describe('FetchHttpClient', () => {
                 const mockResponse = {
                     ok: true,
                     headers: mockHeaders,
-                    text: jest.fn().mockResolvedValue('plain text response')
+                    text: vi.fn().mockResolvedValue('plain text response')
                 };
 
                 mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
@@ -87,7 +89,7 @@ describe('FetchHttpClient', () => {
                 const mockResponse = {
                     ok: true,
                     headers: mockHeaders,
-                    text: jest.fn().mockResolvedValue('response without content-type')
+                    text: vi.fn().mockResolvedValue('response without content-type')
                 };
 
                 mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
@@ -107,7 +109,7 @@ describe('FetchHttpClient', () => {
                 const mockResponse = {
                     ok: true,
                     headers: new Headers({ 'content-type': 'application/json' }),
-                    json: jest.fn().mockResolvedValue({ success: true })
+                    json: vi.fn().mockResolvedValue({ success: true })
                 };
 
                 mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
@@ -130,7 +132,7 @@ describe('FetchHttpClient', () => {
                     status: 400,
                     statusText: 'Bad Request',
                     headers: mockHeaders,
-                    json: jest.fn().mockResolvedValue(errorBody)
+                    json: vi.fn().mockResolvedValue(errorBody)
                 } as unknown as Response);
 
                 await expect(httpClient.request('https://api.example.com/test')).rejects.toThrow(
@@ -144,7 +146,7 @@ describe('FetchHttpClient', () => {
                     status: 400,
                     statusText: 'Bad Request',
                     headers: mockHeaders,
-                    json: jest.fn().mockResolvedValue(errorBody)
+                    json: vi.fn().mockResolvedValue(errorBody)
                 } as unknown as Response);
 
                 try {
@@ -171,7 +173,7 @@ describe('FetchHttpClient', () => {
                     status: 500,
                     statusText: 'Internal Server Error',
                     headers: mockHeaders,
-                    json: jest.fn().mockResolvedValue(errorBody)
+                    json: vi.fn().mockResolvedValue(errorBody)
                 } as unknown as Response);
 
                 try {
@@ -197,7 +199,7 @@ describe('FetchHttpClient', () => {
                     status: 503,
                     statusText: 'Service Unavailable',
                     headers: mockHeaders,
-                    text: jest.fn().mockResolvedValue(errorText)
+                    text: vi.fn().mockResolvedValue(errorText)
                 } as unknown as Response);
 
                 try {
@@ -222,7 +224,7 @@ describe('FetchHttpClient', () => {
                     status: 400,
                     statusText: 'Bad Request',
                     headers: mockHeaders,
-                    json: jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+                    json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
                 } as unknown as Response);
 
                 try {
@@ -249,7 +251,7 @@ describe('FetchHttpClient', () => {
                     status: 429,
                     statusText: 'Too Many Requests',
                     headers: mockHeaders,
-                    json: jest.fn().mockResolvedValue({ message: 'Rate limited' })
+                    json: vi.fn().mockResolvedValue({ message: 'Rate limited' })
                 } as unknown as Response);
 
                 try {
@@ -309,7 +311,7 @@ describe('FetchHttpClient', () => {
                 const mockResponse = {
                     ok: true,
                     headers: mockHeaders,
-                    text: jest.fn().mockResolvedValue('response with invalid content-type')
+                    text: vi.fn().mockResolvedValue('response with invalid content-type')
                 };
 
                 mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
@@ -327,7 +329,7 @@ describe('FetchHttpClient', () => {
                 const mockResponse = {
                     ok: true,
                     headers: mockHeaders,
-                    json: jest.fn().mockRejectedValue(new Error('Invalid JSON'))
+                    json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
                 };
 
                 mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
@@ -347,7 +349,7 @@ describe('FetchHttpClient', () => {
                     status: 204,
                     statusText: 'No Content',
                     headers: mockHeaders,
-                    json: jest.fn().mockResolvedValue(null)
+                    json: vi.fn().mockResolvedValue(null)
                 } as unknown as Response);
 
                 try {
@@ -377,7 +379,7 @@ describe('FetchHttpClient', () => {
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
                     headers: mockHeaders,
-                    json: jest.fn().mockResolvedValue(mockResponse)
+                    json: vi.fn().mockResolvedValue(mockResponse)
                 } as unknown as Response);
 
                 const result = await httpClient.request<TestResponse>(

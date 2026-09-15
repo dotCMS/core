@@ -1,5 +1,5 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
@@ -20,11 +20,11 @@ describe('UveIframeMessengerService', () => {
 
         // Create a mock iframe window with postMessage spy
         mockIframeWindow = {
-            postMessage: jest.fn()
+            postMessage: vi.fn()
         } as unknown as Window;
 
         // Mock console.warn to avoid noise in tests
-        jest.spyOn(console, 'warn').mockImplementation(jest.fn());
+        vi.spyOn(console, 'warn').mockImplementation(vi.fn());
     });
 
     describe('setIframeWindow and getIframeWindow', () => {

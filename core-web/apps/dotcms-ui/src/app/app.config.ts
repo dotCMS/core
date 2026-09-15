@@ -28,6 +28,13 @@ export const appConfig: ApplicationConfig = {
         // Core Angular providers
         provideAnimations(),
         provideDotCMSTheme(),
+        // Angular's default backend, which since v22 is `FetchBackend`.
+        //
+        // Upload progress is not available on it: fetch has no equivalent of `xhr.upload`, so
+        // `HttpEventType.UploadProgress` never fires. `withXhr()` restores that and was tried here,
+        // then dropped by developer decision — XHR sits too near the deprecation line, its
+        // server-side half already being slated for removal. So a bulk upload reports activity
+        // without a position, which the indicator renders as activity rather than as zero.
         provideHttpClient(withInterceptors([apiPrefixInterceptor, serverErrorInterceptor])),
         provideRouter(
             appRoutes,

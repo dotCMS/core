@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -10,20 +16,18 @@ describe('DotAiSettingsPanelComponent', () => {
     let spectator: Spectator<DotAiSettingsPanelComponent>;
 
     const storeMock = {
-        indexesForbidden: jest.fn().mockReturnValue(false),
-        indexOptions: jest
-            .fn()
-            .mockReturnValue([{ label: 'blogs - (contents:4)', value: 'blogs' }]),
-        chatModels: jest.fn().mockReturnValue(['gpt-4o-mini']),
-        settingsIndexName: jest.fn().mockReturnValue('blogs'),
-        settingsThreshold: jest.fn().mockReturnValue(0.75),
-        settingsOperator: jest.fn().mockReturnValue('cosine'),
-        settingsModel: jest.fn().mockReturnValue('gpt-4o-mini'),
-        settingsTemperature: jest.fn().mockReturnValue(0),
-        settingsResponseLength: jest.fn().mockReturnValue(1024),
-        settingsContentTypes: jest.fn().mockReturnValue(''),
-        settingsSite: jest.fn().mockReturnValue(null),
-        setSettings: jest.fn()
+        indexesForbidden: vi.fn().mockReturnValue(false),
+        indexOptions: vi.fn().mockReturnValue([{ label: 'blogs - (contents:4)', value: 'blogs' }]),
+        chatModels: vi.fn().mockReturnValue(['gpt-4o-mini']),
+        settingsIndexName: vi.fn().mockReturnValue('blogs'),
+        settingsThreshold: vi.fn().mockReturnValue(0.75),
+        settingsOperator: vi.fn().mockReturnValue('cosine'),
+        settingsModel: vi.fn().mockReturnValue('gpt-4o-mini'),
+        settingsTemperature: vi.fn().mockReturnValue(0),
+        settingsResponseLength: vi.fn().mockReturnValue(1024),
+        settingsContentTypes: vi.fn().mockReturnValue(''),
+        settingsSite: vi.fn().mockReturnValue(null),
+        setSettings: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -34,7 +38,7 @@ describe('DotAiSettingsPanelComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         storeMock.indexesForbidden.mockReturnValue(false);
     });
 

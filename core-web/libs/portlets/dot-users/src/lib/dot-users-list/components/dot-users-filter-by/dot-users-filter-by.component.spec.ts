@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -29,8 +35,8 @@ describe('DotUsersFilterByComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotUsersListStore, {
-                roleFilter: jest.fn().mockReturnValue(USERS_FILTER_ALL),
-                setRoleFilter: jest.fn()
+                roleFilter: vi.fn().mockReturnValue(USERS_FILTER_ALL),
+                setRoleFilter: vi.fn()
             })
         ],
         providers: [

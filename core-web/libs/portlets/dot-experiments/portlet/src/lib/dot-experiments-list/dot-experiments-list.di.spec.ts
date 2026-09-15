@@ -16,7 +16,13 @@
  * for is left real. Replacing the store or the service with a mock "to simplify" destroys the whole
  * value of this file.
  */
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -43,8 +49,8 @@ const CURRENT_SITE_ID = 'site-123';
 
 /** `GlobalStore` is `providedIn: 'root'`; only what this screen reads and writes is stubbed. */
 const globalStoreMock = {
-    addNewBreadcrumb: jest.fn(),
-    setLastBreadcrumb: jest.fn(),
+    addNewBreadcrumb: vi.fn(),
+    setLastBreadcrumb: vi.fn(),
     lastBreadcrumb: signal(null),
     currentSiteId: signal(CURRENT_SITE_ID),
     siteDetails: signal({

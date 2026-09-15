@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -61,13 +62,13 @@ describe('LocalesFeature', () => {
 
     // Locale reloads are delegated to the host (router vs in-place is its call).
     const mockHost = {
-        reloadContent: jest.fn(),
-        resolveIdentity: jest.fn().mockReturnValue({}),
-        reportSaved: jest.fn(),
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        reloadContent: vi.fn(),
+        resolveIdentity: vi.fn().mockReturnValue({}),
+        reportSaved: vi.fn(),
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const createStore = createServiceFactory({
@@ -153,7 +154,7 @@ describe('LocalesFeature', () => {
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('populate')
             } as DynamicDialogRef);
 
@@ -181,7 +182,7 @@ describe('LocalesFeature', () => {
         }));
 
         it('should open dialog, update state for untranslated locale doing manual copy', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('manual')
             } as DynamicDialogRef);
 
@@ -197,7 +198,7 @@ describe('LocalesFeature', () => {
         }));
 
         it('should reset isManualTranslation to false when switching to a translated locale', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('manual')
             } as DynamicDialogRef);
 

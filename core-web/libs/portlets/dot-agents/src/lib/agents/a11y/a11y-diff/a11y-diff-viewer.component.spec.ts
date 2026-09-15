@@ -1,6 +1,12 @@
 import { MonacoEditorLoaderService } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -35,15 +41,15 @@ const CSS_FILE: PageDiffFile = {
 
 /** A minimal monaco diff-editor mock installed on the window global. */
 function installMonacoMock() {
-    const setModel = jest.fn();
-    const dispose = jest.fn();
+    const setModel = vi.fn();
+    const dispose = vi.fn();
     const editor = {
-        getModel: jest.fn().mockReturnValue(null),
+        getModel: vi.fn().mockReturnValue(null),
         setModel,
         dispose
     };
-    const createDiffEditor = jest.fn().mockReturnValue(editor);
-    const createModel = jest.fn((value: string) => ({ value, dispose: jest.fn() }));
+    const createDiffEditor = vi.fn().mockReturnValue(editor);
+    const createModel = vi.fn((value: string) => ({ value, dispose: vi.fn() }));
     (window as unknown as { monaco: unknown }).monaco = {
         editor: { createDiffEditor, createModel }
     };
@@ -71,7 +77,7 @@ describe('DotA11yDiffViewerComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         monacoMock = installMonacoMock();
     });
 

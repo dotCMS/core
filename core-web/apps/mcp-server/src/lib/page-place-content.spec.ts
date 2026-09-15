@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
 
 import {
@@ -70,7 +72,7 @@ function fakeRuntime(overrides?: {
     page?: unknown;
 }) {
     const calls: Array<{ method?: string; path: string; body?: unknown; query?: unknown }> = [];
-    const request = jest.fn(async (options: RequestOptions) => {
+    const request = vi.fn(async (options: RequestOptions) => {
         calls.push({
             method: options.method,
             path: options.path,
@@ -85,7 +87,7 @@ function fakeRuntime(overrides?: {
         }
         return {};
     });
-    const loadContext = jest.fn(async () => ({
+    const loadContext = vi.fn(async () => ({
         contentTypes: [],
         sites: [
             {

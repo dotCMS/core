@@ -1,5 +1,5 @@
 import { HttpMethod } from '@openng/spectator';
-import { createHttpFactory, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { API_URL, CategoriesService, ITEMS_PER_PAGE } from './categories.service';
 

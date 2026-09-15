@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -24,17 +30,17 @@ describe('DotAiImageComponent', () => {
     let spectator: Spectator<DotAiImageComponent>;
 
     const storeMock = {
-        image: jest.fn().mockReturnValue(null),
-        imageUrl: jest.fn().mockReturnValue(null),
-        imageGenerating: jest.fn().mockReturnValue(false),
-        imageSaving: jest.fn().mockReturnValue(false),
-        imageOrientation: jest.fn().mockReturnValue('1792x1024'),
-        imageError: jest.fn().mockReturnValue(null),
-        isConfigured: jest.fn().mockReturnValue(true),
-        generateImage: jest.fn(),
-        saveImage: jest.fn(),
-        setOrientation: jest.fn(),
-        dismissImageError: jest.fn()
+        image: vi.fn().mockReturnValue(null),
+        imageUrl: vi.fn().mockReturnValue(null),
+        imageGenerating: vi.fn().mockReturnValue(false),
+        imageSaving: vi.fn().mockReturnValue(false),
+        imageOrientation: vi.fn().mockReturnValue('1792x1024'),
+        imageError: vi.fn().mockReturnValue(null),
+        isConfigured: vi.fn().mockReturnValue(true),
+        generateImage: vi.fn(),
+        saveImage: vi.fn(),
+        setOrientation: vi.fn(),
+        dismissImageError: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -47,7 +53,7 @@ describe('DotAiImageComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         storeMock.image.mockReturnValue(null);
         storeMock.imageUrl.mockReturnValue(null);
         storeMock.imageGenerating.mockReturnValue(false);

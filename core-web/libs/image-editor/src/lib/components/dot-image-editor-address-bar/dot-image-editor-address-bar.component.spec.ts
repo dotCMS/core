@@ -1,5 +1,11 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -27,7 +33,7 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotImageEditorAddressBarComponent', () => {
     let spectator: Spectator<DotImageEditorAddressBarComponent>;
     let dispatcher: Dispatcher;
-    let writeText: jest.Mock;
+    let writeText: Mock;
 
     const previewUrl = signal(PREVIEW_URL);
     const zoom = signal({ level: 100, fitToScreen: true });
@@ -68,7 +74,7 @@ describe('DotImageEditorAddressBarComponent', () => {
         canRedo.set(true);
         activeTool.set('move');
 
-        writeText = jest.fn().mockResolvedValue(undefined);
+        writeText = vi.fn().mockResolvedValue(undefined);
         Object.defineProperty(navigator, 'clipboard', {
             value: { writeText },
             configurable: true
@@ -76,7 +82,7 @@ describe('DotImageEditorAddressBarComponent', () => {
 
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
-        jest.spyOn(dispatcher, 'dispatch');
+        vi.spyOn(dispatcher, 'dispatch');
     });
 
     it('should render the preview URL in the address field', () => {
@@ -116,7 +122,7 @@ describe('DotImageEditorAddressBarComponent', () => {
     });
 
     it('should open the absolute preview URL in a new tab when the preview button is clicked', () => {
-        const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+        const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
         spectator.click(button('image-editor-preview-url-btn'));
 
@@ -159,9 +165,9 @@ describe('DotImageEditorAddressBarComponent', () => {
     });
 
     it('should emit zoomIn, zoomOut and fit from the zoom controls', () => {
-        const zoomInSpy = jest.fn();
-        const zoomOutSpy = jest.fn();
-        const fitSpy = jest.fn();
+        const zoomInSpy = vi.fn();
+        const zoomOutSpy = vi.fn();
+        const fitSpy = vi.fn();
         spectator.output('$zoomIn').subscribe(zoomInSpy);
         spectator.output('$zoomOut').subscribe(zoomOutSpy);
         spectator.output('$fit').subscribe(fitSpy);

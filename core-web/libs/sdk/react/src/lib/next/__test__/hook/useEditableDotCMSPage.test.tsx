@@ -1,25 +1,26 @@
 import { renderHook, act } from '@testing-library/react-hooks';
+import { Mock, vi } from 'vitest';
 
 import { DotCMSPageResponse, UVEEventType } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
 
 import { useEditableDotCMSPage } from '../../hooks/useEditableDotCMSPage';
 
-jest.mock('@dotcms/uve', () => ({
-    updateNavigation: jest.fn(),
-    getUVEState: jest.fn(),
-    initUVE: jest.fn(),
-    createUVESubscription: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    updateNavigation: vi.fn(),
+    getUVEState: vi.fn(),
+    initUVE: vi.fn(),
+    createUVESubscription: vi.fn()
 }));
 
 describe('useEditableDotCMSPage', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
-    const initUVEMock = initUVE as jest.Mock;
-    const createUVESubscriptionMock = createUVESubscription as jest.Mock;
-    const updateNavigationMock = updateNavigation as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
+    const initUVEMock = initUVE as Mock;
+    const createUVESubscriptionMock = createUVESubscription as Mock;
+    const updateNavigationMock = updateNavigation as Mock;
 
-    const mockUnsubscribe = jest.fn();
-    const mockDestroyUVESubscriptions = jest.fn();
+    const mockUnsubscribe = vi.fn();
+    const mockDestroyUVESubscriptions = vi.fn();
 
     // Use unknown as intermediate type to avoid type checking issues
     const mockPageResponse = {
@@ -37,7 +38,7 @@ describe('useEditableDotCMSPage', () => {
     } as DotCMSPageResponse;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         initUVEMock.mockReturnValue({ destroyUVESubscriptions: mockDestroyUVESubscriptions });
         createUVESubscriptionMock.mockReturnValue({ unsubscribe: mockUnsubscribe });
     });

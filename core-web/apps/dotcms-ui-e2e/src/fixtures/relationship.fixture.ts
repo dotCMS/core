@@ -88,14 +88,26 @@ function parseBulkPublishContentlets(
     return contentlets;
 }
 
+/**
+ * @param waitForIndex Whether to publish with `indexPolicy=WAIT_FOR`.
+ *
+ *   Defaults to `true`, which is what a test needs when the content has to be **findable** — any
+ *   test that searches for it, the picker included.
+ *
+ *   Pass `false` when the test only reads the content back through a contentlet it is related to.
+ *   The related-content list is resolved from the parent through `?depth=2`, straight out of the
+ *   database, so waiting on the index there buys nothing and costs a round of indexing per row. At
+ *   41 rows that was the difference between a test that fits in CI and one that does not.
+ */
 async function fireContentlets(
     request: APIRequestContext,
     contentType: string,
-    fieldsList: Record<string, unknown>[]
+    fieldsList: Record<string, unknown>[],
+    waitForIndex = true
 ): Promise<TestContentlet[]> {
     const items = fieldsList.map((fields) => ({ contentType, ...fields }));
     const response = await request.post(
-        '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
+        `/api/v1/workflow/actions/default/fire/PUBLISH${waitForIndex ? '?indexPolicy=WAIT_FOR' : ''}`,
         {
             data: { contentlets: items },
             headers: { ...authHeaders(), 'Content-Type': 'application/json' }
@@ -271,7 +283,8 @@ export const test = base.extend<{
         /** Bulk create; returned array sorted by `title` (API completion order is not guaranteed). */
         createContentlets: (
             ct: string,
-            fieldsList: Record<string, unknown>[]
+            fieldsList: Record<string, unknown>[],
+            waitForIndex?: boolean
         ) => Promise<TestContentlet[]>;
         createContentletWithRelationship: (
             ct: string,
@@ -303,7 +316,8 @@ export const test = base.extend<{
             createContentType: (payload) => createFakeContentType(request, payload),
             deleteContentType: (id) => deleteContentType(request, id),
             createContentlet: (ct, fields) => fireContentlet(request, ct, fields),
-            createContentlets: (ct, fieldsList) => fireContentlets(request, ct, fieldsList),
+            createContentlets: (ct, fieldsList, waitForIndex) =>
+                fireContentlets(request, ct, fieldsList, waitForIndex),
             createContentletWithRelationship: (ct, fields, rels) =>
                 fireContentletWithRelationship(request, ct, fields, rels),
             enableNewEditor: (ctVar) => enableNewEditor(request, ctVar),

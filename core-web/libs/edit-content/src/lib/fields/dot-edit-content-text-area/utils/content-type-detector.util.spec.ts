@@ -1,4 +1,4 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { detectEditorType } from './content-type-detector.util';
 
@@ -11,17 +11,17 @@ import {
 import { AvailableEditorTextArea } from '../dot-edit-content-text-area.constants';
 
 // Mock the language detector functions
-jest.mock('../../dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.utils');
+vi.mock('../../dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.utils');
 
 // Get the mocked versions of the functions
-const mockedIsVelocity = jest.mocked(isVelocity);
-const mockedIsJavascript = jest.mocked(isJavascript);
-const mockedIsHtml = jest.mocked(isHtml);
-const mockedIsMarkdown = jest.mocked(isMarkdown);
+const mockedIsVelocity = vi.mocked(isVelocity);
+const mockedIsJavascript = vi.mocked(isJavascript);
+const mockedIsHtml = vi.mocked(isHtml);
+const mockedIsMarkdown = vi.mocked(isMarkdown);
 
 describe('Content Type Detector Utils', () => {
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('detectEditorType', () => {

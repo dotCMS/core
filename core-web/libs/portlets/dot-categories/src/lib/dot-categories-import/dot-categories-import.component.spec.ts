@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -25,10 +26,10 @@ describe('DotCategoriesImportComponent', () => {
         component: DotCategoriesImportComponent,
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
         providers: [
-            { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+            { provide: DynamicDialogRef, useValue: { close: vi.fn() } },
             { provide: DynamicDialogConfig, useValue: { data: { parentInode: 'parent-inode' } } },
             mockProvider(DotCategoriesService, {
-                importCategories: jest.fn().mockReturnValue(of(IMPORT_RESPONSE))
+                importCategories: vi.fn().mockReturnValue(of(IMPORT_RESPONSE))
             }),
             {
                 provide: DotMessageService,
@@ -104,7 +105,7 @@ describe('DotCategoriesImportComponent', () => {
     describe('importFile', () => {
         it('should not call import when no file selected', () => {
             const categoriesService = spectator.inject(DotCategoriesService);
-            (categoriesService.importCategories as jest.Mock).mockClear();
+            (categoriesService.importCategories as Mock).mockClear();
 
             component.importFile();
 
@@ -142,10 +143,10 @@ describe('DotCategoriesImportComponent', () => {
                 error: { message: 'Index 3 out of bounds for length 3' },
                 status: 500
             });
-            (categoriesService.importCategories as jest.Mock).mockReturnValue(
+            (categoriesService.importCategories as Mock).mockReturnValue(
                 throwError(() => httpError)
             );
-            (ref.close as jest.Mock).mockClear();
+            (ref.close as Mock).mockClear();
 
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
@@ -157,7 +158,7 @@ describe('DotCategoriesImportComponent', () => {
 
         it('should clear error when starting a new import', () => {
             const categoriesService = spectator.inject(DotCategoriesService);
-            (categoriesService.importCategories as jest.Mock).mockReturnValue(of(IMPORT_RESPONSE));
+            (categoriesService.importCategories as Mock).mockReturnValue(of(IMPORT_RESPONSE));
 
             component.$errorMessage.set('previous error');
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);

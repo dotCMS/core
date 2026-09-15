@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, forwardRef, Input } from '@angular/core';
@@ -190,7 +191,7 @@ describe('DotTextareaContentComponent', () => {
     });
 
     it('should not propagate enter keyboard event', async () => {
-        const spy = jest.fn();
+        const spy = vi.fn();
         spectator.setInput('show', ['plain', 'code']);
         spectator.detectChanges();
         component.selected = 'plain';
@@ -238,7 +239,7 @@ describe('DotTextareaContentComponent', () => {
     it('should init editor with the correct value', () => {
         const mockEditor = { test: 'editor' };
         spectator.setInput('editorName', 'testName');
-        jest.spyOn(component.monacoInit, 'emit');
+        vi.spyOn(component.monacoInit, 'emit');
         spectator.detectChanges();
         component.onInit(mockEditor);
         expect(component.monacoInit.emit).toHaveBeenCalledWith({

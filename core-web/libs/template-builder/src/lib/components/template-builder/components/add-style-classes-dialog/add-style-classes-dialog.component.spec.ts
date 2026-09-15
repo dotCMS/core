@@ -1,7 +1,12 @@
-import { expect, it } from '@jest/globals';
 import { createFakeEvent } from '@openng/spectator';
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +37,7 @@ const providers = [
     {
         provide: DynamicDialogRef,
         useValue: {
-            close: jest.fn()
+            close: vi.fn()
         }
     }
 ];
@@ -67,7 +72,7 @@ describe('AddStyleClassesDialogComponent', () => {
                         }
                     }),
                     mockProvider(JsonClassesService, {
-                        getClasses: jest.fn().mockReturnValue(of(['class1', 'class2']))
+                        getClasses: vi.fn().mockReturnValue(of(['class1', 'class2']))
                     })
                 ]
             });
