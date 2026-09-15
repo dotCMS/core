@@ -177,7 +177,7 @@ right edges at several viewport widths.
 - **Typing a value directly** into the input rather than picking it: the clear control must appear once the input holds a value, and disappear when it is emptied by hand.
 - **The action button on a field that already holds a value**: it overwrites both date and time on a Date-and-time field, not just the missing half.
 - **A required field cleared and left empty on save**: validation must block the save exactly as it would for a required field never filled.
-- **Very long timezone labels** in a narrow picker: the footer must not push the action button out of the overlay.
+- **Very long timezone labels** in a narrow picker: the footer must not push the action button out of the overlay — see FR-008b.
 
 ---
 
@@ -204,6 +204,7 @@ right edges at several viewport widths.
 
 - **FR-008**: Opening the picker on a **Date and time** or **Time** field MUST show the system timezone as muted, non-interactive text at the left of the picker footer. It MUST be the same timezone value shown under the input today.
 - **FR-008a**: Opening the picker on a **Date** field MUST NOT show timezone text. When the timezone is unavailable for any type, nothing MUST be rendered in its place — no empty slot, no change in the footer's height or in the action button's position.
+- **FR-008b**: The timezone text MUST NOT push the action button out of the footer or the overlay, regardless of the label's length — it MUST truncate or otherwise yield before it does.
 - **FR-009**: The timezone line under the input MUST be removed from the field types that render one today — Date-and-time and Time-only; a Date-only field has none to remove — and the field's hint MUST render in the field footer under the input — the same placement the other field types use — rather than being displaced into the label.
 
 #### Picker footer — Today / Now
@@ -211,11 +212,12 @@ right edges at several viewport widths.
 - **FR-010**: The picker footer MUST hold exactly one button, at its right, styled as a secondary **outlined** button using the shared button styling rather than bespoke CSS.
 - **FR-011**: That button MUST read **Today** on Date and Date-and-time fields, and **Now** on Time-only fields.
 - **FR-012**: Activating it MUST set: today's date and the current time on a Date-and-time field; today's date on a Date-only field; the current time on a Time-only field. "The current time" is the server's time at the moment of activation, resolved to **second** precision — the same precision the field already applies to a `now` default.
-- **FR-013**: The value it sets MUST be derived from the **server** timezone through the field's existing server-time path, never from the browser's clock.
+- **FR-013**: The value it sets MUST be derived from the **server** timezone through the field's existing server-time path, never from the browser's clock. When that timezone has not yet loaded, the button MUST still work: it MUST fall back to the browser's own clock — the same convention every other timezone-less path in this field already follows — rather than silently mixing UTC and local components into a value that stores differently than it displays.
 - **FR-014**: After activation the field MUST show the new value, the underlying value MUST update, and the field MUST be marked touched and dirty.
 - **FR-014a**: Activating it MUST leave the picker open on Date-and-time and Time-only fields (so the time can still be adjusted) and MUST let the picker close on Date-only fields, as a completed date selection does today.
 - **FR-015**: The stock **Clear** button MUST NOT appear in the picker footer for any of the three field types.
 - **FR-015a**: The button label and any accessible name introduced by this feature MUST come from the localized message bundle under the existing calendar-field namespace, not from hardcoded strings.
+- **FR-015b**: The footer action MUST be reachable by keyboard and MUST carry an accessible name, matching the reachability FR-007a requires of the clear control.
 
 #### Cross-issue bookkeeping
 
@@ -257,6 +259,8 @@ right edges at several viewport widths.
 - **SC-005a**: The value the shortcut sets matches the server's clock to the **second** in **100%** of attempts — not rounded to the minute, and not drifting from the precision a `now` default already produces.
 - **SC-006**: The picker footer offers exactly **one** action on all three field types; the redundant *Clear* action appears **0** times.
 - **SC-006a**: After using the shortcut, the picker is still open on **100%** of Date-and-time and Time-only fields and closed on **100%** of Date-only fields — the one place the picker's lifecycle is deliberately non-uniform, and therefore the one most likely to regress unnoticed while the footer is rebuilt.
+- **SC-006b**: The footer action is operable from the keyboard alone — reachable by Tab, activatable by Enter or Space — on **100%** of attempts, matching the clear control's reachability.
+- **SC-006c**: The value the shortcut sets is the same whether or not the system timezone has loaded — displayed and stored values agree with each other in **100%** of attempts, with no offset introduced by the timezone's absence.
 - **SC-007**: Every string this feature adds to the interface is translatable — **0** hardcoded user-visible strings.
 - **SC-008**: Values saved before the change and read after it are identical in **100%** of cases across the three field types, including Date-only, Time-only and default-valued fields.
 
