@@ -13,10 +13,36 @@ import { PRDetails } from './types';
 /** Per-PR body truncation, see fetchPRDetails. */
 export const BODY_CHAR_LIMIT = 1_000;
 
+/** 20 PRs/query — bodies dominate the response, so keep batches smaller. */
+const PR_BATCH = 20;
+
+interface PRDetailsResponse {
+  repository: Record<
+    string,
+    {
+      number: number;
+      title: string;
+      body: string | null;
+      labels: { nodes: { name: string }[] } | null;
+      closingIssuesReferences: {
+        nodes: { number: number; repository: { nameWithOwner: string } }[];
+      };
+    } | null
+  >;
+}
+
 /**
- * Fetch PR details with rate-limit awareness.
- * Processes PRs in batches to avoid hitting secondary rate limits.
- * Throws if any PR fetch fails so the workflow step fails visibly.
+ * Fetch title, labels, body and linked issues for a list of PRs.
+ *
+ * `closingIssuesReferences` replaces the old body regex, which required
+ * whitespace directly after the keyword and so missed `Closes: #N` — the form
+ * CLAUDE.md mandates for every dotCMS PR. On v26.09.02-01 that cost 23 of 51
+ * PRs their issue cross-link. GraphQL reads the same relationship GitHub
+ * itself renders, so the colon form, `Closes owner/repo#N`, and issues linked
+ * only through the Development sidebar all resolve.
+ *
+ * Cross-repo refs are dropped: the changelog links issues in this repo only.
+ * (release-qa-status keeps them — it reports on them separately.)
  */
 export async function fetchPRDetails(
   octokit: Octokit,
@@ -25,93 +51,63 @@ export async function fetchPRDetails(
   prNumbers: number[]
 ): Promise<Map<number, PRDetails>> {
   const results = new Map<number, PRDetails>();
-  const fetchErrors: number[] = [];
-  const BATCH_SIZE = 15;
+  const missing: number[] = [];
+  const ownerRepoLower = `${owner}/${repo}`.toLowerCase();
 
-  for (let i = 0; i < prNumbers.length; i += BATCH_SIZE) {
-    const batch = prNumbers.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < prNumbers.length; i += PR_BATCH) {
+    const batch = prNumbers
+      .slice(i, i + PR_BATCH)
+      .filter((n) => Number.isInteger(n) && n > 0);
+    if (batch.length === 0) continue;
 
-    const promises = batch.map(async (prNumber) => {
-      try {
-        const { data } = await octokit.pulls.get({
-          owner,
-          repo,
-          pull_number: prNumber,
-        });
+    const aliases = batch
+      .map(
+        (n) =>
+          `  pr${n}: pullRequest(number: ${n}) {\n` +
+          `    number title body\n` +
+          `    labels(first: 50) { nodes { name } }\n` +
+          `    closingIssuesReferences(first: 50, userLinkedOnly: false) {\n` +
+          `      nodes { number repository { nameWithOwner } }\n` +
+          `    }\n` +
+          `  }`
+      )
+      .join('\n');
 
-        const labels = data.labels.map((l) => l.name || '');
+    // Re-thrown for the same reason as resolvePRNumbers: a dropped batch would
+    // quietly shrink the changelog rather than fail the step.
+    const data = await octokit.graphql<PRDetailsResponse>(
+      `query($owner: String!, $repo: String!) {\n` +
+        `  repository(owner: $owner, name: $repo) {\n` +
+        aliases +
+        `\n  }\n}`,
+      { owner, repo }
+    );
 
-        const linkedIssues = extractLinkedIssues(data.body || '');
-
-        // Bodies are ~90% of the payload and the changelog only needs the lede,
-        // so keep the first BODY_CHAR_LIMIT chars. Uncapped, a full release
-        // (50+ PRs, spec/design PRs running 10-18K each) pushes the assembled
-        // prompt past Linux MAX_ARG_STRLEN (128 KiB per argv/env entry) and any
-        // step that passes it through argv or GITHUB_ENV dies with E2BIG.
-        const body = (data.body || '').slice(0, BODY_CHAR_LIMIT);
-
-        return {
-          number: prNumber,
-          title: data.title,
-          labels,
-          body,
-          linkedIssues,
-        } as PRDetails;
-      } catch (error: unknown) {
-        const errMsg =
-          error instanceof Error ? error.message : String(error);
-        process.stderr.write(
-          `Error: Could not fetch PR #${prNumber}: ${errMsg}\n`
-        );
-        fetchErrors.push(prNumber);
-        return null;
+    for (const n of batch) {
+      const pr = data.repository[`pr${n}`];
+      if (!pr) {
+        missing.push(n);
+        continue;
       }
-    });
-
-    const batchResults = await Promise.all(promises);
-    for (const result of batchResults) {
-      if (result) {
-        results.set(result.number, result);
-      }
-    }
-
-    // Brief pause between batches to avoid secondary rate limits
-    if (i + BATCH_SIZE < prNumbers.length) {
-      await sleep(500);
+      results.set(n, {
+        number: n,
+        title: pr.title,
+        labels: (pr.labels?.nodes ?? []).map((l) => l.name),
+        // See BODY_CHAR_LIMIT.
+        body: (pr.body ?? '').slice(0, BODY_CHAR_LIMIT),
+        linkedIssues: pr.closingIssuesReferences.nodes
+          .filter((r) => r.repository.nameWithOwner.toLowerCase() === ownerRepoLower)
+          .map((r) => r.number),
+      });
     }
   }
 
-  if (fetchErrors.length > 0) {
+  if (missing.length > 0) {
     process.stderr.write(
-      `Warning: Could not fetch ${fetchErrors.length} PR(s): ${fetchErrors.map((n) => `#${n}`).join(', ')}. ` +
-        `These PRs will be missing from the release notes.\n`
+      `Warning: ${missing.length} PR(s) not found in ${owner}/${repo}: ` +
+        `${missing.map((n) => `#${n}`).join(', ')}. These will be missing from the release notes.\n`
     );
   }
 
   return results;
-}
-
-/**
- * Extract linked issue numbers from PR body text.
- * Looks for "Closes #N", "Fixes #N", "Resolves #N" patterns.
- */
-export function extractLinkedIssues(body: string): number[] {
-  const issues = new Set<number>();
-  const patterns = [
-    /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi,
-    /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+https:\/\/github\.com\/[^/]+\/[^/]+\/issues\/(\d+)/gi,
-  ];
-
-  for (const pattern of patterns) {
-    let match;
-    while ((match = pattern.exec(body)) !== null) {
-      issues.add(parseInt(match[1], 10));
-    }
-  }
-
-  return Array.from(issues);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
