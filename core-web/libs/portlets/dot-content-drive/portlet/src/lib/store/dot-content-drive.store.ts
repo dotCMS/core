@@ -768,17 +768,19 @@ export const DotContentDriveStore = signalStore(
              * the affordances off and on for the common case, and the server refuses the write anyway.
              */
             $canAddChildren: computed(() => {
-                // All site content spans every folder in the site, so there is no single place for
-                // new content to land. This is not a permission answer and it is not negotiable by
-                // one: the question is not whether the user may add content, it is where it would go.
-                if ($allSiteContentSelected()) {
-                    return false;
-                }
-
-                // System Host is a real destination, so this is a permission answer again — but about
+                // System Host is a real destination, so this is a permission answer — but about
                 // System Host, not about whichever site the switcher happens to show.
                 if ($systemHostSelected()) {
                     return systemHostCanAddChildren() !== false;
+                }
+
+                // All site content spans every folder, so it names no single place — but content
+                // added here lands on the site root, and that is whose permission decides. Asked
+                // before the node below on purpose: selecting all site content clears the tree
+                // selection, and a node left over from before it was cleared would be answering
+                // about a folder that is not the destination.
+                if ($allSiteContentSelected()) {
+                    return siteCanAddChildren() !== false;
                 }
 
                 const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)

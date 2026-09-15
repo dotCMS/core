@@ -29,7 +29,7 @@ An editor opens Content Drive and wants to see what actually lives at the top of
 3. **Given** the user has selected **All Site Content**, **When** they select a folder in the hierarchy, **Then** the listing shows that folder's contents exactly as it does today.
 4. **Given** the user has selected the site row, **When** they look at the listing, **Then** no System Host content appears in it regardless of any other setting.
 5. **Given** any of the three sidebar entries is selected, **When** the user selects a different one, **Then** the previous selection is cleared, so exactly one entry is ever active.
-6. **Given** the user has selected **All Site Content**, **When** they look for the ways to add content, **Then** uploading and creating are visibly unavailable, and dragging content over the listing offers no drop target, because **All Site Content** spans the whole site and names no single place to put anything.
+6. **Given** the user has selected **All Site Content**, **When** they add content by any route — uploading, creating, or dropping files onto the listing — **Then** it is accepted and lands at the site root, and the progress indicator names the site so the author can see where it went.
 7. **Given** the user is on a later page of **All Site Content**, **When** they select a different sidebar entry, **Then** the listing starts again at its first page with no items still selected.
 8. **Given** the site row is selected and a search is running, **When** the search is served by either of the product's two internal search paths, **Then** both return the same items, and neither admits content from inside a folder or from System Host.
 
@@ -65,7 +65,7 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 **Acceptance Scenarios**:
 
 1. **Given** the user has selected content on a site, **When** they drop it onto the **System Host** entry, **Then** the content is moved to System Host and the listing reflects the move.
-2. **Given** the user is dragging content, **When** they drag it over the **All Site Content** entry, **Then** it is not offered as a drop target and nothing is moved.
+2. **Given** the user is dragging content, **When** they drag it over the **All Site Content** entry, **Then** it is not offered as a drop target and nothing is moved. Dropping *files* onto the listing while this scope is selected is a different gesture and is accepted (FR-013); what is refused here is the **entry** as a move destination, because the site row directly beneath it already means the site root. Two adjacent rows that move content to the same place is a worse offer than one.
 3. **Given** the user is dragging content, **When** they drag it over the site row or a folder, **Then** it behaves exactly as it does today.
 4. **Given** the user lacks permission to add content to System Host, **When** they drag content over the **System Host** entry, **Then** it is not offered as a drop target.
 
@@ -107,7 +107,11 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 
 #### Creating, uploading and moving
 
-- **FR-013**: **All Site Content** MUST be a read-only view. Uploading, creating content or folders, and dropping content are all unavailable while it is selected, and the affordances MUST be visibly unavailable rather than offered and then refused.
+- **FR-013**: **All Site Content** MUST accept new content, which lands at the **site root**. Uploading, creating and dropping files onto the listing all behave as they do on the site row, and the progress indicator MUST name the site so the destination is visible rather than inferred.
+
+  This reverses an earlier version of this requirement, which made the view read-only on the grounds that a view spanning the whole site "names no single place to put anything". That is true of the view and false of the product: the site root is the obvious destination, and **this is the content search view, where uploading has always been possible and has always landed on the current site**. Refusing the upload prevented no mistake — it sent people to the site row to do the same thing one click later.
+
+  The cost is accepted knowingly: because the listing carries no path column (see Assumptions), a file added here appears among everything else with nothing saying it sits at the root. That gap is inherited rather than introduced, the indicator naming the site is today's mitigation, and the location column that closes it properly is being handled separately.
 - **FR-014**: The **site row**, a **folder**, and **System Host** MUST accept new content: uploads, creation, and content dropped onto them. For the site row and folders this is exactly today's behavior.
 - **FR-015**: Dropping content onto the **System Host** entry MUST move it to System Host.
 - **FR-016**: While **System Host** is selected, the permission check that gates creating and uploading MUST be evaluated against System Host itself, never against whichever site is selected in the site switcher.
@@ -150,7 +154,7 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 - **SC-005**: Opening a shared Content Drive link reproduces the browse scope the sender was viewing, every time.
 - **SC-006**: Content is moved to System Host in a single drag, with no dialog and no intermediate step.
 - **SC-007**: Surfaces other than Content Drive that browse content list exactly what they listed before this change, a listing asked for without a browse scope returns exactly what it returns today, and every consumer of that listing is accounted for by name rather than covered by a blanket claim.
-- **SC-008**: No content can be created, uploaded, or moved from the All Site Content view; every route that would place content somewhere is unavailable there.
+- **SC-008**: Content added from the All Site Content view — by any of uploading, creating, or dropping files onto the listing — arrives at the site root, and the author is told which site received it without having to change view to find out.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -161,7 +165,7 @@ Having selected some content, a user drags it onto the **System Host** entry to 
 
 ## Assumptions
 
-- **System Host accepts everything a folder accepts**: moved content, uploaded files, and newly created content. It is a real place to put things, unlike **All Site Content**, which spans the whole site and names no single destination.
+- **System Host accepts everything a folder accepts**: moved content, uploaded files, and newly created content. It is a real place to put things. **All Site Content** names no place of its own, but content added there lands at the site root, which is the destination the site row names — so the two agree rather than one of them refusing.
 - **Selecting System Host survives a site switch**, because System Host belongs to no site and the listing would not change.
 - **The site root browse scope shows the site's top-level folders.** They sit at the root, so they are part of what is "at" the root. This means the site-root and All Site Content browse scopes differ in their content, not in their folders, since All Site Content shows no folders at all.
 - **Where an item lives is not shown in All Site Content, and that is accepted for now.** The listing carries no path column, so a flat view spanning the whole site cannot tell two files of the same name in different folders apart. The gap is inherited rather than introduced: today's site view is already this flat view. Naming the view and making it the default does raise the cost of it, and a location column shown when the listing spans more than one folder is the fix, but it is being handled separately and is not a defect in this work.

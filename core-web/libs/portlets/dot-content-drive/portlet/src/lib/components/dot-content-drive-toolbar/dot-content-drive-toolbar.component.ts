@@ -243,9 +243,9 @@ export class DotContentDriveToolbarComponent {
             return '';
         }
 
-        return this.#store.$allSiteContentSelected()
-            ? 'content-drive.add-new.no-place-to-add'
-            : 'content-drive.add-new.no-add-children';
+        // One reason left, and it is always a permission one: every scope that reaches here now
+        // has a place for content to land.
+        return 'content-drive.add-new.no-add-children';
     });
 
     protected readonly $uploadBaseType = computed(() => {

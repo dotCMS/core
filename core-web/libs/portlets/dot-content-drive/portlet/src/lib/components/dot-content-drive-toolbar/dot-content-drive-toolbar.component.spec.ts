@@ -144,8 +144,10 @@ describe('DotContentDriveToolbarComponent', () => {
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
                 // through the signals it derives from, not through a hardcoded answer.
                 $canAddChildren: computed(() => {
+                    // All site content lands on the site root, so the site answers for it — and
+                    // ahead of any node left over from before the tree selection was cleared.
                     if (allSiteContentSelectedSignal()) {
-                        return false;
+                        return siteCanAddChildrenSignal() !== false;
                     }
 
                     const permissions = selectedNodeSignal()?.data?.permissions;
@@ -1049,38 +1051,38 @@ describe('DotContentDriveToolbarComponent', () => {
             });
         });
 
-        // All site content spans every folder in the site, so there is no single place for new
-        // content to land. The affordances are refused for a different reason than a permission
-        // denial, and have to say so.
+        // All site content spans every folder in the site, which for a while was read as "there is
+        // nowhere to put anything" and closed the affordances. It now behaves as the site root
+        // does: content added here lands on the site, and the indicator names the site so the
+        // author can see where it went.
         describe('in all site content', () => {
             afterEach(() => allSiteContentSelectedSignal.set(false));
 
-            it('should refuse creation even where the site accepts children', async () => {
+            it('should allow creation where the site accepts children', async () => {
                 siteCanAddChildrenSignal.set(true);
+                allSiteContentSelectedSignal.set(true);
+                await settleToolbarAnimation(spectator);
+
+                expect(spectator.component.$canAddChildren()).toBe(true);
+            });
+
+            it('should refuse creation where the site refuses children', async () => {
+                // A permission answer again, and about the site the content would land on. The
+                // scope stopped being a reason of its own.
+                siteCanAddChildrenSignal.set(false);
                 allSiteContentSelectedSignal.set(true);
                 await settleToolbarAnimation(spectator);
 
                 expect(spectator.component.$canAddChildren()).toBe(false);
             });
 
-            it('should refuse creation even where the folder permits it', async () => {
+            it('should blame permissions, since the scope is no longer a reason', async () => {
+                siteCanAddChildrenSignal.set(false);
                 allSiteContentSelectedSignal.set(true);
-                await withPermissions(['READ', 'CAN_ADD_CHILDREN']);
+                await settleToolbarAnimation(spectator);
 
-                // The scope wins over the permission: the question is not whether the user may
-                // add content, it is where it would go.
-                expect(spectator.component.$canAddChildren()).toBe(false);
-            });
-
-            it('should explain the scope rather than blaming permissions', async () => {
-                allSiteContentSelectedSignal.set(true);
-                await withPermissions(['READ', 'CAN_ADD_CHILDREN']);
-
-                expect(spectator.component.$addChildrenTooltip()).not.toBe(
-                    'content-drive.add-new.no-add-children'
-                );
                 expect(spectator.component.$addChildrenTooltip()).toBe(
-                    'content-drive.add-new.no-place-to-add'
+                    'content-drive.add-new.no-add-children'
                 );
             });
         });
