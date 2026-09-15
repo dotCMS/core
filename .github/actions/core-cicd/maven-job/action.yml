@@ -217,16 +217,22 @@ runs:
         set -euo pipefail
         pkg_json_pm=$(jq -r '.packageManager' core-web/package.json)
         pkg_json_version="${pkg_json_pm#pnpm@}"
+        postman_pm=$(jq -r '.packageManager' dotcms-postman/package.json)
+        postman_version="${postman_pm#pnpm@}"
         pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
         if [ "$pkg_json_version" != "$pom_version" ]; then
           echo "::error::pnpm version mismatch: core-web/package.json=$pkg_json_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value while the pnpm store cache key uses the package.json value." >&2
+          exit 1
+        fi
+        if [ "$postman_version" != "$pom_version" ]; then
+          echo "::error::pnpm version mismatch: dotcms-postman/package.json=$postman_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — dotcms-postman runs its install with the pnpm Maven installs from the pom value." >&2
           exit 1
         fi
         echo "pnpm version in sync: $pom_version"
 
     - name: Set up pnpm
       if: ${{ inputs.requires-node == 'true' }}
-      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       with:
         package_json_file: core-web/package.json
         run_install: false
