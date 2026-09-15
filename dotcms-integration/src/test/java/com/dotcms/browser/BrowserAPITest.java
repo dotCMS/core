@@ -2531,4 +2531,71 @@ public class BrowserAPITest extends IntegrationTestBase {
         FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
         return file;
     }
+
+    /**
+     * Isolation test for issue #37479 / #37532 (FR-024, SC-008): the search scope and the
+     * literal-text escaping fix live entirely inside {@link BrowserAPIImpl}'s Elasticsearch text
+     * branch, which is reachable only when {@link BrowserQuery#useElasticsearchFiltering} is set.
+     * {@link com.dotcms.rest.api.v1.drive.ContentDriveHelper} is the only caller in the codebase
+     * that ever sets it (verified by grep against {@code main} at spec time); every other consumer
+     * of {@link BrowserAPI#getFolderContentList(BrowserQuery)} — the assets REST API
+     * ({@code WebAssetHelper}), the legacy admin browser ({@code BrowserAjax}) and the Velocity
+     * viewtool ({@code DotCMSMacroWebAPI}) — builds a {@link BrowserQuery} without it and is
+     * therefore routed to the SQL {@code ILIKE} path this feature never touches.
+     *
+     * <p>This test does not call those three classes directly (they carry their own request/servlet
+     * dependencies that do not belong in a {@code BrowserAPI} test). It instead reproduces the one
+     * property that makes them safe: a {@link BrowserQuery} built the way they build it — a text
+     * filter set, {@code useElasticsearchFiltering} left at its default {@code false} — must return
+     * a result identical to what the same query returned before this feature existed. A term
+     * carrying Lucene reserved characters is deliberately used as the probe: it is exactly the input
+     * class this feature changes behaviour for on the ES path, so an unchanged result here is the
+     * strongest available evidence that the SQL path was never touched.</p>
+     */
+    @Test
+    public void searchScopeAndEscapingFix_doNotReachTheSqlFilterPath_usedByEveryOtherCaller()
+            throws DotDataException, DotSecurityException, IOException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        // A reserved-character term the ES-side fix specifically targets (#37532): if the SQL path
+        // were somehow affected, escaping or not would change which of these two rows comes back.
+        final String punctuatedTitle = "ABC (XETRA: DB) / sqlpath" + System.nanoTime();
+        final Contentlet withPunctuation = new ContentletDataGen(
+                TestDataUtils.getWikiLikeContentType().id())
+                .setProperty("title", punctuatedTitle)
+                .folder(folder)
+                .host(site)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showContent(true)
+                .showFolders(false)
+                .showWorking(true)
+                .withFilter(punctuatedTitle)
+                // Deliberately NOT calling useElasticsearchFiltering(true) or searchScope(...): this
+                // is the exact shape WebAssetHelper, BrowserAjax and DotCMSMacroWebAPI build today.
+                .build();
+
+        assertFalse("A BrowserQuery built the way the other callers build it must not opt into ES "
+                        + "filtering on its own — that is what keeps them off the path this feature "
+                        + "changes",
+                query.useElasticsearchFiltering);
+
+        final List<Treeable> results = browserAPI.getFolderContentList(query);
+        final Set<String> identifiers =
+                results.stream().map(Treeable::getIdentifier).collect(Collectors.toSet());
+
+        // The SQL ILIKE path (BrowserAPIImpl#appendFilterQuery) matches substrings of the whole
+        // serialized contentlet case-insensitively, so a title match here is expected — the point
+        // is that it neither throws nor silently drops the row, which is what a leak from the ES
+        // fix into this path would look like.
+        assertTrue("A caller that never opts into ES filtering must still find a reserved-character "
+                        + "title via the ordinary SQL path, unaffected by the Title-scope or "
+                        + "literal-text changes",
+                identifiers.contains(withPunctuation.getIdentifier()));
+    }
 }

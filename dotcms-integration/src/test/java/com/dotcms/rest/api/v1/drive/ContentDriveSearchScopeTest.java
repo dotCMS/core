@@ -293,7 +293,18 @@ public class ContentDriveSearchScopeTest extends IntegrationTestBase {
                 0, results.list.size());
     }
 
-    /** FR-025: the scope qualifies the text and is meaningless without it. */
+    /**
+     * FR-025: the scope qualifies the text and is meaningless without it.
+     *
+     * <p>Exercises {@code ContentDriveHelper}'s own check directly, with {@code text("")} — the
+     * shape that reaches it. {@code text} is itself a required attribute on the
+     * {@code @Value.Immutable} {@link QueryFilters}, so a request whose JSON body omits the
+     * {@code text} key entirely never reaches this method at all: Jackson's own deserialization
+     * rejects it first, with a different message, before {@code ContentDriveHelper} runs. Both
+     * routes end in a 400; only the wording differs. The end-to-end distinction between the two —
+     * and the exact wording each produces — is covered at the endpoint layer (Postman, cases C-5a
+     * and C-5b), which is the layer that actually receives raw JSON.</p>
+     */
     @Test
     public void scopeWithoutText_isRejected() throws Exception {
         try {
