@@ -17,7 +17,6 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,10 +26,10 @@ import java.util.Optional;
  * It uses the EmbeddingsAPI to perform these operations.
  *
  * This class is a ViewTool, meaning it can be used in Velocity templates to provide functionality related to embeddings.
+ * When a call fails, the method returns the generic payload from {@link AIViewToolErrorHandler}
+ * and the exception is logged server-side; no exception detail reaches the template.
  */
 public class SearchTool implements ViewTool {
-
-    private static final String STACKTRACE_KEY = "stackTrace";
 
     private final HttpServletRequest request;
     private final Host host;
@@ -66,7 +65,7 @@ public class SearchTool implements ViewTool {
         try {
             return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
-            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return AIViewToolErrorHandler.handle(SearchTool.class, e);
         }
     }
 
@@ -84,7 +83,7 @@ public class SearchTool implements ViewTool {
         try {
             return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
-            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return AIViewToolErrorHandler.handle(SearchTool.class, e);
         }
     }
 
@@ -139,7 +138,7 @@ public class SearchTool implements ViewTool {
                     .build();
             return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
-            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return AIViewToolErrorHandler.handle(SearchTool.class, e);
         }
     }
 
