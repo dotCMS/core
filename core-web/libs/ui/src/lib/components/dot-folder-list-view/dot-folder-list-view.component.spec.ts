@@ -330,6 +330,90 @@ describe('DotFolderListViewComponent', () => {
      * share an identifier and differ only by inode — and inodes are what bulk actions fire on. A
      * caller that acts per variant has to be able to key on `inode` instead.
      */
+    /**
+     * Which rows an operation is currently running on. Narrower than `loading`, which says the whole
+     * listing is being fetched.
+     */
+    describe('busyRows', () => {
+        const busyItem = { ...mockItems[0], inode: 'busy-inode' };
+
+        beforeEach(() => {
+            spectator.setInput('items', [busyItem]);
+            spectator.setInput('loading', false);
+        });
+
+        it('should leave rows unmarked when nothing is running', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeFalsy();
+        });
+
+        it('should mark a row whose inode is running', () => {
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
+        });
+
+        it('should keep a busy row readable rather than replacing it', () => {
+            // The whole point. Swapping it for a skeleton would repeat, one row at a time, the bug
+            // this feature removes: the row the author wants to watch is the one that vanishes.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-title-text'))).toBeTruthy();
+            expect(spectator.query(byTestId('loading-row'))).toBeFalsy();
+        });
+
+        it('should keep the title cell’s shape when a row is busy', () => {
+            // Regression: the marker first *replaced* the thumbnail's container rather than its
+            // contents. That container is the title cell's first grid column and it is sized, so
+            // removing it collapsed the column and the row visibly lost its layout. Counting the
+            // cell's direct children pins the grid's shape without asserting any styling.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            // The box must survive, with the marker inside it. Counting the cell's children does
+            // NOT catch this - the broken version still rendered exactly one element there, just
+            // an unsized one - which is why this asserts the container itself is still present.
+            const box = spectator.query(byTestId('item-thumbnail-box'));
+
+            expect(box).toBeTruthy();
+            expect(box?.querySelector('[data-testid="row-busy"]')).toBeTruthy();
+        });
+
+        it('should leave rows the operation is not touching alone', () => {
+            spectator.setInput('busyRows', ['some-other-inode']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeFalsy();
+        });
+
+        it('should stop a busy row being selected into another action', () => {
+            // Asserted through the output rather than the checkbox's markup: what matters is that
+            // the row cannot join a second action while the first is still running on it.
+            const selectionChange = vi.fn();
+
+            spectator.output('selectionChange').subscribe(selectionChange);
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('item-checkbox')));
+            spectator.detectChanges();
+
+            expect(selectionChange).not.toHaveBeenCalled();
+        });
+
+        it('should not announce each row it marks', () => {
+            // The toolbar indicator is the polite live region for a run. A row marker that also
+            // announced would repeat the same news once per row.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))?.getAttribute('aria-live')).toBe('off');
+        });
+    });
+
     describe('dataKey', () => {
         const variantA = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-en' };
         const variantB = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-es' };
@@ -526,6 +610,47 @@ describe('DotFolderListViewComponent', () => {
             spectator.component.onPage({ first: 20, rows: 20 });
 
             expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
+        });
+
+        it('should not fire a second request from a rapid second click before loading catches up', () => {
+            // `loading` only flips to `true` after this component's `paginate` output round-trips
+            // through the caller's store, at least one microtask away. A second `onPage` call in
+            // that gap must not slip past the `$loading()` guard the way a real fast double click
+            // would (issue #37212) -- exercised here without advancing the input at all, which is
+            // the whole point: this proves the guard does not depend on `loading` having caught up.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should accept a new page change once loading reflects the first one', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            // The caller's store has now caught up and reflects the in-flight request.
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            // The caller's store has settled -- the local guard must have been released by the
+            // `loading` transition above, not still be holding from the first click.
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            spectator.component.onPage({ first: 40, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledTimes(2);
         });
 
         it('should take the paginator out of play while loading', () => {
@@ -2408,6 +2533,57 @@ describe('DotFolderListViewComponent', () => {
             expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
         });
 
+        it('should not open the item when the row is double clicked with Shift held', () => {
+            // Shift is a selection modifier, so every gesture carrying it belongs to the selection
+            // and none of them opens anything. Reported from QA on #32591: a second click landing
+            // inside a Shift range, or a stray double, took the author out of the listing entirely,
+            // and opening a dialog drops the selection they were halfway through building.
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            row.dispatchEvent(new MouseEvent('dblclick', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(doubleClickSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not open the item when its title is clicked with Shift held', () => {
+            // The title and the thumbnail carry their own open handlers rather than relying on the
+            // row's, so the guard has to hold on all three or the modifier only works in some parts
+            // of the row.
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const titleText = spectator.query(byTestId('item-title-text'));
+
+            titleText.dispatchEvent(new MouseEvent('click', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not open the item when its thumbnail is clicked with Shift held', () => {
+            // The third open affordance. It routes through the same handler as the title, but a
+            // guard that covered only the two the report mentioned would leave this one opening.
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+
+            thumbnail.dispatchEvent(new MouseEvent('click', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should still open the item on a plain double click', () => {
+            // The guard is about the modifier, not the gesture: without this the fix could pass by
+            // disabling opening altogether.
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            row.dispatchEvent(new MouseEvent('dblclick', { shiftKey: false, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
         it('should emit doubleClick event when thumbnail is clicked', () => {
             const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
@@ -2424,6 +2600,25 @@ describe('DotFolderListViewComponent', () => {
             spectator.click(titleText);
 
             expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
+        it('should let a Shift title click through so the row still selects', () => {
+            // The swallow exists to stop the row selecting *on the way out* of an open. A Shift
+            // click does not open, so there is nothing to swallow it for, and stopping it there
+            // made the title a dead spot: the gesture neither opened the item nor extended the
+            // selection it belongs to. Asserted on the row rather than on the spy, because what
+            // matters is that the click reaches the element that does the selecting.
+            const row = spectator.query(byTestId('item-row'));
+            const titleText = spectator.query(byTestId('item-title-text'));
+            let reachedRow = false;
+
+            row.addEventListener('click', () => (reachedRow = true));
+            titleText.dispatchEvent(
+                new MouseEvent('click', { shiftKey: true, bubbles: true, cancelable: true })
+            );
+            spectator.detectChanges();
+
+            expect(reachedRow).toBe(true);
         });
 
         it('should swallow the title click so the row is not selected underneath', () => {

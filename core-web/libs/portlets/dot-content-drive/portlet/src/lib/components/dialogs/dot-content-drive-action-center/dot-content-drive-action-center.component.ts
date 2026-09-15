@@ -278,7 +278,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * local signal would reset to `false` on the new instance and let the same action be fired twice
      * over the same rows.
      */
-    protected readonly $executing = computed(() => !!this.#store.actionExecution());
+    protected readonly $executing = computed(() => this.#store.activeRunCount() > 0);
     /**
      * Which screen is showing.
      *
@@ -805,7 +805,10 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executeAddToBundle(
             this.#dotMessageService.get(quickAction.name),
             bundle,
-            identifiers
+            identifiers,
+            // The rows this is acting on. Sent alongside the identifiers because the two are
+            // different vocabularies: the request queues assets, the listing marks rows.
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }
@@ -828,7 +831,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executePushPublish(
             this.#dotMessageService.get(quickAction.name),
             identifiers,
-            settings
+            settings,
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }

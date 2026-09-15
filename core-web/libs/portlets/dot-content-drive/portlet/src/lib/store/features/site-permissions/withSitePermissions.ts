@@ -80,8 +80,7 @@ export function withSitePermissions() {
                                     patchState(store, {
                                         systemHostCanAddChildren: canAddChildren
                                     }),
-                                error: () =>
-                                    patchState(store, { systemHostCanAddChildren: true })
+                                error: () => patchState(store, { systemHostCanAddChildren: true })
                             })
                         )
                     )

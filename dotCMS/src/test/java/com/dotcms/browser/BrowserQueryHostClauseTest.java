@@ -1,6 +1,5 @@
 package com.dotcms.browser;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
@@ -34,6 +33,13 @@ import org.junit.Test;
  *
  * <p>Exercised through the real SQL-building method by reflection, with no {@code APILocator}
  * bootstrap and no database, following {@link BrowserAPIMimeTypeQueryTest}.</p>
+ *
+ * <p><b>Amended once, and only in how it asks.</b> The folder predicate moved into a materialized
+ * {@code candidates} CTE, which binds ahead of the host clause, so the site identifier is no
+ * longer the first bound value. The statement and its parameter list still line up
+ * ({@code and id.parent_path=? and (id.host_inode = ?)} against {@code [/, <site>]}), so the
+ * guarantee is unchanged and is now asserted without an index. Nothing about which rows a caller
+ * gets moved.</p>
  */
 public class BrowserQueryHostClauseTest {
 
@@ -52,8 +58,10 @@ public class BrowserQueryHostClauseTest {
                 result.sql.contains("id.host_inode = ?"));
         assertFalse("a caller that asked for nothing must not be given System Host content",
                 result.sql.contains("SYSTEM_HOST"));
-        assertEquals("the site identifier is bound, never concatenated", SITE_ID,
-                String.valueOf(result.params.get(0)));
+        assertTrue("the site identifier is bound",
+                result.params.stream().map(String::valueOf).anyMatch(SITE_ID::equals));
+        assertFalse("the site identifier is bound, never concatenated into the text",
+                result.sql.contains(SITE_ID));
     }
 
     /**
@@ -91,8 +99,10 @@ public class BrowserQueryHostClauseTest {
         assertTrue("the site is still matched", result.sql.contains("id.host_inode = ?"));
         assertTrue("and System Host is admitted alongside it",
                 result.sql.contains("id.host_inode = 'SYSTEM_HOST'"));
-        assertEquals("the site identifier is still the only bound value", SITE_ID,
-                String.valueOf(result.params.get(0)));
+        assertTrue("the site identifier is still bound rather than widened away",
+                result.params.stream().map(String::valueOf).anyMatch(SITE_ID::equals));
+        assertFalse("and System Host is a literal in the text, never a second binding",
+                result.sql.contains(SITE_ID));
     }
 
     /**

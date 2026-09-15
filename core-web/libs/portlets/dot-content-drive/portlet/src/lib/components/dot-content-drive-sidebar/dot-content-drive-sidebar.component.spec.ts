@@ -218,8 +218,7 @@ describe('DotContentDriveSidebarComponent', () => {
             const hierarchy = spectator.query(byTestId('hierarchy-scroll'));
 
             expect(
-                hierarchy?.compareDocumentPosition(row() as Node) &
-                    Node.DOCUMENT_POSITION_FOLLOWING
+                hierarchy?.compareDocumentPosition(row() as Node) & Node.DOCUMENT_POSITION_FOLLOWING
             ).toBeTruthy();
         });
 

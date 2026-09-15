@@ -174,6 +174,10 @@ describe('DotContentDriveActionCenterComponent', () => {
     const mockItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
     const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
+    // Separate from the run above, because they answer different questions: that one names a
+    // run when there is exactly one, this one says whether anything is in flight at all. The
+    // dialog gates on the count, so with several runs it stays gated rather than opening up.
+    const mockActiveRunCount = signal(0);
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
@@ -219,6 +223,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 selectedItems: mockSelectedItems,
                 items: mockItems,
                 actionExecution: mockActionExecution,
+                activeRunCount: mockActiveRunCount,
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 hasPushPublishEnvironments: mockHasPushPublishEnvironments,
                 // The folder being browsed, which seeds the move destination picker.
@@ -303,6 +308,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             contentlet({ inode: 'inode-2', live: true })
         ]);
         mockActionExecution.set(undefined);
+        mockActiveRunCount.set(0);
         mockCurrentUserIsAdmin.set(false);
         mockHasPushPublishEnvironments.set(false);
         pushPublishEnvironments = [];
@@ -1415,6 +1421,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 // Driven from store state, not a local flag: a run started before this dialog
                 // instance existed must still lock the view.
                 mockActionExecution.set({ actionName: 'Send for Review', total: 2 });
+                mockActiveRunCount.set(1);
                 spectator.detectChanges();
 
                 spectator.component['onBackToActions']();
@@ -1641,6 +1648,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             goToConfigure();
             chooseDestination();
             mockActionExecution.set({ actionName: 'Move', total: 2 });
+            mockActiveRunCount.set(1);
             spectator.detectChanges();
 
             spectator.component['onContinueFromConfigure']();
@@ -1927,7 +1935,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-1', 'id-2'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
             expect(store.closeDialog).toHaveBeenCalled();
         });
@@ -1950,7 +1959,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-drop'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
         });
 
@@ -1975,7 +1985,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-1', 'folder-1'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
         });
 
@@ -2056,10 +2067,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-1',
-                'id-2'
-            ]);
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-1', 'id-2'],
+                expect.any(Array)
+            );
         });
 
         it('should collapse language versions of the same content into one asset', () => {
@@ -2076,9 +2089,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-1'
-            ]);
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-1'],
+                expect.any(Array)
+            );
         });
 
         it('should not fire a workflow action', () => {
@@ -2117,9 +2133,12 @@ describe('DotContentDriveActionCenterComponent', () => {
             uncheckFirstRow();
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-2'
-            ]);
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-2'],
+                expect.any(Array)
+            );
         });
 
         it('should step back from the preview to the bundle step', () => {
