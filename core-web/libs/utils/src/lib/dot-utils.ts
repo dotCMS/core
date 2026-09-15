@@ -265,3 +265,8 @@ const IDENTIFIER_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-
 export function isDotIdentifier(value: string | null | undefined): boolean {
     return !!value && IDENTIFIER_PATTERN.test(value.trim());
 }
+
+// PROBE for #37536 — deliberate TS7006 to prove the gate blocks. DO NOT MERGE.
+export function strictGateProbe(value) {
+    return value;
+}
