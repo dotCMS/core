@@ -827,6 +827,28 @@ describe('DotContentDriveStore', () => {
                 );
             });
 
+            it('should drop the search scope when the term is cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+                expect(store.filters()['searchScope']).toBe('TITLE');
+
+                store.setGlobalSearch('');
+
+                // The scope qualifies the term; with the term gone it is nonsense in the state —
+                // and a leftover scope would keep "Clear all" lit with nothing filtered (FR-020).
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should keep the scope when the term is replaced, not cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+
+                store.setGlobalSearch('contracts');
+
+                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['title']).toBe('contracts');
+            });
+
             it('should reset pagination offset when setting global search', () => {
                 store.setPagination({ limit: 20, page: 2, offset: 20 });
                 expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });

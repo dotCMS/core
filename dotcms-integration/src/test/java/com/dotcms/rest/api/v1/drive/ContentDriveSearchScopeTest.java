@@ -439,4 +439,92 @@ public class ContentDriveSearchScopeTest extends IntegrationTestBase {
         assertTrue("All Fields must match a punctuated term in full — this is the customer path",
                 contains(results, inode));
     }
+
+    /**
+     * A hyphenated term must stay findable in Title scope. The standard tokenizer that indexes
+     * {@code title} treats the hyphen as a word separator — "COVID-19" is stored as the tokens
+     * {@code covid} and {@code 19} — so the search term must split the same way. The previous
+     * behavior <i>stripped</i> the hyphen instead, fusing the words into a token no document
+     * contains ("COVID19"): a title findable in All Fields silently vanished from Title scope.
+     *
+     * <p>Scope narrowing must survive the fix: a document whose <i>body</i> carries the same
+     * hyphenated term stays an All-Fields-only result.</p>
+     */
+    @Test
+    public void titleScope_hyphenatedTerm_isReachableByItsWords() throws Exception {
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final Folder folder = APILocator.getFolderAPI()
+                .findFolderByPath(assetPath.substring(assetPath.indexOf('/', 2)), testSite,
+                        systemUser, false);
+        final String marker = "covidprobe" + System.nanoTime();
+        final String hyphenated = marker + "-19";
+
+        final String titleMatchInode = seed(hyphenated + " vaccine guidance", "unrelated body",
+                folder, languageId);
+        final String bodyOnlyInode = seed("a plain heading " + System.nanoTime(),
+                "the body mentions " + hyphenated, folder, languageId);
+
+        final PaginatedContents results = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text(hyphenated)
+                        .searchScope(SearchScope.TITLE).build())
+                .build(), systemUser);
+
+        assertTrue("A hyphenated term must find its hyphenated title in Title scope — the "
+                        + "analyzer stored the words separately, and stripping the hyphen fused "
+                        + "them into a word no document contains",
+                contains(results, titleMatchInode));
+        assertFalse("Scope narrowing still holds: a body-only hyphenated match is not a Title hit",
+                contains(results, bodyOnlyInode));
+    }
+
+    /**
+     * A term made up entirely of query-syntax characters ({@code ***}, a lone {@code /}) has no
+     * usable word in it after the separators are handled, and must match NOTHING. Returning no
+     * text clause at all would silently drop the constraint and return the whole folder — the
+     * exact "term ignored" failure the injection-shaped test guards against, reached from the
+     * opposite direction, and the opposite of All Fields, which matches nothing for the same
+     * input.
+     */
+    @Test
+    public void titleScope_termOfOnlyQuerySyntax_matchesNothing() throws Exception {
+        // Sanity: the drive is not empty — the seeded title match is findable right now. This is
+        // what makes the zero below mean "matched nothing" rather than "nothing to match".
+        final PaginatedContents sanity = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text(term)
+                        .searchScope(SearchScope.TITLE).build())
+                .build(), systemUser);
+        assertTrue("Sanity: the folder must contain a Title-scope match for the seeded term",
+                contains(sanity, titleMatchInode));
+
+        for (final String syntaxOnly : new String[] {"***", "/"}) {
+            final PaginatedContents titleScope = contentDriveHelper.driveSearch(
+                    DriveRequestForm.builder()
+                            .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                            .offset(0).maxResults(100)
+                            .filters(QueryFilters.builder().text(syntaxOnly)
+                                    .searchScope(SearchScope.TITLE).build())
+                            .build(), systemUser);
+            assertEquals("A Title-scope term of only query syntax must match nothing, not "
+                            + "everything — input was: " + syntaxOnly,
+                    0, titleScope.list.size());
+        }
+    }
+
+    /** All Fields matches nothing for a syntax-only term too — the two scopes agree there. */
+    @Test
+    public void allFieldsScope_termOfOnlyQuerySyntax_matchesNothing() throws Exception {
+        final PaginatedContents results = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text("***")
+                        .searchScope(SearchScope.ALL_FIELDS).build())
+                .build(), systemUser);
+
+        assertEquals("All Fields must match nothing for a syntax-only term",
+                0, results.list.size());
+    }
 }

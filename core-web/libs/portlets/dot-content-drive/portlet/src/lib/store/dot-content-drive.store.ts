@@ -246,6 +246,10 @@ export const DotContentDriveStore = signalStore(
                     filters.title = searchValue;
                 } else {
                     delete filters.title;
+                    // The scope qualifies the term — with no term it is nonsense (FR-025), and a
+                    // leftover scope would keep "Clear all" lit on a drive with nothing filtered
+                    // (FR-020), the exact affordance setSearchScope deletes the key to avoid.
+                    delete filters[SEARCH_SCOPE_FILTER_KEY];
                 }
 
                 patchState(store, {
@@ -533,6 +537,12 @@ export const DotContentDriveStore = signalStore(
                     .search(request)
                     .pipe(
                         take(1),
+                        // Deliberate deviation from the portlet convention of routing every HTTP
+                        // error through DotHttpErrorManagerService: a transient toast over an
+                        // empty grid reads as "found nothing", the exact misread that sent a
+                        // #37532 customer looking for a document that was there all along. The
+                        // ERROR status renders the shell's persistent banner + Retry instead (see
+                        // dot-content-drive-shell.component.html).
                         catchError(() => {
                             patchState(store, { status: DotContentDriveStatus.ERROR });
                             return EMPTY;

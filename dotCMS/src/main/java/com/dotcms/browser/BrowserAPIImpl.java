@@ -1340,8 +1340,23 @@ public class BrowserAPIImpl implements BrowserAPI {
     /** Splits a term into tokens, matching the shared field strategies. */
     private static final String TITLE_SCOPE_SPLIT_REGEX = "[,|\\s+]";
 
-    /** The Lucene {@code query_string} reserved set, as documented on {@code LuceneQueryUtils}. */
-    private static final String LUCENE_RESERVED = "\\\\+-!():^[]\"{}~*?|&/";
+    /**
+     * The subset of {@link LuceneQueryUtils#LUCENE_SPECIAL_CHARS} that reads as query intent — a
+     * wildcard or an escape — rather than as a word boundary. These are dropped from the token
+     * outright (the historical behavior) instead of splitting it: {@code file*.txt} keeps meaning
+     * the literal {@code file.txt}, rather than becoming two mandatory words, one of which
+     * ({@code .txt}) could never match an analyzed token and would sink the whole search.
+     */
+    private static final String WILDCARD_CHARS = "*?\\";
+
+    /**
+     * The clause for a term whose every token is query syntax ({@code ***}, a lone {@code /}): a
+     * required existence test on {@code title} paired with its own negation — a contradiction no
+     * document can satisfy. {@code field:*} is the established {@code query_string} exists idiom
+     * (see {@code PersonaAPIImpl}'s {@code +languageid:*}); the wrapping group in
+     * {@link #buildBaseESQuery} applies the {@code +} and {@code -} as written.
+     */
+    private static final String MATCH_NOTHING_CLAUSE = "+title:* -title:*";
 
     /**
      * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
@@ -1376,12 +1391,13 @@ public class BrowserAPIImpl implements BrowserAPI {
      * <ul>
      *   <li><b>Mid-token.</b> Searching {@code 1004} will not find {@code IMG_1004.jpeg} here. All
      *       Fields keeps it (issue #36791).</li>
-     *   <li><b>Punctuation mid-title.</b> A prefix query is not analyzed, so the search term keeps
-     *       its punctuation while the indexed token had it stripped — {@code (XETRA:} is indexed as
-     *       {@code xetra}. Reaching it would need {@code *(XETRA:*}, the leading wildcard this
-     *       method exists to avoid. The content stays reachable by its words, and All Fields — the
-     *       default — matches the punctuated term in full, which is the path the customer case of
-     *       issue #37532 takes.</li>
+     *   <li><b>Punctuation mid-title.</b> The punctuation itself is never matchable: a prefix query
+     *       is not analyzed, and the indexed token had it removed — {@code (XETRA:} is indexed as
+     *       {@code xetra}. Reaching the punctuation would need {@code *(XETRA:*}, the leading
+     *       wildcard this method exists to avoid. The words around it stay reachable — a split
+     *       aligns the term with the tokens the analyzer stored — and All Fields, the default,
+     *       matches the punctuated term in full, which is the path the customer case of issue
+     *       #37532 takes.</li>
      * </ul>
      *
      * <p>Restoring either would cost the prefix seek that makes this scope worth having.</p>
@@ -1393,59 +1409,85 @@ public class BrowserAPIImpl implements BrowserAPI {
      *
      * @param filter The raw, unescaped term the user typed.
      *
-     * @return The Lucene clause for a title-only search, or {@link #BLANK} when the term carries no
-     *         usable token.
+     * @return The Lucene clause for a title-only search, or {@link #MATCH_NOTHING_CLAUSE} when the
+     *         term carries no usable token at all — matching nothing, never everything.
      */
-    private String buildTitleScopedQuery(final String filter) {
+    static String buildTitleScopedQuery(final String filter) {
         final StringBuilder query = new StringBuilder();
         for (final String token : filter.split(TITLE_SCOPE_SPLIT_REGEX)) {
-            if (token.isEmpty()) {
-                continue;
-            }
-            // STRIP the query-syntax characters rather than escape them.
+            // SPLIT the query-syntax characters that are word separators; DROP the wildcard ones.
             //
             // Escaping is the right move for a substring match, and it is what the all-fields
-            // strategy does. It is the wrong move here. A prefix query is NOT analyzed, so the term
-            // is compared against the indexed token as-is — and the analyzer already stripped that
-            // punctuation at index time: "(XETRA:" is indexed as "xetra". An escaped "\(XETRA\:"
-            // can therefore never match, and because every token is mandatory, one such token sinks
-            // the whole search. Pasting a punctuated title into Title scope returned nothing.
+            // strategy does. It is the wrong move here. A prefix query is NOT analyzed, so the
+            // term is compared against the indexed token as-is — and the analyzer already removed
+            // that punctuation at index time: "(XETRA:" is indexed as "xetra". An escaped
+            // "\(XETRA\:" can therefore never match, and because every token is mandatory, one
+            // such token sinks the whole search. Pasting a punctuated title into Title scope
+            // returned nothing.
             //
-            // Stripping aligns the term with what the analyzer actually stored, and it is at least
-            // as safe as escaping: a token with no reserved characters left in it cannot be query
-            // syntax. Tokens that vanish entirely (a lone "/") are skipped.
-            final String value = stripQuerySyntax(token);
-            if (value.isEmpty()) {
-                continue;
+            // Stripping alone aligns the term with what the analyzer stored, but it also FUSES
+            // the words around the stripped character: title is indexed with the standard
+            // tokenizer, which treats punctuation as word separators — "COVID-19" is stored as
+            // the tokens "covid" and "19", and a stripped token turned the term into "COVID19",
+            // a word no document contains. A hyphenated title findable in All Fields vanished
+            // from Title scope. Splitting on the same separators the analyzer uses keeps every
+            // word reachable by its own prefix; at a token's edges a split and a strip are
+            // equivalent, because the empty side is dropped — which is what the punctuated-paste
+            // cases rely on. Either way, a fragment with no reserved characters left in it
+            // cannot be query syntax.
+            for (final String value : splitQuerySyntax(token)) {
+                query.append("+(title:").append(value).append("* title_dotraw:")
+                        .append(value).append("*) ");
             }
-            query.append("+(title:").append(value).append("* title_dotraw:")
-                    .append(value).append("*) ");
+        }
+
+        if (query.length() == 0) {
+            // Every token was pure query syntax (e.g. "***" or a lone "/"). Returning BLANK here
+            // would drop the text constraint entirely and return the whole folder — the exact
+            // "term silently ignored" failure the injection-shaped test guards against, reached
+            // from the opposite direction, and the opposite of All Fields, which matches nothing
+            // for the same input.
+            return MATCH_NOTHING_CLAUSE;
         }
 
         return query.toString().trim();
     }
 
     /**
-     * Removes every Lucene {@code query_string} reserved character from a single token, so it can
-     * be compared against an analyzed field that never stored those characters.
+     * Splits a single token of the user's term on the Lucene reserved characters, so it can be
+     * compared against an analyzed field that never stored those characters.
      *
      * <p>Deliberately not {@code LuceneQueryUtils.escape}: escaping preserves the character, which
      * is correct when the term is matched as a substring of a raw value and wrong when it is
-     * matched as a prefix of an analyzed token.</p>
+     * matched as a prefix of an analyzed token. And deliberately a character walk, not a regex,
+     * for the same OpenSearch-migration reasons documented on {@code LuceneQueryUtils.escape}.</p>
      *
-     * @param token A single token of the user's term.
+     * @param token A single token of the user's term (already split on the shared separators).
      *
-     * @return The token with reserved characters removed; may be empty.
+     * @return The word fragments the analyzer would have stored; never empty, never blank.
      */
-    private static String stripQuerySyntax(final String token) {
-        final StringBuilder clean = new StringBuilder(token.length());
+    static List<String> splitQuerySyntax(final String token) {
+        final List<String> segments = new ArrayList<>();
+        final StringBuilder current = new StringBuilder(token.length());
         for (int i = 0; i < token.length(); i++) {
             final char c = token.charAt(i);
-            if (LUCENE_RESERVED.indexOf(c) < 0) {
-                clean.append(c);
+            if (LuceneQueryUtils.LUCENE_SPECIAL_CHARS.indexOf(c) < 0) {
+                current.append(c);
+            } else if (WILDCARD_CHARS.indexOf(c) >= 0) {
+                // A wildcard or escape: query intent, dropped rather than treated as a separator
+                // (see WILDCARD_CHARS).
+            } else {
+                // A word separator for the analyzer: flush the fragment accumulated so far.
+                if (current.length() > 0) {
+                    segments.add(current.toString());
+                    current.setLength(0);
+                }
             }
         }
-        return clean.toString();
+        if (current.length() > 0) {
+            segments.add(current.toString());
+        }
+        return segments;
     }
 
     /**

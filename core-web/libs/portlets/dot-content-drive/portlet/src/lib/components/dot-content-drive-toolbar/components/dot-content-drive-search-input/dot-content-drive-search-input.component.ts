@@ -146,6 +146,17 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     };
 
     /**
+     * Squares off the search input's connecting edge — the side that meets the scope addon. This
+     * component's own host sits between `p-inputgroup` and the real `<input>`, breaking PrimeNG's
+     * structural CSS, so the override rides the design token through `inputDt` instead of
+     * competing for specificity (see the template comment). Hoisted like `TRIGGER_PT`: an inline
+     * object literal would be recreated on every change detection cycle.
+     */
+    protected readonly INPUT_DT = {
+        border: { radius: '{form.field.border.radius} 0 0 {form.field.border.radius}' }
+    };
+
+    /**
      * Claims the search shortcuts for as long as this box is on screen.
      *
      * Registered here rather than in the shell because this is the component that holds the search

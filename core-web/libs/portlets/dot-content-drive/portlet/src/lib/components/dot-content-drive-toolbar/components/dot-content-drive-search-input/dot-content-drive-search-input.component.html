@@ -17,9 +17,7 @@
          ("Search"), deliberately not describing the active scope. -->
     <dot-search-input
         [value]="$searchTerm()"
-        [inputDt]="{
-            border: { radius: '{form.field.border.radius} 0 0 {form.field.border.radius}' }
-        }"
+        [inputDt]="INPUT_DT"
         (search)="onSearch($event)"
         class="min-w-0 flex-1" />
 
