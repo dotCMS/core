@@ -104,7 +104,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         it('should render the scope control next to the search input', () => {
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('search-scope'))).toBeTruthy();
+            expect(spectator.query(byTestId('search-scope-trigger'))).toBeTruthy();
             expect(searchInput()).toBeTruthy();
         });
 
@@ -174,7 +174,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             spectator.detectChanges();
 
             expect(
-                spectator.query(byTestId('search-scope'))?.getAttribute('aria-label')
+                spectator.query(byTestId('search-scope-trigger'))?.getAttribute('aria-label')
             ).toBeTruthy();
         });
 

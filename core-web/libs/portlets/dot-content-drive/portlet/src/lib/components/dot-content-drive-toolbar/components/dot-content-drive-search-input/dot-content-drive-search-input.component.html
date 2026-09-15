@@ -1,58 +1,57 @@
-<!-- p-inputgroup joins the two halves into one field: it owns the seam, the rounding and the shared
-     border. The scope sits in an addon so the pair reads as a single control rather than a text box
-     with a dropdown parked beside it.
+<!-- p-inputgroup joins the two halves into one field: it owns the seam and the shared border. The
+     trigger sits in the addon as a plain PrimeNG button — PrimeNG's own inputgroup stylesheet
+     already zeroes an addon's padding and a button's radius when it detects a button inside an
+     addon (`.p-inputgroupaddon:has(.p-button)` / `.p-inputgroupaddon .p-button`), which is the exact
+     recipe https://v21.primeng.org/inputgroup#button uses. No override needed on that side.
 
-     Styling goes through PrimeNG's own PassThrough (`pt`) and Tailwind's `!` (important) modifier,
-     never a stylesheet. `!` is required, not decorative: PrimeNG injects its component styles at
-     runtime, after Tailwind's compiled stylesheet has already loaded, so a plain utility class of
-     equal specificity loses the tie. PrimeNG's own docs style a Select nested in an input group the
-     same way (`border-none! shadow-none! bg-transparent!`). -->
+     The search input's connecting edge needs one, because this component's own host sits between
+     `p-inputgroup` and the real `<input>`, breaking PrimeNG's structural CSS. `inputDt` reaches
+     through with a design-token override rather than a class, so it applies by redefining the
+     value the component's own stylesheet reads instead of competing with it for specificity.
+
+     The panel reuses the same popover + listbox pass-through every other Content Drive filter
+     dropdown already uses (see dot-content-drive-workflow-filter), so this control matches the
+     rest of the toolbar instead of introducing a styling idiom of its own. -->
 <p-inputgroup class="w-full">
-    <!-- `inputClass` reaches the real <input> inside this shared component. Without it the
-         connecting edge cannot be flattened from here: PrimeNG's inputgroup CSS only rewires a
-         DIRECT `.p-iconfield`/`.p-component` child of `.p-inputgroup`, and this component's own host
-         sits one layer in between, so the automatic "flat inner edge" behaviour never reaches it. -->
     <dot-search-input
         [value]="$searchTerm()"
         [placeholder]="$placeholder()"
-        [inputClass]="'rounded-r-none! border-r-0!'"
+        [inputDt]="{ border: { radius: '{form.field.border.radius} 0 0 {form.field.border.radius}' } }"
         (search)="onSearch($event)"
         class="min-w-0 flex-1" />
 
-    <!-- A FIXED width, not a minimum. p-select sizes itself to its selected label, so "Title" and
-         "All Fields" produced two different widths — and because the input takes the remaining
-         space, choosing a scope resized the text field under the user's cursor. 140px is what the
-         filter chips below already use, and it fits the longer label whole.
-
-         White background and a left-only border: the addon must read as part of the same field,
-         with that left edge as the one hairline divider between the two halves — not as its own
-         boxed panel. `p-inputgroupaddon` draws top/bottom/right borders on its own by default (it is
-         the group's last child), which is exactly the outer edge that is wanted; only the
-         background and the left divider need to be added explicitly. -->
-    <p-inputgroup-addon
-        class="w-[140px]! shrink-0 grow-0 border-y-0! border-r-0! border-l! border-slate-200! bg-white! p-0!">
-        <p-select
-            [options]="scopeOptions"
-            [ngModel]="$searchScope()"
-            [ngModelOptions]="{ standalone: true }"
-            [checkmark]="true"
+    <p-inputgroup-addon>
+        <button
+            type="button"
+            pButton
+            severity="secondary"
             [attr.aria-label]="'content-drive.search.scope.label' | dm"
-            [tooltip]="'content-drive.search.scope.help' | dm"
-            [pt]="scopePt"
-            optionValue="value"
-            appendTo="body"
-            class="w-full!"
-            data-testid="search-scope"
+            [pTooltip]="'content-drive.search.scope.help' | dm"
+            aria-haspopup="listbox"
+            data-testid="search-scope-trigger"
             tooltipPosition="bottom"
-            (ngModelChange)="onScopeChange($event)">
-            <ng-template let-item pTemplate="selectedItem">
-                <span data-testid="search-scope-active">{{ item.label | dm }}</span>
-            </ng-template>
-            <ng-template let-item pTemplate="item">
-                <span [attr.data-testid]="'search-scope-option-' + item.value">
-                    {{ item.label | dm }}
-                </span>
-            </ng-template>
-        </p-select>
+            (click)="panel.toggle($event)">
+            <span data-testid="search-scope-active">{{ $activeScopeLabel() | dm }}</span>
+            <i class="pi pi-chevron-down text-xs" aria-hidden="true"></i>
+        </button>
     </p-inputgroup-addon>
 </p-inputgroup>
+
+<p-popover #panel [pt]="POPOVER_PT">
+    <p-listbox
+        [options]="scopeOptions"
+        [ngModel]="$searchScope()"
+        [ngModelOptions]="{ standalone: true }"
+        [checkmark]="true"
+        [pt]="LISTBOX_PT"
+        [scrollHeight]="SCROLL_HEIGHT"
+        optionValue="value"
+        data-testid="search-scope-panel"
+        (ngModelChange)="onScopeChange($event); panel.hide()">
+        <ng-template let-item pTemplate="item">
+            <span [attr.data-testid]="'search-scope-option-' + item.value">
+                {{ item.label | dm }}
+            </span>
+        </ng-template>
+    </p-listbox>
+</p-popover>

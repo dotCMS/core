@@ -8,11 +8,17 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { SelectModule } from 'primeng/select';
+import { ListboxModule } from 'primeng/listbox';
+import { PopoverModule } from 'primeng/popover';
+import { TooltipModule } from 'primeng/tooltip';
 
 import {
+    CHIP_FILTER_LISTBOX_PT,
+    CHIP_FILTER_POPOVER_PT,
+    CHIP_FILTER_SCROLL_HEIGHT,
     DotKeyboardShortcutService,
     DotKeyboardShortcutUnregister,
     DotMessagePipe,
@@ -38,9 +44,12 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DotSearchInputComponent,
+        ButtonModule,
         InputGroupModule,
         InputGroupAddonModule,
-        SelectModule,
+        ListboxModule,
+        PopoverModule,
+        TooltipModule,
         DotMessagePipe,
         FormsModule
     ],
@@ -80,21 +89,13 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     ];
 
     /**
-     * PrimeNG PassThrough: Tailwind classes handed to the select's own internals.
-     *
-     * This is how the component is styled without a stylesheet — `pt` is PrimeNG's supported way in,
-     * so nothing here reaches past the component's API into its markup.
-     *
-     * Each entry earns its place. The root sheds the chrome the input group already drew; the label
-     * gets the padding that otherwise leaves the chevron flush against the text; the dropdown gets
-     * its own column so it stays right-aligned. Colours match `dot-chip-filter`, so the search box
-     * and the chip row beneath it read as one family.
+     * The same popover/listbox pass-through every other Content Drive filter dropdown already uses
+     * (`dot-content-drive-workflow-filter`, `dot-status-filter`, …), so this panel matches the rest
+     * of the toolbar instead of introducing its own styling.
      */
-    protected readonly scopePt = {
-        root: 'h-full w-full border-0 bg-transparent shadow-none rounded-none',
-        label: 'flex items-center pl-3 pr-1 text-slate-600 whitespace-nowrap overflow-visible',
-        dropdown: 'w-8 shrink-0 grow-0 text-slate-500'
-    };
+    protected readonly POPOVER_PT = CHIP_FILTER_POPOVER_PT;
+    protected readonly LISTBOX_PT = CHIP_FILTER_LISTBOX_PT;
+    protected readonly SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
 
     /** Absent from the filters means the default — the scope is only stored when it differs. */
     protected readonly $searchScope = computed<DotContentDriveSearchScope>(
