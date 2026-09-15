@@ -2,14 +2,21 @@
 // the ring encloses both the input and the calendar icon button as one unit.
 
 :host ::ng-deep p-datepicker {
-    // Use PrimeNG's default datepicker sizing
-    display: inline-flex;
+    // Block-level flex so the control fills the column it sits in, matching every other field
+    // type. The input is the part that grows; the trigger keeps its intrinsic width and stays
+    // flush against the right edge.
+    display: flex;
+    width: 100%;
     border-radius: var(--p-inputtext-border-radius);
+
     transition:
         border-color var(--p-inputtext-transition-duration),
         box-shadow var(--p-inputtext-transition-duration);
 
     .p-datepicker-input {
+        // Grows so the input, not the wrapper, absorbs the column's extra width.
+        flex: 1 1 auto;
+        min-width: 0;
         border-right: 0;
     }
 
@@ -49,5 +56,25 @@
     .p-datepicker-input,
     .p-datepicker-dropdown {
         border-color: var(--p-inputtext-invalid-border-color);
+    }
+}
+
+// The clear control projected through PrimeNG's #clearicon template. PrimeNG positions the
+// slot; this only strips the button chrome so it reads as the icon it replaces, while staying
+// a real focusable button (see calendar-field.component.html).
+:host ::ng-deep .calendar-field__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+
+    &:focus-visible {
+        outline: var(--p-focus-ring-width) solid var(--p-focus-ring-color);
+        outline-offset: var(--p-focus-ring-offset);
+        border-radius: var(--p-border-radius-sm);
     }
 }

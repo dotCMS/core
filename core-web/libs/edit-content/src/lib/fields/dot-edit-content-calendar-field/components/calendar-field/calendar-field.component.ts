@@ -6,11 +6,13 @@ import {
     computed,
     effect,
     forwardRef,
-    input
+    input,
+    viewChild
 } from '@angular/core';
 import { FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
-import { DatePickerModule } from 'primeng/datepicker';
+import { ButtonModule } from 'primeng/button';
+import { DatePicker, DatePickerModule } from 'primeng/datepicker';
 
 import {
     DotCMSContentType,
@@ -29,6 +31,7 @@ import {
     processFieldDefaultValue
 } from './calendar-field.util';
 
+import { CALENDAR_FIELD_TYPES_WITH_TIME } from '../../../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { FieldType } from '../../../../models/dot-edit-content-field.type';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
@@ -55,7 +58,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
  */
 @Component({
     selector: 'dot-calendar-field',
-    imports: [DatePickerModule, ReactiveFormsModule, DotMessagePipe],
+    imports: [ButtonModule, DatePickerModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: 'calendar-field.component.html',
     styleUrls: ['./calendar-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -119,6 +122,17 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
             }
         });
 
+        // PrimeNG decides whether to render the clear control by reading the input element's DOM
+        // value, and `updateInputfield()` writes that value without marking the component dirty.
+        // The DatePicker is OnPush, so on the load path — a value arriving from a saved
+        // contentlet — the condition is evaluated before the value lands and nothing ever
+        // re-evaluates it: the field shows a value the author has no way to clear until they
+        // happen to focus it. The microtask lets PrimeNG's writeValue finish first.
+        effect(() => {
+            this.$value();
+            queueMicrotask(() => this.$picker()?.cd.detectChanges());
+        });
+
         this.handleDisabledChange(this.$isDisabled);
         this.handleChangeValue(this.$value);
     }
@@ -131,6 +145,39 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         const fieldType = this.$field().fieldType;
         return CALENDAR_OPTIONS_PER_TYPE[fieldType];
     });
+
+    /**
+     * Whether the picker footer states the timezone the value is interpreted in.
+     *
+     * Only the two types that carry a time. A date is the same calendar day in every zone, so
+     * naming one beside a Date-only picker tells the author nothing — decided explicitly in the
+     * issue's refinement table. Absent too when the timezone has not loaded, so the footer never
+     * renders an empty slot.
+     */
+    $showFooterTimezone = computed(() => {
+        const fieldType = this.$field().fieldType as FIELD_TYPES;
+
+        return (
+            CALENDAR_FIELD_TYPES_WITH_TIME.includes(fieldType) && !!this.$systemTimezone()?.label
+        );
+    });
+
+    /**
+     * The picker instance: the constructor's effect drives its change detection when a value
+     * arrives (see there). Optional rather than required — the effect can run before the view
+     * exists.
+     */
+    $picker = viewChild(DatePicker);
+
+    /**
+     * Message key for the footer action: a time-only field jumps to "now", the two that carry
+     * a date jump to "today".
+     */
+    $footerActionLabel = computed(() =>
+        this.$fieldTypeConfig().timeOnly
+            ? 'edit.content.form.field.calendar.now'
+            : 'edit.content.form.field.calendar.today'
+    );
 
     $isExpireDateField = computed(() => {
         const contentType = this.$contentType();
@@ -199,6 +246,18 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         this.onTouched();
     }
 
+    /**
+     * Fills the field with the current moment, as the SERVER sees it.
+     *
+     * Deliberately does not use the `todayCallback` PrimeNG hands to the button-bar template:
+     * that callback reads `new Date()`, the browser's clock, which on a server in another
+     * timezone resolves to the wrong calendar day. Routing through `onCalendarChange` also
+     * means the per-type UTC conversion stays in one place rather than being duplicated here.
+     */
+    setCurrentServerDateTime(): void {
+        this.onCalendarChange(getCurrentServerTime(this.$systemTimezone()));
+    }
+
     readonly handleDisabledChange = signalMethod<boolean>((isDisabled) => {
         if (isDisabled) {
             this.internalFormControl.disable();
@@ -212,15 +271,6 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         this.lastUtcValue = utcValue;
 
         if (utcValue !== null && utcValue !== undefined) {
-            // Debug logging for unexpected value types
-            if (typeof utcValue !== 'number') {
-                console.warn('Calendar field received non-number value:', {
-                    value: utcValue,
-                    type: typeof utcValue,
-                    fieldVariable: this.$field().variable
-                });
-            }
-
             // Process existing value from form/backend (numeric timestamp)
             const displayValue = processExistingValue(
                 utcValue,
