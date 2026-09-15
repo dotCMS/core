@@ -61,7 +61,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
-                    <executable>${node.install.dir}/pnpm</executable>
+                    <executable>${pnpm.executable}</executable>
                     <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                     <environmentVariables>
                         <PATH>${node.install.dir}:${env.PATH}</PATH>

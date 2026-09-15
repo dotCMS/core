@@ -121,7 +121,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
-                    <executable>${node.install.dir}/pnpm</executable>
+                    <executable>${pnpm.executable}</executable>
                     <workingDirectory>${project.basedir}</workingDirectory>
                     <!--
                       Prepend installs/node to PATH so the pnpm shim's
@@ -443,7 +443,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <executable>${node.install.dir}/pnpm</executable>
+                            <executable>${pnpm.executable}</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <environmentVariables>
                                 <PATH>${node.install.dir}:${env.PATH}</PATH>
