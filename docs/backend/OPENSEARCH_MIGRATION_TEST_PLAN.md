@@ -33,7 +33,7 @@ services and ports is in **Environment**; the limited-user (non-admin OS) varian
 | `FEATURE_FLAG_OPEN_SEARCH_PHASE` | Selects how far the migration runs: `0` = ES only, `1` = dual-write / ES reads, `2` = dual-write / OS reads, `3` = OS only. This is the switch most cases toggle. |
 | `OS_ENDPOINTS` | URL of the OpenSearch (new engine) cluster. Inside the lab network it is `https://opensearch3:9200`; from your machine the same cluster is `https://localhost:9201`. Must be a **separate** instance from ES — pointing it at the ES URL or at the ES address is what the safety guards in Groups 1–2 detect. |
 | `OS_AUTH_TYPE` | Authentication scheme dotCMS uses to talk to OpenSearch (`BASIC` for these cases). |
-| `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials for OpenSearch. With the open dev stack these are `admin` / `admin`; the limited-user stack (Group 16) uses the restricted `dotcms-es-user`. |
+| `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials dotCMS uses for OpenSearch. The lab stack provisions the restricted `dotcms-es-user` on both engines and connects dotCMS with it by default (Group 16 exercises that path explicitly); its password is the `$ES_USER_PW` value in the compose file. An `admin` account exists too — `admin`/`admin` on the old engine, `$OS_ADMIN_PW` on the new one — but that is the direct-`curl` credential, not what dotCMS authenticates with. |
 | `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS (`false` for the open dev stack; the limited-user stack uses HTTPS plus `OS_TLS_TRUST_SELF_SIGNED=true`). |
 
 > A phase change is re-read on each routing decision, so the **routing** (which engine gets writes /
@@ -156,8 +156,8 @@ FEATURE_FLAG_OPEN_SEARCH_PHASE=1
 # New-engine connection
 OS_ENDPOINTS=https://localhost:9201
 OS_AUTH_TYPE=BASIC
-OS_AUTH_BASIC_USER=admin
-OS_AUTH_BASIC_PASSWORD=admin
+OS_AUTH_BASIC_USER=dotcms-es-user
+OS_AUTH_BASIC_PASSWORD=<the $ES_USER_PW value from the compose file>
 OS_TLS_ENABLED=false
 ```
 
