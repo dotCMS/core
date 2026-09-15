@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.time.Instant;
@@ -89,6 +90,31 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
 
     @JsonProperty("createdBy")
     String createdBy();
+
+    /**
+     * The display name of the user behind {@link #createdBy()}, resolved when the Experiment is
+     * serialized and never stored, so a creator who renames themselves is reported under the new
+     * name. Falls back to the raw user ID when the creator cannot be resolved or has no name set —
+     * the value is never null, absent or empty. See {@link ExperimentCreatorNameResolver}.
+     *
+     * <p>Deliberately a plain {@code default} method rather than a {@code @Value.Derived} or
+     * {@code @Value.Lazy} attribute: those are computed at construction or memoized per instance,
+     * which would resolve a user on every Experiment built from the database — including on the
+     * page-render and push-publish paths, which never serialize the object — and would let a
+     * memoized name outlive a rename inside the running-experiments cache. As an ordinary default
+     * method it costs nothing until something serializes the Experiment.
+     *
+     * <p>{@code READ_ONLY} is load-bearing: the generated {@code Experiment.Json} delegate binds
+     * settable attributes only, so without it a payload carrying this field would fail to
+     * deserialize as an unknown property.
+     */
+    @JsonProperty(value = "createdByUserName", access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "Display name of the user who created the experiment. Falls back to the "
+            + "raw createdBy user ID when the user cannot be resolved or has no name set.",
+            example = "Admin User")
+    default String createdByUserName() {
+        return ExperimentCreatorNameResolver.INSTANCE.resolve(createdBy());
+    }
 
     @JsonProperty("lastModifiedBy")
     String lastModifiedBy();
