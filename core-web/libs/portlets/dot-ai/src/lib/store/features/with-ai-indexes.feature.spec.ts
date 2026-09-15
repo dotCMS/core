@@ -125,6 +125,29 @@ describe('withAiIndexes', () => {
         });
     });
 
+    it('should not call an index Building because its name is on Object.prototype', () => {
+        // The seed map comes from Object.fromEntries, so `in` walked its prototype: an index
+        // named constructor / toString / valueOf / hasOwnProperty read as seeded when it was
+        // not, and then rendered Building forever — nothing clears a seed that never existed.
+        // The create form's name pattern accepts all four.
+        stubIndexes([
+            index({ name: 'constructor' }),
+            index({ name: 'toString' }),
+            index({ name: 'valueOf' }),
+            index({ name: 'hasOwnProperty' })
+        ]);
+
+        store.loadIndexes();
+
+        expect(store.indexBuildSeeds()).toEqual({});
+        expect(Object.values(store.indexStatuses())).toEqual([
+            DOT_AI_INDEX_STATUS.READY,
+            DOT_AI_INDEX_STATUS.READY,
+            DOT_AI_INDEX_STATUS.READY,
+            DOT_AI_INDEX_STATUS.READY
+        ]);
+    });
+
     describe('an index the server has not caught up with', () => {
         // Embedding is asynchronous, so a freshly built index has nothing in dot_embeddings and
         // indexCount does not return it. Every assertion here is about the window in between,

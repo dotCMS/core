@@ -71,14 +71,18 @@ export function withAiIndexes() {
                 const seeds = store.indexBuildSeeds();
 
                 return Object.fromEntries(
-                    store
-                        .indexes()
-                        .map((index) => [
-                            index.name,
-                            index.name in seeds
-                                ? DOT_AI_INDEX_STATUS.BUILDING
-                                : DOT_AI_INDEX_STATUS.READY
-                        ])
+                    store.indexes().map((index) => [
+                        index.name,
+                        // `hasOwnProperty`, not `in`: the seed map comes from
+                        // `Object.fromEntries`, so `in` walks its prototype and an index
+                        // named `constructor`, `toString`, `valueOf` or `hasOwnProperty`
+                        // reads as seeded when it is not — then renders Building forever,
+                        // since nothing clears a seed that does not exist. The create
+                        // form's name pattern accepts all four.
+                        Object.prototype.hasOwnProperty.call(seeds, index.name)
+                            ? DOT_AI_INDEX_STATUS.BUILDING
+                            : DOT_AI_INDEX_STATUS.READY
+                    ])
                 );
             })
         })),

@@ -143,7 +143,7 @@ export interface DotAiPortletState {
      * what lets the row show as Building in the meantime instead of not showing at all.
      *
      * The timestamp is the stop condition: a build that never materialises would otherwise poll
-     * for the lifetime of the page. See `BUILD_SEED_TTL_MS`.
+     * for the lifetime of the page. See `PENDING_SEED_TTL_MS`.
      */
     indexBuildSeeds: Record<string, number>;
     indexesForbidden: boolean;
