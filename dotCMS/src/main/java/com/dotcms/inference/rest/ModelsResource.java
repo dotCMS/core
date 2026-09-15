@@ -10,6 +10,7 @@ import com.dotcms.inference.rest.view.InferenceErrorView;
 import com.dotcms.inference.rest.view.ModelListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.NoCors;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -68,6 +69,7 @@ import java.util.Optional;
  */
 @Path("/inference/v1/models")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
+@NoCors
 public class ModelsResource {
 
     /** Section of the site's {@code providerConfig} JSON the listed models come from. */

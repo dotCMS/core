@@ -13,6 +13,7 @@ import com.dotcms.inference.rest.view.EmbeddingsRequestView;
 import com.dotcms.inference.rest.view.InferenceErrorView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.NoCors;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -72,6 +73,7 @@ import java.util.Optional;
  */
 @Path("/inference/v1/embeddings")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
+@NoCors
 public class EmbeddingsResource {
 
     /** Section of the site's {@code providerConfig} JSON that configures embeddings. */

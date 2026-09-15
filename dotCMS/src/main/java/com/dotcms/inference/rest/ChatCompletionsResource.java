@@ -18,6 +18,7 @@ import com.dotcms.inference.rest.view.ChatCompletionView;
 import com.dotcms.inference.rest.view.InferenceErrorView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.NoCors;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -91,6 +92,7 @@ import java.util.function.Consumer;
  */
 @Path("/inference/v1/chat")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
+@NoCors
 public class ChatCompletionsResource {
 
     /** Media type a streamed completion is served as. */
