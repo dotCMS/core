@@ -35,95 +35,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
  */
 @Component({
     selector: 'dot-content-drive-search-input',
-    template: `
-        <!-- p-inputgroup is what joins the two into one control: it owns the seam, the rounding and
-             the shared border, which a hand-rolled wrapper could only approximate. The scope sits in
-             an addon, flush and borderless, following PrimeNG's own input-group-with-select recipe. -->
-        <p-inputgroup class="w-full">
-            <dot-search-input
-                [value]="$searchTerm()"
-                [placeholder]="$placeholder()"
-                (search)="onSearch($event)" />
-
-            <p-inputgroup-addon class="p-0!">
-                <p-select
-                    [options]="scopeOptions"
-                    [ngModel]="$searchScope()"
-                    [ngModelOptions]="{ standalone: true }"
-                    [checkmark]="true"
-                    [attr.aria-label]="'content-drive.search.scope.label' | dm"
-                    [pTooltip]="'content-drive.search.scope.help' | dm"
-                    optionValue="value"
-                    appendTo="body"
-                    class="dot-search-scope"
-                    data-testid="search-scope"
-                    tooltipPosition="bottom"
-                    (ngModelChange)="onScopeChange($event)">
-                    <ng-template let-item pTemplate="selectedItem">
-                        <span data-testid="search-scope-active">{{ item.label | dm }}</span>
-                    </ng-template>
-                    <ng-template let-item pTemplate="item">
-                        <span [attr.data-testid]="'search-scope-option-' + item.value">
-                            {{ item.label | dm }}
-                        </span>
-                    </ng-template>
-                </p-select>
-            </p-inputgroup-addon>
-        </p-inputgroup>
-    `,
-    styles: [
-        `
-            /* The shared search box brings its own border and rounding. Inside an input group that
-               reads as a box inside a box, so its right edge is flattened and handed to the group.
-               ::ng-deep because the markup belongs to @dotcms/ui, not to this template. */
-            :host ::ng-deep .p-inputgroup dot-search-input {
-                flex: 1 1 auto;
-                min-width: 0;
-            }
-
-            :host ::ng-deep .p-inputgroup dot-search-input .p-inputtext {
-                border-top-right-radius: 0;
-                border-bottom-right-radius: 0;
-                border-right: 0;
-            }
-
-            /* A FIXED width, not a minimum.
-               p-select sizes itself to its selected label, so "Title" and "All Fields" produced
-               two different widths — and because the input takes the remaining space, choosing a
-               scope resized the text field under the user's cursor. Pinning the addon means
-               neither the white field nor the whole group ever moves. 140px is what the filter
-               chips below already use, and it fits the longer label without truncating it. */
-            :host ::ng-deep .p-inputgroup .p-inputgroup-addon {
-                width: 140px;
-                flex: 0 0 140px;
-                padding: 0;
-            }
-
-            :host ::ng-deep .dot-search-scope {
-                width: 100%;
-                border: none;
-                background: transparent;
-                box-shadow: none;
-            }
-
-            /* Let the label use the width it now has. */
-            :host ::ng-deep .dot-search-scope .p-select-label {
-                overflow: visible;
-                text-overflow: clip;
-            }
-
-            /* Match the filter chips rather than the default input theme: same border, same text
-               colour, so the search box and the chip row under it read as one family. */
-            :host ::ng-deep .p-inputgroup dot-search-input .p-inputtext,
-            :host ::ng-deep .p-inputgroup .p-inputgroup-addon {
-                border-color: var(--color-slate-200, #e2e8f0);
-            }
-
-            :host ::ng-deep .dot-search-scope .p-select-label {
-                color: var(--color-slate-600, #475569);
-            }
-        `
-    ],
+    templateUrl: './dot-content-drive-search-input.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DotSearchInputComponent,
@@ -168,6 +80,23 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
             value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS
         }
     ];
+
+    /**
+     * PrimeNG PassThrough: Tailwind classes handed to the select's own internals.
+     *
+     * This is how the component is styled without a stylesheet — `pt` is PrimeNG's supported way in,
+     * so nothing here reaches past the component's API into its markup.
+     *
+     * Each entry earns its place. The root sheds the chrome the input group already drew; the label
+     * gets the padding that otherwise leaves the chevron flush against the text; the dropdown gets
+     * its own column so it stays right-aligned. Colours match `dot-chip-filter`, so the search box
+     * and the chip row beneath it read as one family.
+     */
+    protected readonly scopePt = {
+        root: 'h-full w-full border-0 bg-transparent shadow-none rounded-none',
+        label: 'flex items-center pl-3 pr-1 text-slate-600 whitespace-nowrap overflow-visible',
+        dropdown: 'w-8 shrink-0 grow-0 text-slate-500'
+    };
 
     /** Absent from the filters means the default — the scope is only stored when it differs. */
     protected readonly $searchScope = computed<DotContentDriveSearchScope>(

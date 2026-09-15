@@ -1,0 +1,46 @@
+<!-- p-inputgroup joins the two halves into one field: it owns the seam, the rounding and the shared
+     border. The scope sits in an addon so the pair reads as a single control rather than a text box
+     with a dropdown parked beside it.
+
+     Styling goes through PrimeNG's PassThrough (`pt`) rather than a stylesheet: it is the component's
+     own way of reaching its internals, so no CSS file is needed to make the addon transparent or to
+     give the label room. -->
+<p-inputgroup class="w-full">
+    <dot-search-input
+        [value]="$searchTerm()"
+        [placeholder]="$placeholder()"
+        (search)="onSearch($event)"
+        class="min-w-0 flex-1" />
+
+    <!-- A FIXED width, not a minimum. p-select sizes itself to its selected label, so "Title" and
+         "All Fields" produced two different widths — and because the input takes the remaining
+         space, choosing a scope resized the text field under the user's cursor. 140px is what the
+         filter chips below already use, and it fits the longer label whole.
+         Transparent background and a left-only border: the addon has to read as part of the field
+         it sits in, with the border acting as the divider between the two halves. -->
+    <p-inputgroup-addon
+        class="w-[140px] shrink-0 grow-0 border-y-0 border-r-0 border-l border-slate-200 bg-transparent p-0">
+        <p-select
+            [options]="scopeOptions"
+            [ngModel]="$searchScope()"
+            [ngModelOptions]="{ standalone: true }"
+            [checkmark]="true"
+            [attr.aria-label]="'content-drive.search.scope.label' | dm"
+            [pTooltip]="'content-drive.search.scope.help' | dm"
+            [pt]="scopePt"
+            optionValue="value"
+            appendTo="body"
+            data-testid="search-scope"
+            tooltipPosition="bottom"
+            (ngModelChange)="onScopeChange($event)">
+            <ng-template let-item pTemplate="selectedItem">
+                <span data-testid="search-scope-active">{{ item.label | dm }}</span>
+            </ng-template>
+            <ng-template let-item pTemplate="item">
+                <span [attr.data-testid]="'search-scope-option-' + item.value">
+                    {{ item.label | dm }}
+                </span>
+            </ng-template>
+        </p-select>
+    </p-inputgroup-addon>
+</p-inputgroup>
