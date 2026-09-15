@@ -28235,6 +28235,13 @@ components:
       properties:
         createdBy:
           type: string
+        createdByUserName:
+          type: string
+          description: Display name of the user who created the experiment. Falls
+            back to the raw createdBy user ID when the user cannot be resolved or
+            has no name set.
+          example: Admin User
+          readOnly: true
         creationDate:
           type: string
           format: date-time
