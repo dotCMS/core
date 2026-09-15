@@ -300,7 +300,7 @@ public class ImagesResource {
             // occasionally a fragment of the prompt, so it is logged and never returned.
             Logger.error(this, "Image generation failed for site "
                     + AiHostResolver.sanitize(context.servingSiteId()), e);
-            return errorResponse(InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE));
+            return errorResponse(InferenceError.fromProviderFailure(e, UPSTREAM_FAILURE_MESSAGE));
         }
     }
 

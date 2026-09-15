@@ -701,7 +701,9 @@ public final class InferenceAIClient {
                     ? "The request could not be served with this site's configuration"
                     : throwable.getMessage(), null);
         }
-        return InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE);
+        // A streamed exchange is rate limited exactly as often as a buffered one, and a client
+        // reading an error event backs off on the same status, so the translation belongs here too.
+        return InferenceError.fromProviderFailure(throwable, UPSTREAM_FAILURE_MESSAGE);
     }
 
     /**

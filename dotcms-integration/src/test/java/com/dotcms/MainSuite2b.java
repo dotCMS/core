@@ -70,6 +70,7 @@ import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
 import com.dotcms.inference.rest.ChatCompletionsTest;
 import com.dotcms.inference.rest.InferenceAuthorizationTest;
+import com.dotcms.inference.rest.InferenceClientConformanceTest;
 import com.dotcms.inference.rest.InferenceEmbeddingsTest;
 import com.dotcms.inference.rest.InferenceFallbackTest;
 import com.dotcms.inference.rest.InferenceImagesTest;
@@ -457,6 +458,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ChatCompletionsTest.class,
         ChatCompletionsStreamingTest.class,
         InferenceAuthorizationTest.class,
+        InferenceClientConformanceTest.class,
         InferenceEmbeddingsTest.class,
         InferenceFallbackTest.class,
         InferenceImagesTest.class,
