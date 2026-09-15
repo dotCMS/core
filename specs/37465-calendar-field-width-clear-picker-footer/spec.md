@@ -53,7 +53,7 @@ row deciding it. This feature **removes that line entirely**, so all four descri
 will no longer be on the screen.
 
 This spec assumes **#37465 lands first**. On merge, the now-moot criterion must be withdrawn from
-#37464 — see [FR-016](#fr-016). If #37464 lands first instead, this spec's FR-008/FR-009 still
+#37464 — see FR-016 below. If #37464 lands first instead, this spec's FR-008/FR-009 still
 apply unchanged; only the withdrawal direction reverses.
 
 ### Out of scope
@@ -171,7 +171,7 @@ right edges at several viewport widths.
 
 ### Edge Cases
 
-- **Timezone arrives late.** The system timezone is loaded asynchronously and can be absent on first render. The footer must tolerate it appearing after the picker has already been opened, without a layout jump.
+- **Timezone arrives late.** The system timezone is loaded asynchronously and can be absent on first render. The footer must tolerate it appearing after the picker has already been opened, without a layout jump. If it never arrives — the load request can fail with no retry — the *Today* / *Now* shortcut still works by falling back to the browser's clock rather than going silently dead; see FR-013 and Assumption 9.
 - **Clearing a field that carries a default value.** A field configured with a default (`now` or a fixed date) is populated on open; clearing it must leave it empty rather than re-applying the default.
 - **Clearing the expire-date field.** This field has its own placeholder semantics (*Never Expires*) and already had a clear control; it must end up with exactly one, behaving identically to the others.
 - **Typing a value directly** into the input rather than picking it: the clear control must appear once the input holds a value, and disappear when it is emptied by hand.
@@ -212,7 +212,7 @@ right edges at several viewport widths.
 - **FR-010**: The picker footer MUST hold exactly one button, at its right, styled as a secondary **outlined** button using the shared button styling rather than bespoke CSS.
 - **FR-011**: That button MUST read **Today** on Date and Date-and-time fields, and **Now** on Time-only fields.
 - **FR-012**: Activating it MUST set: today's date and the current time on a Date-and-time field; today's date on a Date-only field; the current time on a Time-only field. "The current time" is the server's time at the moment of activation, resolved to **second** precision — the same precision the field already applies to a `now` default.
-- **FR-013**: The value it sets MUST be derived from the **server** timezone through the field's existing server-time path, never from the browser's clock. When that timezone has not yet loaded, the button MUST still work: it MUST fall back to the browser's own clock — the same convention every other timezone-less path in this field already follows — rather than silently mixing UTC and local components into a value that stores differently than it displays.
+- **FR-013**: Once the system timezone has resolved, the value it sets MUST be derived from the **server** timezone through the field's existing server-time path, never from the browser's clock. Before it resolves — or if it never does — the button MUST still work rather than silently doing nothing: it MUST fall back to the browser's own clock, the same convention every other timezone-less path in this field already follows, and MUST stay internally consistent (the displayed value and the stored value MUST agree) even though the calendar day it sets may not match the server's if the two disagree. This fallback is not new risk: it is the field's entire pre-#37465 behaviour, narrowed to the one case where the server's zone is genuinely unknown — see Edge Cases and Assumption 9.
 - **FR-014**: After activation the field MUST show the new value, the underlying value MUST update, and the field MUST be marked touched and dirty.
 - **FR-014a**: Activating it MUST leave the picker open on Date-and-time and Time-only fields (so the time can still be adjusted) and MUST let the picker close on Date-only fields, as a completed date selection does today.
 - **FR-015**: The stock **Clear** button MUST NOT appear in the picker footer for any of the three field types.
@@ -255,12 +255,12 @@ right edges at several viewport widths.
 - **SC-002**: In a form containing a Date, Time or Date-and-time field beside any other field type in the same column, **0** fields stop short of the column edge, at every supported viewport width.
 - **SC-003**: The timezone governing a Date-and-time or Time value is visible to the author whenever they are choosing that value, on **100%** of such fields — up from only those fields that happen to carry a hint today.
 - **SC-004**: A field's hint is shown to the author on **100%** of Date, Time and Date-and-time fields that define one, in the same position as every other field type.
-- **SC-005**: With the server and the browser on calendar days that differ, the *Today* / *Now* shortcut sets the **server's** day and time in **100%** of attempts across all three field types.
+- **SC-005**: With the server and the browser on calendar days that differ, and the system timezone already resolved, the *Today* / *Now* shortcut sets the **server's** day and time in **100%** of attempts across all three field types. *(Scoped to the resolved case — see FR-013 and Assumption 9 for the narrow, accepted exception while the timezone is unknown.)*
 - **SC-005a**: The value the shortcut sets matches the server's clock to the **second** in **100%** of attempts — not rounded to the minute, and not drifting from the precision a `now` default already produces.
 - **SC-006**: The picker footer offers exactly **one** action on all three field types; the redundant *Clear* action appears **0** times.
 - **SC-006a**: After using the shortcut, the picker is still open on **100%** of Date-and-time and Time-only fields and closed on **100%** of Date-only fields — the one place the picker's lifecycle is deliberately non-uniform, and therefore the one most likely to regress unnoticed while the footer is rebuilt.
 - **SC-006b**: The footer action is operable from the keyboard alone — reachable by Tab, activatable by Enter or Space — on **100%** of attempts, matching the clear control's reachability.
-- **SC-006c**: The value the shortcut sets is the same whether or not the system timezone has loaded — displayed and stored values agree with each other in **100%** of attempts, with no offset introduced by the timezone's absence.
+- **SC-006c**: Whether or not the system timezone has loaded, the value the shortcut sets is internally consistent — the displayed value and the stored value agree with each other in **100%** of attempts. This does not claim the **calendar day** matches the server's when the timezone is unknown, only that display and storage never disagree with each other — see FR-013.
 - **SC-007**: Every string this feature adds to the interface is translatable — **0** hardcoded user-visible strings.
 - **SC-008**: Values saved before the change and read after it are identical in **100%** of cases across the three field types, including Date-only, Time-only and default-valued fields.
 
@@ -288,3 +288,4 @@ right edges at several viewport widths.
 6. **"Current time" means the server's current time** at the moment the button is activated, consistent with how the field already resolves a `now` default. *(No longer only an assumption: the precision is stated in FR-012 and checked by SC-005a, so PR 2 can be judged against it.)*
 7. **New message-bundle keys** are added under the existing calendar-field namespace; no existing key is reused or repurposed, and no existing key is removed.
 8. **No new field-level configuration.** Clearing, the footer timezone and the *Today*/*Now* button are unconditional per field type — a content-type editor cannot turn them off.
+9. **The pre-resolution fallback is a scoped degradation, not a silent correctness gap.** The system timezone loads once at app start and, on failure, is never retried (`withSystem` in the global store `console.warn`s and leaves it `null` for the session) — so "not loaded yet" can mean a brief startup window or an indefinite one. **Decided with the developer** in review, after this contradiction surfaced: rather than disabling the shortcut until the timezone resolves — which would leave it permanently dead on that failure path, for a reliability problem outside this feature's scope — it falls back to the browser's clock. That is exactly the field's behaviour before #37465, narrowed to the one case where the server's zone is genuinely unknown, so it is a known regression boundary, not a new one. SC-005 and SC-006c are scoped accordingly (see FR-013).
