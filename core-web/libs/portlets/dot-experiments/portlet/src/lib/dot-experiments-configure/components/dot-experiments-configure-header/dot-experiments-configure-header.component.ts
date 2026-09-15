@@ -1,7 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -14,8 +13,8 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import {
-    EXPERIMENTS_URL,
     NEW_EXPERIMENT_TITLE_KEY,
     STATUS_LABEL_KEYS,
     STATUS_SEVERITIES
@@ -23,7 +22,6 @@ import {
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-import { listReturnParams, resultsCommandsOf } from '../../../util/dot-experiments-list.util';
 
 /** Subline shown while no page is selected. */
 const NO_PAGE_SELECTED_KEY = 'experiments.configure.header.no-page';
@@ -170,8 +168,7 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly $addToBundleAssetId = signal<string | null>(null);
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
-    readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
@@ -190,9 +187,7 @@ export class DotExperimentsConfigureHeaderComponent {
         const experimentId = this.store.experiment()?.id;
 
         if (experimentId) {
-            this.#router.navigate(resultsCommandsOf(experimentId), {
-                queryParams: listReturnParams(this.#route.snapshot.queryParams)
-            });
+            this.#experimentsRouter.toResults(experimentId);
         }
     }
 
@@ -204,9 +199,7 @@ export class DotExperimentsConfigureHeaderComponent {
      * on either side of that swap.
      */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL], {
-            queryParams: listReturnParams(this.#route.snapshot.queryParams)
-        });
+        this.#experimentsRouter.toList();
     }
 
     /**

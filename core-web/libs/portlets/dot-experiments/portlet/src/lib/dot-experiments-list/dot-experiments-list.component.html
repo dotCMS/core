@@ -115,10 +115,12 @@
                             {{ 'experiments.list.header.name' | dm }}
                             <p-sortIcon field="name" />
                         </th>
-                        <th class="w-56" pSortableColumn="page">
-                            {{ 'experiments.list.header.page' | dm }}
-                            <p-sortIcon field="page" />
-                        </th>
+                        @if (!$inPanel) {
+                            <th class="w-56" pSortableColumn="page">
+                                {{ 'experiments.list.header.page' | dm }}
+                                <p-sortIcon field="page" />
+                            </th>
+                        }
                         <th class="w-44 whitespace-nowrap" pSortableColumn="goal">
                             {{ 'experiments.list.header.goal' | dm }}
                             <p-sortIcon field="goal" />
@@ -180,12 +182,14 @@
                                     }
                                 </div>
                             </td>
-                            <td
-                                class="max-w-56 truncate font-mono text-sm"
-                                [title]="row.pagePath"
-                                data-testid="experiment-page">
-                                {{ row.pagePath }}
-                            </td>
+                            @if (!$inPanel) {
+                                <td
+                                    class="max-w-56 truncate font-mono text-sm"
+                                    [title]="row.pagePath"
+                                    data-testid="experiment-page">
+                                    {{ row.pagePath }}
+                                </td>
+                            }
                             <td class="whitespace-nowrap" data-testid="experiment-goal">
                                 {{
                                     row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER

@@ -1,6 +1,6 @@
 import { patchState, signalMethod } from '@ngrx/signals';
 
-import { Location } from '@angular/common';
+import { Location, NgComponentOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,6 +11,8 @@ import {
     OnDestroy,
     OnInit,
     signal,
+    Type,
+    untracked,
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -37,6 +39,7 @@ import {
     DotPageToolsSeoComponent,
     PageScannerToolType
 } from '@dotcms/portlets/dot-ema/ui';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
@@ -121,8 +124,22 @@ function hasOpenContentForEdit(component: unknown): component is RouteWithOpenCo
         DotInfoPageComponent,
         DotNotLicenseComponent,
         MessageModule,
-        DotMessagePipe
+        DotMessagePipe,
+        NgComponentOutlet
     ],
+    /**
+     * `DotExperimentsPanelStore` is **not** here: it is provided by the route, beside `UVEStore`
+     * (#37478).
+     *
+     * It lived here first, on the assumption that leaving for a variant only changes query params
+     * and so this component is never re-created. Measured in a running editor, that is false — the
+     * shell is destroyed and rebuilt on that navigation, and a component-provided store went with
+     * it, taking the panel's memory of which experiment and which screen the editor had open. The
+     * return then had nothing to return to.
+     *
+     * The route's injector outlives the component, which is the same reason `UVEStore` is there
+     * and the same trap #37005 fell into.
+     */
     providers: [ConfirmationService]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
@@ -144,6 +161,60 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
+    protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
+
+    /**
+     * The page in hand, as the Experiments panel's scope (#37478).
+     *
+     * A signal rather than a value: the panel re-scopes when the editor navigates to another
+     * page without closing it, and it must never be able to describe a page other than the one
+     * on the canvas (FR-034).
+     */
+    protected readonly $experimentsPanelPageId = computed<string | null>(
+        () => this.uveStore.pageAsset()?.page?.identifier ?? null
+    );
+
+    /**
+     * The Experiments panel's component class, once its chunk has landed (#37478).
+     *
+     * Null until the editor first opens the panel. The template renders it through
+     * `NgComponentOutlet`, so this signal is the whole of the panel's mounting contract: the
+     * effect below resolves the class, the template decides whether it is on screen.
+     */
+    protected readonly $experimentsPanelComponent = signal<Type<unknown> | null>(null);
+
+    /**
+     * Loads the Experiments panel's chunk the first time the editor opens it (#37478).
+     *
+     * **A dynamic `import()` rather than `@defer`, and that is forced twice over.** The experiments
+     * portlet lib is reached only through dynamic imports — `app.routes.ts` and this lib's own
+     * `lib.routes.ts` both `import()` it — so Nx marks it lazy-loaded and
+     * `@nx/enforce-module-boundaries` rejects any static import of it, which is what a `@defer`
+     * block still needs in `imports:`. And even past that rule there would be no chunk: `@defer`
+     * would reach the component through the lib's barrel, and a bundler keeps a barrel's exports
+     * together, so the whole lib would land in this one's bundle anyway.
+     *
+     * The split is the point: three screens, four stores and chart.js stay out of what the editor
+     * loads until the panel is first opened (FR-037, SC-006).
+     *
+     * Once loaded the class is kept, and `@if` in the template mounts and destroys the panel from
+     * there — so closing still leaves nothing of it running (FR-039) without re-fetching the chunk
+     * on the next open. Nothing here has to survive the `await`: if the editor dismissed the panel
+     * while it was in flight, the template simply never renders it.
+     */
+    readonly $experimentsPanelLoader = effect(() => {
+        if (!this.experimentsPanel.isOpen() || this.$experimentsPanelComponent()) {
+            return;
+        }
+
+        untracked(async () => {
+            const { DotExperimentsPanelComponent } =
+                await import('@dotcms/portlets/dot-experiments/portlet');
+
+            this.$experimentsPanelComponent.set(DotExperimentsPanelComponent);
+        });
+    });
+
     readonly #dotMessageService = inject(DotMessageService);
     protected readonly $lockOptions = this.uveStore.$lockOptions;
     protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
@@ -221,31 +292,21 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             {
                 materialIcon: 'science',
                 label: 'editema.editor.navbar.experiments',
-                // The switch selects the destination and nothing else: `isDisabled` is the same
-                // rule on both sides, so an editor who cannot see experiments for this page does
-                // not gain access through the new one (FR-023).
-                ...(experimentsPortletEnabled
-                    ? {
-                          href: '/experiments',
-                          /**
-                           * The page, and the language the editor is standing in.
-                           *
-                           * `language_id` is not a filter — the list narrows on `pageId` alone.
-                           * It is the only place the language exists: a page identifier says
-                           * nothing about which version was open, so without it the list's
-                           * back-link and the Configure prefill have to guess, and a wrong
-                           * language is invisible until the wrong content loads. Spelled as UVE
-                           * spells it everywhere else, so the same key travels the whole way.
-                           *
-                           * `url` and the persona key are still left behind: they mean nothing to
-                           * the list, and `parseViewState` would leave them in its address.
-                           */
-                          queryParams: {
-                              pageId: page?.identifier,
-                              language_id: this.uveStore.pageLanguageId()
-                          }
-                      }
-                    : { href: `experiments/${page?.identifier}` }),
+                /**
+                 * With the switch on the item carries **no `href`**, and that absence is the
+                 * mechanism rather than an omission: `EditEmaNavigationBarComponent.navigate`
+                 * emits `action` for an item without one, so the gesture opens the panel beside
+                 * the canvas instead of navigating away from the page (#37478, FR-001, FR-002).
+                 *
+                 * `$activeHref` skips items with no `href`, so the item also stops being
+                 * highlighted as a destination — which is the cost D1 accepts, and it needs no
+                 * code of its own.
+                 *
+                 * The switch selects the behaviour and nothing else: `isDisabled` is the same
+                 * rule on both sides, so an editor who cannot see experiments for this page does
+                 * not gain access through the new one (FR-004).
+                 */
+                ...(experimentsPortletEnabled ? {} : { href: `experiments/${page?.identifier}` }),
                 id: 'experiments',
                 isDisabled: !page?.canEdit
             },
@@ -347,6 +408,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     constructor() {
         this.$updateBreadcrumb(this.$breadcrumbPage);
+
+        // Signals, not values: the panel reads the page and the language at the moment it uses
+        // them, so neither goes stale against the canvas. The language is return context only —
+        // it never narrows the panel, because an experiment belongs to a page and not to one of
+        // its language versions (#37478, D10).
+        this.experimentsPanel.setContext({
+            pageId: this.$experimentsPanelPageId,
+            languageId: this.uveStore.pageLanguageId
+        });
     }
 
     ngOnInit(): void {
@@ -456,7 +526,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @memberof DotEmaShellComponent
      */
     handleItemAction(itemId: string) {
-        if (itemId === 'page-tools') {
+        if (itemId === 'experiments') {
+            // Only reachable with the switch on: with it off the item carries an `href` and the
+            // navigation bar navigates instead of emitting (#37478, FR-001).
+            this.experimentsPanel.open();
+        } else if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
             const page = this.uveStore.pageAsset()?.page;
