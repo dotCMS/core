@@ -89,16 +89,24 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     ];
 
     /**
-     * Repoints the trigger's border at the exact token the search input already uses.
+     * Repoints the trigger at the exact tokens the search input already uses, so the two read as
+     * one field rather than a white box beside a grey one.
      *
-     * Button and InputText are different PrimeNG components with separate token families — this
-     * theme's `button.secondary.border.color` resolves to `{surface.700}` while
-     * `inputtext.border.color` resolves to `{form.field.border.color}`, so a plain `severity`
-     * button never matched the field it sits beside. A design-token override, not a literal colour:
-     * if the active theme's form-field border ever changes, this stays in step with it.
+     * Button and InputText are different PrimeNG components with entirely separate token families.
+     * In this theme `button.secondary` resolves to `background: {surface.100}`,
+     * `borderColor: {surface.100}` (identical to its own background — invisible by design) and
+     * `color: {surface.600}`, while `inputtext` resolves to `{form.field.background}`,
+     * `{form.field.border.color}` and `{form.field.color}`. Overriding the border alone left a
+     * visible grey-filled button next to a white field; all three have to move together for the
+     * pair to read as one control. Each is a design-token override, not a literal colour, so the
+     * two stay identical if the active theme itself changes.
      */
     protected readonly TRIGGER_DT = {
-        secondary: { borderColor: '{form.field.border.color}' }
+        secondary: {
+            background: '{form.field.background}',
+            borderColor: '{form.field.border.color}',
+            color: '{form.field.color}'
+        }
     };
 
     /**
