@@ -11,9 +11,14 @@ export * from './lib/utils/functions.util';
 export * from './lib/models/dot-edit-content-field.constant';
 
 // Relationship "select existing content" picker — reused by Content Drive's relationship filter.
-export { DotSelectExistingContentComponent } from './lib/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
-export { FooterComponent as DotSelectExistingContentFooterComponent } from './lib/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/components/footer/footer.component';
-export { ExistingContentStore } from './lib/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/store/existing-content.store';
+// Exported for Content Drive's DOT_RELATIONSHIP_PICKER provider: the shared field-filter chip
+// cannot import this library directly (that would make the dependency circular and drag this
+// library into the legacy custom-element bundle), so the portlet supplies the capability instead.
+export { AddRelationshipsComponent } from './lib/fields/dot-edit-content-relationship-field/components/add-relationships/add-relationships.component';
+export type {
+    AddRelationshipsInput,
+    AddRelationshipsResult
+} from './lib/fields/dot-edit-content-relationship-field/components/add-relationships/models/add-relationships.models';
 export {
     getContentTypeIdFromRelationship,
     getSelectionModeByCardinality

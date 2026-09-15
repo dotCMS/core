@@ -8,6 +8,22 @@
 
 **Status**: Draft — the three scope questions were settled 2026-09-09 (see [Clarifications](#clarifications))
 
+**Amended after sign-off (2026-09-14)**: two changes to the contract that was approved, so both
+need re-approval before PR 2 merges. Each records its own consequence in place rather than leaving
+it to the reader.
+
+- **FR-014 withdrawn** — the picker carries no selection review. Acceptance scenario 10 and the
+  clause in FR-011 that bound the review to the accumulated set go with it.
+- **FR-018 narrowed** — the picker renders the shared table's default columns and passes none from
+  the content type.
+- **FR-023 / FR-024 changed** — the related list's control is a "Show all (N)" / "Show less" toggle
+  rather than an incremental "Load more".
+
+Note for whoever re-approves: PR #37482 merged the **original** spec to `main`, and merging `main`
+back into the implementation branch silently reverted the first of these amendments. Git saw no
+conflict; it was recovered from the commit that made it. A later merge can do the same, so if these
+paragraphs are missing, check the history of this file rather than assuming they were never written.
+
 **Related GitHub Issue**: [#37192](https://github.com/dotCMS/core/issues/37192) — reuses the AssetPicker epic [#36702](https://github.com/dotCMS/core/issues/36702); cross-references [#36155](https://github.com/dotCMS/core/issues/36155) (kept separate) and [#36615](https://github.com/dotCMS/core/issues/36615) (form max-width, closed)
 
 **Design**: [Asset Picker canvas](https://claude.ai/design/p/202fc776-9326-4926-b4c6-5996a8be9ea1?via=share&file=Asset+Picker.dc.html) — the "Add Relationships" artboard is the one this spec is written against.
@@ -133,8 +149,7 @@ editor claim an already-claimed child, or put two items into a one-to-one field,
 content — a worse outcome than the old dialog.
 
 **Independent Test**: Exercise each rule against the new dialog with no reference to the old one: a
-single-cardinality field, a many field, a target set containing an already-claimed item, and a
-multi-item selection reviewed before confirming.
+single-cardinality field, a many field, and a target set containing an already-claimed item.
 
 **Acceptance Scenarios**:
 
@@ -163,9 +178,9 @@ multi-item selection reviewed before confirming.
    it is beyond the first page, or the opening locale/site filters it out — **When** the editor
    confirms without touching it, **Then** it is **still related**. Confirmation reconciles against
    the whole selection, never against the rows on screen.
-10. **Given** the editor has selected several items, **When** they review their current selection,
-    **Then** the review lists their whole selection — including items not in the current result
-    view — and they can deselect from there.
+10. ~~**Given** the editor has selected several items, **When** they review their current
+    selection, **Then** the review lists their whole selection — including items not in the current
+    result view — and they can deselect from there.~~ **Withdrawn with FR-014.**
 11. **Given** the editor confirms, **When** the dialog closes, **Then** the field's related content
     equals the dialog's selection; items that were already related and stayed checked are neither
     duplicated nor reordered.
@@ -370,8 +385,9 @@ its width against the form's other fields; compare the Status column's alignment
 - **FR-011**: The picker's selection MUST be an **accumulated set**, not a reading of the rows
   currently on screen. It MUST survive a page change, a search and a filter change; the field's
   already-related items MUST enter that set **in full** when the picker opens, including any that
-  fall outside the current result view; and the selection review (FR-014) MUST read from the set
-  rather than from a page of results. Confirmation reconciles against the whole set.
+  fall outside the current result view. Confirmation reconciles against the whole set.
+
+  The clause binding the selection review to this set went with FR-014.
 
   This is the requirement that keeps FR-013 safe. Today the picker fetches once and pages in the
   browser, so "the rows on screen" and "everything that matched" are accidentally the same thing.
@@ -384,8 +400,13 @@ its width against the form's other fields; compare the Status column's alignment
   selection is empty. Confirming with nothing selected removes **every** related item, which is the
   only reading consistent with FR-010: if unchecking a row unrelates it, unchecking the last row
   cannot be the one case that silently does nothing.
-- **FR-014**: The editor MUST be able to review their current selection before confirming, and
-  deselect from that review.
+- **FR-014**: ~~The editor MUST be able to review their current selection before confirming, and
+  deselect from that review.~~ **Withdrawn after sign-off.** The dialog this replaces met it with a
+  "Show Selected" toggle; the product decision is that the picker does not carry one. The
+  consequence is accepted and recorded here rather than left implicit: the selection is still
+  accumulated (FR-011), so an editor who picks across two searches confirms more than the screen
+  shows, and has no way to see or undo the earlier picks without reconstructing the search that
+  found them.
 - **FR-015**: Cancelling MUST leave the field's related content exactly as it was.
 - **FR-016**: When the field is disabled, or a single-cardinality field already holds its item, the
   picker MUST NOT be openable. **This bounds FR-007 rather than contradicting it**: the
@@ -394,9 +415,20 @@ its width against the form's other fields; compare the Status column's alignment
   already holds is a **remove-then-add**, not an in-picker swap.
 - **FR-017**: The picker MUST keep its own **paging**: current page, previous/next, and a page-size
   selector at the foot of the dialog.
-- **FR-018**: Result columns MUST be the shared table's — title with thumbnail, the columns the
-  content type configures, Locale, Status and Last Modified — with sortable headers where the shared
-  table sorts.
+- **FR-018**: Result columns MUST be the shared table's, with sortable headers where the shared
+  table sorts. ~~title with thumbnail, the columns the content type configures, Locale, Status and
+  Last Modified~~ **Narrowed after sign-off.** The picker renders the shared table's own default set
+  — Name, Status, Locale, Type, Edited By, Last Edited — and passes no content-type columns.
+
+  The design artboard shows Title, URL Title, Posting Date, Locale, Status and Last Modified. URL
+  Title and Posting Date are **Blog fields**, not columns every content type has, and this dialog
+  opens against whatever type the relationship targets — so following the artboard literally would
+  render two empty columns for every other type. It was drawn against one example rather than
+  describing a fixed set.
+
+  Passing the type's own configured columns is possible: the shared table takes `extraColumns`,
+  which is how Content Drive fills them. Not doing it is the accepted consequence — the picker shows
+  the same six columns whatever it is browsing, including two the original wording did not list.
 - **FR-019**: The relationship-specific search service, filter controls and dialog replaced by the
   shared ones MUST be removed from the codebase, not left in place unused.
 - **FR-020**: The picker MUST NOT be used inside the legacy Dojo edit-contentlet page (#37132).
@@ -406,11 +438,17 @@ its width against the form's other fields; compare the Status column's alignment
 - **FR-021**: The related-content list MUST NOT render a paging control.
 - **FR-022**: When the relationship holds more than **40** items, the list MUST render only the first
   40 rows and withhold the rest from the DOM.
-- **FR-023**: A row MUST be appended after the last rendered one carrying a control that reveals the
-  next 40. It MUST read **"Load more"**, with no count, matching the Key/Value field's precedent
-  (#37191).
-- **FR-024**: The control MUST disappear once every row is rendered, and MUST NOT appear at all for a
-  relationship that fits in the first page.
+- **FR-023**: A row MUST be appended after the last rendered one carrying a control that shows every
+  item at once. It MUST read **"Show all (N)"**, where N is the total the relationship holds, and
+  become **"Show less"** once expanded — returning the list to the first 40.
+  ~~It MUST read "Load more", with no count, matching the Key/Value field's precedent (#37191).~~
+  **Changed after sign-off.** The Key/Value precedent reveals a page at a time; this list is
+  drag-ordered, and stepping through pages to reach one row is worse here than showing the lot. The
+  count sits on "Show all" because that is the decision needing a number — how much is hidden —
+  while collapsing always returns to the same first page.
+- **FR-024**: The control MUST NOT appear for a relationship that fits in the first page.
+  ~~The control MUST disappear once every row is rendered~~ — it now stays, as "Show less", which is
+  what makes the expansion reversible.
 - **FR-025**: Withholding MUST be a **rendering** limit only. Every related item MUST remain in the
   field's value and in what it emits, so reorder, remove and the saved payload behave as though every
   row were on screen. A drag MUST NOT lose, move or reorder a withheld item.
